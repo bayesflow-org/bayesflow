@@ -1,3 +1,4 @@
+
 import logging
 import seaborn as sns
 import pandas as pd
@@ -10,7 +11,7 @@ def plot_distribution_2d(
     color: str | tuple = "#8f2727",
     alpha: float = 0.9,
     n_params: int = None,
-    param_names: list = None,
+    param_names: list[str] = None,
     render: bool = True,
     **kwargs
 ):
@@ -34,7 +35,8 @@ def plot_distribution_2d(
     param_names : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     render      : bool, optional, default: True
-        The boolean that determines whether to render the plot visually. If true, then the plot will render; otherwise, the plot will go through further steps for postprocessing
+        The boolean that determines whether to render the plot visually. If true, then the plot will render;
+        otherwise, the plot will go through further steps for postprocessing
     **kwargs    : dict, optional
         Additional keyword arguments passed to the sns.PairGrid constructor
     """

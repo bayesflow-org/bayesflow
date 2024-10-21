@@ -26,18 +26,34 @@ class MapTransform(Transform):
     def get_config(self) -> dict:
         return {"transform_map": serialize(self.transform_map)}
 
-    def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
-        result = data.copy()
+    def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
+        data = data.copy()
+
+        required_keys = set(self.transform_map.keys())
+        available_keys = set(data.keys())
+        missing_keys = required_keys - available_keys
+
+        if strict and missing_keys:
+            raise KeyError(f"Missing keys: {missing_keys!r}")
+
         for key, transform in self.transform_map.items():
             if key in data:
-                result[key] = transform.forward(data[key], **kwargs)
+                data[key] = transform.forward(data[key], **kwargs)
 
-        return result
+        return data
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
-        result = data.copy()
+    def inverse(self, data: dict[str, np.ndarray], *, strict: bool = False, **kwargs) -> dict[str, np.ndarray]:
+        data = data.copy()
+
+        required_keys = set(self.transform_map.keys())
+        available_keys = set(data.keys())
+        missing_keys = required_keys - available_keys
+
+        if strict and missing_keys:
+            raise KeyError(f"Missing keys: {missing_keys!r}")
+
         for key, transform in self.transform_map.items():
             if key in data:
-                result[key] = transform.inverse(data[key], **kwargs)
+                data[key] = transform.inverse(data[key], **kwargs)
 
-        return result
+        return data

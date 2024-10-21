@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+
 from keras.saving import (
     deserialize_keras_object as deserialize,
     register_keras_serializable as serializable,
@@ -21,6 +22,7 @@ class Drop(Transform):
         return {"keys": serialize(self.keys)}
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, any]:
+        # no strict version because there is no requirement for the keys to be present
         return {key: value for key, value in data.items() if key not in self.keys}
 
     def inverse(self, data: dict[str, any], **kwargs) -> dict[str, any]:

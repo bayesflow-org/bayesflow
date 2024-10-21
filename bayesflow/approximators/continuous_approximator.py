@@ -152,13 +152,13 @@ class ContinuousApproximator(Approximator):
         elif batch_shape is not None and num_samples is not None:
             raise ValueError("Please specify either `num_samples` or `batch_shape`, not both.")
 
-        conditions = self.data_adapter(conditions)
+        conditions = self.data_adapter(conditions, strict=False)
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
         conditions = {
             "inference_variables": self._sample(num_samples=num_samples, batch_shape=batch_shape, **conditions)
         }
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
-        conditions = self.data_adapter(conditions, inverse=True)
+        conditions = self.data_adapter(conditions, inverse=True, strict=False)
 
         return conditions
 
@@ -193,7 +193,7 @@ class ContinuousApproximator(Approximator):
         return self.inference_network.sample(batch_shape, conditions=inference_conditions)
 
     def log_prob(self, data: dict[str, np.ndarray]) -> np.ndarray:
-        data = self.data_adapter(data)
+        data = self.data_adapter(data, strict=False)
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data)
         log_prob = keras.ops.convert_to_numpy(log_prob)

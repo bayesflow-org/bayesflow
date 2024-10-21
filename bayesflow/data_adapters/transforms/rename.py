@@ -22,12 +22,24 @@ class Rename(Transform):
     def get_config(self) -> dict:
         return {"from_key": self.from_key, "to_key": self.to_key}
 
-    def forward(self, data: dict[str, any], **kwargs) -> dict[str, any]:
+    def forward(self, data: dict[str, any], *, strict: bool = True, **kwargs) -> dict[str, any]:
         data = data.copy()
+
+        if strict and self.from_key not in data:
+            raise KeyError(f"Missing key: {self.from_key!r}")
+        elif self.from_key not in data:
+            return data
+
         data[self.to_key] = data.pop(self.from_key)
         return data
 
-    def inverse(self, data: dict[str, any], **kwargs) -> dict[str, any]:
+    def inverse(self, data: dict[str, any], *, strict: bool = False, **kwargs) -> dict[str, any]:
         data = data.copy()
+
+        if strict and self.to_key not in data:
+            raise KeyError(f"Missing key: {self.to_key!r}")
+        elif self.to_key not in data:
+            return data
+
         data[self.from_key] = data.pop(self.to_key)
         return data

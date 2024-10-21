@@ -78,8 +78,13 @@ class FilterTransform(Transform):
             "transform_map": serialize(self.transform_map),
         }
 
-    def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()
+
+        if strict and self.include is not None:
+            missing_keys = set(self.include) - set(data.keys())
+            if missing_keys:
+                raise KeyError(f"Missing keys from include list: {missing_keys!r}")
 
         for key, value in data.items():
             if self._should_transform(key, value, inverse=False):
@@ -87,8 +92,13 @@ class FilterTransform(Transform):
 
         return data
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def inverse(self, data: dict[str, np.ndarray], *, strict: bool = False, **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()
+
+        if strict and self.include is not None:
+            missing_keys = set(self.include) - set(data.keys())
+            if missing_keys:
+                raise KeyError(f"Missing keys from include list: {missing_keys!r}")
 
         for key, value in data.items():
             if self._should_transform(key, value, inverse=True):

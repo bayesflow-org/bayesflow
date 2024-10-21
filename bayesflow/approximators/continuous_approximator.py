@@ -183,6 +183,7 @@ class ContinuousApproximator(Approximator):
 
         if inference_conditions is not None:
             if keras.ops.ndim(inference_conditions) < 3:
+                # TODO: this may present an issue for 2+D conditions
                 inference_conditions = expand_left_to(inference_conditions, 3)
 
             inference_conditions = keras.ops.broadcast_to(

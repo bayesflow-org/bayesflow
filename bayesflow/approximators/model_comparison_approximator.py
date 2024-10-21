@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+
 import keras
 from keras.saving import (
     deserialize_keras_object as deserialize,
@@ -6,13 +7,12 @@ from keras.saving import (
     serialize_keras_object as serialize,
 )
 
-from bayesflow.datasets import OnlineDataset
 from bayesflow.data_adapters import DataAdapter
+from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import filter_kwargs, logging
-
 from .approximator import Approximator
 
 
@@ -50,19 +50,27 @@ class ModelComparisonApproximator(Approximator):
         summary_variables: Sequence[str] = None,
         model_index_name: str = "model_indices",
     ):
-        # TODO: test this
         if classifier_conditions is None and summary_variables is None:
             raise ValueError("At least one of `classifier_variables` or `summary_variables` must be provided.")
 
-        data_adapter = DataAdapter.default()
+        data_adapter = DataAdapter().to_array().convert_dtype("float64", "float32")
 
         if classifier_conditions is not None:
             data_adapter = data_adapter.concatenate(classifier_conditions, into="classifier_conditions")
 
         if summary_variables is not None:
-            data_adapter = data_adapter.concatenate(summary_variables, into="summary_variables")
+            data_adapter = data_adapter.as_set(summary_variables).concatenate(
+                summary_variables, into="summary_variables"
+            )
 
-        data_adapter = data_adapter.concatenate([model_index_name], into="model_indices")
+        data_adapter = (
+            data_adapter.rename(model_index_name, "model_indices")
+            .keep(["classifier_conditions", "summary_variables", "model_indices"])
+            .standardize(exclude="model_indices")
+        )
+
+        # TODO: add one-hot encoding
+        # .one_hot("model_indices", self.num_models)
 
         return data_adapter
 
@@ -177,9 +185,9 @@ class ModelComparisonApproximator(Approximator):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        data_adapter = deserialize(config.pop("data_adapter"), custom_objects=custom_objects)
-        classifier_network = deserialize(config.pop("classifier_network"), custom_objects=custom_objects)
-        summary_network = deserialize(config.pop("summary_network"), custom_objects=custom_objects)
+        data_adapter = deserialize(config["data_adapter"], custom_objects=custom_objects)
+        classifier_network = deserialize(config["classifier_network"], custom_objects=custom_objects)
+        summary_network = deserialize(config["summary_network"], custom_objects=custom_objects)
         return cls(
             data_adapter=data_adapter, classifier_network=classifier_network, summary_network=summary_network, **config
         )

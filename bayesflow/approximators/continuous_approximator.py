@@ -1,17 +1,17 @@
 from collections.abc import Sequence
+
 import keras
+import numpy as np
 from keras.saving import (
     deserialize_keras_object as deserialize,
     register_keras_serializable as serializable,
     serialize_keras_object as serialize,
 )
-import numpy as np
 
 from bayesflow.data_adapters import DataAdapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import logging, expand_tile
-
 from .approximator import Approximator
 
 
@@ -42,14 +42,24 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
     ) -> DataAdapter:
-        # TODO: test this
-        data_adapter = DataAdapter.default().concatenate(inference_variables, into="inference_variables")
+        data_adapter = (
+            DataAdapter()
+            .to_array()
+            .convert_dtype("float64", "float32")
+            .concatenate(inference_variables, into="inference_variables")
+        )
 
         if inference_conditions is not None:
             data_adapter = data_adapter.concatenate(inference_conditions, into="inference_conditions")
 
         if summary_variables is not None:
-            data_adapter = data_adapter.concatenate(summary_variables, into="summary_variables")
+            data_adapter = data_adapter.as_set(summary_variables).concatenate(
+                summary_variables, into="summary_variables"
+            )
+
+        data_adapter = data_adapter.keep(
+            ["inference_variables", "inference_conditions", "summary_variables"]
+        ).standardize()
 
         return data_adapter
 

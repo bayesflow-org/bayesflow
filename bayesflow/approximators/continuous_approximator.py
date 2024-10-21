@@ -148,10 +148,8 @@ class ContinuousApproximator(Approximator):
         conditions: dict[str, np.ndarray],
         **kwargs,
     ) -> dict[str, np.ndarray]:
-        print(keras.tree.map_structure(np.shape, conditions))
         conditions = self.data_adapter(conditions, strict=False, batch_size=batch_size, **kwargs)
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-        print(keras.tree.map_structure(keras.ops.shape, conditions))
         conditions = {"inference_variables": self._sample(num_samples=num_samples, batch_size=batch_size, **conditions)}
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
         conditions = self.data_adapter(conditions, inverse=True, strict=False, **kwargs)

@@ -15,8 +15,8 @@ class Rename(Transform):
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Rename":
         return cls(
-            from_key=config.pop("from_key"),
-            to_key=config.pop("to_key"),
+            from_key=config["from_key"],
+            to_key=config["to_key"],
         )
 
     def get_config(self) -> dict:

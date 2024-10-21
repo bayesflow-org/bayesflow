@@ -1,11 +1,12 @@
 from collections.abc import Callable, Sequence
+from typing import Protocol
+
+import numpy as np
 from keras.saving import (
     deserialize_keras_object as deserialize,
     register_keras_serializable as serializable,
     serialize_keras_object as serialize,
 )
-import numpy as np
-from typing import Protocol
 
 from .elementwise_transform import ElementwiseTransform
 from .transform import Transform
@@ -58,13 +59,13 @@ class FilterTransform(Transform):
 
         instance = cls(
             transform_constructor=transform_constructor,
-            predicate=deserialize(config.pop("predicate"), custom_objects),
-            include=deserialize(config.pop("include"), custom_objects),
-            exclude=deserialize(config.pop("exclude"), custom_objects),
-            **config.pop("kwargs"),
+            predicate=deserialize(config["predicate"], custom_objects),
+            include=deserialize(config["include"], custom_objects),
+            exclude=deserialize(config["exclude"], custom_objects),
+            **config["kwargs"],
         )
 
-        instance.transform_map = deserialize(config.pop("transform_map"))
+        instance.transform_map = deserialize(config["transform_map"])
 
         return instance
 

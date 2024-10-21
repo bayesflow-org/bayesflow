@@ -6,8 +6,10 @@ from .convert_dtype import ConvertDType
 from .drop import Drop
 from .elementwise_transform import ElementwiseTransform
 from .filter_transform import FilterTransform
+from .keep import Keep
 from .lambda_transform import LambdaTransform
 from .map_transform import MapTransform
+from .one_hot import OneHot
 from .rename import Rename
 from .standardize import Standardize
 from .to_array import ToArray

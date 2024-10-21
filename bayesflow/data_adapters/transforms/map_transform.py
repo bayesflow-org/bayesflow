@@ -1,9 +1,9 @@
+import numpy as np
 from keras.saving import (
     deserialize_keras_object as deserialize,
     register_keras_serializable as serializable,
     serialize_keras_object as serialize,
 )
-import numpy as np
 
 from .elementwise_transform import ElementwiseTransform
 from .transform import Transform
@@ -21,7 +21,7 @@ class MapTransform(Transform):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "MapTransform":
-        return cls(deserialize(config.pop("transform_map")))
+        return cls(deserialize(config["transform_map"]))
 
     def get_config(self) -> dict:
         return {"transform_map": serialize(self.transform_map)}

@@ -32,17 +32,8 @@ class DataAdapter:
         self.transforms = transforms
 
     @classmethod
-    def default(cls):
-        instance = cls()
-        instance.to_array()
-        instance.convert_dtype(from_dtype="float64", to_dtype="float32")
-        instance.standardize()
-
-        return instance
-
-    @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "DataAdapter":
-        return cls(transforms=deserialize(config.pop("transforms"), custom_objects))
+        return cls(transforms=deserialize(config["transforms"], custom_objects))
 
     def get_config(self) -> dict:
         return {"transforms": serialize(self.transforms)}

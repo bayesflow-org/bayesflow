@@ -1,10 +1,11 @@
 from collections.abc import Sequence
+
+import numpy as np
 from keras.saving import (
     deserialize_keras_object as deserialize,
     register_keras_serializable as serializable,
     serialize_keras_object as serialize,
 )
-import numpy as np
 
 from .transforms import (
     AsSet,
@@ -14,8 +15,10 @@ from .transforms import (
     ConvertDType,
     Drop,
     FilterTransform,
+    Keep,
     LambdaTransform,
     MapTransform,
+    OneHot,
     Rename,
     Standardize,
     ToArray,
@@ -117,12 +120,12 @@ class DataAdapter:
 
     def convert_dtype(
         self,
+        from_dtype: str,
+        to_dtype: str,
         *,
         predicate: callable = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
-        from_dtype: str,
-        to_dtype: str,
     ):
         transform = FilterTransform(
             transform_constructor=ConvertDType,
@@ -157,6 +160,22 @@ class DataAdapter:
             keys = [keys]
 
         transform = Drop(keys)
+        self.transforms.append(transform)
+        return self
+
+    def keep(self, keys: str | Sequence[str]):
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = Keep(keys)
+        self.transforms.append(transform)
+        return self
+
+    def one_hot(self, keys: str | Sequence[str], num_classes: int):
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: OneHot(num_classes=num_classes) for key in keys})
         self.transforms.append(transform)
         return self
 

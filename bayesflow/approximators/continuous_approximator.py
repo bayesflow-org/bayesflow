@@ -11,7 +11,7 @@ from keras.saving import (
 from bayesflow.data_adapters import DataAdapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import logging, expand_right_to
+from bayesflow.utils import logging, expand_left_to
 from .approximator import Approximator
 
 
@@ -148,8 +148,10 @@ class ContinuousApproximator(Approximator):
         conditions: dict[str, np.ndarray],
         **kwargs,
     ) -> dict[str, np.ndarray]:
+        print(keras.tree.map_structure(np.shape, conditions))
         conditions = self.data_adapter(conditions, strict=False, batch_size=batch_size, **kwargs)
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
+        print(keras.tree.map_structure(keras.ops.shape, conditions))
         conditions = {"inference_variables": self._sample(num_samples=num_samples, batch_size=batch_size, **conditions)}
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
         conditions = self.data_adapter(conditions, inverse=True, strict=False, **kwargs)
@@ -181,7 +183,7 @@ class ContinuousApproximator(Approximator):
 
         if inference_conditions is not None:
             if keras.ops.ndim(inference_conditions) < 3:
-                inference_conditions = expand_right_to(inference_conditions, 3)
+                inference_conditions = expand_left_to(inference_conditions, 3)
 
             inference_conditions = keras.ops.broadcast_to(
                 inference_conditions, batch_shape + inference_conditions.shape[2:]
@@ -189,8 +191,8 @@ class ContinuousApproximator(Approximator):
 
         return self.inference_network.sample(batch_shape, conditions=inference_conditions)
 
-    def log_prob(self, data: dict[str, np.ndarray]) -> np.ndarray:
-        data = self.data_adapter(data, strict=False)
+    def log_prob(self, data: dict[str, np.ndarray], *, batch_size: int) -> np.ndarray:
+        data = self.data_adapter(data, strict=False, batch_size=batch_size)
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data)
         log_prob = keras.ops.convert_to_numpy(log_prob)

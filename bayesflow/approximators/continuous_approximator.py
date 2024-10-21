@@ -10,8 +10,8 @@ from keras.saving import (
 
 from bayesflow.data_adapters import DataAdapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
-from bayesflow.types import Shape, Tensor
-from bayesflow.utils import logging, expand_tile
+from bayesflow.types import Tensor
+from bayesflow.utils import logging, expand_right_to
 from .approximator import Approximator
 
 
@@ -143,29 +143,23 @@ class ContinuousApproximator(Approximator):
     def sample(
         self,
         *,
+        batch_size: int,
+        num_samples: int,
         conditions: dict[str, np.ndarray],
-        num_samples: int = None,
-        batch_shape: Shape = None,
+        **kwargs,
     ) -> dict[str, np.ndarray]:
-        if num_samples is None and batch_shape is None:
-            num_samples = 1
-        elif batch_shape is not None and num_samples is not None:
-            raise ValueError("Please specify either `num_samples` or `batch_shape`, not both.")
-
-        conditions = self.data_adapter(conditions, strict=False)
+        conditions = self.data_adapter(conditions, strict=False, batch_size=batch_size, **kwargs)
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-        conditions = {
-            "inference_variables": self._sample(num_samples=num_samples, batch_shape=batch_shape, **conditions)
-        }
+        conditions = {"inference_variables": self._sample(num_samples=num_samples, batch_size=batch_size, **conditions)}
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
-        conditions = self.data_adapter(conditions, inverse=True, strict=False)
+        conditions = self.data_adapter(conditions, inverse=True, strict=False, **kwargs)
 
         return conditions
 
     def _sample(
         self,
-        num_samples: int = None,
-        batch_shape: Shape = None,
+        batch_size: int,
+        num_samples: int,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
     ) -> Tensor:
@@ -183,12 +177,15 @@ class ContinuousApproximator(Approximator):
             else:
                 inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
 
-        if batch_shape is None:
-            if inference_conditions is not None:
-                batch_shape = (keras.ops.shape(inference_conditions)[0], num_samples)
-                inference_conditions = expand_tile(inference_conditions, num_samples, axis=1)
-            else:
-                batch_shape = (num_samples,)
+        batch_shape = (batch_size, num_samples)
+
+        if inference_conditions is not None:
+            if keras.ops.ndim(inference_conditions) < 3:
+                inference_conditions = expand_right_to(inference_conditions, 3)
+
+            inference_conditions = keras.ops.broadcast_to(
+                inference_conditions, batch_shape + inference_conditions.shape[2:]
+            )
 
         return self.inference_network.sample(batch_shape, conditions=inference_conditions)
 

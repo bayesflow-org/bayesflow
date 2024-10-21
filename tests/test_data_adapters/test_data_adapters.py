@@ -19,4 +19,6 @@ def test_serialize_deserialize(data_adapter, custom_objects):
     deserialized = deserialize(serialized, custom_objects)
     reserialized = serialize(deserialized)
 
-    assert reserialized == serialized
+    assert reserialized.keys() == serialized.keys()
+    for key in reserialized:
+        assert reserialized[key] == serialized[key]

@@ -22,7 +22,9 @@ def data_adapter():
     # TODO: reintroduce lambda testing etc.
 
     d = (
-        DataAdapter.default()
+        DataAdapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
         .concatenate(["x1", "x2"], into="x")
         .concatenate(["y1", "y2"], into="y")
         .apply(forward=forward_transform, inverse=inverse_transform)

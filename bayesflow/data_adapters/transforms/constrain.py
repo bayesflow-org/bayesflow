@@ -28,9 +28,6 @@ class Constrain(ElementwiseTransform):
             if np.any(lower >= upper):
                 raise ValueError("The lower bound must be strictly less than the upper bound.")
 
-            if method == "default":
-                method = "sigmoid"
-
             match method:
                 case "default" | "sigmoid":
 

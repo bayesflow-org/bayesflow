@@ -38,6 +38,7 @@ class LSTNet(SummaryNetwork):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.summary_dim = summary_dim
 
         # Convolutional backbone -> can be extended with inception-like structure
         if not isinstance(filters, (list, tuple)):

@@ -1,7 +1,6 @@
 import keras
 import pytest
 
-
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
 
 
@@ -99,7 +98,7 @@ def simulator(request):
 
 
 @pytest.fixture(params=[None], scope="function")
-def summary_network(request):
+def summary_network(request, summary_dim):
     if request.param is None:
         return None
     return request.getfixturevalue(request.param)

@@ -78,6 +78,9 @@ class SetTransformer(SummaryNetwork):
         """
 
         super().__init__(**kwargs)
+        self.summary_dim = summary_dim
+        self.key_dim = key_dim
+        self.num_attention_blocks = num_attention_blocks
 
         # TODO - check if all lists have same length
         num_attention_layers = len(embed_dims)

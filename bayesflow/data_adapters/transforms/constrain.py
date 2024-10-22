@@ -29,7 +29,7 @@ class Constrain(ElementwiseTransform):
                 raise ValueError("The lower bound must be strictly less than the upper bound.")
 
             match method:
-                case "default" | "sigmoid":
+                case "default" | "sigmoid" | "logit":
 
                     def constrain(x):
                         return (upper - lower) * sigmoid(x) + lower
@@ -50,7 +50,7 @@ class Constrain(ElementwiseTransform):
 
                     def unconstrain(x):
                         return inverse_softplus(x - lower)
-                case "exp":
+                case "exp" | "log":
 
                     def constrain(x):
                         return np.exp(x) + lower
@@ -71,7 +71,7 @@ class Constrain(ElementwiseTransform):
 
                     def unconstrain(x):
                         return -inverse_softplus(-(x - upper))
-                case "exp":
+                case "exp" | "log":
 
                     def constrain(x):
                         return -np.exp(-x) + upper

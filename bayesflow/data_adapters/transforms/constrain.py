@@ -29,7 +29,7 @@ class Constrain(ElementwiseTransform):
                 raise ValueError("The lower bound must be strictly less than the upper bound.")
 
             match method:
-                case "default" | "sigmoid" | "logit":
+                case "default" | "sigmoid" | "expit" | "logit":
 
                     def constrain(x):
                         return (upper - lower) * sigmoid(x) + lower

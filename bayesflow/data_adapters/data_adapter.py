@@ -144,7 +144,7 @@ class DataAdapter:
         *,
         lower: int | float | np.ndarray = None,
         upper: int | float | np.ndarray = None,
-        method: str,
+        method: str = "default",
     ):
         if isinstance(keys, str):
             keys = [keys]

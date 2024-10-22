@@ -15,7 +15,9 @@ from .elementwise_transform import ElementwiseTransform
 
 @serializable(package="bayesflow.data_adapters")
 class Constrain(ElementwiseTransform):
-    def __init__(self, *, lower: int | float | np.ndarray = None, upper: int | float | np.ndarray = None, method: str):
+    def __init__(
+        self, *, lower: int | float | np.ndarray = None, upper: int | float | np.ndarray = None, method: str = "default"
+    ):
         super().__init__()
 
         if lower is None and upper is None:
@@ -26,8 +28,11 @@ class Constrain(ElementwiseTransform):
             if np.any(lower >= upper):
                 raise ValueError("The lower bound must be strictly less than the upper bound.")
 
+            if method == "default":
+                method = "sigmoid"
+
             match method:
-                case "sigmoid":
+                case "default" | "sigmoid":
 
                     def constrain(x):
                         return (upper - lower) * sigmoid(x) + lower
@@ -41,7 +46,7 @@ class Constrain(ElementwiseTransform):
         elif lower is not None:
             # lower bounded case
             match method:
-                case "softplus":
+                case "default" | "softplus":
 
                     def constrain(x):
                         return softplus(x) + lower
@@ -62,7 +67,7 @@ class Constrain(ElementwiseTransform):
         else:
             # upper bounded case
             match method:
-                case "softplus":
+                case "default" | "softplus":
 
                     def constrain(x):
                         return -softplus(-x) + upper

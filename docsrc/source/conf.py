@@ -57,7 +57,7 @@ autodoc_default_options = {
 
 # Define shorthand for external links:
 extlinks = {
-    "mainbranch": ("https://github.com/stefanradev93/BayesFlow/blob/master/%s", None),
+    "mainbranch": ("https://github.com/bayesflow-org/bayesflow/blob/master/%s", None),
 }
 
 coverage_show_missing_items = True
@@ -85,7 +85,7 @@ html_title = "BayesFlow: Amortized Bayesian Inference"
 # html_static_path = ["css/custom.css"]
 html_show_sourcelink = False
 html_theme_options = {
-    "repository_url": "https://github.com/stefanradev93/BayesFlow",
+    "repository_url": "https://github.com/bayesflow-org/bayesflow",
     "repository_branch": "master",
     "use_edit_page_button": True,
     "use_issues_button": True,

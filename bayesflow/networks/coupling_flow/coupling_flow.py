@@ -37,7 +37,7 @@ class CouplingFlow(InferenceNetwork):
     def __init__(
         self,
         depth: int = 6,
-        subnet: str = "mlp",
+        subnet: str | type = "mlp",
         transform: str = "affine",
         permutation: str | None = "random",
         use_actnorm: bool = True,

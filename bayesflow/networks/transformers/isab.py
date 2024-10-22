@@ -19,15 +19,14 @@ class InducedSetAttentionBlock(keras.Layer):
     def __init__(
         self,
         num_inducing_points: int,
-        key_dim: int = 32,
+        embed_dim: int = 64,
         num_heads: int = 4,
         dropout: float = 0.05,
         num_dense_feedforward: int = 2,
-        output_dim: int = None,
         dense_units: int = 128,
         dense_activation: str = "gelu",
         kernel_initializer: str = "he_normal",
-        use_bias=True,
+        use_bias: bool = True,
         layer_norm: bool = True,
         **kwargs,
     ):
@@ -43,16 +42,15 @@ class InducedSetAttentionBlock(keras.Layer):
 
         self.num_inducing_points = num_inducing_points
         self.inducing_points = self.add_weight(
-            shape=(self.num_inducing_points, output_dim if output_dim is not None else key_dim),
+            shape=(self.num_inducing_points, embed_dim),
             initializer="glorot_uniform",
             trainable=True,
         )
         mab_kwargs = dict(
-            key_dim=key_dim,
+            embed_dim=embed_dim,
             num_heads=num_heads,
             dropout=dropout,
             num_dense_feedforward=num_dense_feedforward,
-            output_dim=output_dim,
             dense_units=dense_units,
             dense_activation=dense_activation,
             kernel_initializer=kernel_initializer,
@@ -62,15 +60,21 @@ class InducedSetAttentionBlock(keras.Layer):
         self.mab0 = MultiHeadAttentionBlock(**mab_kwargs)
         self.mab1 = MultiHeadAttentionBlock(**mab_kwargs)
 
-    def call(self, set_x: Tensor, **kwargs) -> Tensor:
+    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass through the self-attention layer.
 
         Parameters
         ----------
-        set_x   : Tensor
+        input_set  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
             Since this is self-attention, the input set is used
             as a query (Q), key (K), and value (V)
+        training   : boolean, optional (default - True)
+            Passed to the optional internal dropout and spectral normalization
+            layers to distinguish between train and test time behavior.
+        **kwargs   : dict, optional (default - {})
+            Additional keyword arguments passed to the internal attention layer,
+            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
@@ -78,8 +82,8 @@ class InducedSetAttentionBlock(keras.Layer):
             Output of shape (batch_size, set_size, input_dim)
         """
 
-        batch_size = ops.shape(set_x)[0]
+        batch_size = ops.shape(input_set)[0]
         inducing_points_expanded = ops.expand_dims(self.inducing_points, axis=0)
         inducing_points_tiled = ops.tile(inducing_points_expanded, [batch_size, 1, 1])
-        h = self.mab0(inducing_points_tiled, set_x, **kwargs)
-        return self.mab1(set_x, h, **kwargs)
+        h = self.mab0(inducing_points_tiled, input_set, training=training, **kwargs)
+        return self.mab1(input_set, h, training=training, **kwargs)

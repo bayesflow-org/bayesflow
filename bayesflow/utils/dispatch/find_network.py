@@ -17,3 +17,10 @@ def _(name: str, *args, **kwargs):
             raise ValueError(f"Unsupported network name: '{other}'.")
 
     return network
+
+
+@find_network.register
+def _(cls: type, *args, **kwargs):
+    # Instantiate class with the given arguments
+    network = cls(*args, **kwargs)
+    return network

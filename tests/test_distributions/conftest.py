@@ -25,7 +25,14 @@ def diagonal_normal():
     return DiagonalNormal()
 
 
-@pytest.fixture(params=["diagonal_normal"])
+@pytest.fixture()
+def diagonal_student_t():
+    from bayesflow.distributions import DiagonalStudentT
+
+    return DiagonalStudentT(df=10)
+
+
+@pytest.fixture(params=["diagonal_normal", "diagonal_student_t"])
 def distribution(request):
     return request.getfixturevalue(request.param)
 

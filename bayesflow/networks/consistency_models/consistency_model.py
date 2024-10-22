@@ -20,7 +20,7 @@ class ConsistencyModel(InferenceNetwork):
     def __init__(
         self,
         total_steps: int | float,
-        subnet: str = "mlp",
+        subnet: str | type = "mlp",
         base_distribution: str = "normal",
         max_time: int | float = 200,
         sigma2: float = 1.0,

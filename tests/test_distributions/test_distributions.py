@@ -1,6 +1,9 @@
-import pytest
-
 import keras
+from keras.saving import (
+    serialize_keras_object as serialize,
+    deserialize_keras_object as deserialize,
+)
+import pytest
 
 
 def test_sample_output_shape(distribution, shape):
@@ -25,3 +28,13 @@ def test_build(automatic, distribution, random_samples):
         distribution.build(keras.ops.shape(random_samples))
 
     assert distribution.built is True
+
+
+def test_serialize_deserialize(distribution, random_samples):
+    distribution.build(keras.ops.shape(random_samples))
+
+    serialized = serialize(distribution)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert reserialized == serialized

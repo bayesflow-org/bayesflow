@@ -9,7 +9,7 @@ class RK4Integrator(Integrator):
     TODO: docstring
     """
 
-    def __init__(self, subnet: str = "mlp", **kwargs):
+    def __init__(self, subnet: str | type = "mlp", **kwargs):
         super().__init__(**keras_kwargs(kwargs))
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")

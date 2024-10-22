@@ -1,8 +1,8 @@
-import math
-
 import keras
 from keras.saving import register_keras_serializable as serializable
-from keras import ops
+
+import math
+import numpy as np
 
 from bayesflow.types import Shape, Tensor
 from .distribution import Distribution
@@ -10,40 +10,68 @@ from .distribution import Distribution
 
 @serializable(package="bayesflow.distributions")
 class DiagonalNormal(Distribution):
-    """Utility class for a backend-agnostic spherical Gaussian distribution.
-
-    Note:
-        - ``_log_unnormalized_prob`` method is used as a loss function
-        - ``log_prob`` is used for density computation
-    """
+    """Implements a backend-agnostic diagonal Gaussian distribution."""
 
     def __init__(
         self,
-        mean: float | Tensor = 0.0,
-        std: float | Tensor = 1.0,
+        mean: int | float | np.ndarray | Tensor = 0.0,
+        std: int | float | np.ndarray | Tensor = 1.0,
+        use_learnable_parameters: bool = False,
         seed_generator: keras.random.SeedGenerator = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.mean = mean
         self.std = std
-        self.var = std**2
+
         self.dim = None
-        self.log_norm_const = None
-        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+        self.log_normalization_constant = None
 
-    def sample(self, batch_shape: Shape) -> Tensor:
-        return keras.random.normal(
-            shape=batch_shape + (self.dim,), mean=self.mean, stddev=self.std, seed=self.seed_generator
-        )
+        self.use_learnable_parameters = use_learnable_parameters
 
-    def log_prob(self, tensor: Tensor) -> Tensor:
-        log_unnorm_pdf = self._log_unnormalized_prob(tensor)
-        return log_unnorm_pdf - self.log_norm_const
+        if seed_generator is None:
+            seed_generator = keras.random.SeedGenerator()
+
+        self.seed_generator = seed_generator
 
     def build(self, input_shape: Shape) -> None:
         self.dim = int(input_shape[-1])
-        self.log_norm_const = 0.5 * self.dim * (math.log(2.0 * math.pi) + math.log(self.var))
 
-    def _log_unnormalized_prob(self, tensor: Tensor) -> Tensor:
-        return -0.5 * ops.sum(ops.square(tensor - self.mean), axis=-1) / self.var
+        # convert to tensor and broadcast if necessary
+        self.mean = keras.ops.broadcast_to(self.mean, (self.dim,))
+        self.mean = keras.ops.cast(self.mean, "float32")
+
+        self.std = keras.ops.broadcast_to(self.std, (self.dim,))
+        self.std = keras.ops.cast(self.std, "float32")
+
+        self.log_normalization_constant = -0.5 * self.dim * math.log(2.0 * math.pi) - keras.ops.sum(
+            keras.ops.log(self.std)
+        )
+
+        if self.use_learnable_parameters:
+            mean = self.mean
+            self.mean = self.add_weight(
+                shape=keras.ops.shape(mean),
+                initializer="zeros",
+                dtype="float32",
+            )
+            self.mean.assign(mean)
+
+            std = self.std
+            self.std = self.add_weight(
+                shape=keras.ops.shape(std),
+                initializer="ones",
+                dtype="float32",
+            )
+            self.std.assign(std)
+
+    def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
+        result = -0.5 * keras.ops.sum((samples - self.mean) ** 2 / self.std**2, axis=-1)
+
+        if normalize:
+            result += self.log_normalization_constant
+
+        return result
+
+    def sample(self, batch_shape: Shape) -> Tensor:
+        return self.mean + self.std * keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)

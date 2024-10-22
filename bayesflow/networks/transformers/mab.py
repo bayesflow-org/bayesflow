@@ -3,6 +3,8 @@ from keras import layers
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.networks import MLP
+from .mha import MultiHeadAttention
 
 
 @serializable(package="bayesflow.networks")
@@ -16,15 +18,14 @@ class MultiHeadAttentionBlock(keras.Layer):
 
     def __init__(
         self,
-        key_dim: int = 32,
+        embed_dim: int = 64,
         num_heads: int = 4,
         dropout: float = 0.05,
         num_dense_feedforward: int = 2,
-        output_dim: int = None,
         dense_units: int = 128,
         dense_activation: str = "gelu",
         kernel_initializer: str = "he_normal",
-        use_bias=True,
+        use_bias: bool = True,
         layer_norm: bool = True,
         **kwargs,
     ):
@@ -38,56 +39,58 @@ class MultiHeadAttentionBlock(keras.Layer):
 
         super().__init__(**kwargs)
 
-        if output_dim is None:
-            output_dim = key_dim
-        self.projector = layers.Dense(output_dim)
-        self.att = layers.MultiHeadAttention(
+        self.input_projector = layers.Dense(embed_dim)
+        self.attention = MultiHeadAttention(
+            embed_dim=embed_dim,
             num_heads=num_heads,
-            key_dim=key_dim,
             dropout=dropout,
-            output_shape=output_dim,
             use_bias=use_bias,
         )
         self.ln_pre = layers.LayerNormalization() if layer_norm else None
-        self.feedforward = keras.Sequential()
-        for _ in range(num_dense_feedforward):
-            self.feedforward.add(
-                layers.Dense(
-                    units=dense_units,
-                    activation=dense_activation,
-                    kernel_initializer=kernel_initializer,
-                    use_bias=use_bias,
-                )
-            )
-            self.feedforward.add(layers.Dropout(dropout))
-        self.feedforward.add(layers.Dense(output_dim))
+        self.mlp = MLP(
+            depth=num_dense_feedforward,
+            width=dense_units,
+            activation=dense_activation,
+            kernel_initializer=kernel_initializer,
+            dropout=dropout,
+        )
+        self.output_projector = layers.Dense(embed_dim)
         self.ln_post = layers.LayerNormalization() if layer_norm else None
 
-    def call(self, set_x: Tensor, set_y: Tensor, **kwargs) -> Tensor:
+    def call(self, set_x: Tensor, set_y: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass through the attention layer.
 
         Parameters
         ----------
-        set_x : Tensor
+        set_x    : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size_x, input_dim), which will
             play the role of a query (Q).
-        set_y : Tensor
+        set_y    : Tensor
             Input of shape (batch_size, set_size_y, input_dim), which will
             play the role of key (K) and value (V).
+        training : boolean, optional (default - True)
+            Passed to the optional internal dropout and spectral normalization
+            layers to distinguish between train and test time behavior.
+        **kwargs : dict, optional (default - {})
+            Additional keyword arguments passed to the internal attention layer,
+            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
         out : Tensor
-            Output of shape (batch_size, set_size_x, input_dim)
+            Output of shape (batch_size, set_size_x, output_dim)
         """
 
-        training = kwargs.get("training", False)
-        h = self.projector(set_x) + self.att(set_x, set_y, set_y, **kwargs)
+        h = self.input_projector(set_x) + self.attention(
+            query=set_x, key=set_y, value=set_y, training=training, **kwargs
+        )
         if self.ln_pre is not None:
             h = self.ln_pre(h, training=training)
-        out = h + self.feedforward(h, training=training)
+
+        out = h + self.output_projector(self.mlp(h, training=training))
         if self.ln_post is not None:
             out = self.ln_post(out, training=training)
+
         return out
 
     def build(self, input_shape):

@@ -22,7 +22,7 @@ class FlowMatching(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str = "mlp",
+        subnet: str | type = "mlp",
         base_distribution: str = "normal",
         integrator: str = "euler",
         use_optimal_transport: bool = False,

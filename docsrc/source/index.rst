@@ -33,7 +33,7 @@ Installation
 
        .. code-block:: bash
 
-          pip install git+https://github.com/stefanradev93/bayesflow@Development
+          pip install git+https://github.com/bayesflow-org/bayesflow@dev
 
 
 BayesFlow requires Python version 3.9 or later.
@@ -103,7 +103,7 @@ License and Source Code
 -----------------------
 
 BayesFlow is released under :mainbranch:`MIT License <LICENSE>`.
-The source code is hosted on the public `GitHub repository <https://github.com/stefanradev93/BayesFlow>`__.
+The source code is hosted on the public `GitHub repository <https://github.com/bayesflow-org/bayesflow>`__.
 
 Indices
 -------

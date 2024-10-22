@@ -16,7 +16,7 @@ class SingleCoupling(InvertibleLayer):
     Subnet output tensors are linearly mapped to the correct dimension.
     """
 
-    def __init__(self, subnet: str = "mlp", transform: str = "affine", **kwargs):
+    def __init__(self, subnet: str | type = "mlp", transform: str = "affine", **kwargs):
         super().__init__(**keras_kwargs(kwargs))
 
         self.network = find_network(subnet, **kwargs.get("subnet_kwargs", {}))

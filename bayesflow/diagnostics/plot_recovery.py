@@ -2,30 +2,31 @@
 import numpy as np
 from scipy.stats import median_abs_deviation
 from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
 import seaborn as sns
 
 from ..utils.plot_utils import preprocess, postprocess
-
+from ..utils.plot_utils import check_posterior_prior_shapes
 
 def plot_recovery(
-    post_samples,
-    prior_samples,
-    point_agg=np.median,
-    uncertainty_agg=median_abs_deviation,
-    param_names: list = None,
-    fig_size: tuple = None,
-    label_fontsize: int = 16,
-    title_fontsize: int = 18,
-    metric_fontsize: int = 16,
-    tick_fontsize: int = 12,
-    add_corr: bool = True,
-    add_r2: bool = True,
-    color: str | tuple = "#8f2727",
-    n_col: int = None,
-    n_row: int = None,
-    xlabel: str = "Ground truth",
-    ylabel: str = "Estimated",
-    **kwargs,
+        post_samples,
+        prior_samples,
+        point_agg=np.median,
+        uncertainty_agg=median_abs_deviation,
+        param_names=None,
+        fig_size=None,
+        label_fontsize=16,
+        title_fontsize=18,
+        metric_fontsize=16,
+        tick_fontsize=12,
+        add_corr=True,
+        add_r2=True,
+        color="#8f2727",
+        n_col=None,
+        n_row=None,
+        xlabel="Ground truth",
+        ylabel="Estimated",
+        **kwargs,
 ):
     """Creates and plots publication-ready recovery plot with true vs. point estimate + uncertainty.
     The point estimate can be controlled with the ``point_agg`` argument, and the uncertainty estimate
@@ -93,17 +94,40 @@ def plot_recovery(
         If there is a deviation from the expected shapes of ``post_samples`` and ``prior_samples``.
     """
 
-    # Preprocess
-    f, axarr, axarr_it, n_row, n_col, n_params, param_names = preprocess(
-        post_samples, prior_samples, fig_size=fig_size
-    )
+    # Sanity check
+    check_posterior_prior_shapes(post_samples, prior_samples)
 
     # Compute point estimates and uncertainties
     est = point_agg(post_samples, axis=1)
     if uncertainty_agg is not None:
         u = uncertainty_agg(post_samples, axis=1)
 
-    # Loop and plot
+    # Determine n params and param names if None given
+    n_params = prior_samples.shape[-1]
+    if param_names is None:
+        param_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
+
+    # Determine number of rows and columns for subplots based on inputs
+    if n_row is None and n_col is None:
+        n_row = int(np.ceil(n_params / 6))
+        n_col = int(np.ceil(n_params / n_row))
+    elif n_row is None and n_col is not None:
+        n_row = int(np.ceil(n_params / n_col))
+    elif n_row is not None and n_col is None:
+        n_col = int(np.ceil(n_params / n_row))
+
+    # Initialize figure
+    if fig_size is None:
+        fig_size = (int(4 * n_col), int(4 * n_row))
+    f, axarr = plt.subplots(n_row, n_col, figsize=fig_size)
+
+    # turn axarr into 1D list
+    axarr = np.atleast_1d(axarr)
+    if n_col > 1 or n_row > 1:
+        axarr_it = axarr.flat
+    else:
+        axarr_it = axarr
+
     for i, ax in enumerate(axarr_it):
         if i >= n_params:
             break
@@ -159,7 +183,22 @@ def plot_recovery(
         ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
         ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
-    postprocess(axarr, axarr_it, n_row, n_col, n_params, xlabel, ylabel, label_fontsize)
+    # Only add x-labels to the bottom row
+    bottom_row = axarr if n_row == 1 else axarr[0] if n_col == 1 else axarr[n_row - 1, :]
+    for _ax in bottom_row:
+        _ax.set_xlabel(xlabel, fontsize=label_fontsize)
+
+    # Only add y-labels to right left-most row
+    if n_row == 1:  # if there is only one row, the ax array is 1D
+        axarr[0].set_ylabel(ylabel, fontsize=label_fontsize)
+    # If there is more than one row, the ax array is 2D
+    else:
+        for _ax in axarr[:, 0]:
+            _ax.set_ylabel(ylabel, fontsize=label_fontsize)
+
+    # Remove unused axes entirely
+    for _ax in axarr_it[n_params:]:
+        _ax.remove()
 
     f.tight_layout()
     return f

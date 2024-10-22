@@ -1,5 +1,7 @@
 
+import numpy as np
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 from tensorflow.keras import ops
 from ..utils.plot_utils import initialize_figure
@@ -8,16 +10,17 @@ from ..utils.plot_utils import initialize_figure
 def plot_losses(
     train_losses,
     val_losses=None,
-    moving_average: bool = False,
-    ma_window_fraction: float = 0.01,
-    train_color: str = "#8f2727",
-    val_color: str = "black",
-    lw_train: int = 2,
-    lw_val: int = 3,
-    grid_alpha: float = 0.5,
-    legend_fontsize: int = 14,
-    label_fontsize: int = 14,
-    title_fontsize: int = 16,
+    moving_average=False,
+    ma_window_fraction=0.01,
+    fig_size=None,
+    train_color="#8f2727",
+    val_color="black",
+    lw_train=2,
+    lw_val=3,
+    grid_alpha=0.5,
+    legend_fontsize=14,
+    label_fontsize=14,
+    title_fontsize=16,
 ):
     """A generic helper function to plot the losses of a series of training epochs and runs.
 
@@ -70,17 +73,15 @@ def plot_losses(
     n_row = len(train_losses.columns)
 
     # Initialize figure
-    f, axarr = initialize_figure(n_row=n_row, n_col=1, fig_size=(16, int(4 * n_row)))
-
-    # if fig_size is None:
-    #     fig_size = (16, int(4 * n_row))
-    # f, axarr = plt.subplots(n_row, 1, figsize=fig_size)
+    if fig_size is None:
+        fig_size = (16, int(4 * n_row))
+    f, axarr = plt.subplots(n_row, 1, figsize=fig_size)
 
     # Get the number of steps as an array
-    train_step_index = ops.arange(1, len(train_losses) + 1)
+    train_step_index = np.arange(1, len(train_losses) + 1)
     if val_losses is not None:
-        val_step = int(ops.floor(len(train_losses) / len(val_losses)))
-        val_step_index = train_step_index[(val_step - 1) :: val_step]
+        val_step = int(np.floor(len(train_losses) / len(val_losses)))
+        val_step_index = train_step_index[(val_step - 1)::val_step]
 
         # If unequal length due to some reason, attempt a fix
         if val_step_index.shape[0] > val_losses.shape[0]:

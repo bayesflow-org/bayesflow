@@ -2,16 +2,19 @@ from collections.abc import Sequence
 import keras
 import numpy as np
 
-from bayesflow.types import Shape
+from bayesflow.types import ShapeLike
 
 from .simulator import Simulator
+from bayesflow.utils import validate_shape
 
 
 class HierarchicalSimulator(Simulator):
     def __init__(self, hierarchy: Sequence[Simulator]):
         self.hierarchy = hierarchy
 
-    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+    def sample(self, batch_shape: ShapeLike, **kwargs) -> dict[str, np.ndarray]:
+        batch_shape = validate_shape(batch_shape)
+
         input_data = {}
         output_data = {}
 

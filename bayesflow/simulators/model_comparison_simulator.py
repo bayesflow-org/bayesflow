@@ -1,12 +1,13 @@
 from collections.abc import Sequence
 import numpy as np
 
-from bayesflow.types import Shape
+from bayesflow.types import ShapeLike
 from bayesflow.utils import tree_stack
 
 from bayesflow.utils import numpy_utils as npu
 
 from .simulator import Simulator
+from bayesflow.utils import validate_shape
 
 
 class ModelComparisonSimulator(Simulator):
@@ -40,7 +41,9 @@ class ModelComparisonSimulator(Simulator):
         self.logits = logits
         self.use_mixed_batches = use_mixed_batches
 
-    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+    def sample(self, batch_shape: ShapeLike, **kwargs) -> dict[str, np.ndarray]:
+        batch_shape = validate_shape(batch_shape)
+
         if not self.use_mixed_batches:
             # draw one model index for the whole batch (faster)
             model_index = np.random.choice(len(self.simulators), p=npu.softmax(self.logits))

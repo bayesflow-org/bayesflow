@@ -1,2 +1,2 @@
-from .shape import Shape
+from .shape import Shape, ShapeLike
 from .tensor import Tensor

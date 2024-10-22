@@ -1,23 +1,25 @@
 from collections.abc import Callable
 import numpy as np
 
-from bayesflow.types import Shape
-from bayesflow.utils import tree_concatenate
+from bayesflow.types import ShapeLike
+from bayesflow.utils import tree_concatenate, validate_shape
 
 
 class Simulator:
-    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+    def sample(self, batch_shape: ShapeLike, **kwargs) -> dict[str, np.ndarray]:
         raise NotImplementedError
 
     def rejection_sample(
         self,
-        batch_shape: Shape,
+        batch_shape: ShapeLike,
         predicate: Callable[[dict[str, np.ndarray]], np.ndarray],
         *,
         axis: int = 0,
         sample_size: int = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
+        batch_shape = validate_shape(batch_shape)
+
         if sample_size is None:
             sample_shape = batch_shape
         else:

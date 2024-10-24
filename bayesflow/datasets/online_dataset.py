@@ -1,6 +1,6 @@
 import keras
 
-from bayesflow.data_adapters import DataAdapter
+from bayesflow.adapters import Adapter
 from bayesflow.simulators.simulator import Simulator
 from bayesflow.types import Tensor
 
@@ -15,7 +15,7 @@ class OnlineDataset(keras.utils.PyDataset):
         simulator: Simulator,
         batch_size: int,
         num_batches: int,
-        data_adapter: DataAdapter | None,
+        adapter: Adapter | None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -28,14 +28,14 @@ class OnlineDataset(keras.utils.PyDataset):
 
         self.batch_size = batch_size
         self._num_batches = num_batches
-        self.data_adapter = data_adapter
+        self.adapter = adapter
         self.simulator = simulator
 
     def __getitem__(self, item: int) -> dict[str, Tensor]:
         batch = self.simulator.sample((self.batch_size,))
 
-        if self.data_adapter is not None:
-            batch = self.data_adapter(batch, batch_size=self.batch_size)
+        if self.adapter is not None:
+            batch = self.adapter(batch, batch_size=self.batch_size)
 
         return batch
 

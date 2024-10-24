@@ -7,7 +7,7 @@ from bayesflow.utils.numpy_utils import one_hot
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class OneHot(ElementwiseTransform):
     def __init__(self, num_classes: int):
         super().__init__()

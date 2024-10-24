@@ -2,11 +2,11 @@ import pytest
 
 
 @pytest.fixture()
-def approximator(data_adapter, inference_network):
+def approximator(adapter, inference_network):
     from bayesflow import ContinuousApproximator
 
     return ContinuousApproximator(
-        data_adapter=data_adapter,
+        adapter=adapter,
         inference_network=inference_network,
     )
 
@@ -17,10 +17,10 @@ def batch_size():
 
 
 @pytest.fixture()
-def data_adapter():
+def adapter():
     from bayesflow import ContinuousApproximator
 
-    return ContinuousApproximator.build_data_adapter(
+    return ContinuousApproximator.build_adapter(
         inference_variables=["theta"],
         inference_conditions=["x"],
     )
@@ -39,14 +39,14 @@ def simulator():
 
 
 @pytest.fixture()
-def train_dataset(batch_size, data_adapter, simulator):
+def train_dataset(batch_size, adapter, simulator):
     from bayesflow import OfflineDataset
 
     num_batches = 32
     data = simulator.sample((num_batches * batch_size,))
     return OfflineDataset(
         data=data,
-        data_adapter=data_adapter,
+        adapter=adapter,
         batch_size=batch_size,
         workers=4,
         max_queue_size=num_batches,
@@ -55,11 +55,9 @@ def train_dataset(batch_size, data_adapter, simulator):
 
 
 @pytest.fixture()
-def validation_dataset(batch_size, data_adapter, simulator):
+def validation_dataset(batch_size, adapter, simulator):
     from bayesflow import OfflineDataset
 
     num_batches = 8
     data = simulator.sample((num_batches * batch_size,))
-    return OfflineDataset(
-        data=data, data_adapter=data_adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches
-    )
+    return OfflineDataset(data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches)

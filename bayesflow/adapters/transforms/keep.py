@@ -9,7 +9,7 @@ from keras.saving import (
 from .transform import Transform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class Keep(Transform):
     def __init__(self, keys: Sequence[str]):
         self.keys = keys

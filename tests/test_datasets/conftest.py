@@ -42,7 +42,7 @@ def offline_dataset(simulator, batch_size, num_batches, workers, use_multiproces
     #  the single batch is then skipped entirely
     data = simulator.sample((batch_size * num_batches,))
     return OfflineDataset(
-        data, batch_size=batch_size, workers=workers, use_multiprocessing=use_multiprocessing, data_adapter=None
+        data, batch_size=batch_size, workers=workers, use_multiprocessing=use_multiprocessing, adapter=None
     )
 
 
@@ -56,7 +56,7 @@ def online_dataset(simulator, batch_size, num_batches, workers, use_multiprocess
         num_batches=num_batches,
         workers=workers,
         use_multiprocessing=use_multiprocessing,
-        data_adapter=None,
+        adapter=None,
     )
 
 

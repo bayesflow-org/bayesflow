@@ -17,7 +17,7 @@ class Predicate(Protocol):
         raise NotImplementedError
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class FilterTransform(Transform):
     def __init__(
         self,

@@ -3,7 +3,7 @@ import numpy as np
 import os
 import pathlib as pl
 
-from bayesflow.data_adapters import DataAdapter
+from bayesflow.adapters import Adapter
 from bayesflow.utils import tree_stack, pickle_load
 
 
@@ -30,14 +30,14 @@ class DiskDataset(keras.utils.PyDataset):
         pattern: str = "*.pkl",
         batch_size: int,
         load_fn: callable = None,
-        data_adapter: DataAdapter | None,
+        adapter: Adapter | None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.batch_size = batch_size
         self.root = pl.Path(root)
         self.load_fn = load_fn or pickle_load
-        self.data_adapter = data_adapter
+        self.adapter = adapter
         self.files = list(map(str, self.root.glob(pattern)))
 
         self.shuffle()
@@ -54,8 +54,8 @@ class DiskDataset(keras.utils.PyDataset):
 
         batch = tree_stack(batch)
 
-        if self.data_adapter is not None:
-            batch = self.data_adapter(batch, batch_size=self.batch_size)
+        if self.adapter is not None:
+            batch = self.adapter(batch, batch_size=self.batch_size)
 
         return batch
 

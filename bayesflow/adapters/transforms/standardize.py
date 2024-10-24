@@ -8,7 +8,7 @@ import numpy as np
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class Standardize(ElementwiseTransform):
     def __init__(self, mean: int | float | np.ndarray = None, std: int | float | np.ndarray = None, axis: int = None):
         super().__init__()

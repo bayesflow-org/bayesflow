@@ -10,7 +10,7 @@ from keras.saving import (
 from .transform import Transform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class Concatenate(Transform):
     """Concatenate multiple arrays into a new key."""
 

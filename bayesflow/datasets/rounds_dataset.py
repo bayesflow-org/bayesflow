@@ -1,6 +1,6 @@
 import keras
 
-from bayesflow.data_adapters import DataAdapter
+from bayesflow.adapters import Adapter
 from bayesflow.simulators.simulator import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import logging
@@ -17,7 +17,7 @@ class RoundsDataset(keras.utils.PyDataset):
         batch_size: int,
         num_batches: int,
         epochs_per_round: int,
-        data_adapter: DataAdapter | None,
+        adapter: Adapter | None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -31,7 +31,7 @@ class RoundsDataset(keras.utils.PyDataset):
         self.batches = None
         self._num_batches = num_batches
         self.batch_size = batch_size
-        self.data_adapter = data_adapter
+        self.adapter = adapter
         self.epoch = 0
 
         if epochs_per_round == 1:
@@ -50,8 +50,8 @@ class RoundsDataset(keras.utils.PyDataset):
         """Get a batch of pre-simulated data"""
         batch = self.batches[item]
 
-        if self.data_adapter is not None:
-            batch = self.data_adapter(batch, batch_size=self.batch_size)
+        if self.adapter is not None:
+            batch = self.adapter(batch, batch_size=self.batch_size)
 
         return batch
 

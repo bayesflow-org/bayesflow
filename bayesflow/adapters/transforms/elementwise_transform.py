@@ -2,7 +2,7 @@ from keras.saving import register_keras_serializable as serializable
 import numpy as np
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class ElementwiseTransform:
     def __call__(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
         if inverse:

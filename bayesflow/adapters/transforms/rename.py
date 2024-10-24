@@ -5,7 +5,7 @@ from keras.saving import (
 from .transform import Transform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class Rename(Transform):
     def __init__(self, from_key: str, to_key: str):
         super().__init__()

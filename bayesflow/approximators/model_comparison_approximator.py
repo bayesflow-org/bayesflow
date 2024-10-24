@@ -7,7 +7,7 @@ from keras.saving import (
     serialize_keras_object as serialize,
 )
 
-from bayesflow.data_adapters import DataAdapter
+from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
@@ -28,13 +28,13 @@ class ModelComparisonApproximator(Approximator):
         *,
         num_models: int,
         classifier_network: keras.Layer,
-        data_adapter: DataAdapter,
+        adapter: Adapter,
         summary_network: SummaryNetwork = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.classifier_network = classifier_network
-        self.data_adapter = data_adapter
+        self.adapter = adapter
         self.summary_network = summary_network
 
         self.logits_projector = keras.layers.Dense(num_models)
@@ -44,7 +44,7 @@ class ModelComparisonApproximator(Approximator):
         self.compute_metrics(**data, stage="training")
 
     @classmethod
-    def build_data_adapter(
+    def build_adapter(
         cls,
         classifier_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
@@ -53,18 +53,16 @@ class ModelComparisonApproximator(Approximator):
         if classifier_conditions is None and summary_variables is None:
             raise ValueError("At least one of `classifier_variables` or `summary_variables` must be provided.")
 
-        data_adapter = DataAdapter().to_array().convert_dtype("float64", "float32")
+        adapter = Adapter().to_array().convert_dtype("float64", "float32")
 
         if classifier_conditions is not None:
-            data_adapter = data_adapter.concatenate(classifier_conditions, into="classifier_conditions")
+            adapter = adapter.concatenate(classifier_conditions, into="classifier_conditions")
 
         if summary_variables is not None:
-            data_adapter = data_adapter.as_set(summary_variables).concatenate(
-                summary_variables, into="summary_variables"
-            )
+            adapter = adapter.as_set(summary_variables).concatenate(summary_variables, into="summary_variables")
 
-        data_adapter = (
-            data_adapter.rename(model_index_name, "model_indices")
+        adapter = (
+            adapter.rename(model_index_name, "model_indices")
             .keep(["classifier_conditions", "summary_variables", "model_indices"])
             .standardize(exclude="model_indices")
         )
@@ -72,7 +70,7 @@ class ModelComparisonApproximator(Approximator):
         # TODO: add one-hot encoding
         # .one_hot("model_indices", self.num_models)
 
-        return data_adapter
+        return adapter
 
     @classmethod
     def build_dataset(
@@ -156,7 +154,7 @@ class ModelComparisonApproximator(Approximator):
     def fit(
         self,
         *,
-        data_adapter: DataAdapter = "auto",
+        adapter: Adapter = "auto",
         dataset: keras.utils.PyDataset = None,
         simulator: ModelComparisonSimulator = None,
         simulators: Sequence[Simulator] = None,
@@ -170,33 +168,31 @@ class ModelComparisonApproximator(Approximator):
 
             return super().fit(dataset=dataset, **kwargs)
 
-        if data_adapter == "auto":
+        if adapter == "auto":
             logging.info("Building automatic data adapter.")
-            data_adapter = self.build_data_adapter(**filter_kwargs(kwargs, self.build_data_adapter))
+            adapter = self.build_adapter(**filter_kwargs(kwargs, self.build_adapter))
 
         if simulator is not None:
-            return super().fit(simulator=simulator, data_adapter=data_adapter, **kwargs)
+            return super().fit(simulator=simulator, adapter=adapter, **kwargs)
 
         logging.info(f"Building model comparison simulator from {len(simulators)} simulators.")
 
         simulator = ModelComparisonSimulator(simulators=simulators)
 
-        return super().fit(simulator=simulator, data_adapter=data_adapter, **kwargs)
+        return super().fit(simulator=simulator, adapter=adapter, **kwargs)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        data_adapter = deserialize(config["data_adapter"], custom_objects=custom_objects)
+        adapter = deserialize(config["adapter"], custom_objects=custom_objects)
         classifier_network = deserialize(config["classifier_network"], custom_objects=custom_objects)
         summary_network = deserialize(config["summary_network"], custom_objects=custom_objects)
-        return cls(
-            data_adapter=data_adapter, classifier_network=classifier_network, summary_network=summary_network, **config
-        )
+        return cls(adapter=adapter, classifier_network=classifier_network, summary_network=summary_network, **config)
 
     def get_config(self):
         base_config = super().get_config()
 
         config = {
-            "data_adapter": serialize(self.data_adapter),
+            "adapter": serialize(self.adapter),
             "classifier_network": serialize(self.classifier_network),
             "summary_network": serialize(self.summary_network),
         }

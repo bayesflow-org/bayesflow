@@ -13,7 +13,7 @@ from bayesflow.utils.numpy_utils import (
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class Constrain(ElementwiseTransform):
     def __init__(
         self, *, lower: int | float | np.ndarray = None, upper: int | float | np.ndarray = None, method: str = "default"

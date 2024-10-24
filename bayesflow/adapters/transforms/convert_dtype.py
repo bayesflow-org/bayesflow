@@ -8,7 +8,7 @@ import numpy as np
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class ConvertDType(ElementwiseTransform):
     def __init__(self, from_dtype: str, to_dtype: str):
         super().__init__()

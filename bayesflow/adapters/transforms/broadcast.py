@@ -24,7 +24,7 @@ class Broadcast(ElementwiseTransform):
         >>> bc(np.array(5), batch_size=3).shape
         (3,)
 
-    It is recommended to precede this transform with a :class:`bayesflow.data_adapters.transforms.ToArray` transform.
+    It is recommended to precede this transform with a :class:`bayesflow.adapters.transforms.ToArray` transform.
     """
 
     def __init__(self, *, expand_scalars: bool = True):

@@ -16,18 +16,20 @@ def custom_objects():
 
 
 @pytest.fixture()
-def data_adapter():
-    from bayesflow.data_adapters import DataAdapter
-
-    # TODO: reintroduce lambda testing etc.
+def adapter():
+    from bayesflow.adapters import Adapter
 
     d = (
-        DataAdapter()
+        Adapter()
         .to_array()
         .convert_dtype("float64", "float32")
         .concatenate(["x1", "x2"], into="x")
         .concatenate(["y1", "y2"], into="y")
         .apply(forward=forward_transform, inverse=inverse_transform)
+        # TODO: fix this in keras
+        # .apply(include="p1", forward=np.log, inverse=np.exp)
+        .constrain("p2", lower=0)
+        .standardize()
     )
 
     return d
@@ -40,4 +42,6 @@ def random_data():
         "x2": np.random.standard_normal(size=(32, 1)),
         "y1": np.random.standard_normal(size=(32, 2)),
         "y2": np.random.standard_normal(size=(32, 2)),
+        "p1": np.random.lognormal(size=(32, 2)),
+        "p2": np.random.lognormal(size=(32, 2)),
     }

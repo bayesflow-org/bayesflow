@@ -26,8 +26,8 @@ from .transforms import (
 )
 
 
-@serializable(package="bayesflow.data_adapters")
-class DataAdapter:
+@serializable(package="bayesflow.adapters")
+class Adapter:
     def __init__(self, transforms: Sequence[Transform] | None = None):
         if transforms is None:
             transforms = []
@@ -35,7 +35,7 @@ class DataAdapter:
         self.transforms = transforms
 
     @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "DataAdapter":
+    def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
         return cls(transforms=deserialize(config["transforms"], custom_objects))
 
     def get_config(self) -> dict:
@@ -64,7 +64,7 @@ class DataAdapter:
         return self.forward(data, **kwargs)
 
     def __repr__(self):
-        return f"DataAdapter({' -> '.join(map(repr, self.transforms))})"
+        return f"Adapter([{' -> '.join(map(repr, self.transforms))}])"
 
     def add_transform(self, transform: Transform):
         self.transforms.append(transform)

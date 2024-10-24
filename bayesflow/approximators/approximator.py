@@ -1,7 +1,7 @@
 import keras
 import multiprocessing as mp
 
-from bayesflow.data_adapters import DataAdapter
+from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
 from bayesflow.simulators import Simulator
 from bayesflow.utils import find_batch_size, filter_kwargs, logging
@@ -15,7 +15,7 @@ class Approximator(BackendApproximator):
         self.build_from_data(mock_data)
 
     @classmethod
-    def build_data_adapter(cls, **kwargs) -> DataAdapter:
+    def build_adapter(cls, **kwargs) -> Adapter:
         # implemented by each respective architecture
         raise NotImplementedError
 
@@ -29,7 +29,7 @@ class Approximator(BackendApproximator):
         *,
         batch_size: int = "auto",
         num_batches: int,
-        data_adapter: DataAdapter = "auto",
+        adapter: Adapter = "auto",
         memory_budget: str | int = "auto",
         simulator: Simulator,
         workers: int = "auto",
@@ -41,8 +41,8 @@ class Approximator(BackendApproximator):
             batch_size = find_batch_size(memory_budget=memory_budget, sample=simulator.sample((1,)))
             logging.info(f"Using a batch size of {batch_size}.")
 
-        if data_adapter == "auto":
-            data_adapter = cls.build_data_adapter(**filter_kwargs(kwargs, cls.build_data_adapter))
+        if adapter == "auto":
+            adapter = cls.build_adapter(**filter_kwargs(kwargs, cls.build_adapter))
 
         if workers == "auto":
             workers = mp.cpu_count()
@@ -54,7 +54,7 @@ class Approximator(BackendApproximator):
             simulator=simulator,
             batch_size=batch_size,
             num_batches=num_batches,
-            data_adapter=data_adapter,
+            adapter=adapter,
             workers=workers,
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,

@@ -7,7 +7,7 @@ from keras.saving import (
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class LambdaTransform(ElementwiseTransform):
     """
     Transforms a parameter using a pair of forward and inverse functions.

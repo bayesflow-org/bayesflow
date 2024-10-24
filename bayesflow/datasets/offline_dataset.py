@@ -1,7 +1,7 @@
 import keras
 import numpy as np
 
-from bayesflow.data_adapters import DataAdapter
+from bayesflow.adapters import Adapter
 
 
 class OfflineDataset(keras.utils.PyDataset):
@@ -9,11 +9,11 @@ class OfflineDataset(keras.utils.PyDataset):
     A dataset that is pre-simulated and stored in memory.
     """
 
-    def __init__(self, data: dict[str, np.ndarray], batch_size: int, data_adapter: DataAdapter | None, **kwargs):
+    def __init__(self, data: dict[str, np.ndarray], batch_size: int, adapter: Adapter | None, **kwargs):
         super().__init__(**kwargs)
         self.batch_size = batch_size
         self.data = data
-        self.data_adapter = data_adapter
+        self.adapter = adapter
         self.num_samples = next(iter(data.values())).shape[0]
         self.indices = np.arange(self.num_samples, dtype="int64")
 
@@ -29,8 +29,8 @@ class OfflineDataset(keras.utils.PyDataset):
 
         batch = {key: np.take(value, item, axis=0) for key, value in self.data.items()}
 
-        if self.data_adapter is not None:
-            batch = self.data_adapter(batch, batch_size=self.batch_size)
+        if self.adapter is not None:
+            batch = self.adapter(batch, batch_size=self.batch_size)
 
         return batch
 

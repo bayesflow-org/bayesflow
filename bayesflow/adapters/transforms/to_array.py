@@ -9,7 +9,7 @@ from bayesflow.utils.io import deserialize_type, serialize_type
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.data_adapters")
+@serializable(package="bayesflow.adapters")
 class ToArray(ElementwiseTransform):
     def __init__(self):
         super().__init__()

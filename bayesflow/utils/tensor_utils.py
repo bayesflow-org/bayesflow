@@ -1,12 +1,31 @@
 from collections.abc import Sequence
+from typing import TypeVar
+
 import keras
 import numpy as np
-from typing import TypeVar
 
 from bayesflow.types import Tensor
 
-
 T = TypeVar("T")
+
+
+def expand_left(x: Tensor, n: int) -> Tensor:
+    """Expand x to the left n times"""
+    if n < 0:
+        raise ValueError(f"Cannot expand {n} times.")
+
+    idx = [None] * n + [...]
+    return x[tuple(idx)]
+
+
+def expand_left_as(x: Tensor, y: Tensor) -> Tensor:
+    """Expand x to the left, matching the dimension of y"""
+    return expand_left_to(x, keras.ops.ndim(y))
+
+
+def expand_left_to(x: Tensor, dim: int) -> Tensor:
+    """Expand x to the left, matching dim"""
+    return expand_left(x, dim - keras.ops.ndim(x))
 
 
 def expand_right(x: Tensor, n: int) -> Tensor:
@@ -18,14 +37,14 @@ def expand_right(x: Tensor, n: int) -> Tensor:
     return x[tuple(idx)]
 
 
-def expand_right_to(x: Tensor, dim: int) -> Tensor:
-    """Expand x to the right, matching dim"""
-    return expand_right(x, dim - keras.ops.ndim(x))
-
-
 def expand_right_as(x: Tensor, y: Tensor) -> Tensor:
     """Expand x to the right, matching the dimension of y"""
     return expand_right_to(x, keras.ops.ndim(y))
+
+
+def expand_right_to(x: Tensor, dim: int) -> Tensor:
+    """Expand x to the right, matching dim"""
+    return expand_right(x, dim - keras.ops.ndim(x))
 
 
 def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:

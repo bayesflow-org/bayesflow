@@ -37,11 +37,11 @@ jobs:
 
       - name: Run Linter
         run: |
-          ruff check --config pyproject.toml
+          ruff check --config pyproject.toml --verbose
 
       - name: Run Formatter
         run: |
-          ruff format --check --config pyproject.toml
+          ruff format --check --config pyproject.toml --verbose
 
   test:
     runs-on: ${{ matrix.os }}

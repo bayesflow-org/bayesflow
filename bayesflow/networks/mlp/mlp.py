@@ -19,8 +19,7 @@ class MLP(keras.Layer):
 
     def __init__(
         self,
-        depth: int = 2,
-        width: int = 256,
+        widths: tuple = (512, 512),
         activation: str = "mish",
         kernel_initializer: str = "he_normal",
         residual: bool = True,
@@ -33,10 +32,9 @@ class MLP(keras.Layer):
 
         Parameters:
         -----------
-        hidden_dim       : int, optional, default: 256
-            The dimensionality of the hidden layers
-        num_hidden       : int, optional, default: 2
-            The number of hidden layers (minimum: 1)
+        widths           : tuple, optional, default: (512, 512)
+            The number of hidden units for each (residual) hidden layer.
+            Note: The depth of the network is inferred from len(widths)
         activation       : string, optional, default: 'gelu'
             The activation function of the dense layers
         residual         : bool, optional, default: True
@@ -52,7 +50,7 @@ class MLP(keras.Layer):
 
         self.res_blocks = []
         projector = layers.Dense(
-            units=width,
+            units=widths[0],
             kernel_initializer=kernel_initializer,
         )
         if spectral_normalization:
@@ -60,9 +58,9 @@ class MLP(keras.Layer):
         self.res_blocks.append(projector)
 
         if dropout is not None and dropout > 0.0:
-            self.res_blocks.append(layers.Dropout(dropout))
+            self.res_blocks.append(layers.Dropout(float(dropout)))
 
-        for _ in range(depth):
+        for width in widths:
             self.res_blocks.append(
                 ConfigurableHiddenBlock(
                     units=width,
@@ -79,9 +77,9 @@ class MLP(keras.Layer):
             layer.build(input_shape)
             input_shape = layer.compute_output_shape(input_shape)
 
-    def call(self, x: Tensor, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         for layer in self.res_blocks:
-            x = layer(x, training=kwargs.get("training", False))
+            x = layer(x, training=training)
         return x
 
     def compute_output_shape(self, input_shape):

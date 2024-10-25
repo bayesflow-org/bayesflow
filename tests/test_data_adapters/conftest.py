@@ -17,26 +17,27 @@ def custom_objects():
 
 @pytest.fixture()
 def data_adapter():
-    from bayesflow.data_adapters import ConcatenateKeysDataAdapter
-    from bayesflow.data_adapters.transforms import LambdaTransform, Standardize
+    from bayesflow.data_adapters import DataAdapter
 
-    return ConcatenateKeysDataAdapter(
-        x=["x1", "x2"],
-        y=["y1", "y2"],
-        transforms=[
-            # normalize all parameters
-            Standardize(),
-            # use a lambda transform with global functions
-            LambdaTransform("x2", forward=forward_transform, inverse=inverse_transform),
-        ],
+    # TODO: reintroduce lambda testing etc.
+
+    d = (
+        DataAdapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
+        .concatenate(["x1", "x2"], into="x")
+        .concatenate(["y1", "y2"], into="y")
+        .apply(forward=forward_transform, inverse=inverse_transform)
     )
+
+    return d
 
 
 @pytest.fixture()
 def random_data():
     return {
-        "x1": np.random.standard_normal(size=(32, 1)).astype("float32"),
-        "x2": np.random.standard_normal(size=(32, 1)).astype("float32"),
-        "y1": np.random.standard_normal(size=(32, 2)).astype("float32"),
-        "y2": np.random.standard_normal(size=(32, 2)).astype("float32"),
+        "x1": np.random.standard_normal(size=(32, 1)),
+        "x2": np.random.standard_normal(size=(32, 1)),
+        "y1": np.random.standard_normal(size=(32, 2)),
+        "y2": np.random.standard_normal(size=(32, 2)),
     }

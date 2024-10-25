@@ -1,4 +1,3 @@
-from collections.abc import Mapping, Sequence
 from keras.saving import (
     deserialize_keras_object as deserialize,
     register_keras_serializable as serializable,
@@ -6,57 +5,53 @@ from keras.saving import (
 )
 import numpy as np
 
-from .transform import ElementwiseTransform
+from .elementwise_transform import ElementwiseTransform
 
 
 @serializable(package="bayesflow.data_adapters")
 class Standardize(ElementwiseTransform):
-    """Normalizes a parameter to have zero mean and unit standard deviation.
-    By default, this is lazily initialized; the mean and standard deviation are computed from the first batch of data.
-    For eager initialization, pass the mean and standard deviation to the constructor.
-    """
+    def __init__(self, mean: int | float | np.ndarray = None, std: int | float | np.ndarray = None, axis: int = None):
+        super().__init__()
 
-    def __init__(
-        self,
-        parameters: str | Sequence[str] | None = None,
-        /,
-        *,
-        means: Mapping[str, np.ndarray] = None,
-        stds: Mapping[str, np.ndarray] = None,
-    ):
-        super().__init__(parameters)
-        self.means = means or {}
-        self.stds = stds or {}
+        self.mean = mean
+        self.std = std
+        self.axis = axis
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Standardize":
         return cls(
-            deserialize(config["parameters"], custom_objects),
-            means=deserialize(config["means"], custom_objects),
-            stds=deserialize(config["stds"], custom_objects),
+            mean=deserialize(config["mean"], custom_objects),
+            std=deserialize(config["std"], custom_objects),
+            axis=deserialize(config["axis"], custom_objects),
         )
-
-    def forward(self, parameter_name: str, parameter_value: np.ndarray) -> np.ndarray:
-        if parameter_name not in self.means:
-            self.means[parameter_name] = np.mean(
-                parameter_value, axis=tuple(range(parameter_value.ndim)), keepdims=True
-            )
-        if parameter_name not in self.stds:
-            self.stds[parameter_name] = np.std(parameter_value, axis=tuple(range(parameter_value.ndim)), keepdims=True)
-
-        return (parameter_value - self.means[parameter_name]) / self.stds[parameter_name]
 
     def get_config(self) -> dict:
         return {
-            "parameters": serialize(self.parameters),
-            "means": serialize(self.means),
-            "stds": serialize(self.stds),
+            "mean": serialize(self.mean),
+            "std": serialize(self.std),
+            "axis": serialize(self.axis),
         }
 
-    def inverse(self, parameter_name: str, parameter_value: np.ndarray) -> np.ndarray:
-        if not self.means or not self.stds:
-            raise ValueError(
-                f"Cannot call `inverse` before calling `forward` at least once for parameter {parameter_name}."
-            )
+    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+        if self.axis is None:
+            self.axis = tuple(range(data.ndim - 1))
 
-        return parameter_value * self.stds[parameter_name] + self.means[parameter_name]
+        if self.mean is None:
+            self.mean = np.mean(data, axis=self.axis, keepdims=True)
+
+        if self.std is None:
+            self.std = np.std(data, axis=self.axis, keepdims=True)
+
+        mean = np.broadcast_to(self.mean, data.shape)
+        std = np.broadcast_to(self.std, data.shape)
+
+        return (data - mean) / std
+
+    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+        if self.mean is None or self.std is None:
+            raise RuntimeError("Cannot call `inverse` before calling `forward` at least once.")
+
+        mean = np.broadcast_to(self.mean, data.shape)
+        std = np.broadcast_to(self.std, data.shape)
+
+        return data * std + mean

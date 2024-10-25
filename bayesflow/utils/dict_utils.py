@@ -31,7 +31,7 @@ def convert_args(f, *args, **kwargs) -> tuple[any, ...]:
     return tuple(parameters)
 
 
-def convert_kwargs(f, *args, **kwargs) -> Mapping[str, any]:
+def convert_kwargs(f, *args, **kwargs) -> dict[str, any]:
     """Convert positional and keyword arguments to just keyword arguments for f"""
     if not args:
         return kwargs
@@ -49,7 +49,7 @@ def convert_kwargs(f, *args, **kwargs) -> Mapping[str, any]:
     return parameters
 
 
-def filter_kwargs(kwargs: Mapping[str, any], f: callable) -> Mapping[str, any]:
+def filter_kwargs(kwargs: Mapping[str, T], f: callable) -> Mapping[str, T]:
     """Filter keyword arguments for f"""
     signature = inspect.signature(f)
 
@@ -63,9 +63,9 @@ def filter_kwargs(kwargs: Mapping[str, any], f: callable) -> Mapping[str, any]:
     return kwargs
 
 
-def keras_kwargs(kwargs: Mapping) -> Mapping:
+def keras_kwargs(kwargs: Mapping[str, T]) -> dict[str, T]:
     """Keep dictionary keys that do not end with _kwargs. Used for propagating
-    custom keyword arguments in custom simulators that inherit from keras.Model.
+    keyword arguments in nested layer classes.
     """
     return {key: value for key, value in kwargs.items() if not key.endswith("_kwargs")}
 

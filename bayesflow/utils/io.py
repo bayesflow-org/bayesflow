@@ -2,11 +2,9 @@ import os
 import pickle
 
 
-def pickle_load(filepath: os.PathLike) -> any:
-    """Small utility to safely load a pickle object."""
-
-    with open(filepath, "rb+") as f:
-        return pickle.load(f)
+def deserialize_type(config: dict) -> type:
+    module = __import__(config["module"], fromlist=[config["name"]])
+    return getattr(module, config["name"])
 
 
 def format_bytes(b: int, precision: int = 2, si: bool = False) -> str:
@@ -88,3 +86,17 @@ def parse_bytes(s: str) -> int:
         result //= 8
 
     return result
+
+
+def pickle_load(filepath: os.PathLike) -> any:
+    """Small utility to safely load a pickle object."""
+
+    with open(filepath, "rb+") as f:
+        return pickle.load(f)
+
+
+def serialize_type(obj: any) -> dict:
+    if not isinstance(obj, type):
+        obj = type(obj)
+
+    return {"module": obj.__module__, "name": obj.__qualname__}

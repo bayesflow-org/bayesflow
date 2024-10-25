@@ -15,7 +15,7 @@ def summary_network():
 def inference_network():
     from bayesflow.networks import CouplingFlow
 
-    return CouplingFlow(depth=2, subnet_kwargs=dict(depth=2, width=32))
+    return CouplingFlow(subnet="mlp", depth=2, subnet_kwargs=dict(widths=(32, 32)))
 
 
 @pytest.fixture()

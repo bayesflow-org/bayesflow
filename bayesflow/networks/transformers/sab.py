@@ -13,18 +13,24 @@ class SetAttentionBlock(MultiHeadAttentionBlock):
         In International conference on machine learning (pp. 3744-3753). PMLR.
     """
 
-    def call(self, set_x: Tensor, **kwargs) -> Tensor:
+    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass through the self-attention layer.
 
         Parameters
         ----------
-        set_x   : Tensor
+        input_set  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
+        training   : boolean, optional (default - True)
+            Passed to the optional internal dropout and spectral normalization
+            layers to distinguish between train and test time behavior.
+        **kwargs   : dict, optional (default - {})
+            Additional keyword arguments passed to the internal attention layer,
+            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
         out : Tensor
-            Output of shape (batch_size, set_size, input_dim)
+            Output of shape (batch_size, set_size, output_dim)
         """
 
-        return super().call(set_x, set_x, **kwargs)
+        return super().call(input_set, input_set, training=training, **kwargs)

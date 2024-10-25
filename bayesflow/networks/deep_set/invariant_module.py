@@ -58,7 +58,7 @@ class InvariantModule(keras.Layer):
         # Outer fully connected net for sum decomposition: inner( pooling( inner(set) ) )
         self.outer_fc = keras.Sequential(name="InvariantOuterFC")
         for _ in range(num_dense_outer):
-            if dropout is not None:
+            if dropout is not None and dropout > 0:
                 self.outer_fc.add(layers.Dropout(float(dropout)))
 
             layer = layers.Dense(

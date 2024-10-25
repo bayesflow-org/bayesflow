@@ -37,8 +37,8 @@ class MixtureDistribution(Distribution):
         # TODO - Implement efficiently
         raise NotImplementedError
 
-    def log_prob(self, tensor: Tensor) -> Tensor:
-        log_prob = [distribution.log_prob(tensor) for distribution in self.distributions]
+    def log_prob(self, x: Tensor, *, normalize: bool = True) -> Tensor:
+        log_prob = [distribution.log_prob(x, normalize=normalize) for distribution in self.distributions]
         log_prob = ops.stack(log_prob, axis=-1)
         log_prob = ops.logsumexp(log_prob + ops.log_softmax(self.mixture_logits), axis=-1)
         return log_prob

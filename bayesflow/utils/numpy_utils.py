@@ -16,7 +16,7 @@ def inverse_shifted_softplus(
 
 def inverse_softplus(x: np.ndarray, beta: float = 1.0, threshold: float = 20.0) -> np.ndarray:
     """Numerically stabilized inverse softplus function."""
-    return np.where(beta * x > threshold, x, np.log(np.expm1(beta * x)) / beta)
+    return np.where(beta * x > threshold, x, np.log(beta * np.expm1(x)) / beta)
 
 
 def one_hot(indices: np.ndarray, num_classes: int, dtype: str = "float32") -> np.ndarray:

@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+
 import keras
 from keras.saving import (
     deserialize_keras_object as deserialize,
@@ -6,14 +7,12 @@ from keras.saving import (
     serialize_keras_object as serialize,
 )
 
+from bayesflow.data_adapters import DataAdapter
 from bayesflow.datasets import OnlineDataset
-from bayesflow.data_adapters import ConcatenateKeysDataAdapter, DataAdapter
-from bayesflow.data_adapters.transforms import Transform
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import filter_kwargs, logging
-
 from .approximator import Approximator
 
 
@@ -50,19 +49,30 @@ class ModelComparisonApproximator(Approximator):
         classifier_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
         model_index_name: str = "model_indices",
-        transforms: Sequence[Transform] = None,
     ):
         if classifier_conditions is None and summary_variables is None:
             raise ValueError("At least one of `classifier_variables` or `summary_variables` must be provided.")
 
-        variables = {
-            "classifier_conditions": classifier_conditions,
-            "summary_variables": summary_variables,
-            "model_indices": [model_index_name],
-        }
-        variables = {key: value for key, value in variables.items() if value is not None}
+        data_adapter = DataAdapter().to_array().convert_dtype("float64", "float32")
 
-        return ConcatenateKeysDataAdapter(**variables, transforms=transforms)
+        if classifier_conditions is not None:
+            data_adapter = data_adapter.concatenate(classifier_conditions, into="classifier_conditions")
+
+        if summary_variables is not None:
+            data_adapter = data_adapter.as_set(summary_variables).concatenate(
+                summary_variables, into="summary_variables"
+            )
+
+        data_adapter = (
+            data_adapter.rename(model_index_name, "model_indices")
+            .keep(["classifier_conditions", "summary_variables", "model_indices"])
+            .standardize(exclude="model_indices")
+        )
+
+        # TODO: add one-hot encoding
+        # .one_hot("model_indices", self.num_models)
+
+        return data_adapter
 
     @classmethod
     def build_dataset(
@@ -175,9 +185,9 @@ class ModelComparisonApproximator(Approximator):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        data_adapter = deserialize(config.pop("data_adapter"), custom_objects=custom_objects)
-        classifier_network = deserialize(config.pop("classifier_network"), custom_objects=custom_objects)
-        summary_network = deserialize(config.pop("summary_network"), custom_objects=custom_objects)
+        data_adapter = deserialize(config["data_adapter"], custom_objects=custom_objects)
+        classifier_network = deserialize(config["classifier_network"], custom_objects=custom_objects)
+        summary_network = deserialize(config["summary_network"], custom_objects=custom_objects)
         return cls(
             data_adapter=data_adapter, classifier_network=classifier_network, summary_network=summary_network, **config
         )

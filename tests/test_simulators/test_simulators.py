@@ -26,11 +26,9 @@ def test_sample(simulator, batch_size):
 
         # test type
         assert isinstance(value, np.ndarray)
-        assert str(value.dtype) == "float32"
 
         # test shape
         assert value.shape[0] == batch_size
-        assert value.ndim > 1
 
         # test batch randomness
-        assert np.any(~np.isclose(value, value[0]))
+        assert not np.allclose(value, value[0])

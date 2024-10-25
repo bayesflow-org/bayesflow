@@ -33,7 +33,7 @@ def conditions_size(request):
 def coupling_flow():
     from bayesflow.networks import CouplingFlow
 
-    return CouplingFlow(depth=2, subnet="mlp", subnet_kwargs=dict(depth=2, width=32))
+    return CouplingFlow(depth=2, subnet="mlp", subnet_kwargs=dict(widths=(32, 32)))
 
 
 @pytest.fixture(params=["two_moons"], scope="session")
@@ -50,7 +50,7 @@ def feature_size(request):
 def flow_matching():
     from bayesflow.networks import FlowMatching
 
-    return FlowMatching(subnet="mlp", subnet_kwargs=dict(depth=2, width=32))
+    return FlowMatching(subnet="mlp", subnet_kwargs=dict(widths=(32, 32)))
 
 
 @pytest.fixture(params=["coupling_flow", "flow_matching"], scope="function")

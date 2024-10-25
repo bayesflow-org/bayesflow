@@ -11,8 +11,9 @@ from . import (
 )
 
 from .approximators import ContinuousApproximator
+from .data_adapters import DataAdapter
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset
-from .benchmarks import TwoMoons
+from .simulators import make_simulator
 
 
 def setup():

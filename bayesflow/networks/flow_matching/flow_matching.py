@@ -24,7 +24,7 @@ class FlowMatching(InferenceNetwork):
         self,
         subnet: str = "mlp",
         base_distribution: str = "normal",
-        # integrator: str = "euler", -> this needs to be configurable at forward and inverse steps
+        integrator: str = "euler",
         use_optimal_transport: bool = False,
         optimal_transport_kwargs: dict[str, any] = None,
         **kwargs,
@@ -44,20 +44,19 @@ class FlowMatching(InferenceNetwork):
         
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
-
-        # match integrator:
-        #     case "euler":
-        #         self.integrator = EulerIntegrator(subnet, **kwargs)
-        #     case "rk2":
-        #         self.integrator = RK2Integrator(subnet, **kwargs)
-        #     case "rk4":
-        #         self.integrator = RK4Integrator(subnet, **kwargs)
-        #     case _:
-        #         raise NotImplementedError(f"No support for {integrator} integration")
+        
+        match integrator:
+            case "euler":
+                self.train_integrator = EulerIntegrator()
+            case "rk2":
+                self.train_integrator = RK2Integrator()
+            case "rk4":
+                self.train_integrator = RK4Integrator()
+            case _:
+                raise NotImplementedError(f"No support for {integrator} integration")
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         super().build(xz_shape)
-        # self.integrator.build(xz_shape, conditions_shape)
         self.output_projector.units = xz_shape[-1]
         input_shape = list(xz_shape)
         
@@ -71,7 +70,6 @@ class FlowMatching(InferenceNetwork):
         self.subnet.build(input_shape)
         out_shape = self.subnet.compute_output_shape(input_shape)
         self.output_projector.build(out_shape)
-        
 
     def call(
         self,
@@ -89,23 +87,21 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         steps = kwargs.get("steps", 100)
         
-        # decide which integrator to use (defaults to Euler for now, add case matching later)
-        integrator = RK2Integrator()
-        
-        # Run integrator
+        # Integration forward step
         if density:
-            z, trace = integrator(self.subnet, self.output_projector, x, conditions=conditions, steps=steps, density=True)
+            z, trace = self.train_integrator(self.subnet, self.output_projector, x, conditions=conditions, steps=steps, density=True)
             log_prob = self.base_distribution.log_prob(z)
             log_density = log_prob + trace
             return z, log_density
 
-        z = integrator(self.subnet, self.output_projector, x, conditions=conditions, steps=steps, density=False)
+        z = self.train_integrator(self.subnet, self.output_projector, x, conditions=conditions, steps=steps, density=False)
         return z
 
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         steps = kwargs.get("steps", 100)
+        method = kwargs.get("method", "euler")
         
         # decide which integrator to use (defaults to Euler for now, add case matching later)
         integrator = RK2Integrator()
@@ -143,8 +139,7 @@ class FlowMatching(InferenceNetwork):
 
         base_metrics = super().compute_metrics(x1, conditions, stage)
 
-        integrator = RK2Integrator()
-        predicted_velocity = integrator.velocity(self.subnet, self.output_projector, x, t, conditions)
+        predicted_velocity = self.train_integrator.velocity(self.subnet, self.output_projector, x, t, conditions)
 
         loss = keras.losses.mean_squared_error(target_velocity, predicted_velocity)
         loss = keras.ops.mean(loss)

@@ -28,10 +28,8 @@ Next point reticulate to the correct virtual environment where bayesflow is stor
 # use_condaenv("/path_to_environment/environment_name")
 
 #use_condaenv("/Users/marvin/miniforge3/envs/bayesflow_r")
-use_condaenv("/Users/eodole/miniforge3/envs/bfv2")
+use_condaenv("/Users/eodole/miniforge3/envs/bfv3")
 ```
-
-
 
 
 Then call the bayesflow module into the R session and give it an alias
@@ -41,14 +39,7 @@ bf <- import("bayesflow")
 keras <- import("keras")
 ```
 
-
-Then we can set a local seed for reproducibility, although the results will not necessarily be the same as in Python. 
-
-```{r}
-set.seed(2023)
-```
-
-One of the many quirks of using bayesflow with R is type matching. Many errors arise from variable types being passed from R to Python in an unexpected format. To try and avoid these errors it's important to familiarlize yourself with the Python equivalents of R variable types. 
+One of the many quirks of using bayesflow with R is type matching. Many errors arise from variable types being passed from R to Python in an unexpected format. To try and avoid these errors it's important to familiarize yourself with the Python equivalents of R variable types. 
 Below is a handy conversion guide from Posit
 
 <!-- ![Link to posit](/Users/eodole/Desktop/HiWi Stelle/Software/R/rcheatsheet.png) -->
@@ -81,7 +72,10 @@ $$ x_1 = -|\theta_1 + \theta_2| / \sqrt{2} + r \cos(\alpha) + 0.25 $$
 $$ x_2 = (-\theta_1 + \theta_2) / \sqrt{2} + r \sin(\alpha) $$
 with $x=(x_1, x_2)$ playing the role of "observables" (data to be learned from),$\alpha \sim Uniform(-\pi/2, \pi/2)$ , and $r \sim N(0.1, 0.01)$ being latent variables creating noise in the data, and being the parameters that we will later seek to infer from new $x$.
 
-*insert more text* 
+We set their priors to 
+
+$$ \theta_1, \theta_2 \sim \Uniform (-1, 1) $$
+This model is typically used for benchmarking simulation-based inference (SBI) methods (see https://arxiv.org/pdf/2101.04653) and any method for amortized Bayesian inference should be capable of recovering the two moons posterior without using a gazillion simulations. Note, that this is a considerably harder task than modeling the common unconditional two moons data set used often in the context of normalizing flows.
 
 
 ```{r}
@@ -158,7 +152,7 @@ sample_data <- simulator$sample(r_to_py(c(4L))) # notice here we need to specify
 
 
 ```{r error=TRUE}
-data_adapter <- bf$ContinuousApproximator$build_data_adapter(
+adapter <- bf$ContinuousApproximator$build_adapter(
   inference_variables = list("theta"),
   inference_conditions = list("x"),
 )
@@ -187,8 +181,8 @@ print(training_samples)
 ```
 
 ```{r}
-training_dataset <- bf$datasets$OfflineDataset(training_samples, batch_size = batch_size, data_adapter = data_adapter)
-validation_dataset <- bf$datasets$OfflineDataset(validation_samples, batch_size = batch_size, data_adapter = data_adapter)
+training_dataset <- bf$datasets$OfflineDataset(training_samples, batch_size = batch_size, adapter = adapter)
+validation_dataset <- bf$datasets$OfflineDataset(validation_samples, batch_size = batch_size,adapter = adapter)
 ```
 
 
@@ -199,7 +193,7 @@ validation_dataset <- bf$datasets$OfflineDataset(validation_samples, batch_size 
 ```{r}
 inference_network <- bf$networks$FlowMatching(
   subnet = "mlp",
-  subnet_kwargs = list(depth = 6L, width = 256L),
+  subnet_kwargs = list(widths = rep(256L,6), dropout = 0), # the width of each layer is 256 and the depth is 6
 )
 ```
 
@@ -207,7 +201,7 @@ inference_network <- bf$networks$FlowMatching(
 ```{r}
 approximator <- bf$ContinuousApproximator(
   inference_network = inference_network,
-  data_adapter = data_adapter,
+  adapter =adapter,
 )
 ```
 
@@ -225,9 +219,9 @@ approximator$compile(optimizer = optimizer)
 
 # 5.2 Training 
 
-```{r eval=FALSE}
+```{r }
 history <- approximator$fit(
-  epochs = 3L,
+  epochs = 10L,
   dataset = training_dataset,
   validation_data = validation_dataset
 )

@@ -5,7 +5,7 @@ date: "2024-09-24"
 output: html_document
 ---
 
-## 1.1 Reticulate Library
+## Reticulate Library
 
 Using Python packages in R is relatively simple. The [reticulate](https://rstudio.github.io/reticulate/) package allows users to use Python packages directly from R, with more detailed instructions on how its used found on their github link above. Before starting, bayesflow needs to be installed following the installation instructions and there should be a virtual environment within which bayesflow is installed. 
 
@@ -46,7 +46,7 @@ Below is a handy conversion guide from Posit
 
 [Posit Quick Guide](https://raw.githubusercontent.com/rstudio/cheatsheets/main/reticulate.pdf)
 
-## 1.2  Libraries 
+## Libraries 
 For your convenience all additional  R libraries are loaded here, and then mentioned again specifically where they are used during the tutorial.
 
 ```{r}
@@ -63,7 +63,7 @@ For your convenience all additional  R libraries are loaded here, and then menti
 *need to somehow set the backend to tensorflow*
 
 
-## 2.1 Simulator 
+## Simulator 
 
 As in the python example, this example will demonstrate amortized estimation of a Bayesian model, whose posterior evaluated at the origin $x = (0,0)$ of the "data" will resemble two crescent moons. The forward process is a noisy non-linear transformation on a 2D plane:
 
@@ -98,7 +98,7 @@ theta_prior <- function(...) {
 
 This model is typically used for benchmarking simulation-based inference (SBI) methods (see https://arxiv.org/pdf/2101.04653) and any method for amortized Bayesian inference should be capable of recovering the two moons posterior without using a gazillion simulations. Note, that this is a considerably harder task than modeling the common unconditional two moons data set used often in the context of normalizing flows.
 
-BayesFlow offers many ways to define your data generating process but here we combine the previously define priors into a single forward model. The `forward_model` should then return all of the variables we are interested in estimating, however we've choose to return all variables.  
+BayesFlow offers many ways to define your data generating process but here the sampling function is  defined as a single `forward_model`, which allows all the functions related to R to stay in R without causing problems with type conversions to python. Additionally all the functions use the `...` argument which allow additional arguments to be passed to these functions. This was done in order to avoid unused argument errors, as the unused arguments passed by python are then simply ignored. 
 
 ```{r }
 # Original
@@ -113,47 +113,55 @@ forward_model <- function(...) {
 }
 ```
 
+The `forward_model` should then return all variables of interest, and here we've choosen to return all variables, although not all are used.  
 
-
-
-Notice here that the sampling function is eventually defined as a single `forward_model`, which allows all the functions related to R to stay in R without causing problems with type conversions to python. Additionally all the functions use the `...` argument which allow additional arguments to be passed to these functions. This was done in order to avoid unused argument errors, as the unused arguments passed by python are then simply ignored. 
-
+Next define our simulator using the previously defined sampling function and generate some data. 
 
 ```{r}
 simulator <- bf$simulators$LambdaSimulator(sample_fn = r_to_py(forward_model))
 sample_data <- simulator$sample(r_to_py(c(4L))) # notice here we need to specify the batch size as an integer
 ```
 
-#3.1 Data Adapter 
+```{r}
+sample_data
+```
+
+
+# Adapter 
+
+The next step is to tell BayesFlow how to deal with all the simulated variables. You may also think of this as informing BayesFlow about the data flow, i.e., which variables go into which network and what transformations needs to be performed prior to passing the simulator outputs into the networks. This is done via an adapter layer, which is implemented as a sequence of fixed, pseudo-invertible data transforms. 
+
+This adapter can be built either manually as shown in the python tutorial or automatically as show here, using the `build_adapter` method. 
+
+For this example, we want to learn the posterior distribution $p(\theta|x)$ so we *infer* $\theta$, *conditioning* on $x$. 
 
 
 ```{r error=TRUE}
 adapter <- bf$ContinuousApproximator$build_adapter(
-  inference_variables = list("theta"),
+  inference_variables = list("theta"), #notice the keys need to be passed as a string inside of a list. 
   inference_conditions = list("x"),
 )
 ```
 
-This step can cause problems, essentially if you get an error saying that inference variables is not found, then the 
 
+## Dataset 
 
-## 4 Data Set 
+For this example, we will sample our training data ahead of time and use offline training with a `bf$datasets$OfflineDataset`.
+
+This makes the training process faster, since we avoid repeated sampling. If you want to use online training, you can use an `OnlineDataset` analogously, or just pass your simulator directly to `approximator$fit()`!
 
 ```{r}
-# works
-num_training_batches <- 2L
-num_validation_batches <- 2L
+num_training_batches <- 512L
+num_validation_batches <- 512L
 batch_size <- 4L
+epochs <- 30L
+total_steps <- num_training_batches * epochs
+
 ```
 
 ```{r}
-# works
 training_samples <- simulator$sample(r_to_py(num_training_batches * batch_size))
 validation_samples <- simulator$sample(r_to_py(num_validation_batches * batch_size))
-```
-
-```{r}
-print(training_samples)
 ```
 
 ```{r}
@@ -162,9 +170,16 @@ validation_dataset <- bf$datasets$OfflineDataset(validation_samples, batch_size 
 ```
 
 
-
-
 ## 5 Training a neural network to approximate all posteriors 
+
+The next step is to set up the neural network that will approximate the posterior $p(\theta | x)$ 
+
+We choose *Flow Matching* [1, 2] as the backbone architecture for this example, as it can deal well with the multimodal nature of the posteriors that some observables imply.
+
+    [1] Lipman, Y., Chen, R. T., Ben-Hamu, H., Nickel, M., & Le, M. Flow Matching for Generative Modeling. In The Eleventh International Conference on Learning Representations.
+
+    [2] Wildberger, J. B., Dax, M., Buchholz, S., Green, S. R., Macke, J. H., & Schölkopf, B. Flow Matching for Scalable Simulation-Based Inference. In Thirty-seventh Conference on Neural Information Processing Systems.
+
 
 ```{r}
 inference_network <- bf$networks$FlowMatching(
@@ -172,6 +187,8 @@ inference_network <- bf$networks$FlowMatching(
   subnet_kwargs = list(widths = rep(256L,6), dropout = 0), # the width of each layer is 256 and the depth is 6
 )
 ```
+
+This inference network is just a general Flow Matching backbone, not yet adapted to the specific inference task at hand (i.e., posterior appproximation). To achieve this adaptation, we combine the network with our adapter, which together form an approximator. In this case, we need a `ContinuousApproximator` since the target we want to approximate is the posterior of the continuous parameter vector $\theta$.
 
 
 ```{r}
@@ -181,10 +198,17 @@ approximator <- bf$ContinuousApproximator(
 )
 ```
 
-### 5.1 Optimizer and Learning Rate 
+### Optimizer and Learning Rate 
+
+We find learning rate schedules, such as cosine decay, work well for a wide variety of approximation tasks.
 
 ```{r}
-learning_rate <- 1e-4
+initial_learning_rate <- 1e-4
+learning_rate <- keras$optimizers$schedules$CosineDecay(
+  initial_learning_rate = initial_learning_rate, 
+  decay_steps = total_steps, 
+  alpha = 1e-8
+)
 optimizer <- keras$optimizers$Adam(learning_rate = learning_rate)
 ```
 
@@ -194,12 +218,14 @@ approximator$compile(optimizer = optimizer)
 
 
 # 5.2 Training 
+We are ready to train our deep posterior approximator on the two moons example. We pass the dataset object to the `fit` method and watch as Bayesflow trains.
 
 ```{r }
+system.time(
 history <- approximator$fit(
-  epochs = 10L,
+  epochs = epochs,
   dataset = training_dataset,
   validation_data = validation_dataset
-)
+))
 ```
 

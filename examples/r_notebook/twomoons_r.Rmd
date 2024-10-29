@@ -75,7 +75,6 @@ with $x=(x_1, x_2)$ playing the role of "observables" (data to be learned from),
 We set their priors to 
 
 $$ \theta_1, \theta_2 \sim \Uniform (-1, 1) $$
-This model is typically used for benchmarking simulation-based inference (SBI) methods (see https://arxiv.org/pdf/2101.04653) and any method for amortized Bayesian inference should be capable of recovering the two moons posterior without using a gazillion simulations. Note, that this is a considerably harder task than modeling the common unconditional two moons data set used often in the context of normalizing flows.
 
 
 ```{r}
@@ -96,7 +95,12 @@ theta_prior <- function(...) {
 
 ```
 
-```{r eval=FALSE}
+
+This model is typically used for benchmarking simulation-based inference (SBI) methods (see https://arxiv.org/pdf/2101.04653) and any method for amortized Bayesian inference should be capable of recovering the two moons posterior without using a gazillion simulations. Note, that this is a considerably harder task than modeling the common unconditional two moons data set used often in the context of normalizing flows.
+
+BayesFlow offers many ways to define your data generating process but here we combine the previously define priors into a single forward model. The `forward_model` should then return all of the variables we are interested in estimating, however we've choose to return all variables.  
+
+```{r }
 # Original
 forward_model <- function(...) {
   theta <- theta_prior()
@@ -109,36 +113,8 @@ forward_model <- function(...) {
 }
 ```
 
-```{r eval=FALSE}
-# Test 1 
-forward_model <- function(...) {
-  # Need to explicitly make all output into floats 
-  theta <- as.float(theta_prior())
-  alpha <- as.float(alpha_prior())
-  r <- as.float(r_prior())
-  x_1 <- as.float(abs(theta[1] + theta[2]) / sqrt(2) + r * cos(alpha) + 0.25)
-  x_2 <- as.float((theta[2] - theta[1] ) / sqrt(2) + r * sin(alpha))
-  # return(list(x1 = x_1 ,x2 = x_2)) # working
-  return(list(x = np_array(c(x_1, x_2)), theta = np_array(c(theta[1], theta[2])), a = alpha, r = r)) # in order for a variable to have more than one direction we need to return it as a numpy array
-}
-```
 
-```{r }
-# Test 2 
-forward_model <- function(...) {
-  theta <- theta_prior()
-  alpha <- alpha_prior()
-  r <- r_prior()
-  x_1 <- abs(theta[1] + theta[2]) / sqrt(2) + r * cos(alpha) + 0.25
-  x_2 <- ( theta[2] - theta[1] ) / sqrt(2) + r * sin(alpha)
-  # in order for a variable to have more than one direction we need to return it as a numpy array
-  # we also need to explicitly define each output as having type "float32" since R used "float64 as default and tensorflow want float 32 
-  return(list(x = np_array(c(x_1, x_2), dtype="float32"),
-              theta = np_array(c(theta[1], theta[2]),dtype="float32"),
-              a = np_array(alpha, dtype="float32"),
-              r = np_array(r, dtype="float32"))) 
-}
-```
+
 
 Notice here that the sampling function is eventually defined as a single `forward_model`, which allows all the functions related to R to stay in R without causing problems with type conversions to python. Additionally all the functions use the `...` argument which allow additional arguments to be passed to these functions. This was done in order to avoid unused argument errors, as the unused arguments passed by python are then simply ignored. 
 

@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,16 +6,16 @@ from ..utils.plot_utils import check_posterior_prior_shapes
 
 
 def plot_z_score_contraction(
-    post_samples,
-    prior_samples,
-    param_names=None,
-    fig_size=None,
-    label_fontsize=16,
-    title_fontsize=18,
-    tick_fontsize=12,
-    color="#8f2727",
-    n_col=None,
-    n_row=None,
+        post_samples,
+        prior_samples,
+        param_names=None,
+        fig_size=None,
+        label_fontsize=16,
+        title_fontsize=18,
+        tick_fontsize=12,
+        color="#8f2727",
+        n_col=None,
+        n_row=None,
 ):
     """
     Implements a graphical check for global model sensitivity by plotting the

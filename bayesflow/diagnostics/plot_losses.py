@@ -1,23 +1,22 @@
-
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
 def plot_losses(
-    train_losses,
-    val_losses=None,
-    moving_average=False,
-    ma_window_fraction=0.01,
-    fig_size=None,
-    train_color="#8f2727",
-    val_color="black",
-    lw_train=2,
-    lw_val=3,
-    grid_alpha=0.5,
-    legend_fontsize=14,
-    label_fontsize=14,
-    title_fontsize=16,
+        train_losses,
+        val_losses=None,
+        moving_average=False,
+        ma_window_fraction=0.01,
+        fig_size=None,
+        train_color="#8f2727",
+        val_color="black",
+        lw_train=2,
+        lw_val=3,
+        grid_alpha=0.5,
+        legend_fontsize=14,
+        label_fontsize=14,
+        title_fontsize=16,
 ):
     """
     A generic helper function to plot the losses of a series of training epochs

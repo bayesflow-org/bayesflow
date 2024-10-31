@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -52,12 +51,7 @@ def check_posterior_prior_shapes(post_samples, prior_samples):
         )
 
 
-def get_count_and_names(
-        samples,
-        names: list = None,
-        symbol: str = None,
-        n_objects: int = None
-):
+def get_count_and_names(samples, names: list = None, symbol: str = None, n_objects: int = None):
     """
     Determine the number of objects, such as parameters or models,
     and their respective names if None given.
@@ -91,12 +85,7 @@ def get_count_and_names(
     return n_objects, names
 
 
-def configure_layout(
-        n_total: int,
-        n_row: int = None,
-        n_col: int = None,
-        stacked: bool = False
-):
+def configure_layout(n_total: int, n_row: int = None, n_col: int = None, stacked: bool = False):
     """
     Determine the number of rows and columns in diagnostics visualizations.
 
@@ -133,9 +122,9 @@ def configure_layout(
 
 
 def initialize_figure(
-        n_row: int = None,
-        n_col: int = None,
-        fig_size: tuple = None,
+    n_row: int = None,
+    n_col: int = None,
+    fig_size: tuple = None,
 ):
     """
     Initialize a set of figures
@@ -146,8 +135,6 @@ def initialize_figure(
         Number of rows in a figure
     n_col       : int
         Number of columns in a figure
-    stacked     : bool
-        Whether subplots in a figure are stacked by rows
     fig_size    : tuple
         Size of the figure adjusting to the display resolution
         or the designer's desire
@@ -197,25 +184,14 @@ def collapse_axes(axarr, n_row: int = 1, n_col: int = 1):
     return ax
 
 
-def add_xlabels(
-        axarr,
-        n_row: int = None,
-        n_col: int = None,
-        xlabel: str = None,
-        label_fontsize: int = None
-):
+def add_xlabels(axarr, n_row: int = None, n_col: int = None, xlabel: str = None, label_fontsize: int = None):
     # Only add x-labels to the bottom row
     bottom_row = axarr if n_row == 1 else axarr[0] if n_col == 1 else axarr[n_row - 1, :]
     for _ax in bottom_row:
         _ax.set_xlabel(xlabel, fontsize=label_fontsize)
 
 
-def add_ylabels(
-        axarr,
-        n_row: int = None,
-        ylabel: str = None,
-        label_fontsize: int = None
-):
+def add_ylabels(axarr, n_row: int = None, ylabel: str = None, label_fontsize: int = None):
     # Only add y-labels to right left-most row
     if n_row == 1:  # if there is only one row, the ax array is 1D
         axarr[0].set_ylabel(ylabel, fontsize=label_fontsize)
@@ -226,12 +202,7 @@ def add_ylabels(
 
 
 def add_labels(
-        axarr,
-        n_row: int = None,
-        n_col: int = None,
-        xlabel: str = None,
-        ylabel: str = None,
-        label_fontsize: int = None
+    axarr, n_row: int = None, n_col: int = None, xlabel: str = None, ylabel: str = None, label_fontsize: int = None
 ):
     """
     Wrapper function for configuring labels for both axes.
@@ -245,12 +216,7 @@ def remove_unused_axes(axarr_it, n_params: int = None):
         _ax.remove()
 
 
-def preprocess(
-        post_samples,
-        prior_samples,
-        fig_size: tuple = None,
-        collapse: bool = True
-):
+def preprocess(post_samples, prior_samples, fig_size: tuple = None, collapse: bool = True):
     """
     Procedural wrapper that encompasses all preprocessing steps,
     including shape-checking, parameter name generation, layout configuration,
@@ -264,8 +230,6 @@ def preprocess(
         The prior draws obtained for generating n_data_sets
     fig_size          : tuple, optional, default: None
         Size of the figure adjusting to the display resolution
-    stacked          : bool, optional, default: False
-        Whether subplots in a figure are stacked by rows
     collapse         : bool, optional, default: True
         Whether subplots in a figure are collapsed into rows
     """

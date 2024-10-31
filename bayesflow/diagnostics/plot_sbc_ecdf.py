@@ -6,6 +6,7 @@ import seaborn as sns
 from ..utils.plot_utils import check_posterior_prior_shapes
 from ..utils.ecdf import simultaneous_ecdf_bands
 
+
 def plot_sbc_ecdf(
     post_samples,
     prior_samples,
@@ -23,16 +24,19 @@ def plot_sbc_ecdf(
     n_col=None,
     **kwargs,
 ):
-    """Creates the empirical CDFs for each marginal rank distribution and plots it against
-    a uniform ECDF. ECDF simultaneous bands are drawn using simulations from the uniform,
+    """
+    Creates the empirical CDFs for each marginal rank distribution
+    and plots it against a uniform ECDF.
+    ECDF simultaneous bands are drawn using simulations from the uniform,
     as proposed by [1].
 
-    For models with many parameters, use `stacked=True` to obtain an idea of the overall calibration
-    of a posterior approximator.
+    For models with many parameters, use `stacked=True` to obtain an idea
+    of the overall calibration of a posterior approximator.
 
-    [1] Säilynoja, T., Bürkner, P. C., & Vehtari, A. (2022). Graphical test for discrete uniformity and
-    its applications in goodness-of-fit evaluation and multiple sample comparison. Statistics and Computing,
-    32(2), 1-21. https://arxiv.org/abs/2103.10522
+    [1] Säilynoja, T., Bürkner, P. C., & Vehtari, A. (2022). Graphical test
+    for discrete uniformity and its applications in goodness-of-fit evaluation
+    and multiple sample comparison. Statistics and Computing, 32(2), 1-21.
+    https://arxiv.org/abs/2103.10522
 
     Parameters
     ----------
@@ -41,20 +45,25 @@ def plot_sbc_ecdf(
     prior_samples     : np.ndarray of shape (n_data_sets, n_params)
         The prior draws obtained for generating n_data_sets
     difference        : bool, optional, default: False
-        If `True`, plots the ECDF difference. Enables a more dynamic visualization range.
+        If `True`, plots the ECDF difference.
+        Enables a more dynamic visualization range.
     stacked           : bool, optional, default: False
-        If `True`, all ECDFs will be plotted on the same plot. If `False`, each ECDF will
-        have its own subplot, similar to the behavior of `plot_sbc_histograms`.
+        If `True`, all ECDFs will be plotted on the same plot.
+        If `False`, each ECDF will have its own subplot,
+        similar to the behavior of `plot_sbc_histograms`.
     param_names       : list or None, optional, default: None
-        The parameter names for nice plot titles. Inferred if None. Only relevant if `stacked=False`.
+        The parameter names for nice plot titles.
+        Inferred if None. Only relevant if `stacked=False`.
     fig_size          : tuple or None, optional, default: None
-        The figure size passed to the matplotlib constructor. Inferred if None.
+        The figure size passed to the matplotlib constructor.
+        Inferred if None.
     label_fontsize    : int, optional, default: 16
         The font size of the y-label and y-label texts
     legend_fontsize   : int, optional, default: 14
         The font size of the legend text
     title_fontsize    : int, optional, default: 18
-        The font size of the title text. Only relevant if `stacked=False`
+        The font size of the title text.
+        Only relevant if `stacked=False`
     tick_fontsize     : int, optional, default: 12
         The font size of the axis ticklabels
     rank_ecdf_color   : str, optional, default: '#a34f4f'
@@ -62,12 +71,15 @@ def plot_sbc_ecdf(
     fill_color        : str, optional, default: 'grey'
         The color of the fill arguments.
     n_row             : int, optional, default: None
-        The number of rows for the subplots. Dynamically determined if None.
+        The number of rows for the subplots.
+        Dynamically determined if None.
     n_col             : int, optional, default: None
-        The number of columns for the subplots. Dynamically determined if None.
+        The number of columns for the subplots.
+        Dynamically determined if None.
     **kwargs          : dict, optional, default: {}
-        Keyword arguments can be passed to control the behavior of ECDF simultaneous band computation
-        through the ``ecdf_bands_kwargs`` dictionary. See `simultaneous_ecdf_bands` for keyword arguments
+        Keyword arguments can be passed to control the behavior of
+        ECDF simultaneous band computation through the ``ecdf_bands_kwargs``
+        dictionary. See `simultaneous_ecdf_bands` for keyword arguments
 
     Returns
     -------
@@ -76,7 +88,8 @@ def plot_sbc_ecdf(
     Raises
     ------
     ShapeError
-        If there is a deviation form the expected shapes of `post_samples` and `prior_samples`.
+        If there is a deviation form the expected shapes of `post_samples`
+        and `prior_samples`.
     """
 
     # Sanity checks
@@ -86,7 +99,9 @@ def plot_sbc_ecdf(
     n_params = post_samples.shape[-1]
 
     # Compute fractional ranks (using broadcasting)
-    ranks = np.sum(post_samples < prior_samples[:, np.newaxis, :], axis=1) / post_samples.shape[1]
+    ranks = np.sum(
+        post_samples < prior_samples[:, np.newaxis, :], axis=1
+    ) / post_samples.shape[1]
 
     # Prepare figure
     if stacked:
@@ -122,14 +137,25 @@ def plot_sbc_ecdf(
 
         if stacked:
             if j == 0:
-                ax.plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
+                ax.plot(
+                    xx, yy,
+                    color=rank_ecdf_color, alpha=0.95,
+                    label="Rank ECDFs"
+                )
             else:
                 ax.plot(xx, yy, color=rank_ecdf_color, alpha=0.95)
         else:
-            ax.flat[j].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
+            ax.flat[j].plot(
+                xx, yy,
+                color=rank_ecdf_color, alpha=0.95,
+                label="Rank ECDF"
+            )
 
     # Compute uniform ECDF and bands
-    alpha, z, L, H = simultaneous_ecdf_bands(post_samples.shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))
+    alpha, z, L, H = simultaneous_ecdf_bands(
+        post_samples.shape[0],
+        **kwargs.pop("ecdf_bands_kwargs", {})
+    )
 
     # Difference, if specified
     if difference:
@@ -151,7 +177,11 @@ def plot_sbc_ecdf(
             titles = param_names
 
     for _ax, title in zip(axes, titles):
-        _ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands")
+        _ax.fill_between(
+            z, L, H,
+            color=fill_color, alpha=0.2,
+            label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands"
+        )
 
         # Prettify plot
         sns.despine(ax=_ax)

@@ -5,6 +5,7 @@ import seaborn as sns
 
 from ..utils.plot_utils import check_posterior_prior_shapes
 
+
 def plot_z_score_contraction(
     post_samples,
     prior_samples,
@@ -17,26 +18,31 @@ def plot_z_score_contraction(
     n_col=None,
     n_row=None,
 ):
-    """Implements a graphical check for global model sensitivity by plotting the posterior
-    z-score over the posterior contraction for each set of posterior samples in ``post_samples``
-    according to [1].
+    """
+    Implements a graphical check for global model sensitivity by plotting the
+    posterior z-score over the posterior contraction for each set of posterior
+    samples in ``post_samples`` according to [1].
 
     - The definition of the posterior z-score is:
 
     post_z_score = (posterior_mean - true_parameters) / posterior_std
 
-    And the score is adequate if it centers around zero and spreads roughly in the interval [-3, 3]
+    And the score is adequate if it centers around zero and spreads roughly
+    in the interval [-3, 3]
 
     - The definition of posterior contraction is:
 
     post_contraction = 1 - (posterior_variance / prior_variance)
 
-    In other words, the posterior contraction is a proxy for the reduction in uncertainty gained by
-    replacing the prior with the posterior. The ideal posterior contraction tends to 1.
-    Contraction near zero indicates that the posterior variance is almost identical to
-    the prior variance for the particular marginal parameter distribution.
+    In other words, the posterior contraction is a proxy for the reduction in
+    uncertainty gained by replacing the prior with the posterior.
+    The ideal posterior contraction tends to 1.
+    Contraction near zero indicates that the posterior variance is almost
+    identical to the prior variance for the particular marginal parameter
+    distribution.
 
-    Note: Means and variances will be estimated via their sample-based estimators.
+    Note:
+    Means and variances will be estimated via their sample-based estimators.
 
     [1] Schad, D. J., Betancourt, M., & Vasishth, S. (2021).
     Toward a principled Bayesian workflow in cognitive science.
@@ -134,7 +140,9 @@ def plot_z_score_contraction(
         ax.set_xlim([-0.05, 1.05])
 
     # Only add x-labels to the bottom row
-    bottom_row = axarr if n_row == 1 else axarr[0] if n_col == 1 else axarr[n_row - 1, :]
+    bottom_row = axarr if n_row == 1 else (
+        axarr[0] if n_col == 1 else axarr[n_row - 1, :]
+    )
     for _ax in bottom_row:
         _ax.set_xlabel("Posterior contraction", fontsize=label_fontsize)
 

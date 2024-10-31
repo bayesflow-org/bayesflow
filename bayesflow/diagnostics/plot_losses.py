@@ -19,25 +19,31 @@ def plot_losses(
     label_fontsize=14,
     title_fontsize=16,
 ):
-    """A generic helper function to plot the losses of a series of training epochs and runs.
+    """
+    A generic helper function to plot the losses of a series of training epochs
+    and runs.
 
     Parameters
     ----------
 
     train_losses       : pd.DataFrame
-        The (plottable) history as returned by a train_[...] method of a ``Trainer`` instance.
-        Alternatively, you can just pass a data frame of validation losses instead of train losses,
-        if you only want to plot the validation loss.
+        The (plottable) history as returned by a train_[...] method of a
+        ``Trainer`` instance.
+        Alternatively, you can just pass a data frame of validation losses
+        instead of train losses, if you only want to plot the validation loss.
     val_losses         : pd.DataFrame or None, optional, default: None
-        The (plottable) validation history as returned by a train_[...] method of a ``Trainer`` instance.
-        If left ``None``, only train losses are plotted. Should have the same number of columns
-        as ``train_losses``.
+        The (plottable) validation history as returned by a train_[...] method
+        of a ``Trainer`` instance.
+        If left ``None``, only train losses are plotted. Should have the same
+        number of columns as ``train_losses``.
     moving_average     : bool, optional, default: False
         A flag for adding a moving average line of the train_losses.
     ma_window_fraction : int, optional, default: 0.01
-        Window size for the moving average as a fraction of total training steps.
+        Window size for the moving average as a fraction of total
+        training steps.
     fig_size           : tuple or None, optional, default: None
-        The figure size passed to the ``matplotlib`` constructor. Inferred if ``None``
+        The figure size passed to the ``matplotlib`` constructor.
+        Inferred if ``None``
     train_color        : str, optional, default: '#8f2727'
         The color for the train loss trajectory
     val_color          : str, optional, default: black
@@ -88,11 +94,18 @@ def plot_losses(
     looper = [axarr] if n_row == 1 else axarr.flat
     for i, ax in enumerate(looper):
         # Plot train curve
-        ax.plot(train_step_index, train_losses.iloc[:, i], color=train_color, lw=lw_train, alpha=0.9, label="Training")
+        ax.plot(
+            train_step_index, train_losses.iloc[:, i],
+            color=train_color, lw=lw_train, alpha=0.9, label="Training"
+        )
         if moving_average and train_losses.columns[i] == "Loss":
             moving_average_window = int(train_losses.shape[0] * ma_window_fraction)
             smoothed_loss = train_losses.iloc[:, i].rolling(window=moving_average_window).mean()
-            ax.plot(train_step_index, smoothed_loss, color="grey", lw=lw_train, label="Training (Moving Average)")
+            ax.plot(
+                train_step_index, smoothed_loss,
+                color="grey", lw=lw_train,
+                label="Training (Moving Average)"
+            )
 
         # Plot optional val curve
         if val_losses is not None:

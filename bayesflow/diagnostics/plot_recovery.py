@@ -27,18 +27,24 @@ def plot_recovery(
         ylabel="Estimated",
         **kwargs,
 ):
-    """Creates and plots publication-ready recovery plot with true vs. point estimate + uncertainty.
-    The point estimate can be controlled with the ``point_agg`` argument, and the uncertainty estimate
-    can be controlled with the ``uncertainty_agg`` argument.
+    """
+    Creates and plots publication-ready recovery plot with true estimate
+    vs. point estimate + uncertainty.
+    The point estimate can be controlled with the ``point_agg`` argument,
+    and the uncertainty estimate can be controlled with the
+    ``uncertainty_agg`` argument.
 
-    This plot yields similar information as the "posterior z-score", but allows for generic
-    point and uncertainty estimates:
+    This plot yields similar information as the "posterior z-score",
+    but allows for generic point and uncertainty estimates:
 
     https://betanalpha.github.io/assets/case_studies/principled_bayesian_workflow.html
 
-    Important: Posterior aggregates play no special role in Bayesian inference and should only
-    be used heuristically. For instance, in the case of multi-modal posteriors, common point
-    estimates, such as mean, (geometric) median, or maximum a posteriori (MAP) mean nothing.
+    Important:
+    Posterior aggregates play no special role in Bayesian inference and
+    should only be used heuristically.
+    For instance, in the case of multi-modal posteriors, common point
+    estimates, such as mean, (geometric) median, or maximum a posteriori
+    (MAP) mean nothing.
 
     Parameters
     ----------
@@ -133,9 +139,13 @@ def plot_recovery(
 
         # Add scatter and error bars
         if uncertainty_agg is not None:
-            _ = ax.errorbar(prior_samples[:, i], est[:, i], yerr=u[:, i], fmt="o", alpha=0.5, color=color, **kwargs)
+            _ = ax.errorbar(
+                prior_samples[:, i], est[:, i], yerr=u[:, i], fmt="o", alpha=0.5, color=color, **kwargs
+            )
         else:
-            _ = ax.scatter(prior_samples[:, i], est[:, i], alpha=0.5, color=color, **kwargs)
+            _ = ax.scatter(
+                prior_samples[:, i], est[:, i], alpha=0.5, color=color, **kwargs
+            )
 
         # Make plots quadratic to avoid visual illusions
         lower = min(prior_samples[:, i].min(), est[:, i].min())
@@ -179,11 +189,17 @@ def plot_recovery(
         # Prettify
         sns.despine(ax=ax)
         ax.grid(alpha=0.5)
-        ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
-        ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
+        ax.tick_params(
+            axis="both", which="major", labelsize=tick_fontsize
+        )
+        ax.tick_params(
+            axis="both", which="minor", labelsize=tick_fontsize
+        )
 
     # Only add x-labels to the bottom row
-    bottom_row = axarr if n_row == 1 else axarr[0] if n_col == 1 else axarr[n_row - 1, :]
+    bottom_row = axarr if n_row == 1 else (
+        axarr[0] if n_col == 1 else axarr[n_row - 1, :]
+    )
     for _ax in bottom_row:
         _ax.set_xlabel(xlabel, fontsize=label_fontsize)
 

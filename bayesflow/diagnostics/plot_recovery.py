@@ -5,7 +5,6 @@ from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from ..utils.plot_utils import preprocess, postprocess
 from ..utils.plot_utils import check_posterior_prior_shapes
 
 def plot_recovery(

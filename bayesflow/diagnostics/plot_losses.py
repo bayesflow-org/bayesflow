@@ -3,9 +3,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from tensorflow.keras import ops
-from ..utils.plot_utils import initialize_figure
-
 
 def plot_losses(
     train_losses,

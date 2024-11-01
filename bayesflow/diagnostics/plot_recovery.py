@@ -8,24 +8,24 @@ from ..utils.plot_utils import check_posterior_prior_shapes
 
 
 def plot_recovery(
-        post_samples,
-        prior_samples,
-        point_agg=np.median,
-        uncertainty_agg=median_abs_deviation,
-        param_names=None,
-        fig_size=None,
-        label_fontsize=16,
-        title_fontsize=18,
-        metric_fontsize=16,
-        tick_fontsize=12,
-        add_corr=True,
-        add_r2=True,
-        color="#8f2727",
-        n_col=None,
-        n_row=None,
-        xlabel="Ground truth",
-        ylabel="Estimated",
-        **kwargs,
+    post_samples,
+    prior_samples,
+    point_agg=np.median,
+    uncertainty_agg=median_abs_deviation,
+    param_names=None,
+    fig_size=None,
+    label_fontsize=16,
+    title_fontsize=18,
+    metric_fontsize=16,
+    tick_fontsize=12,
+    add_corr=True,
+    add_r2=True,
+    color="#8f2727",
+    n_col=None,
+    n_row=None,
+    xlabel="Ground truth",
+    ylabel="Estimated",
+    **kwargs,
 ):
     """
     Creates and plots publication-ready recovery plot with true estimate
@@ -139,13 +139,9 @@ def plot_recovery(
 
         # Add scatter and error bars
         if uncertainty_agg is not None:
-            _ = ax.errorbar(
-                prior_samples[:, i], est[:, i], yerr=u[:, i], fmt="o", alpha=0.5, color=color, **kwargs
-            )
+            _ = ax.errorbar(prior_samples[:, i], est[:, i], yerr=u[:, i], fmt="o", alpha=0.5, color=color, **kwargs)
         else:
-            _ = ax.scatter(
-                prior_samples[:, i], est[:, i], alpha=0.5, color=color, **kwargs
-            )
+            _ = ax.scatter(prior_samples[:, i], est[:, i], alpha=0.5, color=color, **kwargs)
 
         # Make plots quadratic to avoid visual illusions
         lower = min(prior_samples[:, i].min(), est[:, i].min())
@@ -189,17 +185,11 @@ def plot_recovery(
         # Prettify
         sns.despine(ax=ax)
         ax.grid(alpha=0.5)
-        ax.tick_params(
-            axis="both", which="major", labelsize=tick_fontsize
-        )
-        ax.tick_params(
-            axis="both", which="minor", labelsize=tick_fontsize
-        )
+        ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
+        ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
     # Only add x-labels to the bottom row
-    bottom_row = axarr if n_row == 1 else (
-        axarr[0] if n_col == 1 else axarr[n_row - 1, :]
-    )
+    bottom_row = axarr if n_row == 1 else (axarr[0] if n_col == 1 else axarr[n_row - 1, :])
     for _ax in bottom_row:
         _ax.set_xlabel(xlabel, fontsize=label_fontsize)
 

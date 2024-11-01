@@ -4,19 +4,19 @@ import matplotlib.pyplot as plt
 
 
 def plot_losses(
-        train_losses,
-        val_losses=None,
-        moving_average=False,
-        ma_window_fraction=0.01,
-        fig_size=None,
-        train_color="#8f2727",
-        val_color="black",
-        lw_train=2,
-        lw_val=3,
-        grid_alpha=0.5,
-        legend_fontsize=14,
-        label_fontsize=14,
-        title_fontsize=16,
+    train_losses,
+    val_losses=None,
+    moving_average=False,
+    ma_window_fraction=0.01,
+    fig_size=None,
+    train_color="#8f2727",
+    val_color="black",
+    lw_train=2,
+    lw_val=3,
+    grid_alpha=0.5,
+    legend_fontsize=14,
+    label_fontsize=14,
+    title_fontsize=16,
 ):
     """
     A generic helper function to plot the losses of a series of training epochs
@@ -83,7 +83,7 @@ def plot_losses(
     train_step_index = np.arange(1, len(train_losses) + 1)
     if val_losses is not None:
         val_step = int(np.floor(len(train_losses) / len(val_losses)))
-        val_step_index = train_step_index[(val_step - 1)::val_step]
+        val_step_index = train_step_index[(val_step - 1) :: val_step]
 
         # If unequal length due to some reason, attempt a fix
         if val_step_index.shape[0] > val_losses.shape[0]:
@@ -93,18 +93,11 @@ def plot_losses(
     looper = [axarr] if n_row == 1 else axarr.flat
     for i, ax in enumerate(looper):
         # Plot train curve
-        ax.plot(
-            train_step_index, train_losses.iloc[:, i],
-            color=train_color, lw=lw_train, alpha=0.9, label="Training"
-        )
+        ax.plot(train_step_index, train_losses.iloc[:, i], color=train_color, lw=lw_train, alpha=0.9, label="Training")
         if moving_average and train_losses.columns[i] == "Loss":
             moving_average_window = int(train_losses.shape[0] * ma_window_fraction)
             smoothed_loss = train_losses.iloc[:, i].rolling(window=moving_average_window).mean()
-            ax.plot(
-                train_step_index, smoothed_loss,
-                color="grey", lw=lw_train,
-                label="Training (Moving Average)"
-            )
+            ax.plot(train_step_index, smoothed_loss, color="grey", lw=lw_train, label="Training (Moving Average)")
 
         # Plot optional val curve
         if val_losses is not None:

@@ -6,16 +6,16 @@ from ..utils.plot_utils import check_posterior_prior_shapes
 
 
 def plot_z_score_contraction(
-        post_samples,
-        prior_samples,
-        param_names=None,
-        fig_size=None,
-        label_fontsize=16,
-        title_fontsize=18,
-        tick_fontsize=12,
-        color="#8f2727",
-        n_col=None,
-        n_row=None,
+    post_samples,
+    prior_samples,
+    param_names=None,
+    fig_size=None,
+    label_fontsize=16,
+    title_fontsize=18,
+    tick_fontsize=12,
+    color="#8f2727",
+    n_col=None,
+    n_row=None,
 ):
     """
     Implements a graphical check for global model sensitivity by plotting the
@@ -139,9 +139,7 @@ def plot_z_score_contraction(
         ax.set_xlim([-0.05, 1.05])
 
     # Only add x-labels to the bottom row
-    bottom_row = axarr if n_row == 1 else (
-        axarr[0] if n_col == 1 else axarr[n_row - 1, :]
-    )
+    bottom_row = axarr if n_row == 1 else (axarr[0] if n_col == 1 else axarr[n_row - 1, :])
     for _ax in bottom_row:
         _ax.set_xlabel("Posterior contraction", fontsize=label_fontsize)
 

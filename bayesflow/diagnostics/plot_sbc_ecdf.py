@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -99,9 +98,7 @@ def plot_sbc_ecdf(
     n_params = post_samples.shape[-1]
 
     # Compute fractional ranks (using broadcasting)
-    ranks = np.sum(
-        post_samples < prior_samples[:, np.newaxis, :], axis=1
-    ) / post_samples.shape[1]
+    ranks = np.sum(post_samples < prior_samples[:, np.newaxis, :], axis=1) / post_samples.shape[1]
 
     # Prepare figure
     if stacked:
@@ -137,25 +134,14 @@ def plot_sbc_ecdf(
 
         if stacked:
             if j == 0:
-                ax.plot(
-                    xx, yy,
-                    color=rank_ecdf_color, alpha=0.95,
-                    label="Rank ECDFs"
-                )
+                ax.plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
             else:
                 ax.plot(xx, yy, color=rank_ecdf_color, alpha=0.95)
         else:
-            ax.flat[j].plot(
-                xx, yy,
-                color=rank_ecdf_color, alpha=0.95,
-                label="Rank ECDF"
-            )
+            ax.flat[j].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
 
     # Compute uniform ECDF and bands
-    alpha, z, L, H = simultaneous_ecdf_bands(
-        post_samples.shape[0],
-        **kwargs.pop("ecdf_bands_kwargs", {})
-    )
+    alpha, z, L, H = simultaneous_ecdf_bands(post_samples.shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))
 
     # Difference, if specified
     if difference:
@@ -177,11 +163,7 @@ def plot_sbc_ecdf(
             titles = param_names
 
     for _ax, title in zip(axes, titles):
-        _ax.fill_between(
-            z, L, H,
-            color=fill_color, alpha=0.2,
-            label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands"
-        )
+        _ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands")
 
         # Prettify plot
         sns.despine(ax=_ax)

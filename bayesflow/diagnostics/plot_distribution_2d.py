@@ -1,4 +1,3 @@
-
 import logging
 import seaborn as sns
 import pandas as pd
@@ -7,15 +6,15 @@ from bayesflow.types import Tensor
 
 
 def plot_distribution_2d(
-        samples: dict[str, Tensor] = None,
-        parameters: str = None,
-        n_params: int = None,
-        param_names: list = None,
-        height: float = 2.5,
-        color: str | tuple = "#8f2727",
-        alpha: float = 0.9,
-        render: bool = True,
-        **kwargs
+    samples: dict[str, Tensor] = None,
+    parameters: str = None,
+    n_params: int = None,
+    param_names: list = None,
+    height: float = 2.5,
+    color: str | tuple = "#8f2727",
+    alpha: float = 0.9,
+    render: bool = True,
+    **kwargs,
 ):
     """
     A more flexible pair plot function for multiple distributions based upon
@@ -67,28 +66,16 @@ def plot_distribution_2d(
     # Generate plots
     artist = sns.PairGrid(data_to_plot, height=height, **kwargs)
 
-    artist.map_diag(
-        sns.histplot, fill=True, color=color, alpha=alpha, kde=True
-    )
+    artist.map_diag(sns.histplot, fill=True, color=color, alpha=alpha, kde=True)
 
     # Incorporate exceptions for generating KDE plots
     try:
-        artist.map_lower(
-            sns.kdeplot, fill=True, color=color, alpha=alpha
-        )
+        artist.map_lower(sns.kdeplot, fill=True, color=color, alpha=alpha)
     except Exception as e:
-        logging.warning(
-            "KDE failed due to the following exception:\n"
-            + repr(e)
-            + "\nSubstituting scatter plot."
-        )
-        artist.map_lower(
-            sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color
-        )
+        logging.warning("KDE failed due to the following exception:\n" + repr(e) + "\nSubstituting scatter plot.")
+        artist.map_lower(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color)
 
-    artist.map_upper(
-        sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color
-    )
+    artist.map_upper(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color)
 
     if render:
         # Generate grids

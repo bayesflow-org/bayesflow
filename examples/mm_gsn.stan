@@ -27,11 +27,11 @@ transformed parameters {
 
 model {
   vector[D] mu;
-  
+
   // Priors
   theta1_centered ~ normal(0.0, 0.1);
   theta2_centered ~ normal(0.0, 0.1);
-  
+
   // Likelihood
   for (i in 1:D) {
     mu[i] = theta1_scaled * design_s[i] / (theta2_scaled + design_s[i]);

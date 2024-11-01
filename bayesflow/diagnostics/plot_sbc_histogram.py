@@ -1,4 +1,3 @@
-
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,19 +6,20 @@ import seaborn as sns
 from scipy.stats import binom
 from ..utils.plot_utils import check_posterior_prior_shapes
 
+
 def plot_sbc_histograms(
-        post_samples,
-        prior_samples,
-        param_names=None,
-        fig_size=None,
-        num_bins=None,
-        binomial_interval=0.99,
-        label_fontsize=16,
-        title_fontsize=18,
-        tick_fontsize=12,
-        hist_color="#a34f4f",
-        n_row=None,
-        n_col=None,
+    post_samples,
+    prior_samples,
+    param_names=None,
+    fig_size=None,
+    num_bins=None,
+    binomial_interval=0.99,
+    label_fontsize=16,
+    title_fontsize=18,
+    tick_fontsize=12,
+    hist_color="#a34f4f",
+    n_row=None,
+    n_col=None,
 ):
     """Creates and plots publication-ready histograms of rank statistics for simulation-based calibration
     (SBC) checks according to [1].

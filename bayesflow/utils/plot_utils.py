@@ -85,7 +85,7 @@ def get_count_and_names(samples, names: list = None, symbol: str = None, n_objec
     return n_objects, names
 
 
-def configure_layout(n_total: int, n_row: int = None, n_col: int = None, stacked: bool = False):
+def set_layout(n_total: int, n_row: int = None, n_col: int = None, stacked: bool = False):
     """
     Determine the number of rows and columns in diagnostics visualizations.
 
@@ -121,7 +121,7 @@ def configure_layout(n_total: int, n_row: int = None, n_col: int = None, stacked
     return n_row, n_col
 
 
-def initialize_figure(
+def make_figure(
     n_row: int = None,
     n_col: int = None,
     fig_size: tuple = None,
@@ -141,27 +141,27 @@ def initialize_figure(
 
     Returns
     -------
-    f, axarr
+    f, ax_array
         Initialized figures
     """
     if n_row == 1 and n_col == 1:
-        f, axarr = plt.subplots(1, 1, figsize=fig_size)
+        f, ax_array = plt.subplots(1, 1, figsize=fig_size)
     else:
         if fig_size is None:
             fig_size = (int(5 * n_col), int(5 * n_row))
 
-        f, axarr = plt.subplots(n_row, n_col, figsize=fig_size)
+        f, ax_array = plt.subplots(n_row, n_col, figsize=fig_size)
 
-    return f, axarr
+    return f, ax_array
 
 
-def collapse_axes(axarr, n_row: int = 1, n_col: int = 1):
+def flatten_axes(ax_array, n_row: int = 1, n_col: int = 1):
     """
     Collapse a 2D array of subplot Axes into a 1D array
 
     Parameters
     ----------
-    axarr      : 2D array of Axes
+    ax_array      : 2D array of Axes
         An array of axes for subplots
     n_row      : int, default: 1
         Number of rows for the axes
@@ -174,49 +174,49 @@ def collapse_axes(axarr, n_row: int = 1, n_col: int = 1):
         Collapsed axes for subplots
     """
 
-    ax = np.atleast_1d(axarr)
-    # turn axarr into 1D list
+    ax = np.atleast_1d(ax_array)
+    # turn ax_array into 1D list
     if n_row > 1 or n_col > 1:
-        ax = axarr.flat
+        ax = ax_array.flat
     else:
-        ax = axarr
+        ax = ax_array
 
     return ax
 
 
-def add_xlabels(axarr, n_row: int = None, n_col: int = None, xlabel: str = None, label_fontsize: int = None):
+def add_x_labels(ax_array, n_row: int = None, n_col: int = None, x_label: str = None, label_fontsize: int = None):
     # Only add x-labels to the bottom row
-    bottom_row = axarr if n_row == 1 else axarr[0] if n_col == 1 else axarr[n_row - 1, :]
+    bottom_row = ax_array if n_row == 1 else ax_array[0] if n_col == 1 else ax_array[n_row - 1, :]
     for _ax in bottom_row:
-        _ax.set_xlabel(xlabel, fontsize=label_fontsize)
+        _ax.set_xlabel(x_label, fontsize=label_fontsize)
 
 
-def add_ylabels(axarr, n_row: int = None, ylabel: str = None, label_fontsize: int = None):
+def add_y_labels(ax_array, n_row: int = None, y_label: str = None, label_fontsize: int = None):
     # Only add y-labels to right left-most row
     if n_row == 1:  # if there is only one row, the ax array is 1D
-        axarr[0].set_ylabel(ylabel, fontsize=label_fontsize)
+        ax_array[0].set_ylabel(y_label, fontsize=label_fontsize)
     # If there is more than one row, the ax array is 2D
     else:
-        for _ax in axarr[:, 0]:
-            _ax.set_ylabel(ylabel, fontsize=label_fontsize)
+        for _ax in ax_array[:, 0]:
+            _ax.set_ylabel(y_label, fontsize=label_fontsize)
 
 
 def add_labels(
-    axarr, n_row: int = None, n_col: int = None, xlabel: str = None, ylabel: str = None, label_fontsize: int = None
+    ax_array, n_row: int = None, n_col: int = None, x_label: str = None, y_label: str = None, label_fontsize: int = None
 ):
     """
     Wrapper function for configuring labels for both axes.
     """
-    add_xlabels(axarr, n_row, n_col, xlabel, label_fontsize)
-    add_ylabels(axarr, n_row, ylabel, label_fontsize)
+    add_x_labels(ax_array, n_row, n_col, x_label, label_fontsize)
+    add_y_labels(ax_array, n_row, y_label, label_fontsize)
 
 
-def remove_unused_axes(axarr_it, n_params: int = None):
-    for _ax in axarr_it[n_params:]:
-        _ax.remove()
+def remove_unused_axes(ax_array_it, n_params: int = None):
+    for ax in ax_array_it[n_params:]:
+        ax.remove()
 
 
-def preprocess(post_samples, prior_samples, fig_size: tuple = None, collapse: bool = True):
+def preprocess(post_samples, prior_samples, fig_size: tuple = None, flatten: bool = True):
     """
     Procedural wrapper that encompasses all preprocessing steps,
     including shape-checking, parameter name generation, layout configuration,
@@ -230,7 +230,7 @@ def preprocess(post_samples, prior_samples, fig_size: tuple = None, collapse: bo
         The prior draws obtained for generating n_data_sets
     fig_size          : tuple, optional, default: None
         Size of the figure adjusting to the display resolution
-    collapse         : bool, optional, default: True
+    flatten           : bool, optional, default: True
         Whether subplots in a figure are collapsed into rows
     """
 
@@ -241,18 +241,18 @@ def preprocess(post_samples, prior_samples, fig_size: tuple = None, collapse: bo
     n_params, param_names = get_count_and_names(post_samples)
 
     # Configure layout
-    n_row, n_col = configure_layout(n_params)
+    n_row, n_col = set_layout(n_params)
 
     # Initialize figure
-    f, axarr = initialize_figure(n_row, n_col, fig_size=fig_size)
+    f, ax_array = make_figure(n_row, n_col, fig_size=fig_size)
 
-    # turn axarr into 1D list
-    if collapse:
-        axarr_it = collapse_axes(axarr, n_row, n_col)
+    # turn ax_array into 1D list
+    if flatten:
+        ax_array_it = flatten_axes(ax_array, n_row, n_col)
     else:
-        axarr_it = axarr
+        ax_array_it = ax_array
 
-    return f, axarr, axarr_it, n_row, n_col, n_params, param_names
+    return f, ax_array, ax_array_it, n_row, n_col, n_params, param_names
 
 
 def postprocess(*args):

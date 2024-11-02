@@ -39,3 +39,5 @@ from .tensor_utils import (
     tree_concatenate,
     tree_stack,
 )
+from .comp_utils import expected_calibration_error
+from .plot_utils import check_posterior_prior_shapes

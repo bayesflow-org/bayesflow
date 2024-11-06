@@ -1,10 +1,12 @@
+from collections.abc import Sequence
+
 import keras
 from keras import layers
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import keras_kwargs
 from bayesflow.utils import find_pooling
+from bayesflow.utils import keras_kwargs
 
 
 @serializable(package="bayesflow.networks")
@@ -19,12 +21,12 @@ class InvariantModule(keras.Layer):
 
     def __init__(
         self,
-        mlp_widths_inner: tuple = (128, 128),
-        mlp_widths_outer: tuple = (128, 128),
+        mlp_widths_inner: Sequence[int] = (128, 128),
+        mlp_widths_outer: Sequence[int] = (128, 128),
         activation: str = "gelu",
         kernel_initializer: str = "he_normal",
         dropout: int | float | None = 0.05,
-        pooling: str | keras.Layer = "mean",
+        pooling: str = "mean",
         spectral_normalization: bool = False,
         **kwargs,
     ):

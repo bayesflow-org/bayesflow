@@ -46,7 +46,7 @@ class DeepSet(SummaryNetwork):
         super().__init__(**kwargs)
 
         # Stack of equivariant modules for a many-to-many learnable transformation
-        self.equivariant_modules = keras.Sequential()
+        self.equivariant_modules = []
         for _ in range(depth):
             equivariant_module = EquivariantModule(
                 mlp_widths_equivariant=mlp_widths_equivariant,
@@ -59,7 +59,7 @@ class DeepSet(SummaryNetwork):
                 pooling=inner_pooling,
                 **kwargs,
             )
-            self.equivariant_modules.add(equivariant_module)
+            self.equivariant_modules.append(equivariant_module)
 
         # Invariant module for a many-to-one transformation
         self.invariant_module = InvariantModule(
@@ -81,13 +81,16 @@ class DeepSet(SummaryNetwork):
         super().build(input_shape)
         self.call(keras.ops.zeros(input_shape))
 
-    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass of a learnable deep invariant transformation consisting of
         a sequence of equivariant transforms followed by an invariant transform.
 
         #TODO
         """
-        x = self.equivariant_modules(input_set, training=training)
+
+        for em in self.equivariant_modules:
+            x = em(x, training=training)
+
         x = self.invariant_module(x, training=training)
 
         return self.output_projector(x)

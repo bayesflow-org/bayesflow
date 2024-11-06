@@ -94,15 +94,3 @@ class DeepSet(SummaryNetwork):
         x = self.invariant_module(x, training=training)
 
         return self.output_projector(x)
-
-    def get_config(self):
-        base_config = super().get_config()
-
-        config = {
-            "invariant_module": serialize(self.equivariant_modules),
-            "equivariant_fc": serialize(self.invariant_module),
-            "output_projector": serialize(self.output_projector),
-            "summary_dim": serialize(self.summary_dim),
-        }
-
-        return base_config | config

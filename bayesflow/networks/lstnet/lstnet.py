@@ -1,5 +1,5 @@
 import keras
-from keras.saving import register_keras_serializable as serializable, serialize_keras_object as serialize
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from .skip_recurrent import SkipRecurrentNet
@@ -81,15 +81,3 @@ class LSTNet(SummaryNetwork):
     def build(self, input_shape):
         super().build(input_shape)
         self.call(keras.ops.zeros(input_shape))
-
-    def get_config(self):
-        base_config = super().get_config()
-
-        config = {
-            "conv_blocks": serialize(self.conv_blocks),
-            "recurrent": serialize(self.recurrent),
-            "output_projector": serialize(self.output_projector),
-            "summary_dim": serialize(self.summary_dim),
-        }
-
-        return base_config | config

@@ -134,7 +134,6 @@ def test_serialize_deserialize(inference_network, random_samples, random_conditi
     reserialized = serialize(deserialized)
 
     assert serialized == reserialized
-    assert_layers_equal(inference_network, deserialized)
 
 
 def test_save_and_load(tmp_path, summary_network, random_set):

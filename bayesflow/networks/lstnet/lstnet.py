@@ -30,7 +30,7 @@ class LSTNet(SummaryNetwork):
         activation: str = "mish",
         kernel_initializer: str = "glorot_uniform",
         groups: int = 8,
-        recurrent_type: str | keras.Layer = "gru",
+        recurrent_type: str = "gru",
         recurrent_dim: int = 128,
         bidirectional: bool = True,
         dropout: float = 0.05,

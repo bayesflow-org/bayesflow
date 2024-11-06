@@ -22,7 +22,7 @@ class SkipRecurrentNet(keras.Model):
     def __init__(
         self,
         hidden_dim: int = 256,
-        recurrent_type: str | keras.Layer = "gru",
+        recurrent_type: str = "gru",
         bidirectional: bool = True,
         input_channels: int = 64,
         skip_steps: int = 4,

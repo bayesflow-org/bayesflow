@@ -56,6 +56,7 @@ class InvariantModule(keras.Layer):
             self.inner_fc.add(layer)
 
         # Outer fully connected net for sum decomposition: inner( pooling( inner(set) ) )
+        # TODO: why does using Sequential work here, but not in DeepSet?
         self.outer_fc = keras.Sequential()
         for width in mlp_widths_outer:
             if dropout is not None and dropout > 0:

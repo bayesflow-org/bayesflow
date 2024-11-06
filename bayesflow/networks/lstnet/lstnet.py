@@ -55,6 +55,7 @@ class LSTNet(SummaryNetwork):
                     strides=s,
                     activation=activation,
                     kernel_initializer=kernel_initializer,
+                    padding="same",
                 )
             )
             self.conv_blocks.add(layers.GroupNormalization(groups=groups))

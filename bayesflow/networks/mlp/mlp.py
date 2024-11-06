@@ -1,10 +1,12 @@
+from collections.abc import Sequence
+from typing import Literal
+
 import keras
 from keras import layers
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import keras_kwargs
-
 from .hidden_block import ConfigurableHiddenBlock
 
 
@@ -19,11 +21,14 @@ class MLP(keras.Layer):
 
     def __init__(
         self,
-        widths: tuple = (512, 512),
+        *,
+        depth: int = None,
+        width: int = None,
+        widths: Sequence[int] = None,
         activation: str = "mish",
         kernel_initializer: str = "he_normal",
         residual: bool = True,
-        dropout: float = 0.05,
+        dropout: Literal[0, None] | float = 0.05,
         spectral_normalization: bool = False,
         **kwargs,
     ):
@@ -45,8 +50,18 @@ class MLP(keras.Layer):
         dropout          : float, optional, default: 0.05
             Dropout rate for the hidden layers in the internal layers.
         """
-
         super().__init__(**keras_kwargs(kwargs))
+
+        if widths is not None:
+            if depth is not None or width is not None:
+                raise ValueError("Either specify 'widths' or 'depth' and 'width', not both.")
+        else:
+            if depth is None or width is None:
+                # use the default
+                depth = 2
+                width = 512
+
+            widths = [width] * depth
 
         self.res_blocks = []
         projector = layers.Dense(

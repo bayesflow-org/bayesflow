@@ -1,9 +1,7 @@
 import keras
-from keras import layers, Sequential
 from keras.saving import register_keras_serializable as serializable, serialize_keras_object as serialize
 
 from bayesflow.types import Tensor
-
 from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
 
@@ -69,7 +67,7 @@ class LSTNet(SummaryNetwork):
             skip_steps=skip_steps,
             dropout=dropout,
         )
-        self.output_projector = layers.Dense(summary_dim)
+        self.output_projector = keras.layers.Dense(summary_dim)
         self.summary_dim = summary_dim
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:

@@ -136,13 +136,11 @@ def test_serialize_deserialize(inference_network, random_samples, random_conditi
     assert serialized == reserialized
 
 
-def test_save_and_load(tmp_path, summary_network, random_set):
-    if summary_network is None:
-        pytest.skip()
+def test_save_and_load(tmp_path, inference_network, random_samples, random_conditions):
+    # to save, the model must be built
+    inference_network(random_samples, conditions=random_conditions)
 
-    summary_network.build(keras.ops.shape(random_set))
-
-    keras.saving.save_model(summary_network, tmp_path / "model.keras")
+    keras.saving.save_model(inference_network, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
-    assert_layers_equal(summary_network, loaded)
+    assert_layers_equal(inference_network, loaded)

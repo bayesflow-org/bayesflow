@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import numpy as np
 from keras.saving import (
@@ -24,6 +24,8 @@ from .transforms import (
     ToArray,
     Transform,
 )
+
+from .transforms.filter_transform import Predicate
 
 
 @serializable(package="bayesflow.adapters")
@@ -82,9 +84,9 @@ class Adapter:
     def apply(
         self,
         *,
-        forward: callable,
-        inverse: callable,
-        predicate: callable = None,
+        forward: Callable[[np.ndarray, ...], np.ndarray],
+        inverse: Callable[[np.ndarray, ...], np.ndarray],
+        predicate: Predicate = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
@@ -135,7 +137,7 @@ class Adapter:
         from_dtype: str,
         to_dtype: str,
         *,
-        predicate: callable = None,
+        predicate: Predicate = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
     ):
@@ -198,7 +200,7 @@ class Adapter:
     def standardize(
         self,
         *,
-        predicate: callable = None,
+        predicate: Predicate = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
@@ -216,7 +218,7 @@ class Adapter:
     def to_array(
         self,
         *,
-        predicate: callable = None,
+        predicate: Predicate = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
         **kwargs,

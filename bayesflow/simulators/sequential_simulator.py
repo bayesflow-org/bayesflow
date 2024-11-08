@@ -2,6 +2,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from bayesflow.types import Shape
+from bayesflow.utils.decorators import allow_batch_size
 
 from .simulator import Simulator
 
@@ -13,6 +14,7 @@ class SequentialSimulator(Simulator):
         self.simulators = simulators
         self.expand_outputs = expand_outputs
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         data = {}
         for simulator in self.simulators:

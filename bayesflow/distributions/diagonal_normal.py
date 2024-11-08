@@ -5,6 +5,8 @@ import math
 import numpy as np
 
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils.decorators import allow_batch_size
+
 from .distribution import Distribution
 
 
@@ -73,5 +75,6 @@ class DiagonalNormal(Distribution):
 
         return result
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape) -> Tensor:
         return self.mean + self.std * keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)

@@ -2,6 +2,7 @@ import keras
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import find_distribution
+from bayesflow.utils.decorators import allow_batch_size
 
 
 class InferenceNetwork(keras.Layer):
@@ -13,22 +14,29 @@ class InferenceNetwork(keras.Layer):
         self.base_distribution.build(xz_shape)
 
     def call(
-        self, xz: Tensor, conditions: Tensor = None, inverse: bool = False, density: bool = False, **kwargs
+        self,
+        xz: Tensor,
+        conditions: Tensor = None,
+        inverse: bool = False,
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         if inverse:
-            return self._inverse(xz, **kwargs)
-        return self._forward(xz, **kwargs)
+            return self._inverse(xz, conditions=conditions, density=density, training=training, **kwargs)
+        return self._forward(xz, conditions=conditions, density=density, training=training, **kwargs)
 
     def _forward(
-        self, x: Tensor, conditions: Tensor = None, density: bool = False, **kwargs
+        self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
 
     def _inverse(
-        self, z: Tensor, conditions: Tensor = None, density: bool = False, **kwargs
+        self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape, conditions: Tensor = None, **kwargs) -> Tensor:
         samples = self.base_distribution.sample(batch_shape)
         samples = self(samples, conditions=conditions, inverse=True, density=False, **kwargs)

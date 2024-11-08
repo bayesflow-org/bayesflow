@@ -3,6 +3,8 @@ from keras import ops
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils.decorators import allow_batch_size
+
 from .distribution import Distribution
 
 
@@ -33,6 +35,7 @@ class MixtureDistribution(Distribution):
             trainable=trainable_mixture,
         )
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape) -> Tensor:
         # TODO - Implement efficiently
         raise NotImplementedError

@@ -107,15 +107,20 @@ def tree_concatenate(structures: Sequence[T], axis: int = 0, numpy: bool = None)
     if numpy:
         structures = keras.tree.map_structure(keras.ops.convert_to_numpy, structures)
 
-        def concatenate(*items):
+        def concat(*items):
             return np.concatenate(items, axis=axis)
     else:
         structures = keras.tree.map_structure(keras.ops.convert_to_tensor, structures)
 
-        def concatenate(*items):
+        def concat(*items):
             return keras.ops.concatenate(items, axis=axis)
 
-    return keras.tree.map_structure(concatenate, *structures)
+    return keras.tree.map_structure(concat, *structures)
+
+
+def concatenate(*tensors: Sequence[Tensor], axis=0):
+    """Concatenate multiple tensors along axis, some of which can be None."""
+    return keras.ops.concatenate([t for t in tensors if t is not None], axis=axis)
 
 
 def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:

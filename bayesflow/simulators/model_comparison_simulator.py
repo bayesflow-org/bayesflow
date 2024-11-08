@@ -3,6 +3,7 @@ import numpy as np
 
 from bayesflow.types import Shape
 from bayesflow.utils import tree_stack
+from bayesflow.utils.decorators import allow_batch_size
 
 from bayesflow.utils import numpy_utils as npu
 
@@ -40,6 +41,7 @@ class ModelComparisonSimulator(Simulator):
         self.logits = logits
         self.use_mixed_batches = use_mixed_batches
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         if not self.use_mixed_batches:
             # draw one model index for the whole batch (faster)

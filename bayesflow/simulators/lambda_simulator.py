@@ -1,6 +1,7 @@
 import numpy as np
 
 from bayesflow.utils import batched_call, filter_kwargs, tree_stack
+from bayesflow.utils.decorators import allow_batch_size
 
 from .simulator import Simulator
 from ..types import Shape
@@ -13,6 +14,7 @@ class LambdaSimulator(Simulator):
         self.sample_fn = sample_fn
         self.is_batched = is_batched
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         # try to use only valid keyword-arguments
         kwargs = filter_kwargs(kwargs, self.sample_fn)

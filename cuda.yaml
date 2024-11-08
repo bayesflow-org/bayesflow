@@ -1,0 +1,27 @@
+name: bf-cuda
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - jax[cuda12]
+      - jupyter
+      - jupyterlab
+      - keras
+      - numpy
+      - matplotlib
+      - pre-commit
+      - pytest
+      - pytest-cov
+      - pytest-rerunfailures
+      - pytest-xdist
+      - ruff
+      - seaborn
+      - scikit-learn
+      - scipy
+      - tqdm
+      - tensorflow[and-cuda]
+      - torch
+      - torchvision
+      - tox

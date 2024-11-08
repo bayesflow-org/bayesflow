@@ -25,6 +25,7 @@ from .io import (
     parse_bytes,
 )
 from .jacobian_trace import jacobian_trace
+from .jvp import jvp
 from .optimal_transport import optimal_transport
 from .tensor_utils import (
     expand_left,
@@ -37,7 +38,9 @@ from .tensor_utils import (
     size_of,
     tile_axis,
     tree_concatenate,
+    concatenate,
     tree_stack,
 )
+from .validators import check_lengths_same
 from .comp_utils import expected_calibration_error
 from .plot_utils import check_posterior_prior_shapes

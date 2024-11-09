@@ -205,7 +205,7 @@ def add_labels(
     n_col: int = None,
     x_label: list[str] | str = None,
     y_label: list[str] | str = None,
-    label_fontsize: int = None
+    label_fontsize: int = None,
 ):
     """
     Wrapper function for configuring labels for both axes.

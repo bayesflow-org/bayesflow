@@ -1,8 +1,4 @@
-from ..utils.plot_utils import (
-    preprocess,
-    prettify,
-    add_labels
-)
+from ..utils.plot_utils import preprocess, prettify, add_labels
 
 
 def plot_z_score_contraction(
@@ -119,7 +115,14 @@ def plot_z_score_contraction(
         ax.set_xlim([-0.05, 1.05])
 
     # Only add x-labels to the bottom row
-    add_labels(ax_array=ax_array, n_row=n_row, n_col=n_col, x_label="Posterior contraction", y_label="Posterior z-score", label_fontsize=label_fontsize)
+    add_labels(
+        ax_array=ax_array,
+        n_row=n_row,
+        n_col=n_col,
+        x_label="Posterior contraction",
+        y_label="Posterior z-score",
+        label_fontsize=label_fontsize,
+    )
 
     # Remove unused axes entirely
     for _ax in ax_array_it[n_params:]:

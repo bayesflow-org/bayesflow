@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from ..utils.comp_utils import expected_calibration_error
+from ..utils.plot_utils import set_layout
 
 
 def plot_calibration_curves(
@@ -62,13 +63,8 @@ def plot_calibration_curves(
         model_names = [rf"$M_{{{m}}}$" for m in range(1, num_models + 1)]
 
     # Determine number of rows and columns for subplots based on inputs
-    if n_row is None and n_col is None:
-        n_row = int(np.ceil(num_models / 6))
-        n_col = int(np.ceil(num_models / n_row))
-    elif n_row is None and n_col is not None:
-        n_row = int(np.ceil(num_models / n_col))
-    elif n_row is not None and n_col is None:
-        n_col = int(np.ceil(num_models / n_row))
+    if n_row is None or n_col is None:
+        n_row, n_col = set_layout(n_total=num_models)
 
     # Compute calibration
     cal_errs, probs_true, probs_pred = expected_calibration_error(true_models, pred_models, num_bins)

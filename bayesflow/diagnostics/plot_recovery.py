@@ -4,7 +4,7 @@ from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from ..utils.plot_utils import check_posterior_prior_shapes
+from ..utils.plot_utils import check_posterior_prior_shapes, set_layout
 
 
 def plot_recovery(
@@ -113,13 +113,8 @@ def plot_recovery(
         param_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
 
     # Determine number of rows and columns for subplots based on inputs
-    if n_row is None and n_col is None:
-        n_row = int(np.ceil(n_params / 6))
-        n_col = int(np.ceil(n_params / n_row))
-    elif n_row is None and n_col is not None:
-        n_row = int(np.ceil(n_params / n_col))
-    elif n_row is not None and n_col is None:
-        n_col = int(np.ceil(n_params / n_row))
+    if n_row is None or n_col is None:
+        n_row, n_col = set_layout(n_total=n_params)
 
     # Initialize figure
     if fig_size is None:

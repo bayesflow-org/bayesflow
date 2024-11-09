@@ -1,6 +1,4 @@
-import seaborn as sns
-
-from ..utils.plot_utils import preprocess
+from ..utils.plot_utils import preprocess, prettify
 
 
 def plot_z_score_contraction(
@@ -111,10 +109,9 @@ def plot_z_score_contraction(
 
         ax.scatter(post_cont[:, i], z_score[:, i], color=color, alpha=0.5)
         ax.set_title(param_names[i], fontsize=title_fontsize)
-        sns.despine(ax=ax)
-        ax.grid(alpha=0.5)
-        ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
-        ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
+
+        # Prettify
+        prettify(ax, tick_fontsize)
         ax.set_xlim([-0.05, 1.05])
 
     # Only add x-labels to the bottom row

@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.stats import median_abs_deviation
 from sklearn.metrics import r2_score
-import seaborn as sns
 
-from ..utils.plot_utils import preprocess
+from ..utils.plot_utils import preprocess, prettify
 
 
 def plot_recovery(
@@ -163,10 +162,7 @@ def plot_recovery(
         ax.set_title(param_names[i], fontsize=title_fontsize)
 
         # Prettify
-        sns.despine(ax=ax)
-        ax.grid(alpha=0.5)
-        ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
-        ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
+        prettify(ax, tick_fontsize)
 
     # Only add x-labels to the bottom row
     bottom_row = ax_array if n_row == 1 else (ax_array[0] if n_col == 1 else ax_array[n_row - 1, :])

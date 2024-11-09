@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from .exceptions.shape_error import ShapeError
 
@@ -214,6 +215,13 @@ def add_labels(
 def remove_unused_axes(ax_array_it, n_params: int = None):
     for ax in ax_array_it[n_params:]:
         ax.remove()
+
+
+def prettify(ax, tick_fontsize: int = 12):
+    sns.despine(ax=ax)
+    ax.grid(alpha=0.5)
+    ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
+    ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
 
 def preprocess(

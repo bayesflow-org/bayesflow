@@ -122,11 +122,7 @@ def set_layout(n_total: int, n_row: int = None, n_col: int = None, stacked: bool
     return n_row, n_col
 
 
-def make_figure(
-    n_row: int = None,
-    n_col: int = None,
-    fig_size: tuple = None,
-):
+def make_figure(n_row: int = None, n_col: int = None, fig_size: tuple = None):
     """
     Initialize a set of figures
 
@@ -152,6 +148,7 @@ def make_figure(
             fig_size = (int(5 * n_col), int(5 * n_row))
 
         f, ax_array = plt.subplots(n_row, n_col, figsize=fig_size)
+        ax_array = np.atleast_1d(ax_array)
 
     return f, ax_array
 
@@ -175,7 +172,7 @@ def flatten_axes(ax_array, n_row: int = 1, n_col: int = 1):
         Collapsed axes for subplots
     """
 
-    ax = np.atleast_1d(ax_array)
+    ax_array = np.atleast_1d(ax_array)
     # turn ax_array into 1D list
     if n_row > 1 or n_col > 1:
         ax = ax_array.flat
@@ -232,6 +229,7 @@ def preprocess(
     param_names: list[str] = None,
     fig_size: tuple = None,
     flatten: bool = True,
+    stacked: bool = False,
 ):
     """
     Procedural wrapper that encompasses all preprocessing steps,
@@ -270,7 +268,7 @@ def preprocess(
         n_row, n_col = set_layout(n_params)
 
     # Initialize figure
-    f, ax_array = make_figure(n_row, n_col, fig_size=fig_size)
+    f, ax_array = make_figure(n_row, n_col, fig_size=fig_size, stacked=stacked)
 
     # turn ax_array into 1D list
     if flatten:

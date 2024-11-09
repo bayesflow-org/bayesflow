@@ -1,10 +1,9 @@
 import logging
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
 
 from scipy.stats import binom
-from ..utils.plot_utils import check_posterior_prior_shapes, set_layout
+from ..utils.plot_utils import preprocess
 
 
 def plot_sbc_histograms(
@@ -68,11 +67,22 @@ def plot_sbc_histograms(
         If there is a deviation form the expected shapes of `post_samples` and `prior_samples`.
     """
 
-    # Sanity check
-    check_posterior_prior_shapes(post_samples, prior_samples)
+    # Preprocessing
+    f, ax_array, ax_array_it, n_row, n_col, n_params, param_names = preprocess(
+        post_samples=post_samples,
+        prior_samples=prior_samples,
+        n_col=n_col,
+        n_row=n_row,
+        param_names=param_names,
+        fig_size=fig_size,
+        flatten=False,
+    )
 
     # Determine the ratio of simulations to prior draws
-    n_sim, n_draws, n_params = post_samples.shape
+    # n_params = post_samples.shape[-1]
+    n_sim = post_samples.shape[0]
+    n_draws = post_samples.shape[1]
+
     ratio = int(n_sim / n_draws)
 
     # Log a warning if N/B ratio recommended by Talts et al. (2018) < 20
@@ -92,19 +102,19 @@ def plot_sbc_histograms(
         if num_bins == 1:
             num_bins = 5
 
-    # Determine n params and param names if None given
-    if param_names is None:
-        param_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
-
-    # Determine number of rows and columns for subplots based on inputs
-    if n_row is None or n_col is None:
-        n_row, n_col = set_layout(n_total=n_params)
-
-    # Initialize figure
-    if fig_size is None:
-        fig_size = (int(5 * n_col), int(5 * n_row))
-    f, axarr = plt.subplots(n_row, n_col, figsize=fig_size)
-    axarr = np.atleast_1d(axarr)
+    # # Determine n params and param names if None given
+    # if param_names is None:
+    #     param_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
+    #
+    # # Determine number of rows and columns for subplots based on inputs
+    # if n_row is None or n_col is None:
+    #     n_row, n_col = set_layout(n_total=n_params)
+    #
+    # # Initialize figure
+    # if fig_size is None:
+    #     fig_size = (int(5 * n_col), int(5 * n_row))
+    # f, axarr = plt.subplots(n_row, n_col, figsize=fig_size)
+    # axarr = np.atleast_1d(axarr)
 
     # Compute ranks (using broadcasting)
     ranks = np.sum(post_samples < prior_samples[:, np.newaxis, :], axis=1)
@@ -118,9 +128,9 @@ def plot_sbc_histograms(
 
     # Plot marginal histograms in a loop
     if n_row > 1:
-        ax = axarr.flat
+        ax = ax_array.flat
     else:
-        ax = axarr
+        ax = ax_array
     for j in range(len(param_names)):
         ax[j].axhspan(endpoints[0], endpoints[1], facecolor="gray", alpha=0.3)
         ax[j].axhline(mean, color="gray", zorder=0, alpha=0.9)
@@ -134,12 +144,12 @@ def plot_sbc_histograms(
         ax[j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
     # Only add x-labels to the bottom row
-    bottom_row = axarr if n_row == 1 else axarr[0] if n_col == 1 else axarr[n_row - 1, :]
+    bottom_row = ax_array if n_row == 1 else ax_array[0] if n_col == 1 else ax_array[n_row - 1, :]
     for _ax in bottom_row:
         _ax.set_xlabel("Rank statistic", fontsize=label_fontsize)
 
     # Remove unused axes entirely
-    for _ax in axarr[n_params:]:
+    for _ax in ax_array[n_params:]:
         _ax.remove()
 
     f.tight_layout()

@@ -1,8 +1,7 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from ..utils.plot_utils import check_posterior_prior_shapes, set_layout
+from ..utils.plot_utils import preprocess
 from ..utils.ecdf import simultaneous_ecdf_bands
 
 
@@ -91,31 +90,20 @@ def plot_sbc_ecdf(
         and `prior_samples`.
     """
 
-    # Sanity checks
-    check_posterior_prior_shapes(post_samples, prior_samples)
-
-    # Store reference to number of parameters
-    n_params = post_samples.shape[-1]
+    # Preprocessing
+    f, ax_array, ax_array_it, n_row, n_col, n_params, param_names = preprocess(
+        post_samples=post_samples,
+        prior_samples=prior_samples,
+        n_col=n_col,
+        n_row=n_row,
+        param_names=param_names,
+        fig_size=fig_size,
+        flatten=False,
+        stacked=stacked,
+    )
 
     # Compute fractional ranks (using broadcasting)
     ranks = np.sum(post_samples < prior_samples[:, np.newaxis, :], axis=1) / post_samples.shape[1]
-
-    # Prepare figure
-    if stacked:
-        n_row, n_col = 1, 1
-        f, ax = plt.subplots(1, 1, figsize=fig_size)
-    else:
-        # Determine number of rows and columns for subplots based on inputs
-        if n_row is None or n_col is None:
-            n_row, n_col = set_layout(n_total=n_params)
-
-        # Determine fig_size dynamically, if None
-        if fig_size is None:
-            fig_size = (int(5 * n_col), int(5 * n_row))
-
-        # Initialize figure
-        f, ax = plt.subplots(n_row, n_col, figsize=fig_size)
-        ax = np.atleast_1d(ax)
 
     # Plot individual ecdf of parameters
     for j in range(ranks.shape[-1]):
@@ -129,11 +117,11 @@ def plot_sbc_ecdf(
 
         if stacked:
             if j == 0:
-                ax.plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
+                ax_array.plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
             else:
-                ax.plot(xx, yy, color=rank_ecdf_color, alpha=0.95)
+                ax_array.plot(xx, yy, color=rank_ecdf_color, alpha=0.95)
         else:
-            ax.flat[j].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
+            ax_array.flat[j].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
 
     # Compute uniform ECDF and bands
     alpha, z, L, H = simultaneous_ecdf_bands(post_samples.shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))
@@ -149,9 +137,9 @@ def plot_sbc_ecdf(
     # Add simultaneous bounds
     if stacked:
         titles = [None]
-        axes = [ax]
+        axes = [ax_array]
     else:
-        axes = ax.flat
+        axes = ax_array.flat
         if param_names is None:
             titles = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
         else:
@@ -170,9 +158,9 @@ def plot_sbc_ecdf(
 
     # Only add x-labels to the bottom row
     if stacked:
-        bottom_row = [ax]
+        bottom_row = [ax_array]
     else:
-        bottom_row = ax if n_row == 1 else ax[-1, :]
+        bottom_row = ax_array if n_row == 1 else ax_array[-1, :]
     for _ax in bottom_row:
         _ax.set_xlabel("Fractional rank statistic", fontsize=label_fontsize)
 
@@ -180,7 +168,7 @@ def plot_sbc_ecdf(
     if n_row == 1:  # if there is only one row, the ax array is 1D
         axes[0].set_ylabel(ylab, fontsize=label_fontsize)
     else:  # if there is more than one row, the ax array is 2D
-        for _ax in ax[:, 0]:
+        for _ax in ax_array[:, 0]:
             _ax.set_ylabel(ylab, fontsize=label_fontsize)
 
     # Remove unused axes entirely

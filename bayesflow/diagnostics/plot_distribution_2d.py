@@ -1,13 +1,13 @@
 import logging
+
+import numpy as np
 import seaborn as sns
 import pandas as pd
 
-from bayesflow.types import Tensor
-
 
 def plot_distribution_2d(
-    samples: dict[str, Tensor] = None,
-    parameters: str = None,
+    samples: np.ndarray = None,
+    context: str = None,
     n_params: int = None,
     param_names: list = None,
     height: float = 2.5,
@@ -24,7 +24,7 @@ def plot_distribution_2d(
     ----------
     samples     : dict[str, Tensor], default: None
         Sample draws from any dataset
-    parameters  : str, default: None
+    context     : str, default: None
         The context that the sample represents
     height      : float, optional, default: 2.5
         The height of the pair plot
@@ -33,7 +33,7 @@ def plot_distribution_2d(
     alpha       : float in [0, 1], optional, default: 0.9
         The opacity of the plot
     n_params     : int, optional, default: None
-        The number of parameters in the collection of distributions
+        The number of params in the collection of distributions
     param_names : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     render      : bool, optional, default: True
@@ -44,21 +44,21 @@ def plot_distribution_2d(
         Additional keyword arguments passed to the sns.PairGrid constructor
     """
     # Get latent dimensions
-    dim = samples.values().shape[-1]
+    dim = samples.shape[-1]
 
     # Get number of params
     if n_params is None:
         n_params = dim
 
-    # Generate context if there is none
-    if parameters is None:
-        parameters = "Parameter"
+    # Generate parameters if there is none
+    if context is None:
+        context = "Default"
 
     # Generate titles
     if param_names is None:
-        titles = [f"{parameters} {i}" for i in range(1, dim + 1)]
+        titles = [f"{context} $\\theta_{{{i}}}$" for i in range(1, dim + 1)]
     else:
-        titles = [f"{parameters} {p}" for p in param_names]
+        titles = [f"{context} {p}" for p in param_names]
 
     # Convert samples to pd.DataFrame
     data_to_plot = pd.DataFrame(samples, columns=titles)

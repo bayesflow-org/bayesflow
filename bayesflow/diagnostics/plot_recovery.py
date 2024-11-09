@@ -1,10 +1,9 @@
 import numpy as np
 from scipy.stats import median_abs_deviation
 from sklearn.metrics import r2_score
-import matplotlib.pyplot as plt
 import seaborn as sns
 
-from ..utils.plot_utils import check_posterior_prior_shapes, set_layout
+from ..utils.plot_utils import preprocess
 
 
 def plot_recovery(
@@ -99,36 +98,22 @@ def plot_recovery(
         If there is a deviation from the expected shapes of ``post_samples`` and ``prior_samples``.
     """
 
-    # Sanity check
-    check_posterior_prior_shapes(post_samples, prior_samples)
+    # Preprocessing
+    f, ax_array, ax_array_it, n_row, n_col, n_params, param_names = preprocess(
+        post_samples=post_samples,
+        prior_samples=prior_samples,
+        n_col=n_col,
+        n_row=n_row,
+        param_names=param_names,
+        fig_size=fig_size,
+    )
 
     # Compute point estimates and uncertainties
     est = point_agg(post_samples, axis=1)
     if uncertainty_agg is not None:
         u = uncertainty_agg(post_samples, axis=1)
 
-    # Determine n params and param names if None given
-    n_params = prior_samples.shape[-1]
-    if param_names is None:
-        param_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
-
-    # Determine number of rows and columns for subplots based on inputs
-    if n_row is None or n_col is None:
-        n_row, n_col = set_layout(n_total=n_params)
-
-    # Initialize figure
-    if fig_size is None:
-        fig_size = (int(4 * n_col), int(4 * n_row))
-    f, axarr = plt.subplots(n_row, n_col, figsize=fig_size)
-
-    # turn axarr into 1D list
-    axarr = np.atleast_1d(axarr)
-    if n_col > 1 or n_row > 1:
-        axarr_it = axarr.flat
-    else:
-        axarr_it = axarr
-
-    for i, ax in enumerate(axarr_it):
+    for i, ax in enumerate(ax_array_it):
         if i >= n_params:
             break
 
@@ -184,20 +169,20 @@ def plot_recovery(
         ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
     # Only add x-labels to the bottom row
-    bottom_row = axarr if n_row == 1 else (axarr[0] if n_col == 1 else axarr[n_row - 1, :])
+    bottom_row = ax_array if n_row == 1 else (ax_array[0] if n_col == 1 else ax_array[n_row - 1, :])
     for _ax in bottom_row:
         _ax.set_xlabel(xlabel, fontsize=label_fontsize)
 
     # Only add y-labels to right left-most row
     if n_row == 1:  # if there is only one row, the ax array is 1D
-        axarr[0].set_ylabel(ylabel, fontsize=label_fontsize)
+        ax_array[0].set_ylabel(ylabel, fontsize=label_fontsize)
     # If there is more than one row, the ax array is 2D
     else:
-        for _ax in axarr[:, 0]:
+        for _ax in ax_array[:, 0]:
             _ax.set_ylabel(ylabel, fontsize=label_fontsize)
 
     # Remove unused axes entirely
-    for _ax in axarr_it[n_params:]:
+    for _ax in ax_array_it[n_params:]:
         _ax.remove()
 
     f.tight_layout()

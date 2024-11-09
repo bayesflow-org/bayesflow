@@ -216,7 +216,15 @@ def remove_unused_axes(ax_array_it, n_params: int = None):
         ax.remove()
 
 
-def preprocess(post_samples, prior_samples, fig_size: tuple = None, flatten: bool = True):
+def preprocess(
+    post_samples,
+    prior_samples,
+    n_col: int = None,
+    n_row: int = None,
+    param_names: list[str] = None,
+    fig_size: tuple = None,
+    flatten: bool = True,
+):
     """
     Procedural wrapper that encompasses all preprocessing steps,
     including shape-checking, parameter name generation, layout configuration,
@@ -228,6 +236,12 @@ def preprocess(post_samples, prior_samples, fig_size: tuple = None, flatten: boo
         The posterior draws obtained from n_data_sets
     prior_samples     : np.ndarray of shape (n_data_sets, n_params)
         The prior draws obtained for generating n_data_sets
+    n_col           : int
+        Number of columns for the visualization layout
+    n_row           : int
+        Number of rows for the visualization layout
+    param_names     : str
+        Parameter name used to initialize the figure
     fig_size          : tuple, optional, default: None
         Size of the figure adjusting to the display resolution
     flatten           : bool, optional, default: True
@@ -238,10 +252,14 @@ def preprocess(post_samples, prior_samples, fig_size: tuple = None, flatten: boo
     check_posterior_prior_shapes(post_samples, prior_samples)
 
     # Determine parameters and parameter names
-    n_params, param_names = get_count_and_names(post_samples)
+    if param_names is None:
+        n_params, param_names = get_count_and_names(post_samples)
+    else:
+        n_params, param_names = get_count_and_names(post_samples, param_names)
 
     # Configure layout
-    n_row, n_col = set_layout(n_params)
+    if n_row is None or n_col is None:
+        n_row, n_col = set_layout(n_params)
 
     # Initialize figure
     f, ax_array = make_figure(n_row, n_col, fig_size=fig_size)

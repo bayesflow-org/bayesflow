@@ -1,7 +1,7 @@
 import numpy as np
 import seaborn as sns
 
-from ..utils.plot_utils import preprocess
+from ..utils.plot_utils import preprocess, add_y_labels
 from ..utils.ecdf import simultaneous_ecdf_bands
 
 
@@ -165,11 +165,7 @@ def plot_sbc_ecdf(
         _ax.set_xlabel("Fractional rank statistic", fontsize=label_fontsize)
 
     # Only add y-labels to right left-most row
-    if n_row == 1:  # if there is only one row, the ax array is 1D
-        axes[0].set_ylabel(ylab, fontsize=label_fontsize)
-    else:  # if there is more than one row, the ax array is 2D
-        for _ax in ax_array[:, 0]:
-            _ax.set_ylabel(ylab, fontsize=label_fontsize)
+    add_y_labels(ax_array, n_row, ylab, label_fontsize)
 
     # Remove unused axes entirely
     for _ax in axes[n_params:]:

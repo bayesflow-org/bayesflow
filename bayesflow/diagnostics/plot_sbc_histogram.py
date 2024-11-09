@@ -3,7 +3,7 @@ import numpy as np
 import seaborn as sns
 
 from scipy.stats import binom
-from ..utils.plot_utils import preprocess
+from ..utils.plot_utils import preprocess, add_labels
 
 
 def plot_sbc_histograms(
@@ -102,20 +102,6 @@ def plot_sbc_histograms(
         if num_bins == 1:
             num_bins = 5
 
-    # # Determine n params and param names if None given
-    # if param_names is None:
-    #     param_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
-    #
-    # # Determine number of rows and columns for subplots based on inputs
-    # if n_row is None or n_col is None:
-    #     n_row, n_col = set_layout(n_total=n_params)
-    #
-    # # Initialize figure
-    # if fig_size is None:
-    #     fig_size = (int(5 * n_col), int(5 * n_row))
-    # f, axarr = plt.subplots(n_row, n_col, figsize=fig_size)
-    # axarr = np.atleast_1d(axarr)
-
     # Compute ranks (using broadcasting)
     ranks = np.sum(post_samples < prior_samples[:, np.newaxis, :], axis=1)
 
@@ -144,9 +130,7 @@ def plot_sbc_histograms(
         ax[j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
     # Only add x-labels to the bottom row
-    bottom_row = ax_array if n_row == 1 else ax_array[0] if n_col == 1 else ax_array[n_row - 1, :]
-    for _ax in bottom_row:
-        _ax.set_xlabel("Rank statistic", fontsize=label_fontsize)
+    add_labels(ax_array=ax_array, n_row=n_row, n_col=n_col, x_label="Rank statistic", label_fontsize=label_fontsize)
 
     # Remove unused axes entirely
     for _ax in ax_array[n_params:]:

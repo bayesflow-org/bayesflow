@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import median_abs_deviation
 from sklearn.metrics import r2_score
 
-from ..utils.plot_utils import preprocess, prettify
+from ..utils.plot_utils import preprocess, prettify, add_labels
 
 
 def plot_recovery(
@@ -164,18 +164,8 @@ def plot_recovery(
         # Prettify
         prettify(ax, tick_fontsize)
 
-    # Only add x-labels to the bottom row
-    bottom_row = ax_array if n_row == 1 else (ax_array[0] if n_col == 1 else ax_array[n_row - 1, :])
-    for _ax in bottom_row:
-        _ax.set_xlabel(xlabel, fontsize=label_fontsize)
-
-    # Only add y-labels to right left-most row
-    if n_row == 1:  # if there is only one row, the ax array is 1D
-        ax_array[0].set_ylabel(ylabel, fontsize=label_fontsize)
-    # If there is more than one row, the ax array is 2D
-    else:
-        for _ax in ax_array[:, 0]:
-            _ax.set_ylabel(ylabel, fontsize=label_fontsize)
+    # Add labels
+    add_labels(ax_array, n_row, n_col, xlabel, ylabel, label_fontsize)
 
     # Remove unused axes entirely
     for _ax in ax_array_it[n_params:]:

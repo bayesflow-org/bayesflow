@@ -200,13 +200,20 @@ def add_y_labels(ax_array, n_row: int = None, y_label: str = None, label_fontsiz
 
 
 def add_labels(
-    ax_array, n_row: int = None, n_col: int = None, x_label: str = None, y_label: str = None, label_fontsize: int = None
+    ax_array,
+    n_row: int = None,
+    n_col: int = None,
+    x_label: list[str] | str = None,
+    y_label: list[str] | str = None,
+    label_fontsize: int = None
 ):
     """
     Wrapper function for configuring labels for both axes.
     """
-    add_x_labels(ax_array, n_row, n_col, x_label, label_fontsize)
-    add_y_labels(ax_array, n_row, y_label, label_fontsize)
+    if x_label is not None:
+        add_x_labels(ax_array, n_row, n_col, x_label, label_fontsize)
+    if y_label is not None:
+        add_y_labels(ax_array, n_row, y_label, label_fontsize)
 
 
 def remove_unused_axes(ax_array_it, n_params: int = None):

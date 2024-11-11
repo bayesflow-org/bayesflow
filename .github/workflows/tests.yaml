@@ -90,6 +90,7 @@ jobs:
           conda config --show-sources
           conda config --show
           printenv | sort
+          conda env export
 
       - name: Run Tests
         run: |

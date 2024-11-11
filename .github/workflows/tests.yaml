@@ -69,7 +69,7 @@ jobs:
       - name: Install JAX
         if: ${{ matrix.backend == 'jax' }}
         run: |
-          pip install -U "jax[cpu]"
+          pip install -U jax
       - name: Install NumPy
         if: ${{ matrix.backend == 'numpy' }}
         run: |

@@ -2,7 +2,7 @@ from .plot_distribution_2d import plot_distribution_2d
 
 
 def plot_prior_2d(
-    prior,
+    simulator,
     param_names: list = None,
     n_samples: int = 2000,
     height: float = 2.5,
@@ -32,12 +32,12 @@ def plot_prior_2d(
     """
 
     # Generate prior draws
-    prior_samples = prior(n_samples)
+    samples = simulator.sample((n_samples,))
 
     # Handle dict type
-    if isinstance(prior_samples, dict):
-        prior_samples = prior_samples["prior_draws"]
+    if isinstance(samples, dict):
+        samples = samples["theta"]
 
     plot_distribution_2d(
-        prior_samples, context="Prior", height=height, color=color, param_names=param_names, render=True, **kwargs
+        samples, context="Prior", height=height, color=color, param_names=param_names, render=True, **kwargs
     )

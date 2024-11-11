@@ -7,6 +7,7 @@ def plot_losses(
     train_losses,
     val_losses=None,
     moving_average=False,
+    per_training_step=False,
     ma_window_fraction=0.01,
     fig_size=None,
     train_color="#8f2727",
@@ -112,7 +113,7 @@ def plot_losses(
                     label="Validation",
                 )
         # Schmuck
-        ax.set_xlabel("Training step #", fontsize=label_fontsize)
+        ax.set_xlabel("Training step #" if per_training_step else "Training epoch #", fontsize=label_fontsize)
         ax.set_ylabel("Value", fontsize=label_fontsize)
         sns.despine(ax=ax)
         ax.grid(alpha=grid_alpha)

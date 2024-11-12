@@ -117,7 +117,9 @@ def plot_losses(
         ax.set_ylabel("Value", fontsize=label_fontsize)
         sns.despine(ax=ax)
         ax.grid(alpha=grid_alpha)
-        ax.set_title(train_losses.columns[i], fontsize=title_fontsize)
+        ax.set_title(
+            train_losses.columns[i] if train_losses.columns[i] != 0 else "Training Loss", fontsize=title_fontsize
+        )
         # Only add legend if there is a validation curve
         if val_losses is not None or moving_average:
             ax.legend(fontsize=legend_fontsize)

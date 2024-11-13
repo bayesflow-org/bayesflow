@@ -122,7 +122,7 @@ def set_layout(n_total: int, n_row: int = None, n_col: int = None, stacked: bool
     return n_row, n_col
 
 
-def make_figure(n_row: int = None, n_col: int = None, fig_size: tuple = None):
+def make_figure(n_row: int = None, n_col: int = None, fig_size: tuple = None, stacked: bool = False):
     """
     Initialize a set of figures
 
@@ -134,7 +134,9 @@ def make_figure(n_row: int = None, n_col: int = None, fig_size: tuple = None):
         Number of columns in a figure
     fig_size    : tuple
         Size of the figure adjusting to the display resolution
-        or the designer's desire
+        or the user's choice
+    stacked     : bool, default = False
+        Boolean that determines whether to stack the plot or not
 
     Returns
     -------

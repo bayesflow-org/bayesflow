@@ -5,13 +5,13 @@ import seaborn as sns
 import pandas as pd
 
 
-def plot_distribution_2d(
+def plot_samples_2d(
     samples: np.ndarray = None,
     context: str = None,
     n_params: int = None,
     param_names: list = None,
     height: float = 2.5,
-    color: str | tuple = "#8f2727",
+    color: str | tuple = "#1a1e75",
     alpha: float = 0.9,
     render: bool = True,
     **kwargs,

@@ -2,7 +2,9 @@ import inspect
 import keras
 from typing import TypeVar
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
+
+import numpy as np
 
 from bayesflow.types import Tensor
 
@@ -101,3 +103,36 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
             result[f"{key}_{i + 1}"] = split
 
     return result
+
+
+def dicts_to_arrays(
+    post_samples: dict[str, np.ndarray] | np.ndarray,
+    prior_samples: dict[str, np.ndarray] | np.ndarray,
+    names: Sequence[str] = None,
+):
+    """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
+
+    if type(post_samples) is not type(prior_samples):
+        raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
+
+    if isinstance(post_samples, dict):
+        if post_samples.keys() != prior_samples.keys():
+            raise ValueError("Keys in your posterior / prior arrays should match.")
+
+        # Use user-provided names instead of inferred ones
+        names = list(post_samples.keys()) if names is None else names
+
+        post_samples = np.concatenate([v for k, v in post_samples.items() if k in names], axis=-1)
+        prior_samples = np.concatenate([v for k, v in prior_samples.items() if k in names], axis=-1)
+
+    elif isinstance(post_samples, np.ndarray):
+        if names is not None:
+            if post_samples.shape[-1] != len(names) or prior_samples.shape[-1] != len(names):
+                raise ValueError("The length of the names list should match the number of target variables.")
+        else:
+            names = [f"$\\theta_{{{i}}}$" for i in range(post_samples.shape[-1])]
+
+    else:
+        raise TypeError("Only dicts and tensors are supported as arguments.")
+
+    return dict(post_samples=post_samples, prior_samples=prior_samples, names=names, num_variables=len(names))

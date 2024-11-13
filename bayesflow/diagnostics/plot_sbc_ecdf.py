@@ -1,25 +1,24 @@
 import numpy as np
-import seaborn as sns
 
-from ..utils.plot_utils import preprocess, add_y_labels
+from ..utils.plot_utils import preprocess, add_labels, prettify_subplots
 from ..utils.ecdf import simultaneous_ecdf_bands
 
 
 def plot_sbc_ecdf(
     post_samples,
     prior_samples,
+    names=None,
     difference=False,
     stacked=False,
-    fig_size=None,
-    param_names=None,
+    figsize=None,
     label_fontsize=16,
     legend_fontsize=14,
     title_fontsize=18,
     tick_fontsize=12,
-    rank_ecdf_color="#a34f4f",
+    rank_ecdf_color="#1a1e75",
     fill_color="grey",
-    n_row=None,
-    n_col=None,
+    num_row=None,
+    num_col=None,
     **kwargs,
 ):
     """
@@ -91,19 +90,10 @@ def plot_sbc_ecdf(
     """
 
     # Preprocessing
-    f, ax_array, ax_array_it, n_row, n_col, n_params, param_names = preprocess(
-        post_samples=post_samples,
-        prior_samples=prior_samples,
-        n_col=n_col,
-        n_row=n_row,
-        param_names=param_names,
-        fig_size=fig_size,
-        flatten=False,
-        stacked=stacked,
-    )
+    plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize, stacked)
 
     # Compute fractional ranks (using broadcasting)
-    ranks = np.sum(post_samples < prior_samples[:, np.newaxis, :], axis=1) / post_samples.shape[1]
+    ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
 
     # Plot individual ecdf of parameters
     for j in range(ranks.shape[-1]):
@@ -117,59 +107,41 @@ def plot_sbc_ecdf(
 
         if stacked:
             if j == 0:
-                ax_array.plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
+                plot_data["axes"][0].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
             else:
-                ax_array.plot(xx, yy, color=rank_ecdf_color, alpha=0.95)
+                plot_data["axes"][0].plot(xx, yy, color=rank_ecdf_color, alpha=0.95)
         else:
-            ax_array.flat[j].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
+            plot_data["axes"].flat[j].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
 
     # Compute uniform ECDF and bands
-    alpha, z, L, H = simultaneous_ecdf_bands(post_samples.shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))
+    alpha, z, L, H = simultaneous_ecdf_bands(plot_data["post_samples"].shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))
 
     # Difference, if specified
     if difference:
         L -= z
         H -= z
-        ylab = "ECDF difference"
+        ylab = "ECDF Difference"
     else:
         ylab = "ECDF"
 
     # Add simultaneous bounds
-    if stacked:
-        titles = [None]
-        axes = [ax_array]
-    else:
-        axes = ax_array.flat
-        if param_names is None:
-            titles = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
-        else:
-            titles = param_names
+    titles = names if not stacked else ["Stacked ECDFs"]
+    for ax, title in zip(plot_data["axes"], titles):
+        ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands")
+        ax.legend(fontsize=legend_fontsize)
+        ax.set_title(title, fontsize=title_fontsize)
 
-    for _ax, title in zip(axes, titles):
-        _ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands")
+    # Add prettiness
+    prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
-        # Prettify plot
-        sns.despine(ax=_ax)
-        _ax.grid(alpha=0.35)
-        _ax.legend(fontsize=legend_fontsize)
-        _ax.set_title(title, fontsize=title_fontsize)
-        _ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
-        _ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
+    add_labels(
+        plot_data["axes"],
+        plot_data["num_row"],
+        plot_data["num_col"],
+        xlabel="Fractional rank statistic",
+        ylabel=ylab,
+        label_fontsize=label_fontsize,
+    )
 
-    # Only add x-labels to the bottom row
-    if stacked:
-        bottom_row = [ax_array]
-    else:
-        bottom_row = ax_array if n_row == 1 else ax_array[-1, :]
-    for _ax in bottom_row:
-        _ax.set_xlabel("Fractional rank statistic", fontsize=label_fontsize)
-
-    # Only add y-labels to right left-most row
-    add_y_labels(ax_array, n_row, ylab, label_fontsize)
-
-    # Remove unused axes entirely
-    for _ax in axes[n_params:]:
-        _ax.remove()
-
-    f.tight_layout()
-    return f
+    plot_data["fig"].tight_layout()
+    return plot_data["fig"]

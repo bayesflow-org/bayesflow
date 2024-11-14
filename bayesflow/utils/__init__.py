@@ -44,3 +44,4 @@ from .tensor_utils import (
 from .validators import check_lengths_same
 from .comp_utils import expected_calibration_error
 from .plot_utils import check_posterior_prior_shapes
+from .callbacks import detailed_loss_callback

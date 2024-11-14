@@ -34,7 +34,7 @@ def convert_args(f: Callable, *args: any, **kwargs: any) -> tuple[any, ...]:
 
 
 def convert_kwargs(f: Callable, *args: any, **kwargs: any) -> dict[str, any]:
-    """Convert positional and keyword arguments to just keyword arguments for f"""
+    """Convert positional and keyword arguments qto just keyword arguments for f"""
     if not args:
         return kwargs
 

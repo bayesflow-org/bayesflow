@@ -106,37 +106,37 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
 
 
 def dicts_to_arrays(
-    post_samples: dict[str, np.ndarray] | np.ndarray,
-    prior_samples: dict[str, np.ndarray] | np.ndarray,
+    post_variables: dict[str, np.ndarray] | np.ndarray,
+    prior_variables: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,
     context: str = None,
 ):
     """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
 
-    if type(post_samples) is not type(prior_samples):
+    if type(post_variables) is not type(prior_variables):
         raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
 
-    if isinstance(post_samples, dict):
-        if post_samples.keys() != prior_samples.keys():
+    if isinstance(post_variables, dict):
+        if post_variables.keys() != prior_variables.keys():
             raise ValueError("Keys in your posterior / prior arrays should match.")
 
         # Use user-provided names instead of inferred ones
-        names = list(post_samples.keys()) if names is None else names
+        names = list(post_variables.keys()) if names is None else names
 
-        post_samples = np.concatenate([v for k, v in post_samples.items() if k in names], axis=-1)
-        prior_samples = np.concatenate([v for k, v in prior_samples.items() if k in names], axis=-1)
+        post_variables = np.concatenate([v for k, v in post_variables.items() if k in names], axis=-1)
+        prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in names], axis=-1)
 
-    elif isinstance(post_samples, np.ndarray):
+    elif isinstance(post_variables, np.ndarray):
         if names is not None:
-            if post_samples.shape[-1] != len(names) or prior_samples.shape[-1] != len(names):
+            if post_variables.shape[-1] != len(names) or prior_variables.shape[-1] != len(names):
                 raise ValueError("The length of the names list should match the number of target variables.")
         else:
             if context is not None:
-                names = [f"${context}_{{{i}}}$" for i in range(post_samples.shape[-1])]
+                names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
             else:
-                names = [f"$\\theta_{{{i}}}$" for i in range(post_samples.shape[-1])]
+                names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
 
     else:
         raise TypeError("Only dicts and tensors are supported as arguments.")
 
-    return dict(post_samples=post_samples, prior_samples=prior_samples, names=names, num_variables=len(names))
+    return dict(post_variables=post_variables, prior_variables=prior_variables, names=names, num_variables=len(names))

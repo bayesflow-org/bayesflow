@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -6,15 +7,15 @@ from .plot_samples_2d import plot_samples_2d
 
 
 def plot_posterior_2d(
-    posterior_draws,
+    post_samples: dict[str, np.ndarray] | np.ndarray,
+    prior_samples: dict[str, np.ndarray] | np.ndarray,
     prior=None,
-    prior_draws=None,
     param_names: list = None,
     height: int = 3,
     label_fontsize: int = 14,
     legend_fontsize: int = 16,
     tick_fontsize: int = 12,
-    post_color: str | tuple = "#8f2727",
+    post_color: str | tuple = "#132a70",
     prior_color: str | tuple = "gray",
     post_alpha: float = 0.9,
     prior_alpha: float = 0.7,
@@ -59,18 +60,16 @@ def plot_posterior_2d(
     """
 
     # Ensure correct shape
-    assert (
-        len(posterior_draws.shape)
-    ) == 2, "Shape of `posterior_samples` for a single data set should be 2 dimensional!"
+    assert (len(post_samples.shape)) == 2, "Shape of `posterior_samples` for a single data set should be 2 dimensional!"
 
     # Plot posterior first
-    g = plot_distribution_2d(posterior_draws, context="\\theta", param_names=param_names, render=False, **kwargs)
+    g = plot_samples_2d(post_samples, context="\\theta", param_names=param_names, render=False, height=height, **kwargs)
 
     # Obtain n_draws and n_params
-    n_draws, n_params = posterior_draws.shape
+    n_draws, n_params = post_samples.shape
 
     # If prior object is given and no draws, obtain draws
-    if prior is not None and prior_draws is None:
+    if prior is not None and prior_samples is None:
         draws = prior(n_draws)
         if isinstance(draws, dict):
             prior_draws = draws["prior_draws"]

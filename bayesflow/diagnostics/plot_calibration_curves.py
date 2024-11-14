@@ -62,23 +62,26 @@ def plot_calibration_curves(
     plot_data = preprocess(post_model_samples, true_model_samples, names, num_col, num_row, figsize, context="M")
 
     # Plot marginal calibration curves in a loop
-    if plot_data['num_row'] > 1:
-        ax = plot_data['axes'].flat
+    if plot_data["num_row"] > 1:
+        ax = plot_data["axes"].flat
     else:
-        ax = plot_data['axes']
+        ax = plot_data["axes"]
 
     # Compute calibration
     cal_errs, probs_true, probs_pred = expected_calibration_error(
-        plot_data['prior_samples'], plot_data['post_samples'], num_bins)
+        plot_data["prior_samples"], plot_data["post_samples"], num_bins
+    )
 
-    for j in range(plot_data['num_variables']):
+    for j in range(plot_data["num_variables"]):
         # Plot calibration curve
         ax[j].plot(probs_pred[j], probs_true[j], "o-", color=color)
 
         # Plot PMP distribution over bins
         uniform_bins = np.linspace(0.0, 1.0, num_bins + 1)
-        norm_weights = np.ones_like(plot_data['post_samples']) / len(plot_data['post_samples'])
-        ax[j].hist(plot_data['post_samples'][:, j], bins=uniform_bins, weights=norm_weights[:, j], color="grey", alpha=0.3)
+        norm_weights = np.ones_like(plot_data["post_samples"]) / len(plot_data["post_samples"])
+        ax[j].hist(
+            plot_data["post_samples"][:, j], bins=uniform_bins, weights=norm_weights[:, j], color="grey", alpha=0.3
+        )
 
         # Plot AB line
         ax[j].plot((0, 1), (0, 1), "--", color="black", alpha=0.9)
@@ -86,7 +89,7 @@ def plot_calibration_curves(
         # Tweak plot
         ax[j].tick_params(axis="both", which="major", labelsize=tick_fontsize)
         ax[j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
-        ax[j].set_title(plot_data['names'][j], fontsize=title_fontsize)
+        ax[j].set_title(plot_data["names"][j], fontsize=title_fontsize)
         ax[j].spines["right"].set_visible(False)
         ax[j].spines["top"].set_visible(False)
         ax[j].set_xlim([0 - epsilon, 1 + epsilon])
@@ -108,13 +111,13 @@ def plot_calibration_curves(
 
     # Only add x-labels to the bottom row
     add_labels(
-        axes=plot_data['axes'],
-        num_row=plot_data['num_row'],
-        num_col=plot_data['num_col'],
+        axes=plot_data["axes"],
+        num_row=plot_data["num_row"],
+        num_col=plot_data["num_col"],
         xlabel="Predicted Probability",
         ylabel="True Probability",
         label_fontsize=label_fontsize,
     )
 
-    plot_data['fig'].tight_layout()
-    return plot_data['fig']
+    plot_data["fig"].tight_layout()
+    return plot_data["fig"]

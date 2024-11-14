@@ -6,7 +6,7 @@ def plot_prior_2d(
     param_names: list = None,
     n_samples: int = 2000,
     height: float = 2.5,
-    color: str | tuple = "#8f2727",
+    color: str | tuple = "#132a70",
     **kwargs,
 ):
     """Creates pair-plots for a given joint prior.

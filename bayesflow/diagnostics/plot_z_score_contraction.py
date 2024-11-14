@@ -15,7 +15,7 @@ def plot_z_score_contraction(
     tick_fontsize: int = 12,
     color: str = "#132a70",
     num_col: int = None,
-    num_row: int = None
+    num_row: int = None,
 ) -> plt.Figure:
     """
     Implements a graphical check for global model sensitivity by plotting the
@@ -86,12 +86,12 @@ def plot_z_score_contraction(
     plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize)
 
     # Estimate posterior means and stds
-    post_means = plot_data['post_samples'].mean(axis=1)
-    post_stds = plot_data['post_samples'].std(axis=1, ddof=1)
-    post_vars = plot_data['post_samples'].var(axis=1, ddof=1)
+    post_means = plot_data["post_samples"].mean(axis=1)
+    post_stds = plot_data["post_samples"].std(axis=1, ddof=1)
+    post_vars = plot_data["post_samples"].var(axis=1, ddof=1)
 
     # Estimate prior variance
-    prior_vars = plot_data['prior_samples'].var(axis=0, keepdims=True, ddof=1)
+    prior_vars = plot_data["prior_samples"].var(axis=0, keepdims=True, ddof=1)
 
     # Compute contraction
     post_contraction = 1 - (post_vars / prior_vars)
@@ -100,27 +100,27 @@ def plot_z_score_contraction(
     z_score = (post_means - prior_samples) / post_stds
 
     # Loop and plot
-    for i, ax in enumerate(plot_data['axes'].flat):
-        if i >= plot_data['num_variables']:
+    for i, ax in enumerate(plot_data["axes"].flat):
+        if i >= plot_data["num_variables"]:
             break
 
         ax.scatter(post_contraction[:, i], z_score[:, i], color=color, alpha=0.5)
-        ax.set_title(plot_data['names'][i], fontsize=title_fontsize)
+        ax.set_title(plot_data["names"][i], fontsize=title_fontsize)
 
         ax.set_xlim([-0.05, 1.05])
 
     # Prettify
-    prettify_subplots(plot_data['axes'], tick_fontsize)
+    prettify_subplots(plot_data["axes"], tick_fontsize)
 
     # Only add x-labels to the bottom row
     add_labels(
-        axes=plot_data['axes'],
-        num_row=plot_data['num_row'],
-        num_col=plot_data['num_col'],
+        axes=plot_data["axes"],
+        num_row=plot_data["num_row"],
+        num_col=plot_data["num_col"],
         xlabel="Posterior contraction",
         ylabel="Posterior z-score",
         label_fontsize=label_fontsize,
     )
 
-    plot_data['fig'].tight_layout()
-    return plot_data['fig']
+    plot_data["fig"].tight_layout()
+    return plot_data["fig"]

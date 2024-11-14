@@ -109,7 +109,7 @@ def dicts_to_arrays(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,
-    context: str = None
+    context: str = None,
 ):
     """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
 

@@ -1,24 +1,28 @@
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from typing import Sequence
+from ..utils.plot_utils import make_figure
+
 
 def plot_losses(
-    train_losses,
-    val_losses=None,
-    moving_average=False,
-    per_training_step=False,
-    ma_window_fraction=0.01,
-    fig_size=None,
-    train_color="#8f2727",
-    val_color="black",
-    lw_train=2,
-    lw_val=3,
-    grid_alpha=0.5,
-    legend_fontsize=14,
-    label_fontsize=14,
-    title_fontsize=16,
-):
+    train_losses: pd.DataFrame,
+    val_losses: pd.DataFrame = None,
+    moving_average: bool = False,
+    per_training_step: bool = False,
+    ma_window_fraction: float = 0.01,
+    figsize: Sequence[float] = None,
+    train_color: str = "#132a70",
+    val_color: str = "black",
+    lw_train: float = 2.0,
+    lw_val: float = 3.0,
+    grid_alpha: float = 0.5,
+    legend_fontsize: int = 14,
+    label_fontsize: int = 14,
+    title_fontsize: int = 16,
+) -> plt.Figure:
     """
     A generic helper function to plot the losses of a series of training epochs
     and runs.
@@ -73,12 +77,10 @@ def plot_losses(
     """
 
     # Determine the number of rows for plot
-    n_row = len(train_losses.columns)
+    num_row = len(train_losses.columns)
 
     # Initialize figure
-    if fig_size is None:
-        fig_size = (16, int(4 * n_row))
-    f, axarr = plt.subplots(n_row, 1, figsize=fig_size)
+    fig, axes = make_figure(num_row=num_row, num_col=1, figsize=figsize)
 
     # Get the number of steps as an array
     train_step_index = np.arange(1, len(train_losses) + 1)
@@ -91,7 +93,7 @@ def plot_losses(
             val_step_index = val_step_index[: val_losses.shape[0]]
 
     # Loop through loss entries and populate plot
-    looper = [axarr] if n_row == 1 else axarr.flat
+    looper = [axes] if num_row == 1 else axes.flat
     for i, ax in enumerate(looper):
         # Plot train curve
         ax.plot(train_step_index, train_losses.iloc[:, i], color=train_color, lw=lw_train, alpha=0.9, label="Training")
@@ -123,5 +125,6 @@ def plot_losses(
         # Only add legend if there is a validation curve
         if val_losses is not None or moving_average:
             ax.legend(fontsize=legend_fontsize)
-    f.tight_layout()
-    return f
+
+    fig.tight_layout()
+    return fig

@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
 from keras import ops
 
 
 def plot_mmd_hypothesis_test(
-    mmd_null,
+    mmd_null: np.ndarray,
     mmd_observed: float = None,
     alpha_level: float = 0.05,
     null_color: str | tuple = (0.16407, 0.020171, 0.577478),

@@ -11,7 +11,7 @@ def plot_samples_2d(
     n_params: int = None,
     param_names: list = None,
     height: float = 2.5,
-    color: str | tuple = "#1a1e75",
+    color: str | tuple = "#132a70",
     alpha: float = 0.9,
     render: bool = True,
     **kwargs,

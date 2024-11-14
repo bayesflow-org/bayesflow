@@ -13,9 +13,9 @@ def plot_sbc_histograms(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,
-    figsize: Sequence[int] = None,
+    figsize: Sequence[float] = None,
     num_bins: int = 10,
-    binomial_interval=0.99,
+    binomial_interval: float = 0.99,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
@@ -75,8 +75,8 @@ def plot_sbc_histograms(
 
     # Determine the ratio of simulations to prior draws
     # num_params = plot_data['num_variables']
-    num_sims = plot_data['post_samples'].shape[0]
-    num_draws = plot_data['post_samples'].shape[1]
+    num_sims = plot_data["post_samples"].shape[0]
+    num_draws = plot_data["post_samples"].shape[1]
 
     ratio = int(num_sims / num_draws)
 
@@ -98,26 +98,26 @@ def plot_sbc_histograms(
             num_bins = 5
 
     # Compute ranks (using broadcasting)
-    ranks = np.sum(plot_data['post_samples'] < plot_data['prior_samples'][:, np.newaxis, :], axis=1)
+    ranks = np.sum(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
 
     # Compute confidence interval and mean
-    num_trials = int(plot_data['prior_samples'].shape[0])
+    num_trials = int(plot_data["prior_samples"].shape[0])
     # uniform distribution expected -> for all bins: equal probability
     # p = 1 / num_bins that a rank lands in that bin
     endpoints = binom.interval(binomial_interval, num_trials, 1 / num_bins)
     mean = num_trials / num_bins  # corresponds to binom.mean(N, 1 / num_bins)
 
     # Plot marginal histograms in a loop
-    if plot_data['num_row'] > 1:
+    if plot_data["num_row"] > 1:
         ax = plot_data["axes"].flat
     else:
         ax = plot_data["axes"]
 
-    for j in range(len(plot_data['names'])):
+    for j in range(len(plot_data["names"])):
         ax[j].axhspan(endpoints[0], endpoints[1], facecolor="gray", alpha=0.3)
         ax[j].axhline(mean, color="gray", zorder=0, alpha=0.9)
         sns.histplot(ranks[:, j], kde=False, ax=ax[j], color=color, bins=num_bins, alpha=0.95)
-        ax[j].set_title(plot_data['names'][j], fontsize=title_fontsize)
+        ax[j].set_title(plot_data["names"][j], fontsize=title_fontsize)
         ax[j].spines["right"].set_visible(False)
         ax[j].spines["top"].set_visible(False)
         ax[j].get_yaxis().set_ticks([])
@@ -126,16 +126,16 @@ def plot_sbc_histograms(
         ax[j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
     # Prettify
-    prettify_subplots(plot_data['axes'], tick_fontsize)
+    prettify_subplots(plot_data["axes"], tick_fontsize)
 
     # Only add x-labels to the bottom row
     add_labels(
-        axes=plot_data['axes'],
-        num_row=plot_data['num_row'],
-        num_col=plot_data['num_col'],
+        axes=plot_data["axes"],
+        num_row=plot_data["num_row"],
+        num_col=plot_data["num_col"],
         xlabel="Rank statistic",
-        label_fontsize=label_fontsize
+        label_fontsize=label_fontsize,
     )
 
-    plot_data['fig'].tight_layout()
-    return plot_data['fig']
+    plot_data["fig"].tight_layout()
+    return plot_data["fig"]

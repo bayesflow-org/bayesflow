@@ -15,7 +15,7 @@ def plot_sbc_ecdf(
     legend_fontsize=14,
     title_fontsize=18,
     tick_fontsize=12,
-    rank_ecdf_color="#1a1e75",
+    rank_ecdf_color="#132a70",
     fill_color="grey",
     num_row=None,
     num_col=None,

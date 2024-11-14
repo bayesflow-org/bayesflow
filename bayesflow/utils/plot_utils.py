@@ -12,6 +12,7 @@ def preprocess(
     post_samples: dict[str, np.ndarray],
     prior_samples: dict[str, np.ndarray],
     names: Sequence[str] = None,
+    context: str = None,
     num_col: int = None,
     num_row: int = None,
     figsize: tuple = None,
@@ -30,15 +31,19 @@ def preprocess(
         The prior draws obtained for generating num_data_sets
     names             : str
         Parameter name used to initialize the figure
+    context: str
+        Context where the parameters are situated
     num_col           : int
         Number of columns for the visualization layout
     num_row           : int
         Number of rows for the visualization layout
     figsize           : tuple, optional, default: None
         Size of the figure adjusting to the display resolution
+    stacked           : bool, optional, default: False
+        Whether or not the plots are stacked horizontally
     """
 
-    plot_data = dicts_to_arrays(post_samples, prior_samples, names)
+    plot_data = dicts_to_arrays(post_samples, prior_samples, names, context)
     check_posterior_prior_shapes(plot_data["post_samples"], plot_data["prior_samples"])
 
     # Configure layout

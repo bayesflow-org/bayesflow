@@ -109,6 +109,7 @@ def dicts_to_arrays(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,
+    context: str = None
 ):
     """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
 
@@ -130,7 +131,10 @@ def dicts_to_arrays(
             if post_samples.shape[-1] != len(names) or prior_samples.shape[-1] != len(names):
                 raise ValueError("The length of the names list should match the number of target variables.")
         else:
-            names = [f"$\\theta_{{{i}}}$" for i in range(post_samples.shape[-1])]
+            if context is not None:
+                names = [f"${context}_{{{i}}}$" for i in range(post_samples.shape[-1])]
+            else:
+                names = [f"$\\theta_{{{i}}}$" for i in range(post_samples.shape[-1])]
 
     else:
         raise TypeError("Only dicts and tensors are supported as arguments.")

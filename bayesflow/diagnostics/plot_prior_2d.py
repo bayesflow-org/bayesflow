@@ -1,4 +1,4 @@
-from .plot_distribution_2d import plot_distribution_2d
+from .plot_samples_2d import plot_samples_2d
 
 
 def plot_prior_2d(
@@ -38,6 +38,6 @@ def plot_prior_2d(
     if isinstance(samples, dict):
         samples = samples["theta"]
 
-    plot_distribution_2d(
+    plot_samples_2d(
         samples, context="Prior", height=height, color=color, param_names=param_names, render=True, **kwargs
     )

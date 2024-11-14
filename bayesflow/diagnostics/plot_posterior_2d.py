@@ -2,7 +2,7 @@ import pandas as pd
 import seaborn as sns
 
 from matplotlib.lines import Line2D
-from .plot_distribution_2d import plot_distribution_2d
+from .plot_samples_2d import plot_samples_2d
 
 
 def plot_posterior_2d(

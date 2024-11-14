@@ -19,7 +19,7 @@ def plot_recovery(
     metric_fontsize: int = 16,
     tick_fontsize: int = 12,
     add_corr: bool = True,
-    color: str = "#1a1e75",
+    color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
     xlabel: str = "Ground truth",

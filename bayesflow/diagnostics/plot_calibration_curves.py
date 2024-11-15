@@ -3,12 +3,7 @@ import matplotlib.pyplot as plt
 
 from typing import Sequence
 from ..utils.comp_utils import expected_calibration_error
-from ..utils.plot_utils import (
-    preprocess,
-    add_titles_and_labels,
-    add_metric,
-    prettify_subplots
-)
+from ..utils.plot_utils import preprocess, add_titles_and_labels, add_metric, prettify_subplots
 
 
 def plot_calibration_curves(

@@ -155,11 +155,11 @@ def annotate():
 
 
 def add_x_labels(
-        axes: np.ndarray,
-        num_row: int = None,
-        num_col: int = None,
-        xlabel: Sequence[str] | str = None,
-        label_fontsize: int = None
+    axes: np.ndarray,
+    num_row: int = None,
+    num_col: int = None,
+    xlabel: Sequence[str] | str = None,
+    label_fontsize: int = None,
 ):
     """#TODO - Deal with sequence of labels"""
     if num_row == 1:
@@ -170,12 +170,7 @@ def add_x_labels(
         ax.set_xlabel(xlabel if isinstance(xlabel, str) else xlabel[i], fontsize=label_fontsize)
 
 
-def add_y_labels(
-        axes: np.ndarray,
-        num_row: int = None,
-        ylabel: Sequence[str] | str = None,
-        label_fontsize: int = None
-):
+def add_y_labels(axes: np.ndarray, num_row: int = None, ylabel: Sequence[str] | str = None, label_fontsize: int = None):
     """TODO - Deal with sequence of labels"""
 
     if num_row == 1:  # if there is only one row, the ax array is 1D
@@ -186,11 +181,7 @@ def add_y_labels(
             ax.set_ylabel(ylabel[i], fontsize=label_fontsize)
 
 
-def add_titles(
-        axes: np.ndarray,
-        title: Sequence[str] | str = None,
-        title_fontsize: int = None
-):
+def add_titles(axes: np.ndarray, title: Sequence[str] | str = None, title_fontsize: int = None):
     for i, ax in enumerate(axes.flat):
         ax.set_title(title[i], fontsize=title_fontsize)
 
@@ -216,11 +207,7 @@ def add_titles_and_labels(
         add_y_labels(axes, num_row, ylabel, label_fontsize)
 
 
-def prettify_subplots(
-        axes: np.ndarray,
-        num_subplots: int,
-        tick_fontsize: int = 12
-):
+def prettify_subplots(axes: np.ndarray, num_subplots: int, tick_fontsize: int = 12):
     """TODO"""
     for ax in axes.flat:
         sns.despine(ax=ax)

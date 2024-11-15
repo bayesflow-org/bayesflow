@@ -82,11 +82,7 @@ def plot_losses(
     num_row = len(train_losses.columns)
 
     # Initialize figure
-    fig, axes = make_figure(
-        num_row=num_row,
-        num_col=1,
-        figsize=(16, int(4 * num_row) if figsize is None else figsize)
-    )
+    fig, axes = make_figure(num_row=num_row, num_col=1, figsize=(16, int(4 * num_row) if figsize is None else figsize))
 
     # Get the number of steps as an array
     train_step_index = np.arange(1, len(train_losses) + 1)

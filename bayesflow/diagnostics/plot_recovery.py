@@ -58,8 +58,8 @@ def plot_recovery(
 
     # Gather plot data and metadata into a dictionary
     plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize)
-    plot_data['post_samples'] = plot_data.pop('post_variables')
-    plot_data['prior_samples'] = plot_data.pop('prior_variables')
+    plot_data["post_samples"] = plot_data.pop("post_variables")
+    plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
     # Compute point estimates and uncertainties
     point_estimate = point_agg(plot_data["post_samples"], axis=1)
@@ -101,7 +101,7 @@ def plot_recovery(
         num_col=plot_data["num_col"],
         xlabel=xlabel,
         ylabel=ylabel,
-        label_fontsize=label_fontsize
+        label_fontsize=label_fontsize,
     )
 
     plot_data["fig"].tight_layout()

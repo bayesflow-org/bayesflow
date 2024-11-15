@@ -6,11 +6,7 @@ import seaborn as sns
 
 from typing import Sequence
 from scipy.stats import binom
-from ..utils.plot_utils import (
-    preprocess,
-    add_titles_and_labels,
-    prettify_subplots
-)
+from ..utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
 
 
 def plot_sbc_histograms(
@@ -76,8 +72,8 @@ def plot_sbc_histograms(
 
     # Preprocessing
     plot_data = preprocess(post_samples, prior_samples, num_col, num_row, names, figsize)
-    plot_data['post_samples'] = plot_data.pop('post_variables')
-    plot_data['prior_samples'] = plot_data.pop('prior_variables')
+    plot_data["post_samples"] = plot_data.pop("post_variables")
+    plot_data["prior_samples"] = plot_data.pop("prior_variables")
     # Determine the ratio of simulations to prior draws
     # num_params = plot_data['num_variables']
     num_sims = plot_data["post_samples"].shape[0]

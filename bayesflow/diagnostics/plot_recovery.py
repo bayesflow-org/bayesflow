@@ -1,18 +1,18 @@
-from typing import Sequence
+from typing import Sequence, Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import median_abs_deviation
 
-from bayesflow.utils.plot_utils import preprocess, prettify_subplots, make_quadratic, add_labels, add_metric
+from bayesflow.utils.plot_utils import preprocess, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
 
 
 def plot_recovery(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,
-    point_agg: callable = np.median,
-    uncertainty_agg: callable = median_abs_deviation,
+    point_agg: Callable = np.median,
+    uncertainty_agg: Callable = median_abs_deviation,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
@@ -58,6 +58,8 @@ def plot_recovery(
 
     # Gather plot data and metadata into a dictionary
     plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize)
+    plot_data['post_samples'] = plot_data.pop('post_variables')
+    plot_data['prior_samples'] = plot_data.pop('prior_variables')
 
     # Compute point estimates and uncertainties
     point_estimate = point_agg(plot_data["post_samples"], axis=1)
@@ -93,7 +95,14 @@ def plot_recovery(
 
     # Add custom schmuck
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
-    add_labels(plot_data["axes"], plot_data["num_row"], plot_data["num_col"], xlabel, ylabel, label_fontsize)
+    add_titles_and_labels(
+        axes=plot_data["axes"],
+        num_row=plot_data["num_row"],
+        num_col=plot_data["num_col"],
+        xlabel=xlabel,
+        ylabel=ylabel,
+        label_fontsize=label_fontsize
+    )
 
     plot_data["fig"].tight_layout()
     return plot_data["fig"]

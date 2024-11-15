@@ -6,7 +6,11 @@ import seaborn as sns
 
 from typing import Sequence
 from scipy.stats import binom
-from ..utils.plot_utils import preprocess, add_labels, prettify_subplots
+from ..utils.plot_utils import (
+    preprocess,
+    add_titles_and_labels,
+    prettify_subplots
+)
 
 
 def plot_sbc_histograms(
@@ -72,7 +76,8 @@ def plot_sbc_histograms(
 
     # Preprocessing
     plot_data = preprocess(post_samples, prior_samples, num_col, num_row, names, figsize)
-
+    plot_data['post_samples'] = plot_data.pop('post_variables')
+    plot_data['prior_samples'] = plot_data.pop('prior_variables')
     # Determine the ratio of simulations to prior draws
     # num_params = plot_data['num_variables']
     num_sims = plot_data["post_samples"].shape[0]
@@ -117,19 +122,20 @@ def plot_sbc_histograms(
         ax[j].axhspan(endpoints[0], endpoints[1], facecolor="gray", alpha=0.3)
         ax[j].axhline(mean, color="gray", zorder=0, alpha=0.9)
         sns.histplot(ranks[:, j], kde=False, ax=ax[j], color=color, bins=num_bins, alpha=0.95)
-        ax[j].set_title(plot_data["names"][j], fontsize=title_fontsize)
         ax[j].get_yaxis().set_ticks([])
-        ax[j].set_ylabel("")
 
     # Prettify
     prettify_subplots(plot_data["axes"], tick_fontsize)
 
     # Only add x-labels to the bottom row
-    add_labels(
+    add_titles_and_labels(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
+        title=plot_data["names"],
         xlabel="Rank statistic",
+        ylabel="",
+        title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )
 

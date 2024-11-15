@@ -42,10 +42,12 @@ def plot_losses(
         number of columns as ``train_losses``.
     moving_average     : bool, optional, default: False
         A flag for adding a moving average line of the train_losses.
+    per_training_step : bool, optional, default: False
+        A flag for making loss trajectory detailed (to training steps) rather than per epoch.
     ma_window_fraction : int, optional, default: 0.01
         Window size for the moving average as a fraction of total
         training steps.
-    fig_size           : tuple or None, optional, default: None
+    figsize            : tuple or None, optional, default: None
         The figure size passed to the ``matplotlib`` constructor.
         Inferred if ``None``
     train_color        : str, optional, default: '#8f2727'
@@ -80,7 +82,11 @@ def plot_losses(
     num_row = len(train_losses.columns)
 
     # Initialize figure
-    fig, axes = make_figure(num_row=num_row, num_col=1, figsize=figsize)
+    fig, axes = make_figure(
+        num_row=num_row,
+        num_col=1,
+        figsize=(16, int(4 * num_row) if figsize is None else figsize)
+    )
 
     # Get the number of steps as an array
     train_step_index = np.arange(1, len(train_losses) + 1)

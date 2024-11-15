@@ -2,7 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from typing import Sequence
-from ..utils.plot_utils import preprocess, add_labels, prettify_subplots
+from ..utils.plot_utils import (
+    preprocess,
+    add_titles_and_labels,
+    prettify_subplots
+)
 
 
 def plot_z_score_contraction(
@@ -84,6 +88,8 @@ def plot_z_score_contraction(
 
     # Preprocessing
     plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize)
+    plot_data["post_samples"] = plot_data.pop("post_variables")
+    plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
     # Estimate posterior means and stds
     post_means = plot_data["post_samples"].mean(axis=1)
@@ -105,7 +111,6 @@ def plot_z_score_contraction(
             break
 
         ax.scatter(post_contraction[:, i], z_score[:, i], color=color, alpha=0.5)
-        ax.set_title(plot_data["names"][i], fontsize=title_fontsize)
 
         ax.set_xlim([-0.05, 1.05])
 
@@ -113,12 +118,14 @@ def plot_z_score_contraction(
     prettify_subplots(plot_data["axes"], tick_fontsize)
 
     # Only add x-labels to the bottom row
-    add_labels(
+    add_titles_and_labels(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
+        title=plot_data["names"],
         xlabel="Posterior contraction",
         ylabel="Posterior z-score",
+        title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )
 

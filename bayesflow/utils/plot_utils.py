@@ -25,9 +25,9 @@ def preprocess(
 
     Parameters
     ----------
-    post_samples      : np.ndarray of shape (num_data_sets, num_post_draws, num_params)
+    post_variables    : np.ndarray of shape (num_data_sets, num_post_draws, num_params)
         The posterior draws obtained from num_data_sets
-    prior_samples     : np.ndarray of shape (num_data_sets, num_params)
+    prior_variables   : np.ndarray of shape (num_data_sets, num_params)
         The prior draws obtained for generating num_data_sets
     names             : str
         Parameter name used to initialize the figure
@@ -44,7 +44,7 @@ def preprocess(
     """
 
     plot_data = dicts_to_arrays(post_variables, prior_variables, names, context)
-    check_posterior_prior_shapes(plot_data["post_samples"], plot_data["prior_samples"])
+    check_posterior_prior_shapes(plot_data["post_variables"], plot_data["prior_variables"])
 
     # Configure layout
     num_row, num_col = set_layout(plot_data["num_variables"], num_row, num_col, stacked)
@@ -112,7 +112,7 @@ def make_figure(num_row: int = None, num_col: int = None, figsize: tuple = None)
 
     Returns
     -------
-    f, ax_array
+    f, axes
         Initialized figures
     """
     if num_row == 1 and num_col == 1:
@@ -122,7 +122,7 @@ def make_figure(num_row: int = None, num_col: int = None, figsize: tuple = None)
             figsize = (int(5 * num_col), int(5 * num_row))
 
         f, axes = plt.subplots(num_row, num_col, figsize=figsize)
-    axes = np.atleast_1d(axes)
+    # axes = np.atleast_1d(axes)
 
     return f, axes
 
@@ -133,9 +133,9 @@ def add_metric(
     metric_value: np.ndarray | float = None,
     position: tuple = (0.1, 0.9),
     metric_fontsize: int = 12,
-):    if metric_text is None or metric_value is None:
+):
+    if metric_text is None or metric_value is None:
         raise ValueError("Metric text and values must be provided to be add this metric.")
-
 
     metric_label = metric_text.format(metric_value)
 
@@ -150,50 +150,77 @@ def add_metric(
     )
 
 
-def add_x_labels(axes, num_row: int = None, num_col: int = None, xlabel: str = None, label_fontsize: int = None):
+def annotate():
+    raise NotImplementedError
+
+
+def add_x_labels(
+        axes: np.ndarray,
+        num_row: int = None,
+        num_col: int = None,
+        xlabel: Sequence[str] | str = None,
+        label_fontsize: int = None
+):
     """#TODO - Deal with sequence of labels"""
     if num_row == 1:
         bottom_row = axes
     else:
         bottom_row = axes[num_row - 1, :] if num_col > 1 else axes
-    for _ax in bottom_row:
-        _ax.set_xlabel(xlabel, fontsize=label_fontsize)
+    for i, ax in enumerate(bottom_row):
+        ax.set_xlabel(xlabel if isinstance(xlabel, str) else xlabel[i], fontsize=label_fontsize)
 
 
-def add_y_labels(ax_array, num_row: int = None, ylabel: str = None, label_fontsize: int = None):
+def add_y_labels(
+        axes: np.ndarray,
+        num_row: int = None,
+        ylabel: Sequence[str] | str = None,
+        label_fontsize: int = None
+):
     """TODO - Deal with sequence of labels"""
 
     if num_row == 1:  # if there is only one row, the ax array is 1D
-        ax_array[0].set_ylabel(ylabel, fontsize=label_fontsize)
+        axes[0].set_ylabel(ylabel, fontsize=label_fontsize)
     # If there is more than one row, the ax array is 2D
     else:
-        for _ax in ax_array[:, 0]:
-            _ax.set_ylabel(ylabel, fontsize=label_fontsize)
+        for i, ax in enumerate(axes[:, 0]):
+            ax.set_ylabel(ylabel[i], fontsize=label_fontsize)
 
 
-def add_labels(
+def add_titles(
+        axes: np.ndarray,
+        title: Sequence[str] | str = None,
+        title_fontsize: int = None
+):
+    for i, ax in enumerate(axes.flat):
+        ax.set_title(title[i], fontsize=title_fontsize)
+
+
+def add_titles_and_labels(
     axes: np.ndarray,
     num_row: int = None,
     num_col: int = None,
-    xlabel: list[str] | str = None,
-    ylabel: list[str] | str = None,
+    title: Sequence[str] | str = None,
+    xlabel: Sequence[str] | str = None,
+    ylabel: Sequence[str] | str = None,
+    title_fontsize: int = None,
     label_fontsize: int = None,
 ):
     """
     Wrapper function for configuring labels for both axes.
     """
+    if title is not None:
+        add_titles(axes, title, title_fontsize)
     if xlabel is not None:
         add_x_labels(axes, num_row, num_col, xlabel, label_fontsize)
     if ylabel is not None:
         add_y_labels(axes, num_row, ylabel, label_fontsize)
 
 
-def remove_unused_axes(ax_array_it, num_params: int = None):
-    for ax in ax_array_it[num_params:]:
-        ax.remove()
-
-
-def prettify_subplots(axes: np.ndarray, num_subplots: int, tick_fontsize: int = 12):
+def prettify_subplots(
+        axes: np.ndarray,
+        num_subplots: int,
+        tick_fontsize: int = 12
+):
     """TODO"""
     for ax in axes.flat:
         sns.despine(ax=ax)
@@ -207,7 +234,10 @@ def prettify_subplots(axes: np.ndarray, num_subplots: int, tick_fontsize: int = 
 
 
 def make_quadratic(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray):
-    """Utility to make a subplots quadratic in order to avoid visual illusions in, e.g., recovery plots."""
+    """
+    Utility to make a subplots quadratic in order to avoid visual illusions
+    in, e.g., recovery plots.
+    """
 
     lower = min(x_data.min(), y_data.min())
     upper = max(x_data.max(), y_data.max())
@@ -221,12 +251,3 @@ def make_quadratic(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray):
         alpha=0.9,
         linestyle="dashed",
     )
-
-
-def postprocess(*args):
-    """
-    Procedural wrapper for postprocessing steps, including adding labels and removing unused axes.
-    """
-
-    add_labels(args)
-    remove_unused_axes(args)

@@ -3,7 +3,12 @@ import matplotlib.pyplot as plt
 
 from typing import Sequence
 from ..utils.comp_utils import expected_calibration_error
-from ..utils.plot_utils import preprocess, add_labels, add_metric, prettify_subplots
+from ..utils.plot_utils import (
+    preprocess,
+    add_titles_and_labels,
+    add_metric,
+    prettify_subplots
+)
 
 
 def plot_calibration_curves(
@@ -105,12 +110,14 @@ def plot_calibration_curves(
     prettify_subplots(axes=plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
     # Only add x-labels to the bottom row
-    add_labels(
+    add_titles_and_labels(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
+        title=plot_data["names"],
         xlabel="Predicted Probability",
         ylabel="True Probability",
+        title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )
 

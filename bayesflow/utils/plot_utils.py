@@ -134,6 +134,7 @@ def add_metric(
     position: tuple = (0.1, 0.9),
     metric_fontsize: int = 12,
 ):
+    """TODO: docstring"""
     if metric_text is None or metric_value is None:
         raise ValueError("Metric text and values must be provided to be add this metric.")
 
@@ -157,7 +158,7 @@ def add_x_labels(
     xlabel: Sequence[str] | str = None,
     label_fontsize: int = None,
 ):
-    """TODO"""
+    """TODO: docstring"""
     if num_row == 1:
         bottom_row = axes
     else:
@@ -168,7 +169,7 @@ def add_x_labels(
 
 
 def add_y_labels(axes: np.ndarray, num_row: int = None, ylabel: Sequence[str] | str = None, label_fontsize: int = None):
-    """TODO"""
+    """TODO: docstring"""
 
     if num_row == 1:  # if there is only one row, the ax array is 1D
         axes[0].set_ylabel(ylabel, fontsize=label_fontsize)
@@ -205,13 +206,14 @@ def add_titles_and_labels(
         add_y_labels(axes, num_row, ylabel, label_fontsize)
 
 
-def prettify_subplots(axes: np.ndarray, num_subplots: int, tick_fontsize: int = 12):
-    """TODO"""
+def prettify_subplots(axes: np.ndarray, num_subplots: int, tick: bool = True, tick_fontsize: int = 12):
+    """TODO: docstring"""
     for ax in axes.flat:
         sns.despine(ax=ax)
         ax.grid(alpha=0.5)
-        ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
-        ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
+        if tick:
+            ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
+            ax.tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
     # Remove unused axes entirely
     for _ax in axes.flat[num_subplots:]:

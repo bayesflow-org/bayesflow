@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from typing import Sequence
-from ..utils.plot_utils import make_figure
+from ..utils.plot_utils import make_figure, add_titles_and_labels
 
 
 def plot_losses(
@@ -18,7 +18,6 @@ def plot_losses(
     val_color: str = "black",
     lw_train: float = 2.0,
     lw_val: float = 3.0,
-    grid_alpha: float = 0.5,
     legend_fontsize: int = 14,
     label_fontsize: int = 14,
     title_fontsize: int = 16,
@@ -58,8 +57,6 @@ def plot_losses(
         The linewidth for the training loss curve
     lw_val             : int, optional, default: 3
         The linewidth for the validation loss curve
-    grid_alpha         : float, optional, default 0.5
-        The opacity factor for the background gridlines
     legend_fontsize    : int, optional, default: 14
         The font size of the legend text
     label_fontsize     : int, optional, default: 14
@@ -121,17 +118,25 @@ def plot_losses(
                     lw=lw_val,
                     label="Validation",
                 )
-        # Schmuck
-        ax.set_xlabel("Training step #" if per_training_step else "Training epoch #", fontsize=label_fontsize)
-        ax.set_ylabel("Value", fontsize=label_fontsize)
+
         sns.despine(ax=ax)
-        ax.grid(alpha=grid_alpha)
-        ax.set_title(
-            train_losses.columns[i] if train_losses.columns[i] != 0 else "Training Loss", fontsize=title_fontsize
-        )
+        ax.grid(alpha=0.5)
+
         # Only add legend if there is a validation curve
         if val_losses is not None or moving_average:
             ax.legend(fontsize=legend_fontsize)
+
+    # Schmuck
+    add_titles_and_labels(
+        axes=np.atleast_1d(axes),
+        num_row=num_row,
+        num_col=1,
+        title=train_losses.columns if num_row > 1 else ["Training Loss"],
+        xlabel="Training step #" if per_training_step else "Training epoch #",
+        ylabel="Value",
+        title_fontsize=title_fontsize,
+        label_fontsize=label_fontsize,
+    )
 
     fig.tight_layout()
     return fig

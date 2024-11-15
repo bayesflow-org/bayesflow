@@ -87,8 +87,8 @@ def plot_sbc_histograms(
         logger.setLevel(logging.INFO)
         logger.info(
             "The ratio of simulations / posterior draws should be > 20 "
-            + f"for reliable variance reduction, but your ratio is {ratio}.\
-                    Confidence intervals might be unreliable!"
+            f"for reliable variance reduction, but your ratio is {ratio}. "
+            "Confidence intervals might be unreliable!"
         )
 
     # Set n_bins automatically, if nothing provided

@@ -41,5 +41,5 @@ def plot_prior_2d(
         samples = samples["theta"]
 
     plot_samples_2d(
-        samples, context="Prior", height=height, color=color, param_names=param_names, render=True, **kwargs
+        samples, context="Prior", height=height, color=color, param_names=variable_names, render=True, **kwargs
     )

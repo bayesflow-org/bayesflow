@@ -40,7 +40,7 @@ def preprocess(
     figsize           : tuple, optional, default: None
         Size of the figure adjusting to the display resolution
     stacked           : bool, optional, default: False
-        Whether or not the plots are stacked horizontally
+        Whether the plots are stacked horizontally
     """
 
     plot_data = dicts_to_arrays(post_variables, prior_variables, names, context)
@@ -125,6 +125,32 @@ def make_figure(num_row: int = None, num_col: int = None, figsize: tuple = None)
     axes = np.atleast_1d(axes)
 
     return f, axes
+
+
+def add_metric(
+    axes,
+    metric_text: str = None,
+    metric_value: np.ndarray | float = None,
+    position: tuple = (0.1, 0.9),
+    metric_fontsize: int = 12,
+):
+    if metric_text is None or metric_value is None:
+        raise ValueError("Metric text and values must be provided to be added")
+
+    for i, ax in enumerate(axes):
+        metric_label = metric_text.format(
+            metric_value if not isinstance(metric_value, (np.ndarray)) else metric_value[i]
+        )
+
+        ax.text(
+            position[0],
+            position[1],
+            metric_label,
+            ha="left",
+            va="center",
+            transform=ax.transAxes,
+            size=metric_fontsize,
+        )
 
 
 def add_x_labels(axes, num_row: int = None, num_col: int = None, xlabel: str = None, label_fontsize: int = None):

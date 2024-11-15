@@ -9,7 +9,7 @@ def plot_mmd_hypothesis_test(
     mmd_null: np.ndarray,
     mmd_observed: float = None,
     alpha_level: float = 0.05,
-    null_color: str | tuple = (0.16407, 0.020171, 0.577478),
+    null_color: str | tuple = "#132a70",
     observed_color: str | tuple = "red",
     alpha_color: str | tuple = "orange",
     truncate_v_lines_at_kde: bool = False,

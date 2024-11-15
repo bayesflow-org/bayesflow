@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from .plot_samples_2d import plot_samples_2d
 
 from typing import Sequence
@@ -10,7 +11,7 @@ def plot_prior_2d(
     height: float = 2.5,
     color: str | tuple = "#132a70",
     **kwargs,
-):
+) -> plt.Figure:
     """Creates pair-plots for a given joint prior.
 
     Parameters

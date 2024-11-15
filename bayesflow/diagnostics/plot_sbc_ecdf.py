@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from typing import Sequence
 from ..utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
@@ -21,7 +22,7 @@ def plot_sbc_ecdf(
     num_row: int = None,
     num_col: int = None,
     **kwargs,
-):
+) -> plt.Figure:
     """
     Creates the empirical CDFs for each marginal rank distribution
     and plots it against a uniform ECDF.

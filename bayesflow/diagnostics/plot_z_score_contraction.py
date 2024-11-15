@@ -96,7 +96,7 @@ def plot_z_score_contraction(
     prior_vars = plot_data["prior_samples"].var(axis=0, keepdims=True, ddof=1)
 
     # Compute contraction
-    post_contraction = 1 - (post_vars / prior_vars)
+    contraction = 1 - (post_vars / prior_vars)
 
     # Compute posterior z score
     z_score = (post_means - prior_samples) / post_stds
@@ -106,8 +106,7 @@ def plot_z_score_contraction(
         if i >= plot_data["num_variables"]:
             break
 
-        ax.scatter(post_contraction[:, i], z_score[:, i], color=color, alpha=0.5)
-
+        ax.scatter(contraction[:, i], z_score[:, i], color=color, alpha=0.5)
         ax.set_xlim([-0.05, 1.05])
 
     # Prettify

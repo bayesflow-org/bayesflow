@@ -150,10 +150,6 @@ def add_metric(
     )
 
 
-def annotate():
-    raise NotImplementedError
-
-
 def add_x_labels(
     axes: np.ndarray,
     num_row: int = None,
@@ -161,24 +157,26 @@ def add_x_labels(
     xlabel: Sequence[str] | str = None,
     label_fontsize: int = None,
 ):
-    """#TODO - Deal with sequence of labels"""
+    """TODO"""
     if num_row == 1:
         bottom_row = axes
     else:
         bottom_row = axes[num_row - 1, :] if num_col > 1 else axes
     for i, ax in enumerate(bottom_row):
+        # If labels are in sequence, set them sequentially. Otherwise, one label fits all.
         ax.set_xlabel(xlabel if isinstance(xlabel, str) else xlabel[i], fontsize=label_fontsize)
 
 
 def add_y_labels(axes: np.ndarray, num_row: int = None, ylabel: Sequence[str] | str = None, label_fontsize: int = None):
-    """TODO - Deal with sequence of labels"""
+    """TODO"""
 
     if num_row == 1:  # if there is only one row, the ax array is 1D
         axes[0].set_ylabel(ylabel, fontsize=label_fontsize)
     # If there is more than one row, the ax array is 2D
     else:
         for i, ax in enumerate(axes[:, 0]):
-            ax.set_ylabel(ylabel[i], fontsize=label_fontsize)
+            # If labels are in sequence, set them sequentially. Otherwise, one label fits all.
+            ax.set_ylabel(ylabel if isinstance(ylabel, str) else ylabel[i], fontsize=label_fontsize)
 
 
 def add_titles(axes: np.ndarray, title: Sequence[str] | str = None, title_fontsize: int = None):

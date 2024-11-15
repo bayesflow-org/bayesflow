@@ -1,5 +1,6 @@
 import logging
 
+import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import pandas as pd
@@ -15,7 +16,7 @@ def plot_samples_2d(
     alpha: float = 0.9,
     render: bool = True,
     **kwargs,
-):
+) -> plt.Figure:
     """
     A more flexible pair plot function for multiple distributions based upon
     collected samples.

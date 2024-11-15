@@ -78,12 +78,12 @@ def plot_confusion_matrix(
     # Compute confusion matrix
     cm = confusion_matrix(true_models, pred_models)
 
-    if normalize:
-        # Sum along rows and keep dimensions for broadcasting
-        cm_sum = ops.sum(cm, axis=1, keepdims=True)
-
-        # Broadcast division for normalization
-        cm_normalized = cm / cm_sum
+    # if normalize:
+    #     # Sum along rows and keep dimensions for broadcasting
+    #     cm_sum = ops.sum(cm, axis=1, keepdims=True)
+    #
+    #     # Broadcast division for normalization
+    #     cm_normalized = cm / cm_sum
 
     # Initialize figure
     fig, ax = make_figure(1, 1, figsize=fig_size)

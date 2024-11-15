@@ -8,8 +8,8 @@ from ..utils.plot_utils import make_figure
 
 
 def plot_losses(
-    train_losses: pd.DataFrame,
-    val_losses: pd.DataFrame = None,
+    train_losses: pd.DataFrame | np.ndarray,
+    val_losses: pd.DataFrame | np.ndarray = None,
     moving_average: bool = False,
     per_training_step: bool = False,
     ma_window_fraction: float = 0.01,
@@ -77,6 +77,11 @@ def plot_losses(
         If the number of columns in ``train_losses`` does not match the
         number of columns in ``val_losses``.
     """
+    if isinstance(train_losses, np.ndarray):
+        train_losses = pd.DataFrame(train_losses)
+
+    if isinstance(val_losses, np.ndarray):
+        val_losses = pd.DataFrame(val_losses)
 
     # Determine the number of rows for plot
     num_row = len(train_losses.columns)

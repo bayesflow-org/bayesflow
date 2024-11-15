@@ -8,8 +8,8 @@ import pandas as pd
 def plot_samples_2d(
     samples: np.ndarray = None,
     context: str = None,
-    n_params: int = None,
-    param_names: list = None,
+    num_variables: int = None,
+    variable_names: list = None,
     height: float = 2.5,
     color: str | tuple = "#132a70",
     alpha: float = 0.9,
@@ -32,9 +32,9 @@ def plot_samples_2d(
         The color of the plot
     alpha       : float in [0, 1], optional, default: 0.9
         The opacity of the plot
-    n_params     : int, optional, default: None
+    num_variables     : int, optional, default: None
         The number of params in the collection of distributions
-    param_names : list or None, optional, default: None
+    variable_names : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     render      : bool, optional, default: True
         The boolean that determines whether to render the plot visually.
@@ -47,18 +47,18 @@ def plot_samples_2d(
     dim = samples.shape[-1]
 
     # Get number of params
-    if n_params is None:
-        n_params = dim
+    if num_variables is None:
+        num_variables = dim
 
     # Generate parameters if there is none
     if context is None:
         context = "Default"
 
     # Generate titles
-    if param_names is None:
+    if variable_names is None:
         titles = [f"{context} $\\theta_{{{i}}}$" for i in range(1, dim + 1)]
     else:
-        titles = [f"{context} {p}" for p in param_names]
+        titles = [f"{context} {p}" for p in variable_names]
 
     # Convert samples to pd.DataFrame
     data_to_plot = pd.DataFrame(samples, columns=titles)

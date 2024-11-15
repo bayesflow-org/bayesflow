@@ -1,10 +1,12 @@
 from .plot_samples_2d import plot_samples_2d
 
+from typing import Sequence
+
 
 def plot_prior_2d(
     simulator,
-    param_names: list = None,
-    n_samples: int = 2000,
+    variable_names: Sequence[str] | str = None,
+    num_samples: int = 2000,
     height: float = 2.5,
     color: str | tuple = "#132a70",
     **kwargs,
@@ -15,9 +17,9 @@ def plot_prior_2d(
     ----------
     prior       : callable
         The prior object which takes a single integer argument and generates random draws.
-    param_names : list of str or None, optional, default None
+    variable_names : list of str or None, optional, default None
         An optional list of strings which
-    n_samples   : int, optional, default: 1000
+    num_samples   : int, optional, default: 1000
         The number of random draws from the joint prior
     height      : float, optional, default: 2.5
         The height of the pair plot
@@ -32,7 +34,7 @@ def plot_prior_2d(
     """
 
     # Generate prior draws
-    samples = simulator.sample((n_samples,))
+    samples = simulator.sample((num_samples,))
 
     # Handle dict type
     if isinstance(samples, dict):

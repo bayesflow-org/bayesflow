@@ -1,9 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 from typing import Sequence
 from ..utils.comp_utils import expected_calibration_error
-from ..utils.plot_utils import preprocess, add_labels
+from ..utils.plot_utils import preprocess, add_labels, add_metric, prettify_subplots
 
 
 def plot_calibration_curves(
@@ -13,7 +13,7 @@ def plot_calibration_curves(
     num_bins: int = 10,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
-    legend_fontsize: int = 14,
+    metric_fontsize: int = 14,
     tick_fontsize: int = 12,
     epsilon: float = 0.02,
     figsize: Sequence[int] = None,
@@ -68,13 +68,13 @@ def plot_calibration_curves(
         ax = plot_data["axes"]
 
     # Compute calibration
-    cal_errs, probs_true, probs_pred = expected_calibration_error(
+    cal_errors, true_probs, pred_probs = expected_calibration_error(
         plot_data["prior_samples"], plot_data["post_samples"], num_bins
     )
 
     for j in range(plot_data["num_variables"]):
         # Plot calibration curve
-        ax[j].plot(probs_pred[j], probs_true[j], "o-", color=color)
+        ax[j].plot(pred_probs[j], true_probs[j], "o-", color=color)
 
         # Plot PMP distribution over bins
         uniform_bins = np.linspace(0.0, 1.0, num_bins + 1)
@@ -87,27 +87,22 @@ def plot_calibration_curves(
         ax[j].plot((0, 1), (0, 1), "--", color="black", alpha=0.9)
 
         # Tweak plot
-        ax[j].tick_params(axis="both", which="major", labelsize=tick_fontsize)
-        ax[j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
         ax[j].set_title(plot_data["names"][j], fontsize=title_fontsize)
-        ax[j].spines["right"].set_visible(False)
-        ax[j].spines["top"].set_visible(False)
         ax[j].set_xlim([0 - epsilon, 1 + epsilon])
         ax[j].set_ylim([0 - epsilon, 1 + epsilon])
         ax[j].set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
         ax[j].set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-        ax[j].grid(alpha=0.5)
 
         # Add ECE label
-        ax[j].text(
-            0.1,
-            0.9,
-            r"$\widehat{{\mathrm{{ECE}}}}$ = {0:.3f}".format(cal_errs[j]),
-            horizontalalignment="left",
-            verticalalignment="center",
-            transform=ax[j].transAxes,
-            size=legend_fontsize,
+        add_metric(
+            ax[j],
+            metric_text=r"$\widehat{{\mathrm{{ECE}}}}$ = {0:.3f}",
+            metric_value=cal_errors[j],
+            metric_fontsize=metric_fontsize,
         )
+
+    # Prettify
+    prettify_subplots(axes=plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
     # Only add x-labels to the bottom row
     add_labels(

@@ -118,12 +118,8 @@ def plot_sbc_histograms(
         ax[j].axhline(mean, color="gray", zorder=0, alpha=0.9)
         sns.histplot(ranks[:, j], kde=False, ax=ax[j], color=color, bins=num_bins, alpha=0.95)
         ax[j].set_title(plot_data["names"][j], fontsize=title_fontsize)
-        ax[j].spines["right"].set_visible(False)
-        ax[j].spines["top"].set_visible(False)
         ax[j].get_yaxis().set_ticks([])
         ax[j].set_ylabel("")
-        ax[j].tick_params(axis="both", which="major", labelsize=tick_fontsize)
-        ax[j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
     # Prettify
     prettify_subplots(plot_data["axes"], tick_fontsize)

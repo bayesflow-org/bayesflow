@@ -1,24 +1,25 @@
 import numpy as np
 
-from ..utils.plot_utils import preprocess, add_labels, prettify_subplots
+from typing import Sequence
+from ..utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
 from ..utils.ecdf import simultaneous_ecdf_bands
 
 
 def plot_sbc_ecdf(
-    post_samples,
-    prior_samples,
-    names=None,
-    difference=False,
-    stacked=False,
-    figsize=None,
-    label_fontsize=16,
-    legend_fontsize=14,
-    title_fontsize=18,
-    tick_fontsize=12,
-    rank_ecdf_color="#132a70",
-    fill_color="grey",
-    num_row=None,
-    num_col=None,
+    post_samples: dict[str, np.ndarray] | np.ndarray,
+    prior_samples: dict[str, np.ndarray] | np.ndarray,
+    names: Sequence[str] = None,
+    difference: bool = False,
+    stacked: bool = False,
+    figsize: Sequence[float] = None,
+    label_fontsize: int = 16,
+    legend_fontsize: int = 14,
+    title_fontsize: int = 18,
+    tick_fontsize: int = 12,
+    rank_ecdf_color: str = "#132a70",
+    fill_color: str = "grey",
+    num_row: int = None,
+    num_col: int = None,
     **kwargs,
 ):
     """
@@ -90,7 +91,9 @@ def plot_sbc_ecdf(
     """
 
     # Preprocessing
-    plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize, stacked)
+    plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize, stacked=stacked)
+    plot_data["post_samples"] = plot_data.pop("post_variables")
+    plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
     # Compute fractional ranks (using broadcasting)
     ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
@@ -125,8 +128,8 @@ def plot_sbc_ecdf(
         ylab = "ECDF"
 
     # Add simultaneous bounds
-    titles = names if not stacked else ["Stacked ECDFs"]
-    for ax, title in zip(plot_data["axes"], titles):
+    titles = plot_data["names"] if not stacked else ["Stacked ECDFs"]
+    for ax, title in zip(plot_data["axes"].flat, titles):
         ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands")
         ax.legend(fontsize=legend_fontsize)
         ax.set_title(title, fontsize=title_fontsize)
@@ -134,7 +137,7 @@ def plot_sbc_ecdf(
     # Add prettiness
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
-    add_labels(
+    add_titles_and_labels(
         plot_data["axes"],
         plot_data["num_row"],
         plot_data["num_col"],

@@ -122,7 +122,7 @@ def make_figure(num_row: int = None, num_col: int = None, figsize: tuple = None)
             figsize = (int(5 * num_col), int(5 * num_row))
 
         f, axes = plt.subplots(num_row, num_col, figsize=figsize)
-    # axes = np.atleast_1d(axes)
+    axes = np.atleast_1d(axes)
 
     return f, axes
 
@@ -130,14 +130,14 @@ def make_figure(num_row: int = None, num_col: int = None, figsize: tuple = None)
 def add_metric(
     ax,
     metric_text: str = None,
-    metric_value: np.ndarray | float = None,
+    metric_value: float = None,
     position: tuple = (0.1, 0.9),
     metric_fontsize: int = 12,
 ):
     if metric_text is None or metric_value is None:
         raise ValueError("Metric text and values must be provided to be add this metric.")
 
-    metric_label = metric_text.format(metric_value)
+    metric_label = f"{metric_text} = {metric_value:.3f}"
 
     ax.text(
         position[0],

@@ -1,7 +1,8 @@
-from typing import Sequence, Callable
+from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 from scipy.stats import median_abs_deviation
 
 from bayesflow.utils.plot_utils import preprocess, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
@@ -11,8 +12,8 @@ def plot_recovery(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,
-    point_agg: Callable = np.median,
-    uncertainty_agg: Callable = median_abs_deviation,
+    point_agg=np.median,
+    uncertainty_agg=median_abs_deviation,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
@@ -67,7 +68,7 @@ def plot_recovery(
     if uncertainty_agg is not None:
         u = uncertainty_agg(plot_data["post_samples"], axis=1)
 
-    for i, ax in enumerate(plot_data["axes"].flat):
+    for i, ax in enumerate(np.atleast_1d(plot_data["axes"].flat)):
         if i >= plot_data["num_variables"]:
             break
 
@@ -86,10 +87,10 @@ def plot_recovery(
             _ = ax.scatter(plot_data["prior_samples"][:, i], point_estimate[:, i], alpha=0.5, color=color, **kwargs)
 
         make_quadratic(ax, plot_data["prior_samples"][:, i], point_estimate[:, i])
-        # TODO - Generalize
+
         if add_corr:
             corr = np.corrcoef(plot_data["prior_samples"][:, i], point_estimate[:, i])[0, 1]
-            add_metric(ax=ax, metric_text="$r$ = {:.3f}", metric_value=corr, metric_fontsize=metric_fontsize)
+            add_metric(ax=ax, metric_text="$r$", metric_value=corr, metric_fontsize=metric_fontsize)
 
         ax.set_title(plot_data["names"][i], fontsize=title_fontsize)
 

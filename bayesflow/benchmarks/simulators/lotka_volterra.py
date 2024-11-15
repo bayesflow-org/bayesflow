@@ -13,6 +13,7 @@ class LotkaVolterra(BenchmarkSimulator):
         subsample: int = 10,
         flatten: bool = True,
         obs_noise: float = 0.1,
+        dt: float = None,
         rng: np.random.Generator = None,
     ):
         """Lotka Volterra simulated benchmark.
@@ -41,6 +42,9 @@ class LotkaVolterra(BenchmarkSimulator):
         self.X0 = X0
         self.Y0 = Y0
         self.T = T
+        if dt is None:
+            dt = 1 / T
+        self.dt = dt
         self.subsample = subsample
         self.flatten = flatten
         self.obs_noise = obs_noise
@@ -69,7 +73,7 @@ class LotkaVolterra(BenchmarkSimulator):
         params = self.rng.lognormal(mean=[-0.125, -3, -0.125, -3], sigma=0.5)
         return params
 
-    def observation_model(self, params: np.ndarray):
+    def observation_model(self, params: np.ndarray) -> np.ndarray:
         """Runs a Lotka-Volterra simulation for T time steps and returns `subsample` evenly spaced
         points from the simulated trajectory, given contact parameters `params`.
 
@@ -92,7 +96,7 @@ class LotkaVolterra(BenchmarkSimulator):
         alpha, beta, gamma, delta = params
 
         # Prepate time vector between 0 and T of length T
-        t_vec = np.linspace(0, self.T, self.T)
+        t_vec = np.linspace(0, self.T, int(1 / self.dt))
 
         # Integrate using scipy and retain only infected (2-nd dimension)
         pp = odeint(self._deriv, x0, t_vec, args=(alpha, beta, gamma, delta))

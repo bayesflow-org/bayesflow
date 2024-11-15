@@ -3,69 +3,61 @@ import keras
 from bayesflow.types import Tensor
 from bayesflow.utils import issue_url
 
-# hard coded from keras.ops.logspace(-6, 6, 11)
-# to avoid pytorch errors/warnings if you want to use MPS
-default_scales = keras.ops.convert_to_tensor(
-    [
-        1.0000e-06,
-        1.5849e-05,
-        2.5119e-04,
-        3.9811e-03,
-        6.3096e-02,
-        1.0000e00,
-        1.5849e01,
-        2.5119e02,
-        3.9811e03,
-        6.3096e04,
-        1.0000e06,
-    ]
-)
+from .kernels import gaussian, inverse_multiquadratic
 
 
-def gaussian_kernel(x1: Tensor, x2: Tensor, scales: Tensor = default_scales) -> Tensor:
-    residuals = x1[:, None] - x2[None, :]
-    residuals = keras.ops.reshape(residuals, keras.ops.shape(residuals)[:2] + (-1,))
-    norms = keras.ops.norm(residuals, ord=2, axis=2)
-    exponent = norms[:, :, None] / (2.0 * scales[None, None, :])
-    return keras.ops.mean(keras.ops.exp(-exponent), axis=2)
+def maximum_mean_discrepancy(
+    x: Tensor, y: Tensor, kernel: str = "inverse_multiquadratic", unbiased: bool = False, **kwargs
+) -> Tensor:
+    """Computes a mixture of Gaussian radial basis functions (RBFs) between the samples of x and y.
 
+    See the original paper below for details and different estimators:
 
-def maximum_mean_discrepancy(x1: Tensor, x2: Tensor, kernel: str = "gaussian", **kwargs) -> Tensor:
-    """Computes the maximum mean discrepancy between samples x1 and x2.
+    Gretton, A., Borgwardt, K. M., Rasch, M. J., Schölkopf, B., & Smola, A. (2012).
+    A kernel two-sample test. The Journal of Machine Learning Research, 13(1), 723-773.
+    https://jmlr.csail.mit.edu/papers/v13/gretton12a.html
 
-    :param x1: Tensor of shape (n, ...)
+    Parameters
+    ----------
+    x        :  Tensor of shape (num_draws_x, num_features)
+        Comprises `num_draws_x` Random draws from the "source" distribution `P`.
+    y        :  Tensor of shape (num_draws_y, num_features)
+        Comprises `num_draws_y` Random draws from the "source" distribution `Q`.
+    kernel   : str, optional (default - "inverse_multiquadratic")
+        The (mixture of) kernels to be used for the MMD computation.
+    unbiased : bool, optional (default - False)
+        Whether to use the unbiased MMD estimator. Default is False.
 
-    :param x2: Tensor of shape (n, ...)
-
-    :param kernel: Name of the kernel to use.
-        Default: 'gaussian'
-
-    :param kwargs: Additional keyword arguments to pass to the kernel function.
-
-    :return: Tensor of shape (n,)
-        The (x1)-sample-wise maximum mean discrepancy between samples in x1 and x2.
+    Returns
+    -------
+    mmd  : Tensor of shape (1, )
+        The biased or unbiased empirical maximum mean discrepancy (MMD) estimator.
     """
-    if kernel != "gaussian":
+
+    if kernel == "gaussian":
+        kernel_fn = gaussian
+    elif kernel == "inverse_multiquadratic":
+        kernel_fn = inverse_multiquadratic
+    else:
         raise ValueError(
-            "For now, we only support the Gaussian kernel. "
+            "For now, we only support a gaussian and an inverse_multiquadratic kernel."
             f"If you need a different kernel, please open an issue at {issue_url}"
         )
-    else:
-        kernel_fn = gaussian_kernel
 
-    # cannot check first (batch) dimension since it will be unknown at compile time
-    if keras.ops.shape(x1)[1:] != keras.ops.shape(x2)[1:]:
+    if keras.ops.shape(x)[1:] != keras.ops.shape(y)[1:]:
         raise ValueError(
-            f"Expected x1 and x2 to live in the same feature space, "
-            f"but got {keras.ops.shape(x1)[1:]} != {keras.ops.shape(x2)[1:]}."
+            f"Expected x and y to live in the same feature space, "
+            f"but got {keras.ops.shape(x)[1:]} != {keras.ops.shape(y)[1:]}."
         )
 
-    # use flattened versions
-    x1 = keras.ops.reshape(x1, (keras.ops.shape(x1)[0], -1))
-    x2 = keras.ops.reshape(x2, (keras.ops.shape(x2)[0], -1))
+    if unbiased:
+        m, n = keras.ops.shape(x)[0], keras.ops.shape(y)[0]
+        xx = (1.0 / (m * (m + 1))) * keras.ops.sum(kernel_fn(x, x, **kwargs))
+        yy = (1.0 / (n * (n + 1))) * keras.ops.sum(kernel_fn(y, y, **kwargs))
+        xy = (2.0 / (m * n)) * keras.ops.sum(kernel_fn(x, y, **kwargs))
+    else:
+        xx = keras.ops.mean(kernel_fn(x, x, **kwargs))
+        yy = keras.ops.mean(kernel_fn(y, y, **kwargs))
+        xy = keras.ops.mean(kernel_fn(x, y, **kwargs))
 
-    k1 = keras.ops.mean(kernel_fn(x1, x1, **kwargs), axis=1)
-    k2 = keras.ops.mean(kernel_fn(x2, x2, **kwargs), axis=1)
-    k3 = keras.ops.mean(kernel_fn(x1, x2, **kwargs), axis=1)
-
-    return k1 + k2 - 2.0 * k3
+    return xx + yy - 2.0 * xy

@@ -71,6 +71,16 @@ pre-commit install
 We recommend using the PyTorch backend for development.
 Be careful not to downgrade your keras version when installing the backend.
 
+You can also install a triple backend cuda environment using `cuda.yaml`:
+
+```bash
+conda env create --file cuda.yaml --name bf-cuda
+```
+
+Note that we cannot guarantee that this environment file will always work,
+as it is not tested frequently or across devices.
+It is provided merely as a convenience. For reliability, install only a single backend.
+
 ### 3. Implement your changes
 
 In general, we recommend a test-driven development approach:

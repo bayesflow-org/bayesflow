@@ -56,19 +56,8 @@ class FlowMatching(InferenceNetwork):
         super().build(xz_shape)
         self.integrator.build(xz_shape, conditions_shape)
 
-    def call(
-        self,
-        xz: Tensor,
-        conditions: Tensor = None,
-        inverse: bool = False,
-        **kwargs,
-    ):
-        if inverse:
-            return self._inverse(xz, conditions=conditions, **kwargs)
-        return self._forward(xz, conditions=conditions, **kwargs)
-
     def _forward(
-        self, x: Tensor, conditions: Tensor = None, density: bool = False, **kwargs
+        self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         steps = kwargs.get("steps", 100)
 
@@ -82,7 +71,7 @@ class FlowMatching(InferenceNetwork):
         return z
 
     def _inverse(
-        self, z: Tensor, conditions: Tensor = None, density: bool = False, **kwargs
+        self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         steps = kwargs.get("steps", 100)
 

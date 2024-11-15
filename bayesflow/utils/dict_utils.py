@@ -2,7 +2,7 @@ import inspect
 import keras
 from typing import TypeVar
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 
 from bayesflow.types import Tensor
 
@@ -11,7 +11,7 @@ from . import logging
 T = TypeVar("T")
 
 
-def convert_args(f, *args, **kwargs) -> tuple[any, ...]:
+def convert_args(f: Callable, *args: any, **kwargs: any) -> tuple[any, ...]:
     """Convert positional and keyword arguments to just positional arguments for f"""
     if not kwargs:
         return args
@@ -31,7 +31,7 @@ def convert_args(f, *args, **kwargs) -> tuple[any, ...]:
     return tuple(parameters)
 
 
-def convert_kwargs(f, *args, **kwargs) -> dict[str, any]:
+def convert_kwargs(f: Callable, *args: any, **kwargs: any) -> dict[str, any]:
     """Convert positional and keyword arguments to just keyword arguments for f"""
     if not args:
         return kwargs
@@ -49,7 +49,7 @@ def convert_kwargs(f, *args, **kwargs) -> dict[str, any]:
     return parameters
 
 
-def filter_kwargs(kwargs: Mapping[str, T], f: callable) -> Mapping[str, T]:
+def filter_kwargs(kwargs: Mapping[str, T], f: Callable) -> Mapping[str, T]:
     """Filter keyword arguments for f"""
     signature = inspect.signature(f)
 

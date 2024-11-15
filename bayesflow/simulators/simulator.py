@@ -3,12 +3,15 @@ import numpy as np
 
 from bayesflow.types import Shape
 from bayesflow.utils import tree_concatenate
+from bayesflow.utils.decorators import allow_batch_size
 
 
 class Simulator:
+    @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         raise NotImplementedError
 
+    @allow_batch_size
     def rejection_sample(
         self,
         batch_shape: Shape,

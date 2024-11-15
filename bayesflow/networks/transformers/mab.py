@@ -56,16 +56,16 @@ class MultiHeadAttentionBlock(keras.Layer):
         self.output_projector = layers.Dense(embed_dim)
         self.ln_post = layers.LayerNormalization() if layer_norm else None
 
-    def call(self, set_x: Tensor, set_y: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, seq_x: Tensor, seq_y: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass through the attention layer.
 
         Parameters
         ----------
-        set_x    : Tensor (e.g., np.ndarray, tf.Tensor, ...)
-            Input of shape (batch_size, set_size_x, input_dim), which will
+        seq_x    : Tensor (e.g., np.ndarray, tf.Tensor, ...)
+            Input of shape (batch_size, seq_size_x, input_dim), which will
             play the role of a query (Q).
-        set_y    : Tensor
-            Input of shape (batch_size, set_size_y, input_dim), which will
+        seq_y    : Tensor
+            Input of shape (batch_size, seq_size_y, input_dim), which will
             play the role of key (K) and value (V).
         training : boolean, optional (default - True)
             Passed to the optional internal dropout and spectral normalization
@@ -80,8 +80,8 @@ class MultiHeadAttentionBlock(keras.Layer):
             Output of shape (batch_size, set_size_x, output_dim)
         """
 
-        h = self.input_projector(set_x) + self.attention(
-            query=set_x, key=set_y, value=set_y, training=training, **kwargs
+        h = self.input_projector(seq_x) + self.attention(
+            query=seq_x, key=seq_y, value=seq_y, training=training, **kwargs
         )
         if self.ln_pre is not None:
             h = self.ln_pre(h, training=training)

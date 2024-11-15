@@ -1,5 +1,6 @@
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - jupyter
   - jupyterlab
@@ -15,6 +16,6 @@ dependencies:
   - ruff
   - seaborn
   - scikit-learn
-  - scipy ~= 1.13
+  - scipy
   - tqdm
-  - tox ~= 4.15
+  - tox

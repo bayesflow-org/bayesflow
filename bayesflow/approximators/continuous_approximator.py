@@ -11,7 +11,7 @@ from keras.saving import (
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import logging, expand_left_to
+from bayesflow.utils import logging
 from .approximator import Approximator
 
 
@@ -166,20 +166,16 @@ class ContinuousApproximator(Approximator):
             if inference_conditions is None:
                 inference_conditions = summary_outputs
             else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
-
-        batch_shape = (batch_size, num_samples)
+                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=1)
 
         if inference_conditions is not None:
-            if keras.ops.ndim(inference_conditions) < 3:
-                # TODO: this may present an issue for 2+D conditions
-                inference_conditions = expand_left_to(inference_conditions, 3)
-
+            # conditions must always have shape (batch_size, dims)
+            inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
             inference_conditions = keras.ops.broadcast_to(
-                inference_conditions, batch_shape + inference_conditions.shape[2:]
+                inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
 
-        return self.inference_network.sample(batch_shape, conditions=inference_conditions)
+        return self.inference_network.sample((batch_size, num_samples), conditions=inference_conditions)
 
     def log_prob(self, data: dict[str, np.ndarray], *, batch_size: int) -> np.ndarray:
         data = self.adapter(data, strict=False, batch_size=batch_size)

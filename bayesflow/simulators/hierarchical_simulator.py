@@ -3,6 +3,7 @@ import keras
 import numpy as np
 
 from bayesflow.types import Shape
+from bayesflow.utils.decorators import allow_batch_size
 
 from .simulator import Simulator
 
@@ -11,6 +12,7 @@ class HierarchicalSimulator(Simulator):
     def __init__(self, hierarchy: Sequence[Simulator]):
         self.hierarchy = hierarchy
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         input_data = {}
         output_data = {}

@@ -35,7 +35,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
         layer_norm: bool = True,
         **kwargs,
     ):
-        """Creates a multi-head attention block (MAB) which will perform cross-attention between an input set
+        """Creates a multi-head attention block (MAB) which will perform cross-attention between an input sequence
         and a set of seed vectors (typically one for a single summary) with summary_dim output dimensions.
 
         Could also be used as part of a ``DeepSet`` for representing learnable instead of fixed pooling.

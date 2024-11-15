@@ -65,13 +65,6 @@ class CouplingFlow(InferenceNetwork):
         for layer in self.invertible_layers:
             layer.build(xz_shape=xz_shape, conditions_shape=conditions_shape)
 
-    def call(
-        self, xz: Tensor, conditions: Tensor = None, inverse: bool = False, training: bool = False, **kwargs
-    ) -> Tensor | tuple[Tensor, Tensor]:
-        if inverse:
-            return self._inverse(xz, conditions=conditions, training=training, **kwargs)
-        return self._forward(xz, conditions=conditions, training=training, **kwargs)
-
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:

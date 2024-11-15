@@ -156,7 +156,7 @@ class ConsistencyModel(InferenceNetwork):
         discretized_times = np.zeros((len(unique_n), self.max_n + 1))
         discretization_map = np.zeros((self.max_n + 1,), dtype=np.int32)
         for i, n in enumerate(unique_n):
-            disc = self._discretize_time(n)
+            disc = ops.convert_to_numpy(self._discretize_time(n))
             discretized_times[i, : len(disc)] = disc
             discretization_map[n] = i
         # Finally, we convert the vectors to tensors

@@ -7,6 +7,7 @@ import numpy as np
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import expand_tile
+from bayesflow.utils.decorators import allow_batch_size
 
 from .distribution import Distribution
 
@@ -84,6 +85,7 @@ class DiagonalStudentT(Distribution):
 
         return result
 
+    @allow_batch_size
     def sample(self, batch_shape: Shape) -> Tensor:
         # As of writing this code, keras does not support the chi-square distribution
         # nor does it support a scale or rate parameter in Gamma. Hence, we use the relation:

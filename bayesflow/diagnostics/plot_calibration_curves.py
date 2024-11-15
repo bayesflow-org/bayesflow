@@ -61,18 +61,12 @@ def plot_calibration_curves(
 
     plot_data = preprocess(post_model_samples, true_model_samples, names, num_col, num_row, figsize, context="M")
 
-    # Plot marginal calibration curves in a loop
-    if plot_data["num_row"] > 1:
-        ax = plot_data["axes"].flat
-    else:
-        ax = plot_data["axes"]
-
     # Compute calibration
     cal_errors, true_probs, pred_probs = expected_calibration_error(
         plot_data["prior_samples"], plot_data["post_samples"], num_bins
     )
 
-    for j in range(plot_data["num_variables"]):
+    for j, ax in enumerate(plot_data["axes"].flat):
         # Plot calibration curve
         ax[j].plot(pred_probs[j], true_probs[j], "o-", color=color)
 
@@ -87,7 +81,6 @@ def plot_calibration_curves(
         ax[j].plot((0, 1), (0, 1), "--", color="black", alpha=0.9)
 
         # Tweak plot
-        ax[j].set_title(plot_data["names"][j], fontsize=title_fontsize)
         ax[j].set_xlim([0 - epsilon, 1 + epsilon])
         ax[j].set_ylim([0 - epsilon, 1 + epsilon])
         ax[j].set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])

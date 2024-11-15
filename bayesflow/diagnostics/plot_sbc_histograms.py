@@ -108,17 +108,11 @@ def plot_sbc_histograms(
     endpoints = binom.interval(binomial_interval, num_trials, 1 / num_bins)
     mean = num_trials / num_bins  # corresponds to binom.mean(N, 1 / num_bins)
 
-    # Plot marginal histograms in a loop
-    if plot_data["num_row"] > 1:
-        ax = plot_data["axes"].flat
-    else:
-        ax = plot_data["axes"]
-
-    for j in range(len(plot_data["names"])):
-        ax[j].axhspan(endpoints[0], endpoints[1], facecolor="gray", alpha=0.3)
-        ax[j].axhline(mean, color="gray", zorder=0, alpha=0.9)
-        sns.histplot(ranks[:, j], kde=False, ax=ax[j], color=color, bins=num_bins, alpha=0.95)
-        ax[j].get_yaxis().set_ticks([])
+    for j, ax in enumerate(plot_data["axes"].flat):
+        ax.axhspan(endpoints[0], endpoints[1], facecolor="gray", alpha=0.3)
+        ax.axhline(mean, color="gray", zorder=0, alpha=0.9)
+        sns.histplot(ranks[:, j], kde=False, ax=ax, color=color, bins=num_bins, alpha=0.95)
+        ax.get_yaxis().set_ticks([])
 
     # Prettify
     prettify_subplots(plot_data["axes"], tick_fontsize)

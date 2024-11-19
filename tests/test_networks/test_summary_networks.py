@@ -1,6 +1,10 @@
 import keras
 import numpy as np
 import pytest
+from keras.saving import (
+    deserialize_keras_object as deserialize,
+    serialize_keras_object as serialize,
+)
 
 from tests.utils import assert_layers_equal
 
@@ -52,7 +56,20 @@ def test_variable_set_size(summary_network, random_set):
         summary_network(new_input)
 
 
-def test_serialize_deserialize(tmp_path, summary_network, random_set):
+def test_serialize_deserialize(summary_network, random_set):
+    if summary_network is None:
+        pytest.skip()
+
+    summary_network.build(keras.ops.shape(random_set))
+
+    serialized = serialize(summary_network)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert serialized == reserialized
+
+
+def test_save_and_load(tmp_path, summary_network, random_set):
     if summary_network is None:
         pytest.skip()
 

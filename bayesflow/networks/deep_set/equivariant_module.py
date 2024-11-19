@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import keras
 from keras import ops, layers
 from keras.saving import register_keras_serializable as serializable
@@ -19,10 +21,10 @@ class EquivariantModule(keras.Layer):
 
     def __init__(
         self,
-        mlp_widths_equivariant: tuple = (128, 128),
-        mlp_widths_invariant_inner: tuple = (128, 128),
-        mlp_widths_invariant_outer: tuple = (128, 128),
-        pooling: str | keras.Layer = "mean",
+        mlp_widths_equivariant: Sequence[int] = (128, 128),
+        mlp_widths_invariant_inner: Sequence[int] = (128, 128),
+        mlp_widths_invariant_outer: Sequence[int] = (128, 128),
+        pooling: str = "mean",
         activation: str = "gelu",
         kernel_initializer: str = "he_normal",
         dropout: int | float | None = 0.05,

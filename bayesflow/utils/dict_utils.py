@@ -2,7 +2,9 @@ import inspect
 import keras
 from typing import TypeVar
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
+
+import numpy as np
 
 from bayesflow.types import Tensor
 
@@ -32,7 +34,7 @@ def convert_args(f: Callable, *args: any, **kwargs: any) -> tuple[any, ...]:
 
 
 def convert_kwargs(f: Callable, *args: any, **kwargs: any) -> dict[str, any]:
-    """Convert positional and keyword arguments to just keyword arguments for f"""
+    """Convert positional and keyword arguments qto just keyword arguments for f"""
     if not args:
         return kwargs
 
@@ -101,3 +103,40 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
             result[f"{key}_{i + 1}"] = split
 
     return result
+
+
+def dicts_to_arrays(
+    post_variables: dict[str, np.ndarray] | np.ndarray,
+    prior_variables: dict[str, np.ndarray] | np.ndarray,
+    names: Sequence[str] = None,
+    context: str = None,
+):
+    """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
+
+    if type(post_variables) is not type(prior_variables):
+        raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
+
+    if isinstance(post_variables, dict):
+        if post_variables.keys() != prior_variables.keys():
+            raise ValueError("Keys in your posterior / prior arrays should match.")
+
+        # Use user-provided names instead of inferred ones
+        names = list(post_variables.keys()) if names is None else names
+
+        post_variables = np.concatenate([v for k, v in post_variables.items() if k in names], axis=-1)
+        prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in names], axis=-1)
+
+    elif isinstance(post_variables, np.ndarray):
+        if names is not None:
+            if post_variables.shape[-1] != len(names) or prior_variables.shape[-1] != len(names):
+                raise ValueError("The length of the names list should match the number of target variables.")
+        else:
+            if context is not None:
+                names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
+            else:
+                names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
+
+    else:
+        raise TypeError("Only dicts and tensors are supported as arguments.")
+
+    return dict(post_variables=post_variables, prior_variables=prior_variables, names=names, num_variables=len(names))

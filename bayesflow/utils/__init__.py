@@ -42,3 +42,13 @@ from .tensor_utils import (
     tree_stack,
 )
 from .validators import check_lengths_same
+from .comp_utils import expected_calibration_error
+from .plot_utils import (
+    check_posterior_prior_shapes,
+    preprocess,
+    add_titles_and_labels,
+    prettify_subplots,
+    make_quadratic,
+    add_metric,
+)
+from .callbacks import detailed_loss_callback

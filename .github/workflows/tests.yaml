@@ -69,7 +69,7 @@ jobs:
       - name: Install JAX
         if: ${{ matrix.backend == 'jax' }}
         run: |
-          pip install -U "jax[cpu]"
+          pip install -U jax
       - name: Install NumPy
         if: ${{ matrix.backend == 'numpy' }}
         run: |
@@ -90,6 +90,7 @@ jobs:
           conda config --show-sources
           conda config --show
           printenv | sort
+          conda env export
 
       - name: Run Tests
         run: |

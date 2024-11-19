@@ -1,9 +1,7 @@
 import keras
-from keras import layers, Sequential
-from keras.saving import register_keras_serializable as serializable, serialize_keras_object as serialize
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-
 from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
 
@@ -30,7 +28,7 @@ class LSTNet(SummaryNetwork):
         activation: str = "mish",
         kernel_initializer: str = "glorot_uniform",
         groups: int = 8,
-        recurrent_type: str | keras.Layer = "gru",
+        recurrent_type: str = "gru",
         recurrent_dim: int = 128,
         bidirectional: bool = True,
         dropout: float = 0.05,
@@ -46,18 +44,19 @@ class LSTNet(SummaryNetwork):
             kernel_sizes = (kernel_sizes,)
         if not isinstance(strides, (list, tuple)):
             strides = (strides,)
-        self.conv_blocks = Sequential()
+        self.conv_blocks = []
         for f, k, s in zip(filters, kernel_sizes, strides):
-            self.conv_blocks.add(
-                layers.Conv1D(
+            self.conv_blocks.append(
+                keras.layers.Conv1D(
                     filters=f,
                     kernel_size=k,
                     strides=s,
                     activation=activation,
                     kernel_initializer=kernel_initializer,
+                    padding="same",
                 )
             )
-            self.conv_blocks.add(layers.GroupNormalization(groups=groups))
+            self.conv_blocks.append(keras.layers.GroupNormalization(groups=groups))
 
         # Recurrent and feedforward backbones
         self.recurrent = SkipRecurrentNet(
@@ -68,27 +67,17 @@ class LSTNet(SummaryNetwork):
             skip_steps=skip_steps,
             dropout=dropout,
         )
-        self.output_projector = layers.Dense(summary_dim)
+        self.output_projector = keras.layers.Dense(summary_dim)
         self.summary_dim = summary_dim
 
-    def call(self, time_series: Tensor, training: bool = False, **kwargs) -> Tensor:
-        summary = self.conv_blocks(time_series, training=training)
-        summary = self.recurrent(summary, training=training)
-        summary = self.output_projector(summary)
-        return summary
+    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
+        for c in self.conv_blocks:
+            x = c(x, training=training)
+
+        x = self.recurrent(x, training=training)
+        x = self.output_projector(x)
+        return x
 
     def build(self, input_shape):
         super().build(input_shape)
         self.call(keras.ops.zeros(input_shape))
-
-    def get_config(self):
-        base_config = super().get_config()
-
-        config = {
-            "conv_blocks": serialize(self.conv_blocks),
-            "recurrent": serialize(self.recurrent),
-            "output_projector": serialize(self.output_projector),
-            "summary_dim": serialize(self.summary_dim),
-        }
-
-        return base_config | config

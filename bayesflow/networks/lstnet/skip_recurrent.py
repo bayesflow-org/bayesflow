@@ -22,7 +22,7 @@ class SkipRecurrentNet(keras.Model):
     def __init__(
         self,
         hidden_dim: int = 256,
-        recurrent_type: str | keras.Layer = "gru",
+        recurrent_type: str = "gru",
         bidirectional: bool = True,
         input_channels: int = 64,
         skip_steps: int = 4,
@@ -32,7 +32,10 @@ class SkipRecurrentNet(keras.Model):
         super().__init__(**keras_kwargs(kwargs))
 
         self.skip_conv = keras.layers.Conv1D(
-            filters=input_channels * skip_steps, kernel_size=skip_steps, strides=skip_steps
+            filters=input_channels * skip_steps,
+            kernel_size=skip_steps,
+            strides=skip_steps,
+            padding="same",
         )
 
         recurrent_constructor = find_recurrent_net(recurrent_type)

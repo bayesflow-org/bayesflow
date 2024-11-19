@@ -1,4 +1,5 @@
 from functools import partial
+
 import keras
 
 from .functional import maximum_mean_discrepancy
@@ -20,4 +21,4 @@ class MaximumMeanDiscrepancy(keras.Metric):
         self.mmd.assign(keras.ops.cast(self.mmd_fn(x, y), self.dtype))
 
     def result(self):
-        return self.mmd
+        return self.mmd.value

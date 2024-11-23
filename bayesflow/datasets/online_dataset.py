@@ -35,7 +35,7 @@ class OnlineDataset(keras.utils.PyDataset):
         batch = self.simulator.sample((self.batch_size,))
 
         if self.adapter is not None:
-            batch = self.adapter(batch, batch_size=self.batch_size)
+            batch = self.adapter(batch)
 
         return batch
 

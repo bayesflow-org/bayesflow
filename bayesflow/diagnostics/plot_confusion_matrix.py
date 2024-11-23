@@ -1,12 +1,13 @@
-import matplotlib.colors
-import matplotlib.pyplot as plt
-import numpy as np
-
 from typing import Sequence
 
-from keras import ops
-from sklearn.metrics import confusion_matrix
+import matplotlib.colors
+import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+import numpy as np
+
+from sklearn.metrics import confusion_matrix
+
+from keras import ops
 
 from bayesflow.utils.plot_utils import make_figure
 

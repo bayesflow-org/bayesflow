@@ -7,6 +7,7 @@ from bayesflow.utils import check_lengths_same
 from ..summary_network import SummaryNetwork
 
 from .sab import SetAttentionBlock
+from .isab import InducedSetAttentionBlock
 from .pma import PoolingByMultiHeadAttention
 
 
@@ -107,7 +108,9 @@ class SetTransformer(SummaryNetwork):
                 block = SetAttentionBlock(**(global_attention_settings | layer_attention_settings))
             else:
                 isab_settings = dict(num_inducing_points=num_inducing_points)
-                block = SetAttentionBlock(**(global_attention_settings | layer_attention_settings | isab_settings))
+                block = InducedSetAttentionBlock(
+                    **(global_attention_settings | layer_attention_settings | isab_settings)
+                )
 
             self.attention_blocks.add(block)
 

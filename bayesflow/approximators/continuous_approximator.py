@@ -134,14 +134,13 @@ class ContinuousApproximator(Approximator):
     def sample(
         self,
         *,
-        batch_size: int,
         num_samples: int,
         conditions: dict[str, np.ndarray],
         **kwargs,
     ) -> dict[str, np.ndarray]:
-        conditions = self.adapter(conditions, strict=False, batch_size=batch_size, **kwargs)
+        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-        conditions = {"inference_variables": self._sample(num_samples=num_samples, batch_size=batch_size, **conditions)}
+        conditions = {"inference_variables": self._sample(num_samples=num_samples, **conditions)}
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
         conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
 
@@ -149,7 +148,6 @@ class ContinuousApproximator(Approximator):
 
     def _sample(
         self,
-        batch_size: int,
         num_samples: int,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
@@ -170,15 +168,19 @@ class ContinuousApproximator(Approximator):
 
         if inference_conditions is not None:
             # conditions must always have shape (batch_size, dims)
+            batch_size = keras.ops.shape(inference_conditions)[0]
             inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
             inference_conditions = keras.ops.broadcast_to(
                 inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
+            batch_shape = (batch_size, num_samples)
+        else:
+            batch_shape = (num_samples,)
 
-        return self.inference_network.sample((batch_size, num_samples), conditions=inference_conditions)
+        return self.inference_network.sample(batch_shape, conditions=inference_conditions)
 
-    def log_prob(self, data: dict[str, np.ndarray], *, batch_size: int) -> np.ndarray:
-        data = self.adapter(data, strict=False, batch_size=batch_size)
+    def log_prob(self, data: dict[str, np.ndarray]) -> np.ndarray:
+        data = self.adapter(data, strict=False, stage="inference")
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data)
         log_prob = keras.ops.convert_to_numpy(log_prob)

@@ -1,23 +1,25 @@
-import matplotlib.pyplot as plt
-from .plot_samples_2d import plot_samples_2d
-
 from typing import Sequence
+
+import seaborn as sns
+
+from bayesflow.simulators import Simulator
+from .plot_samples_2d import plot_samples_2d
 
 
 def plot_prior_2d(
-    simulator,
+    simulator: Simulator,
     variable_names: Sequence[str] | str = None,
     num_samples: int = 2000,
     height: float = 2.5,
     color: str | tuple = "#132a70",
     **kwargs,
-) -> plt.Figure:
+) -> sns.PairGrid:
     """Creates pair-plots for a given joint prior.
 
     Parameters
     ----------
-    prior       : callable
-        The prior object which takes a single integer argument and generates random draws.
+    simulator      : bayesflow.simulations.Simulator
+        The simulator object which can take an integer argument and generate random draws.
     variable_names : list of str or None, optional, default None
         An optional list of strings which
     num_samples   : int, optional, default: 1000
@@ -41,6 +43,6 @@ def plot_prior_2d(
     if isinstance(samples, dict):
         samples = samples["theta"]
 
-    plot_samples_2d(
+    return plot_samples_2d(
         samples, context="Prior", height=height, color=color, param_names=variable_names, render=True, **kwargs
     )

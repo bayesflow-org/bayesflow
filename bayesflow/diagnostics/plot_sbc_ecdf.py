@@ -9,7 +9,7 @@ from ..utils.ecdf import simultaneous_ecdf_bands
 def plot_sbc_ecdf(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
-    names: Sequence[str] = None,
+    variable_names: Sequence[str] = None,
     difference: bool = False,
     stacked: bool = False,
     figsize: Sequence[float] = None,
@@ -50,10 +50,10 @@ def plot_sbc_ecdf(
         If `True`, all ECDFs will be plotted on the same plot.
         If `False`, each ECDF will have its own subplot,
         similar to the behavior of `plot_sbc_histograms`.
-    param_names       : list or None, optional, default: None
+    variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
         Inferred if None. Only relevant if `stacked=False`.
-    fig_size          : tuple or None, optional, default: None
+    figsize           : tuple or None, optional, default: None
         The figure size passed to the matplotlib constructor.
         Inferred if None.
     label_fontsize    : int, optional, default: 16
@@ -69,10 +69,10 @@ def plot_sbc_ecdf(
         The color to use for the rank ECDFs
     fill_color        : str, optional, default: 'grey'
         The color of the fill arguments.
-    n_row             : int, optional, default: None
+    num_row           : int, optional, default: None
         The number of rows for the subplots.
         Dynamically determined if None.
-    n_col             : int, optional, default: None
+    num_col           : int, optional, default: None
         The number of columns for the subplots.
         Dynamically determined if None.
     **kwargs          : dict, optional, default: {}
@@ -92,7 +92,7 @@ def plot_sbc_ecdf(
     """
 
     # Preprocessing
-    plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize, stacked=stacked)
+    plot_data = preprocess(post_samples, prior_samples, variable_names, num_col, num_row, figsize, stacked=stacked)
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
@@ -135,9 +135,9 @@ def plot_sbc_ecdf(
         ax.legend(fontsize=legend_fontsize)
         ax.set_title(title, fontsize=title_fontsize)
 
-    # Add prettiness
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
+    # Add labels, titles, and set font sizes
     add_titles_and_labels(
         plot_data["axes"],
         plot_data["num_row"],

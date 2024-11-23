@@ -51,7 +51,7 @@ class RoundsDataset(keras.utils.PyDataset):
         batch = self.batches[item]
 
         if self.adapter is not None:
-            batch = self.adapter(batch, batch_size=self.batch_size)
+            batch = self.adapter(batch)
 
         return batch
 

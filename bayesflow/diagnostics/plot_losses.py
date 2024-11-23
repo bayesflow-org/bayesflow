@@ -1,9 +1,11 @@
+from typing import Sequence
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from typing import Sequence
+
 from ..utils.plot_utils import make_figure, add_titles_and_labels
 
 
@@ -126,7 +128,7 @@ def plot_losses(
         if val_losses is not None or moving_average:
             ax.legend(fontsize=legend_fontsize)
 
-    # Schmuck
+    # Add labels, titles, and set font sizes
     add_titles_and_labels(
         axes=np.atleast_1d(axes),
         num_row=num_row,

@@ -55,7 +55,7 @@ class DiskDataset(keras.utils.PyDataset):
         batch = tree_stack(batch)
 
         if self.adapter is not None:
-            batch = self.adapter(batch, batch_size=self.batch_size)
+            batch = self.adapter(batch)
 
         return batch
 

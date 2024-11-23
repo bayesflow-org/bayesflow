@@ -14,6 +14,7 @@ from .transforms import (
     Constrain,
     ConvertDType,
     Drop,
+    ExpandDims,
     FilterTransform,
     Keep,
     LambdaTransform,
@@ -111,11 +112,13 @@ class Adapter:
         self.transforms.append(transform)
         return self
 
-    def broadcast(self, keys: str | Sequence[str], *, expand_scalars: bool = True):
+    def broadcast(
+        self, keys: str | Sequence[str], *, to: str, expand: str | int | tuple = "left", exclude: int | tuple = -1
+    ):
         if isinstance(keys, str):
             keys = [keys]
 
-        transform = MapTransform({key: Broadcast(expand_scalars=expand_scalars) for key in keys})
+        transform = Broadcast(keys, to=to, expand=expand, exclude=exclude)
         self.transforms.append(transform)
         return self
 
@@ -174,6 +177,14 @@ class Adapter:
             keys = [keys]
 
         transform = Drop(keys)
+        self.transforms.append(transform)
+        return self
+
+    def expand_dims(self, keys: str | Sequence[str], *, axis: int | tuple):
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = ExpandDims(keys, axis=axis)
         self.transforms.append(transform)
         return self
 

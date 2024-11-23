@@ -24,12 +24,12 @@ class AffineTransform(Transform):
     def constrain_parameters(self, parameters: dict[str, Tensor]) -> dict[str, Tensor]:
         scale = parameters["scale"]
 
-        # constrain to positive values
-        scale = shifted_softplus(scale)
-
         # soft clamp
         if self.clamp:
             scale = ops.arcsinh(scale)
+
+        # constrain to positive values
+        scale = shifted_softplus(scale)
 
         parameters["scale"] = scale
         return parameters

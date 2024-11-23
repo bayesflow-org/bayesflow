@@ -31,8 +31,8 @@ def preprocess(
         The prior draws obtained for generating num_data_sets
     names             : str
         Parameter name used to initialize the figure
-    context: str
-        Context where the parameters are situated
+    context           : str
+        Context where the parameters are situated (e.g., Posterior Inference)
     num_col           : int
         Number of columns for the visualization layout
     num_row           : int
@@ -122,7 +122,6 @@ def make_figure(num_row: int = None, num_col: int = None, figsize: tuple = None)
             figsize = (int(5 * num_col), int(5 * num_row))
 
         f, axes = plt.subplots(num_row, num_col, figsize=figsize)
-    # axes = np.atleast_1d(axes)
 
     return f, axes
 

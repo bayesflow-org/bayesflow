@@ -1,9 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
 from matplotlib.lines import Line2D
+
 from .plot_samples_2d import plot_samples_2d
 
 
@@ -21,7 +21,7 @@ def plot_posterior_2d(
     post_alpha: float = 0.9,
     prior_alpha: float = 0.7,
     **kwargs,
-) -> plt.Figure:
+) -> sns.PairGrid:
     """Generates a bivariate pairplot given posterior draws and optional prior or prior draws.
 
     posterior_draws   : np.ndarray of shape (n_post_draws, n_params)

@@ -1,3 +1,5 @@
+from typing import Literal
+
 import keras
 from keras import layers
 from keras.saving import register_keras_serializable as serializable
@@ -12,8 +14,8 @@ class ConfigurableHiddenBlock(keras.layers.Layer):
         units: int = 256,
         activation: str = "mish",
         kernel_initializer: str = "he_normal",
-        residual: bool = True,
-        dropout: float = 0.05,
+        residual: bool = False,
+        dropout: Literal[0, None] | float = 0.05,
         spectral_normalization: bool = False,
         **kwargs,
     ):

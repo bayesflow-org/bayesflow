@@ -41,14 +41,14 @@ class Standardize(ElementwiseTransform):
             "momentum": serialize(self.momentum),
         }
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, data: np.ndarray, stage: str = "training", **kwargs) -> np.ndarray:
         if self.axis is None:
             self.axis = tuple(range(data.ndim - 1))
 
         if self.mean is None:
             self.mean = np.mean(data, axis=self.axis, keepdims=True)
         else:
-            if self.momentum is not None:
+            if self.momentum is not None and stage == "training":
                 self.mean = self.momentum * self.mean + (1.0 - self.momentum) * np.mean(
                     data, axis=self.axis, keepdims=True
                 )
@@ -56,7 +56,7 @@ class Standardize(ElementwiseTransform):
         if self.std is None:
             self.std = np.std(data, axis=self.axis, keepdims=True, ddof=1)
         else:
-            if self.momentum is not None:
+            if self.momentum is not None and stage == "training":
                 self.std = self.momentum * self.std + (1.0 - self.momentum) * np.std(
                     data, axis=self.axis, keepdims=True, ddof=1
                 )

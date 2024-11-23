@@ -1,18 +1,18 @@
-import logging
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
 from typing import Sequence
 from scipy.stats import binom
-from ..utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
+
+from bayesflow.utils import logging
+from bayesflow.utils import preprocess, add_titles_and_labels, prettify_subplots
 
 
 def plot_sbc_histograms(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
-    names: Sequence[str] = None,
+    variable_names: Sequence[str] = None,
     figsize: Sequence[float] = None,
     num_bins: int = 10,
     binomial_interval: float = 0.99,
@@ -39,7 +39,7 @@ def plot_sbc_histograms(
         The posterior draws obtained from n_data_sets
     prior_samples     : np.ndarray of shape (n_data_sets, n_params)
         The prior draws obtained for generating n_data_sets
-    names       : list or None, optional, default: None
+    variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     figsize          : tuple or None, optional, default : None
         The figure size passed to the matplotlib constructor. Inferred if None
@@ -71,9 +71,10 @@ def plot_sbc_histograms(
     """
 
     # Preprocessing
-    plot_data = preprocess(post_samples, prior_samples, num_col, num_row, names, figsize)
+    plot_data = preprocess(post_samples, prior_samples, num_col, num_row, variable_names, figsize)
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
+
     # Determine the ratio of simulations to prior draws
     # num_params = plot_data['num_variables']
     num_sims = plot_data["post_samples"].shape[0]
@@ -83,9 +84,7 @@ def plot_sbc_histograms(
 
     # Log a warning if N/B ratio recommended by Talts et al. (2018) < 20
     if ratio < 20:
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
-        logger.info(
+        logging.warning(
             "The ratio of simulations / posterior draws should be > 20 "
             f"for reliable variance reduction, but your ratio is {ratio}. "
             "Confidence intervals might be unreliable!"
@@ -96,7 +95,7 @@ def plot_sbc_histograms(
         num_bins = int(ratio / 2)
         # Attempt a fix if a single bin is determined so plot still makes sense
         if num_bins == 1:
-            num_bins = 5
+            num_bins = 4
 
     # Compute ranks (using broadcasting)
     ranks = np.sum(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
@@ -113,11 +112,9 @@ def plot_sbc_histograms(
         ax.axhline(mean, color="gray", zorder=0, alpha=0.9)
         sns.histplot(ranks[:, j], kde=False, ax=ax, color=color, bins=num_bins, alpha=0.95)
         ax.get_yaxis().set_ticks([])
-
-    # Prettify
     prettify_subplots(plot_data["axes"], tick_fontsize)
 
-    # Only add x-labels to the bottom row
+    # Add labels, titles, and set font sizes
     add_titles_and_labels(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
@@ -128,6 +125,6 @@ def plot_sbc_histograms(
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )
-
     plot_data["fig"].tight_layout()
+
     return plot_data["fig"]

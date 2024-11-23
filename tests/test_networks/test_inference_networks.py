@@ -1,6 +1,10 @@
 import keras
 import numpy as np
 import pytest
+from keras.saving import (
+    deserialize_keras_object as deserialize,
+    serialize_keras_object as serialize,
+)
 
 from tests.utils import allclose, assert_layers_equal
 
@@ -121,7 +125,18 @@ def test_density_numerically(inference_network, random_samples, random_condition
     assert allclose(inverse_log_density, numerical_inverse_log_density, rtol=1e-4, atol=1e-5)
 
 
-def test_serialize_deserialize(tmp_path, inference_network, random_samples, random_conditions):
+def test_serialize_deserialize(inference_network, random_samples, random_conditions):
+    # to save, the model must be built
+    inference_network(random_samples, conditions=random_conditions)
+
+    serialized = serialize(inference_network)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert serialized == reserialized
+
+
+def test_save_and_load(tmp_path, inference_network, random_samples, random_conditions):
     # to save, the model must be built
     inference_network(random_samples, conditions=random_conditions)
 

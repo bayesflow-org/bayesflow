@@ -5,13 +5,13 @@ import numpy as np
 
 from scipy.stats import median_abs_deviation
 
-from bayesflow.utils.plot_utils import preprocess, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
+from bayesflow.utils import preprocess, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
 
 
 def plot_recovery(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
-    names: Sequence[str] = None,
+    variable_names: Sequence[str] = None,
     point_agg=np.median,
     uncertainty_agg=median_abs_deviation,
     figsize: Sequence[int] = None,
@@ -46,6 +46,7 @@ def plot_recovery(
 
     Parameters
     ----------
+    #TODO
 
     Returns
     -------
@@ -58,7 +59,7 @@ def plot_recovery(
     """
 
     # Gather plot data and metadata into a dictionary
-    plot_data = preprocess(post_samples, prior_samples, names, num_col, num_row, figsize)
+    plot_data = preprocess(post_samples, prior_samples, variable_names, num_col, num_row, figsize)
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 

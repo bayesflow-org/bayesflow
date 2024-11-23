@@ -30,7 +30,7 @@ class OfflineDataset(keras.utils.PyDataset):
         batch = {key: np.take(value, item, axis=0) for key, value in self.data.items()}
 
         if self.adapter is not None:
-            batch = self.adapter(batch, batch_size=self.batch_size)
+            batch = self.adapter(batch)
 
         return batch
 

@@ -5,6 +5,7 @@ from .constrain import Constrain
 from .convert_dtype import ConvertDType
 from .drop import Drop
 from .elementwise_transform import ElementwiseTransform
+from .expand_dims import ExpandDims
 from .filter_transform import FilterTransform
 from .keep import Keep
 from .lambda_transform import LambdaTransform

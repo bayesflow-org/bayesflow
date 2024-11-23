@@ -50,13 +50,13 @@ class CouplingFlow(InferenceNetwork):
 
         self.invertible_layers = []
         for i in range(depth):
+            if use_actnorm:
+                self.invertible_layers.append(ActNorm(**kwargs.get("actnorm_kwargs", {})))
+
             if (p := find_permutation(permutation, **kwargs.get("permutation_kwargs", {}))) is not None:
                 self.invertible_layers.append(p)
 
             self.invertible_layers.append(DualCoupling(subnet, transform, **kwargs.get("coupling_kwargs", {})))
-
-            if use_actnorm:
-                self.invertible_layers.append(ActNorm(**kwargs.get("actnorm_kwargs", {})))
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):

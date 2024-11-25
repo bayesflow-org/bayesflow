@@ -41,7 +41,9 @@ def plot_sbc_ecdf(
     and multiple sample comparison. Statistics and Computing, 32(2), 1-21.
     https://arxiv.org/abs/2103.10522
 
-    [2] Tarp ....
+    [2] Lemos, Pablo, et al. "Sampling-based accuracy testing of posterior estimators
+     for general inference." International Conference on Machine Learning. PMLR, 2023.
+     https://proceedings.mlr.press/v202/lemos23a.html
 
     Parameters
     ----------
@@ -110,6 +112,8 @@ def plot_sbc_ecdf(
         ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
     else:
         if stacked:
+            # for all parameters, compute random reference points with
+            # minor dependence only on the first prior parameter
             random_samples = np.random.uniform(
                 low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
             )
@@ -123,6 +127,7 @@ def plot_sbc_ecdf(
             theta_distances = np.sqrt(np.sum((references - plot_data["prior_samples"]) ** 2, axis=-1))
             ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)[:, np.newaxis]
         else:
+            # for each parameter, compute random reference points with dependence on the prior parameter
             references = plot_data["prior_samples"] + np.random.uniform(
                 low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
             )
@@ -176,7 +181,7 @@ def plot_sbc_ecdf(
         plot_data["axes"],
         plot_data["num_row"],
         plot_data["num_col"],
-        xlabel="Fractional rank statistic",
+        xlabel="Fractional rank statistic" if not random_reference else "Distance rank statistic",
         ylabel=ylab,
         label_fontsize=label_fontsize,
     )

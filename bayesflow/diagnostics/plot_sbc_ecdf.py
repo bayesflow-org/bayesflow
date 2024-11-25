@@ -143,8 +143,8 @@ def plot_sbc_ecdf(
 
         if stacked:
             if j == 0:
-                if not isinstance(plot_data["axes"], list):
-                    plot_data["axes"] = [plot_data["axes"]]  # in case of single axis
+                if not isinstance(plot_data["axes"], np.ndarray):
+                    plot_data["axes"] = np.array([plot_data["axes"]])  # in case of single axis
                 plot_data["axes"][0].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
             else:
                 plot_data["axes"][0].plot(xx, yy, color=rank_ecdf_color, alpha=0.95)

@@ -110,19 +110,25 @@ def plot_sbc_ecdf(
         ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
     else:
         if stacked:
-            random_samples = np.random.uniform(low=-1, high=1, size=(prior_samples.shape[0], prior_samples.shape[-1]))
-            references = np.array([prior_samples[:, 0]] * prior_samples.shape[-1]).T + random_samples
-
-            samples_distances = np.sqrt(np.sum((references[:, np.newaxis, :] - post_samples) ** 2, axis=-1))
-            theta_distances = np.sqrt(np.sum((references - prior_samples) ** 2, axis=-1))
-            ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)[:, np.newaxis]
-        else:
-            references = prior_samples + np.random.uniform(
-                low=-1, high=1, size=(prior_samples.shape[0], prior_samples.shape[-1])
+            random_samples = np.random.uniform(
+                low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
+            )
+            references = (
+                np.array([plot_data["prior_samples"][:, 0]] * plot_data["prior_samples"].shape[-1]).T + random_samples
             )
 
-            samples_distances = np.sqrt((references[:, np.newaxis, :] - post_samples) ** 2)
-            theta_distances = np.sqrt((references - prior_samples) ** 2)
+            samples_distances = np.sqrt(
+                np.sum((references[:, np.newaxis, :] - plot_data["post_samples"]) ** 2, axis=-1)
+            )
+            theta_distances = np.sqrt(np.sum((references - plot_data["prior_samples"]) ** 2, axis=-1))
+            ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)[:, np.newaxis]
+        else:
+            references = plot_data["prior_samples"] + np.random.uniform(
+                low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
+            )
+
+            samples_distances = np.sqrt((references[:, np.newaxis, :] - plot_data["post_samples"]) ** 2)
+            theta_distances = np.sqrt((references - plot_data["prior_samples"]) ** 2)
             ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)
 
     # Plot individual ecdf of parameters
@@ -137,6 +143,8 @@ def plot_sbc_ecdf(
 
         if stacked:
             if j == 0:
+                if not isinstance(plot_data["axes"], list):
+                    plot_data["axes"] = [plot_data["axes"]]  # in case of single axis
                 plot_data["axes"][0].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
             else:
                 plot_data["axes"][0].plot(xx, yy, color=rank_ecdf_color, alpha=0.95)

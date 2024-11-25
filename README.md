@@ -8,6 +8,11 @@
 
 Welcome to our BayesFlow library for efficient simulation-based Bayesian workflows! Our library enables users to create specialized neural networks for *amortized Bayesian inference*, which repay users with rapid statistical inference after a potentially longer simulation-based training phase.
 
+> 🚨 **Attention, new users!** 🚨
+> This is the `master` branch of BayesFlow, which only supports TensorFlow. The `dev` branch contains the new BayesFlow version 2.0 that fully builds on Keras 3. This means you can choose your backend (PyTorch, JAX, TensorFlow) and have full flexibility. We are actively working on this new BayesFlow version and will merge it into the `master` branch once all features are implemented.
+> [Click here (Link)](https://github.com/stefanradev93/BayesFlow/tree/dev) to get to the dev branch and see the latest installation instructions.
+
+
 For starters, check out some of our walk-through notebooks:
 
 1. [Quickstart amortized posterior estimation](examples/Intro_Amortized_Posterior_Estimation.ipynb)

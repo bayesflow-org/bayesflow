@@ -12,6 +12,7 @@ def plot_sbc_ecdf(
     variable_names: Sequence[str] = None,
     difference: bool = False,
     stacked: bool = False,
+    random_reference: bool = False,
     figsize: Sequence[float] = None,
     label_fontsize: int = 16,
     legend_fontsize: int = 14,
@@ -32,10 +33,15 @@ def plot_sbc_ecdf(
     For models with many parameters, use `stacked=True` to obtain an idea
     of the overall calibration of a posterior approximator.
 
+    To compute ranks based on the Euclidean distance instead, you can use 'use_random_refs=True'.
+    This is motivated by [2].
+
     [1] Säilynoja, T., Bürkner, P. C., & Vehtari, A. (2022). Graphical test
     for discrete uniformity and its applications in goodness-of-fit evaluation
     and multiple sample comparison. Statistics and Computing, 32(2), 1-21.
     https://arxiv.org/abs/2103.10522
+
+    [2] Tarp ....
 
     Parameters
     ----------
@@ -50,6 +56,9 @@ def plot_sbc_ecdf(
         If `True`, all ECDFs will be plotted on the same plot.
         If `False`, each ECDF will have its own subplot,
         similar to the behavior of `plot_sbc_histograms`.
+    random_reference   : bool, optional, default: False
+        If `True`, random reference points are used to compute ranks based on the distance to these points
+         (wrt. the distance of the prior samples). This is motivated by [2].
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
         Inferred if None. Only relevant if `stacked=False`.
@@ -96,8 +105,25 @@ def plot_sbc_ecdf(
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
-    # Compute fractional ranks (using broadcasting)
-    ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
+    if not random_reference:
+        # Compute fractional ranks (using broadcasting)
+        ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
+    else:
+        if stacked:
+            random_samples = np.random.uniform(low=-1, high=1, size=(prior_samples.shape[0], prior_samples.shape[-1]))
+            references = np.array([prior_samples[:, 0]] * prior_samples.shape[-1]).T + random_samples
+
+            samples_distances = np.sqrt(np.sum((references[:, np.newaxis, :] - post_samples) ** 2, axis=-1))
+            theta_distances = np.sqrt(np.sum((references - prior_samples) ** 2, axis=-1))
+            ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)[:, np.newaxis]
+        else:
+            references = prior_samples + np.random.uniform(
+                low=-1, high=1, size=(prior_samples.shape[0], prior_samples.shape[-1])
+            )
+
+            samples_distances = np.sqrt((references[:, np.newaxis, :] - post_samples) ** 2)
+            theta_distances = np.sqrt((references - prior_samples) ** 2)
+            ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)
 
     # Plot individual ecdf of parameters
     for j in range(ranks.shape[-1]):

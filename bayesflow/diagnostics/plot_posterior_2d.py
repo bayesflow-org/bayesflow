@@ -36,6 +36,8 @@ def plot_posterior_2d(
         The optional prior object having an input-output signature as given by bayesflow.forward_inference.Prior
     variable_names       : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
+    true_params       : np.ndarray of shape (n_params,) or None, optional, default: None
+        The true parameter values to be plotted on the diagonal.
     height            : float, optional, default: 3
         The height of the pairplot
     label_fontsize    : int, optional, default: 14

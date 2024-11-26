@@ -84,6 +84,9 @@ def plot_posterior_2d(
             prior_samples = draws["prior_draws"]
         else:
             prior_samples = draws
+    elif prior_samples is not None:
+        # trim to the same number of draws as posterior
+        prior_samples = prior_samples[:n_draws]
 
     # Attempt to determine parameter names
     if variable_names is None:

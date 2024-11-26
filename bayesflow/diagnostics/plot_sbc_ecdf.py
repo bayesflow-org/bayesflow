@@ -137,6 +137,7 @@ def plot_sbc_ecdf(
             stacked=stacked,
             **kwargs.pop("ranks_kwargs", {}),
         )
+        rank_type = "reference"
     else:
         raise ValueError("Unknown rank type.")
 

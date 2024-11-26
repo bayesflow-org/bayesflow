@@ -12,7 +12,7 @@ def plot_sbc_ecdf(
     variable_names: Sequence[str] = None,
     difference: bool = False,
     stacked: bool = False,
-    random_reference: bool = False,
+    rank_type: str = "fractional",
     figsize: Sequence[float] = None,
     label_fontsize: int = 16,
     legend_fontsize: int = 14,
@@ -58,9 +58,11 @@ def plot_sbc_ecdf(
         If `True`, all ECDFs will be plotted on the same plot.
         If `False`, each ECDF will have its own subplot,
         similar to the behavior of `plot_sbc_histograms`.
-    random_reference   : bool, optional, default: False
-        If `True`, random reference points are used to compute ranks based on the distance to these points
-         (wrt. the distance of the prior samples). This is motivated by [2].
+    rank_type   : str, optional, default: 'fractional'
+        If `fractional` (default), the ranks are computed as the fraction of posterior samples that are smaller than
+        the prior. If `distance`, the ranks are computed as the fraction of posterior samples that are closer to 0.
+        If `random_reference`, the ranks are computed as the fraction of posterior samples that are closer to a random
+         reference (which has a small dependence on the true parameter value) as in [2].
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
         Inferred if None. Only relevant if `stacked=False`.
@@ -100,6 +102,8 @@ def plot_sbc_ecdf(
     ShapeError
         If there is a deviation form the expected shapes of `post_samples`
         and `prior_samples`.
+    ValueError
+        If an unknown `rank_type` is passed.
     """
 
     # Preprocessing
@@ -107,34 +111,40 @@ def plot_sbc_ecdf(
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
-    if not random_reference:
+    if rank_type == "fractional":
         # Compute fractional ranks (using broadcasting)
         ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
-    else:
-        if stacked:
-            # for all parameters, compute random reference points with
-            # minor dependence only on the first prior parameter
-            random_samples = np.random.uniform(
+    elif rank_type == "distance" or rank_type == "random_reference":
+        if rank_type == "distance":
+            # reference is the origin
+            references = np.zeros((plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[1]))
+        else:
+            random_ref = np.random.uniform(
                 low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
             )
+            # we muss have a dependency on the true parameter otherwise potential biases will not be detected
             references = (
-                np.array([plot_data["prior_samples"][:, 0]] * plot_data["prior_samples"].shape[-1]).T + random_samples
+                np.array(
+                    [plot_data["prior_samples"][:, np.random.randint(plot_data["prior_samples"].shape[-1])]]
+                    * plot_data["prior_samples"].shape[-1]
+                ).T
+                + random_ref
             )
 
+        if stacked:
+            # compute ranks for all parameters jointly
             samples_distances = np.sqrt(
                 np.sum((references[:, np.newaxis, :] - plot_data["post_samples"]) ** 2, axis=-1)
             )
             theta_distances = np.sqrt(np.sum((references - plot_data["prior_samples"]) ** 2, axis=-1))
             ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)[:, np.newaxis]
         else:
-            # for each parameter, compute random reference points with dependence on the prior parameter
-            references = plot_data["prior_samples"] + np.random.uniform(
-                low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
-            )
-
+            # compute marginal ranks for each parameter
             samples_distances = np.sqrt((references[:, np.newaxis, :] - plot_data["post_samples"]) ** 2)
             theta_distances = np.sqrt((references - plot_data["prior_samples"]) ** 2)
             ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)
+    else:
+        raise ValueError(f"Unknown rank type: {rank_type}")
 
     # Plot individual ecdf of parameters
     for j in range(ranks.shape[-1]):
@@ -181,7 +191,7 @@ def plot_sbc_ecdf(
         plot_data["axes"],
         plot_data["num_row"],
         plot_data["num_col"],
-        xlabel="Fractional rank statistic" if not random_reference else "Distance rank statistic",
+        xlabel=f"{rank_type.capitalize()} rank statistic",
         ylabel=ylab,
         label_fontsize=label_fontsize,
     )

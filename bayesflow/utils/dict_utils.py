@@ -108,35 +108,53 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
 def dicts_to_arrays(
     post_variables: dict[str, np.ndarray] | np.ndarray,
     prior_variables: dict[str, np.ndarray] | np.ndarray,
-    names: Sequence[str] = None,
+    filter_keys: Sequence[str] | None = None,
+    variable_names: Sequence[str] = None,
     context: str = None,
 ):
-    """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
+    """
+    # TODO - consider variable_names first, then filter_keys
+    """
 
     if type(post_variables) is not type(prior_variables):
         raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
 
+    # Filtering
     if isinstance(post_variables, dict):
         if post_variables.keys() != prior_variables.keys():
             raise ValueError("Keys in your posterior / prior arrays should match.")
 
-        # Use user-provided names instead of inferred ones
-        names = list(post_variables.keys()) if names is None else names
+        # Use user-provided filter keys instead of inferred ones
+        filter_keys = list(post_variables.keys()) if filter_keys is None else filter_keys
 
-        post_variables = np.concatenate([v for k, v in post_variables.items() if k in names], axis=-1)
-        prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in names], axis=-1)
+        post_variables = np.concatenate([v for k, v in post_variables.items() if k in filter_keys], axis=-1)
+        prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in filter_keys], axis=-1)
 
+    # Naming or Renaming
     elif isinstance(post_variables, np.ndarray):
-        if names is not None:
-            if post_variables.shape[-1] != len(names) or prior_variables.shape[-1] != len(names):
+        # If there are filter_keys, check if their number is the same as that of the variables.
+        # If it does, check if there are sufficient variable names.
+        # If there are, then the variable names are adopted.
+        if filter_keys is not None:
+            if post_variables.shape[-1] != len(filter_keys) or prior_variables.shape[-1] != len(filter_keys):
                 raise ValueError("The length of the names list should match the number of target variables.")
-        else:
-            if context is not None:
-                names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
             else:
-                names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
+                if variable_names is not None:
+                    if len(variable_names) != len(filter_keys):
+                        raise ValueError("The length of your list of names should match that of your filter keys.")
+        else:  # Otherwise, we would assume that all variables are used for plotting.
+            if context is None:
+                if variable_names is None:
+                    variable_names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
+            else:
+                variable_names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
 
     else:
         raise TypeError("Only dicts and tensors are supported as arguments.")
 
-    return dict(post_variables=post_variables, prior_variables=prior_variables, names=names, num_variables=len(names))
+    return dict(
+        post_variables=post_variables,
+        prior_variables=prior_variables,
+        names=variable_names,
+        num_variables=len(variable_names),
+    )

@@ -36,8 +36,9 @@ def plot_sbc_ecdf(
 
     To compute ranks based on the Euclidean distance to the origin or a random reference, use `rank_type='distance'` or
     `rank_type='random'`, respectively. Both can be used to check the joint calibration of the posterior approximator
-    and might show potential biases in the posterior approximation which are not detected by the fractional ranks.
-    This is motivated by [2].
+    and might show potential biases in the posterior approximation which are not detected by the fractional ranks (e.g.,
+    when the prior equals the posterior). However, for multi-modal posteriors, the random reference might indicate a
+    bias by focusing on the wrong mode. This is motivated by [2].
 
     [1] Säilynoja, T., Bürkner, P. C., & Vehtari, A. (2022). Graphical test
     for discrete uniformity and its applications in goodness-of-fit evaluation

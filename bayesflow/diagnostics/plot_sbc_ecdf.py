@@ -118,20 +118,32 @@ def plot_sbc_ecdf(
         ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
     elif rank_type in ["distance", "random"]:
         if rank_type == "distance":
-            # reference is the origin
+            # Reference is the origin
             references = np.zeros((plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[1]))
         else:
             random_ref = np.random.uniform(
                 low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
             )
-            # we muss have a dependency on the true parameter otherwise potential biases will not be detected
-            references = (
-                np.array(
-                    [plot_data["prior_samples"][:, np.random.randint(plot_data["prior_samples"].shape[-1])]]
-                    * plot_data["prior_samples"].shape[-1]
-                ).T
-                + random_ref
+            half_size = random_ref.shape[0] // 2
+            # We muss have a dependency on the true parameter otherwise potential biases will not be detected
+            # the dependency of the first half of the references is on the one parameter, then on another
+            references_1 = (
+                np.tile(
+                    plot_data["prior_samples"][:, np.random.randint(plot_data["prior_samples"].shape[-1])],
+                    (plot_data["prior_samples"].shape[-1], 1),
+                ).T[:half_size]
+                + random_ref[:half_size]
             )
+
+            # Create references for the second half
+            references_2 = (
+                np.tile(
+                    plot_data["prior_samples"][:, np.random.randint(plot_data["prior_samples"].shape[-1])],
+                    (plot_data["prior_samples"].shape[-1], 1),
+                ).T[half_size:]
+                + random_ref[half_size:]
+            )
+            references = np.concatenate([references_1, references_2], axis=0)
 
         if stacked:
             # compute ranks for all parameters jointly

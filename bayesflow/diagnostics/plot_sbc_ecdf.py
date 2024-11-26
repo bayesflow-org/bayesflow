@@ -61,7 +61,7 @@ def plot_sbc_ecdf(
     rank_type   : str, optional, default: 'fractional'
         If `fractional` (default), the ranks are computed as the fraction of posterior samples that are smaller than
         the prior. If `distance`, the ranks are computed as the fraction of posterior samples that are closer to 0.
-        If `random_reference`, the ranks are computed as the fraction of posterior samples that are closer to a random
+        If `random`, the ranks are computed as the fraction of posterior samples that are closer to a random
          reference (which has a small dependence on the true parameter value) as in [2].
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
@@ -114,7 +114,7 @@ def plot_sbc_ecdf(
     if rank_type == "fractional":
         # Compute fractional ranks (using broadcasting)
         ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
-    elif rank_type == "distance" or rank_type == "random_reference":
+    elif rank_type == "distance" or rank_type == "random":
         if rank_type == "distance":
             # reference is the origin
             references = np.zeros((plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[1]))
@@ -144,7 +144,7 @@ def plot_sbc_ecdf(
             theta_distances = np.sqrt((references - plot_data["prior_samples"]) ** 2)
             ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)
     else:
-        raise ValueError(f"Unknown rank type: {rank_type}")
+        raise ValueError(f"Unknown rank type: {rank_type}. Use 'fractional', 'distance', or 'random'.")
 
     # Plot individual ecdf of parameters
     for j in range(ranks.shape[-1]):

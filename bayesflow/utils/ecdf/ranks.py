@@ -7,65 +7,53 @@ def fractional_ranks(post_samples: np.ndarray, prior_samples: np.ndarray) -> np.
 
 
 def _helper_distance_ranks(
-    post_samples: np.ndarray, prior_samples: np.ndarray, references: np.ndarray, stacked: bool
+    post_samples: np.ndarray, prior_samples: np.ndarray, references: np.ndarray, stacked: bool, p_norm: int
 ) -> np.ndarray:
     """
     Helper function to compute ranks of true parameter wrt posterior samples
-    based on distances between samples and a given references.
-
+    based on distances (defined on the p_norm) between samples and a given references.
     """
+    # compute distances to references
+    dist_post = np.abs((references[:, np.newaxis, :] - post_samples))
+    dist_prior = np.abs(references - prior_samples)
+
     if stacked:
         # compute ranks for all parameters jointly
-        samples_distances = np.sqrt(np.sum((references[:, np.newaxis, :] - post_samples) ** 2, axis=-1))
-        theta_distances = np.sqrt(np.sum((references - prior_samples) ** 2, axis=-1))
+        samples_distances = np.sum(dist_post**p_norm, axis=-1) ** (1 / p_norm)
+        theta_distances = np.sum(dist_prior**p_norm, axis=-1) ** (1 / p_norm)
+
         ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)[:, np.newaxis]
     else:
         # compute marginal ranks for each parameter
-        samples_distances = np.sqrt((references[:, np.newaxis, :] - post_samples) ** 2)
-        theta_distances = np.sqrt((references - prior_samples) ** 2)
-        ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)
+        ranks = np.mean((dist_post < dist_prior[:, np.newaxis]), axis=1)
     return ranks
 
 
-def distance_ranks(post_samples: np.ndarray, prior_samples: np.ndarray, stacked: bool) -> np.ndarray:
+def distance_ranks(post_samples: np.ndarray, prior_samples: np.ndarray, stacked: bool, p_norm: int = 2) -> np.ndarray:
     """
     Compute ranks of true parameter wrt posterior samples based on distances between samples and the origin.
     """
     # Reference is the origin
     references = np.zeros((prior_samples.shape[0], prior_samples.shape[1]))
     ranks = _helper_distance_ranks(
-        post_samples=post_samples, prior_samples=prior_samples, references=references, stacked=stacked
+        post_samples=post_samples, prior_samples=prior_samples, references=references, stacked=stacked, p_norm=p_norm
     )
     return ranks
 
 
-def random_ranks(post_samples: np.ndarray, prior_samples: np.ndarray, stacked: bool) -> np.ndarray:
+def reference_ranks(
+    post_samples: np.ndarray, prior_samples: np.ndarray, references: np.ndarray, stacked: bool, p_norm: int = 2
+) -> np.ndarray:
     """
-    Compute ranks of true parameter wrt posterior samples based on distances between samples and random references.
+    Compute ranks of true parameter wrt posterior samples based on distances between samples and references.
     """
-    # Create random references
-    random_ref = np.random.uniform(low=-1, high=1, size=(prior_samples.shape[0], prior_samples.shape[-1]))
-    half_size = random_ref.shape[0] // 2
-    # We muss have a dependency on the true parameter otherwise potential biases will not be detected
-    # the dependency of the first half of the references is on the one parameter, then on another
-    references_1 = (
-        np.tile(
-            prior_samples[:, np.random.randint(prior_samples.shape[-1])],
-            (prior_samples.shape[-1], 1),
-        ).T[:half_size]
-        + random_ref[:half_size]
-    )
-
-    # Create references for the second half
-    references_2 = (
-        np.tile(
-            prior_samples[:, np.random.randint(prior_samples.shape[-1])],
-            (prior_samples.shape[-1], 1),
-        ).T[half_size:]
-        + random_ref[half_size:]
-    )
-    references = np.concatenate((references_1, references_2), axis=0)
+    # Validate reference
+    if references.shape[0] != prior_samples.shape[0]:
+        raise ValueError("The number of references must match the number of prior samples.")
+    if references.shape[1] != prior_samples.shape[1]:
+        raise ValueError("The dimension of references must match the dimension of the parameters.")
+    # Compute ranks
     ranks = _helper_distance_ranks(
-        post_samples=post_samples, prior_samples=prior_samples, references=references, stacked=stacked
+        post_samples=post_samples, prior_samples=prior_samples, references=references, stacked=stacked, p_norm=p_norm
     )
     return ranks

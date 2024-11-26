@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from bayesflow.utils.ecdf import fractional_ranks, distance_ranks, random_ranks
+from bayesflow.utils.ecdf import fractional_ranks, distance_ranks, reference_ranks
 
 
 @pytest.fixture
@@ -30,6 +30,8 @@ def test_distance_ranks(test_data, stacked, expected_shape):
 
 @pytest.mark.parametrize("stacked, expected_shape", [(True, (2, 1)), (False, (2, 2))])
 def test_random_ranks(test_data, stacked, expected_shape):
-    post_samples, prior_samples, _ = test_data
-    result = random_ranks(post_samples=post_samples, prior_samples=prior_samples, stacked=stacked)
+    post_samples, prior_samples, references = test_data
+    result = reference_ranks(
+        post_samples=post_samples, prior_samples=prior_samples, references=references, stacked=stacked
+    )
     assert result.shape == expected_shape

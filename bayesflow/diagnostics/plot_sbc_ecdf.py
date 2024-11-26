@@ -33,7 +33,9 @@ def plot_sbc_ecdf(
     For models with many parameters, use `stacked=True` to obtain an idea
     of the overall calibration of a posterior approximator.
 
-    To compute ranks based on the Euclidean distance instead, you can use 'use_random_refs=True'.
+    To compute ranks based on the Euclidean distance to the origin or a random reference, use `rank_type='distance'` or
+    `rank_type='random'`, respectively. Both can be used to check the joint calibration of the posterior approximator
+    and might show potential biases in the posterior approximation which are not detected by the fractional ranks.
     This is motivated by [2].
 
     [1] Säilynoja, T., Bürkner, P. C., & Vehtari, A. (2022). Graphical test
@@ -61,8 +63,8 @@ def plot_sbc_ecdf(
     rank_type   : str, optional, default: 'fractional'
         If `fractional` (default), the ranks are computed as the fraction of posterior samples that are smaller than
         the prior. If `distance`, the ranks are computed as the fraction of posterior samples that are closer to 0.
-        If `random`, the ranks are computed as the fraction of posterior samples that are closer to a random
-         reference (which has a small dependence on the true parameter value) as in [2].
+        If `random`, the ranks are computed as the fraction of posterior samples that are closer to a random reference
+        (which has a small dependence on the true parameter value) as in [2].
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
         Inferred if None. Only relevant if `stacked=False`.

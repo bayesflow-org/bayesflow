@@ -11,7 +11,7 @@ from .dict_utils import (
     split_tensors,
 )
 from .dispatch import find_distribution, find_network, find_permutation, find_pooling, find_recurrent_net
-from .ecdf import simultaneous_ecdf_bands
+from .ecdf import simultaneous_ecdf_bands, ranks
 from .functional import batched_call
 from .git import (
     issue_url,

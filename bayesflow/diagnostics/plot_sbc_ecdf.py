@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from typing import Sequence
 from ..utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
 from ..utils.ecdf import simultaneous_ecdf_bands
+from ..utils.ecdf.ranks import fractional_ranks, distance_ranks, random_ranks
 
 
 def plot_sbc_ecdf(
@@ -114,49 +115,14 @@ def plot_sbc_ecdf(
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
     if rank_type == "fractional":
-        # Compute fractional ranks (using broadcasting)
-        ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
-    elif rank_type in ["distance", "random"]:
-        if rank_type == "distance":
-            # Reference is the origin
-            references = np.zeros((plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[1]))
-        else:
-            random_ref = np.random.uniform(
-                low=-1, high=1, size=(plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[-1])
-            )
-            half_size = random_ref.shape[0] // 2
-            # We muss have a dependency on the true parameter otherwise potential biases will not be detected
-            # the dependency of the first half of the references is on the one parameter, then on another
-            references_1 = (
-                np.tile(
-                    plot_data["prior_samples"][:, np.random.randint(plot_data["prior_samples"].shape[-1])],
-                    (plot_data["prior_samples"].shape[-1], 1),
-                ).T[:half_size]
-                + random_ref[:half_size]
-            )
-
-            # Create references for the second half
-            references_2 = (
-                np.tile(
-                    plot_data["prior_samples"][:, np.random.randint(plot_data["prior_samples"].shape[-1])],
-                    (plot_data["prior_samples"].shape[-1], 1),
-                ).T[half_size:]
-                + random_ref[half_size:]
-            )
-            references = np.concatenate([references_1, references_2], axis=0)
-
-        if stacked:
-            # compute ranks for all parameters jointly
-            samples_distances = np.sqrt(
-                np.sum((references[:, np.newaxis, :] - plot_data["post_samples"]) ** 2, axis=-1)
-            )
-            theta_distances = np.sqrt(np.sum((references - plot_data["prior_samples"]) ** 2, axis=-1))
-            ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)[:, np.newaxis]
-        else:
-            # compute marginal ranks for each parameter
-            samples_distances = np.sqrt((references[:, np.newaxis, :] - plot_data["post_samples"]) ** 2)
-            theta_distances = np.sqrt((references - plot_data["prior_samples"]) ** 2)
-            ranks = np.mean((samples_distances < theta_distances[:, np.newaxis]), axis=1)
+        # Compute fractional ranks
+        ranks = fractional_ranks(plot_data["post_samples"], plot_data["prior_samples"])
+    elif rank_type == "distance":
+        # Compute ranks based on distance to the origin
+        ranks = distance_ranks(plot_data["post_samples"], plot_data["prior_samples"], stacked=stacked)
+    elif rank_type == "random":
+        # Compute ranks based on distance to a random reference (with dependency on the true parameter)
+        ranks = random_ranks(plot_data["post_samples"], plot_data["prior_samples"], stacked=stacked)
     else:
         raise ValueError(f"Unknown rank type: {rank_type}. Use 'fractional', 'distance', or 'random'.")
 

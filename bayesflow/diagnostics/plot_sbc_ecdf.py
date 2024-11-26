@@ -114,7 +114,7 @@ def plot_sbc_ecdf(
     if rank_type == "fractional":
         # Compute fractional ranks (using broadcasting)
         ranks = np.mean(plot_data["post_samples"] < plot_data["prior_samples"][:, np.newaxis, :], axis=1)
-    elif rank_type == "distance" or rank_type == "random":
+    elif rank_type in ["distance", "random"]:
         if rank_type == "distance":
             # reference is the origin
             references = np.zeros((plot_data["prior_samples"].shape[0], plot_data["prior_samples"].shape[1]))
@@ -178,7 +178,12 @@ def plot_sbc_ecdf(
         ylab = "ECDF"
 
     # Add simultaneous bounds
-    titles = plot_data["names"] if not stacked else ["Stacked ECDFs"]
+    if not stacked:
+        titles = plot_data["names"]
+    elif rank_type in ["distance", "random"]:
+        titles = ["Joint ECDFs"]
+    else:
+        titles = ["Stacked ECDFs"]
     for ax, title in zip(plot_data["axes"].flat, titles):
         ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands")
         ax.legend(fontsize=legend_fontsize)

@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -9,7 +11,7 @@ from .plot_samples_2d import plot_samples_2d
 
 def plot_posterior_2d(
     post_samples: np.ndarray,
-    prior_samples: np.ndarray,
+    prior_samples: np.ndarray = None,
     prior=None,
     variable_names: list = None,
     true_params: np.ndarray = None,
@@ -65,8 +67,9 @@ def plot_posterior_2d(
     assert (len(post_samples.shape)) == 2, "Shape of `posterior_samples` for a single data set should be 2 dimensional!"
 
     # Plot posterior first
+    context = ""
     g = plot_samples_2d(
-        post_samples, context="\\theta", variable_names=variable_names, render=False, height=height, **kwargs
+        post_samples, context=context, variable_names=variable_names, render=False, height=height, **kwargs
     )
 
     # Obtain n_draws and n_params
@@ -86,9 +89,11 @@ def plot_posterior_2d(
             if prior.variable_names is not None:
                 variable_names = prior.variable_names
             else:
-                variable_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
+                variable_names = [f"{context} $\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
         else:
-            variable_names = [f"$\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
+            variable_names = [f"{context} $\\theta_{{{i}}}$" for i in range(1, n_params + 1)]
+    else:
+        variable_names = [f"{context} {p}" for p in variable_names]
 
     # Add prior, if given
     if prior_samples is not None:
@@ -99,9 +104,14 @@ def plot_posterior_2d(
 
     # Add true parameters
     if true_params is not None:
-        # only plot on the diagonal
-        for i, ax in enumerate(np.diag(g.axes)):
-            ax.axvline(true_params[i], color="black", linestyle="--", label="True parameter")
+        # Custom function to plot true_params on the diagonal
+        def plot_true_params(x, **kwargs):
+            param = x.iloc[0]  # Get the single true value for the diagonal
+            plt.axvline(param, color="black", linestyle="--")  # Add vertical line
+
+        # only plot on the diagonal a vertical line for the true parameter
+        g.data = pd.DataFrame(true_params[np.newaxis], columns=variable_names)
+        g.map_diag(plot_true_params)
 
     # Add legend, if prior also given
     if prior_samples is not None or prior is not None:
@@ -111,9 +121,9 @@ def plot_posterior_2d(
         ]
         handles_names = ["Posterior", "Prior"]
         if true_params is not None:
-            handles.append(Line2D(xdata=[], ydata=[], color="black", lw=3, linestyle="--", label="True parameter"))
-            handles_names.append("True parameter")
-        g.legend(handles, handles_names, fontsize=legend_fontsize, loc="center right")
+            handles.append(Line2D(xdata=[], ydata=[], color="black", lw=3, linestyle="--"))
+            handles_names.append("True Parameter")
+        plt.legend(handles=handles, labels=handles_names, fontsize=legend_fontsize, loc="center right")
 
     n_row, n_col = g.axes.shape
 

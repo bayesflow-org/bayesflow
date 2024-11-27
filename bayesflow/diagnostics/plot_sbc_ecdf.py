@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from typing import Sequence
 from ..utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
 from ..utils.ecdf import simultaneous_ecdf_bands
-from ..utils.ecdf.ranks import fractional_ranks, distance_ranks, reference_ranks
+from ..utils.ecdf.ranks import fractional_ranks, distance_ranks
 
 
 def plot_sbc_ecdf(
@@ -34,8 +34,8 @@ def plot_sbc_ecdf(
     For models with many parameters, use `stacked=True` to obtain an idea
     of the overall calibration of a posterior approximator.
 
-    To compute ranks based on the Euclidean distance to the origin or a random reference, use `rank_type='distance'` or
-    pass a reference array, respectively. Both can be used to check the joint calibration of the posterior approximator
+    To compute ranks based on the Euclidean distance to the origin or a reference, use `rank_type='distance'` (and
+    pass a reference array, respectively). This can be used to check the joint calibration of the posterior approximator
     and might show potential biases in the posterior approximation which are not detected by the fractional ranks (e.g.,
     when the prior equals the posterior). This is motivated by [2].
 
@@ -61,12 +61,11 @@ def plot_sbc_ecdf(
         If `True`, all ECDFs will be plotted on the same plot.
         If `False`, each ECDF will have its own subplot,
         similar to the behavior of `plot_sbc_histograms`.
-    rank_type   : str | np.ndarray, optional, default: 'fractional'
+    rank_type   : str, optional, default: 'fractional'
         If `fractional` (default), the ranks are computed as the fraction of posterior samples that are smaller than
-        the prior. If `distance`, the ranks are computed as the fraction of posterior samples that are closer to 0.
-        If `rank_type` is an array, it should have the same shape as the `prior_samples` arrays, the distance to this
-        array will be used to compute the ranks (consider to make this reference dependent on the observation,
-        not the samples itself). This is motivated by [2].
+        the prior. If `distance`, the ranks are computed as the fraction of posterior samples that are closer to
+        a reference points (default here is the origin). You can pass a reference array in the same shape as the
+        `prior_samples` array by setting `references` in the ``ranks_kwargs``. This is motivated by [2].
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
         Inferred if None. Only relevant if `stacked=False`.
@@ -117,29 +116,16 @@ def plot_sbc_ecdf(
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
-    if isinstance(rank_type, str):
-        if rank_type == "fractional":
-            # Compute fractional ranks
-            ranks = fractional_ranks(plot_data["post_samples"], plot_data["prior_samples"])
-        elif rank_type == "distance":
-            # Compute ranks based on distance to the origin
-            ranks = distance_ranks(
-                plot_data["post_samples"], plot_data["prior_samples"], stacked=stacked, **kwargs.pop("ranks_kwargs", {})
-            )
-        else:
-            raise ValueError(f"Unknown rank type: {rank_type}. Use 'fractional' or 'distance'.")
-    elif isinstance(rank_type, np.ndarray):
-        # Compute ranks based on distance to a random reference (with dependency on the true parameter)
-        ranks = reference_ranks(
-            plot_data["post_samples"],
-            plot_data["prior_samples"],
-            references=rank_type,
-            stacked=stacked,
-            **kwargs.pop("ranks_kwargs", {}),
+    if rank_type == "fractional":
+        # Compute fractional ranks
+        ranks = fractional_ranks(plot_data["post_samples"], plot_data["prior_samples"])
+    elif rank_type == "distance":
+        # Compute ranks based on distance to the origin
+        ranks = distance_ranks(
+            plot_data["post_samples"], plot_data["prior_samples"], stacked=stacked, **kwargs.pop("ranks_kwargs", {})
         )
-        rank_type = "reference"
     else:
-        raise ValueError("Unknown rank type.")
+        raise ValueError(f"Unknown rank type: {rank_type}. Use 'fractional' or 'distance'.")
 
     # Plot individual ecdf of parameters
     for j in range(ranks.shape[-1]):

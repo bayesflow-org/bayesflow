@@ -161,6 +161,42 @@ def gaussian_kernel_matrix(x, y, sigmas=None):
     kernel = tf.reshape(tf.reduce_sum(tf.exp(-s), 0), tf.shape(dist))
     return kernel
 
+def energy_kernel_matrix(x, y):
+    """Computes an energy kernel between the samples of x and y as suggested
+    in [1,2].
+
+    [1] Feydy, J., Séjourné, T., Vialard, F. X., Amari, S. I., Trouvé, A., &
+    Peyré, G. (2019, April). Interpolating between optimal transport and mmd
+    using sinkhorn divergences. In The 22nd International Conference on
+    Artificial Intelligence and Statistics (pp. 2681-2690). PMLR.
+
+    [2] Feydy, J. Geometric Data Analysis, beyond Convolutions. Ph.D. Thesis,
+    Université Paris-Saclay, Gif-sur-Yvette, France, 2020.
+
+    Parameters
+    ----------
+    x       :  tf.Tensor of shape (num_draws_x, num_features)
+        Comprises `num_draws_x` Random draws from the "source" distribution `P`.
+    y       :  tf.Tensor of shape (num_draws_y, num_features)
+        Comprises `num_draws_y` Random draws from the "source" distribution `Q`.
+
+    Returns
+    -------
+    kernel  : tf.Tensor of shape (num_draws_x, num_draws_y)
+        The kernel matrix between pairs from `x` and `y`.
+    """
+
+    norm = lambda v: tf.reduce_sum(tf.square(v), 1)
+    d_xx = tf.expand_dims(norm(x),-1)
+    d_xy = tf.matmul(x,tf.transpose(y))
+    d_yy = tf.expand_dims(norm(y), 0)
+    squared_dist = d_xx - 2 * d_xy + d_yy
+    dist = tf.math.sqrt(tf.clip_by_value(squared_dist,
+                                         clip_value_min=1e-8,
+                                         clip_value_max=int(1e10)))
+    kernel = - dist
+
+    return kernel
 
 def inverse_multiquadratic_kernel_matrix(x, y, sigmas=None):
     """Computes an inverse multiquadratic RBF between the samples of x and y.
@@ -333,6 +369,8 @@ def maximum_mean_discrepancy(source_samples, target_samples, kernel="gaussian", 
         kernel_fun = gaussian_kernel_matrix
     elif kernel == "inverse_multiquadratic":
         kernel_fun = inverse_multiquadratic_kernel_matrix
+    elif kernel == "energy":
+        kernel_fun = energy_kernel_matrix
     else:
         kernel_fun = gaussian_kernel_matrix
 

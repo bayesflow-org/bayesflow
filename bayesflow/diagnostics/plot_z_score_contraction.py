@@ -116,7 +116,7 @@ def plot_z_score_contraction(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
-        title=plot_data["names"],
+        title=plot_data["variable_names"],
         xlabel="Posterior contraction",
         ylabel="Posterior z-score",
         title_fontsize=title_fontsize,

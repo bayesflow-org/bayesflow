@@ -123,7 +123,7 @@ def dicts_to_arrays(
     # Filtering
     if isinstance(post_variables, dict):
         # Ensure that the keys of posterior and prior variables match
-        if post_variables.keys() != prior_variables.keys():
+        if not (set(post_variables) <= set(prior_variables)):
             raise ValueError("Keys in your posterior / prior arrays should match.")
 
         # If they match, users can further select the variables by using filter keys
@@ -140,7 +140,7 @@ def dicts_to_arrays(
         # If there are, then the variable names are adopted.
         if filter_keys is not None:
             if post_variables.shape[-1] != len(filter_keys) or prior_variables.shape[-1] != len(filter_keys):
-                raise ValueError("The length of the names list should match the number of target variables.")
+                raise ValueError("The length of the filter key list should match the number of target variables.")
             else:
                 if variable_names is not None:
                     if len(variable_names) != len(filter_keys):
@@ -157,6 +157,6 @@ def dicts_to_arrays(
     return dict(
         post_variables=post_variables,
         prior_variables=prior_variables,
-        names=variable_names,
+        variable_names=variable_names,
         num_variables=len(variable_names),
     )

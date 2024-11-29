@@ -132,7 +132,7 @@ def plot_sbc_ecdf(
         ylab = "ECDF"
 
     # Add simultaneous bounds
-    titles = plot_data["names"] if not stacked else ["Stacked ECDFs"]
+    titles = plot_data["variable_names"] if not stacked else ["Stacked ECDFs"]
     for ax, title in zip(plot_data["axes"].flat, titles):
         ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1-alpha) * 100)}$\%$ Confidence Bands")
         ax.legend(fontsize=legend_fontsize)

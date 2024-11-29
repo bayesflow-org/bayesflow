@@ -9,6 +9,7 @@ from bayesflow.utils import preprocess, add_titles_and_labels, prettify_subplots
 def plot_z_score_contraction(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
+    filter_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -84,7 +85,7 @@ def plot_z_score_contraction(
     """
 
     # Preprocessing
-    plot_data = preprocess(post_samples, prior_samples, variable_names, num_col, num_row, figsize)
+    plot_data = preprocess(post_samples, prior_samples, filter_keys, variable_names, num_col, num_row, figsize)
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 

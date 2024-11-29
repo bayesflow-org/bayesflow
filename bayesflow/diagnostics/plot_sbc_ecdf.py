@@ -9,6 +9,7 @@ from ..utils.ecdf import simultaneous_ecdf_bands
 def plot_sbc_ecdf(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
+    filter_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     difference: bool = False,
     stacked: bool = False,
@@ -92,7 +93,9 @@ def plot_sbc_ecdf(
     """
 
     # Preprocessing
-    plot_data = preprocess(post_samples, prior_samples, variable_names, num_col, num_row, figsize, stacked=stacked)
+    plot_data = preprocess(
+        post_samples, prior_samples, filter_keys, variable_names, num_col, num_row, figsize, stacked=stacked
+    )
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 

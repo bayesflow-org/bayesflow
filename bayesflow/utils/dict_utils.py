@@ -116,22 +116,25 @@ def dicts_to_arrays(
     # TODO - consider variable_names first, then filter_keys
     """
 
+    # Ensure that posterior and prior variables have the same type
     if type(post_variables) is not type(prior_variables):
         raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
 
     # Filtering
     if isinstance(post_variables, dict):
+        # Ensure that the keys of posterior and prior variables match
         if post_variables.keys() != prior_variables.keys():
             raise ValueError("Keys in your posterior / prior arrays should match.")
 
-        # Use user-provided filter keys instead of inferred ones
+        # If they match, users can further select the variables by using filter keys
         filter_keys = list(post_variables.keys()) if filter_keys is None else filter_keys
 
+        # The variables will then be overridden with the filtered keys
         post_variables = np.concatenate([v for k, v in post_variables.items() if k in filter_keys], axis=-1)
         prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in filter_keys], axis=-1)
 
     # Naming or Renaming
-    elif isinstance(post_variables, np.ndarray):
+    if isinstance(post_variables, np.ndarray):
         # If there are filter_keys, check if their number is the same as that of the variables.
         # If it does, check if there are sufficient variable names.
         # If there are, then the variable names are adopted.
@@ -148,7 +151,6 @@ def dicts_to_arrays(
                     variable_names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
             else:
                 variable_names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
-
     else:
         raise TypeError("Only dicts and tensors are supported as arguments.")
 

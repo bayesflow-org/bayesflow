@@ -2,11 +2,14 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
+from typing import Sequence
 from bayesflow.utils import logging
+from bayesflow.utils.dict_utils import dicts_to_arrays
 
 
 def plot_samples_2d(
-    samples: np.ndarray = None,
+    samples: dict[str, np.ndarray] | np.ndarray = None,
+    filter_keys: Sequence[str] = None,
     context: str = None,
     variable_names: list = None,
     height: float = 2.5,
@@ -41,7 +44,11 @@ def plot_samples_2d(
         Additional keyword arguments passed to the sns.PairGrid constructor
     """
 
-    dim = samples.shape[-1]
+    plot_data = dicts_to_arrays(
+        post_variables=samples, filter_keys=filter_keys, variable_names=variable_names, context=context
+    )
+
+    dim = plot_data["post_variables"].shape[-1]
     if context is None:
         context = "Default"
 
@@ -52,7 +59,10 @@ def plot_samples_2d(
         titles = [f"{context} {p}" for p in variable_names]
 
     # Convert samples to pd.DataFrame
-    data_to_plot = pd.DataFrame(samples, columns=titles)
+    if context == "Posterior":
+        data_to_plot = pd.DataFrame(plot_data["post_variables"][0], columns=titles)
+    else:
+        data_to_plot = pd.DataFrame(plot_data["post_variables"], columns=titles)
 
     # Generate plots
     artist = sns.PairGrid(data_to_plot, height=height, **kwargs)

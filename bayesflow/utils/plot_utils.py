@@ -9,8 +9,8 @@ from .dict_utils import dicts_to_arrays
 
 
 def preprocess(
-    post_variables: dict[str, np.ndarray],
-    prior_variables: dict[str, np.ndarray],
+    post_variables: dict[str, np.ndarray] | np.ndarray,
+    prior_variables: dict[str, np.ndarray] | np.ndarray,
     filter_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     context: str = None,
@@ -44,7 +44,13 @@ def preprocess(
         Whether the plots are stacked horizontally
     """
 
-    plot_data = dicts_to_arrays(post_variables, prior_variables, filter_keys, variable_names, context)
+    plot_data = dicts_to_arrays(
+        post_variables=post_variables,
+        prior_variables=prior_variables,
+        filter_keys=filter_keys,
+        variable_names=variable_names,
+        context=context,
+    )
     check_posterior_prior_shapes(plot_data["post_variables"], plot_data["prior_variables"])
 
     # Configure layout

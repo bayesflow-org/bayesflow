@@ -107,44 +107,44 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
 
 def dicts_to_arrays(
     post_variables: dict[str, np.ndarray] | np.ndarray,
-    prior_variables: dict[str, np.ndarray] | np.ndarray,
+    prior_variables: dict[str, np.ndarray] | np.ndarray = None,
     filter_keys: Sequence[str] | None = None,
     variable_names: Sequence[str] = None,
     context: str = None,
 ):
     """
-    # TODO - consider variable_names first, then filter_keys
+    # TODO
     """
 
     # Ensure that posterior and prior variables have the same type
-    if type(post_variables) is not type(prior_variables):
-        raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
+    if prior_variables is not None:
+        if type(post_variables) is not type(prior_variables):
+            raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
 
     # Filtering
     if isinstance(post_variables, dict):
-        # Ensure that the keys of posterior and prior variables match
-        if not (set(post_variables) <= set(prior_variables)):
-            raise ValueError("Keys in your posterior / prior arrays should match.")
+        # Ensure that the keys of selected posterior and prior variables match
+        if prior_variables is not None:
+            if not (set(post_variables) <= set(prior_variables)):
+                raise ValueError("Keys in your posterior / prior arrays should match.")
 
         # If they match, users can further select the variables by using filter keys
         filter_keys = list(post_variables.keys()) if filter_keys is None else filter_keys
 
         # The variables will then be overridden with the filtered keys
         post_variables = np.concatenate([v for k, v in post_variables.items() if k in filter_keys], axis=-1)
-        prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in filter_keys], axis=-1)
+        if prior_variables is not None:
+            prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in filter_keys], axis=-1)
 
     # Naming or Renaming
-    if isinstance(post_variables, np.ndarray):
+    elif isinstance(post_variables, np.ndarray):
         # If there are filter_keys, check if their number is the same as that of the variables.
         # If it does, check if there are sufficient variable names.
         # If there are, then the variable names are adopted.
-        if filter_keys is not None:
-            if post_variables.shape[-1] != len(filter_keys) or prior_variables.shape[-1] != len(filter_keys):
-                raise ValueError("The length of the filter key list should match the number of target variables.")
-            else:
-                if variable_names is not None:
-                    if len(variable_names) != len(filter_keys):
-                        raise ValueError("The length of your list of names should match that of your filter keys.")
+        if variable_names is not None:
+            if post_variables.shape[-1] != len(variable_names) or prior_variables.shape[-1] != len(variable_names):
+                raise ValueError("The number of variable names should match the number of target variables.")
+
         else:  # Otherwise, we would assume that all variables are used for plotting.
             if context is None:
                 if variable_names is None:

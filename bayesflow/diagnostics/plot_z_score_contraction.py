@@ -99,7 +99,7 @@ def plot_z_score_contraction(
 
     # Compute contraction and z-score
     contraction = 1 - (post_vars / prior_vars)
-    z_score = (post_means - prior_samples) / post_stds
+    z_score = (post_means - plot_data["prior_samples"]) / post_stds
 
     # Loop and plot
     for i, ax in enumerate(plot_data["axes"].flat):

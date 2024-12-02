@@ -9,6 +9,7 @@ from bayesflow.utils import preprocess, add_titles_and_labels, prettify_subplots
 def plot_z_score_contraction(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
+    filter_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -84,7 +85,7 @@ def plot_z_score_contraction(
     """
 
     # Preprocessing
-    plot_data = preprocess(post_samples, prior_samples, variable_names, num_col, num_row, figsize)
+    plot_data = preprocess(post_samples, prior_samples, filter_keys, variable_names, num_col, num_row, figsize)
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
@@ -98,7 +99,7 @@ def plot_z_score_contraction(
 
     # Compute contraction and z-score
     contraction = 1 - (post_vars / prior_vars)
-    z_score = (post_means - prior_samples) / post_stds
+    z_score = (post_means - plot_data["prior_samples"]) / post_stds
 
     # Loop and plot
     for i, ax in enumerate(plot_data["axes"].flat):
@@ -115,7 +116,7 @@ def plot_z_score_contraction(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
-        title=plot_data["names"],
+        title=plot_data["variable_names"],
         xlabel="Posterior contraction",
         ylabel="Posterior z-score",
         title_fontsize=title_fontsize,

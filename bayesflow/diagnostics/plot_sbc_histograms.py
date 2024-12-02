@@ -12,6 +12,7 @@ from bayesflow.utils import preprocess, add_titles_and_labels, prettify_subplots
 def plot_sbc_histograms(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
+    filter_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     figsize: Sequence[float] = None,
     num_bins: int = 10,
@@ -71,11 +72,11 @@ def plot_sbc_histograms(
     """
 
     # Preprocessing
-    plot_data = preprocess(post_samples, prior_samples, num_col, num_row, variable_names, figsize)
+    plot_data = preprocess(post_samples, prior_samples, filter_keys, variable_names, num_col, num_row, figsize=figsize)
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
-    # Determine the ratio of simulations to prior draws
+    # Determine the ratio of simulations to prior draw
     # num_params = plot_data['num_variables']
     num_sims = plot_data["post_samples"].shape[0]
     num_draws = plot_data["post_samples"].shape[1]
@@ -119,7 +120,7 @@ def plot_sbc_histograms(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
-        title=plot_data["names"],
+        title=plot_data["variable_names"],
         xlabel="Rank statistic",
         ylabel="",
         title_fontsize=title_fontsize,

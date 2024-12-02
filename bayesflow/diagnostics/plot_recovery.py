@@ -11,6 +11,7 @@ from bayesflow.utils import preprocess, prettify_subplots, make_quadratic, add_t
 def plot_recovery(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
+    filter_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     point_agg=np.median,
     uncertainty_agg=median_abs_deviation,
@@ -59,7 +60,7 @@ def plot_recovery(
     """
 
     # Gather plot data and metadata into a dictionary
-    plot_data = preprocess(post_samples, prior_samples, variable_names, num_col, num_row, figsize)
+    plot_data = preprocess(post_samples, prior_samples, filter_keys, variable_names, num_col, num_row, figsize)
     plot_data["post_samples"] = plot_data.pop("post_variables")
     plot_data["prior_samples"] = plot_data.pop("prior_variables")
 
@@ -93,7 +94,7 @@ def plot_recovery(
             corr = np.corrcoef(plot_data["prior_samples"][:, i], point_estimate[:, i])[0, 1]
             add_metric(ax=ax, metric_text="$r$", metric_value=corr, metric_fontsize=metric_fontsize)
 
-        ax.set_title(plot_data["names"][i], fontsize=title_fontsize)
+        ax.set_title(plot_data["variable_names"][i], fontsize=title_fontsize)
 
     # Add custom schmuck
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)

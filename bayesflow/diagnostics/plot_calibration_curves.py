@@ -102,7 +102,7 @@ def plot_calibration_curves(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
-        title=plot_data["names"],
+        title=plot_data["variable_names"],
         xlabel="Predicted Probability",
         ylabel="True Probability",
         title_fontsize=title_fontsize,

@@ -107,36 +107,56 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
 
 def dicts_to_arrays(
     post_variables: dict[str, np.ndarray] | np.ndarray,
-    prior_variables: dict[str, np.ndarray] | np.ndarray,
-    names: Sequence[str] = None,
+    prior_variables: dict[str, np.ndarray] | np.ndarray = None,
+    filter_keys: Sequence[str] | None = None,
+    variable_names: Sequence[str] = None,
     context: str = None,
 ):
-    """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
+    """
+    # TODO
+    """
 
-    if type(post_variables) is not type(prior_variables):
-        raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
+    # Ensure that posterior and prior variables have the same type
+    if prior_variables is not None:
+        if type(post_variables) is not type(prior_variables):
+            raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
 
+    # Filtering
     if isinstance(post_variables, dict):
-        if post_variables.keys() != prior_variables.keys():
-            raise ValueError("Keys in your posterior / prior arrays should match.")
+        # Ensure that the keys of selected posterior and prior variables match
+        if prior_variables is not None:
+            if not (set(post_variables) <= set(prior_variables)):
+                raise ValueError("Keys in your posterior / prior arrays should match.")
 
-        # Use user-provided names instead of inferred ones
-        names = list(post_variables.keys()) if names is None else names
+        # If they match, users can further select the variables by using filter keys
+        filter_keys = list(post_variables.keys()) if filter_keys is None else filter_keys
 
-        post_variables = np.concatenate([v for k, v in post_variables.items() if k in names], axis=-1)
-        prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in names], axis=-1)
+        # The variables will then be overridden with the filtered keys
+        post_variables = np.concatenate([v for k, v in post_variables.items() if k in filter_keys], axis=-1)
+        if prior_variables is not None:
+            prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in filter_keys], axis=-1)
 
+    # Naming or Renaming
     elif isinstance(post_variables, np.ndarray):
-        if names is not None:
-            if post_variables.shape[-1] != len(names) or prior_variables.shape[-1] != len(names):
-                raise ValueError("The length of the names list should match the number of target variables.")
-        else:
-            if context is not None:
-                names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
-            else:
-                names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
+        # If there are filter_keys, check if their number is the same as that of the variables.
+        # If it does, check if there are sufficient variable names.
+        # If there are, then the variable names are adopted.
+        if variable_names is not None:
+            if post_variables.shape[-1] != len(variable_names) or prior_variables.shape[-1] != len(variable_names):
+                raise ValueError("The number of variable names should match the number of target variables.")
 
+        else:  # Otherwise, we would assume that all variables are used for plotting.
+            if context is None:
+                if variable_names is None:
+                    variable_names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
+            else:
+                variable_names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
     else:
         raise TypeError("Only dicts and tensors are supported as arguments.")
 
-    return dict(post_variables=post_variables, prior_variables=prior_variables, names=names, num_variables=len(names))
+    return dict(
+        post_variables=post_variables,
+        prior_variables=prior_variables,
+        variable_names=variable_names,
+        num_variables=len(variable_names),
+    )

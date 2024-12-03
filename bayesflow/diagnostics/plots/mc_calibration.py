@@ -8,8 +8,8 @@ from bayesflow.utils import expected_calibration_error, preprocess, add_titles_a
 
 
 def mc_calibration(
-    post_model_samples: dict[str, np.ndarray] | np.ndarray,
-    true_model_samples: dict[str, np.ndarray] | np.ndarray,
+    pred_models: dict[str, np.ndarray] | np.ndarray,
+    true_models: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,
     num_bins: int = 10,
     label_fontsize: int = 16,
@@ -28,11 +28,11 @@ def mc_calibration(
 
     Parameters
     ----------
-    true_model_samples       : np.ndarray of shape (num_data_sets, num_models)
+    true_models       : np.ndarray of shape (num_data_sets, num_models)
         The one-hot-encoded true model indices per data set.
-    post_model_samples      : np.ndarray of shape (num_data_sets, num_models)
+    pred_models       : np.ndarray of shape (num_data_sets, num_models)
         The predicted posterior model probabilities (PMPs) per data set.
-    names       : list or None, optional, default: None
+    names             : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.
     num_bins          : int, optional, default: 10
         The number of bins to use for the calibration curves (and marginal histograms).
@@ -60,7 +60,7 @@ def mc_calibration(
     fig : plt.Figure - the figure instance for optional saving
     """
 
-    plot_data = preprocess(post_model_samples, true_model_samples, names, num_col, num_row, figsize, context="M")
+    plot_data = preprocess(pred_models, true_models, names, num_col, num_row, figsize, context="M")
 
     # Compute calibration
     cal_errors, true_probs, pred_probs = expected_calibration_error(

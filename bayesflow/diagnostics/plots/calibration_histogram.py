@@ -9,7 +9,7 @@ from bayesflow.utils import logging
 from bayesflow.utils import preprocess, add_titles_and_labels, prettify_subplots
 
 
-def plot_sbc_histograms(
+def calibration_histogram(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     filter_keys: Sequence[str] = None,

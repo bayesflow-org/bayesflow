@@ -8,7 +8,7 @@ from scipy.stats import median_abs_deviation
 from bayesflow.utils import preprocess, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
 
 
-def plot_recovery(
+def recovery(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     filter_keys: Sequence[str] = None,

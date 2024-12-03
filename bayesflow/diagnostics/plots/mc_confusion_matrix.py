@@ -12,7 +12,7 @@ from keras import ops
 from bayesflow.utils.plot_utils import make_figure
 
 
-def plot_confusion_matrix(
+def mc_confusion_matrix(
     true_models: dict[str, np.ndarray] | np.ndarray,
     pred_models: dict[str, np.ndarray] | np.ndarray,
     model_names: Sequence[str] = None,

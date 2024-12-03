@@ -3,10 +3,10 @@ from typing import Sequence
 import seaborn as sns
 
 from bayesflow.simulators import Simulator
-from .plot_samples_2d import plot_samples_2d
+from .pairs_samples import pairs_samples
 
 
-def plot_prior_2d(
+def pairs_prior(
     simulator: Simulator,
     variable_names: Sequence[str] | str = None,
     num_samples: int = 2000,
@@ -43,6 +43,6 @@ def plot_prior_2d(
     if isinstance(samples, dict):
         samples = samples["theta"]
 
-    return plot_samples_2d(
+    return pairs_samples(
         samples, context="Prior", height=height, color=color, param_names=variable_names, render=True, **kwargs
     )

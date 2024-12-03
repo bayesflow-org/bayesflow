@@ -6,7 +6,7 @@ from typing import Sequence
 from bayesflow.utils import preprocess, add_titles_and_labels, prettify_subplots
 
 
-def plot_z_score_contraction(
+def z_score_contraction(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     filter_keys: Sequence[str] = None,

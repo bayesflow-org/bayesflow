@@ -5,7 +5,7 @@ import seaborn as sns
 from keras import ops
 
 
-def plot_mmd_hypothesis_test(
+def mmd_hypothesis_test(
     mmd_null: np.ndarray,
     mmd_observed: float = None,
     alpha_level: float = 0.05,

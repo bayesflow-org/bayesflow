@@ -6,10 +6,10 @@ import seaborn as sns
 
 from matplotlib.lines import Line2D
 
-from .plot_samples_2d import plot_samples_2d
+from .pairs_samples import pairs_samples
 
 
-def plot_posterior_2d(
+def pairs_posterior(
     post_samples: np.ndarray,
     prior_samples: np.ndarray = None,
     prior=None,
@@ -70,7 +70,7 @@ def plot_posterior_2d(
 
     # Plot posterior first
     context = ""
-    g = plot_samples_2d(
+    g = pairs_samples(
         post_samples, context=context, variable_names=variable_names, render=False, height=height, **kwargs
     )
 

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from bayesflow.utils import expected_calibration_error, preprocess, add_titles_and_labels, add_metric, prettify_subplots
 
 
-def plot_calibration_curves(
+def mc_calibration(
     post_model_samples: dict[str, np.ndarray] | np.ndarray,
     true_model_samples: dict[str, np.ndarray] | np.ndarray,
     names: Sequence[str] = None,

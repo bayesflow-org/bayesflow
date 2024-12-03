@@ -7,7 +7,7 @@ from bayesflow.utils import logging
 from bayesflow.utils.dict_utils import dicts_to_arrays
 
 
-def plot_samples_2d(
+def pairs_samples(
     samples: dict[str, np.ndarray] | np.ndarray = None,
     filter_keys: Sequence[str] = None,
     context: str = None,
@@ -27,7 +27,8 @@ def plot_samples_2d(
     samples     : dict[str, Tensor], default: None
         Sample draws from any dataset
     context     : str, default: None
-        The context that the sample represents
+        The context that the sample represents. If specified,
+        should usually either be `Prior` or `Posterior`.
     height      : float, optional, default: 2.5
         The height of the pair plot
     color       : str, optional, default : '#8f2727'

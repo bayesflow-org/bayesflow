@@ -6,10 +6,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-from ..utils.plot_utils import make_figure, add_titles_and_labels
+from ...utils.plot_utils import make_figure, add_titles_and_labels
 
 
-def plot_losses(
+def loss(
     train_losses: pd.DataFrame | np.ndarray,
     val_losses: pd.DataFrame | np.ndarray = None,
     moving_average: bool = False,

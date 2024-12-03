@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from typing import Sequence
-from ..utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
-from ..utils.ecdf import simultaneous_ecdf_bands
-from ..utils.ecdf.ranks import fractional_ranks, distance_ranks
+from ...utils.plot_utils import preprocess, add_titles_and_labels, prettify_subplots
+from ...utils.ecdf import simultaneous_ecdf_bands
+from ...utils.ecdf.ranks import fractional_ranks, distance_ranks
 
 
-def plot_sbc_ecdf(
+def calibration_ecdf(
     post_samples: dict[str, np.ndarray] | np.ndarray,
     prior_samples: dict[str, np.ndarray] | np.ndarray,
     filter_keys: Sequence[str] = None,
@@ -61,12 +61,15 @@ def plot_sbc_ecdf(
     stacked           : bool, optional, default: False
         If `True`, all ECDFs will be plotted on the same plot.
         If `False`, each ECDF will have its own subplot,
-        similar to the behavior of `plot_sbc_histograms`.
+        similar to the behavior of `calibration_histogram`.
     rank_type   : str, optional, default: 'fractional'
-        If `fractional` (default), the ranks are computed as the fraction of posterior samples that are smaller than
-        the prior. If `distance`, the ranks are computed as the fraction of posterior samples that are closer to
-        a reference points (default here is the origin). You can pass a reference array in the same shape as the
-        `prior_samples` array by setting `references` in the ``ranks_kwargs``. This is motivated by [2].
+        If `fractional` (default), the ranks are computed as the fraction
+        of posterior samples that are smaller than the prior.
+        If `distance`, the ranks are computed as the fraction of posterior
+        samples that are closer to a reference points (default here is the origin).
+        You can pass a reference array in the same shape as the
+        `prior_samples` array by setting `references` in the ``ranks_kwargs``.
+        This is motivated by [2].
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
         Inferred if None. Only relevant if `stacked=False`.

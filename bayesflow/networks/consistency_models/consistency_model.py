@@ -83,7 +83,7 @@ class ConsistencyModel(InferenceNetwork):
         self.s0 = float(s0)
         self.s1 = float(s1)
         # create variable that works with JIT compilation
-        self.current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int32")
+        self.current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
         self.current_step.assign(0)
 
         self.seed_generator = keras.random.SeedGenerator()
@@ -258,7 +258,7 @@ class ConsistencyModel(InferenceNetwork):
             self.current_step.assign(ops.minimum(self.current_step, self.total_steps - 1))
 
         discretization_index = ops.take(
-            self.discretization_map, ops.cast(self._schedule_discretization(self.current_step), "int32")
+            self.discretization_map, ops.cast(self._schedule_discretization(self.current_step), "int")
         )
         discretized_time = ops.take(self.discretized_times, discretization_index, axis=0)
 

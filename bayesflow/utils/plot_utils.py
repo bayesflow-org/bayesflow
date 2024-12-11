@@ -9,8 +9,8 @@ from .dict_utils import dicts_to_arrays
 
 
 def prepare_plot_data(
-    estimates: Mapping[str, np.ndarray] | np.ndarray,
-    ground_truths: Mapping[str, np.ndarray] | np.ndarray,
+    targets: Mapping[str, np.ndarray] | np.ndarray,
+    references: Mapping[str, np.ndarray] | np.ndarray,
     variable_names: Sequence[str] = None,
     num_col: int = None,
     num_row: int = None,
@@ -24,15 +24,15 @@ def prepare_plot_data(
 
     Parameters
     ----------
-    estimates         : dict[str, ndarray] or ndarray
-        The model-generated estimates, which can take the following forms:
+    targets           : dict[str, ndarray] or ndarray
+        The model-generated predictions or estimates, which can take the following forms:
         - ndarray of shape (num_datasets, num_variables)
             Point estimates for each dataset, where `num_datasets` is the number of datasets
             and `num_variables` is the number of variables per dataset.
         - ndarray of shape (num_datasets, num_draws, num_variables)
             Posterior samples for each dataset, where `num_datasets` is the number of datasets,
             `num_draws` is the number of posterior draws, and `num_variables` is the number of variables.
-    ground_truths     : dict[str, ndarray] or ndarray, optional (default = None)
+    references        : dict[str, ndarray] or ndarray, optional (default = None)
         Ground truth values corresponding to the estimates. Must match the structure and dimensionality
         of `estimates` in terms of first and last axis.
     variable_names    : Sequence[str], optional (default = None)
@@ -46,13 +46,13 @@ def prepare_plot_data(
     stacked           : bool, optional, default: False
         Whether the plots are stacked horizontally
     default_name      : str, optional (default = "var")
-        Context where the estimates are situated (e.g., Posterior Inference)
+        The default name to use for targets if None provided
     """
 
     plot_data = dicts_to_arrays(
-        estimates=estimates, ground_truths=ground_truths, variable_names=variable_names, default_name=default_name
+        targets=targets, references=references, variable_names=variable_names, default_name=default_name
     )
-    check_posterior_prior_shapes(plot_data["estimates"], plot_data["ground_truths"])
+    check_posterior_prior_shapes(plot_data["targets"], plot_data["references"])
 
     # Configure layout
     num_row, num_col = set_layout(plot_data["num_variables"], num_row, num_col, stacked)

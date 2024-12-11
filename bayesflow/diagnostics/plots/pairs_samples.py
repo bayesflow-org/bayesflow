@@ -44,17 +44,17 @@ def pairs_samples(
         Additional keyword arguments passed to the sns.PairGrid constructor
     """
 
-    plot_data = dicts_to_arrays(estimates=samples, variable_names=variable_names, default_name=context)
+    plot_data = dicts_to_arrays(targets=samples, variable_names=variable_names, default_name=context)
 
-    dim = plot_data["estimates"].shape[-1]
+    dim = plot_data["targets"].shape[-1]
     if context is None:
         context = "Default"
 
     # Convert samples to pd.DataFrame
     if context == "Posterior":
-        data_to_plot = pd.DataFrame(plot_data["estimates"][0], columns=plot_data["variable_names"])
+        data_to_plot = pd.DataFrame(plot_data["targets"][0], columns=plot_data["variable_names"])
     else:
-        data_to_plot = pd.DataFrame(plot_data["estimates"], columns=plot_data["variable_names"])
+        data_to_plot = pd.DataFrame(plot_data["targets"], columns=plot_data["variable_names"])
 
     # Generate plots
     artist = sns.PairGrid(data_to_plot, height=height, **kwargs)

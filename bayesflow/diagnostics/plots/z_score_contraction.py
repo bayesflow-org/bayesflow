@@ -7,8 +7,8 @@ from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_s
 
 
 def z_score_contraction(
-    post_samples: dict[str, np.ndarray] | np.ndarray,
-    prior_samples: dict[str, np.ndarray] | np.ndarray,
+    targets: dict[str, np.ndarray] | np.ndarray,
+    references: dict[str, np.ndarray] | np.ndarray,
     variable_names: Sequence[str] = None,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -52,10 +52,10 @@ def z_score_contraction(
 
     Parameters
     ----------
-    post_samples      : np.ndarray of shape (n_data_sets, n_post_draws, n_params)
-        The posterior draws obtained from n_data_sets
-    prior_samples     : np.ndarray of shape (n_data_sets, n_params)
-        The prior draws (true parameters) obtained for generating the n_data_sets
+    targets      : np.ndarray of shape (num_datasets, num_post_draws, num_params)
+        The posterior draws obtained from num_datasets
+    references     : np.ndarray of shape (num_datasets, num_params)
+        The prior draws (true parameters) used for generating the num_datasets
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     figsize           : tuple or None, optional, default : None
@@ -85,28 +85,28 @@ def z_score_contraction(
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
-        estimates=post_samples,
-        ground_truths=prior_samples,
+        targets=targets,
+        references=references,
         variable_names=variable_names,
         num_col=num_col,
         num_row=num_row,
         figsize=figsize,
     )
 
-    post_samples = plot_data.pop("estimates")
-    prior_samples = plot_data.pop("ground_truths")
+    targets = plot_data.pop("targets")
+    references = plot_data.pop("references")
 
     # Estimate posterior means and stds
-    post_means = post_samples.mean(axis=1)
-    post_vars = post_samples.var(axis=1, ddof=1)
+    post_means = targets.mean(axis=1)
+    post_vars = targets.var(axis=1, ddof=1)
     post_stds = np.sqrt(post_vars)
 
     # Estimate prior variance
-    prior_vars = prior_samples.var(axis=0, keepdims=True, ddof=1)
+    prior_vars = references.var(axis=0, keepdims=True, ddof=1)
 
     # Compute contraction and z-score
     contraction = 1 - (post_vars / prior_vars)
-    z_score = (post_means - prior_samples) / post_stds
+    z_score = (post_means - references) / post_stds
 
     # Loop and plot
     for i, ax in enumerate(plot_data["axes"].flat):

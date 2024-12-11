@@ -128,8 +128,8 @@ def split_arrays(data: Mapping[str, np.ndarray], axis: int = -1) -> Mapping[str,
 
 
 def dicts_to_arrays(
-    estimates: Mapping[str, np.ndarray] | np.ndarray,
-    ground_truths: Mapping[str, np.ndarray] | np.ndarray = None,
+    targets: Mapping[str, np.ndarray] | np.ndarray,
+    references: Mapping[str, np.ndarray] | np.ndarray = None,
     variable_names: Sequence[str] = None,
     default_name: str = "var",
 ) -> Mapping[str, Any]:
@@ -148,8 +148,8 @@ def dicts_to_arrays(
 
     Parameters
     ----------
-    estimates   : dict[str, ndarray] or ndarray
-        The model-generated estimates, which can take the following forms:
+    targets   : dict[str, ndarray] or ndarray
+        The model-generated predictions or estimates, which can take the following forms:
         - ndarray of shape (num_datasets, num_variables)
             Point estimates for each dataset, where `num_datasets` is the number of datasets
             and `num_variables` is the number of variables per dataset.
@@ -157,8 +157,8 @@ def dicts_to_arrays(
             Posterior samples for each dataset, where `num_datasets` is the number of datasets,
             `num_draws` is the number of posterior draws, and `num_variables` is the number of variables.
 
-    ground_truths : dict[str, ndarray] or ndarray, optional (default = None)
-        Ground truth values corresponding to the estimates. Must match the structure and dimensionality
+    references : dict[str, ndarray] or ndarray, optional (default = None)
+        Ground-truth values corresponding to the estimates. Must match the structure and dimensionality
         of `estimates` in terms of first and last axis.
 
     variable_names : Sequence[str], optional (default = None)
@@ -166,40 +166,37 @@ def dicts_to_arrays(
         inputs.
     default_name   : str, optional (default = "v")
         The default variable name to use if array arguments and no variable names are provided.
-
-    Returns
-    -------
-    None
-        This function or class does not return a value directly.
     """
 
     # Ensure that posterior and prior variables have the same type
-    if ground_truths is not None:
-        if type(estimates) is not type(ground_truths):
+    if references is not None:
+        if type(targets) is not type(references):
             raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
 
     # Case dictionaries provided
-    if isinstance(estimates, dict):
-        estimates = split_arrays(estimates)
-        variable_names = list(estimates.keys()) if variable_names is None else variable_names
-        estimates = np.stack([v for k, v in estimates.items() if k in variable_names], axis=-1)
+    if isinstance(targets, dict):
+        targets = split_arrays(targets)
+        variable_names = list(targets.keys()) if variable_names is None else variable_names
+        targets = np.stack([v for k, v in targets.items() if k in variable_names], axis=-1)
 
-        if ground_truths is not None:
-            ground_truths = split_arrays(ground_truths)
-            ground_truths = np.stack([v for k, v in ground_truths.items() if k in variable_names], axis=-1)
+        if references is not None:
+            references = split_arrays(references)
+            references = np.stack([v for k, v in references.items() if k in variable_names], axis=-1)
 
     # Case arrays provided
-    elif isinstance(estimates, np.ndarray):
+    elif isinstance(targets, np.ndarray):
         if variable_names is None:
-            variable_names = [f"${default_name}_{{{i}}}$" for i in range(estimates.shape[-1])]
+            variable_names = [f"${default_name}_{{{i}}}$" for i in range(targets.shape[-1])]
 
     # Throw if unknown type
     else:
-        raise TypeError("Only dicts and tensors are supported as arguments.")
+        raise TypeError(
+            f"Only dicts and tensors are supported as arguments, " f"but your targets are of type {type(targets)}"
+        )
 
     return dict(
-        estimates=estimates,
-        ground_truths=ground_truths,
+        targets=targets,
+        references=references,
         variable_names=variable_names,
         num_variables=len(variable_names),
     )

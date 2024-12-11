@@ -9,8 +9,8 @@ from bayesflow.utils import prepare_plot_data, prettify_subplots, make_quadratic
 
 
 def recovery(
-    post_samples: dict[str, np.ndarray] | np.ndarray,
-    prior_samples: dict[str, np.ndarray] | np.ndarray,
+    targets: dict[str, np.ndarray] | np.ndarray,
+    references: dict[str, np.ndarray] | np.ndarray,
     variable_names: Sequence[str] = None,
     point_agg=np.median,
     uncertainty_agg=median_abs_deviation,
@@ -60,22 +60,22 @@ def recovery(
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
-        estimates=post_samples,
-        ground_truths=prior_samples,
+        targets=targets,
+        references=references,
         variable_names=variable_names,
         num_col=num_col,
         num_row=num_row,
         figsize=figsize,
     )
 
-    post_samples = plot_data.pop("estimates")
-    prior_samples = plot_data.pop("ground_truths")
+    targets = plot_data.pop("targets")
+    references = plot_data.pop("references")
 
     # Compute point estimates and uncertainties
-    point_estimate = point_agg(post_samples, axis=1)
+    point_estimate = point_agg(targets, axis=1)
 
     if uncertainty_agg is not None:
-        u = uncertainty_agg(post_samples, axis=1)
+        u = uncertainty_agg(targets, axis=1)
 
     for i, ax in enumerate(np.atleast_1d(plot_data["axes"].flat)):
         if i >= plot_data["num_variables"]:
@@ -84,7 +84,7 @@ def recovery(
         # Add scatter and error bars
         if uncertainty_agg is not None:
             _ = ax.errorbar(
-                prior_samples[:, i],
+                references[:, i],
                 point_estimate[:, i],
                 yerr=u[:, i],
                 fmt="o",
@@ -93,12 +93,12 @@ def recovery(
                 **kwargs,
             )
         else:
-            _ = ax.scatter(prior_samples[:, i], point_estimate[:, i], alpha=0.5, color=color, **kwargs)
+            _ = ax.scatter(references[:, i], point_estimate[:, i], alpha=0.5, color=color, **kwargs)
 
-        make_quadratic(ax, prior_samples[:, i], point_estimate[:, i])
+        make_quadratic(ax, references[:, i], point_estimate[:, i])
 
         if add_corr:
-            corr = np.corrcoef(prior_samples[:, i], point_estimate[:, i])[0, 1]
+            corr = np.corrcoef(references[:, i], point_estimate[:, i])[0, 1]
             add_metric(ax=ax, metric_text="$r$", metric_value=corr, metric_fontsize=metric_fontsize)
 
         ax.set_title(plot_data["variable_names"][i], fontsize=title_fontsize)

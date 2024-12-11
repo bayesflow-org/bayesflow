@@ -112,12 +112,17 @@ class BasicWorkflow(Workflow):
         self.history = None
 
     @staticmethod
+    def samples_to_data_frame(samples: dict[str, np.ndarray]) -> pd.DataFrame:
+        """Converts samples of a single data set to a pandas DataFrame."""
+        return pd.DataFrame(keras.tree.map_structure(np.squeeze, samples))
+
+    @staticmethod
     def default_adapter(
         inference_variables: Sequence[str] | str,
         inference_conditions: Sequence[str] | str,
         summary_variables: Sequence[str] | str,
         standardize: Sequence[str] | str,
-    ):
+    ) -> Adapter:
         adapter = (
             Adapter()
             .convert_dtype(from_dtype="float64", to_dtype="float32")
@@ -155,7 +160,7 @@ class BasicWorkflow(Workflow):
     ) -> dict[str, np.ndarray]:
         return self.approximator.sample(num_samples=num_samples, conditions=conditions, **kwargs)
 
-    def log_prob(self, data: dict[str, np.ndarray], **kwargs):
+    def log_prob(self, data: dict[str, np.ndarray], **kwargs) -> np.ndarray:
         return self.approximator.log_prob(data=data)
 
     def plot_diagnostics(
@@ -186,22 +191,22 @@ class BasicWorkflow(Workflow):
             figures["losses"] = bf_plots.loss(self.history, **kwargs.get("loss_kwargs", {}))
 
         figures["recovery"] = bf_plots.recovery(
-            post_samples=post_samples,
-            prior_samples=inference_variables,
+            targets=post_samples,
+            references=inference_variables,
             variable_names=variable_names,
             **kwargs.get("recovery_kwargs", {}),
         )
 
         figures["calibration_ecdf"] = bf_plots.calibration_ecdf(
-            post_samples=post_samples,
-            prior_samples=inference_variables,
+            targets=post_samples,
+            references=inference_variables,
             variable_names=variable_names,
             **kwargs.get("calibration_ecdf_kwargs", {}),
         )
 
         figures["z_score_contraction"] = bf_plots.z_score_contraction(
-            post_samples=post_samples,
-            prior_samples=inference_variables,
+            targets=post_samples,
+            references=inference_variables,
             variable_names=variable_names,
             **kwargs.get("z_score_contraction_kwargs", {}),
         )
@@ -213,7 +218,7 @@ class BasicWorkflow(Workflow):
         test_data: dict[str, np.ndarray] | int,
         num_samples: int = 1000,
         variable_names: Sequence[str] = None,
-        as_pandas: bool = True,
+        as_data_frame: bool = True,
         **kwargs,
     ) -> Sequence[dict] | pd.DataFrame:
         if isinstance(test_data, int) and self.simulator is not None:
@@ -231,27 +236,27 @@ class BasicWorkflow(Workflow):
         )
 
         root_mean_squared_error = bf_metrics.root_mean_squared_error(
-            post_samples=post_samples,
-            prior_samples=inference_variables,
+            targets=post_samples,
+            references=inference_variables,
             variable_names=variable_names,
             **kwargs.get("root_mean_squared_error_kwargs", {}),
         )
 
         contraction = bf_metrics.posterior_contraction(
-            post_samples=post_samples,
-            prior_samples=inference_variables,
+            targets=post_samples,
+            references=inference_variables,
             variable_names=variable_names,
             **kwargs.get("posterior_contraction_kwargs", {}),
         )
 
         calibration_errors = bf_metrics.calibration_error(
-            post_samples=post_samples,
-            prior_samples=inference_variables,
+            targets=post_samples,
+            references=inference_variables,
             variable_names=variable_names,
             **kwargs.get("calibration_error_kwargs", {}),
         )
 
-        if as_pandas:
+        if as_data_frame:
             metrics = pd.DataFrame(
                 {
                     root_mean_squared_error["metric_name"]: root_mean_squared_error["values"],
@@ -370,7 +375,7 @@ class BasicWorkflow(Workflow):
             if not keep_optimizer:
                 self.optimizer = None
 
-    def build_optimizer(self, epochs: int, num_batches: int, strategy: str):
+    def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
         if self.optimizer is not None:
             return
 

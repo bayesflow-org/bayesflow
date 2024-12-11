@@ -6,8 +6,8 @@ from ...utils.dict_utils import dicts_to_arrays
 
 
 def root_mean_squared_error(
-    post_samples: Mapping[str, np.ndarray] | np.ndarray,
-    prior_samples: Mapping[str, np.ndarray] | np.ndarray,
+    targets: Mapping[str, np.ndarray] | np.ndarray,
+    references: Mapping[str, np.ndarray] | np.ndarray,
     normalize: bool = True,
     aggregation: Callable = np.median,
     variable_names: Sequence[str] = None,
@@ -16,10 +16,10 @@ def root_mean_squared_error(
 
     Parameters
     ----------
-    post_samples   : np.ndarray of shape (num_datasets, num_draws_post, num_variables)
+    targets   : np.ndarray of shape (num_datasets, num_draws_post, num_variables)
         Posterior samples, comprising `num_draws_post` random draws from the posterior distribution
         for each data set from `num_datasets`.
-    prior_samples  : np.ndarray of shape (num_datasets, num_variables)
+    references  : np.ndarray of shape (num_datasets, num_variables)
         Prior samples, comprising `num_datasets` ground truths.
     normalize      : bool, optional (default = True)
         Whether to normalize the RMSE using the range of the prior samples.
@@ -45,12 +45,12 @@ def root_mean_squared_error(
             The (inferred) variable names.
     """
 
-    samples = dicts_to_arrays(estimates=post_samples, ground_truths=prior_samples, variable_names=variable_names)
+    samples = dicts_to_arrays(targets=targets, references=references, variable_names=variable_names)
 
-    rmse = np.sqrt(np.mean((samples["estimates"] - samples["ground_truths"][:, None, :]) ** 2, axis=0))
+    rmse = np.sqrt(np.mean((samples["targets"] - samples["references"][:, None, :]) ** 2, axis=0))
 
     if normalize:
-        rmse /= (samples["ground_truths"].max(axis=0) - samples["ground_truths"].min(axis=0))[None, :]
+        rmse /= (samples["references"].max(axis=0) - samples["references"].min(axis=0))[None, :]
         metric_name = "NRMSE"
     else:
         metric_name = "RMSE"

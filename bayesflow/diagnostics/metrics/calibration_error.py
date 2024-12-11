@@ -6,8 +6,8 @@ from ...utils.dict_utils import dicts_to_arrays
 
 
 def calibration_error(
-    post_samples: Mapping[str, np.ndarray] | np.ndarray,
-    prior_samples: Mapping[str, np.ndarray] | np.ndarray,
+    targets: Mapping[str, np.ndarray] | np.ndarray,
+    references: Mapping[str, np.ndarray] | np.ndarray,
     resolution: int = 20,
     aggregation: Callable = np.median,
     min_quantile: float = 0.005,
@@ -21,9 +21,9 @@ def calibration_error(
 
     Parameters
     ----------
-    post_samples  : np.ndarray of shape (num_datasets, num_draws, num_variables)
+    targets  : np.ndarray of shape (num_datasets, num_draws, num_variables)
         The random draws from the approximate posteriors over ``num_datasets``
-    prior_samples : np.ndarray of shape (num_datasets, num_variables)
+    references : np.ndarray of shape (num_datasets, num_variables)
         The corresponding ground-truth values sampled from the prior
     resolution    : int, optional, default: 20
         The number of credibility intervals (CIs) to consider
@@ -49,7 +49,7 @@ def calibration_error(
             The (inferred) variable names.
     """
 
-    samples = dicts_to_arrays(estimates=post_samples, ground_truths=prior_samples, variable_names=variable_names)
+    samples = dicts_to_arrays(targets=targets, references=references, variable_names=variable_names)
 
     # Define alpha values and the corresponding quantile bounds
     alphas = np.linspace(start=min_quantile, stop=max_quantile, num=resolution)
@@ -58,14 +58,14 @@ def calibration_error(
     uppers = 1 - lowers
 
     # Compute quantiles for each alpha, for each dataset and parameter
-    quantiles = np.quantile(samples["estimates"], [lowers, uppers], axis=1)
+    quantiles = np.quantile(samples["targets"], [lowers, uppers], axis=1)
 
     # Shape: (2, resolution, num_datasets, num_params)
     lower_bounds, upper_bounds = quantiles[0], quantiles[1]
 
     # Compute masks for inliers
-    lower_mask = lower_bounds <= samples["ground_truths"][None, ...]
-    upper_mask = upper_bounds >= samples["ground_truths"][None, ...]
+    lower_mask = lower_bounds <= samples["references"][None, ...]
+    upper_mask = upper_bounds >= samples["references"][None, ...]
 
     # Logical AND to identify inliers for each alpha
     inlier_id = np.logical_and(lower_mask, upper_mask)

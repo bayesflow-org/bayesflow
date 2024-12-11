@@ -25,7 +25,7 @@ def pairs_posterior(
     prior_alpha: float = 0.7,
     **kwargs,
 ) -> sns.PairGrid:
-    """Generates a bivariate pairplot given posterior draws and optional prior or prior draws.
+    """Generates a bivariate pair plot given posterior draws and optional prior or prior draws.
 
     post_samples   : np.ndarray of shape (n_post_draws, n_params)
         The posterior draws obtained for a SINGLE observed data set.
@@ -66,12 +66,16 @@ def pairs_posterior(
     """
 
     # Ensure correct shape
-    assert (len(post_samples.shape)) == 2, "Shape of `posterior_samples` for a single data set should be 2 dimensional!"
+    if len(post_samples.shape) != 2:
+        raise ValueError(
+            f"Posterior samples for a single data set should be a matrix, but"
+            f"your `post_samples` array has a shape of {post_samples.shape}!"
+        )
 
     # Plot posterior first
     context = ""
     g = pairs_samples(
-        post_samples, context=context, variable_names=variable_names, render=False, height=height, **kwargs
+        samples=post_samples, context=context, variable_names=variable_names, render=False, height=height, **kwargs
     )
 
     # Obtain n_draws and n_params

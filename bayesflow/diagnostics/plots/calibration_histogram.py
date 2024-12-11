@@ -10,8 +10,8 @@ from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_s
 
 
 def calibration_histogram(
-    post_samples: dict[str, np.ndarray] | np.ndarray,
-    prior_samples: dict[str, np.ndarray] | np.ndarray,
+    targets: dict[str, np.ndarray] | np.ndarray,
+    references: dict[str, np.ndarray] | np.ndarray,
     variable_names: Sequence[str] = None,
     figsize: Sequence[float] = None,
     num_bins: int = 10,
@@ -35,9 +35,9 @@ def calibration_histogram(
 
     Parameters
     ----------
-    post_samples      : np.ndarray of shape (n_data_sets, n_post_draws, n_params)
+    targets      : np.ndarray of shape (n_data_sets, n_post_draws, n_params)
         The posterior draws obtained from n_data_sets
-    prior_samples     : np.ndarray of shape (n_data_sets, n_params)
+    references     : np.ndarray of shape (n_data_sets, n_params)
         The prior draws obtained for generating n_data_sets
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
@@ -71,20 +71,21 @@ def calibration_histogram(
     """
 
     plot_data = prepare_plot_data(
-        estimates=post_samples,
-        ground_truths=prior_samples,
+        targets=targets,
+        references=references,
         variable_names=variable_names,
         num_col=num_col,
         num_row=num_row,
         figsize=figsize,
     )
-    post_samples = plot_data.pop("estimates")
-    prior_samples = plot_data.pop("ground_truths")
+
+    targets = plot_data.pop("targets")
+    references = plot_data.pop("references")
 
     # Determine the ratio of simulations to prior draw
     # num_params = plot_data['num_variables']
-    num_sims = post_samples.shape[0]
-    num_draws = post_samples.shape[1]
+    num_sims = targets.shape[0]
+    num_draws = targets.shape[1]
 
     ratio = int(num_sims / num_draws)
 
@@ -104,10 +105,10 @@ def calibration_histogram(
             num_bins = 4
 
     # Compute ranks (using broadcasting)
-    ranks = np.sum(post_samples < prior_samples[:, np.newaxis, :], axis=1)
+    ranks = np.sum(targets < references[:, np.newaxis, :], axis=1)
 
     # Compute confidence interval and mean
-    num_trials = int(prior_samples.shape[0])
+    num_trials = int(references.shape[0])
     # uniform distribution expected -> for all bins: equal probability
     # p = 1 / num_bins that a rank lands in that bin
     endpoints = binom.interval(binomial_interval, num_trials, 1 / num_bins)
@@ -120,7 +121,6 @@ def calibration_histogram(
         ax.get_yaxis().set_ticks([])
     prettify_subplots(plot_data["axes"], tick_fontsize)
 
-    # Add labels, titles, and set font sizes
     add_titles_and_labels(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],

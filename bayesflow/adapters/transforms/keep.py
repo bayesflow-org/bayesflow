@@ -25,8 +25,9 @@ class Keep(Transform):
 
         adapter = (
             bf.adapters.Adapter()
-            # only keep theta and x
-            .keep(("theta", "x"))
+                # drop data from unneeded priors alpha, and r
+                # only keep theta and x
+                .keep(("theta", "x"))
             )
 
     Example:

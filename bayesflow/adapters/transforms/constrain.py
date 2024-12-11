@@ -32,7 +32,7 @@ class Constrain(ElementwiseTransform):
 
 
     Examples:
-        Let sigma be the standard deviation of a normal distribution,
+        1) Let sigma be the standard deviation of a normal distribution,
         then sigma should always be greater than zero.
 
         Useage:
@@ -41,8 +41,8 @@ class Constrain(ElementwiseTransform):
             .constrain("sigma", lower=0)
             )
 
-        Suppose p is the parameter for a binomial distribution where p must be in [0,1]
-        then we would constrain the neural network to estimate p in the following way.
+        2 ) Suppose p is the parameter for a binomial distribution where p must be in
+        [0,1] then we would constrain the neural network to estimate p in the following way.
 
         Usage:
         adapter = (

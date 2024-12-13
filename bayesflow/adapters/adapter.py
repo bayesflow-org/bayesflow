@@ -78,6 +78,27 @@ class Adapter:
     def __repr__(self):
         return f"Adapter([{' -> '.join(map(repr, self.transforms))}])"
 
+    def __getitem__(self, index):
+        if isinstance(index, slice): 
+            sliced_transforms = self.transforms[index]
+            print("Are the sliced transforms a sequence")
+            print(isinstance(sliced_transforms, Sequence))
+            print("Is there an associate print method?")
+            print(sliced_transforms)
+            
+            new_adapter = Adapter(transforms = sliced_transforms)
+            return new_adapter
+        elif isinstance(index, int): 
+            if index < 0:
+                index = index + len(self.transforms) # negative indexing 
+            if index < 0 or index >= len(self.transforms): 
+                raise IndexError("Adapter index out of range.")
+            sliced_transforms = self.transforms[index]
+            new_adapter = Adapter(transforms = sliced_transforms)
+            return new_adapter
+        else:
+            raise TypeError("Invalid index type. Must be int or slice.")
+    
     def add_transform(self, transform: Transform):
         self.transforms.append(transform)
         return self
@@ -104,6 +125,7 @@ class Adapter:
         self.transforms.append(transform)
         return self
 
+    # Begin of transformed derived from transform classes 
     def as_set(self, keys: str | Sequence[str]):
         if isinstance(keys, str):
             keys = [keys]

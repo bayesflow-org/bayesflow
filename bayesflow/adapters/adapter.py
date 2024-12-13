@@ -15,6 +15,7 @@ from .transforms import (
     ConvertDType,
     Drop,
     ExpandDims,
+    ElementwiseTransform, # why wasn't this added before? 
     FilterTransform,
     Keep,
     LambdaTransform,
@@ -79,15 +80,25 @@ class Adapter:
         return f"Adapter([{' -> '.join(map(repr, self.transforms))}])"
 
     def __getitem__(self, index):
+
         if isinstance(index, slice): 
-            sliced_transforms = self.transforms[index]
-            print("Are the sliced transforms a sequence")
-            print(isinstance(sliced_transforms, Sequence))
-            print("Is there an associate print method?")
-            print(sliced_transforms)
-            
-            new_adapter = Adapter(transforms = sliced_transforms)
-            return new_adapter
+            if index.start > index.stop: 
+                raise IndexError("Index slice must be positive integers such that a < b for adapter[a:b]")
+            if index.stop < len(self.transforms): 
+                # print("What is the slice?")
+                # print(index)
+                # print(type(index))
+                # check that the slice is in range 
+                sliced_transforms = self.transforms[index]
+                # print("Are the sliced transforms a sequence")
+                # print(isinstance(sliced_transforms, Sequence))
+                # print("What is in the slice?")
+                # print(sliced_transforms)
+                new_adapter = Adapter(transforms = sliced_transforms)
+                return new_adapter
+            else: 
+                raise IndexError("Index slice out of range")
+                        
         elif isinstance(index, int): 
             if index < 0:
                 index = index + len(self.transforms) # negative indexing 
@@ -98,6 +109,33 @@ class Adapter:
             return new_adapter
         else:
             raise TypeError("Invalid index type. Must be int or slice.")
+        
+    
+    def __setitem__(self, index, new_value): 
+        
+        if isinstance(index, slice): 
+            if index.start > index.stop: 
+                raise IndexError("Index slice must be positive integers such that a < b for adapter[a:b]")
+            if index.stop < len(self.transforms):
+                new_transform = new_value.transforms 
+                # print("what is self.transforms[index]?")
+                # print(self.transforms[index])
+                # print("what is the value of the newvalue")
+                # print(new_transform)
+                # print(type(new_transform))
+                self.transforms[index] = new_transform
+                # else raise theory 
+            else: 
+                raise IndexError("Index slice out of range")
+            
+        elif isinstance(index, int): 
+            return 
+            # check if in range 
+            # if not inrange but it is just the len of the transforms (append )
+            # 
+            # else raise error 
+        else: 
+            raise  TypeError("Invalid index type. Must be int or slice.")
     
     def add_transform(self, transform: Transform):
         self.transforms.append(transform)

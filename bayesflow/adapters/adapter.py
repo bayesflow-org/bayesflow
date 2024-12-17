@@ -112,28 +112,43 @@ class Adapter:
         
     
     def __setitem__(self, index, new_value): 
+
+        if not isinstance(new_value, Adapter): 
+            raise TypeError("new_value must be an Adapter instance")
         
+        
+        new_transform = new_value.transforms 
+        
+        if len(new_transform) == 0: 
+            raise ValueError("new_value is an Adapter instance without any specified transforms, new_value Adapter must contain at least one transform.")
+
+
         if isinstance(index, slice): 
             if index.start > index.stop: 
                 raise IndexError("Index slice must be positive integers such that a < b for adapter[a:b]")
+            
             if index.stop < len(self.transforms):
-                new_transform = new_value.transforms 
-                # print("what is self.transforms[index]?")
-                # print(self.transforms[index])
-                # print("what is the value of the newvalue")
-                # print(new_transform)
-                # print(type(new_transform))
                 self.transforms[index] = new_transform
-                # else raise theory 
+            
             else: 
                 raise IndexError("Index slice out of range")
             
+
         elif isinstance(index, int): 
-            return 
-            # check if in range 
-            # if not inrange but it is just the len of the transforms (append )
-            # 
-            # else raise error 
+            if index < 0: # negative indexing 
+                index = index + len(self.transforms)
+                
+            if index < 0 or index >= len(self.transforms): 
+                raise IndexError("Index out of range.")
+                # could add that if the index is out of range, like index == len 
+                # then we just add the transform 
+            print("what is self.transforms[index]?")
+            print(self.transforms[index])
+            print("what is the value of the newvalue")
+            print(new_transform)
+            print(type(new_transform))
+        
+            self.transforms[index] = new_transform
         else: 
             raise  TypeError("Invalid index type. Must be int or slice.")
     

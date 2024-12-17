@@ -83,15 +83,7 @@ class Adapter:
             if index.start > index.stop:
                 raise IndexError("Index slice must be positive integers such that a < b for adapter[a:b]")
             if index.stop < len(self.transforms):
-                # print("What is the slice?")
-                # print(index)
-                # print(type(index))
-                # check that the slice is in range
                 sliced_transforms = self.transforms[index]
-                # print("Are the sliced transforms a sequence")
-                # print(isinstance(sliced_transforms, Sequence))
-                # print("What is in the slice?")
-                # print(sliced_transforms)
                 new_adapter = Adapter(transforms=sliced_transforms)
                 return new_adapter
             else:
@@ -137,11 +129,6 @@ class Adapter:
                 raise IndexError("Index out of range.")
                 # could add that if the index is out of range, like index == len
                 # then we just add the transform
-            print("what is self.transforms[index]?")
-            print(self.transforms[index])
-            print("what is the value of the newvalue")
-            print(new_transform)
-            print(type(new_transform))
 
             self.transforms[index] = new_transform
         else:

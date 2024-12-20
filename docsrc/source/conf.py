@@ -12,11 +12,22 @@
 import os
 import sys
 
+try:
+    from sphinx_polyversion import load
+    from sphinx_polyversion.git import GitRef
+    from sphinx_polyversion.api import LoadError
+
+    USE_POLYVERSION = True
+except ImportError:
+    USE_POLYVERSION = False
+    print("sphinx_polyversion not installed, building single version")
+
 sys.path.insert(0, os.path.abspath("../.."))
 
 # -- Project information -----------------------------------------------------
 
 project = "BayesFlow"
+author = "The BayesFlow authors"
 copyright = "2023, BayesFlow authors (lead maintainer: Stefan T. Radev)"
 
 
@@ -36,7 +47,10 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx_design",
+    "sphinxcontrib.bibtex",
 ]
+
+bibtex_bibfiles = ["references.bib"]
 
 numpydoc_show_class_members = False
 myst_enable_extensions = [
@@ -69,6 +83,7 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
+autosummary_imported_members = True
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -82,7 +97,8 @@ html_title = "BayesFlow: Amortized Bayesian Inference"
 # Add any paths that contain custom _static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin _static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["css/custom.css"]
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 html_show_sourcelink = False
 html_theme_options = {
     "repository_url": "https://github.com/bayesflow-org/bayesflow",
@@ -97,6 +113,15 @@ html_logo = "_static/bayesflow_hex.png"
 html_favicon = "_static/bayesflow_hex.ico"
 html_baseurl = "https://www.bayesflow.org/"
 html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"]
+html_sidebars = {
+    "**": [
+        "navbar-logo.html",
+        "icon-links.html",
+        "search-button-field.html",
+        "sbt-sidebar-nav.html",
+        "versioning.html",
+    ],
+}
 
 todo_include_todos = True
 
@@ -113,3 +138,13 @@ suppress_warnings = [
 ]  # Avoid duplicate label warnings for Jupyter notebooks.
 
 remove_from_toctrees = ["_autosummary/*"]
+
+autosummmary_generate = True
+
+# versioning data for template
+if USE_POLYVERSION:
+    try:
+        data = load(globals())
+        current: GitRef = data["current"]
+    except LoadError:
+        print("sphinx_polyversion could not load. Building single version")

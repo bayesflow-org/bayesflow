@@ -18,7 +18,7 @@ from .io import (
     format_bytes,
     parse_bytes,
 )
-from .serialization import serialize_val_or_type, deserialize_val_or_type
+from .serialization import serialize_value_or_type, deserialize_value_or_type
 from .jacobian_trace import jacobian_trace
 from .jacobian import compute_jacobian, log_jacobian_determinant
 from .jvp import jvp

@@ -2,7 +2,7 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_permutation, keras_kwargs, serialize_val_or_type, deserialize_val_or_type
+from bayesflow.utils import find_permutation, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
 
 from .actnorm import ActNorm
 from .couplings import DualCoupling
@@ -67,7 +67,7 @@ class CouplingFlow(InferenceNetwork):
             "base_distribution": base_distribution,
             **kwargs,
         }
-        self.config = serialize_val_or_type(self.config, "subnet", subnet)
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):
@@ -82,7 +82,7 @@ class CouplingFlow(InferenceNetwork):
 
     @classmethod
     def from_config(cls, config):
-        config = deserialize_val_or_type(config, "subnet")
+        config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
     def _forward(

@@ -7,8 +7,8 @@ from bayesflow.utils import (
     expand_right_as,
     keras_kwargs,
     optimal_transport,
-    serialize_val_or_type,
-    deserialize_val_or_type,
+    serialize_value_or_type,
+    deserialize_value_or_type,
 )
 from ..inference_network import InferenceNetwork
 from .integrators import EulerIntegrator
@@ -66,7 +66,7 @@ class FlowMatching(InferenceNetwork):
             "optimal_transport_kwargs": optimal_transport_kwargs,
             **kwargs,
         }
-        self.config = serialize_val_or_type(self.config, "subnet", subnet)
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         super().build(xz_shape)
@@ -78,7 +78,7 @@ class FlowMatching(InferenceNetwork):
 
     @classmethod
     def from_config(cls, config):
-        config = deserialize_val_or_type(config, "subnet")
+        config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
     def _forward(

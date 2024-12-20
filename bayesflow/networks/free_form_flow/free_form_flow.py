@@ -10,8 +10,8 @@ from bayesflow.utils import (
     log_jacobian_determinant,
     jvp,
     vjp,
-    serialize_val_or_type,
-    deserialize_val_or_type,
+    serialize_value_or_type,
+    deserialize_value_or_type,
 )
 
 from ..inference_network import InferenceNetwork
@@ -79,8 +79,8 @@ class FreeFormFlow(InferenceNetwork):
             "hutchinson_sampling": hutchinson_sampling,
             **kwargs,
         }
-        self.config = serialize_val_or_type(self.config, "encoder_subnet", encoder_subnet)
-        self.config = serialize_val_or_type(self.config, "decoder_subnet", decoder_subnet)
+        self.config = serialize_value_or_type(self.config, "encoder_subnet", encoder_subnet)
+        self.config = serialize_value_or_type(self.config, "decoder_subnet", decoder_subnet)
 
     def get_config(self):
         base_config = super().get_config()
@@ -88,8 +88,8 @@ class FreeFormFlow(InferenceNetwork):
 
     @classmethod
     def from_config(cls, config):
-        config = deserialize_val_or_type(config, "encoder_subnet")
-        config = deserialize_val_or_type(config, "decoder_subnet")
+        config = deserialize_value_or_type(config, "encoder_subnet")
+        config = deserialize_value_or_type(config, "decoder_subnet")
         return cls(**config)
 
     # noinspection PyMethodOverriding

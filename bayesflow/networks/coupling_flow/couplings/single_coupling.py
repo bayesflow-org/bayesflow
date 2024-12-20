@@ -3,7 +3,7 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, keras_kwargs, serialize_val_or_type, deserialize_val_or_type
+from bayesflow.utils import find_network, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
 from ..invertible_layer import InvertibleLayer
 from ..transforms import find_transform
 
@@ -31,7 +31,7 @@ class SingleCoupling(InvertibleLayer):
             "transform": transform,
             **kwargs,
         }
-        self.config = serialize_val_or_type(self.config, "subnet", subnet)
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
 
     def get_config(self):
         base_config = super().get_config()
@@ -39,7 +39,7 @@ class SingleCoupling(InvertibleLayer):
 
     @classmethod
     def from_config(cls, config):
-        config = deserialize_val_or_type(config, "subnet")
+        config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
     # noinspection PyMethodOverriding

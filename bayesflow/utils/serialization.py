@@ -4,7 +4,7 @@ import keras
 PREFIX = "_bayesflow_"
 
 
-def serialize_val_or_type(config, name, obj):
+def serialize_value_or_type(config, name, obj):
     """Serialize an object that can be either a value or a type
     and add it to a copy of the supplied dictionary.
 
@@ -43,7 +43,7 @@ def serialize_val_or_type(config, name, obj):
     return updated_config
 
 
-def deserialize_val_or_type(config, name):
+def deserialize_value_or_type(config, name):
     """Deserialize an object that can be either a value or a type and add
     it to the supplied dictionary.
 
@@ -66,7 +66,7 @@ def deserialize_val_or_type(config, name):
 
     See Also
     --------
-    `serialize_val_or_type`
+    `serialize_value_or_type`
     """
     updated_config = config.copy()
     if f"{PREFIX}{name}_type" in config:

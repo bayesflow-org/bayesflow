@@ -14,8 +14,8 @@ from bayesflow.utils import (
     keras_kwargs,
     expand_right_as,
     expand_right_to,
-    serialize_val_or_type,
-    deserialize_val_or_type,
+    serialize_value_or_type,
+    deserialize_value_or_type,
 )
 
 
@@ -76,7 +76,7 @@ class ContinuousConsistencyModel(InferenceNetwork):
             "sigma_data": sigma_data,
             **kwargs,
         }
-        self.config = serialize_val_or_type(self.config, "subnet", subnet)
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
 
     def get_config(self):
         base_config = super().get_config()
@@ -84,7 +84,7 @@ class ContinuousConsistencyModel(InferenceNetwork):
 
     @classmethod
     def from_config(cls, config):
-        config = deserialize_val_or_type(config, "subnet")
+        config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
     def _discretize_time(self, num_steps: int, rho: float = 3.5, **kwargs):

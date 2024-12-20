@@ -7,7 +7,7 @@ from keras.saving import (
 import numpy as np
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, keras_kwargs, serialize_val_or_type, deserialize_val_or_type
+from bayesflow.utils import find_network, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
 
 
 from ..inference_network import InferenceNetwork
@@ -98,7 +98,7 @@ class ConsistencyModel(InferenceNetwork):
             "s1": s1,
             **kwargs,
         }
-        self.config = serialize_val_or_type(self.config, "subnet", subnet)
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
 
     def get_config(self):
         base_config = super().get_config()
@@ -106,7 +106,7 @@ class ConsistencyModel(InferenceNetwork):
 
     @classmethod
     def from_config(cls, config):
-        config = deserialize_val_or_type(config, "subnet")
+        config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
     def _schedule_discretization(self, step) -> float:

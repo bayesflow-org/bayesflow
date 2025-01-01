@@ -76,7 +76,12 @@ class Adapter:
         return self.forward(data, **kwargs)
 
     def __repr__(self):
-        return f"Adapter([{' -> '.join(map(repr, self.transforms))}])"
+        str_transf = ''
+        for i in range(0, len(self.transforms)):
+            str_transf = str_transf + str(i) + ': ' + repr(self.transforms[i]) 
+            if i != len(self.transforms) - 1:
+                str_transf = str_transf + ' -> ' 
+        return f"Adapter([{str_transf}])"
 
     def __getitem__(self, index):
         if isinstance(index, slice):

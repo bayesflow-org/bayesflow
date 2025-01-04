@@ -93,9 +93,6 @@ class Adapter:
         if not isinstance(new_value, Adapter):
             raise TypeError("new_value must be an Adapter instance")
 
-        # new_transform = new_value.transforms
-
-        # To be tested
         if len(new_value.transforms) == 0:
             raise ValueError(
                 "new_value is an Adapter instance without any specified transforms, new_value Adapter must contain at least one transform."
@@ -136,7 +133,7 @@ class Adapter:
         self.transforms.append(transform)
         return self
 
-    # Begin of transforms derived from transform classes
+
     def as_set(self, keys: str | Sequence[str]):
         if isinstance(keys, str):
             keys = [keys]

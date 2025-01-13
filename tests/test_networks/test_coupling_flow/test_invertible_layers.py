@@ -4,7 +4,7 @@ import keras
 import numpy as np
 import pytest
 
-from tests.utils import allclose
+from tests.utils import allclose, assert_allclose
 
 
 def test_build(invertible_layer, random_samples, random_conditions):
@@ -57,8 +57,8 @@ def test_cycle_consistency(invertible_layer, random_samples, random_conditions):
     forward_output, forward_log_det = invertible_layer(random_samples)
     inverse_output, inverse_log_det = invertible_layer(forward_output, inverse=True)
 
-    assert allclose(random_samples, inverse_output)
-    assert allclose(forward_log_det, -inverse_log_det)
+    assert_allclose(random_samples, inverse_output, atol=1e-6, msg="Samples are not cycle consistent")
+    assert_allclose(forward_log_det, -inverse_log_det, atol=1e-6, msg="Log Determinants are not cycle consistent")
 
 
 @pytest.mark.torch

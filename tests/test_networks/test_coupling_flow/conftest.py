@@ -12,7 +12,7 @@ def actnorm():
 def dual_coupling():
     from bayesflow.networks.coupling_flow.couplings import DualCoupling
 
-    return DualCoupling()
+    return DualCoupling(transform="spline")
 
 
 @pytest.fixture(params=["actnorm", "dual_coupling"])

@@ -1,172 +1,155 @@
-import math
+import keras
+from keras.saving import (
+    register_keras_serializable as serializable,
+)
 
-from keras import ops
-from keras.saving import register_keras_serializable as serializable
-
-from bayesflow.utils import searchsorted
 from bayesflow.types import Tensor
+from bayesflow.utils import searchsorted
+from bayesflow.utils.keras_utils import shifted_softplus
 
 from .transform import Transform
+from ._rational_quadratic import _rational_quadratic_spline
 
 
 @serializable(package="networks.coupling_flow")
 class SplineTransform(Transform):
-    def __init__(self, bins=16, default_domain=(-5.0, 5.0, -5.0, 5.0), **kwargs):
-        super().__init__(**kwargs)
-
+    def __init__(
+        self,
+        bins: int = 16,
+        default_domain: (float, float, float, float) = (-5.0, 5.0, -5.0, 5.0),
+        method: str = "rational_quadratic",
+    ):
+        super().__init__()
         self.bins = bins
-        self.default_domain = default_domain
-        self.spline_params_counts = {
+        self.method = method
+
+        if self.method != "rational_quadratic":
+            raise NotImplementedError("Currently, only 'rational_quadratic' spline method is supported.")
+
+        self.parameter_sizes = {
             "left_edge": 1,
             "bottom_edge": 1,
-            "widths": self.bins,
-            "heights": self.bins,
+            "bin_widths": self.bins,
+            "bin_heights": self.bins,
             "derivatives": self.bins - 1,
         }
-        self.split_idx = ops.cumsum(list(self.spline_params_counts.values()))[:-1]
-        self._params_per_dim = sum(self.spline_params_counts.values())
 
-        # Pre-compute defaults and softplus shifts
-        default_width = (self.default_domain[1] - self.default_domain[0]) / self.bins
-        default_height = (self.default_domain[3] - self.default_domain[2]) / self.bins
-        self.xshift = math.log(math.exp(default_width) - 1)
-        self.yshift = math.log(math.exp(default_height) - 1)
-        self.softplus_shift = math.log(math.e - 1.0)
+        if default_domain[1] <= default_domain[0] or default_domain[3] <= default_domain[2]:
+            raise ValueError("Invalid default domain. Must be (left, right, bottom, top).")
 
-    def split_parameters(self, parameters: Tensor) -> dict[str, Tensor]:
-        # Ensure spline works for N-D, e.g., 2D (batch_size, dim) and 3D (batch_size, num_reps, dim)
-        shape = ops.shape(parameters)
-        new_shape = shape[:-1] + (-1, self._params_per_dim)
-
-        # Arrange spline parameters into a dictionary
-        parameters = ops.reshape(parameters, new_shape)
-        parameters = ops.split(parameters, self.split_idx, axis=-1)
-        parameters = dict(
-            left_edge=parameters[0],
-            bottom_edge=parameters[1],
-            widths=parameters[2],
-            heights=parameters[3],
-            derivatives=parameters[4],
-        )
-        return parameters
+        self.default_left = default_domain[0]
+        self.default_bottom = default_domain[2]
+        self.default_bin_width = (default_domain[1] - default_domain[0]) / self.bins
+        self.default_bin_height = (default_domain[3] - default_domain[2]) / self.bins
 
     @property
-    def params_per_dim(self):
-        return self._params_per_dim
+    def params_per_dim(self) -> int:
+        return sum(self.parameter_sizes.values())
+
+    def split_parameters(self, parameters: Tensor) -> dict[str, Tensor]:
+        p = {}
+
+        start = 0
+        for key, value in self.parameter_sizes.items():
+            stop = start + value
+            p[key] = keras.ops.take(parameters, indices=list(range(start, stop)), axis=-1)
+            start = stop
+
+        return p
 
     def constrain_parameters(self, parameters: dict[str, Tensor]) -> dict[str, Tensor]:
-        # Set lower corners of domain relative to default domain
-        parameters["left_edge"] = parameters["left_edge"] + self.default_domain[0]
-        parameters["bottom_edge"] = parameters["bottom_edge"] + self.default_domain[2]
+        left_edge = parameters["left_edge"] + self.default_left
+        bottom_edge = parameters["bottom_edge"] + self.default_bottom
+        bin_widths = self.default_bin_width * shifted_softplus(parameters["bin_widths"])
+        bin_heights = self.default_bin_height * shifted_softplus(parameters["bin_heights"])
 
-        # Constrain widths and heights to be positive
-        parameters["widths"] = ops.softplus(parameters["widths"] + self.xshift)
-        parameters["heights"] = ops.softplus(parameters["heights"] + self.yshift)
+        affine_scale = keras.ops.sum(bin_widths, axis=-1, keepdims=True)
+        affine_shift = bottom_edge - affine_scale * left_edge
 
-        # Compute spline derivatives
-        parameters["derivatives"] = ops.softplus(parameters["derivatives"] + self.softplus_shift)
+        horizontal_edges = left_edge + keras.ops.cumsum(bin_widths, axis=-1)
+        vertical_edges = bottom_edge + keras.ops.cumsum(bin_heights, axis=-1)
 
-        # Add in edge derivatives
-        total_width = ops.sum(parameters["widths"], axis=-1, keepdims=True)
-        total_height = ops.sum(parameters["heights"], axis=-1, keepdims=True)
-        scale = total_height / total_width
-        parameters["derivatives"] = ops.concatenate([scale, parameters["derivatives"], scale], axis=-1)
-        return parameters
+        derivatives = shifted_softplus(parameters["derivatives"])
+        # derivatives = pad(derivatives, 0.0, 1, axis=-1)
+        derivatives = keras.ops.concatenate([affine_scale, derivatives, affine_scale], axis=-1)
+
+        constrained_parameters = {
+            "horizontal_edges": horizontal_edges,
+            "vertical_edges": vertical_edges,
+            "derivatives": derivatives,
+            "affine_scale": affine_scale,
+            "affine_shift": affine_shift,
+        }
+
+        return constrained_parameters
 
     def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
-        return self._calculate_spline(x, parameters, inverse=False)
+        # x.shape == ([B, ...], D)
+        # parameters.shape == ([B, ...], bins)
+        bins = searchsorted(parameters["horizontal_edges"], x)
+
+        inside = (bins > 0) & (bins <= self.bins)
+        inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
+
+        # first compute affine transform on everything
+        scale = parameters["affine_scale"]
+        shift = parameters["affine_shift"]
+        z = scale * x + shift
+        log_jac = keras.ops.broadcast_to(keras.ops.log(scale), keras.ops.shape(z))
+
+        # overwrite inside part with spline
+        upper = bins[inside]
+        lower = upper - 1
+
+        edges = {
+            "left": keras.ops.take_along_axis(parameters["horizontal_edges"], lower, axis=None),
+            "right": keras.ops.take_along_axis(parameters["horizontal_edges"], upper, axis=None),
+            "bottom": keras.ops.take_along_axis(parameters["vertical_edges"], lower, axis=None),
+            "top": keras.ops.take_along_axis(parameters["vertical_edges"], upper, axis=None),
+        }
+        derivatives = {
+            "left": keras.ops.take_along_axis(parameters["derivatives"], lower, axis=None),
+            "right": keras.ops.take_along_axis(parameters["derivatives"], upper, axis=None),
+        }
+        spline, jac = _rational_quadratic_spline(x[inside], edges=edges, derivatives=derivatives)
+        z = keras.ops.scatter_update(z, inside_indices, spline)
+        log_jac = keras.ops.scatter_update(log_jac, inside_indices, jac)
+
+        log_det = keras.ops.sum(log_jac, axis=-1)
+
+        return z, log_det
 
     def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
-        return self._calculate_spline(z, parameters, inverse=True)
+        bins = searchsorted(parameters["vertical_edges"], z)
 
-    @staticmethod
-    def _calculate_spline(x: Tensor, p: dict[str, Tensor], inverse: bool = False) -> (Tensor, Tensor):
-        """Helper function to calculate RQ spline."""
+        inside = (bins > 0) & (bins <= self.bins)
+        inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
 
-        result = ops.zeros_like(x)
-        log_jac = ops.zeros_like(x)
+        # first compute affine transform on everything
+        scale = parameters["affine_scale"]
+        shift = parameters["affine_shift"]
+        x = (z - shift) / scale
+        log_jac = keras.ops.broadcast_to(-keras.ops.log(scale), keras.ops.shape(x))
 
-        total_width = ops.sum(p["widths"], axis=-1, keepdims=True)
-        total_height = ops.sum(p["heights"], axis=-1, keepdims=True)
+        # overwrite inside part with spline
 
-        knots_x = ops.concatenate([p["left_edge"], p["left_edge"] + ops.cumsum(p["widths"], axis=-1)], axis=-1)
-        knots_y = ops.concatenate([p["bottom_edge"], p["bottom_edge"] + ops.cumsum(p["heights"], axis=-1)], axis=-1)
+        upper = bins[inside]
+        lower = upper - 1
 
-        if not inverse:
-            target_in_domain = ops.logical_and(knots_x[..., 0] < x, x <= knots_x[..., -1])
-            higher_indices = searchsorted(knots_x, x[..., None])
-        else:
-            target_in_domain = ops.logical_and(knots_y[..., 0] < x, x <= knots_y[..., -1])
-            higher_indices = searchsorted(knots_y, x[..., None])
+        edges = {
+            "left": keras.ops.take_along_axis(parameters["vertical_edges"], lower, axis=None),
+            "right": keras.ops.take_along_axis(parameters["vertical_edges"], upper, axis=None),
+            "bottom": keras.ops.take_along_axis(parameters["horizontal_edges"], lower, axis=None),
+            "top": keras.ops.take_along_axis(parameters["horizontal_edges"], upper, axis=None),
+        }
+        derivatives = {
+            "left": keras.ops.take_along_axis(parameters["derivatives"], lower, axis=None),
+            "right": keras.ops.take_along_axis(parameters["derivatives"], upper, axis=None),
+        }
+        spline, jac = _rational_quadratic_spline(z[inside], edges=edges, derivatives=derivatives, inverse=True)
+        x = keras.ops.scatter_update(x, inside_indices, spline)
+        log_jac = keras.ops.scatter_update(log_jac, inside_indices, jac)
 
-        target_in = x[target_in_domain]
-        target_in_idx = ops.stack(ops.where(target_in_domain), axis=-1)
-        target_out = x[~target_in_domain]
-        target_out_idx = ops.stack(ops.where(~target_in_domain), axis=-1)
+        log_det = keras.ops.sum(log_jac, axis=-1)
 
-        # In-domain computation
-        if ops.size(target_in_idx) > 0:
-            # Index crunching
-            higher_indices = ops.take_along_axis(higher_indices, target_in_idx)
-            lower_indices = higher_indices - 1
-            lower_idx_tuples = ops.concatenate([target_in_idx, lower_indices], axis=-1)
-            higher_idx_tuples = ops.concatenate([target_in_idx, higher_indices], axis=-1)
-
-            # Spline computation
-            dk = ops.take_along_axis(p["derivatives"], lower_idx_tuples)
-            dkp = ops.take_along_axis(p["derivatives"], higher_idx_tuples)
-            xk = ops.take_along_axis(knots_x, lower_idx_tuples)
-            xkp = ops.take_along_axis(knots_x, higher_idx_tuples)
-            yk = ops.take_along_axis(knots_y, lower_idx_tuples)
-            ykp = ops.take_along_axis(knots_y, higher_idx_tuples)
-            x = target_in
-            dx = xkp - xk
-            dy = ykp - yk
-            sk = dy / dx
-            xi = (x - xk) / dx
-
-            # Forward pass
-            if not inverse:
-                numerator = dy * (sk * xi**2 + dk * xi * (1 - xi))
-                denominator = sk + (dkp + dk - 2 * sk) * xi * (1 - xi)
-                result_in = yk + numerator / denominator
-
-                # Log Jacobian for in-domain
-                numerator = sk**2 * (dkp * xi**2 + 2 * sk * xi * (1 - xi) + dk * (1 - xi) ** 2)
-                denominator = (sk + (dkp + dk - 2 * sk) * xi * (1 - xi)) ** 2
-                log_jac_in = ops.log(numerator + 1e-10) - ops.log(denominator + 1e-10)
-                log_jac = ops.slice_update(log_jac, target_in_idx, log_jac_in)
-
-            # Inverse pass
-            else:
-                y = x
-                a = dy * (sk - dk) + (y - yk) * (dkp + dk - 2 * sk)
-                b = dy * dk - (y - yk) * (dkp + dk - 2 * sk)
-                c = -sk * (y - yk)
-                discriminant = ops.maximum(b**2 - 4 * a * c, 0.0)
-                xi = 2 * c / (-b - ops.sqrt(discriminant))
-                result_in = xi * dx + xk
-
-            result = ops.slice_update(result, target_in_idx, result_in)
-
-        # Out-of-domain
-        if ops.size(target_out_idx) > 1:
-            scale = total_height / total_width
-            shift = p["bottom_edge"] - scale * p["left_edge"]
-            scale_out = ops.take_along_axis(scale, target_out_idx)
-            shift_out = ops.take_along_axis(shift, target_out_idx)
-
-            if not inverse:
-                result_out = scale_out * target_out[..., None] + shift_out
-                # Log Jacobian for out-of-domain points
-                log_jac_out = ops.log(scale_out + 1e-10)
-                log_jac_out = ops.squeeze(log_jac_out, axis=-1)
-                log_jac = ops.slice_update(log_jac, target_out_idx, log_jac_out)
-            else:
-                result_out = (target_out[..., None] - shift_out) / scale_out
-
-            result_out = ops.squeeze(result_out, axis=-1)
-            result = ops.slice_update(result, target_out_idx, result_out)
-
-        log_det = ops.sum(log_jac, axis=-1)
-        return result, log_det
+        return x, log_det

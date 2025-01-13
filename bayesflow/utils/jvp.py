@@ -27,5 +27,5 @@ def jvp(fn: callable, primals: tuple[Tensor] | Tensor, tangents: tuple[Tensor] |
                 tangents,
             )
         case _:
-            raise NotImplementedError(f"JVP not implemented for backend {keras.backend.backend()}")
+            raise NotImplementedError(f"JVP not implemented for backend {keras.backend.backend()!r}")
     return fn_output, _jvp

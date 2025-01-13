@@ -5,6 +5,7 @@ import keras
 import numpy as np
 
 from bayesflow.types import Tensor
+from . import logging
 
 T = TypeVar("T")
 
@@ -55,6 +56,16 @@ def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:
         x = np.expand_dims(x, axis)
 
     return tile_axis(x, n, axis=axis)
+
+
+def pad(x: Tensor, value: float, n: int, axis: int) -> Tensor:
+    """Pad x with n values along axis"""
+    shape = list(keras.ops.shape(x))
+    shape[axis] = n
+    p = keras.ops.full(shape, value, dtype=keras.ops.dtype(x))
+    xp = keras.ops.concatenate([p, x, p], axis=axis)
+
+    return xp
 
 
 def size_of(x) -> int:
@@ -142,21 +153,51 @@ def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
     return keras.tree.map_structure(stack, *structures)
 
 
-def searchsorted(sorted_sequence: Tensor, values: Tensor) -> Tensor:
-    """Compute the dot product between the Jacobian of the given function at the point given by
-    the input (primals) and vectors in tangents."""
+def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") -> Tensor:
+    """
+    Find indices where elements should be inserted to maintain order.
+    """
 
     match keras.backend.backend():
-        case "torch":
-            import torch
+        case "jax":
+            import jax
+            import jax.numpy as jnp
 
-            return torch.searchsorted(sorted_sequence, values)
+            logging.warning("JAX searchsorted is not yet optimized.")
+
+            # do not vmap over the side argument (we have to pass it as a positional argument)
+            in_axes = [0, 0, None]
+
+            # vmap over the batch dimension
+            vss = jax.vmap(jnp.searchsorted, in_axes=in_axes)
+
+            # flatten all batch dimensions
+            ss = sorted_sequence.reshape((-1,) + sorted_sequence.shape[-1:])
+            v = values.reshape((-1,) + values.shape[-1:])
+
+            # noinspection PyTypeChecker
+            indices = vss(ss, v, side)
+
+            # restore the batch dimensions
+            indices = indices.reshape(values.shape)
+
+            # noinspection PyTypeChecker
+            return indices
         case "tensorflow":
             import tensorflow as tf
 
-            return tf.searchsorted(sorted_sequence, values)
-        case "jax":
-            raise NotImplementedError("N-D searchsorted not implemented for JAX")
+            out_type = "int32" if len(sorted_sequence) <= np.iinfo(np.int32).max else "int64"
 
+            indices = tf.searchsorted(sorted_sequence, values, side=side, out_type=out_type)
+
+            return indices
+        case "torch":
+            import torch
+
+            out_int32 = len(sorted_sequence) <= np.iinfo(np.int32).max
+
+            indices = torch.searchsorted(sorted_sequence, values, side=side, out_int32=out_int32)
+
+            return indices
         case _:
-            raise NotImplementedError(f"JVP not implemented for backend {keras.backend.backend()}")
+            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")

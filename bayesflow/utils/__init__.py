@@ -28,6 +28,7 @@ from .jacobian_trace import jacobian_trace
 from .jvp import jvp
 from .optimal_transport import optimal_transport
 from .tensor_utils import (
+    concatenate,
     expand_left,
     expand_left_as,
     expand_left_to,
@@ -38,8 +39,8 @@ from .tensor_utils import (
     size_of,
     tile_axis,
     tree_concatenate,
-    concatenate,
     tree_stack,
+    pad,
     searchsorted,
 )
 from .validators import check_lengths_same

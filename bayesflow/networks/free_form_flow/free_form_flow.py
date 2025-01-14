@@ -122,7 +122,7 @@ class FreeFormFlow(InferenceNetwork):
             z, jac = jacobian(
                 lambda inp: self.encode(inp, conditions=conditions, training=training, **kwargs), x, return_output=True
             )
-            log_det = keras.ops.log(keras.ops.abs(keras.ops.det(jac)))
+            log_det = keras.ops.logdet(jac)
 
             log_density = self.base_distribution.log_prob(z) + log_det
             return z, log_density
@@ -137,7 +137,7 @@ class FreeFormFlow(InferenceNetwork):
             x, jac = jacobian(
                 lambda inp: self.decode(inp, conditions=conditions, training=training, **kwargs), z, return_output=True
             )
-            log_det = keras.ops.log(keras.ops.abs(keras.ops.det(jac)))
+            log_det = keras.ops.logdet(jac)
 
             log_density = self.base_distribution.log_prob(z) - log_det
             return x, log_density

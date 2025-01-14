@@ -1,0 +1,22 @@
+.sidebar-primary-item .rst-versions p.caption {
+  margin-bottom: 0;
+  padding-left: 0.65rem;
+  font-weight: 600;
+}
+.sidebar-primary-item .rst-versions ul {
+  display: block;
+  list-style: none;
+  margin-bottom: 0.2rem;
+}
+.sidebar-primary-item .rst-versions li {
+  display: list-item;
+  text-align: match-parent;
+}
+
+.sidebar-primary-item .rst-versions .current {
+  color: var(--pst-color-accent);
+  font-weight: 600;
+}
+.bd-sidebar-primary div#rtd-footer-container {
+  margin: 0;
+}

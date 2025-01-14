@@ -9,9 +9,10 @@ from .dict_utils import (
     filter_kwargs,
     keras_kwargs,
     split_tensors,
+    split_arrays,
 )
 from .dispatch import find_distribution, find_network, find_permutation, find_pooling, find_recurrent_net
-from .ecdf import simultaneous_ecdf_bands
+from .ecdf import simultaneous_ecdf_bands, ranks
 from .functional import batched_call
 from .git import (
     issue_url,
@@ -51,10 +52,11 @@ from .validators import check_lengths_same
 from .comp_utils import expected_calibration_error
 from .plot_utils import (
     check_posterior_prior_shapes,
-    preprocess,
+    prepare_plot_data,
     add_titles_and_labels,
     prettify_subplots,
     make_quadratic,
     add_metric,
 )
 from .callbacks import detailed_loss_callback
+from .workflow_utils import find_inference_network, find_summary_network

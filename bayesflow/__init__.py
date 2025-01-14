@@ -7,9 +7,11 @@ from . import (
     distributions,
     networks,
     simulators,
+    workflows,
     utils,
 )
 
+from .workflows import BasicWorkflow
 from .approximators import ContinuousApproximator
 from .adapters import Adapter
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset

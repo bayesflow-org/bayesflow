@@ -15,6 +15,42 @@ from .elementwise_transform import ElementwiseTransform
 
 @serializable(package="bayesflow.adapters")
 class Constrain(ElementwiseTransform):
+    """
+    Constrains neural network predictions of a data variable to specificied bounds.
+
+    Parameters:
+        String containing the name of the data variable to be transformed e.g. "sigma". See examples below.
+
+    Named Parameters:
+        lower: Lower bound for named data variable.
+        upper: Upper bound for named data variable.
+        method: Method by which to shrink the network predictions space to specified bounds. Choose from
+            - Double bounded methods: sigmoid, expit, (default = sigmoid)
+            - Lower bound only methods: softplus, exp, (default = softplus)
+            - Upper bound only methods: softplus, exp, (default = softplus)
+
+
+
+    Examples:
+        1) Let sigma be the standard deviation of a normal distribution,
+        then sigma should always be greater than zero.
+
+        Useage:
+        adapter = (
+            bf.Adapter()
+            .constrain("sigma", lower=0)
+            )
+
+        2 ) Suppose p is the parameter for a binomial distribution where p must be in
+        [0,1] then we would constrain the neural network to estimate p in the following way.
+
+        Usage:
+        adapter = (
+            bf.Adapter()
+            .constrain("p", lower=0, upper=1, method = "sigmoid")
+            )
+    """
+
     def __init__(
         self, *, lower: int | float | np.ndarray = None, upper: int | float | np.ndarray = None, method: str = "default"
     ):

@@ -26,6 +26,9 @@ if errorlevel 9009 (
 	exit /b 1
 )
 
+echo.Warning: This make.bat was not tested. If you encounter errors, please
+echo.refer to Makefile.
+
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 goto end
 
@@ -33,24 +36,36 @@ goto end
 %SPHINXBUILD% -M help %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 goto end
 
-:github
-mkdir source\_examples
-xcopy /y /s ..\INSTALL.rst source\installation.rst
-xcopy /y /s ..\CONTRIBUTING.md source\contributing.md
-xcopy /y /s ..\examples source\_examples
-rmdir /q /s source\_examples\in_progress
+:dev
+python pre-build.py source
 %SPHINXBUILD% -M html %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 xcopy /y /s "%BUILDDIR%\html" ..\docs
 xcopy /y .nojekyll ..\docs\.nojekyll
-rmdir /q /s source\_examples
-rmdir /q /s _build\html\
-del /q /s source\installation.rst
-del /q /s source\contributing.md
 goto end
+
+:github
+set BF_DOCS_SEQUENTIAL_BUILDS=1
+sphinx-polyversion poly.py
+xcopy /y /s _build_polyversion\ ..\docs
+xcopy /y .nojekyll ..\docs\.nojekyll
+goto end
+
+:parallel
+set BF_DOCS_SEQUENTIAL_BUILDS=0
+sphinx-polyversion poly.py
+xcopy /y /s _build_polyversion\ ..\docs
+xcopy /y .nojekyll ..\docs\.nojekyll
 
 :clean
 del /q /s ..\docs\*
+rmdir /q /s _build
 rmdir /q /s %BUILDDIR%
+rmdir /q /s _build_polyversion
+rmdir /q /s source\_examples
+del /q /s source\contributing.md
+del /q /s source\installation.rst
+goto end
+
 
 :end
 popd

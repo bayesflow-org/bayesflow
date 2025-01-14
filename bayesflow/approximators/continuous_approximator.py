@@ -11,7 +11,7 @@ from keras.saving import (
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import logging
+from bayesflow.utils import logging, split_arrays
 from .approximator import Approximator
 
 
@@ -136,6 +136,7 @@ class ContinuousApproximator(Approximator):
         *,
         num_samples: int,
         conditions: dict[str, np.ndarray],
+        split: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
@@ -144,6 +145,8 @@ class ContinuousApproximator(Approximator):
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
         conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
 
+        if split:
+            conditions = split_arrays(conditions, axis=-1)
         return conditions
 
     def _sample(

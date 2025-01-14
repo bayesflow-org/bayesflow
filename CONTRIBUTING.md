@@ -100,7 +100,7 @@ Make sure to occasionally also run multi-backend tests for your OS using [tox](h
 tox --parallel auto
 ```
 
-See [tox.ini](tox.ini) for details on the environment configurations.
+See `tox.ini` for details on the environment configurations.
 Multi-OS tests will automatically be run once you create a pull request.
 
 Note that to be backend-agnostic, your code must not:
@@ -137,12 +137,24 @@ z = keras.ops.convert_to_numpy(x)
 ### 4. Document your changes
 
 The documentation uses [sphinx](https://www.sphinx-doc.org/) and relies on [numpy style docstrings](https://numpydoc.readthedocs.io/en/latest/format.html) in classes and functions.
-The overall *structure* of the documentation is manually designed. This also applies to the API documentation. This has two implications for you:
 
-1. If you add to existing submodules, the documentation will update automatically (given that you use proper numpy docstrings).
-2. If you add a new submodule or subpackage, you need to add a file to `docsrc/source/api` and a reference to the new module to the appropriate section of `docsrc/source/api/bayesflow.rst`.
+Run the following command to install all necessary packages for setting up documentation generation:
 
-You can re-build the documentation with
+```
+pip install .[docs]
+```
+
+The overall *structure* of the documentation is manually designed, but the API documentation is auto-generated.
+
+You can re-build the current documentation with
+
+```bash
+cd docsrc
+make clean && make dev
+# in case of issues, try `make clean-all`
+```
+
+We also provide a multi-version documentation. To generate it, run
 
 ```bash
 cd docsrc

@@ -19,6 +19,11 @@ class Predicate(Protocol):
 
 @serializable(package="bayesflow.adapters")
 class FilterTransform(Transform):
+    """
+    Implements a transform that applies a different transform on a subset of the data. Used by other transforms and
+    base adapter class.
+    """
+
     def __init__(
         self,
         *,

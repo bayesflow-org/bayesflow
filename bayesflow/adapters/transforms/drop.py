@@ -11,6 +11,26 @@ from .transform import Transform
 
 @serializable(package="bayesflow.adapters")
 class Drop(Transform):
+    """
+    Transform to drop variables from further calculation.
+
+    Parameters:
+        keys: list of strings, containing names of data variables that should be dropped
+
+    Example:
+
+    >>> import bayesflow as bf
+    >>> a = [1, 2, 3, 4]
+    >>> b = [[1, 2], [3, 4]]
+    >>> c = [[5, 6, 7, 8]]
+    >>> dat = dict(a=a, b=b, c=c)
+    >>> dat
+        {'a': [1, 2, 3, 4], 'b': [[1, 2], [3, 4]], 'c': [[5, 6, 7, 8]]}
+    >>> drop = bf.adapters.transforms.Drop(("b", "c"))
+    >>> drop.forward(dat)
+        {'a': [1, 2, 3, 4]}
+    """
+
     def __init__(self, keys: Sequence[str]):
         self.keys = keys
 

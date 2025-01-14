@@ -11,6 +11,21 @@ from .elementwise_transform import ElementwiseTransform
 
 @serializable(package="bayesflow.adapters")
 class ToArray(ElementwiseTransform):
+    """
+    Checks provided data for any non-arrays and converts them to numpy arrays.
+    This ensures all data is in a format suitable for training.
+
+    Example:
+    >>> ta = bf.adapters.transforms.ToArray()
+    >>> a = [1, 2, 3, 4]
+    >>> ta.forward(a)
+        array([1, 2, 3, 4])
+    >>> b = [[1, 2], [3, 4]]
+    >>> ta.forward(b)
+        array([[1, 2],
+            [3, 4]])
+    """
+
     def __init__(self):
         super().__init__()
         self.original_type = None

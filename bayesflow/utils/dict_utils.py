@@ -1,8 +1,8 @@
+from collections.abc import Callable, Mapping, Sequence
+
 import inspect
 import keras
-from typing import TypeVar
-
-from collections.abc import Callable, Mapping, Sequence
+from typing import TypeVar, Any
 
 import numpy as np
 
@@ -105,38 +105,98 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
     return result
 
 
+def split_arrays(data: Mapping[str, np.ndarray], axis: int = -1) -> Mapping[str, np.ndarray]:
+    """Split tensors in the dictionary along the given axis."""
+    result = {}
+
+    for key, value in data.items():
+        if len(value.shape) == 1:
+            result[key] = value
+            continue
+
+        if value.shape[axis] == 1:
+            result[key] = np.squeeze(value, axis=axis)
+            continue
+
+        splits = np.split(value, value.shape[axis], axis=axis)
+        splits = [np.squeeze(split, axis=axis) for split in splits]
+
+        for i, split in enumerate(splits):
+            result[f"{key}_{i + 1}"] = split
+
+    return result
+
+
 def dicts_to_arrays(
-    post_variables: dict[str, np.ndarray] | np.ndarray,
-    prior_variables: dict[str, np.ndarray] | np.ndarray,
-    names: Sequence[str] = None,
-    context: str = None,
-):
-    """Utility to optionally convert dicts as returned from approximators and adapters into arrays."""
+    targets: Mapping[str, np.ndarray] | np.ndarray,
+    references: Mapping[str, np.ndarray] | np.ndarray = None,
+    variable_names: Sequence[str] = None,
+    default_name: str = "var",
+) -> Mapping[str, Any]:
+    """Helper function that prepares estimates and optional ground truths for diagnostics
+    (plotting or computation of metrics).
 
-    if type(post_variables) is not type(prior_variables):
-        raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
+    The function operates on both arrays and dictionaries and assumes either a dictionary
+    where each key contains a 1D or a 2D array (i.e., a univariate quantity or samples thereof)
+    or a 2D or 3D array where the last axis represents all quantities of interest.
 
-    if isinstance(post_variables, dict):
-        if post_variables.keys() != prior_variables.keys():
-            raise ValueError("Keys in your posterior / prior arrays should match.")
+    If a `ground_truths` array is provided, it must correspond to estimates in terms of type
+    and structure of the first and last axis.
 
-        # Use user-provided names instead of inferred ones
-        names = list(post_variables.keys()) if names is None else names
+    If a dictionary is provided, `variable_names` acts as a filter to select variables from
+    estimates. If an array is provided, `variable_names` can be used to override the `default_name`.
 
-        post_variables = np.concatenate([v for k, v in post_variables.items() if k in names], axis=-1)
-        prior_variables = np.concatenate([v for k, v in prior_variables.items() if k in names], axis=-1)
+    Parameters
+    ----------
+    targets   : dict[str, ndarray] or ndarray
+        The model-generated predictions or estimates, which can take the following forms:
+        - ndarray of shape (num_datasets, num_variables)
+            Point estimates for each dataset, where `num_datasets` is the number of datasets
+            and `num_variables` is the number of variables per dataset.
+        - ndarray of shape (num_datasets, num_draws, num_variables)
+            Posterior samples for each dataset, where `num_datasets` is the number of datasets,
+            `num_draws` is the number of posterior draws, and `num_variables` is the number of variables.
 
-    elif isinstance(post_variables, np.ndarray):
-        if names is not None:
-            if post_variables.shape[-1] != len(names) or prior_variables.shape[-1] != len(names):
-                raise ValueError("The length of the names list should match the number of target variables.")
-        else:
-            if context is not None:
-                names = [f"${context}_{{{i}}}$" for i in range(post_variables.shape[-1])]
-            else:
-                names = [f"$\\theta_{{{i}}}$" for i in range(post_variables.shape[-1])]
+    references : dict[str, ndarray] or ndarray, optional (default = None)
+        Ground-truth values corresponding to the estimates. Must match the structure and dimensionality
+        of `estimates` in terms of first and last axis.
 
+    variable_names : Sequence[str], optional (default = None)
+        Optional variable names to act as a filter if dicts provided or actual variable names in case of array
+        inputs.
+    default_name   : str, optional (default = "v")
+        The default variable name to use if array arguments and no variable names are provided.
+    """
+
+    # Ensure that posterior and prior variables have the same type
+    if references is not None:
+        if type(targets) is not type(references):
+            raise ValueError("You should either use dicts or tensors, but not separate types for your inputs.")
+
+    # Case dictionaries provided
+    if isinstance(targets, dict):
+        targets = split_arrays(targets)
+        variable_names = list(targets.keys()) if variable_names is None else variable_names
+        targets = np.stack([v for k, v in targets.items() if k in variable_names], axis=-1)
+
+        if references is not None:
+            references = split_arrays(references)
+            references = np.stack([v for k, v in references.items() if k in variable_names], axis=-1)
+
+    # Case arrays provided
+    elif isinstance(targets, np.ndarray):
+        if variable_names is None:
+            variable_names = [f"${default_name}_{{{i}}}$" for i in range(targets.shape[-1])]
+
+    # Throw if unknown type
     else:
-        raise TypeError("Only dicts and tensors are supported as arguments.")
+        raise TypeError(
+            f"Only dicts and tensors are supported as arguments, " f"but your targets are of type {type(targets)}"
+        )
 
-    return dict(post_variables=post_variables, prior_variables=prior_variables, names=names, num_variables=len(names))
+    return dict(
+        targets=targets,
+        references=references,
+        variable_names=variable_names,
+        num_variables=len(variable_names),
+    )

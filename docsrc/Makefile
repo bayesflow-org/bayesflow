@@ -17,22 +17,37 @@ help:
 # render docs
 # copy rendered docs and .nojekyll (for github.io) to docs folder
 # remove example notebooks from source folder
-github:
-	@cp ../INSTALL.rst source/installation.rst
-	@cp ../CONTRIBUTING source/contributing.md
-	@cp -a ../examples/. source/_examples
-	@rm -r source/_examples/in_progress
+dev:
+	@python pre-build.py source
 	@make html
+	@echo 'Copying docs to ../docs'
 	@cp -a _build/html/. ../docs
 	@cp .nojekyll ../docs/.nojekyll
-	@rm -r _build/html/
-	@rm -r source/_examples
-	@rm source/installation.rst
-	@rm source/contributing.md
+
+github:
+	@BF_DOCS_SEQUENTIAL_BUILDS=1 sphinx-polyversion poly.py
+	@echo 'Copying docs to ../docs'
+	@cp -a _build_polyversion/. ../docs
+	@cp .nojekyll ../docs/.nojekyll
+
+parallel:
+	@BF_DOCS_SEQUENTIAL_BUILDS=0 sphinx-polyversion poly.py
+	@echo 'Copying docs to ../docs'
+	@cp -a _build_polyversion/. ../docs
+	@cp .nojekyll ../docs/.nojekyll
 
 clean:
 	@rm -rf ../docs/*
 	@rm -rf _build
+	@rm -rf _build_polyversion
+	@rm -rf source/_examples
+	@rm -f source/installation.rst
+	@rm -f source/contributing.md
+
+clean-all:
+	@make clean
+	@rm -rf docsrc/.bf_doc_gen_venv
+	@find source/api -type f ! -name 'bayesflow.rst' -exec rm -f {} +
 
 .PHONY: help Makefile
 

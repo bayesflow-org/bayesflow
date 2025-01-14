@@ -350,10 +350,10 @@ history = trainer.train_online(epochs=10, iterations_per_epoch=1000, batch_size=
 
 
 
-Bayesian models can be complex and computationally intensive, and metrics like training and validation loss can provide critical insights into the model's performance and stability. A decreasing loss over time indicates that the model is learning effectively, while fluctuations or increases in loss might suggest issues in the training process, such as overfitting, underfitting, or inappropriate learning rate settings. We can inspect the evolution of the loss via a utility function ``plot_losses``, for which we have imported the ``diagnostics`` module from ``BayesFlow``.
+Bayesian models can be complex and computationally intensive, and metrics like training and validation loss can provide critical insights into the model's performance and stability. A decreasing loss over time indicates that the model is learning effectively, while fluctuations or increases in loss might suggest issues in the training process, such as overfitting, underfitting, or inappropriate learning rate settings. We can inspect the evolution of the loss via a utility function ``plots.loss``, for which we have imported the ``diagnostics`` module from ``BayesFlow``.
 
 ```python
-f = bf.diagnostics.plot_losses(history["train_losses"], history["val_losses"], moving_average=True)
+f = bf.diagnostics.plots.loss(history["train_losses"], history["val_losses"], moving_average=True)
 ```
 
 ### Validating Consistency <a class="anchor" id="validating_consistency"></a>
@@ -392,13 +392,13 @@ posterior_samples = amortizer.sample(test_sims, n_samples=100)
 ```
 
 ```python
-f = bf.diagnostics.plot_sbc_histograms(posterior_samples, test_sims["parameters"], num_bins=10)
+f = bf.diagnostics.plots.calibration_histogram(posterior_samples, test_sims["parameters"], num_bins=10)
 ```
 
 Note, that the above function complains about the simulations-to-posterior-samples ratio, which is too low for reasonable density estimation and confidence intervals. Thus, we may want to use the [more modern version of SBC](https://arxiv.org/abs/2103.10522), which is based on empirical cumulative distribution functions (ECDFs) and does not have a `num_bins` hyperparameter.
 
 ```python
-f = bf.diagnostics.plot_sbc_ecdf(posterior_samples, test_sims["parameters"], difference=True)
+f = bf.diagnostics.plots.calibration_ecdf(posterior_samples, test_sims["parameters"], difference=True)
 ```
 
 And it all looks good: the difference of the rank ECDF between the inferred and true parameters is inside the confidence bands for all the parameters!
@@ -416,7 +416,7 @@ print("Shape of posterior samples array:", post_samples.shape)
 Note the shapes of our resulting array: `(500, 1000, 4)`. The resulting array holds the $1000$ posterior draws (axis 1) for each of the $500$ data sets (axis 0). The final axis (axis 2) represents the number of target parameters.
 
 ```python
-f = bf.diagnostics.plot_recovery(post_samples, test_sims["parameters"])
+f = bf.diagnostics.plots.recovery(post_samples, test_sims["parameters"])
 ```
 
 This is really good!
@@ -433,7 +433,7 @@ Even better, you might want to inspect the sensitivity of the model in terms of 
 Ideally, we should obtain high contraction and a z-score near 0. This means the model accurately captures the true value with little bias and high confidence.
 
 ```python
-f = bf.diagnostics.plot_z_score_contraction(post_samples, test_sims["parameters"])
+f = bf.diagnostics.plots.z_score_contraction(post_samples, test_sims["parameters"])
 ```
 
 We observe the best case of model adequacy - no bias and large contraction. Now you may be wondering: "why are they saying that there is no bias? The z-scores do go from $-3$ to $+3$"... So this begs the question: is $[-3, 3]$ generally low? More generally, what is a close-enough-to-zero z-score?
@@ -459,16 +459,16 @@ fake_data = trainer.configurator(model(batch_size=1))
 post_samples = amortizer.sample(fake_data, 1000)
 ```
 
-Using the `plot_posterior_2d` function from the `diagnostics` module, we can look at the bivariate posteriors in isolation:
+Using the `plots.pairs_posterior` function from the `diagnostics` module, we can look at the bivariate posteriors in isolation:
 
 ```python
-fig = bf.diagnostics.plot_posterior_2d(post_samples)
+fig = bf.diagnostics.plots.pairs_posterior(post_samples)
 ```
 
-We can even look at the "Bayesian surprise", i.e. how different the prior and posterior parameters look like. For that, just supply the prior object to `plot_posterior_2d`:
+We can even look at the "Bayesian surprise", i.e. how different the prior and posterior parameters look like. For that, just supply the prior object to `plots.pairs_posterior`:
 
 ```python
-fig = bf.diagnostics.plot_posterior_2d(post_samples, prior=prior)
+fig = bf.diagnostics.plots.pairs_posterior(post_samples, prior=prior)
 ```
 
 Here of course, the results look great, because 1) we know the model is well calibrated thanks to the SBC we just did, and 2) we sampled from data that were very much expected by the model, since they came from prior draws.

@@ -24,8 +24,12 @@ from .io import (
     format_bytes,
     parse_bytes,
 )
-from .jacobian_trace import jacobian_trace
-from .jvp import jvp
+from .jacobian import (
+    jacobian,
+    jacobian_trace,
+    jvp,
+    vjp,
+)
 from .optimal_transport import optimal_transport
 from .tensor_utils import (
     concatenate,

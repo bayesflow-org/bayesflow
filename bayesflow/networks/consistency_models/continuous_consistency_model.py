@@ -224,7 +224,7 @@ class ContinuousConsistencyModel(InferenceNetwork):
             ops.cos(t) * ops.sin(t) * self.sigma_data,
         )
 
-        teacher_output, cos_sin_dFdt = jvp(f_teacher, primals, tangents)
+        teacher_output, cos_sin_dFdt = jvp(f_teacher, primals, tangents, return_output=True)
         teacher_output = ops.stop_gradient(teacher_output)
         cos_sin_dFdt = ops.stop_gradient(cos_sin_dFdt)
 

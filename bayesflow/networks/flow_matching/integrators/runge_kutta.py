@@ -67,7 +67,7 @@ class RK2Integrator(Integrator):
         if density:
             trace = keras.ops.zeros(keras.ops.shape(x)[:-1], dtype=x.dtype)
             for _ in range(steps):
-                k2, tr = jacobian_trace(f, z, kwargs.get("trace_steps", 5))
+                k2, tr = jacobian_trace(f, z, max_steps=kwargs.get("trace_steps", 5), return_output=True)
                 z += dt * k2
                 trace += dt * tr
                 t += dt

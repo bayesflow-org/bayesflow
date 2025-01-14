@@ -65,7 +65,7 @@ class EulerIntegrator(Integrator):
         if density:
             trace = keras.ops.zeros(keras.ops.shape(x)[:-1], dtype=x.dtype)
             for _ in range(steps):
-                v, tr = jacobian_trace(f, z, kwargs.get("trace_steps", 5))
+                v, tr = jacobian_trace(f, z, max_steps=kwargs.get("trace_steps", 5), return_output=True)
                 z += dt * v
                 trace += dt * tr
                 t += dt

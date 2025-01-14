@@ -1,9 +1,11 @@
+from collections.abc import Callable
 import keras
 
 from bayesflow.types import Tensor
 
 
-def _make_vjp_fn(f: callable, x: Tensor) -> (Tensor, callable):
+def vjp(f: Callable[[Tensor], Tensor], x: Tensor, return_output: bool = False):
+    """Compute the vector-Jacobian product of f at x."""
     match keras.backend.backend():
         case "jax":
             import jax
@@ -35,4 +37,7 @@ def _make_vjp_fn(f: callable, x: Tensor) -> (Tensor, callable):
         case other:
             raise NotImplementedError(f"Cannot build a vjp function for backend '{other}'.")
 
-    return fx, vjp_fn
+    if return_output:
+        return fx, vjp_fn
+
+    return vjp_fn

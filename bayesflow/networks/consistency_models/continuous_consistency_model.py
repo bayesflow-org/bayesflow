@@ -7,7 +7,16 @@ from keras.saving import (
 import numpy as np
 
 from bayesflow.types import Tensor
-from bayesflow.utils import jvp, concatenate, find_network, keras_kwargs, expand_right_as, expand_right_to
+from bayesflow.utils import (
+    jvp,
+    concatenate,
+    find_network,
+    keras_kwargs,
+    expand_right_as,
+    expand_right_to,
+    serialize_value_or_type,
+    deserialize_value_or_type,
+)
 
 
 from ..inference_network import InferenceNetwork
@@ -61,6 +70,22 @@ class ContinuousConsistencyModel(InferenceNetwork):
         self.sigma_data = sigma_data
 
         self.seed_generator = keras.random.SeedGenerator()
+
+        # serialization: store all parameters necessary to call __init__
+        self.config = {
+            "sigma_data": sigma_data,
+            **kwargs,
+        }
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+
+    def get_config(self):
+        base_config = super().get_config()
+        return base_config | self.config
+
+    @classmethod
+    def from_config(cls, config):
+        config = deserialize_value_or_type(config, "subnet")
+        return cls(**config)
 
     def _discretize_time(self, num_steps: int, rho: float = 3.5, **kwargs):
         t = np.linspace(0.0, np.pi / 2, num_steps)

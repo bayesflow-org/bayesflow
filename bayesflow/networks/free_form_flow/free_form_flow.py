@@ -3,7 +3,16 @@ from keras import ops
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, keras_kwargs, concatenate, log_jacobian_determinant, jvp, vjp
+from bayesflow.utils import (
+    find_network,
+    keras_kwargs,
+    concatenate,
+    log_jacobian_determinant,
+    jvp,
+    vjp,
+    serialize_value_or_type,
+    deserialize_value_or_type,
+)
 
 from ..inference_network import InferenceNetwork
 
@@ -62,6 +71,26 @@ class FreeFormFlow(InferenceNetwork):
         self.beta = beta
 
         self.seed_generator = keras.random.SeedGenerator()
+
+        # serialization: store all parameters necessary to call __init__
+        self.config = {
+            "beta": beta,
+            "base_distribution": base_distribution,
+            "hutchinson_sampling": hutchinson_sampling,
+            **kwargs,
+        }
+        self.config = serialize_value_or_type(self.config, "encoder_subnet", encoder_subnet)
+        self.config = serialize_value_or_type(self.config, "decoder_subnet", decoder_subnet)
+
+    def get_config(self):
+        base_config = super().get_config()
+        return base_config | self.config
+
+    @classmethod
+    def from_config(cls, config):
+        config = deserialize_value_or_type(config, "encoder_subnet")
+        config = deserialize_value_or_type(config, "decoder_subnet")
+        return cls(**config)
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):

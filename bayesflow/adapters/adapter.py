@@ -122,12 +122,18 @@ class Adapter:
         return self
 
     def broadcast(
-        self, keys: str | Sequence[str], *, to: str, expand: str | int | tuple = "left", exclude: int | tuple = -1
+        self,
+        keys: str | Sequence[str],
+        *,
+        to: str,
+        expand: str | int | tuple = "left",
+        exclude: int | tuple = -1,
+        squeeze: int | tuple = None,
     ):
         if isinstance(keys, str):
             keys = [keys]
 
-        transform = Broadcast(keys, to=to, expand=expand, exclude=exclude)
+        transform = Broadcast(keys, to=to, expand=expand, exclude=exclude, squeeze=squeeze)
         self.transforms.append(transform)
         return self
 

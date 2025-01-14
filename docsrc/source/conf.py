@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 project = "BayesFlow"
 author = "The BayesFlow authors"
-copyright = "2023, BayesFlow authors (lead maintainer: Stefan T. Radev)"
+copyright = "2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev)"
 
 
 # -- General configuration ---------------------------------------------------
@@ -61,13 +61,6 @@ myst_enable_extensions = [
     "html_image",
 ]
 myst_url_schemes = ["http", "https", "mailto"]
-autodoc_default_options = {
-    "members": "var1, var2",
-    "special-members": "__call__,__init__",
-    "undoc-members": True,
-    "exclude-members": "__weakref__",
-    "member-order": "bysource",
-}
 
 # Define shorthand for external links:
 extlinks = {
@@ -83,7 +76,23 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
+
+# Options for autodoc and autosummary
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "imported-members": True,
+    "inherited-members": True,
+    "show-inheritance": True,
+    "special-members": "__call__",
+    "memberorder": "bysource",
+}
+# do not ignore __all__, use it to determine public members
+autosummary_ignore_module_all = False
+# include imported members in autosummary
 autosummary_imported_members = True
+# selects content to insert into the main body of an autoclass directive.
+autoclass_content = "both"
 
 
 # -- Options for HTML output -------------------------------------------------

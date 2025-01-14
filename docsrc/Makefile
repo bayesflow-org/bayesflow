@@ -46,7 +46,7 @@ clean:
 
 clean-all:
 	@make clean
-	@rm -rf docsrc/.bf_doc_gen_venv
+	@rm -rf .bf_doc_gen_venv
 	@find source/api -type f ! -name 'bayesflow.rst' -exec rm -f {} +
 
 .PHONY: help Makefile

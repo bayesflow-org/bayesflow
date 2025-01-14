@@ -31,6 +31,7 @@ from .jacobian import (
     jvp,
     vjp,
 )
+from .serialization import serialize_value_or_type, deserialize_value_or_type
 from .optimal_transport import optimal_transport
 from .tensor_utils import (
     concatenate,

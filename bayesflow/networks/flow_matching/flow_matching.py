@@ -3,7 +3,13 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import expand_right_as, keras_kwargs, optimal_transport
+from bayesflow.utils import (
+    expand_right_as,
+    keras_kwargs,
+    optimal_transport,
+    serialize_value_or_type,
+    deserialize_value_or_type,
+)
 from ..inference_network import InferenceNetwork
 from .integrators import EulerIntegrator
 from .integrators import RK2Integrator
@@ -52,9 +58,28 @@ class FlowMatching(InferenceNetwork):
             case _:
                 raise NotImplementedError(f"No support for {integrator} integration")
 
+        # serialization: store all parameters necessary to call __init__
+        self.config = {
+            "base_distribution": base_distribution,
+            "integrator": integrator,
+            "use_optimal_transport": use_optimal_transport,
+            "optimal_transport_kwargs": optimal_transport_kwargs,
+            **kwargs,
+        }
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         super().build(xz_shape)
         self.integrator.build(xz_shape, conditions_shape)
+
+    def get_config(self):
+        base_config = super().get_config()
+        return base_config | self.config
+
+    @classmethod
+    def from_config(cls, config):
+        config = deserialize_value_or_type(config, "subnet")
+        return cls(**config)
 
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs

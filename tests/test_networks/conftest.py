@@ -8,11 +8,20 @@ def deep_set():
     return DeepSet()
 
 
-@pytest.fixture()
-def coupling_flow():
-    from bayesflow.networks import CouplingFlow
+# For the serialization tests, we want to test passing str and type.
+# For all other tests, this is not necessary and would double test time.
+# Therefore, below we specify two variants of each network, one without and
+# one with a subnet parameter. The latter will only be used for the relevant
+# tests. If there is a better way to set the params to a single value ("mlp")
+# for a given test, maybe this can be simplified, but I did not see one.
+@pytest.fixture(params=["str", "type"], scope="function")
+def subnet(request):
+    if request.param == "str":
+        return "mlp"
 
-    return CouplingFlow()
+    from bayesflow.networks import MLP
+
+    return MLP
 
 
 @pytest.fixture()
@@ -23,14 +32,47 @@ def flow_matching():
 
 
 @pytest.fixture()
+def flow_matching_subnet(subnet):
+    from bayesflow.networks import FlowMatching
+
+    return FlowMatching(subnet=subnet)
+
+
+@pytest.fixture()
+def coupling_flow():
+    from bayesflow.networks import CouplingFlow
+
+    return CouplingFlow()
+
+
+@pytest.fixture()
+def coupling_flow_subnet(subnet):
+    from bayesflow.networks import CouplingFlow
+
+    return CouplingFlow(subnet=subnet)
+
+
+@pytest.fixture()
 def free_form_flow():
     from bayesflow.networks import FreeFormFlow
 
     return FreeFormFlow()
 
 
+@pytest.fixture()
+def free_form_flow_subnet(subnet):
+    from bayesflow.networks import FreeFormFlow
+
+    return FreeFormFlow(encoder_subnet=subnet, decoder_subnet=subnet)
+
+
 @pytest.fixture(params=["coupling_flow", "flow_matching", "free_form_flow"], scope="function")
 def inference_network(request):
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture(params=["coupling_flow_subnet", "flow_matching_subnet", "free_form_flow_subnet"], scope="function")
+def inference_network_subnet(request):
     return request.getfixturevalue(request.param)
 
 

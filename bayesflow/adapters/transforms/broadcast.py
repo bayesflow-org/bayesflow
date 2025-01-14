@@ -53,7 +53,15 @@ class Broadcast(Transform):
     It is recommended to precede this transform with a :class:`bayesflow.adapters.transforms.ToArray` transform.
     """
 
-    def __init__(self, keys: Sequence[str], *, to: str, expand: str | int | tuple = "left", exclude: int | tuple = -1):
+    def __init__(
+        self,
+        keys: Sequence[str],
+        *,
+        to: str,
+        expand: str | int | tuple = "left",
+        exclude: int | tuple = -1,
+        squeeze: int | tuple = None,
+    ):
         super().__init__()
         self.keys = keys
         self.to = to
@@ -67,6 +75,7 @@ class Broadcast(Transform):
             exclude = (exclude,)
 
         self.exclude = exclude
+        self.squeeze = squeeze
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Broadcast":
@@ -75,6 +84,7 @@ class Broadcast(Transform):
             to=deserialize(config["to"], custom_objects),
             expand=deserialize(config["expand"], custom_objects),
             exclude=deserialize(config["exclude"], custom_objects),
+            squeeze=deserialize(config["squeeze"], custom_objects),
         )
 
     def get_config(self) -> dict:
@@ -83,6 +93,7 @@ class Broadcast(Transform):
             "to": serialize(self.to),
             "expand": serialize(self.expand),
             "exclude": serialize(self.exclude),
+            "squeeze": serialize(self.squeeze),
         }
 
     # noinspection PyMethodOverriding
@@ -114,6 +125,9 @@ class Broadcast(Transform):
                 new_shape = tuple(new_shape)
 
             data[k] = np.broadcast_to(data[k], new_shape)
+
+            if self.squeeze is not None:
+                data[k] = np.squeeze(data[k], axis=self.squeeze)
 
         return data
 

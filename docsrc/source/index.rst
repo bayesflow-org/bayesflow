@@ -113,12 +113,12 @@ Indices
 
 
 .. toctree::
-   :maxdepth: 0
-   :titlesonly:
-   :hidden:
+    :maxdepth: 0
+    :titlesonly:
+    :hidden:
 
-   self
-   examples
-   api/bayesflow
-   contributing
-   about
+    self
+    examples
+    api/bayesflow
+    contributing
+    about

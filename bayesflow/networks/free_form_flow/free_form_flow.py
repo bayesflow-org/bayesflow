@@ -7,7 +7,7 @@ from bayesflow.utils import (
     find_network,
     keras_kwargs,
     concatenate,
-    log_jacobian_determinant,
+    jacobian,
     jvp,
     vjp,
     serialize_value_or_type,
@@ -119,12 +119,10 @@ class FreeFormFlow(InferenceNetwork):
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         if density:
-            if conditions is None:
-                # None cannot be batched, so supply as keyword argument
-                z, log_det = log_jacobian_determinant(x, self.encode, conditions=None, training=training, **kwargs)
-            else:
-                # conditions should be batched, supply as positional argument
-                z, log_det = log_jacobian_determinant(x, self.encode, conditions, training=training, **kwargs)
+            z, jac = jacobian(
+                lambda inp: self.encode(inp, conditions=conditions, training=training, **kwargs), x, return_output=True
+            )
+            log_det = keras.ops.log(keras.ops.abs(keras.ops.det(jac)))
 
             log_density = self.base_distribution.log_prob(z) + log_det
             return z, log_density
@@ -136,12 +134,11 @@ class FreeFormFlow(InferenceNetwork):
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         if density:
-            if conditions is None:
-                # None cannot be batched, so supply as keyword argument
-                x, log_det = log_jacobian_determinant(z, self.decode, conditions=None, training=training, **kwargs)
-            else:
-                # conditions should be batched, supply as positional argument
-                x, log_det = log_jacobian_determinant(z, self.decode, conditions, training=training, **kwargs)
+            x, jac = jacobian(
+                lambda inp: self.decode(inp, conditions=conditions, training=training, **kwargs), z, return_output=True
+            )
+            log_det = keras.ops.log(keras.ops.abs(keras.ops.det(jac)))
+
             log_density = self.base_distribution.log_prob(z) - log_det
             return x, log_density
 

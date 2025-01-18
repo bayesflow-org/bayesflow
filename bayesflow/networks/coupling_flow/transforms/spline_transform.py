@@ -70,7 +70,6 @@ class SplineTransform(Transform):
         vertical_edges = bottom_edge + keras.ops.cumsum(bin_heights, axis=-1)
 
         derivatives = shifted_softplus(parameters["derivatives"])
-        # derivatives = pad(derivatives, 0.0, 1, axis=-1)
         derivatives = keras.ops.concatenate([affine_scale, derivatives, affine_scale], axis=-1)
 
         constrained_parameters = {

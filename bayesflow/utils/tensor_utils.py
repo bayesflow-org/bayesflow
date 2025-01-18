@@ -186,9 +186,8 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
         case "tensorflow":
             import tensorflow as tf
 
-            out_type = "int32" if len(sorted_sequence) <= np.iinfo(np.int32).max else "int64"
-
-            indices = tf.searchsorted(sorted_sequence, values, side=side, out_type=out_type)
+            # always use int64 to avoid complicated graph code
+            indices = tf.searchsorted(sorted_sequence, values, side=side, out_type="int64")
 
             return indices
         case "torch":

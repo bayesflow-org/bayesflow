@@ -4,11 +4,10 @@ from keras.saving import (
 )
 
 from bayesflow.types import Tensor
-from bayesflow.utils import searchsorted
+from bayesflow.utils import pad, searchsorted
 from bayesflow.utils.keras_utils import shifted_softplus
-
-from .transform import Transform
 from ._rational_quadratic import _rational_quadratic_spline
+from .transform import Transform
 
 
 @serializable(package="networks.coupling_flow")
@@ -63,14 +62,22 @@ class SplineTransform(Transform):
         bin_widths = self.default_bin_width * shifted_softplus(parameters["bin_widths"])
         bin_heights = self.default_bin_height * shifted_softplus(parameters["bin_heights"])
 
-        affine_scale = keras.ops.sum(bin_widths, axis=-1, keepdims=True)
+        total_width = keras.ops.sum(bin_widths, axis=-1, keepdims=True)
+        total_height = keras.ops.sum(bin_heights, axis=-1, keepdims=True)
+
+        affine_scale = total_height / total_width
         affine_shift = bottom_edge - affine_scale * left_edge
 
-        horizontal_edges = left_edge + keras.ops.cumsum(bin_widths, axis=-1)
-        vertical_edges = bottom_edge + keras.ops.cumsum(bin_heights, axis=-1)
+        horizontal_edges = keras.ops.cumsum(bin_widths, axis=-1)
+        horizontal_edges = pad(horizontal_edges, 0.0, 1, axis=-1, side="left")
+        horizontal_edges = left_edge + horizontal_edges
+
+        vertical_edges = keras.ops.cumsum(bin_heights, axis=-1)
+        vertical_edges = pad(vertical_edges, 0.0, 1, axis=-1, side="left")
+        vertical_edges = bottom_edge + vertical_edges
 
         derivatives = shifted_softplus(parameters["derivatives"])
-        derivatives = keras.ops.concatenate([affine_scale, derivatives, affine_scale], axis=-1)
+        derivatives = pad(derivatives, affine_scale, 1, axis=-1, side="both")
 
         constrained_parameters = {
             "horizontal_edges": horizontal_edges,

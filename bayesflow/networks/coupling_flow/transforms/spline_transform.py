@@ -94,7 +94,7 @@ class SplineTransform(Transform):
         # parameters.shape == ([B, ...], bins)
         bins = searchsorted(parameters["horizontal_edges"], x)
 
-        inside = (bins > 0) & (bins <= self.bins)
+        inside = (bins > 0) & (bins < self.bins)
         inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
 
         # first compute affine transform on everything
@@ -128,7 +128,7 @@ class SplineTransform(Transform):
     def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
         bins = searchsorted(parameters["vertical_edges"], z)
 
-        inside = (bins > 0) & (bins <= self.bins)
+        inside = (bins > 0) & (bins < self.bins)
         inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
 
         # first compute affine transform on everything
@@ -138,7 +138,6 @@ class SplineTransform(Transform):
         log_jac = keras.ops.broadcast_to(-keras.ops.log(scale), keras.ops.shape(x))
 
         # overwrite inside part with spline
-
         upper = bins[inside]
         lower = upper - 1
 

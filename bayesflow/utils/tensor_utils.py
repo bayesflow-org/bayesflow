@@ -58,14 +58,29 @@ def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:
     return tile_axis(x, n, axis=axis)
 
 
-def pad(x: Tensor, value: float, n: int, axis: int) -> Tensor:
-    """Pad x with n values along axis"""
+def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both") -> Tensor:
+    """
+    Pad x with n values along axis on the given side.
+    The pad value must broadcast against the shape of x, except for the pad axis, where it must broadcast against n.
+    """
+    if not keras.ops.is_tensor(value):
+        value = keras.ops.full((), value, dtype=keras.ops.dtype(x))
+
     shape = list(keras.ops.shape(x))
     shape[axis] = n
-    p = keras.ops.full(shape, value, dtype=keras.ops.dtype(x))
-    xp = keras.ops.concatenate([p, x, p], axis=axis)
 
-    return xp
+    p = keras.ops.broadcast_to(value, shape)
+    match side:
+        case "left":
+            return keras.ops.concatenate([p, x], axis=axis)
+        case "right":
+            return keras.ops.concatenate([x, p], axis=axis)
+        case "both":
+            return keras.ops.concatenate([p, x, p], axis=axis)
+        case str() as name:
+            raise ValueError(f"Invalid side {name!r}. Must be 'left', 'right', or 'both'.")
+        case _:
+            raise TypeError(f"Invalid side type {type(side)!r}. Must be str.")
 
 
 def size_of(x) -> int:

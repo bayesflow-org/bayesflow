@@ -10,6 +10,31 @@ from . import logging
 T = TypeVar("T")
 
 
+def expand(x: Tensor, n: int, side: str):
+    if n < 0:
+        raise ValueError(f"Cannot expand {n} times.")
+
+    match side:
+        case "left":
+            idx = [None] * n + [...]
+        case "right":
+            idx = [...] + [None] * n
+        case str() as name:
+            raise ValueError(f"Invalid side {name!r}. Must be 'left' or 'right'.")
+        case other:
+            raise TypeError(f"Invalid side type {type(other)!r}. Must be str.")
+
+    return x[tuple(idx)]
+
+
+def expand_as(x: Tensor, y: Tensor, side: str):
+    return expand_to(x, keras.ops.ndim(y), side)
+
+
+def expand_to(x: Tensor, dim: int, side: str):
+    return expand(x, dim - keras.ops.ndim(x), side)
+
+
 def expand_left(x: Tensor, n: int) -> Tensor:
     """Expand x to the left n times"""
     if n < 0:

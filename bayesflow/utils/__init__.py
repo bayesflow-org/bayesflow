@@ -3,6 +3,8 @@ from . import (
     logging,
     numpy_utils,
 )
+from .callbacks import detailed_loss_callback
+from .comp_utils import expected_calibration_error
 from .dict_utils import (
     convert_args,
     convert_kwargs,
@@ -31,10 +33,21 @@ from .jacobian import (
     jvp,
     vjp,
 )
-from .serialization import serialize_value_or_type, deserialize_value_or_type
 from .optimal_transport import optimal_transport
+from .plot_utils import (
+    check_posterior_prior_shapes,
+    prepare_plot_data,
+    add_titles_and_labels,
+    prettify_subplots,
+    make_quadratic,
+    add_metric,
+)
+from .serialization import serialize_value_or_type, deserialize_value_or_type
 from .tensor_utils import (
     concatenate,
+    expand,
+    expand_as,
+    expand_to,
     expand_left,
     expand_left_as,
     expand_left_to,
@@ -50,14 +63,4 @@ from .tensor_utils import (
     searchsorted,
 )
 from .validators import check_lengths_same
-from .comp_utils import expected_calibration_error
-from .plot_utils import (
-    check_posterior_prior_shapes,
-    prepare_plot_data,
-    add_titles_and_labels,
-    prettify_subplots,
-    make_quadratic,
-    add_metric,
-)
-from .callbacks import detailed_loss_callback
 from .workflow_utils import find_inference_network, find_summary_network

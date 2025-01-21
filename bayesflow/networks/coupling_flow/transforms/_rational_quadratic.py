@@ -1,5 +1,6 @@
-import keras
 from typing import TypedDict
+
+import keras
 
 from bayesflow.types import Tensor
 
@@ -50,9 +51,11 @@ def _rational_quadratic_spline(
         # Eq. 4 in the paper
         numerator = dy * (sk * xi**2 + dk * xi * (1 - xi))
         denominator = sk + (dkp + dk - 2 * sk) * xi * (1 - xi)
-        out = yk + numerator / denominator
+        result = yk + numerator / denominator
     else:
+        # rename for clarity
         y = x
+
         # Eq. 6-8 in the paper
         a = dy * (sk - dk) + (y - yk) * (dkp + dk - 2 * sk)
         b = dy * dk - (y - yk) * (dkp + dk - 2 * sk)
@@ -64,12 +67,11 @@ def _rational_quadratic_spline(
             raise ValueError("Discriminant must be non-negative.")
 
         xi = 2 * c / (-b - keras.ops.sqrt(discriminant))
-
-        out = xi * dx + xk
+        result = xi * dx + xk
 
     # Eq 5 in the paper
     numerator = sk**2 * (dkp * xi**2 + 2 * sk * xi * (1 - xi) + dk * (1 - xi) ** 2)
     denominator = (sk + (dkp + dk - 2 * sk) * xi * (1 - xi)) ** 2
     log_jac = keras.ops.log(numerator) - keras.ops.log(denominator)
 
-    return out, log_jac
+    return result, log_jac

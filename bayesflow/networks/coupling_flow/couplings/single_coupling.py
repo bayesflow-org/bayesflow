@@ -1,5 +1,4 @@
 import keras
-
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
@@ -24,6 +23,7 @@ class SingleCoupling(InvertibleLayer):
 
         output_projector_kwargs = kwargs.get("output_projector_kwargs", {})
         output_projector_kwargs.setdefault("kernel_initializer", "zeros")
+        output_projector_kwargs.setdefault("bias_initializer", "zeros")
         self.output_projector = keras.layers.Dense(units=None, **output_projector_kwargs)
 
         # serialization: store all parameters necessary to call __init__

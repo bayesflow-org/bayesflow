@@ -36,6 +36,10 @@ def setup():
 
         torch.autograd.set_grad_enabled(False)
 
+    from bayesflow.utils import logging
+
+    logging.info(f"Using backend {keras.backend.backend()!r}")
+
 
 # call and clean up namespace
 setup()

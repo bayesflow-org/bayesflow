@@ -69,13 +69,9 @@ class SplineTransform(Transform):
         return sum(self.parameter_sizes.values())
 
     def split_parameters(self, parameters: Tensor) -> dict[str, Tensor]:
-        shape = keras.ops.shape(parameters)
-
-        if shape[-1] % self.params_per_dim != 0:
-            raise ValueError(f"Invalid number of parameters. Must be divisible by {self.params_per_dim}.")
-
-        dims = shape[-1] // self.params_per_dim
-        indices = dims * keras.ops.convert_to_tensor(list(self.parameter_sizes.values()))
+        batch_shape = list(keras.ops.shape(parameters)[:-1])
+        parameters = keras.ops.reshape(parameters, batch_shape + [-1, self.params_per_dim])
+        indices = np.cumsum(list(self.parameter_sizes.values())).tolist()
         parameters = keras.ops.split(parameters, indices, axis=-1)
         parameters = dict(zip(self.parameter_sizes.keys(), parameters))
 

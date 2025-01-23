@@ -5,7 +5,7 @@ from keras.saving import (
 )
 
 from bayesflow.types import Tensor
-from bayesflow.utils import expand_as, pad, searchsorted
+from bayesflow.utils import pad, searchsorted
 from bayesflow.utils.keras_utils import shifted_softplus
 from ._rational_quadratic import _rational_quadratic_spline
 from .transform import Transform
@@ -132,17 +132,18 @@ class SplineTransform(Transform):
         affine_log_jac = keras.ops.broadcast_to(keras.ops.log(scale), keras.ops.shape(affine))
 
         # compute spline and overwrite inside part
-        bins = searchsorted(parameters["horizontal_edges"], x)
+        bins = searchsorted(parameters["horizontal_edges"], keras.ops.expand_dims(x, axis=-1))
+        bins = keras.ops.squeeze(bins, axis=-1)
         inside = (bins > 0) & (bins <= self.bins)
         inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
 
         # select parameters for inside elements
-        parameters = {key: value[keras.ops.any(inside, axis=-1)] for key, value in parameters.items()}
+        parameters = {key: value[inside] for key, value in parameters.items()}
 
         # select parameters for the bins
         # TODO: need a generic way to do this for arbitrary spline methods
-        upper = bins[keras.ops.any(inside, axis=-1)]
-        upper = expand_as(upper, parameters["horizontal_edges"], side="right")
+        upper = bins[inside]
+        upper = keras.ops.expand_dims(upper, axis=-1)
         lower = upper - 1
 
         edges = {
@@ -151,10 +152,12 @@ class SplineTransform(Transform):
             "bottom": keras.ops.take_along_axis(parameters["vertical_edges"], lower, axis=-1),
             "top": keras.ops.take_along_axis(parameters["vertical_edges"], upper, axis=-1),
         }
+        edges = {key: keras.ops.squeeze(value, axis=-1) for key, value in edges.items()}
         derivatives = {
             "left": keras.ops.take_along_axis(parameters["derivatives"], lower, axis=-1),
             "right": keras.ops.take_along_axis(parameters["derivatives"], upper, axis=-1),
         }
+        derivatives = {key: keras.ops.squeeze(value, axis=-1) for key, value in derivatives.items()}
 
         parameters = {"edges": edges, "derivatives": derivatives}
 
@@ -180,17 +183,18 @@ class SplineTransform(Transform):
         affine_log_jac = keras.ops.broadcast_to(-keras.ops.log(scale), keras.ops.shape(affine))
 
         # compute spline and overwrite inside part
-        bins = searchsorted(parameters["vertical_edges"], z)
+        bins = searchsorted(parameters["vertical_edges"], keras.ops.expand_dims(z, axis=-1))
+        bins = keras.ops.squeeze(bins, axis=-1)
         inside = (bins > 0) & (bins <= self.bins)
         inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
 
         # select parameters for inside elements
-        parameters = {key: value[keras.ops.any(inside, axis=-1)] for key, value in parameters.items()}
+        parameters = {key: value[inside] for key, value in parameters.items()}
 
         # select parameters for the bins
         # TODO: need a generic way to do this for arbitrary spline methods
         upper = bins[inside]
-        upper = expand_as(upper, parameters["horizontal_edges"], side="right")
+        upper = keras.ops.expand_dims(upper, axis=-1)
         lower = upper - 1
 
         edges = {

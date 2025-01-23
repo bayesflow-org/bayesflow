@@ -115,8 +115,8 @@ class SplineTransform(Transform):
             "horizontal_edges": horizontal_edges,
             "vertical_edges": vertical_edges,
             "derivatives": derivatives,
-            "affine_scale": affine_scale,
-            "affine_shift": affine_shift,
+            "affine_scale": keras.ops.squeeze(affine_scale, axis=-1),
+            "affine_shift": keras.ops.squeeze(affine_shift, axis=-1),
         }
 
         return constrained_parameters

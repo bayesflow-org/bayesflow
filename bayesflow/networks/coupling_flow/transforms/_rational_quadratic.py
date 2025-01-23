@@ -74,4 +74,7 @@ def _rational_quadratic_spline(
     denominator = (sk + (dkp + dk - 2 * sk) * xi * (1 - xi)) ** 2
     log_jac = keras.ops.log(numerator) - keras.ops.log(denominator)
 
+    if inverse:
+        log_jac = -log_jac
+
     return result, log_jac

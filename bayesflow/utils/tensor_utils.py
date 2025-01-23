@@ -203,7 +203,7 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
             import jax
             import jax.numpy as jnp
 
-            logging.warning("JAX searchsorted is not yet optimized.")
+            logging.warn_once("JAX searchsorted is not yet optimized.")
 
             # do not vmap over the side argument (we have to pass it as a positional argument)
             in_axes = [0, 0, None]

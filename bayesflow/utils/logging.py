@@ -1,5 +1,6 @@
 import keras
 import logging
+from functools import lru_cache
 
 
 logger = logging.getLogger("bayesflow")
@@ -43,3 +44,8 @@ def log(msg, *args, **kwargs):
 
 def warning(msg, *args, **kwargs):
     _log(msg, *args, callback_fn=logger.warning, **kwargs)
+
+
+@lru_cache(100)
+def warn_once(msg, *args, **kwargs):
+    warning(msg, *args, **kwargs)

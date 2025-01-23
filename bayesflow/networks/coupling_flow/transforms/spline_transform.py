@@ -34,6 +34,8 @@ class SplineTransform(Transform):
         if self.method != "rational_quadratic":
             raise NotImplementedError("Currently, only 'rational_quadratic' spline method is supported.")
 
+        self.method_fn = _rational_quadratic_spline
+
         # we slightly over-parametrize to allow for better constraints
         # this may also improve convergence due to redundancy
         self.parameter_sizes = {
@@ -67,15 +69,17 @@ class SplineTransform(Transform):
         return sum(self.parameter_sizes.values())
 
     def split_parameters(self, parameters: Tensor) -> dict[str, Tensor]:
-        p = {}
+        shape = keras.ops.shape(parameters)
 
-        start = 0
-        for key, value in self.parameter_sizes.items():
-            stop = start + value
-            p[key] = keras.ops.take(parameters, indices=list(range(start, stop)), axis=-1)
-            start = stop
+        if shape[-1] % self.params_per_dim != 0:
+            raise ValueError(f"Invalid number of parameters. Must be divisible by {self.params_per_dim}.")
 
-        return p
+        dims = shape[-1] // self.params_per_dim
+        indices = dims * keras.ops.convert_to_tensor(list(self.parameter_sizes.values()))
+        parameters = keras.ops.split(parameters, indices, axis=-1)
+        parameters = dict(zip(self.parameter_sizes.keys(), parameters))
+
+        return parameters
 
     def constrain_parameters(self, parameters: dict[str, Tensor]) -> dict[str, Tensor]:
         left_edge = parameters["left_edge"] + self.default_left
@@ -124,99 +128,99 @@ class SplineTransform(Transform):
         return constrained_parameters
 
     def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
-        # x.shape == ([B, ...], D)
-        # parameters.shape == ([B, ...], bins)
-        bins = searchsorted(parameters["horizontal_edges"], x)
-
-        # inside check is right-inclusive because searchsorted is right-inclusive
-        inside = (bins > 0) & (bins <= self.bins)
-        # inside_indices.shape == (n_inside, ndim(x))
-        inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
+        # avoid side effects for mutable args
+        parameters = parameters.copy()
 
         # first compute affine transform on everything
-        scale = parameters["affine_scale"]
-        shift = parameters["affine_shift"]
-        z = scale * x + shift
-        log_jac = keras.ops.broadcast_to(keras.ops.log(scale), keras.ops.shape(z))
+        scale = parameters.pop("affine_scale")
+        shift = parameters.pop("affine_shift")
+        affine = scale * x + shift
+        affine_log_jac = keras.ops.broadcast_to(keras.ops.log(scale), keras.ops.shape(affine))
 
-        # overwrite inside part with spline
-        upper = bins[inside]
+        # compute spline and overwrite inside part
+        bins = searchsorted(parameters["horizontal_edges"], x)
+        inside = (bins > 0) & (bins <= self.bins)
+        inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
+
+        # select parameters for inside elements
+        parameters = {key: value[keras.ops.any(inside, axis=-1)] for key, value in parameters.items()}
+
+        # select parameters for the bins
+        # TODO: need a generic way to do this for arbitrary spline methods
+        upper = bins[keras.ops.any(inside, axis=-1)]
         upper = expand_as(upper, parameters["horizontal_edges"], side="right")
-
         lower = upper - 1
 
-        # select batch elements that are inside
-        parameters_inside = {key: value[inside_indices[:, :-1]] for key, value in parameters.items()}
-        parameters_inside = {key: keras.ops.squeeze(value, axis=1) for key, value in parameters_inside.items()}
-
-        # select bin parameters for inside elements
         edges = {
-            "left": keras.ops.take_along_axis(parameters_inside["horizontal_edges"], lower, axis=-1),
-            "right": keras.ops.take_along_axis(parameters_inside["horizontal_edges"], upper, axis=-1),
-            "bottom": keras.ops.take_along_axis(parameters_inside["vertical_edges"], lower, axis=-1),
-            "top": keras.ops.take_along_axis(parameters_inside["vertical_edges"], upper, axis=-1),
+            "left": keras.ops.take_along_axis(parameters["horizontal_edges"], lower, axis=-1),
+            "right": keras.ops.take_along_axis(parameters["horizontal_edges"], upper, axis=-1),
+            "bottom": keras.ops.take_along_axis(parameters["vertical_edges"], lower, axis=-1),
+            "top": keras.ops.take_along_axis(parameters["vertical_edges"], upper, axis=-1),
         }
-        edges = {key: keras.ops.squeeze(value, axis=-1) for key, value in edges.items()}
         derivatives = {
-            "left": keras.ops.take_along_axis(parameters_inside["derivatives"], lower, axis=-1),
-            "right": keras.ops.take_along_axis(parameters_inside["derivatives"], upper, axis=-1),
+            "left": keras.ops.take_along_axis(parameters["derivatives"], lower, axis=-1),
+            "right": keras.ops.take_along_axis(parameters["derivatives"], upper, axis=-1),
         }
-        derivatives = {key: keras.ops.squeeze(value, axis=-1) for key, value in derivatives.items()}
 
-        # compute spline and jacobian
-        spline, jac = _rational_quadratic_spline(x[inside], edges=edges, derivatives=derivatives)
-        z = keras.ops.scatter_update(z, inside_indices, spline)
-        log_jac = keras.ops.scatter_update(log_jac, inside_indices, jac)
+        parameters = {"edges": edges, "derivatives": derivatives}
+
+        # compute the spline and jacobian
+        spline, spline_log_jac = self.method_fn(x[inside], **parameters)
+
+        # overwrite inside part with spline
+        z = keras.ops.scatter_update(affine, inside_indices, spline)
+        log_jac = keras.ops.scatter_update(affine_log_jac, inside_indices, spline_log_jac)
 
         log_det = keras.ops.sum(log_jac, axis=-1)
 
         return z, log_det
 
     def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
-        # z.shape == ([B, ...], D)
-        # parameters.shape == ([B, ...], bins)
-        bins = searchsorted(parameters["vertical_edges"], z)
-
-        # inside check is right-inclusive because searchsorted is right-inclusive
-        inside = (bins > 0) & (bins <= self.bins)
-        # inside_indices.shape == (n_inside, ndim(x))
-        inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
+        # avoid side effects for mutable args
+        parameters = parameters.copy()
 
         # first compute affine transform on everything
-        scale = parameters["affine_scale"]
-        shift = parameters["affine_shift"]
-        x = (z - shift) / scale
-        log_jac = keras.ops.broadcast_to(-keras.ops.log(scale), keras.ops.shape(x))
+        scale = parameters.pop("affine_scale")
+        shift = parameters.pop("affine_shift")
+        affine = (z - shift) / scale
+        affine_log_jac = keras.ops.broadcast_to(-keras.ops.log(scale), keras.ops.shape(affine))
 
-        # overwrite inside part with spline
+        # compute spline and overwrite inside part
+        bins = searchsorted(parameters["vertical_edges"], z)
+        inside = (bins > 0) & (bins <= self.bins)
+        inside_indices = keras.ops.stack(keras.ops.nonzero(inside), axis=-1)
+
+        # select parameters for inside elements
+        parameters = {key: value[keras.ops.any(inside, axis=-1)] for key, value in parameters.items()}
+
+        # select parameters for the bins
+        # TODO: need a generic way to do this for arbitrary spline methods
         upper = bins[inside]
         upper = expand_as(upper, parameters["horizontal_edges"], side="right")
-
         lower = upper - 1
 
-        # select batch elements that are inside
-        parameters_inside = {key: value[inside_indices[:, :-1]] for key, value in parameters.items()}
-        parameters_inside = {key: keras.ops.squeeze(value, axis=1) for key, value in parameters_inside.items()}
-
-        # select bin parameters for inside elements
         edges = {
-            "left": keras.ops.take_along_axis(parameters_inside["horizontal_edges"], lower, axis=-1),
-            "right": keras.ops.take_along_axis(parameters_inside["horizontal_edges"], upper, axis=-1),
-            "bottom": keras.ops.take_along_axis(parameters_inside["vertical_edges"], lower, axis=-1),
-            "top": keras.ops.take_along_axis(parameters_inside["vertical_edges"], upper, axis=-1),
+            "left": keras.ops.take_along_axis(parameters["horizontal_edges"], lower, axis=-1),
+            "right": keras.ops.take_along_axis(parameters["horizontal_edges"], upper, axis=-1),
+            "bottom": keras.ops.take_along_axis(parameters["vertical_edges"], lower, axis=-1),
+            "top": keras.ops.take_along_axis(parameters["vertical_edges"], upper, axis=-1),
         }
         edges = {key: keras.ops.squeeze(value, axis=-1) for key, value in edges.items()}
         derivatives = {
-            "left": keras.ops.take_along_axis(parameters_inside["derivatives"], lower, axis=-1),
-            "right": keras.ops.take_along_axis(parameters_inside["derivatives"], upper, axis=-1),
+            "left": keras.ops.take_along_axis(parameters["derivatives"], lower, axis=-1),
+            "right": keras.ops.take_along_axis(parameters["derivatives"], upper, axis=-1),
         }
         derivatives = {key: keras.ops.squeeze(value, axis=-1) for key, value in derivatives.items()}
 
-        # compute spline and jacobian
-        spline, jac = _rational_quadratic_spline(z[inside], edges=edges, derivatives=derivatives, inverse=True)
-        x = keras.ops.scatter_update(x, inside_indices, spline)
-        log_jac = keras.ops.scatter_update(log_jac, inside_indices, jac)
+        parameters = {"edges": edges, "derivatives": derivatives}
+
+        # compute the spline and jacobian
+        spline, spline_log_jac = self.method_fn(z[inside], **parameters, inverse=True)
+
+        # overwrite inside part with spline
+        x = keras.ops.scatter_update(affine, inside_indices, spline)
+        log_jac = keras.ops.scatter_update(affine_log_jac, inside_indices, spline_log_jac)
 
         log_det = keras.ops.sum(log_jac, axis=-1)
 
-        return x, log_det
+        return z, log_det

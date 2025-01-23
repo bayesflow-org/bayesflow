@@ -217,4 +217,4 @@ class SplineTransform(Transform):
 
         log_det = keras.ops.sum(log_jac, axis=-1)
 
-        return z, log_det
+        return x, log_det

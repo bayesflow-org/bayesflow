@@ -90,12 +90,10 @@ class SplineTransform(Transform):
         total_height = keras.ops.arcsinh(keras.ops.softplus(parameters["total_height"] + self._shift))
         total_height = (self.default_height - self.min_height) * total_height + self.min_height
 
-        bin_widths = (total_width - self.bins * self.min_bin_width) * keras.ops.softmax(
-            parameters["bin_widths"], axis=-1
-        ) + self.min_bin_width
-        bin_heights = (total_height - self.bins * self.min_bin_height) * keras.ops.softmax(
-            parameters["bin_heights"], axis=-1
-        ) + self.min_bin_height
+        bin_widths = keras.ops.softmax(parameters["bin_widths"], axis=-1)
+        bin_widths = (total_width - self.bins * self.min_bin_width) * bin_widths + self.min_bin_width
+        bin_heights = keras.ops.softmax(parameters["bin_heights"], axis=-1)
+        bin_heights = (total_height - self.bins * self.min_bin_height) * bin_heights + self.min_bin_height
 
         # dy / dx
         affine_scale = total_height / total_width

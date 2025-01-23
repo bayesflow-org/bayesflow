@@ -79,7 +79,7 @@ def mmd_hypothesis_test(
 
     mmd_critical = ops.quantile(mmd_null, 1 - alpha_level)
     fill_area_under_kde(
-        kde, mmd_critical, color=alpha_color, alpha=0.5, label=rf"{int(alpha_level*100)}% rejection area"
+        kde, mmd_critical, color=alpha_color, alpha=0.5, label=rf"{int(alpha_level * 100)}% rejection area"
     )
 
     if truncate_v_lines_at_kde:

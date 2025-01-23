@@ -191,7 +191,7 @@ def dicts_to_arrays(
     # Throw if unknown type
     else:
         raise TypeError(
-            f"Only dicts and tensors are supported as arguments, " f"but your targets are of type {type(targets)}"
+            f"Only dicts and tensors are supported as arguments, but your targets are of type {type(targets)}"
         )
 
     return dict(

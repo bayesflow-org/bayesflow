@@ -43,7 +43,7 @@ class Simulator:
 
             if accept.shape != (sample_shape[axis],):
                 raise RuntimeError(
-                    f"Predicate return array must have shape {(sample_shape[axis],)}. " f"Received: {accept.shape}."
+                    f"Predicate return array must have shape {(sample_shape[axis],)}. Received: {accept.shape}."
                 )
 
             if not accept.dtype == "bool":

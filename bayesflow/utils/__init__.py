@@ -35,7 +35,7 @@ from .jacobian import (
 )
 from .optimal_transport import optimal_transport
 from .plot_utils import (
-    check_posterior_prior_shapes,
+    check_estimates_prior_shapes,
     prepare_plot_data,
     add_titles_and_labels,
     prettify_subplots,

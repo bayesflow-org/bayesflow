@@ -68,41 +68,42 @@ def mc_calibration(
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
-        estimates=pred_models,
-        ground_truths=true_models,
+        targets=pred_models,
+        references=true_models,
         variable_names=model_names,
         num_col=num_col,
         num_row=num_row,
         figsize=figsize,
+        default_name="M",
     )
 
     # Compute calibration
     cal_errors, true_probs, pred_probs = expected_calibration_error(
-        plot_data["ground_truths"], plot_data["estimates"], num_bins
+        plot_data["references"], plot_data["targets"], num_bins
     )
 
     for j, ax in enumerate(plot_data["axes"].flat):
         # Plot calibration curve
-        ax[j].plot(pred_probs[j], true_probs[j], "o-", color=color)
+        ax.plot(pred_probs[j], true_probs[j], "o-", color=color)
 
         # Plot PMP distribution over bins
         uniform_bins = np.linspace(0.0, 1.0, num_bins + 1)
-        norm_weights = np.ones_like(plot_data["estimates"]) / len(plot_data["estimates"])
-        ax[j].hist(plot_data["estimates"][:, j], bins=uniform_bins, weights=norm_weights[:, j], color="grey", alpha=0.3)
+        norm_weights = np.ones_like(plot_data["targets"]) / len(plot_data["targets"])
+        ax.hist(plot_data["targets"][:, j], bins=uniform_bins, weights=norm_weights[:, j], color="grey", alpha=0.3)
 
         # Plot AB line
-        ax[j].plot((0, 1), (0, 1), "--", color="black", alpha=0.9)
+        ax.plot((0, 1), (0, 1), "--", color="black", alpha=0.9)
 
         # Tweak plot
-        ax[j].set_xlim([0 - epsilon, 1 + epsilon])
-        ax[j].set_ylim([0 - epsilon, 1 + epsilon])
-        ax[j].set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-        ax[j].set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        ax.set_xlim([0 - epsilon, 1 + epsilon])
+        ax.set_ylim([0 - epsilon, 1 + epsilon])
+        ax.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 
         # Add ECE label
         add_metric(
-            ax[j],
-            metric_text=r"$\widehat{{\mathrm{{ECE}}}}$ = {0:.3f}",
+            ax,
+            metric_text=r"$\widehat{{\mathrm{{ECE}}}}$",
             metric_value=cal_errors[j],
             metric_fontsize=metric_fontsize,
         )

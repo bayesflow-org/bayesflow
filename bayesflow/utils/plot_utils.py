@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from .validators import check_posterior_prior_shapes
+from .validators import check_estimates_prior_shapes
 from .dict_utils import dicts_to_arrays
 
 
@@ -52,7 +52,7 @@ def prepare_plot_data(
     plot_data = dicts_to_arrays(
         targets=targets, references=references, variable_names=variable_names, default_name=default_name
     )
-    check_posterior_prior_shapes(plot_data["targets"], plot_data["references"])
+    check_estimates_prior_shapes(plot_data["targets"], plot_data["references"])
 
     # Configure layout
     num_row, num_col = set_layout(plot_data["num_variables"], num_row, num_col, stacked)

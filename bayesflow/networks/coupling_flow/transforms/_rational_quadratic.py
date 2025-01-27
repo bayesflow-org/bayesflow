@@ -63,8 +63,9 @@ def _rational_quadratic_spline(
 
         # Eq. 29 in the appendix of the paper
         discriminant = b**2 - 4 * a * c
-        if not keras.ops.all(discriminant >= 0):
-            raise ValueError("Discriminant must be non-negative.")
+
+        # the discriminant must be positive, even when the spline is called out of bounds
+        discriminant = keras.ops.maximum(discriminant, 0)
 
         xi = 2 * c / (-b - keras.ops.sqrt(discriminant))
         result = xi * dx + xk

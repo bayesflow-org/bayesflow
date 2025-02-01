@@ -6,6 +6,8 @@ from bayesflow.utils.decorators import allow_batch_size
 
 
 class InferenceNetwork(keras.Layer):
+    MLP_DEFAULT_CONFIG = {}
+
     def __init__(self, base_distribution: str = "normal", **kwargs):
         super().__init__(**kwargs)
         self.base_distribution = find_distribution(base_distribution)

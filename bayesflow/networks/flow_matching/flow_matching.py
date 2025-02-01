@@ -26,6 +26,23 @@ class FlowMatching(InferenceNetwork):
     [3] Optimal Transport Flow Matching: arXiv:2302.00482
     """
 
+    MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
+
+    OPTIMAL_TRANSPORT_DEFAULT_CONFIG = {
+        "method": "sinkhorn",
+        "cost": "euclidean",
+        "regularization": 0.1,
+        "max_steps": 1000,
+        "tolerance": 1e-4,
+    }
+
     def __init__(
         self,
         subnet: str | type = "mlp",
@@ -38,13 +55,14 @@ class FlowMatching(InferenceNetwork):
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
 
         self.use_optimal_transport = use_optimal_transport
-        self.optimal_transport_kwargs = optimal_transport_kwargs or {
-            "method": "sinkhorn",
-            "cost": "euclidean",
-            "regularization": 0.1,
-            "max_steps": 1000,
-            "tolerance": 1e-4,
-        }
+        self.optimal_transport_kwargs = self.OPTIMAL_TRANSPORT_DEFAULT_CONFIG.copy()
+        self.optimal_transport_kwargs.update(optimal_transport_kwargs or {})
+
+        if subnet == "mlp":
+            subnet_kwargs = self.MLP_DEFAULT_CONFIG.copy()
+            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
+
+        # TODO - Spawn subnet here
 
         self.seed_generator = keras.random.SeedGenerator()
 

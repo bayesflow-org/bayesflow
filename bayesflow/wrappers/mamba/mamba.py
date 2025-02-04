@@ -9,7 +9,17 @@ from ...networks.summary_network import SummaryNetwork
 
 
 class MambaSSM(SummaryNetwork):
-    def __init__(self, pooling: bool, dropout: int | float | None = 0.5, **kwargs):
+    def __init__(self, pooling: bool = True, dropout: int | float | None = 0.5, **kwargs):
+        """
+        Wrapper to apply the Mamba SSM as a `SummaryNetwork`
+        
+        Parameters
+        ----------
+        pooling : bool
+            Applies `GlobalAveragePooling` to SSM
+        dropout : int
+            Applies dropout with given probability
+        """
         super().__init__(**kwargs)
         
         batch, length, dim = 64, 14, 1

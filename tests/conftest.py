@@ -1,8 +1,11 @@
+import logging
+
 import keras
 import pytest
 
-
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
+
+logging.getLogger("bayesflow").setLevel(logging.DEBUG)
 
 
 def pytest_runtest_setup(item):

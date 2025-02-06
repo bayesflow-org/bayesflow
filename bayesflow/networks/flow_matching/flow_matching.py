@@ -32,6 +32,7 @@ class FlowMatching(InferenceNetwork):
         subnet: str | type = "mlp",
         base_distribution: str = "normal",
         use_optimal_transport: bool = False,
+        loss_fn: str = "mse",
         optimal_transport_kwargs: dict[str, any] = None,
         **kwargs,
     ):
@@ -47,6 +48,8 @@ class FlowMatching(InferenceNetwork):
                 "max_steps": 1000,
                 "tolerance": 1e-4,
             }
+
+        self.loss_fn = keras.losses.get(loss_fn)
 
         self.optimal_transport_kwargs = optimal_transport_kwargs
 
@@ -187,7 +190,7 @@ class FlowMatching(InferenceNetwork):
 
         predicted_velocity = self.velocity(x, t, conditions, training=stage == "training")
 
-        loss = keras.losses.mean_squared_error(target_velocity, predicted_velocity)
+        loss = self.loss_fn(target_velocity, predicted_velocity)
         loss = keras.ops.mean(loss)
 
         return base_metrics | {"loss": loss}

@@ -1,19 +1,20 @@
 from collections.abc import Sequence
+
 import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
     expand_right_as,
+    find_network,
+    integrate,
+    jacobian_trace,
     keras_kwargs,
     optimal_transport,
     serialize_value_or_type,
     deserialize_value_or_type,
 )
 from ..inference_network import InferenceNetwork
-from .integrators import EulerIntegrator
-from .integrators import RK2Integrator
-from .integrators import RK4Integrator
 
 
 @serializable(package="bayesflow.networks")
@@ -30,7 +31,6 @@ class FlowMatching(InferenceNetwork):
         self,
         subnet: str | type = "mlp",
         base_distribution: str = "normal",
-        integrator: str = "euler",
         use_optimal_transport: bool = False,
         optimal_transport_kwargs: dict[str, any] = None,
         **kwargs,
@@ -38,30 +38,26 @@ class FlowMatching(InferenceNetwork):
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
 
         self.use_optimal_transport = use_optimal_transport
-        self.optimal_transport_kwargs = optimal_transport_kwargs or {
-            "method": "sinkhorn",
-            "cost": "euclidean",
-            "regularization": 0.1,
-            "max_steps": 1000,
-            "tolerance": 1e-4,
-        }
+
+        if optimal_transport_kwargs is None:
+            optimal_transport_kwargs = {
+                "method": "sinkhorn",
+                "cost": "euclidean",
+                "regularization": 0.1,
+                "max_steps": 1000,
+                "tolerance": 1e-4,
+            }
+
+        self.optimal_transport_kwargs = optimal_transport_kwargs
 
         self.seed_generator = keras.random.SeedGenerator()
 
-        match integrator:
-            case "euler":
-                self.integrator = EulerIntegrator(subnet, **kwargs)
-            case "rk2":
-                self.integrator = RK2Integrator(subnet, **kwargs)
-            case "rk4":
-                self.integrator = RK4Integrator(subnet, **kwargs)
-            case _:
-                raise NotImplementedError(f"No support for {integrator} integration")
+        self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
+        self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
 
         # serialization: store all parameters necessary to call __init__
         self.config = {
             "base_distribution": base_distribution,
-            "integrator": integrator,
             "use_optimal_transport": use_optimal_transport,
             "optimal_transport_kwargs": optimal_transport_kwargs,
             **kwargs,
@@ -69,8 +65,21 @@ class FlowMatching(InferenceNetwork):
         self.config = serialize_value_or_type(self.config, "subnet", subnet)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
-        super().build(xz_shape)
-        self.integrator.build(xz_shape, conditions_shape)
+        super().build(xz_shape, conditions_shape=conditions_shape)
+
+        self.output_projector.units = xz_shape[-1]
+        input_shape = list(xz_shape)
+
+        # construct time vector
+        input_shape[-1] += 1
+        if conditions_shape is not None:
+            input_shape[-1] += conditions_shape[-1]
+
+        input_shape = tuple(input_shape)
+
+        self.subnet.build(input_shape)
+        out_shape = self.subnet.compute_output_shape(input_shape)
+        self.output_projector.build(out_shape)
 
     def get_config(self):
         base_config = super().get_config()
@@ -81,33 +90,74 @@ class FlowMatching(InferenceNetwork):
         config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
+    def velocity(self, xz: Tensor, t: float | Tensor, conditions: Tensor = None) -> Tensor:
+        if not keras.ops.is_tensor(t):
+            t = keras.ops.convert_to_tensor(t, dtype=keras.ops.dtype(xz))
+
+        if keras.ops.ndim(t) == 0:
+            t = keras.ops.full((keras.ops.shape(xz)[0],), t, dtype=keras.ops.dtype(xz))
+
+        t = expand_right_as(t, xz)
+        t = keras.ops.tile(t, [1] + list(keras.ops.shape(xz)[1:-1]) + [1])
+
+        if conditions is None:
+            xtc = keras.ops.concatenate([xz, t], axis=-1)
+        else:
+            xtc = keras.ops.concatenate([xz, t, conditions], axis=-1)
+
+        return self.output_projector(self.subnet(xtc))
+
+    def _velocity_trace(self, xz: Tensor, t: Tensor, conditions: Tensor = None, max_steps: int = 1) -> (Tensor, Tensor):
+        def f(x):
+            return self.velocity(x, t, conditions=conditions)
+
+        v, trace = jacobian_trace(f, xz, max_steps=max_steps)
+
+        return v, trace
+
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        steps = kwargs.get("steps", 100)
-
         if density:
-            z, trace = self.integrator(x, conditions=conditions, steps=steps, density=True)
-            log_prob = self.base_distribution.log_prob(z)
-            log_density = log_prob + trace
-            return z, log_density
 
-        z = self.integrator(x, conditions=conditions, steps=steps, density=False)
-        return z
+            def deltas(t, xz):
+                v, trace = self._velocity_trace(xz, t, conditions=conditions)
+                return {"xz": v, "trace": trace}
+
+            state = {"xz": x, "trace": 0.0}
+            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **kwargs)
+
+            return state["xz"], state["trace"]
+
+        def deltas(t, xz):
+            return {"xz": self.velocity(xz, t, conditions=conditions)}
+
+        state = {"xz": x}
+        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **kwargs)
+
+        return state["xz"]
 
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        steps = kwargs.get("steps", 100)
-
         if density:
-            x, trace = self.integrator(z, conditions=conditions, steps=steps, density=True, inverse=True)
-            log_prob = self.base_distribution.log_prob(z)
-            log_density = log_prob - trace
-            return x, log_density
 
-        x = self.integrator(z, conditions=conditions, steps=steps, density=False, inverse=True)
-        return x
+            def deltas(t, xz):
+                v, trace = self._velocity_trace(xz, t, conditions=conditions)
+                return {"xz": v, "trace": trace}
+
+            state = {"xz": z, "trace": 0.0}
+            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **kwargs)
+
+            return state["xz"], state["trace"]
+
+        def deltas(t, xz):
+            return {"xz": self.velocity(xz, t, conditions=conditions)}
+
+        state = {"xz": z}
+        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **kwargs)
+
+        return state["xz"]
 
     def compute_metrics(
         self, x: Tensor | Sequence[Tensor, ...], conditions: Tensor = None, stage: str = "training"
@@ -133,7 +183,7 @@ class FlowMatching(InferenceNetwork):
 
         base_metrics = super().compute_metrics(x1, conditions, stage)
 
-        predicted_velocity = self.integrator.velocity(x, t, conditions)
+        predicted_velocity = self.velocity(x, t, conditions)
 
         loss = keras.losses.mean_squared_error(target_velocity, predicted_velocity)
         loss = keras.ops.mean(loss)

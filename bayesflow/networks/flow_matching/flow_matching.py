@@ -108,14 +108,14 @@ class FlowMatching(InferenceNetwork):
         return self.output_projector(self.subnet(xtc, training=training), training=training)
 
     def _velocity_trace(
-        self, xz: Tensor, t: Tensor, conditions: Tensor = None, max_steps: int = 1, training: bool = False
+        self, xz: Tensor, t: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
     ) -> (Tensor, Tensor):
         def f(x):
             return self.velocity(x, t, conditions=conditions, training=training)
 
-        v, trace = jacobian_trace(f, xz, max_steps=max_steps)
+        v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
-        return v, trace
+        return v, keras.ops.expand_dims(trace, axis=-1)
 
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
@@ -126,10 +126,10 @@ class FlowMatching(InferenceNetwork):
                 v, trace = self._velocity_trace(xz, t, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
-            state = {"xz": x, "trace": 0.0}
+            state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
             state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **kwargs)
 
-            return state["xz"], state["trace"]
+            return state["xz"], keras.ops.squeeze(state["trace"], axis=-1)
 
         def deltas(t, xz):
             return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}
@@ -148,10 +148,10 @@ class FlowMatching(InferenceNetwork):
                 v, trace = self._velocity_trace(xz, t, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
-            state = {"xz": z, "trace": 0.0}
+            state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
             state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **kwargs)
 
-            return state["xz"], state["trace"]
+            return state["xz"], keras.ops.squeeze(state["trace"], axis=-1)
 
         def deltas(t, xz):
             return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}

@@ -1,13 +1,19 @@
 from collections.abc import Callable
+
 import keras
 
 from bayesflow.types import Tensor
-
 from .jacobian import jacobian
 from .vjp import vjp
 
 
-def jacobian_trace(f: Callable[[Tensor], Tensor], x: Tensor, max_steps: int = None, return_output: bool = False):
+def jacobian_trace(
+    f: Callable[[Tensor], Tensor],
+    x: Tensor,
+    max_steps: int = None,
+    return_output: bool = False,
+    seed: int | keras.random.SeedGenerator = None,
+):
     """Compute or estimate the trace of the Jacobian matrix of f.
 
     :param f: The function to be differentiated.
@@ -25,6 +31,9 @@ def jacobian_trace(f: Callable[[Tensor], Tensor], x: Tensor, max_steps: int = No
         Whether to return the output of f(x) along with the trace of the Jacobian.
         Default: False
 
+    :param seed: int or keras SeedGenerator
+        The seed to use for hutchinson trace estimation. Only has an effect when max_steps < d.
+
     :return: 2-tuple of tensors:
         1. The output of f(x) (if return_output is True)
         2. Tensor of shape (n,)
@@ -36,7 +45,7 @@ def jacobian_trace(f: Callable[[Tensor], Tensor], x: Tensor, max_steps: int = No
         fx, jac = jacobian(f, x, return_output=True)
         trace = keras.ops.trace(jac, axis1=-2, axis2=-1)
     else:
-        fx, trace = _hutchinson(f, x, steps=max_steps, return_output=True)
+        fx, trace = _hutchinson(f, x, steps=max_steps, return_output=True, seed=seed)
 
     if return_output:
         return fx, trace
@@ -44,7 +53,9 @@ def jacobian_trace(f: Callable[[Tensor], Tensor], x: Tensor, max_steps: int = No
     return trace
 
 
-def _hutchinson(f: callable, x: Tensor, steps: int = 1, return_output: bool = False):
+def _hutchinson(
+    f: callable, x: Tensor, steps: int = 1, return_output: bool = False, seed: int | keras.random.SeedGenerator = None
+):
     """Estimate the trace of the Jacobian matrix of f using Hutchinson's algorithm.
 
     :param f: The function to be differentiated.
@@ -67,7 +78,7 @@ def _hutchinson(f: callable, x: Tensor, steps: int = 1, return_output: bool = Fa
     fx, vjp_fn = vjp(f, x, return_output=True)
 
     for _ in range(steps):
-        projector = keras.random.normal(shape)
+        projector = keras.random.normal(shape, seed=seed)
         trace += keras.ops.sum(vjp_fn(projector) * projector, axis=-1)
 
     if return_output:

@@ -5,12 +5,10 @@ from numbers import Number
 import keras
 
 from bayesflow.types import Tensor
+from bayesflow.utils import filter_kwargs
 from . import logging
 
 ArrayLike = int | float | Tensor
-
-
-from bayesflow.utils import filter_kwargs
 
 
 def fixed_euler(
@@ -54,7 +52,7 @@ def dynamic_euler(
     step_size = step_size * tolerance / intermediate_error
 
     # consolidate step size
-    step_size = keras.ops.min(step_size)
+    step_size = keras.ops.take(step_size, keras.ops.argmin(keras.ops.abs(step_size)))
 
     return state, time, step_size
 
@@ -142,7 +140,7 @@ def dynamic_rk45(
     step_size = step_size * tolerance / intermediate_error
 
     # consolidate step size
-    step_size = keras.ops.min(step_size)
+    step_size = keras.ops.take(step_size, keras.ops.argmin(keras.ops.abs(step_size)))
 
     return state, time, step_size
 
@@ -151,7 +149,7 @@ def step_function_factory(fn: Callable, method: str, start_time, stop_time, step
     match steps, step_size:
         case "adaptive", "adaptive":
             # TODO: select a better initial step size
-            step_size = 1e-3
+            step_size = (stop_time - start_time) / 100
             use_adaptive_step_size = True
         case int(), "adaptive":
             step_size = (stop_time - start_time) / steps
@@ -201,7 +199,9 @@ def integrate(
 
     def cond(state, time, step_size, step):
         # step until the next step would exceed the stop time
-        return keras.ops.all(time + step_size < stop_time)
+        return keras.ops.all(
+            keras.ops.where(stop_time > start_time, time + step_size <= stop_time, time + step_size >= stop_time)
+        )
 
     def body(state, time, step_size, step):
         state, time, step_size = step_fn(state, time, step_size)

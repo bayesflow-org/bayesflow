@@ -10,12 +10,11 @@ from . import (
     workflows,
     utils,
 )
-
-from .workflows import BasicWorkflow
-from .approximators import ContinuousApproximator
 from .adapters import Adapter
+from .approximators import ContinuousApproximator
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset
 from .simulators import make_simulator
+from .workflows import BasicWorkflow
 
 
 def setup():
@@ -38,7 +37,7 @@ def setup():
 
     from bayesflow.utils import logging
 
-    logging.info(f"Using backend {keras.backend.backend()!r}")
+    logging.debug(f"Using backend {keras.backend.backend()!r}")
 
 
 # call and clean up namespace

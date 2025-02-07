@@ -75,6 +75,7 @@ class FlowMatching(InferenceNetwork):
             "base_distribution": base_distribution,
             "use_optimal_transport": use_optimal_transport,
             "optimal_transport_kwargs": optimal_transport_kwargs,
+            "integrate_kwargs": integrate_kwargs,
             **kwargs,
         }
         self.config = serialize_value_or_type(self.config, "subnet", subnet)

@@ -199,7 +199,7 @@ def integrate_adaptive(
         time_remaining = stop_time - (_time + _step_size)
 
         min_step_size = time_remaining / (max_steps - _step)
-        max_step_size = time_remaining / keras.ops.maximum(min_steps - _step, 1)
+        max_step_size = time_remaining / keras.ops.maximum(min_steps - _step, 1.0)
 
         # reorder
         min_step_size, max_step_size = (

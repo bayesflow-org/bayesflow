@@ -33,6 +33,7 @@ class FlowMatching(InferenceNetwork):
         base_distribution: str = "normal",
         use_optimal_transport: bool = False,
         loss_fn: str = "mse",
+        integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
         **kwargs,
     ):
@@ -40,12 +41,23 @@ class FlowMatching(InferenceNetwork):
 
         self.use_optimal_transport = use_optimal_transport
 
+        if integrate_kwargs is None:
+            integrate_kwargs = {
+                "method": "rk45",
+                "steps": "adaptive",
+                "tolerance": 1e-3,
+                "min_steps": 10,
+                "max_steps": 100,
+            }
+
+        self.integrate_kwargs = integrate_kwargs
+
         if optimal_transport_kwargs is None:
             optimal_transport_kwargs = {
                 "method": "sinkhorn",
                 "cost": "euclidean",
                 "regularization": 0.1,
-                "max_steps": 1000,
+                "max_steps": 100,
                 "tolerance": 1e-4,
             }
 
@@ -98,7 +110,7 @@ class FlowMatching(InferenceNetwork):
             t = keras.ops.convert_to_tensor(t, dtype=keras.ops.dtype(xz))
 
         if keras.ops.ndim(t) == 0:
-            t = keras.ops.full((keras.ops.shape(xz)[0],), t, dtype=keras.ops.dtype(xz))
+            t = keras.ops.broadcast_to(t, keras.ops.shape(xz)[:-1])
 
         t = expand_right_as(t, xz)
         t = keras.ops.tile(t, [1] + list(keras.ops.shape(xz)[1:-1]) + [1])
@@ -130,17 +142,22 @@ class FlowMatching(InferenceNetwork):
                 return {"xz": v, "trace": trace}
 
             state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
-            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **kwargs)
+            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
 
-            return state["xz"], keras.ops.squeeze(state["trace"], axis=-1)
+            z = state["xz"]
+            log_density = self.base_distribution.log_prob(z) + keras.ops.squeeze(state["trace"], axis=-1)
+
+            return z, log_density
 
         def deltas(t, xz):
             return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}
 
         state = {"xz": x}
-        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **kwargs)
+        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
 
-        return state["xz"]
+        z = state["xz"]
+
+        return z
 
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
@@ -152,17 +169,22 @@ class FlowMatching(InferenceNetwork):
                 return {"xz": v, "trace": trace}
 
             state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
-            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **kwargs)
+            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
 
-            return state["xz"], keras.ops.squeeze(state["trace"], axis=-1)
+            x = state["xz"]
+            log_density = self.base_distribution.log_prob(z) - keras.ops.squeeze(state["trace"], axis=-1)
+
+            return x, log_density
 
         def deltas(t, xz):
             return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}
 
         state = {"xz": z}
-        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **kwargs)
+        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
 
-        return state["xz"]
+        x = state["xz"]
+
+        return x
 
     def compute_metrics(
         self, x: Tensor | Sequence[Tensor, ...], conditions: Tensor = None, stage: str = "training"

@@ -12,7 +12,10 @@ from tests.utils import allclose, assert_layers_equal
 def test_build(inference_network, random_samples, random_conditions):
     assert inference_network.built is False
 
-    inference_network(random_samples, conditions=random_conditions)
+    samples_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+
+    inference_network.build(samples_shape, conditions_shape=conditions_shape)
 
     assert inference_network.built is True
 

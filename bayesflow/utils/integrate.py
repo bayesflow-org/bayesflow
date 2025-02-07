@@ -162,7 +162,7 @@ def integrate_adaptive(
     start_time: ArrayLike,
     stop_time: ArrayLike,
     min_steps: int = 10,
-    max_steps: int = 10_000,
+    max_steps: int = 1000,
     method: str = "rk45",
     **kwargs,
 ) -> dict[str, ArrayLike]:

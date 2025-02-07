@@ -107,14 +107,9 @@ class FlowMatching(InferenceNetwork):
         return cls(**config)
 
     def velocity(self, xz: Tensor, t: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
-        if not keras.ops.is_tensor(t):
-            t = keras.ops.convert_to_tensor(t, dtype=keras.ops.dtype(xz))
-
-        if keras.ops.ndim(t) == 0:
-            t = keras.ops.broadcast_to(t, keras.ops.shape(xz)[:-1])
-
+        t = keras.ops.convert_to_tensor(t)
         t = expand_right_as(t, xz)
-        t = keras.ops.tile(t, [1] + list(keras.ops.shape(xz)[1:-1]) + [1])
+        t = keras.ops.broadcast_to(t, keras.ops.shape(xz)[:-1] + (1,))
 
         if conditions is None:
             xtc = keras.ops.concatenate([xz, t], axis=-1)
@@ -196,7 +191,7 @@ class FlowMatching(InferenceNetwork):
         else:
             # not pre-configured, resample
             x1 = x
-            x0 = keras.random.normal(keras.ops.shape(x1), dtype=keras.ops.dtype(x1), seed=self.seed_generator)
+            x0 = self.base_distribution.sample(keras.ops.shape(x1), seed=self.seed_generator)
 
             if self.use_optimal_transport:
                 x1, x0, conditions = optimal_transport(

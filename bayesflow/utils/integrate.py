@@ -243,7 +243,7 @@ def integrate(
     **kwargs,
 ) -> dict[str, ArrayLike]:
     match steps:
-        case "adaptive":
+        case "adaptive" | "dynamic":
             return integrate_adaptive(fn, state, start_time, stop_time, min_steps, max_steps, method, **kwargs)
         case int():
             return integrate_fixed(fn, state, start_time, stop_time, steps, method, **kwargs)

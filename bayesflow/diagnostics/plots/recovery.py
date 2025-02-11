@@ -77,7 +77,7 @@ def recovery(
     if uncertainty_agg is not None:
         u = uncertainty_agg(targets, axis=1)
 
-    for i, ax in enumerate(np.atleast_1d(plot_data["axes"].flat)):
+    for i, ax in enumerate(plot_data["axes"].flat):
         if i >= plot_data["num_variables"]:
             break
 

@@ -19,12 +19,12 @@ from bayesflow.utils import (
 )
 
 
-from ..inference_network import InferenceNetwork
-from ..embeddings import FourierEmbedding
+from bayesflow.networks import InferenceNetwork
+from bayesflow.networks.embeddings import FourierEmbedding
 
 
 @register_keras_serializable(package="bayesflow.networks")
-class ContinuousConsistencyModel(InferenceNetwork):
+class ContinuousTimeConsistencyModel(InferenceNetwork):
     """Implements an sCM (simple, stable, and scalable Consistency Model)
     with continous-time Consistency Training (CT) as described in [1].
     The sampling procedure is taken from [2].

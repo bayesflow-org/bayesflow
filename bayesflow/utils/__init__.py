@@ -22,6 +22,9 @@ from .git import (
     repo_url,
 )
 from .hparam_utils import find_batch_size, find_memory_budget
+from .integrate import (
+    integrate,
+)
 from .io import (
     pickle_load,
     format_bytes,

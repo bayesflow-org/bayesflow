@@ -20,6 +20,8 @@ class MambaSSM(SummaryNetwork):
         state_dim: int = 16,
         conv_dim: int = 4,
         expand: int = 2,
+        dt_min: float = 0.001,
+        dt_max: float = 0.1,
         pooling: bool = True,
         dropout: int | float | None = 0.5,
         mamba_version: int = 2,
@@ -45,6 +47,10 @@ class MambaSSM(SummaryNetwork):
             The dimensionality of the convolutional layer in Mamba (default is 4).
         expand : int, optional
             The expansion factor for the hidden state in Mamba (default is 2).
+        dt_min : float, optional
+            Minimum dynamic state evolution over time (default is 0.001).
+        dt_max : float, optional
+            Maximum dynmaic state evolution over time (default is 0.1).
         pooling : bool, optional
             Whether to apply global average pooling (default is True).
         dropout : int, float, or None, optional
@@ -62,13 +68,20 @@ class MambaSSM(SummaryNetwork):
             raise NotImplementedError("MambaSSM currently only supports cuda")
         
         if mamba_version == 1:
-            mamba_gen = Mamba
+            mamba_gen = Mamba()
         elif mamba_version == 2:
             mamba_gen = Mamba2
         else:
             raise NotImplementedError("Mamba version must be 1 or 2")
         
-        self.mamba_blocks = [mamba_gen(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand).to(device) for _ in range(mamba_blocks)]
+        self.mamba_blocks = [mamba_gen(
+            d_model=ssm_dim,
+            d_state=state_dim,
+            d_conv=conv_dim,
+            expand=expand,
+            dt_min=dt_min,
+            dt_max=dt_max
+        ).to(device) for _ in range(mamba_blocks)]
         
         self.pooling = pooling
         if pooling:
@@ -80,7 +93,7 @@ class MambaSSM(SummaryNetwork):
         summary = time_series
         for mamba_block in self.mamba_blocks:
             summary = mamba_block(summary, **kwargs)
-            summary = keras.ops.log(1 + keras.ops.exp(summary)) # TODO: custom activatiom
+            # summary = keras.ops.log(1 + keras.ops.exp(summary)) # TODO: custom activatiom
 
         if self.pooling:
             summary = self.pooling(summary)

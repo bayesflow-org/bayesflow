@@ -32,7 +32,7 @@ class FreeFormFlow(InferenceNetwork):
     """
 
     ENCODER_MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256),
+        "widths": (256, 256, 256, 256),
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
@@ -41,7 +41,7 @@ class FreeFormFlow(InferenceNetwork):
     }
 
     DECODER_MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256),
+        "widths": (256, 256, 256, 256),
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
@@ -82,7 +82,7 @@ class FreeFormFlow(InferenceNetwork):
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
 
         if encoder_subnet == "mlp":
-            encoder_subnet_kwargs = self.ENCODER_MLP_DEFAULT_CONFIG.copy()
+            encoder_subnet_kwargs = FreeFormFlow.ENCODER_MLP_DEFAULT_CONFIG.copy()
             encoder_subnet_kwargs.update(kwargs.get("encoder_subnet_kwargs", {}))
         else:
             encoder_subnet_kwargs = kwargs.get("encoder_subnet_kwargs", {})
@@ -91,7 +91,7 @@ class FreeFormFlow(InferenceNetwork):
         self.encoder_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
 
         if decoder_subnet == "mlp":
-            decoder_subnet_kwargs = self.ENCODER_MLP_DEFAULT_CONFIG.copy()
+            decoder_subnet_kwargs = FreeFormFlow.DECODER_MLP_DEFAULT_CONFIG.copy()
             decoder_subnet_kwargs.update(kwargs.get("decoder_subnet_kwargs", {}))
         else:
             decoder_subnet_kwargs = kwargs.get("decoder_subnet_kwargs", {})

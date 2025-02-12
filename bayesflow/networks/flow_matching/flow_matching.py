@@ -28,7 +28,7 @@ class FlowMatching(InferenceNetwork):
     """
 
     MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256),
+        "widths": (256, 256, 256, 256, 256),
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
@@ -40,8 +40,16 @@ class FlowMatching(InferenceNetwork):
         "method": "sinkhorn",
         "cost": "euclidean",
         "regularization": 0.1,
-        "max_steps": 1000,
+        "max_steps": 100,
         "tolerance": 1e-4,
+    }
+
+    INTEGRATE_DEFAULT_CONFIG = {
+        "method": "rk45",
+        "steps": "adaptive",
+        "tolerance": 1e-3,
+        "min_steps": 10,
+        "max_steps": 100,
     }
 
     def __init__(
@@ -58,41 +66,28 @@ class FlowMatching(InferenceNetwork):
 
         self.use_optimal_transport = use_optimal_transport
 
-        if integrate_kwargs is None:
-            integrate_kwargs = {
-                "method": "rk45",
-                "steps": "adaptive",
-                "tolerance": 1e-3,
-                "min_steps": 10,
-                "max_steps": 100,
-            }
-
-        self.integrate_kwargs = integrate_kwargs
-
-        if optimal_transport_kwargs is None:
-            optimal_transport_kwargs = {
-                "method": "sinkhorn",
-                "cost": "euclidean",
-                "regularization": 0.1,
-                "max_steps": 100,
-                "tolerance": 1e-4,
-            }
+        self.integrate_kwargs = integrate_kwargs or FlowMatching.INTEGRATE_DEFAULT_CONFIG.copy()
+        self.optimal_transport_kwargs = optimal_transport_kwargs or FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG.copy()
 
         self.loss_fn = keras.losses.get(loss_fn)
 
-        self.optimal_transport_kwargs = optimal_transport_kwargs
-
         self.seed_generator = keras.random.SeedGenerator()
 
-        self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
+        if subnet == "mlp":
+            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG.copy()
+            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
+        else:
+            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+
+        self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
 
         # serialization: store all parameters necessary to call __init__
         self.config = {
             "base_distribution": base_distribution,
-            "use_optimal_transport": use_optimal_transport,
-            "optimal_transport_kwargs": optimal_transport_kwargs,
-            "integrate_kwargs": integrate_kwargs,
+            "use_optimal_transport": self.use_optimal_transport,
+            "optimal_transport_kwargs": self.optimal_transport_kwargs,
+            "integrate_kwargs": self.integrate_kwargs,
             **kwargs,
         }
         self.config = serialize_value_or_type(self.config, "subnet", subnet)

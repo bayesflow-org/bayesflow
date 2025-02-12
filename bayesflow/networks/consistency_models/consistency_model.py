@@ -29,6 +29,15 @@ class ConsistencyModel(InferenceNetwork):
     Discussion: https://openreview.net/forum?id=WNzy9bRDvG
     """
 
+    MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
+
     def __init__(
         self,
         total_steps: int | float,
@@ -65,12 +74,18 @@ class ConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
-        # Normal is the only supported base distribution for CMs
         super().__init__(base_distribution="normal", **keras_kwargs(kwargs))
 
         self.total_steps = float(total_steps)
 
-        self.student = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
+        if subnet == "mlp":
+            subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG.copy()
+            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
+        else:
+            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+
+        self.student = find_network(subnet, **subnet_kwargs)
+
         self.student_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
 
         self.sigma2 = ops.convert_to_tensor(sigma2)
@@ -82,6 +97,7 @@ class ConsistencyModel(InferenceNetwork):
 
         self.s0 = float(s0)
         self.s1 = float(s1)
+
         # create variable that works with JIT compilation
         self.current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
         self.current_step.assign(0)

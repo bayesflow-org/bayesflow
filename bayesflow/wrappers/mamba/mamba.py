@@ -74,14 +74,7 @@ class MambaSSM(SummaryNetwork):
         else:
             raise NotImplementedError("Mamba version must be 1 or 2")
         
-        self.mamba_blocks = [mamba_gen(
-            d_model=ssm_dim,
-            d_state=state_dim,
-            d_conv=conv_dim,
-            expand=expand,
-            dt_min=dt_min,
-            dt_max=dt_max
-        ).to(device) for _ in range(mamba_blocks)]
+        self.mamba_blocks = [mamba_gen(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max).to(device) for _ in range(mamba_blocks)]
         
         self.pooling = pooling
         if pooling:

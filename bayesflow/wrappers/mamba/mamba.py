@@ -80,7 +80,7 @@ class MambaSSM(SummaryNetwork):
         summary = time_series
         for mamba_block in self.mamba_blocks:
             summary = mamba_block(summary, **kwargs)
-            summary = keras.activations.sigmoid(summary) # TODO: custom activatiom
+            summary = keras.activations.softplus(summary) # TODO: custom activatiom
 
         if self.pooling:
             summary = self.pooling(summary)

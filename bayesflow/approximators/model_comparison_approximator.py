@@ -1,6 +1,7 @@
 from collections.abc import Mapping, Sequence
 
 import keras
+import numpy as np
 from keras.saving import (
     deserialize_keras_object as deserialize,
     register_keras_serializable as serializable,
@@ -198,3 +199,44 @@ class ModelComparisonApproximator(Approximator):
         }
 
         return base_config | config
+
+    def predict(
+        self,
+        *,
+        conditions: dict[str, np.ndarray],
+        logits: bool = False,
+        **kwargs,
+    ) -> np.ndarray:
+        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
+        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
+
+        output = self._predict(**conditions, **kwargs)
+
+        if not logits:
+            output = keras.ops.softmax(output)
+
+        output = keras.ops.convert_to_numpy(output)
+
+        return output
+
+    def _predict(self, classifier_conditions: Tensor = None, summary_variables: Tensor = None, **kwargs) -> Tensor:
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot use summary variables without a summary network.")
+        else:
+            if summary_variables is None:
+                raise ValueError("Summary variables are required when a summary network is present")
+
+            summary_outputs = self.summary_network(
+                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+            )
+
+            if classifier_conditions is None:
+                classifier_conditions = summary_outputs
+            else:
+                classifier_conditions = keras.ops.concatenate([classifier_conditions, summary_outputs], axis=1)
+
+        output = self.classifier_network(classifier_conditions)
+        output = self.logits_projector(output)
+
+        return output

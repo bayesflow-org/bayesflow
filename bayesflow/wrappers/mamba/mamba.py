@@ -68,7 +68,7 @@ class MambaSSM(SummaryNetwork):
             raise NotImplementedError("MambaSSM currently only supports cuda")
         
         if mamba_version == 1:
-            mamba_gen = Mamba()
+            mamba_gen = Mamba
         elif mamba_version == 2:
             mamba_gen = Mamba2
         else:

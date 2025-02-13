@@ -79,12 +79,19 @@ class Broadcast(Transform):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Broadcast":
+        # Deserialize turns tuples to lists, undo it if necessary
+        exclude = deserialize(config["exclude"], custom_objects)
+        exclude = tuple(exclude) if isinstance(exclude, list) else exclude
+        expand = deserialize(config["expand"], custom_objects)
+        expand = tuple(expand) if isinstance(expand, list) else expand
+        squeeze = deserialize(config["squeeze"], custom_objects)
+        squeeze = tuple(squeeze) if isinstance(squeeze, list) else squeeze
         return cls(
             keys=deserialize(config["keys"], custom_objects),
             to=deserialize(config["to"], custom_objects),
-            expand=deserialize(config["expand"], custom_objects),
-            exclude=deserialize(config["exclude"], custom_objects),
-            squeeze=deserialize(config["squeeze"], custom_objects),
+            expand=expand,
+            exclude=exclude,
+            squeeze=squeeze,
         )
 
     def get_config(self) -> dict:

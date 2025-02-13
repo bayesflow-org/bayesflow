@@ -41,10 +41,14 @@ class Standardize(ElementwiseTransform):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Standardize":
+        # Deserialize turns tuples to lists, undo it if necessary
+        deserialized_axis = deserialize(config["axis"], custom_objects)
+        if isinstance(deserialized_axis, list):
+            deserialized_axis = tuple(deserialized_axis)
         return cls(
             mean=deserialize(config["mean"], custom_objects),
             std=deserialize(config["std"], custom_objects),
-            axis=deserialize(config["axis"], custom_objects),
+            axis=deserialized_axis,
             momentum=deserialize(config["momentum"], custom_objects),
         )
 

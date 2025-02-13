@@ -99,7 +99,8 @@ Check out some of our walk-through notebooks below. We are actively working on p
 4. [SBML model using an external simulator](examples/From_ABC_to_BayesFlow.ipynb)
 5. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-7. More coming soon...
+7. [Simple model comparison example (One-Sample T-Test)](examples/One_Sample_TTest.ipynb)
+8. More coming soon...
 
 ## Documentation \& Help
 

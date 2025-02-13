@@ -13,8 +13,8 @@ from bayesflow.utils.plot_utils import make_figure
 
 
 def mc_confusion_matrix(
-    true_models: dict[str, np.ndarray] | np.ndarray,
     pred_models: dict[str, np.ndarray] | np.ndarray,
+    true_models: dict[str, np.ndarray] | np.ndarray,
     model_names: Sequence[str] = None,
     fig_size: tuple = (5, 5),
     label_fontsize: int = 16,
@@ -31,10 +31,10 @@ def mc_confusion_matrix(
 
     Parameters
     ----------
-    true_models    : np.ndarray of shape (num_data_sets, num_models)
-        The one-hot-encoded true model indices per data set.
     pred_models    : np.ndarray of shape (num_data_sets, num_models)
         The predicted posterior model probabilities (PMPs) per data set.
+    true_models    : np.ndarray of shape (num_data_sets, num_models)
+        The one-hot-encoded true model indices per data set.
     model_names    : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.
     fig_size       : tuple or None, optional, default: (5, 5)

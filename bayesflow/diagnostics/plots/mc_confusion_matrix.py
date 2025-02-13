@@ -23,7 +23,7 @@ def mc_confusion_matrix(
     tick_fontsize: int = 12,
     xtick_rotation: int = None,
     ytick_rotation: int = None,
-    normalize: bool = True,
+    normalize: str = None,
     cmap: matplotlib.colors.Colormap | str = None,
     title: bool = True,
 ) -> plt.Figure:
@@ -51,9 +51,11 @@ def mc_confusion_matrix(
         Rotation of x-axis tick labels (helps with long model names).
     ytick_rotation: int, optional, default: None
         Rotation of y-axis tick labels (helps with long model names).
-    normalize      : bool, optional, default: True
-        A flag for normalization of the confusion matrix.
-        If True, each row of the confusion matrix is normalized to sum to 1.
+    normalize : {'true', 'pred', 'all'}, default=None
+        Passed to sklearn.metrics.confusion_matrix.
+        Normalizes confusion matrix over the true (rows), predicted (columns)
+        conditions or all the population. If None, confusion matrix will not be
+        normalized.
     cmap           : matplotlib.colors.Colormap or str, optional, default: None
         Colormap to be used for the cells. If a str, it should be the name of a registered colormap,
         e.g., 'viridis'. Default colormap matches the BayesFlow defaults by ranging from white to red.
@@ -77,29 +79,26 @@ def mc_confusion_matrix(
     pred_models = ops.argmax(pred_models, axis=1)
 
     # Compute confusion matrix
-    cm = confusion_matrix(true_models, pred_models)
-
-    # if normalize:
-    #     # Sum along rows and keep dimensions for broadcasting
-    #     cm_sum = ops.sum(cm, axis=1, keepdims=True)
-    #
-    #     # Broadcast division for normalization
-    #     cm_normalized = cm / cm_sum
+    cm = confusion_matrix(true_models, pred_models, normalize=normalize)
 
     # Initialize figure
     fig, ax = make_figure(1, 1, figsize=fig_size)
+    ax = ax[0]
     im = ax.imshow(cm, interpolation="nearest", cmap=cmap)
     cbar = ax.figure.colorbar(im, ax=ax, shrink=0.75)
 
     cbar.ax.tick_params(labelsize=value_fontsize)
 
-    ax.set(xticks=ops.arange(cm.shape[1]), yticks=ops.arange(cm.shape[0]))
+    ax.set_xticks(range(cm.shape[0]))
     ax.set_xticklabels(model_names, fontsize=tick_fontsize)
     if xtick_rotation:
         plt.xticks(rotation=xtick_rotation, ha="right")
+
+    ax.set_yticks(range(cm.shape[1]))
     ax.set_yticklabels(model_names, fontsize=tick_fontsize)
     if ytick_rotation:
         plt.yticks(rotation=ytick_rotation)
+
     ax.set_xlabel("Predicted model", fontsize=label_fontsize)
     ax.set_ylabel("True model", fontsize=label_fontsize)
 

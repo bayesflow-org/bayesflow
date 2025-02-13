@@ -12,7 +12,7 @@ def inverse_transform(x):
 
 @pytest.fixture()
 def custom_objects():
-    return globals() | np.__dict__
+    return dict(forward_transform=forward_transform, inverse_transform=inverse_transform)
 
 
 @pytest.fixture()
@@ -22,7 +22,10 @@ def adapter():
     d = (
         Adapter()
         .to_array()
-        .convert_dtype("float64", "float32")
+        .as_set(["s1", "s2"])
+        .broadcast("t1", to="t2")
+        .as_time_series(["t1", "t2"])
+        .convert_dtype("float64", "float32", exclude="o1")
         .concatenate(["x1", "x2"], into="x")
         .concatenate(["y1", "y2"], into="y")
         .expand_dims(["z1"], axis=2)
@@ -30,7 +33,11 @@ def adapter():
         # TODO: fix this in keras
         # .apply(include="p1", forward=np.log, inverse=np.exp)
         .constrain("p2", lower=0)
-        .standardize()
+        .standardize(exclude=["t1", "t2", "o1"])
+        .drop("d1")
+        .one_hot("o1", 10)
+        .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "t1", "t2", "o1"])
+        .rename("o1", "o2")
     )
 
     return d
@@ -46,4 +53,11 @@ def random_data():
         "z1": np.random.standard_normal(size=(32, 2)),
         "p1": np.random.lognormal(size=(32, 2)),
         "p2": np.random.lognormal(size=(32, 2)),
+        "s1": np.random.standard_normal(size=(32, 3, 2)),
+        "s2": np.random.standard_normal(size=(32, 3, 2)),
+        "t1": np.zeros((3, 2)),
+        "t2": np.ones((32, 3, 2)),
+        "d1": np.random.standard_normal(size=(32, 2)),
+        "d2": np.random.standard_normal(size=(32, 2)),
+        "o1": np.random.randint(0, 9, size=(32, 2)),
     }

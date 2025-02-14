@@ -191,22 +191,22 @@ class BasicWorkflow(Workflow):
             figures["losses"] = bf_plots.loss(self.history, **kwargs.get("loss_kwargs", {}))
 
         figures["recovery"] = bf_plots.recovery(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=post_samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("recovery_kwargs", {}),
         )
 
         figures["calibration_ecdf"] = bf_plots.calibration_ecdf(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=post_samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("calibration_ecdf_kwargs", {}),
         )
 
         figures["z_score_contraction"] = bf_plots.z_score_contraction(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=post_samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("z_score_contraction_kwargs", {}),
         )
@@ -236,22 +236,22 @@ class BasicWorkflow(Workflow):
         )
 
         root_mean_squared_error = bf_metrics.root_mean_squared_error(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=post_samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("root_mean_squared_error_kwargs", {}),
         )
 
         contraction = bf_metrics.posterior_contraction(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=post_samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("posterior_contraction_kwargs", {}),
         )
 
         calibration_errors = bf_metrics.calibration_error(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=post_samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("calibration_error_kwargs", {}),
         )

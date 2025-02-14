@@ -68,8 +68,8 @@ def mc_calibration(
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
-        targets=pred_models,
-        references=true_models,
+        estimates=pred_models,
+        targets=true_models,
         variable_names=model_names,
         num_col=num_col,
         num_row=num_row,
@@ -79,7 +79,7 @@ def mc_calibration(
 
     # Compute calibration
     cal_errors, true_probs, pred_probs = expected_calibration_error(
-        plot_data["references"], plot_data["targets"], num_bins
+        plot_data["targets"], plot_data["estimates"], num_bins
     )
 
     for j, ax in enumerate(plot_data["axes"].flat):
@@ -88,8 +88,8 @@ def mc_calibration(
 
         # Plot PMP distribution over bins
         uniform_bins = np.linspace(0.0, 1.0, num_bins + 1)
-        norm_weights = np.ones_like(plot_data["targets"]) / len(plot_data["targets"])
-        ax.hist(plot_data["targets"][:, j], bins=uniform_bins, weights=norm_weights[:, j], color="grey", alpha=0.3)
+        norm_weights = np.ones_like(plot_data["estimates"]) / len(plot_data["estimates"])
+        ax.hist(plot_data["estimates"][:, j], bins=uniform_bins, weights=norm_weights[:, j], color="grey", alpha=0.3)
 
         # Plot AB line
         ax.plot((0, 1), (0, 1), "--", color="black", alpha=0.9)

@@ -30,12 +30,12 @@ class Concatenate(Transform):
      )
     """
 
-    def __init__(self, keys: Sequence[str], *, into: str, axis: int = -1):
+    def __init__(self, keys: Sequence[str], *, into: str, axis: int = -1, _indices: list | None = None):
         self.keys = keys
         self.into = into
         self.axis = axis
 
-        self.indices = None
+        self.indices = _indices
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Concatenate":
@@ -43,6 +43,7 @@ class Concatenate(Transform):
             keys=deserialize(config["keys"], custom_objects),
             into=deserialize(config["into"], custom_objects),
             axis=deserialize(config["axis"], custom_objects),
+            _indices=deserialize(config["indices"], custom_objects),
         )
 
     def get_config(self) -> dict:
@@ -50,6 +51,7 @@ class Concatenate(Transform):
             "keys": serialize(self.keys),
             "into": serialize(self.into),
             "axis": serialize(self.axis),
+            "indices": serialize(self.indices),
         }
 
     def forward(self, data: dict[str, any], *, strict: bool = True, **kwargs) -> dict[str, any]:

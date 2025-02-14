@@ -9,17 +9,18 @@ from bayesflow.utils import prepare_plot_data, prettify_subplots, make_quadratic
 
 
 def recovery(
+    estimates: dict[str, np.ndarray] | np.ndarray,
     targets: dict[str, np.ndarray] | np.ndarray,
-    references: dict[str, np.ndarray] | np.ndarray,
+    variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     point_agg=np.median,
     uncertainty_agg=median_abs_deviation,
+    add_corr: bool = True,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
     metric_fontsize: int = 16,
     tick_fontsize: int = 12,
-    add_corr: bool = True,
     color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
@@ -46,7 +47,37 @@ def recovery(
 
     Parameters
     ----------
-    #TODO
+    estimates           : np.ndarray of shape (num_datasets, num_post_draws, num_params)
+        The posterior draws obtained from num_datasets
+    targets        : np.ndarray of shape (num_datasets, num_params)
+        The prior draws (true parameters) used for generating the num_datasets
+    variable_keys       : list or None, optional, default: None
+       Select keys from the dictionaries provided in estimates and targets.
+       By default, select all keys.
+    variable_names    : list or None, optional, default: None
+        The individual parameter names for nice plot titles. Inferred if None
+    point_agg         : function to compute point estimates. Default: median
+    uncertainty_agg   : function to compute uncertainty estimates. Default: MAD
+    add_corr          : boolean, default: True
+        Should correlations between estimates and ground truth values be shown?
+    figsize           : tuple or None, optional, default : None
+        The figure size passed to the matplotlib constructor. Inferred if None.
+    label_fontsize    : int, optional, default: 16
+        The font size of the y-label text.
+    title_fontsize    : int, optional, default: 18
+        The font size of the title text.
+    metric_fontsize   : int, optional, default: 16
+        The font size of the metrics shown as text.
+    tick_fontsize     : int, optional, default: 12
+        The font size of the axis ticklabels.
+    color             : str, optional, default: '#8f2727'
+        The color for the true vs. estimated scatter points and error bars.
+    num_row           : int, optional, default: None
+        The number of rows for the subplots. Dynamically determined if None.
+    num_col           : int, optional, default: None
+        The number of columns for the subplots. Dynamically determined if None.
+    xlabel:
+    ylabel:
 
     Returns
     -------
@@ -55,27 +86,28 @@ def recovery(
     Raises
     ------
     ShapeError
-        If there is a deviation from the expected shapes of ``post_samples`` and ``prior_samples``.
+        If there is a deviation from the expected shapes of ``estimates`` and ``targets``.
     """
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
+        estimates=estimates,
         targets=targets,
-        references=references,
+        variable_keys=variable_keys,
         variable_names=variable_names,
         num_col=num_col,
         num_row=num_row,
         figsize=figsize,
     )
 
+    estimates = plot_data.pop("estimates")
     targets = plot_data.pop("targets")
-    references = plot_data.pop("references")
 
     # Compute point estimates and uncertainties
-    point_estimate = point_agg(targets, axis=1)
+    point_estimate = point_agg(estimates, axis=1)
 
     if uncertainty_agg is not None:
-        u = uncertainty_agg(targets, axis=1)
+        u = uncertainty_agg(estimates, axis=1)
 
     for i, ax in enumerate(plot_data["axes"].flat):
         if i >= plot_data["num_variables"]:
@@ -84,7 +116,7 @@ def recovery(
         # Add scatter and error bars
         if uncertainty_agg is not None:
             _ = ax.errorbar(
-                references[:, i],
+                targets[:, i],
                 point_estimate[:, i],
                 yerr=u[:, i],
                 fmt="o",
@@ -93,12 +125,12 @@ def recovery(
                 **kwargs,
             )
         else:
-            _ = ax.scatter(references[:, i], point_estimate[:, i], alpha=0.5, color=color, **kwargs)
+            _ = ax.scatter(targets[:, i], point_estimate[:, i], alpha=0.5, color=color, **kwargs)
 
-        make_quadratic(ax, references[:, i], point_estimate[:, i])
+        make_quadratic(ax, targets[:, i], point_estimate[:, i])
 
         if add_corr:
-            corr = np.corrcoef(references[:, i], point_estimate[:, i])[0, 1]
+            corr = np.corrcoef(targets[:, i], point_estimate[:, i])[0, 1]
             add_metric(ax=ax, metric_text="$r$", metric_value=corr, metric_fontsize=metric_fontsize)
 
         ax.set_title(plot_data["variable_names"][i], fontsize=title_fontsize)

@@ -93,12 +93,13 @@ conda env create --file environment.yaml --name bayesflow
 
 Check out some of our walk-through notebooks below. We are actively working on porting all notebooks to the new interface so more will be available soon!
 
-1. [Two moons starter toy example](examples/TwoMoons_StarterNotebook.ipynb)
-2. [Linear regression](examples/Linear_Regression.ipynb)
-3. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-4. [SIR model with custom summary network](examples/SIR_PosteriorEstimation.ipynb)
+1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
+2. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
+3. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
+4. [SBML model using an external simulator](examples/SBML_Posterior_Estimation.ipynb)
 5. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
-6. Coming soon...
+6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
+7. More coming soon...
 
 ## Documentation \& Help
 

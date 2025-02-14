@@ -28,7 +28,10 @@ def subnet(request):
 def flow_matching():
     from bayesflow.networks import FlowMatching
 
-    return FlowMatching()
+    return FlowMatching(
+        subnet_kwargs={"widths": None, "width": 64, "depth": 2},
+        integrate_kwargs={"method": "rk45", "steps": 100},
+    )
 
 
 @pytest.fixture()

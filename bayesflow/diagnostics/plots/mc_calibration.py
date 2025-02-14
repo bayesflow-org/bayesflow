@@ -34,10 +34,10 @@ def mc_calibration(
 
     Parameters
     ----------
-    true_models       : np.ndarray of shape (num_data_sets, num_models)
-        The one-hot-encoded true model indices per data set.
     pred_models       : np.ndarray of shape (num_data_sets, num_models)
         The predicted posterior model probabilities (PMPs) per data set.
+    true_models       : np.ndarray of shape (num_data_sets, num_models)
+        The one-hot-encoded true model indices per data set.
     model_names       : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.
     num_bins          : int, optional, default: 10

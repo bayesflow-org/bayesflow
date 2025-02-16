@@ -96,7 +96,7 @@ Check out some of our walk-through notebooks below. We are actively working on p
 1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
 2. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
 3. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
-4. [SBML model using an external simulator](examples/SBML_Posterior_Estimation.ipynb)
+4. [SBML model using an external simulator](examples/From_ABC_to_BayesFlow.ipynb)
 5. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
 7. More coming soon...

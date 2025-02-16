@@ -76,6 +76,8 @@ class MambaSSM(SummaryNetwork):
         
         self.mamba_blocks = [mamba_gen(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max).to(device) for _ in range(mamba_blocks)]
         
+        self.layernorm = keras.layers.LayerNormalization(axis=-1)
+        
         self.pooling = pooling
         if pooling:
             self.pooling = keras.layers.GlobalAveragePooling1D()
@@ -86,7 +88,7 @@ class MambaSSM(SummaryNetwork):
         summary = time_series
         for mamba_block in self.mamba_blocks:
             summary = mamba_block(summary, **kwargs)
-            # summary = keras.ops.log(1 + keras.ops.exp(summary)) # TODO: custom activatiom
+            summary = self.layernorm(summary)
 
         if self.pooling:
             summary = self.pooling(summary)

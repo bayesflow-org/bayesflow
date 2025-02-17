@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, MutableSequence, Sequence
 
 import numpy as np
 from keras.saving import (
@@ -9,6 +9,7 @@ from keras.saving import (
 
 from .transforms import (
     AsSet,
+    AsTimeSeries,
     Broadcast,
     Concatenate,
     Constrain,
@@ -25,17 +26,16 @@ from .transforms import (
     ToArray,
     Transform,
 )
-
 from .transforms.filter_transform import Predicate
 
 
 @serializable(package="bayesflow.adapters")
-class Adapter:
+class Adapter(MutableSequence[Transform]):
     def __init__(self, transforms: Sequence[Transform] | None = None):
         if transforms is None:
             transforms = []
 
-        self.transforms = transforms
+        self.transforms = list(transforms)
 
     @staticmethod
     def create_default(inference_variables: Sequence[str]) -> "Adapter":
@@ -76,40 +76,69 @@ class Adapter:
         return self.forward(data, **kwargs)
 
     def __repr__(self):
-        str_transf = ""
-        if isinstance(self.transforms, list):
-            for i in range(0, len(self.transforms)):
-                str_transf = str_transf + str(i) + ": " + repr(self.transforms[i])
-                if i != len(self.transforms) - 1:
-                    str_transf = str_transf + " -> "
-            return f"Adapter([{str_transf}])"
-        else:
-            return f"Adapter([ 0: {repr(self.transforms)}])"
+        result = ""
+        for i, transform in enumerate(self):
+            result += f"{i}: {transform!r}"
+            if i != len(self) - 1:
+                result += " -> "
 
-    def __getitem__(self, index):
-        return Adapter(transforms=self.transforms[index])
+        return f"Adapter([{result}])"
 
-    def __setitem__(self, index, new_value):
-        if not isinstance(new_value, Adapter):
-            raise TypeError("new_value must be an Adapter instance")
+    # list methods
 
-        if len(new_value.transforms) == 0:
-            raise ValueError(
-                "new_value is an Adapter instance without any specified transforms, new_value Adapter must contain at least one transform."
-            )
-
-        if isinstance(index, slice):
-            self.transforms[index] = new_value.transforms[:]
-
-        elif isinstance(index, int):
-            self.transforms[index : index + 1] = new_value.transforms[:]
-
-        else:
-            raise TypeError("Invalid index type. Must be int or slice.")
-
-    def add_transform(self, transform: Transform):
-        self.transforms.append(transform)
+    def append(self, value: Transform) -> "Adapter":
+        self.transforms.append(value)
         return self
+
+    def __delitem__(self, key: int | slice):
+        del self.transforms[key]
+
+    def extend(self, values: Sequence[Transform]) -> "Adapter":
+        if isinstance(values, Adapter):
+            values = values.transforms
+
+        self.transforms.extend(values)
+
+        return self
+
+    def __getitem__(self, item: int | slice) -> "Adapter":
+        if isinstance(item, int):
+            return self.transforms[item]
+
+        return Adapter(self.transforms[item])
+
+    def insert(self, index: int, value: Transform | Sequence[Transform]) -> "Adapter":
+        if isinstance(value, Adapter):
+            value = value.transforms
+
+        if isinstance(value, Sequence):
+            # convenience: Adapters are always flat
+            self.transforms = self.transforms[:index] + list(value) + self.transforms[index:]
+        else:
+            self.transforms.insert(index, value)
+
+        return self
+
+    def __setitem__(self, key: int | slice, value: Transform | Sequence[Transform]) -> "Adapter":
+        if isinstance(value, Adapter):
+            value = value.transforms
+
+        if isinstance(key, int) and isinstance(value, Sequence):
+            if key < 0:
+                key += len(self.transforms)
+
+            key = slice(key, key + 1)
+
+        self.transforms[key] = value
+
+        return self
+
+    def __len__(self):
+        return len(self.transforms)
+
+    # adapter methods
+
+    add_transform = append
 
     def apply(
         self,
@@ -142,13 +171,27 @@ class Adapter:
         self.transforms.append(transform)
         return self
 
+    def as_time_series(self, keys: str | Sequence[str]):
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: AsTimeSeries() for key in keys})
+        self.transforms.append(transform)
+        return self
+
     def broadcast(
-        self, keys: str | Sequence[str], *, to: str, expand: str | int | tuple = "left", exclude: int | tuple = -1
+        self,
+        keys: str | Sequence[str],
+        *,
+        to: str,
+        expand: str | int | tuple = "left",
+        exclude: int | tuple = -1,
+        squeeze: int | tuple = None,
     ):
         if isinstance(keys, str):
             keys = [keys]
 
-        transform = Broadcast(keys, to=to, expand=expand, exclude=exclude)
+        transform = Broadcast(keys, to=to, expand=expand, exclude=exclude, squeeze=squeeze)
         self.transforms.append(transform)
         return self
 
@@ -156,12 +199,11 @@ class Adapter:
         self.transforms = []
         return self
 
-    def concatenate(self, keys: Sequence[str], *, into: str, axis: int = -1):
+    def concatenate(self, keys: str | Sequence[str], *, into: str, axis: int = -1):
         if isinstance(keys, str):
-            # this is a common mistake, and also passes the type checker since str is a sequence of characters
-            raise ValueError("Keys must be a sequence of strings. To rename a single key, use the `rename` method.")
-
-        transform = Concatenate(keys, into=into, axis=axis)
+            transform = Rename(keys, to_key=into)
+        else:
+            transform = Concatenate(keys, into=into, axis=axis)
         self.transforms.append(transform)
         return self
 

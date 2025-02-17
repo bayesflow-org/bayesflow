@@ -5,7 +5,6 @@ from keras.saving import register_keras_serializable as serializable
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
 
-from ..embeddings import Time2Vec
 from ..summary_network import SummaryNetwork
 
 from .mab import MultiHeadAttentionBlock
@@ -28,15 +27,17 @@ class FusionTransformer(SummaryNetwork):
         kernel_initializer: str = "he_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
-        t2v_embed_dim: int = 8,
         template_type: str = "lstm",
         bidirectional: bool = True,
         template_dim: int = 128,
         **kwargs,
     ):
-        """Creates a fusion transformer used to flexibly compress time series. If the time intervals vary across
-        batches, it is highly recommended that your simulator also returns a "time" vector denoting absolute or
-        relative time.
+        """Creates a fusion transformer used to flexibly compress time series and learn additional time embeddings
+        using a recurrent neural network. If the time intervals vary across batches, it is highly recommended that
+        your simulator also returns a "time" vector appended to the simulator outputs.
+
+        Important: This network needs at least 2 transformer blocks and will generally be slower than the
+        corresponding TimeSeriesTransformer.
 
         Parameters
         ----------
@@ -73,6 +74,8 @@ class FusionTransformer(SummaryNetwork):
         template_dim         : int, optional (default - 128)
             Only used if ``template_type`` in ['lstm', 'gru']. The number of hidden
             units (equiv. output dimensions) of the recurrent network.
+        time_axis     : int, optional (default - None)
+            The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into t2v.
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
@@ -81,9 +84,6 @@ class FusionTransformer(SummaryNetwork):
 
         # Ensure all tuple-settings have the same length
         check_lengths_same(embed_dims, num_heads, mlp_depths, mlp_widths)
-
-        # Initialize Time2Vec embedding layer
-        self.time2vec = Time2Vec(t2v_embed_dim)
 
         # Construct a series of set-attention blocks
         self.attention_blocks = []
@@ -121,17 +121,13 @@ class FusionTransformer(SummaryNetwork):
 
         self.output_projector = keras.layers.Dense(summary_dim)
 
-    def call(self, input_sequence: Tensor, time: Tensor = None, training: bool = False, **kwargs) -> Tensor:
+    def call(self, input_sequence: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
 
         Parameters
         ----------
         input_sequence  : Tensor
             Input of shape (batch_size, sequence_length, input_dim)
-        time            : Tensor
-            Time vector of shape (batch_size, sequence_length), optional (default - None)
-            Note: time values for Time2Vec embeddings will be inferred on a linearly spaced
-            interval between [0, sequence length], if no time vector is specified.
         training        : boolean, optional (default - False)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
@@ -145,12 +141,12 @@ class FusionTransformer(SummaryNetwork):
             Output of shape (batch_size, set_size, output_dim)
         """
 
-        inp = self.time2vec(input_sequence, t=time)
-        template = self.template_net(inp, training=training)
+        template = self.template_net(input_sequence, training=training)
 
+        rep = input_sequence
         for layer in self.attention_blocks[:-1]:
-            inp = layer(inp, inp, training=training, **kwargs)
+            rep = layer(rep, rep, training=training, **kwargs)
 
-        summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), inp, training=training, **kwargs)
+        summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training, **kwargs)
         summary = self.output_projector(keras.ops.squeeze(summary, axis=1))
         return summary

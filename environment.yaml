@@ -4,7 +4,7 @@ channels:
 dependencies:
   - jupyter
   - jupyterlab
-  - keras ~= 3.4.0
+  - keras ~= 3.7.0
   - numpy ~= 1.26
   - matplotlib
   - pre-commit
@@ -15,6 +15,7 @@ dependencies:
   - python >= 3.10, < 3.12
   - ruff
   - seaborn
+  - pandas
   - scikit-learn
   - scipy
   - tqdm

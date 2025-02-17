@@ -4,7 +4,6 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.networks import MLP
-from .mha import MultiHeadAttention
 
 
 @serializable(package="bayesflow.networks")
@@ -40,11 +39,8 @@ class MultiHeadAttentionBlock(keras.Layer):
         super().__init__(**kwargs)
 
         self.input_projector = layers.Dense(embed_dim)
-        self.attention = MultiHeadAttention(
-            embed_dim=embed_dim,
-            num_heads=num_heads,
-            dropout=dropout,
-            use_bias=use_bias,
+        self.attention = layers.MultiHeadAttention(
+            key_dim=embed_dim, num_heads=num_heads, dropout=dropout, use_bias=use_bias, output_shape=embed_dim
         )
         self.ln_pre = layers.LayerNormalization() if layer_norm else None
         self.mlp = MLP(

@@ -1,0 +1,63 @@
+
+# From https://github.com/eeholmes/readthedoc-test/blob/main/.github/workflows/docs_pages.yml
+name: multiversion-docs
+
+on:
+  workflow_dispatch:
+# execute this workflow automatically when we push to master or dev
+#   push:
+#     branches:
+#       - master
+#       - dev
+
+jobs:
+
+  build_docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v3
+        with:
+          path: dev
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout gh-pages-dev
+        uses: actions/checkout@v3
+        with:
+          path: gh-pages-dev
+          ref: gh-pages-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          cd ./dev
+          python -m pip install .[docs]
+      - name: Create local branches
+        run: |
+          cd ./dev
+          git branch master remotes/origin/master
+      - name: Make the Sphinx docs
+        run: |
+          cd ./dev/docsrc
+          make clean
+          make github
+      - name: Commit changes to docs
+        run: |
+          cd ./gh-pages-dev
+          cp -R ../dev/docs/* ./
+          git config --local user.email ""
+          git config --local user.name "github-actions"
+          git add -A
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "auto: Rebuild docs."
+            git  push
+          else
+            echo No commit made because the docs have not changed.
+          fi

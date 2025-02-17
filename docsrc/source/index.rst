@@ -40,7 +40,7 @@ BayesFlow requires Python version 3.9 or later.
 The installer should automatically choose the appropriate TensorFlow version depending on your operating system.
 However, if the installation fails, Tensorflow and Tensorflow-Probability are likely to be the culprit,
 and you might consider starting your bug hunt there.
-You can find detailed installation instructions for developers :doc:`here <installation>`.
+You can find detailed installation instructions for developers :doc:`here <contributing>`.
 
 
 Citation
@@ -113,13 +113,19 @@ Indices
 
 
 .. toctree::
-   :maxdepth: 0
-   :titlesonly:
-   :hidden:
+    :maxdepth: 0
+    :titlesonly:
+    :hidden:
 
-   self
-   examples
-   api/bayesflow
-   installation
-   contributing
-   about
+    self
+    examples
+    api/bayesflow
+    about
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Development
+
+    contributing
+    development/index

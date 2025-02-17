@@ -23,11 +23,26 @@ license = { file = "LICENSE" }
 
 requires-python = ">= 3.10, < 3.12"
 dependencies = [
-    "keras ~= 3.4.0",
+    "keras ~= 3.7.0",
     "numpy ~= 1.26.4",
-    "scipy ~= 1.14.0",
+    "scipy ~= 1.14.1",
+    "matplotlib",
+    "seaborn",
+    "pandas",
+    "scikit-learn",
+    "scipy",
+    "tqdm",
 ]
-
+[project.optional-dependencies]
+docs = [
+  "sphinx",
+  "numpydoc",
+  "myst-nb",
+  "sphinx_design",
+  "sphinx-book-theme",
+  "sphinxcontrib-bibtex",
+  "sphinx-polyversion==1.0.0",
+]
 [tool.ruff]
 # We use ruff to lint and auto-format code
 

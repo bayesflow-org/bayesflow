@@ -5,8 +5,34 @@ import keras
 import numpy as np
 
 from bayesflow.types import Tensor
+from . import logging
 
 T = TypeVar("T")
+
+
+def expand(x: Tensor, n: int, side: str):
+    if n < 0:
+        raise ValueError(f"Cannot expand {n} times.")
+
+    match side:
+        case "left":
+            idx = [None] * n + [...]
+        case "right":
+            idx = [...] + [None] * n
+        case str() as name:
+            raise ValueError(f"Invalid side {name!r}. Must be 'left' or 'right'.")
+        case other:
+            raise TypeError(f"Invalid side type {type(other)!r}. Must be str.")
+
+    return x[tuple(idx)]
+
+
+def expand_as(x: Tensor, y: Tensor, side: str):
+    return expand_to(x, keras.ops.ndim(y), side)
+
+
+def expand_to(x: Tensor, dim: int, side: str):
+    return expand(x, dim - keras.ops.ndim(x), side)
 
 
 def expand_left(x: Tensor, n: int) -> Tensor:
@@ -55,6 +81,31 @@ def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:
         x = np.expand_dims(x, axis)
 
     return tile_axis(x, n, axis=axis)
+
+
+def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both") -> Tensor:
+    """
+    Pad x with n values along axis on the given side.
+    The pad value must broadcast against the shape of x, except for the pad axis, where it must broadcast against n.
+    """
+    if not keras.ops.is_tensor(value):
+        value = keras.ops.full((), value, dtype=keras.ops.dtype(x))
+
+    shape = list(keras.ops.shape(x))
+    shape[axis] = n
+
+    p = keras.ops.broadcast_to(value, shape)
+    match side:
+        case "left":
+            return keras.ops.concatenate([p, x], axis=axis)
+        case "right":
+            return keras.ops.concatenate([x, p], axis=axis)
+        case "both":
+            return keras.ops.concatenate([p, x, p], axis=axis)
+        case str() as name:
+            raise ValueError(f"Invalid side {name!r}. Must be 'left', 'right', or 'both'.")
+        case _:
+            raise TypeError(f"Invalid side type {type(side)!r}. Must be str.")
 
 
 def size_of(x) -> int:
@@ -140,3 +191,52 @@ def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
             return keras.ops.stack(items, axis=axis)
 
     return keras.tree.map_structure(stack, *structures)
+
+
+def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") -> Tensor:
+    """
+    Find indices where elements should be inserted to maintain order.
+    """
+
+    match keras.backend.backend():
+        case "jax":
+            import jax
+            import jax.numpy as jnp
+
+            logging.warn_once(f"searchsorted is not yet optimized for backend {keras.backend.backend()!r}")
+
+            # do not vmap over the side argument (we have to pass it as a positional argument)
+            in_axes = [0, 0, None]
+
+            # vmap over the batch dimension
+            vss = jax.vmap(jnp.searchsorted, in_axes=in_axes)
+
+            # flatten all batch dimensions
+            ss = sorted_sequence.reshape((-1,) + sorted_sequence.shape[-1:])
+            v = values.reshape((-1,) + values.shape[-1:])
+
+            # noinspection PyTypeChecker
+            indices = vss(ss, v, side)
+
+            # restore the batch dimensions
+            indices = indices.reshape(values.shape)
+
+            # noinspection PyTypeChecker
+            return indices
+        case "tensorflow":
+            import tensorflow as tf
+
+            # always use int64 to avoid complicated graph code
+            indices = tf.searchsorted(sorted_sequence, values, side=side, out_type="int64")
+
+            return indices
+        case "torch":
+            import torch
+
+            out_int32 = len(sorted_sequence) <= np.iinfo(np.int32).max
+
+            indices = torch.searchsorted(sorted_sequence, values, side=side, out_int32=out_int32)
+
+            return indices
+        case _:
+            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")

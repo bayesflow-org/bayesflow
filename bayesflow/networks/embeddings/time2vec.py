@@ -58,8 +58,7 @@ class Time2Vec(keras.Layer):
         Returns:
         --------
         emb : Tensor
-            Embedding of shape (batch_size, fourier_emb_dim) if `include_identity`
-            is False, else (batch_size, fourier_emb_dim+1)
+            Embedding of shape (batch_size, sequence_length, num_periodic_features + 1)
         """
 
         if t is None:

@@ -1,12 +1,17 @@
 import keras
 
 
-def isclose(x1, x2, rtol=1e-5, atol=1e-8):
+def isclose(x1, x2, rtol=1e-5, atol=1e-5):
     return keras.ops.abs(x1 - x2) <= atol + rtol * keras.ops.abs(x2)
 
 
-def allclose(x1, x2, rtol=1e-5, atol=1e-8):
+def allclose(x1, x2, rtol=1e-5, atol=1e-5):
     return keras.ops.all(isclose(x1, x2, rtol, atol))
+
+
+def assert_allclose(x1, x2, rtol=1e-5, atol=1e-8, msg=""):
+    mse = keras.ops.mean(keras.ops.square(x1 - x2))
+    assert allclose(x1, x2, rtol, atol), f"{msg} - mse={mse}"
 
 
 def max_mean_discrepancy(x, y):

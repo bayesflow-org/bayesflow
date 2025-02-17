@@ -18,6 +18,7 @@ dependencies:
       - pytest-xdist
       - ruff
       - seaborn
+      - pandas
       - scikit-learn
       - scipy
       - tqdm

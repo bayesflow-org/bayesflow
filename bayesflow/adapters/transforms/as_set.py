@@ -11,6 +11,12 @@ class AsSet(ElementwiseTransform):
     This is useful, for example, in a linear regression context where we can index
     the observations in arbitrary order and always get the same regression line.
 
+    Currently, all this transform does is to ensure that the variable
+    arrays are at least 3D. The 2rd dimension is treated as the
+    set dimension and the 3rd dimension as the data dimension.
+    In the future, the transform will have more advanced behavior
+    to better ensure the correct treatment of sets.
+
     Useage:
 
     adapter = (
@@ -27,3 +33,10 @@ class AsSet(ElementwiseTransform):
             return np.squeeze(data, axis=2)
 
         return data
+
+    @classmethod
+    def from_config(cls, config: dict, custom_objects=None) -> "AsSet":
+        return cls()
+
+    def get_config(self) -> dict:
+        return {}

@@ -1,2 +1,1 @@
 from .consistency_model import ConsistencyModel
-from .continuous_consistency_model import ContinuousConsistencyModel

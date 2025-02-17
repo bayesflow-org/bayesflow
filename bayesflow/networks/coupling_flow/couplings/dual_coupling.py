@@ -1,7 +1,7 @@
 import keras
 from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils import keras_kwargs, serialize_value_or_type, deserialize_value_or_type
 from bayesflow.types import Tensor
 from .single_coupling import SingleCoupling
 from ..invertible_layer import InvertibleLayer
@@ -14,6 +14,22 @@ class DualCoupling(InvertibleLayer):
         self.coupling1 = SingleCoupling(subnet, transform, **kwargs)
         self.coupling2 = SingleCoupling(subnet, transform, **kwargs)
         self.pivot = None
+
+        # serialization: store all parameters necessary to call __init__
+        self.config = {
+            "transform": transform,
+            **kwargs,
+        }
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+
+    def get_config(self):
+        base_config = super().get_config()
+        return base_config | self.config
+
+    @classmethod
+    def from_config(cls, config):
+        config = deserialize_value_or_type(config, "subnet")
+        return cls(**config)
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):

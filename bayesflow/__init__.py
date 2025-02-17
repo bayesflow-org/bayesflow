@@ -7,13 +7,14 @@ from . import (
     distributions,
     networks,
     simulators,
+    workflows,
     utils,
 )
-
-from .approximators import ContinuousApproximator
 from .adapters import Adapter
+from .approximators import ContinuousApproximator
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset
 from .simulators import make_simulator
+from .workflows import BasicWorkflow
 
 
 def setup():
@@ -33,6 +34,10 @@ def setup():
         import torch
 
         torch.autograd.set_grad_enabled(False)
+
+    from bayesflow.utils import logging
+
+    logging.debug(f"Using backend {keras.backend.backend()!r}")
 
 
 # call and clean up namespace

@@ -12,7 +12,10 @@ from tests.utils import allclose, assert_layers_equal
 def test_build(inference_network, random_samples, random_conditions):
     assert inference_network.built is False
 
-    inference_network(random_samples, conditions=random_conditions)
+    samples_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+
+    inference_network.build(samples_shape, conditions_shape=conditions_shape)
 
     assert inference_network.built is True
 
@@ -22,7 +25,9 @@ def test_build(inference_network, random_samples, random_conditions):
 
 def test_variable_batch_size(inference_network, random_samples, random_conditions):
     # build with one batch size
-    inference_network(random_samples, conditions=random_conditions)
+    samples_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    inference_network.build(samples_shape, conditions_shape=conditions_shape)
 
     # run with another batch size
     batch_sizes = np.random.choice(10, replace=False, size=3)
@@ -78,6 +83,7 @@ def test_cycle_consistency(inference_network, random_samples, random_conditions)
     assert allclose(forward_log_density, inverse_log_density, atol=1e-3, rtol=1e-3)
 
 
+# TODO: make this backend-agnostic
 @pytest.mark.torch
 def test_density_numerically(inference_network, random_samples, random_conditions):
     import torch
@@ -125,22 +131,22 @@ def test_density_numerically(inference_network, random_samples, random_condition
     assert allclose(inverse_log_density, numerical_inverse_log_density, rtol=1e-4, atol=1e-5)
 
 
-def test_serialize_deserialize(inference_network, random_samples, random_conditions):
+def test_serialize_deserialize(inference_network_subnet, subnet, random_samples, random_conditions):
     # to save, the model must be built
-    inference_network(random_samples, conditions=random_conditions)
+    inference_network_subnet(random_samples, conditions=random_conditions)
 
-    serialized = serialize(inference_network)
+    serialized = serialize(inference_network_subnet)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
     assert serialized == reserialized
 
 
-def test_save_and_load(tmp_path, inference_network, random_samples, random_conditions):
+def test_save_and_load(tmp_path, inference_network_subnet, subnet, random_samples, random_conditions):
     # to save, the model must be built
-    inference_network(random_samples, conditions=random_conditions)
+    inference_network_subnet(random_samples, conditions=random_conditions)
 
-    keras.saving.save_model(inference_network, tmp_path / "model.keras")
+    keras.saving.save_model(inference_network_subnet, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
-    assert_layers_equal(inference_network, loaded)
+    assert_layers_equal(inference_network_subnet, loaded)

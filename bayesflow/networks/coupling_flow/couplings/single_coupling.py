@@ -1,9 +1,8 @@
 import keras
-
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, keras_kwargs
+from bayesflow.utils import find_network, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
 from ..invertible_layer import InvertibleLayer
 from ..transforms import find_transform
 
@@ -24,7 +23,24 @@ class SingleCoupling(InvertibleLayer):
 
         output_projector_kwargs = kwargs.get("output_projector_kwargs", {})
         output_projector_kwargs.setdefault("kernel_initializer", "zeros")
+        output_projector_kwargs.setdefault("bias_initializer", "zeros")
         self.output_projector = keras.layers.Dense(units=None, **output_projector_kwargs)
+
+        # serialization: store all parameters necessary to call __init__
+        self.config = {
+            "transform": transform,
+            **kwargs,
+        }
+        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+
+    def get_config(self):
+        base_config = super().get_config()
+        return base_config | self.config
+
+    @classmethod
+    def from_config(cls, config):
+        config = deserialize_value_or_type(config, "subnet")
+        return cls(**config)
 
     # noinspection PyMethodOverriding
     def build(self, x1_shape, x2_shape, conditions_shape=None):

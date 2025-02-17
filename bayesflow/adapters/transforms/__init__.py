@@ -1,4 +1,5 @@
 from .as_set import AsSet
+from .as_time_series import AsTimeSeries
 from .broadcast import Broadcast
 from .concatenate import Concatenate
 from .constrain import Constrain

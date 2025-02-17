@@ -1,0 +1,20 @@
+{% if revisions %}
+<div class="rst-versions">
+  {% if tags %} {# List of tags #}
+  <p class="caption" aria-level="2" role="heading"><span class="caption-text">{{ _('Tags') }}</span></p>
+  <ul>
+    {%- for item in tags %}
+      <li><a href="/{{ item.name }}/{{ pagename }}.html" {% if current and current.name == item.name %}class="current"{% endif %}>{{ item.name }}</a></li>
+    {%- endfor %}
+  </ul>
+  {% endif %}
+  {% if branches %} {# List of branches #}
+  <p class="caption" aria-level="2" role="heading"><span class="caption-text">{{ _('Branches') }}</span></p>
+  <ul>
+    {%- for item in branches %}
+      <li><a href="/{{ item.name }}/{{ pagename}}.html" {% if current and current.name == item.name %}class="current"{% endif %}>{{ item.name }}</a></li>
+    {%- endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endif %}

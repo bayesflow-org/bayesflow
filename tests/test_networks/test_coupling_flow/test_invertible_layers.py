@@ -1,10 +1,7 @@
-import functools
-
 import keras
 import numpy as np
-import pytest
 
-from tests.utils import allclose
+from tests.utils import assert_allclose
 
 
 def test_build(invertible_layer, random_samples, random_conditions):
@@ -57,39 +54,25 @@ def test_cycle_consistency(invertible_layer, random_samples, random_conditions):
     forward_output, forward_log_det = invertible_layer(random_samples)
     inverse_output, inverse_log_det = invertible_layer(forward_output, inverse=True)
 
-    assert allclose(random_samples, inverse_output)
-    assert allclose(forward_log_det, -inverse_log_det)
+    assert_allclose(random_samples, inverse_output, atol=1e-6, msg="Samples are not cycle consistent")
+    assert_allclose(forward_log_det, -inverse_log_det, atol=1e-6, msg="Log Determinants are not cycle consistent")
 
 
-@pytest.mark.torch
 def test_jacobian_numerically(invertible_layer, random_samples, random_conditions):
-    import torch
+    from bayesflow.utils import jacobian
 
     forward_output, forward_log_det = invertible_layer(random_samples)
-    numerical_forward_jacobian, *_ = torch.autograd.functional.jacobian(
-        invertible_layer, random_samples, vectorize=True
-    )
 
-    # TODO: torch is somehow permuted wrt keras
-    numerical_forward_log_det = [
-        keras.ops.log(keras.ops.abs(keras.ops.det(numerical_forward_jacobian[i, :, i, :])))
-        for i in range(keras.ops.shape(random_samples)[0])
-    ]
-    numerical_forward_log_det = keras.ops.stack(numerical_forward_log_det, axis=0)
+    numerical_forward_jacobian = jacobian(lambda x: invertible_layer(x)[0], random_samples)
 
-    assert allclose(forward_log_det, numerical_forward_log_det, rtol=1e-4, atol=1e-5)
+    numerical_forward_log_det = keras.ops.logdet(numerical_forward_jacobian)
+
+    assert_allclose(forward_log_det, numerical_forward_log_det, rtol=1e-4, atol=1e-5)
 
     inverse_output, inverse_log_det = invertible_layer(random_samples, inverse=True)
 
-    numerical_inverse_jacobian, *_ = torch.autograd.functional.jacobian(
-        functools.partial(invertible_layer, inverse=True), random_samples, vectorize=True
-    )
+    numerical_inverse_jacobian = jacobian(lambda z: invertible_layer(z, inverse=True)[0], random_samples)
 
-    # TODO: torch is somehow permuted wrt keras
-    numerical_inverse_log_det = [
-        keras.ops.log(keras.ops.abs(keras.ops.det(numerical_inverse_jacobian[i, :, i, :])))
-        for i in range(keras.ops.shape(random_samples)[0])
-    ]
-    numerical_inverse_log_det = keras.ops.stack(numerical_inverse_log_det, axis=0)
+    numerical_inverse_log_det = keras.ops.logdet(numerical_inverse_jacobian)
 
-    assert allclose(inverse_log_det, numerical_inverse_log_det, rtol=1e-4, atol=1e-5)
+    assert_allclose(inverse_log_det, numerical_inverse_log_det, rtol=1e-4, atol=1e-5)

@@ -12,12 +12,23 @@
 import os
 import sys
 
+try:
+    from sphinx_polyversion import load
+    from sphinx_polyversion.git import GitRef
+    from sphinx_polyversion.api import LoadError
+
+    USE_POLYVERSION = True
+except ImportError:
+    USE_POLYVERSION = False
+    print("sphinx_polyversion not installed, building single version")
+
 sys.path.insert(0, os.path.abspath("../.."))
 
 # -- Project information -----------------------------------------------------
 
 project = "BayesFlow"
-copyright = "2023, BayesFlow authors (lead maintainer: Stefan T. Radev)"
+author = "The BayesFlow authors"
+copyright = "2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev)"
 
 
 # -- General configuration ---------------------------------------------------
@@ -36,7 +47,10 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx_design",
+    "sphinxcontrib.bibtex",
 ]
+
+bibtex_bibfiles = ["references.bib"]
 
 numpydoc_show_class_members = False
 myst_enable_extensions = [
@@ -47,13 +61,6 @@ myst_enable_extensions = [
     "html_image",
 ]
 myst_url_schemes = ["http", "https", "mailto"]
-autodoc_default_options = {
-    "members": "var1, var2",
-    "special-members": "__call__,__init__",
-    "undoc-members": True,
-    "exclude-members": "__weakref__",
-    "member-order": "bysource",
-}
 
 # Define shorthand for external links:
 extlinks = {
@@ -70,6 +77,23 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# Options for autodoc and autosummary
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "imported-members": True,
+    "inherited-members": True,
+    "show-inheritance": True,
+    "special-members": "__call__",
+    "memberorder": "bysource",
+}
+# do not ignore __all__, use it to determine public members
+autosummary_ignore_module_all = False
+# include imported members in autosummary
+autosummary_imported_members = True
+# selects content to insert into the main body of an autoclass directive.
+autoclass_content = "both"
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -82,7 +106,8 @@ html_title = "BayesFlow: Amortized Bayesian Inference"
 # Add any paths that contain custom _static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin _static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["css/custom.css"]
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 html_show_sourcelink = False
 html_theme_options = {
     "repository_url": "https://github.com/bayesflow-org/bayesflow",
@@ -97,6 +122,15 @@ html_logo = "_static/bayesflow_hex.png"
 html_favicon = "_static/bayesflow_hex.ico"
 html_baseurl = "https://www.bayesflow.org/"
 html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"]
+html_sidebars = {
+    "**": [
+        "navbar-logo.html",
+        "icon-links.html",
+        "search-button-field.html",
+        "sbt-sidebar-nav.html",
+        "versioning.html",
+    ],
+}
 
 todo_include_todos = True
 
@@ -113,3 +147,13 @@ suppress_warnings = [
 ]  # Avoid duplicate label warnings for Jupyter notebooks.
 
 remove_from_toctrees = ["_autosummary/*"]
+
+autosummmary_generate = True
+
+# versioning data for template
+if USE_POLYVERSION:
+    try:
+        data = load(globals())
+        current: GitRef = data["current"]
+    except LoadError:
+        print("sphinx_polyversion could not load. Building single version")

@@ -10,12 +10,10 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    :glob:
    :numbered:
 
-   _examples/Intro_Amortized_Posterior_Estimation.ipynb
-   _examples/TwoMoons_Bimodal_Posterior.ipynb
-   _examples/Model_Misspecification.ipynb
-   _examples/LCA_Model_Posterior_Estimation.ipynb
-   _examples/Linear_ODE_system.ipynb
-   _examples/Covid19_Initial_Posterior_Estimation.ipynb
-   _examples/Model_Comparison_MPT.ipynb
-   _examples/Hierarchical_Model_Comparison_MPT.ipynb
+   _examples/Quickstart_Amortized_Posterior_Estimation.ipynb
+   _examples/TwoMoons_StarterNotebook.ipynb
+   _examples/SIR_PosteriorEstimation.ipynb
+   _examples/Linear_Regression.ipynb
+   _examples/Hyperparameter_Optimization.ipynb
+   _examples/Bayesian_Experimental_Design.ipynb
    _examples/SBML_Model_Posterior_Estimation.ipynb

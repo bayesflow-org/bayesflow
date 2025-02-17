@@ -87,8 +87,9 @@ class MambaSSM(SummaryNetwork):
     def call(self, time_series, **kwargs):
         summary = time_series
         for mamba_block in self.mamba_blocks:
-            summary = mamba_block(summary, **kwargs)
             summary = self.layernorm(summary)
+            summary = mamba_block(summary, **kwargs)
+            summary = summary + 0.1 * time_series
 
         if self.pooling:
             summary = self.pooling(summary)

@@ -162,7 +162,6 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
-
     def as_set(self, keys: str | Sequence[str]):
         if isinstance(keys, str):
             keys = [keys]

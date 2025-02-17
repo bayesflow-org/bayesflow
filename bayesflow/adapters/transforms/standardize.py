@@ -12,12 +12,12 @@ from .elementwise_transform import ElementwiseTransform
 class Standardize(ElementwiseTransform):
     """
     Transform that when applied standardizes data using typical z-score standardization i.e. for some unstandardized
-    data x the standardized version z  would be. 
+    data x the standardized version z  would be.
 
     z = (x - mean(x))/std(x)
 
-    Important to note that when specifying a mean and sd user should be careful to specify which variables should be 
-    standardized. Please see examples. 
+    Important to note that when specifying a mean and sd user should be careful to specify which variables should be
+    standardized. Please see examples.
 
     Parameters:
         mean: integer or float used to specify a mean if known but will be estimated from data when not provided
@@ -26,31 +26,31 @@ class Standardize(ElementwiseTransform):
             standardization happens individually for each dimension
         momentum: float in (0,1) specifying the momentum during training
 
-    Examples: 
+    Examples:
 
-    1) Standardize all variables using estimated mean and standard deviation 
-        
+    1) Standardize all variables using estimated mean and standard deviation
+
         adapter = (
                 bf.adapters.Adapter()
                     .standardize()
             )
-    
+
     2) Standardize all with same known mean and standard deviation. In this example all data is drawn from a standard normal
-        
+
         adapter = (
                 bf.adapters.Adapter()
                     .standardize(mean = 1, sd = 0)
             )
 
     3) Mix of specified and auto-computed means/sds. Suppose we have priors for "beta" and "sigma" where we know the
-    mean and standard deviations. However for our simulated data "x" and "y" the mean and standard deviations are 
-    unknown. Then standardize should be used in several stages specifying which variables to include or exclude. 
+    mean and standard deviations. However for our simulated data "x" and "y" the mean and standard deviations are
+    unknown. Then standardize should be used in several stages specifying which variables to include or exclude.
 
         adapter = (
                 bf.adapters.Adapter()
                     .standardize(include = "beta", mean = 1)   # specify only mean/sd
-                    .standardize(include = "sigma", mean = 0.6, sd = 1) # specify both mean and sd 
-                    .standardize(exclude = ["beta", "sigma"])  # specify neither mean nor sd 
+                    .standardize(include = "sigma", mean = 0.6, sd = 1) # specify both mean and sd
+                    .standardize(exclude = ["beta", "sigma"])  # specify neither mean nor sd
             )
 
 

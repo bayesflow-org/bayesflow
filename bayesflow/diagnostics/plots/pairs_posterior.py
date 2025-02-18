@@ -20,14 +20,12 @@ def pairs_posterior(
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     height: int = 3,
+    post_color: str | tuple = "#132a70",
+    prior_color: str | tuple = "gray",
+    alpha = 0.9,
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
-    # arguments related to priors which is currently unused
-    # legend_fontsize: int = 16,
-    # post_color: str | tuple = "#132a70",
-    # prior_color: str | tuple = "gray",
-    # post_alpha: float = 0.9,
-    # prior_alpha: float = 0.7,
+    legend_fontsize: int = 16,
     **kwargs,
 ) -> sns.PairGrid:
     """Generates a bivariate pair plot given posterior draws and optional prior or prior draws.
@@ -75,6 +73,7 @@ def pairs_posterior(
     plot_data = dicts_to_arrays(
         estimates=estimates,
         targets=targets,
+        priors=priors,
         dataset_ids=dataset_id,
         variable_keys=variable_keys,
         variable_names=variable_names,
@@ -90,56 +89,34 @@ def pairs_posterior(
     g = _pairs_samples(
         plot_data=plot_data,
         height=height,
+        color=post_color,
+        color2=prior_color,
+        alpha=alpha,
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
+        legend_fontsize=legend_fontsize,
         **kwargs,
     )
 
-    # add priors
-    if priors is not None:
-        # TODO: integrate priors into plot_data and then use
-        #   proper coloring of posterior vs. prior using the hue argument in PairGrid
-        raise ValueError("Plotting prior samples is not yet implemented.")
-
-        """
-        # this is currently not working as expected as it doesn't show the off diagonal plots
-        prior_samples_df = pd.DataFrame(priors, columns=plot_data["variable_names"])
-        g.data = prior_samples_df
-        g.map_diag(sns.histplot, fill=True, color=prior_color, alpha=prior_alpha, kde=True, zorder=-1)
-        g.map_lower(sns.kdeplot, fill=True, color=prior_color, alpha=prior_alpha, zorder=-1)
-
-        # Add legend to differentiate between prior and posterior
-        handles = [
-            Line2D(xdata=[], ydata=[], color=post_color, lw=3, alpha=post_alpha),
-            Line2D(xdata=[], ydata=[], color=prior_color, lw=3, alpha=prior_alpha),
-        ]
-        handles_names = ["Posterior", "Prior"]
-        if targets is not None:
-            handles.append(Line2D(xdata=[], ydata=[], color="black", lw=3, linestyle="--"))
-            handles_names.append("True Parameter")
-        plt.legend(handles=handles, labels=handles_names, fontsize=legend_fontsize, loc="center right")
-        """
-
     # add true parameters
     if plot_data["targets"] is not None:
-        # TODO: also add true parameters to the off diagonal plots?
-
         # drop dataset axis if it is still present but of length 1
         targets_shape = plot_data["targets"].shape
         if len(targets_shape) == 2 and targets_shape[0] == 1:
             plot_data["targets"] = np.squeeze(plot_data["targets"], axis=0)
 
         # Custom function to plot true parameters on the diagonal
-        def plot_true_params(x, **kwargs):
+        def plot_true_params(x, hue=None, **kwargs):
+            # hue needs to be added to handle the case of plotting both posterior and prior
             param = x.iloc[0]  # Get the single true value for the diagonal
+            # only plot on the diagonal a vertical line for the true parameter
             plt.axvline(param, color="black", linestyle="--")  # Add vertical line
-
-        # only plot on the diagonal a vertical line for the true parameter
 
         g.data = pd.DataFrame(
             plot_data["targets"][np.newaxis], 
             columns=plot_data["targets"].variable_names,
         )
+        g.data["Source"] = "True Parameter"
         g.map_diag(plot_true_params)
 
     return g

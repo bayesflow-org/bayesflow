@@ -236,6 +236,7 @@ def make_variable_array(
 def dicts_to_arrays(
     estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray = None,
+    priors: Mapping[str, np.ndarray] | np.ndarray = None,
     dataset_ids: Sequence[int] | int = None,
     variable_keys: Sequence[str] | str = None,
     variable_names: Sequence[str] | str = None,
@@ -272,6 +273,10 @@ def dicts_to_arrays(
     dataset_ids : Sequence of integers indexing the datasets to select (default = None).
         By default, use all datasets.
 
+    variable_keys : list or None, optional, default: None
+       Select keys from the dictionary provided in samples.
+       By default, select all keys.
+
     variable_names : Sequence[str], optional (default = None)
         Optional variable names to act as a filter if dicts provided or actual variable names in case of array
         inputs.
@@ -297,8 +302,17 @@ def dicts_to_arrays(
             variable_keys=estimates.variable_keys,
             variable_names=estimates.variable_names,
         )
+
+    if priors is not None:
+        priors = make_variable_array(
+            priors,
+            # priors are data independent so datasets_ids is not passed here
+            variable_keys=estimates.variable_keys,
+            variable_names=estimates.variable_names,
+        )
     
     return dict(
         estimates=estimates,
         targets=targets,
+        priors=priors,
     )

@@ -36,6 +36,8 @@ def prepare_plot_data(
     targets        : dict[str, ndarray] or ndarray, optional (default = None)
         Ground truth values corresponding to the estimates. Must match the structure and dimensionality
         of `estimates` in terms of first and last axis.
+    variable_keys     : list or None, optional, default: None
+       Select keys from the dictionary provided in samples. By default, select all keys.
     variable_names    : Sequence[str], optional (default = None)
         Optional variable names to act as a filter if dicts provided or actual variable names in case of array args
     num_col           : int
@@ -59,16 +61,18 @@ def prepare_plot_data(
     )
     check_estimates_prior_shapes(plot_data["estimates"], plot_data["targets"])
 
-    # Configure layout
+    # store variable information at top level for easy access
     variable_names = plot_data["estimates"].variable_names
     num_variables = len(variable_names)    
+    plot_data["variable_names"] = variable_names
+    plot_data["num_variables"] = num_variables
+
+    # Configure layout
     num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
 
     # Initialize figure
     fig, axes = make_figure(num_row, num_col, figsize=figsize)
 
-    plot_data["variable_names"] = variable_names
-    plot_data["num_variables"] = num_variables
     plot_data["fig"] = fig
     plot_data["axes"] = axes
     plot_data["num_row"] = num_row

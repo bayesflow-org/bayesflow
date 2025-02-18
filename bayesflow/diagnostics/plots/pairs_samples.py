@@ -68,9 +68,11 @@ def _pairs_samples(
     plot_data: dict,
     height: float = 2.5,
     color: str | tuple = "#132a70",
+    color2: str | tuple = "gray",
     alpha: float = 0.9,
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
+    legend_fontsize: int = 14,
     **kwargs,
 ) -> sns.PairGrid:
     # internal version of pairs_samples creating the seaborn plot
@@ -87,46 +89,71 @@ def _pairs_samples(
             f"your samples array has a shape of {estimates_shape}."
         )
 
-    # Convert samples to pd.DataFrame
     variable_names = plot_data["estimates"].variable_names
-    data_to_plot = pd.DataFrame(plot_data["estimates"], columns=variable_names)
 
-    # initialize plot
-    artist = sns.PairGrid(data_to_plot, height=height, **kwargs)
+    # Convert samples to pd.DataFrame
+    if plot_data["priors"] is not None:
+        # differentiate posterior from prior draws
+        # row bind posterior and prior draws
+        samples = np.vstack((plot_data["priors"], plot_data["estimates"]))
+        data_to_plot = pd.DataFrame(samples, columns=variable_names)
 
-    # Generate grids
-    # in the off diagonal plots, the grids appears in front of the points/densities
-    # TODO: can we put the grid in the background somehow?
-    dim = artist.axes.shape[0]
-    for i in range(dim):
-        for j in range(dim):
-            artist.axes[i, j].grid(alpha=0.5)
+        # ensure that the source of the samples is stored
+        source_prior = np.repeat("Prior", plot_data["priors"].shape[0])
+        source_post = np.repeat("Posterior", plot_data["estimates"].shape[0])
+        data_to_plot["Source"] = np.concatenate((source_prior, source_post))
+        data_to_plot["Source"] = pd.Categorical(data_to_plot["Source"], categories=["Prior", "Posterior"])
+
+        color = [color, color2]
+    
+        # initialize plot
+        g = sns.PairGrid(data_to_plot, height=height, hue="Source", **kwargs)
+
+    else:
+        # plot just the one set of distributions
+        data_to_plot = pd.DataFrame(plot_data["estimates"], columns=variable_names)
+
+        # initialize plot
+        g = sns.PairGrid(data_to_plot, height=height, **kwargs)
 
     # add histograms + KDEs to the diagonal
-    artist.map_diag(sns.histplot, fill=True, color=color, alpha=alpha, kde=True)
+    g.map_diag(sns.histplot, fill=True, color=color, alpha=alpha, kde=True)
+    
+    # add scatterplots to the upper diagonal
+    g.map_upper(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
 
-    # Incorporate exceptions for generating KDE plots
+    # add KDEs to the lower diagonal
     try:
-        artist.map_lower(sns.kdeplot, fill=True, color=color, alpha=alpha)
+        g.map_lower(sns.kdeplot, fill=True, color=color, alpha=alpha)
     except Exception as e:
         logging.exception("KDE failed due to the following exception:\n" + repr(e) + "\nSubstituting scatter plot.")
-        artist.map_lower(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
+        g.map_lower(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
 
-    artist.map_upper(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
+    # need to add legend here such that colors are recognized
+    if plot_data["priors"] is not None:
+        g.add_legend(fontsize=legend_fontsize, loc="center right")
+        g._legend.set_title(None)
 
-    dim = artist.axes.shape[0]
+    # Generate grids
+    dim = g.axes.shape[0]
+    for i in range(dim):
+        for j in range(dim):
+            g.axes[i, j].grid(alpha=0.5)
+            g.axes[i, j].set_axisbelow(True)
+
+    dim = g.axes.shape[0]
     for i in range(dim):
         # Modify tick sizes
         for j in range(i + 1):
-            artist.axes[i, j].tick_params(axis="both", which="major", labelsize=tick_fontsize)
-            artist.axes[i, j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
+            g.axes[i, j].tick_params(axis="both", which="major", labelsize=tick_fontsize)
+            g.axes[i, j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
         # adjust font size of labels
         # the labels themselves remain the same as before, i.e., variable_names
-        artist.axes[i, 0].set_ylabel(variable_names[i], fontsize=label_fontsize)
-        artist.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
+        g.axes[i, 0].set_ylabel(variable_names[i], fontsize=label_fontsize)
+        g.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
 
     # Return figure
-    artist.tight_layout()
+    g.tight_layout()
 
-    return artist
+    return g

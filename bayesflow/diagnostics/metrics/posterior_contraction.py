@@ -58,4 +58,5 @@ def posterior_contraction(
     prior_vars = samples["targets"].var(axis=0, keepdims=True, ddof=1)
     contraction = 1 - (post_vars / prior_vars)
     contraction = aggregation(contraction, axis=0)
-    return {"values": contraction, "metric_name": "Posterior Contraction", "variable_names": samples["variable_names"]}
+    variable_names = samples["estimates"].variable_names
+    return {"values": contraction, "metric_name": "Posterior Contraction", "variable_names": variable_names}

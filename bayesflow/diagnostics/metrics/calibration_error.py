@@ -88,4 +88,5 @@ def calibration_error(
     # Aggregate errors across alpha
     error = aggregation(absolute_errors, axis=0)
 
+    variable_names = samples["estimates"].variable_names
     return {"values": error, "metric_name": "Calibration Error", "variable_names": variable_names}

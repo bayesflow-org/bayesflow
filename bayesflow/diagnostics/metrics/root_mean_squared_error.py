@@ -65,4 +65,5 @@ def root_mean_squared_error(
         metric_name = "RMSE"
 
     rmse = aggregation(rmse, axis=0)
-    return {"values": rmse, "metric_name": metric_name, "variable_names": samples["variable_names"]}
+    variable_names = samples["estimates"].variable_names
+    return {"values": rmse, "metric_name": metric_name, "variable_names": variable_names}

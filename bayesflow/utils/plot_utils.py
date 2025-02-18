@@ -60,11 +60,15 @@ def prepare_plot_data(
     check_estimates_prior_shapes(plot_data["estimates"], plot_data["targets"])
 
     # Configure layout
-    num_row, num_col = set_layout(plot_data["num_variables"], num_row, num_col, stacked)
+    variable_names = plot_data["estimates"].variable_names
+    num_variables = len(variable_names)    
+    num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
 
     # Initialize figure
     fig, axes = make_figure(num_row, num_col, figsize=figsize)
 
+    plot_data["variable_names"] = variable_names
+    plot_data["num_variables"] = num_variables
     plot_data["fig"] = fig
     plot_data["axes"] = axes
     plot_data["num_row"] = num_row

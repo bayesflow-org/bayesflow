@@ -135,7 +135,11 @@ def pairs_posterior(
             plt.axvline(param, color="black", linestyle="--")  # Add vertical line
 
         # only plot on the diagonal a vertical line for the true parameter
-        g.data = pd.DataFrame(plot_data["targets"][np.newaxis], columns=plot_data["variable_names"])
+
+        g.data = pd.DataFrame(
+            plot_data["targets"][np.newaxis], 
+            columns=plot_data["targets"].variable_names,
+        )
         g.map_diag(plot_true_params)
 
     return g

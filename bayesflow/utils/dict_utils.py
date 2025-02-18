@@ -129,13 +129,36 @@ def split_arrays(data: Mapping[str, np.ndarray], axis: int = -1) -> Mapping[str,
     return result
 
 
-def validate_variable_array(
+class VariableArray(np.ndarray):
+    """
+    An enriched numpy array with information on variable keys and names
+    to be used in post-processing, specifically the diagnostics module.
+
+    The current implemention is very basic and we may want to extend it 
+    in the future should this general structure prove useful.
+
+    Design according to 
+    https://numpy.org/doc/stable/user/basics.subclassing.html#simple-example-adding-an-extra-attribute-to-ndarray
+    """
+    def __new__(cls, input_array, variable_keys=None, variable_names=None):        
+        obj = np.asarray(input_array).view(cls)
+        obj.variable_keys = variable_keys
+        obj.variable_names = variable_names
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None: return
+        self.variable_keys = getattr(obj, 'variable_keys', None)
+        self.variable_names = getattr(obj, 'variable_names', None)
+
+
+def make_variable_array(
     x: Mapping[str, np.ndarray] | np.ndarray,
     dataset_ids: Sequence[int] | int = None,
     variable_keys: Sequence[str] | str = None,
     variable_names: Sequence[str] | str = None,
     default_name: str = "v",
-):
+) -> VariableArray:
     """
     Helper function to validate arrays for use in the diagnostics module.
 
@@ -180,7 +203,15 @@ def validate_variable_array(
 
     # Case arrays provided
     elif isinstance(x, np.ndarray):
-        if variable_names is None:
+        if isinstance(x, VariableArray):
+            # reuse existing variable keys and names if contained in x
+            if variable_names is None:
+                variable_names = x.variable_names
+            if variable_keys in None:
+                variable_keys = x.variable_keys
+
+        # use default names if not otherwise specified
+        if variable_names is None:  
             variable_names = [f"${default_name}_{{{i}}}$" for i in range(x.shape[-1])]
 
         if dataset_ids is not None:
@@ -192,8 +223,14 @@ def validate_variable_array(
 
     if len(variable_names) is not x.shape[-1]:
         raise ValueError("Length of 'variable_names' should be the same as the number of variables.")
+    
+    if variable_keys is None:
+        # every variable will count as its own key if not otherwise specified
+        variable_keys = variable_names
 
-    return x, variable_keys, variable_names
+    x = VariableArray(x, variable_keys=variable_keys, variable_names=variable_names)
+
+    return x
 
 
 def dicts_to_arrays(
@@ -245,7 +282,7 @@ def dicts_to_arrays(
 
     # other to be validated arrays (see below) will take use
     # the variable_keys and variable_names implied by estimates
-    estimates, variable_keys, variable_names = validate_variable_array(
+    estimates = make_variable_array(
         estimates,
         dataset_ids=dataset_ids,
         variable_keys=variable_keys,
@@ -254,16 +291,14 @@ def dicts_to_arrays(
     )
 
     if targets is not None:
-        targets, _, _ = validate_variable_array(
+        targets = make_variable_array(
             targets,
             dataset_ids=dataset_ids,
-            variable_keys=variable_keys,
-            variable_names=variable_names,
+            variable_keys=estimates.variable_keys,
+            variable_names=estimates.variable_names,
         )
-
+    
     return dict(
         estimates=estimates,
         targets=targets,
-        variable_names=variable_names,
-        num_variables=len(variable_names),
     )

@@ -88,7 +88,8 @@ def _pairs_samples(
         )
 
     # Convert samples to pd.DataFrame
-    data_to_plot = pd.DataFrame(plot_data["estimates"], columns=plot_data["variable_names"])
+    variable_names = plot_data["estimates"].variable_names
+    data_to_plot = pd.DataFrame(plot_data["estimates"], columns=variable_names)
 
     # initialize plot
     artist = sns.PairGrid(data_to_plot, height=height, **kwargs)
@@ -122,8 +123,8 @@ def _pairs_samples(
 
         # adjust font size of labels
         # the labels themselves remain the same as before, i.e., variable_names
-        artist.axes[i, 0].set_ylabel(plot_data["variable_names"][i], fontsize=label_fontsize)
-        artist.axes[dim - 1, i].set_xlabel(plot_data["variable_names"][i], fontsize=label_fontsize)
+        artist.axes[i, 0].set_ylabel(variable_names[i], fontsize=label_fontsize)
+        artist.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
 
     # Return figure
     artist.tight_layout()

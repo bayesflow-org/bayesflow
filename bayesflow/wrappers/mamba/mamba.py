@@ -25,7 +25,8 @@ class MambaSSM(SummaryNetwork):
         pooling: bool = True,
         dropout: int | float | None = 0.5,
         mamba_version: int = 2,
-        device: str = "cuda", 
+        device: str = "cuda",
+        d_ssm: int = 1,
         **kwargs
     ):
         """
@@ -68,13 +69,14 @@ class MambaSSM(SummaryNetwork):
             raise NotImplementedError("MambaSSM currently only supports cuda")
         
         if mamba_version == 1:
-            mamba_gen = Mamba
+            self.mamba_blocks = [Mamba(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max).to(device) for _ in range(mamba_blocks)]
         elif mamba_version == 2:
-            mamba_gen = Mamba2
+            self.mamba_blocks = [Mamba2(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max, d_ssm=d_ssm).to(device) for _ in range(mamba_blocks)]
         else:
             raise NotImplementedError("Mamba version must be 1 or 2")
         
-        self.mamba_blocks = [mamba_gen(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max).to(device) for _ in range(mamba_blocks)]
+        
+        
         
         self.layernorm = keras.layers.LayerNormalization(axis=-1)
         

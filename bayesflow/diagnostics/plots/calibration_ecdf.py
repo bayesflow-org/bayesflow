@@ -143,7 +143,7 @@ def calibration_ecdf(
 
     # Plot individual ecdf of parameters
     for j in range(ranks.shape[-1]):
-        ecdf_single = np.sort(ranks[:, j])
+        ecdf_single = np.pad(np.sort(ranks[:, j]), (1, 1), constant_values=(0, 1))
         xx = ecdf_single
         yy = np.arange(1, xx.shape[-1] + 1) / float(xx.shape[-1])
 

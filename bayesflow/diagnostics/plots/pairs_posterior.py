@@ -22,10 +22,10 @@ def pairs_posterior(
     height: int = 3,
     post_color: str | tuple = "#132a70",
     prior_color: str | tuple = "gray",
-    alpha = 0.9,
+    alpha=0.9,
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
-    legend_fontsize: int = 16,
+    legend_fontsize: int = 14,
     **kwargs,
 ) -> sns.PairGrid:
     """Generates a bivariate pair plot given posterior draws and optional prior or prior draws.
@@ -113,10 +113,10 @@ def pairs_posterior(
             plt.axvline(param, color="black", linestyle="--")  # Add vertical line
 
         g.data = pd.DataFrame(
-            plot_data["targets"][np.newaxis], 
+            plot_data["targets"][np.newaxis],
             columns=plot_data["targets"].variable_names,
         )
-        g.data["Source"] = "True Parameter"
+        g.data["_source"] = "True Parameter"
         g.map_diag(plot_true_params)
 
     return g

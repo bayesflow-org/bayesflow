@@ -101,13 +101,17 @@ def _pairs_samples(
         # ensure that the source of the samples is stored
         source_prior = np.repeat("Prior", plot_data["priors"].shape[0])
         source_post = np.repeat("Posterior", plot_data["estimates"].shape[0])
-        data_to_plot["Source"] = np.concatenate((source_prior, source_post))
-        data_to_plot["Source"] = pd.Categorical(data_to_plot["Source"], categories=["Prior", "Posterior"])
+        data_to_plot["_source"] = np.concatenate((source_prior, source_post))
+        data_to_plot["_source"] = pd.Categorical(data_to_plot["_source"], categories=["Prior", "Posterior"])
 
-        color = [color, color2]
-    
         # initialize plot
-        g = sns.PairGrid(data_to_plot, height=height, hue="Source", **kwargs)
+        g = sns.PairGrid(
+            data_to_plot,
+            height=height,
+            hue="_source",
+            palette=[color2, color],
+            **kwargs,
+        )
 
     else:
         # plot just the one set of distributions
@@ -117,8 +121,16 @@ def _pairs_samples(
         g = sns.PairGrid(data_to_plot, height=height, **kwargs)
 
     # add histograms + KDEs to the diagonal
-    g.map_diag(sns.histplot, fill=True, color=color, alpha=alpha, kde=True)
-    
+    g.map_diag(
+        sns.histplot,
+        fill=True,
+        kde=True,
+        color=color,
+        alpha=alpha,
+        stat="density",
+        common_norm=False,
+    )
+
     # add scatterplots to the upper diagonal
     g.map_upper(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
 

@@ -134,22 +134,24 @@ class VariableArray(np.ndarray):
     An enriched numpy array with information on variable keys and names
     to be used in post-processing, specifically the diagnostics module.
 
-    The current implemention is very basic and we may want to extend it 
+    The current implemention is very basic and we may want to extend it
     in the future should this general structure prove useful.
 
-    Design according to 
+    Design according to
     https://numpy.org/doc/stable/user/basics.subclassing.html#simple-example-adding-an-extra-attribute-to-ndarray
     """
-    def __new__(cls, input_array, variable_keys=None, variable_names=None):        
+
+    def __new__(cls, input_array, variable_keys=None, variable_names=None):
         obj = np.asarray(input_array).view(cls)
         obj.variable_keys = variable_keys
         obj.variable_names = variable_names
         return obj
 
     def __array_finalize__(self, obj):
-        if obj is None: return
-        self.variable_keys = getattr(obj, 'variable_keys', None)
-        self.variable_names = getattr(obj, 'variable_names', None)
+        if obj is None:
+            return
+        self.variable_keys = getattr(obj, "variable_keys", None)
+        self.variable_names = getattr(obj, "variable_names", None)
 
 
 def make_variable_array(
@@ -211,7 +213,7 @@ def make_variable_array(
                 variable_keys = x.variable_keys
 
         # use default names if not otherwise specified
-        if variable_names is None:  
+        if variable_names is None:
             variable_names = [f"${default_name}_{{{i}}}$" for i in range(x.shape[-1])]
 
         if dataset_ids is not None:
@@ -223,7 +225,7 @@ def make_variable_array(
 
     if len(variable_names) is not x.shape[-1]:
         raise ValueError("Length of 'variable_names' should be the same as the number of variables.")
-    
+
     if variable_keys is None:
         # every variable will count as its own key if not otherwise specified
         variable_keys = variable_names
@@ -310,7 +312,7 @@ def dicts_to_arrays(
             variable_keys=estimates.variable_keys,
             variable_names=estimates.variable_names,
         )
-    
+
     return dict(
         estimates=estimates,
         targets=targets,

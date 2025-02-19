@@ -63,7 +63,7 @@ def prepare_plot_data(
 
     # store variable information at top level for easy access
     variable_names = plot_data["estimates"].variable_names
-    num_variables = len(variable_names)    
+    num_variables = len(variable_names)
     plot_data["variable_names"] = variable_names
     plot_data["num_variables"] = num_variables
 

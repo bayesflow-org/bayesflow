@@ -100,17 +100,14 @@ def pairs_posterior(
         **kwargs,
     )
 
-    # add true parameters
-    if plot_data["targets"] is not None:
-        # drop dataset axis if it is still present but of length 1
-        targets_shape = plot_data["targets"].shape
-        if len(targets_shape) == 2 and targets_shape[0] == 1:
-            plot_data["targets"] = np.squeeze(plot_data["targets"], axis=0)
+    targets = plot_data.get("targets")
+    if targets is not None:
+        # Ensure targets is at least 2D
+        if targets.ndim == 1:
+            targets = np.atleast_2d(targets)
 
-        g.data = pd.DataFrame(
-            plot_data["targets"][np.newaxis],
-            columns=plot_data["targets"].variable_names,
-        )
+        # Create DataFrame with variable names as columns
+        g.data = pd.DataFrame(targets, columns=targets.variable_names)
         g.data["_source"] = "True Parameter"
         g.map_diag(plot_true_params)
 

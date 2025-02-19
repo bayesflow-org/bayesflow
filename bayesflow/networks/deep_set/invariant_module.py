@@ -6,7 +6,6 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import find_pooling
-from bayesflow.utils import keras_kwargs
 
 
 @serializable(package="bayesflow.networks")
@@ -27,8 +26,8 @@ class InvariantModule(keras.Layer):
         kernel_initializer: str = "he_normal",
         dropout: int | float | None = 0.05,
         pooling: str = "mean",
+        pooling_kwargs: dict = None,
         spectral_normalization: bool = False,
-        **kwargs,
     ):
         """Creates an invariant module according to [1] which represents a learnable permutation-invariant
         function with an option for learnable pooling.
@@ -41,7 +40,7 @@ class InvariantModule(keras.Layer):
             Optional keyword arguments can be passed to the pooling layer as a dictionary into the
             reserved key ``pooling_kwargs``. Example: #TODO
         """
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__()
 
         # Inner fully connected net for sum decomposition: inner( pooling( inner(set) ) )
         self.inner_fc = keras.Sequential()
@@ -72,7 +71,10 @@ class InvariantModule(keras.Layer):
             self.outer_fc.add(layer)
 
         # Pooling function as keras layer for sum decomposition: inner( pooling( inner(set) ) )
-        self.pooling_layer = find_pooling(pooling, **kwargs.get("pooling_kwargs", {}))
+        if pooling_kwargs is None:
+            pooling_kwargs = {}
+
+        self.pooling_layer = find_pooling(pooling, **pooling_kwargs)
 
     def build(self, input_shape):
         self.call(keras.ops.zeros(input_shape))

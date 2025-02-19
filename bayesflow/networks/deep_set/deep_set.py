@@ -4,6 +4,8 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils import filter_kwargs
+
 from .equivariant_module import EquivariantModule
 from .invariant_module import InvariantModule
 from ..summary_network import SummaryNetwork
@@ -56,7 +58,7 @@ class DeepSet(SummaryNetwork):
                 spectral_normalization=spectral_normalization,
                 dropout=dropout,
                 pooling=inner_pooling,
-                **kwargs,
+                **filter_kwargs(kwargs, EquivariantModule),
             )
             self.equivariant_modules.append(equivariant_module)
 
@@ -69,7 +71,7 @@ class DeepSet(SummaryNetwork):
             dropout=dropout,
             pooling=output_pooling,
             spectral_normalization=spectral_normalization,
-            **kwargs,
+            **filter_kwargs(kwargs, InvariantModule),
         )
 
         # Output linear layer to project set representation down to "summary_dim" learned summary statistics

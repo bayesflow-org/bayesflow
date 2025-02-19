@@ -55,10 +55,12 @@ def pairs_posterior(
         The color for the posterior histograms and KDEs
     priors_color      : str, optional, default: gray
         The color for the optional prior histograms and KDEs
-    post_alpha        : float in [0, 1], optonal, default: 0.9
+    post_alpha        : float in [0, 1], optional, default: 0.9
         The opacity of the posterior plots
-    prior_alpha       : float in [0, 1], optonal, default: 0.7
+    prior_alpha       : float in [0, 1], optional, default: 0.7
         The opacity of the prior plots
+    **kwargs          : dict, optional, default: {}
+        Further optional keyword arguments propagated to `_pairs_samples`
 
     Returns
     -------
@@ -105,13 +107,6 @@ def pairs_posterior(
         if len(targets_shape) == 2 and targets_shape[0] == 1:
             plot_data["targets"] = np.squeeze(plot_data["targets"], axis=0)
 
-        # Custom function to plot true parameters on the diagonal
-        def plot_true_params(x, hue=None, **kwargs):
-            # hue needs to be added to handle the case of plotting both posterior and prior
-            param = x.iloc[0]  # Get the single true value for the diagonal
-            # only plot on the diagonal a vertical line for the true parameter
-            plt.axvline(param, color="black", linestyle="--")  # Add vertical line
-
         g.data = pd.DataFrame(
             plot_data["targets"][np.newaxis],
             columns=plot_data["targets"].variable_names,
@@ -120,3 +115,12 @@ def pairs_posterior(
         g.map_diag(plot_true_params)
 
     return g
+
+
+def plot_true_params(x, **kwargs):
+    """Custom function to plot true parameters on the diagonal."""
+
+    # hue needs to be added to handle the case of plotting both posterior and prior
+    param = x.iloc[0]  # Get the single true value for the diagonal
+    # only plot on the diagonal a vertical line for the true parameter
+    plt.axvline(param, color="black", linestyle="--")

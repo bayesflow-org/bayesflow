@@ -208,6 +208,7 @@ class ModelComparisonApproximator(Approximator):
         **kwargs,
     ) -> np.ndarray:
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
+        conditions = {k: v for k, v in conditions.items() if k != "model_indices"}
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         output = self._predict(**conditions, **kwargs)

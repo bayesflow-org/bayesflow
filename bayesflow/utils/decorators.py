@@ -2,6 +2,7 @@ from collections.abc import Callable, Sequence
 from functools import wraps
 import inspect
 from typing import overload, TypeVar
+from bayesflow.types import Shape
 
 Fn = TypeVar("Fn", bound=Callable[..., any])
 
@@ -109,4 +110,21 @@ def allow_batch_size(fn: Callable):
     fn = argument_callback("batch_shape", callback)(fn)
     fn = alias("batch_shape", "batch_size")(fn)
 
+    return fn
+
+
+def sanitize_input_shape(fn: Callable):
+    """Decorator to replace the first dimension in input_shape with a dummy batch size if it is None"""
+
+    # The Keras functional API passes input_shape = (None, second_dim, third_dim, ...), which
+    # causes problems when constructions like self.call(keras.ops.zeros(input_shape)) are used
+    # in build. To alleviate those problems, this decorator replaces None with an arbitrary batch size.
+    def callback(input_shape: Shape) -> Shape:
+        if input_shape[0] is None:
+            input_shape = list(input_shape)
+            input_shape[0] = 32
+            return tuple(input_shape)
+        return input_shape
+
+    fn = argument_callback("input_shape", callback)(fn)
     return fn

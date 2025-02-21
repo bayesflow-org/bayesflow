@@ -5,6 +5,7 @@ from keras import ops, layers
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils.decorators import sanitize_input_shape
 from .invariant_module import InvariantModule
 
 
@@ -66,6 +67,7 @@ class EquivariantModule(keras.Layer):
 
         self.layer_norm = layers.LayerNormalization() if layer_norm else None
 
+    @sanitize_input_shape
     def build(self, input_shape):
         self.call(keras.ops.zeros(input_shape))
 

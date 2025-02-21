@@ -6,6 +6,7 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import find_pooling
+from bayesflow.utils.decorators import sanitize_input_shape
 
 
 @serializable(package="bayesflow.networks")
@@ -76,6 +77,7 @@ class InvariantModule(keras.Layer):
 
         self.pooling_layer = find_pooling(pooling, **pooling_kwargs)
 
+    @sanitize_input_shape
     def build(self, input_shape):
         self.call(keras.ops.zeros(input_shape))
 

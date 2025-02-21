@@ -5,6 +5,7 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
 
 from .equivariant_module import EquivariantModule
 from .invariant_module import InvariantModule
@@ -78,6 +79,7 @@ class DeepSet(SummaryNetwork):
         self.output_projector = keras.layers.Dense(summary_dim, activation="linear")
         self.summary_dim = summary_dim
 
+    @sanitize_input_shape
     def build(self, input_shape):
         super().build(input_shape)
         self.call(keras.ops.zeros(input_shape))

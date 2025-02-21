@@ -2,6 +2,7 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils.decorators import sanitize_input_shape
 from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
 
@@ -78,6 +79,7 @@ class LSTNet(SummaryNetwork):
         x = self.output_projector(x)
         return x
 
+    @sanitize_input_shape
     def build(self, input_shape):
         super().build(input_shape)
         self.call(keras.ops.zeros(input_shape))

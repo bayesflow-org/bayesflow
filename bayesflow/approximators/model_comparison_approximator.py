@@ -208,6 +208,7 @@ class ModelComparisonApproximator(Approximator):
         **kwargs,
     ) -> np.ndarray:
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
+        # at inference time, model_indices are predicted by the networks and thus ignored in conditions
         conditions.pop("model_indices", None)
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 

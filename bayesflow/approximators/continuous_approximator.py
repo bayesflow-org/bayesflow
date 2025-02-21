@@ -141,7 +141,7 @@ class ContinuousApproximator(Approximator):
     ) -> dict[str, np.ndarray]:
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
         # at inference time, inference_variables are estimated by the networks and thus ignored in conditions
-        conditions = {k: v for k, v in conditions.items() if k != "inference_variables"}
+        conditions.pop("inference_variables", None)
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
         conditions = {"inference_variables": self._sample(num_samples=num_samples, **conditions, **kwargs)}
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)

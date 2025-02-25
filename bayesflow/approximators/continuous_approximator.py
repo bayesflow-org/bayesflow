@@ -131,6 +131,50 @@ class ContinuousApproximator(Approximator):
 
         return base_config | config
 
+    def estimate(
+        self,
+        conditions: dict[str, np.ndarray],
+        split: bool = False,
+        estimators: dict[str, callable] = None,
+        num_samples: int = 1000,
+        **kwargs,
+    ) -> dict[str, dict[str, np.ndarray]]:
+        estimators = estimators or {}
+        estimators = (
+            dict(
+                mean=lambda x, axis: dict(value=np.mean(x, keepdims=True, axis=axis)),
+                median=lambda x, axis: dict(value=np.median(x, keepdims=True, axis=axis)),
+                quantiles=lambda x, axis: dict(value=np.moveaxis(np.quantile(x, q=[0.1, 0.5, 0.9], axis=axis), 0, 1)),
+            )
+            | estimators
+        )
+
+        samples = self.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+
+        estimates = {
+            variable_name: {
+                estimator_name: func(samples[variable_name], axis=1) for estimator_name, func in estimators.items()
+            }
+            for variable_name in samples.keys()
+        }
+
+        def squeeze_dict(d):
+            if len(d.keys()) == 1 and "value" in d.keys():
+                return d["value"]
+            else:
+                return d
+
+        # remove unnecessary nesting
+        estimates = {
+            variable_name: {
+                outer_key: squeeze_dict(estimates[variable_name][outer_key])
+                for outer_key in estimates[variable_name].keys()
+            }
+            for variable_name in estimates.keys()
+        }
+
+        return estimates
+
     def sample(
         self,
         *,

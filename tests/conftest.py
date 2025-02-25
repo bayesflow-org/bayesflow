@@ -39,6 +39,21 @@ def coupling_flow():
     return CouplingFlow(depth=2, subnet="mlp", subnet_kwargs=dict(widths=(32, 32)))
 
 
+@pytest.fixture()
+def typical_point_inference_network():
+    from bayesflow.networks import PointInferenceNetwork
+    from bayesflow.scores import MeanScore, MedianScore, QuantileScore
+
+    return PointInferenceNetwork(
+        scores=dict(
+            mean=MeanScore(),
+            median=MedianScore(),
+            quantiles=QuantileScore(),
+            # mvn=MultivariateNormalScore(),  # currently not stable
+        )
+    )
+
+
 @pytest.fixture(params=["two_moons"], scope="session")
 def dataset(request):
     return request.getfixturevalue(request.param)
@@ -49,7 +64,7 @@ def feature_size(request):
     return request.param
 
 
-@pytest.fixture(params=["coupling_flow"], scope="function")
+@pytest.fixture(params=["coupling_flow", "typical_point_inference_network"], scope="function")
 def inference_network(request):
     return request.getfixturevalue(request.param)
 

@@ -19,7 +19,7 @@ def inference_network():
 
 
 @pytest.fixture()
-def approximator(adapter, inference_network, summary_network):
+def continuous_approximator(adapter, inference_network, summary_network):
     from bayesflow import ContinuousApproximator
 
     return ContinuousApproximator(
@@ -27,6 +27,38 @@ def approximator(adapter, inference_network, summary_network):
         inference_network=inference_network,
         summary_network=summary_network,
     )
+
+
+@pytest.fixture()
+def point_inference_network():
+    from bayesflow.networks import PointInferenceNetwork
+    from bayesflow.scores import NormedDifferenceScore, QuantileScore
+
+    return PointInferenceNetwork(
+        scores=dict(
+            mean=NormedDifferenceScore(k=2),
+            quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
+        ),
+        subnet="mlp",
+        subnet_kwargs=dict(widths=(32, 32)),
+    )
+
+
+@pytest.fixture()
+def point_approximator(adapter, point_inference_network, summary_network):
+    from bayesflow import PointApproximator
+
+    return PointApproximator(
+        adapter=adapter,
+        inference_network=point_inference_network,
+        summary_network=summary_network,
+    )
+
+
+# @pytest.fixture(params=["continuous_approximator"], scope="function")
+@pytest.fixture(params=["continuous_approximator", "point_approximator"], scope="function")
+def approximator(request):
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture()

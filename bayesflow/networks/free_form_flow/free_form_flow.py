@@ -214,8 +214,10 @@ class FreeFormFlow(InferenceNetwork):
                 raise ValueError(f"{self.hutchinson_sampling} is not a valid value for hutchinson_sampling.")
         return v
 
-    def compute_metrics(self, x: Tensor, conditions: Tensor = None, stage: str = "training") -> dict[str, Tensor]:
-        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
+    def compute_metrics(
+        self, x: Tensor, conditions: Tensor = None, sample_weights: Tensor = None, stage: str = "training"
+    ) -> dict[str, Tensor]:
+        base_metrics = super().compute_metrics(x, conditions=conditions, sample_weights=sample_weights, stage=stage)
         # sample random vector
         v = self._sample_v(x)
 
@@ -236,6 +238,8 @@ class FreeFormFlow(InferenceNetwork):
         nll = -self.base_distribution.log_prob(z)
         maximum_likelihood_loss = nll - surrogate
         reconstruction_loss = ops.sum((x - x_pred) ** 2, axis=-1)
-        loss = ops.mean(maximum_likelihood_loss + self.beta * reconstruction_loss)
+
+        losses = maximum_likelihood_loss + self.beta * reconstruction_loss
+        loss = self.aggregate(losses, sample_weights)
 
         return base_metrics | {"loss": loss}

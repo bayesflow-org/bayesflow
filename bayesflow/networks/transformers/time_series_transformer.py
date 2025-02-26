@@ -1,5 +1,4 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
@@ -10,7 +9,6 @@ from ..summary_network import SummaryNetwork
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
 class TimeSeriesTransformer(SummaryNetwork):
     def __init__(
         self,
@@ -66,8 +64,8 @@ class TimeSeriesTransformer(SummaryNetwork):
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
-
         super().__init__(**kwargs)
+        self.initialize_config()
 
         # Ensure all tuple-settings have the same length
         check_lengths_same(embed_dims, num_heads, mlp_depths, mlp_widths)

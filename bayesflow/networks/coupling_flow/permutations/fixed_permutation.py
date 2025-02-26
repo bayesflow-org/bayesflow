@@ -1,14 +1,14 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from ..invertible_layer import InvertibleLayer
 
 
-@serializable(package="networks.coupling_flow")
 class FixedPermutation(InvertibleLayer):
     def __init__(self, forward_indices=None, inverse_indices=None, **kwargs):
         super().__init__(**kwargs)
+        self.initialize_config()
+
         self.forward_indices = forward_indices
         self.inverse_indices = inverse_indices
 

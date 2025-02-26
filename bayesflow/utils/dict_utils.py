@@ -32,7 +32,7 @@ def convert_args(f: Callable, *args: any, **kwargs: any) -> tuple[any, ...]:
 
 
 def convert_kwargs(f: Callable, *args: any, **kwargs: any) -> dict[str, any]:
-    """Convert positional and keyword arguments qto just keyword arguments for f"""
+    """Convert positional and keyword arguments to just keyword arguments for f"""
     if not args:
         return kwargs
 
@@ -47,6 +47,51 @@ def convert_kwargs(f: Callable, *args: any, **kwargs: any) -> dict[str, any]:
         parameters[name] = value
 
     return parameters
+
+
+def filter_keys(mapping: dict, *, include: list = None, exclude: list = None, strict: bool = True) -> dict:
+    """
+    Filter keys of a dictionary based on inclusion or exclusion lists.
+
+    Parameters
+    ----------
+    mapping : dict
+        The dictionary to filter.
+    include : list, optional
+        List of keys to include in the filtered dictionary. If None, no keys are included based on this list.
+    exclude : list, optional
+        List of keys to exclude from the filtered dictionary. If None, no keys are excluded based on this list.
+    strict : bool, default=True
+        If True, raises an error if any keys in the include or exclude lists are not found in the dictionary.
+
+    Returns
+    -------
+    dict
+        The filtered dictionary.
+
+    Raises
+    ------
+    KeyError
+        If `strict` is True and any keys in the include or exclude lists are not found in the dictionary.
+    """
+    if strict:
+        if include:
+            missing_keys = set(include) - set(mapping.keys())
+            if missing_keys:
+                raise KeyError(f"Could not find keys from include list in source mapping: {list(missing_keys)!r}")
+
+        if exclude:
+            missing_keys = set(exclude) - set(mapping.keys())
+            if missing_keys:
+                raise KeyError(f"Could not find keys from exclude list in source mapping: {list(missing_keys)!r}")
+
+    if include is not None:
+        mapping = {key: value for key, value in mapping.items() if key in include}
+
+    if exclude is not None:
+        mapping = {key: value for key, value in mapping.items() if key not in exclude}
+
+    return mapping
 
 
 def filter_kwargs(kwargs: Mapping[str, T], f: Callable) -> Mapping[str, T]:

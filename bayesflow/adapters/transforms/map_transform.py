@@ -1,15 +1,9 @@
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
 
 from .elementwise_transform import ElementwiseTransform
 from .transform import Transform
 
 
-@serializable(package="bayesflow.adapters")
 class MapTransform(Transform):
     """
     Implements a transform that applies a set of elementwise transforms
@@ -17,6 +11,9 @@ class MapTransform(Transform):
     """
 
     def __init__(self, transform_map: dict[str, ElementwiseTransform]):
+        super().__init__()
+        self.initialize_config()
+
         self.transform_map = transform_map
 
     def __repr__(self):
@@ -32,13 +29,6 @@ class MapTransform(Transform):
             return f"{transform_type.__name__}({e})"
 
         return transform_type.__name__
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "MapTransform":
-        return cls(deserialize(config["transform_map"]))
-
-    def get_config(self) -> dict:
-        return {"transform_map": serialize(self.transform_map)}
 
     def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()

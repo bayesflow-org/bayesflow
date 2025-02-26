@@ -1,12 +1,12 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils.serialization import Serializable
+
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
-class InducedSetAttentionBlock(keras.Layer):
+class InducedSetAttentionBlock(Serializable, keras.Layer):
     """Implements the ISAB block from [1] which represents learnable self-attention specifically
     designed to deal with large sets via a learnable set of "inducing points".
 
@@ -38,6 +38,7 @@ class InducedSetAttentionBlock(keras.Layer):
         """
 
         super().__init__(**kwargs)
+        self.initialize_config()
 
         self.num_inducing_points = num_inducing_points
         self.inducing_points = self.add_weight(

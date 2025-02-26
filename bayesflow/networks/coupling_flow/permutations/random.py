@@ -1,11 +1,9 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape
 from .fixed_permutation import FixedPermutation
 
 
-@serializable(package="networks.coupling_flow")
 class RandomPermutation(FixedPermutation):
     # noinspection PyMethodOverriding
     def build(self, xz_shape: Shape, **kwargs) -> None:

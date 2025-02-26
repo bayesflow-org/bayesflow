@@ -1,16 +1,9 @@
 from collections.abc import Sequence
 import numpy as np
 
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
-
 from .transform import Transform
 
 
-@serializable(package="bayesflow.adapters")
 class Broadcast(Transform):
     """
     Broadcasts arrays or scalars to the shape of a given other array.
@@ -35,17 +28,17 @@ class Broadcast(Transform):
         >>> c = np.array([[[1, 2, 3], [4, 5, 6]], [[4, 5, 6], [1, 2, 3]]])
         >>> dat = dict(a=a, b=b, c=c)
 
-        >>> bc = bf.adapters.transforms.Broadcast("a", to="b")
+        >>> bc = Broadcast("a", to="b")
         >>> new_dat = bc.forward(dat)
         >>> new_dat["a"].shape
         (2, 1)
 
-        >>> bc = bf.adapters.transforms.Broadcast("a", to="b", exclude=None)
+        >>> bc = Broadcast("a", to="b", exclude=None)
         >>> new_dat = bc.forward(dat)
         >>> new_dat["a"].shape
         (2, 3)
 
-        >>> bc = bf.adapters.transforms.Broadcast("b", to="c", expand=1)
+        >>> bc = Broadcast("b", to="c", expand=1)
         >>> new_dat = bc.forward(dat)
         >>> new_dat["b"].shape
         (2, 2, 3)
@@ -59,10 +52,12 @@ class Broadcast(Transform):
         *,
         to: str,
         expand: str | int | tuple = "left",
-        exclude: int | tuple = -1,
+        exclude: int | tuple = None,
         squeeze: int | tuple = None,
     ):
         super().__init__()
+        self.initialize_config()
+
         self.keys = keys
         self.to = to
 
@@ -76,32 +71,6 @@ class Broadcast(Transform):
 
         self.exclude = exclude
         self.squeeze = squeeze
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Broadcast":
-        # Deserialize turns tuples to lists, undo it if necessary
-        exclude = deserialize(config["exclude"], custom_objects)
-        exclude = tuple(exclude) if isinstance(exclude, list) else exclude
-        expand = deserialize(config["expand"], custom_objects)
-        expand = tuple(expand) if isinstance(expand, list) else expand
-        squeeze = deserialize(config["squeeze"], custom_objects)
-        squeeze = tuple(squeeze) if isinstance(squeeze, list) else squeeze
-        return cls(
-            keys=deserialize(config["keys"], custom_objects),
-            to=deserialize(config["to"], custom_objects),
-            expand=expand,
-            exclude=exclude,
-            squeeze=squeeze,
-        )
-
-    def get_config(self) -> dict:
-        return {
-            "keys": serialize(self.keys),
-            "to": serialize(self.to),
-            "expand": serialize(self.expand),
-            "exclude": serialize(self.exclude),
-            "squeeze": serialize(self.squeeze),
-        }
 
     # noinspection PyMethodOverriding
     def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:

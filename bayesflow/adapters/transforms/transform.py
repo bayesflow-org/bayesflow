@@ -1,12 +1,15 @@
-from keras.saving import register_keras_serializable as serializable
 import numpy as np
 
+from bayesflow.utils.serialization import Serializable
 
-@serializable(package="bayesflow.adapters")
-class Transform:
+
+class Transform(Serializable):
     """
     Base class on which other transforms are based
     """
+
+    def __init__(self):
+        self.initialize_config()
 
     def __call__(self, data: dict[str, np.ndarray], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
         if inverse:
@@ -18,13 +21,6 @@ class Transform:
         if e := self.extra_repr():
             return f"{self.__class__.__name__}({e})"
         return self.__class__.__name__
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Transform":
-        raise NotImplementedError
-
-    def get_config(self) -> dict:
-        raise NotImplementedError
 
     def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
         raise NotImplementedError

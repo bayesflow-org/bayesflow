@@ -1,16 +1,16 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import expand_tile
+from bayesflow.utils.serialization import Serializable
 
 
-@serializable(package="bayesflow.networks")
-class RecurrentEmbedding(keras.Layer):
+class RecurrentEmbedding(Serializable, keras.Layer):
     """Implements a recurrent network for embedding time."""
 
     def __init__(self, embed_dim: int = 8, embedding: str = "lstm"):
         super().__init__()
+        self.initialize_config()
 
         self.embed_dim = embed_dim
         self.embedding = embedding

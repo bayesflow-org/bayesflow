@@ -1,6 +1,3 @@
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
 import numpy as np
 
 from bayesflow.utils.numpy_utils import (
@@ -13,10 +10,9 @@ from bayesflow.utils.numpy_utils import (
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
 class Constrain(ElementwiseTransform):
     """
-    Constrains neural network predictions of a data variable to specificied bounds.
+    Constrains neural network predictions of a data variable to specified bounds.
 
     Parameters:
         String containing the name of the data variable to be transformed e.g. "sigma". See examples below.
@@ -35,7 +31,7 @@ class Constrain(ElementwiseTransform):
         1) Let sigma be the standard deviation of a normal distribution,
         then sigma should always be greater than zero.
 
-        Useage:
+        Usage:
         adapter = (
             bf.Adapter()
             .constrain("sigma", lower=0)
@@ -55,6 +51,7 @@ class Constrain(ElementwiseTransform):
         self, *, lower: int | float | np.ndarray = None, upper: int | float | np.ndarray = None, method: str = "default"
     ):
         super().__init__()
+        self.initialize_config()
 
         if lower is None and upper is None:
             raise ValueError("At least one of 'lower' or 'upper' must be provided.")
@@ -126,17 +123,6 @@ class Constrain(ElementwiseTransform):
 
         self.constrain = constrain
         self.unconstrain = unconstrain
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Constrain":
-        return cls(**config)
-
-    def get_config(self) -> dict:
-        return {
-            "lower": self.lower,
-            "upper": self.upper,
-            "method": self.method,
-        }
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # forward means data space -> network space, so unconstrain the data

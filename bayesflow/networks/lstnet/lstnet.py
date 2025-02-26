@@ -1,5 +1,4 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils.decorators import sanitize_input_shape
@@ -7,7 +6,6 @@ from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
 
 
-@serializable(package="bayesflow.networks")
 class LSTNet(SummaryNetwork):
     """
     Implements a LSTNet Architecture as described in [1]
@@ -37,6 +35,7 @@ class LSTNet(SummaryNetwork):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.initialize_config()
 
         # Convolutional backbone -> can be extended with inception-like structure
         if not isinstance(filters, (list, tuple)):

@@ -1,15 +1,10 @@
 from collections.abc import Callable
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+
 from .elementwise_transform import ElementwiseTransform
 from ...utils import filter_kwargs
 
 
-@serializable(package="bayesflow.adapters")
 class LambdaTransform(ElementwiseTransform):
     """
     Transforms a parameter using a pair of forward and inverse functions.
@@ -23,22 +18,10 @@ class LambdaTransform(ElementwiseTransform):
         self, *, forward: Callable[[np.ndarray, ...], np.ndarray], inverse: Callable[[np.ndarray, ...], np.ndarray]
     ):
         super().__init__()
+        self.initialize_config()
 
         self._forward = forward
         self._inverse = inverse
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "LambdaTransform":
-        return cls(
-            forward=deserialize(config["forward"], custom_objects),
-            inverse=deserialize(config["inverse"], custom_objects),
-        )
-
-    def get_config(self) -> dict:
-        return {
-            "forward": serialize(self._forward),
-            "inverse": serialize(self._inverse),
-        }
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # filter kwargs so that other transform args like batch_size, strict, ... are not passed through

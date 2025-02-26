@@ -33,10 +33,3 @@ class AsSet(ElementwiseTransform):
             return np.squeeze(data, axis=2)
 
         return data
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "AsSet":
-        return cls()
-
-    def get_config(self) -> dict:
-        return {}

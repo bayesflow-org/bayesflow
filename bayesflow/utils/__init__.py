@@ -8,6 +8,7 @@ from .devices import devices
 from .dict_utils import (
     convert_args,
     convert_kwargs,
+    filter_keys,
     filter_kwargs,
     keras_kwargs,
     split_tensors,
@@ -45,7 +46,7 @@ from .plot_utils import (
     make_quadratic,
     add_metric,
 )
-from .serialization import serialize_value_or_type, deserialize_value_or_type
+from .serialization import deserialize, serialize
 from .tensor_utils import (
     concatenate,
     expand,

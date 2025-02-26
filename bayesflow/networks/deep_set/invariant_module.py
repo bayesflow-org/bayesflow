@@ -2,15 +2,14 @@ from collections.abc import Sequence
 
 import keras
 from keras import layers
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import find_pooling
 from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import Serializable
 
 
-@serializable(package="bayesflow.networks")
-class InvariantModule(keras.Layer):
+class InvariantModule(Serializable, keras.Layer):
     """Implements an invariant module performing a permutation-invariant transform.
 
     For details and rationale, see:
@@ -42,6 +41,7 @@ class InvariantModule(keras.Layer):
             reserved key ``pooling_kwargs``. Example: #TODO
         """
         super().__init__()
+        self.initialize_config()
 
         # Inner fully connected net for sum decomposition: inner( pooling( inner(set) ) )
         self.inner_fc = keras.Sequential()
@@ -96,7 +96,6 @@ class InvariantModule(keras.Layer):
         set_summary : tf.Tensor
             Output of shape (batch_size,..., out_dim)
         """
-
         set_summary = self.inner_fc(input_set, training=training)
         set_summary = self.pooling_layer(set_summary, training=training)
         set_summary = self.outer_fc(set_summary, training=training)

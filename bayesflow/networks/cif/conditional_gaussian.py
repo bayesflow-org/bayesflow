@@ -1,14 +1,14 @@
 import keras
-from keras.saving import register_keras_serializable
 import numpy as np
-from ..mlp import MLP
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import keras_kwargs
+from bayesflow.utils.serialization import Serializable
+
+from ..mlp import MLP
 
 
-@register_keras_serializable(package="bayesflow.networks.cif")
-class ConditionalGaussian(keras.Layer):
+class ConditionalGaussian(Serializable, keras.Layer):
     """Implements a conditional gaussian distribution with neural networks for
     the means and standard deviations respectively. Bulit in reference to [1].
 
@@ -31,8 +31,9 @@ class ConditionalGaussian(keras.Layer):
         activation: str, optional, default: "swish"
             The MLP activation function
         """
-
         super().__init__(**keras_kwargs(kwargs))
+        self.initialize_config()
+
         self.means = MLP(depth=depth, width=width, activation=activation)
         self.stds = MLP(depth=depth, width=width, activation=activation)
         self.output_projector = keras.layers.Dense(None)

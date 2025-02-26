@@ -1,19 +1,14 @@
 import keras
 from keras import ops
-from keras.saving import (
-    register_keras_serializable,
-)
 
 import numpy as np
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
-
+from bayesflow.utils import find_network, keras_kwargs
 
 from ..inference_network import InferenceNetwork
 
 
-@register_keras_serializable(package="bayesflow.networks")
 class ConsistencyModel(InferenceNetwork):
     """Implements a Consistency Model with Consistency Training (CT) as
     described in [1-2]. The adaptations to CT described in [2] were taken
@@ -75,6 +70,7 @@ class ConsistencyModel(InferenceNetwork):
             Additional keyword arguments
         """
         super().__init__(base_distribution="normal", **keras_kwargs(kwargs))
+        self.initialize_config()
 
         self.total_steps = float(total_steps)
 
@@ -103,27 +99,6 @@ class ConsistencyModel(InferenceNetwork):
         self.current_step.assign(0)
 
         self.seed_generator = keras.random.SeedGenerator()
-
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "total_steps": total_steps,
-            "max_time": max_time,
-            "sigma2": sigma2,
-            "eps": eps,
-            "s0": s0,
-            "s1": s1,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
-
-    def get_config(self):
-        base_config = super().get_config()
-        return base_config | self.config
-
-    @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
 
     def _schedule_discretization(self, step) -> float:
         """Schedule function for adjusting the discretization level `N` during

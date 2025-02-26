@@ -1,15 +1,13 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_permutation, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import find_permutation, keras_kwargs
 
 from .actnorm import ActNorm
 from .couplings import DualCoupling
 from ..inference_network import InferenceNetwork
 
 
-@serializable(package="networks.coupling_flow")
 class CouplingFlow(InferenceNetwork):
     """Implements a coupling flow as a sequence of dual couplings with permutations and activation
     normalization. Incorporates ideas from [1-5].
@@ -45,6 +43,7 @@ class CouplingFlow(InferenceNetwork):
         **kwargs,
     ):
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
+        self.initialize_config(stateful=["invertible_layers"])
 
         self.depth = depth
 
@@ -58,32 +57,12 @@ class CouplingFlow(InferenceNetwork):
 
             self.invertible_layers.append(DualCoupling(subnet, transform, **kwargs.get("coupling_kwargs", {})))
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "depth": depth,
-            "transform": transform,
-            "permutation": permutation,
-            "use_actnorm": use_actnorm,
-            "base_distribution": base_distribution,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
-
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):
         super().build(xz_shape)
 
         for layer in self.invertible_layers:
             layer.build(xz_shape=xz_shape, conditions_shape=conditions_shape)
-
-    def get_config(self):
-        base_config = super().get_config()
-        return base_config | self.config
-
-    @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
 
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs

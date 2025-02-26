@@ -2,13 +2,12 @@ from typing import Literal
 
 import keras
 from keras import layers
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils.serialization import Serializable
 
 
-@serializable(package="bayesflow.networks")
-class ConfigurableHiddenBlock(keras.layers.Layer):
+class ConfigurableHiddenBlock(Serializable, keras.Layer):
     def __init__(
         self,
         units: int = 256,
@@ -20,6 +19,7 @@ class ConfigurableHiddenBlock(keras.layers.Layer):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.initialize_config()
 
         self.activation_fn = keras.activations.get(activation)
         self.residual = residual

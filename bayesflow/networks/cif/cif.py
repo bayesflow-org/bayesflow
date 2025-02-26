@@ -1,5 +1,4 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 
@@ -9,7 +8,6 @@ from ..coupling_flow import CouplingFlow
 from .conditional_gaussian import ConditionalGaussian
 
 
-@serializable(package="bayesflow.networks")
 class CIF(InferenceNetwork):
     """Implements a continuously indexed flow (CIF) with a `CouplingFlow`
     bijection and `ConditionalGaussian` distributions p and q. Improves on
@@ -38,6 +36,8 @@ class CIF(InferenceNetwork):
         """
 
         super().__init__(base_distribution="normal", **kwargs)
+        self.initialize_config()
+
         self.bijection = CouplingFlow()
         self.p_dist = ConditionalGaussian(depth=pq_depth, width=pq_width, activation=pq_activation)
         self.q_dist = ConditionalGaussian(depth=pq_depth, width=pq_width, activation=pq_activation)

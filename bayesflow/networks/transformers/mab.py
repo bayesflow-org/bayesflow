@@ -1,13 +1,12 @@
 import keras
 from keras import layers
-from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.types import Tensor
 from bayesflow.networks import MLP
+from bayesflow.types import Tensor
+from bayesflow.utils.serialization import Serializable
 
 
-@serializable(package="bayesflow.networks")
-class MultiHeadAttentionBlock(keras.Layer):
+class MultiHeadAttentionBlock(Serializable, keras.Layer):
     """Implements the MAB block from [1] which represents learnable cross-attention.
 
     [1] Lee, J., Lee, Y., Kim, J., Kosiorek, A., Choi, S., & Teh, Y. W. (2019).
@@ -35,8 +34,8 @@ class MultiHeadAttentionBlock(keras.Layer):
         ----------
         ##TODO
         """
-
         super().__init__(**kwargs)
+        self.initialize_config()
 
         self.input_projector = layers.Dense(embed_dim)
         self.attention = layers.MultiHeadAttention(
@@ -87,6 +86,3 @@ class MultiHeadAttentionBlock(keras.Layer):
             out = self.ln_post(out, training=training)
 
         return out
-
-    def build(self, input_shape):
-        super().build(input_shape)

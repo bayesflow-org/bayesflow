@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
@@ -12,7 +11,6 @@ from .invariant_module import InvariantModule
 from ..summary_network import SummaryNetwork
 
 
-@serializable(package="bayesflow.networks")
 class DeepSet(SummaryNetwork):
     r"""Implements a deep set encoder introduced in [1]. This module performs the computation:
 
@@ -44,8 +42,8 @@ class DeepSet(SummaryNetwork):
         """
         #TODO
         """
-
         super().__init__(**kwargs)
+        self.initialize_config()
 
         # Stack of equivariant modules for a many-to-many learnable transformation
         self.equivariant_modules = []

@@ -2,15 +2,15 @@ from collections.abc import Sequence
 
 import keras
 from keras import ops, layers
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import Serializable
+
 from .invariant_module import InvariantModule
 
 
-@serializable(package="bayesflow.networks")
-class EquivariantModule(keras.Layer):
+class EquivariantModule(Serializable, keras.Layer):
     """Implements an equivariant module performing an equivariant transform.
 
     For details and justification, see:
@@ -38,8 +38,8 @@ class EquivariantModule(keras.Layer):
         ----------
         #TODO
         """
-
         super().__init__()
+        self.initialize_config()
 
         # Invariant module to increase expressiveness by concatenating outputs to each set member
         self.invariant_module = InvariantModule(

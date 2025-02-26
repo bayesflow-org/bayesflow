@@ -2,15 +2,15 @@ from collections.abc import Sequence
 from typing import Literal
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import keras_kwargs
+from bayesflow.utils.serialization import Serializable
+
 from .hidden_block import ConfigurableHiddenBlock
 
 
-@serializable(package="bayesflow.networks")
-class MLP(keras.Layer):
+class MLP(Serializable, keras.Layer):
     """
     Implements a simple configurable MLP with optional residual connections and dropout.
 
@@ -50,6 +50,7 @@ class MLP(keras.Layer):
             Dropout rate for the hidden layers in the internal layers.
         """
         super().__init__(**keras_kwargs(kwargs))
+        self.initialize_config()
 
         if widths is not None:
             if depth is not None or width is not None:

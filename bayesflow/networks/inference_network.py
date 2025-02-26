@@ -3,13 +3,14 @@ import keras
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import find_distribution
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.serialization import Serializable
 
 
-class InferenceNetwork(keras.Layer):
-    MLP_DEFAULT_CONFIG = {}
-
+class InferenceNetwork(Serializable, keras.Layer):
     def __init__(self, base_distribution: str = "normal", **kwargs):
         super().__init__(**kwargs)
+        self.initialize_config()
+
         self.base_distribution = find_distribution(base_distribution)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:

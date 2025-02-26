@@ -30,10 +30,3 @@ class AsTimeSeries(ElementwiseTransform):
             return np.squeeze(data, axis=2)
 
         return data
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "AsTimeSeries":
-        return cls()
-
-    def get_config(self) -> dict:
-        return {}

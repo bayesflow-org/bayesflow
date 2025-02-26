@@ -2,13 +2,12 @@ import numpy as np
 
 import keras
 from keras import ops
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils.serialization import Serializable
 
 
-@serializable(package="bayesflow.networks")
-class FourierEmbedding(keras.Layer):
+class FourierEmbedding(Serializable, keras.Layer):
     """Implements a Fourier projection with normally distributed frequencies."""
 
     def __init__(
@@ -37,9 +36,12 @@ class FourierEmbedding(keras.Layer):
         include_identity : bool, optional (default - True)
             If True, adds an identity mapping component to the embedding.
         """
-
         super().__init__(**kwargs)
-        assert embed_dim % 2 == 0, f"Embedding dimension must be even, but is {embed_dim}."
+        self.initialize_config()
+
+        if embed_dim % 2 != 0:
+            raise ValueError(f"Embedding dimension must be even, but is {embed_dim}.")
+
         self.w = self.add_weight(initializer=initializer, shape=(embed_dim // 2,), trainable=trainable)
         self.scale = scale
         self.embed_dim = embed_dim

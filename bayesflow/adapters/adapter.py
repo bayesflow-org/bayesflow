@@ -1,11 +1,8 @@
 from collections.abc import Callable, MutableSequence, Sequence
 
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+
+from bayesflow.utils.serialization import Serializable
 
 from .transforms import (
     AsSet,
@@ -29,9 +26,11 @@ from .transforms import (
 from .transforms.filter_transform import Predicate
 
 
-@serializable(package="bayesflow.adapters")
-class Adapter(MutableSequence[Transform]):
+class Adapter(Serializable, MutableSequence[Transform]):
     def __init__(self, transforms: Sequence[Transform] | None = None):
+        super().__init__()
+        self.initialize_config(stateful=["transforms"])
+
         if transforms is None:
             transforms = []
 
@@ -45,13 +44,6 @@ class Adapter(MutableSequence[Transform]):
             .convert_dtype("float64", "float32")
             .concatenate(inference_variables, into="inference_variables")
         )
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
-        return cls(transforms=deserialize(config["transforms"], custom_objects))
-
-    def get_config(self) -> dict:
-        return {"transforms": serialize(self.transforms)}
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()

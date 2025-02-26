@@ -1,22 +1,17 @@
 from numbers import Number
 
 import numpy as np
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
 
-from bayesflow.utils.io import deserialize_type, serialize_type
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
 class ToArray(ElementwiseTransform):
     """
     Checks provided data for any non-arrays and converts them to numpy arrays.
     This ensures all data is in a format suitable for training.
 
     Example:
-    >>> ta = bf.adapters.transforms.ToArray()
+    >>> ta = ToArray()
     >>> a = [1, 2, 3, 4]
     >>> ta.forward(a)
         array([1, 2, 3, 4])
@@ -28,16 +23,9 @@ class ToArray(ElementwiseTransform):
 
     def __init__(self):
         super().__init__()
+        self.initialize_config()
+
         self.original_type = None
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "ToArray":
-        instance = cls()
-        instance.original_type = deserialize_type(config["original_type"])
-        return instance
-
-    def get_config(self) -> dict:
-        return {"original_type": serialize_type(self.original_type)}
 
     def forward(self, data: any, **kwargs) -> np.ndarray:
         if self.original_type is None:

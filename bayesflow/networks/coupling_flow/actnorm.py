@@ -32,6 +32,8 @@ class ActNorm(InvertibleLayer):
 
     def __init__(self, **kwargs):
         super().__init__(**keras_kwargs(kwargs))
+        self.initialize_config(exclude=["kwargs"])
+
         self.scale = None
         self.bias = None
 

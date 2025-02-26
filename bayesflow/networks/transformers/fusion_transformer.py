@@ -1,6 +1,5 @@
 import keras
 from keras import layers
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
@@ -10,7 +9,6 @@ from ..summary_network import SummaryNetwork
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
 class FusionTransformer(SummaryNetwork):
     """Implements a more flexible version of the TimeSeriesTransformer that applies a series of self-attention layers
     followed by cross-attention between the representation and a learnable template summarized via a recurrent net."""
@@ -79,8 +77,8 @@ class FusionTransformer(SummaryNetwork):
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
-
         super().__init__(**kwargs)
+        self.initialize_config()
 
         # Ensure all tuple-settings have the same length
         check_lengths_same(embed_dims, num_heads, mlp_depths, mlp_widths)

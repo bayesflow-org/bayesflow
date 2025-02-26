@@ -19,7 +19,7 @@ def custom_objects():
 def adapter():
     from bayesflow.adapters import Adapter
 
-    d = (
+    adapter = (
         Adapter()
         .to_array()
         .as_set(["s1", "s2"])
@@ -40,7 +40,7 @@ def adapter():
         .rename("o1", "o2")
     )
 
-    return d
+    return adapter
 
 
 @pytest.fixture()

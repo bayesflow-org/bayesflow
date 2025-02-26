@@ -1,15 +1,8 @@
 from collections.abc import Sequence
 
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
-
 from .transform import Transform
 
 
-@serializable(package="bayesflow.adapters")
 class Keep(Transform):
     """
     Name the data parameters that should be kept for futher calculation.
@@ -43,14 +36,10 @@ class Keep(Transform):
     """
 
     def __init__(self, keys: Sequence[str]):
+        super().__init__()
+        self.initialize_config()
+
         self.keys = keys
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Keep":
-        return cls(keys=deserialize(config["keys"], custom_objects))
-
-    def get_config(self) -> dict:
-        return {"keys": serialize(self.keys)}
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, any]:
         return {key: value for key, value in data.items() if key in self.keys}

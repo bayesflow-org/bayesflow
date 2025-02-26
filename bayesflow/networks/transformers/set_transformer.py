@@ -1,5 +1,4 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
@@ -11,7 +10,6 @@ from .isab import InducedSetAttentionBlock
 from .pma import PoolingByMultiHeadAttention
 
 
-@serializable(package="bayesflow.networks")
 class SetTransformer(SummaryNetwork):
     """Implements the set transformer architecture from [1] which ultimately represents
     a learnable permutation-invariant function. Designed to naturally model interactions in
@@ -78,8 +76,8 @@ class SetTransformer(SummaryNetwork):
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
-
         super().__init__(**kwargs)
+        self.initialize_config()
 
         check_lengths_same(embed_dims, num_heads, mlp_depths, mlp_widths)
 

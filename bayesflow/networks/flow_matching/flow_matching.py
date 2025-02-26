@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
@@ -11,13 +10,10 @@ from bayesflow.utils import (
     jacobian_trace,
     keras_kwargs,
     optimal_transport,
-    serialize_value_or_type,
-    deserialize_value_or_type,
 )
 from ..inference_network import InferenceNetwork
 
 
-@serializable(package="bayesflow.networks")
 class FlowMatching(InferenceNetwork):
     """Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow,
     with ideas incorporated from [1-3].
@@ -63,6 +59,7 @@ class FlowMatching(InferenceNetwork):
         **kwargs,
     ):
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
+        self.initialize_config()
 
         self.use_optimal_transport = use_optimal_transport
 
@@ -82,16 +79,6 @@ class FlowMatching(InferenceNetwork):
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "base_distribution": base_distribution,
-            "use_optimal_transport": self.use_optimal_transport,
-            "optimal_transport_kwargs": self.optimal_transport_kwargs,
-            "integrate_kwargs": self.integrate_kwargs,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
-
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         super().build(xz_shape, conditions_shape=conditions_shape)
 
@@ -108,15 +95,6 @@ class FlowMatching(InferenceNetwork):
         self.subnet.build(input_shape)
         out_shape = self.subnet.compute_output_shape(input_shape)
         self.output_projector.build(out_shape)
-
-    def get_config(self):
-        base_config = super().get_config()
-        return base_config | self.config
-
-    @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
 
     def velocity(self, xz: Tensor, t: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         t = keras.ops.convert_to_tensor(t)

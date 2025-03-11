@@ -47,9 +47,6 @@ class FlowMatching(InferenceNetwork):
     INTEGRATE_DEFAULT_CONFIG = {
         "method": "euler",
         "steps": 100,
-        "tolerance": 1e-3,
-        "min_steps": 10,
-        "max_steps": 100,
     }
 
     def __init__(

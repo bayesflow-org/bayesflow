@@ -45,8 +45,8 @@ class FlowMatching(InferenceNetwork):
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": "adaptive",
+        "method": "euler",
+        "steps": 100,
         "tolerance": 1e-3,
         "min_steps": 10,
         "max_steps": 100,

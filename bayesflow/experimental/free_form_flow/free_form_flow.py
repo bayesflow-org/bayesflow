@@ -6,7 +6,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils import (
     find_network,
     keras_kwargs,
-    concatenate,
+    concatenate_valid,
     jacobian,
     jvp,
     vjp,
@@ -181,7 +181,7 @@ class FreeFormFlow(InferenceNetwork):
         if conditions is None:
             inp = x
         else:
-            inp = concatenate(x, conditions, axis=-1)
+            inp = concatenate_valid([x, conditions], axis=-1)
         network_out = self.encoder_projector(
             self.encoder_subnet(inp, training=training, **kwargs), training=training, **kwargs
         )
@@ -191,7 +191,7 @@ class FreeFormFlow(InferenceNetwork):
         if conditions is None:
             inp = z
         else:
-            inp = concatenate(z, conditions, axis=-1)
+            inp = concatenate_valid([z, conditions], axis=-1)
         network_out = self.decoder_projector(
             self.decoder_subnet(inp, training=training, **kwargs), training=training, **kwargs
         )

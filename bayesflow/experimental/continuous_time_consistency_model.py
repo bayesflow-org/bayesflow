@@ -9,7 +9,7 @@ import numpy as np
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     jvp,
-    concatenate,
+    concatenate_valid,
     find_network,
     keras_kwargs,
     expand_right_as,
@@ -240,7 +240,7 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
         r = 1.0  # TODO: if consistency distillation training (not supported yet) is unstable, add schedule here
 
         def f_teacher(x, t):
-            o = self.subnet(concatenate(x, self.time_emb(t), conditions, axis=-1), training=stage == "training")
+            o = self.subnet(concatenate_valid([x, self.time_emb(t), conditions], axis=-1), training=stage == "training")
             return self.subnet_projector(o)
 
         primals = (xt / self.sigma_data, t)
@@ -254,7 +254,7 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
         cos_sin_dFdt = ops.stop_gradient(cos_sin_dFdt)
 
         # calculate output of the network
-        xtc = concatenate(xt / self.sigma_data, self.time_emb(t), conditions, axis=-1)
+        xtc = concatenate_valid([xt / self.sigma_data, self.time_emb(t), conditions], axis=-1)
         student_out = self.subnet_projector(self.subnet(xtc, training=stage == "training"))
 
         # calculate the tangent

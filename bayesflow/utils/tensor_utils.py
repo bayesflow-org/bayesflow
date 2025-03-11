@@ -10,6 +10,16 @@ from . import logging
 T = TypeVar("T")
 
 
+def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor | None:
+    """Concatenate multiple tensors along axis, ignoring None values."""
+    tensors = [t for t in tensors if t is not None]
+
+    if not tensors:
+        return None
+
+    return keras.ops.concatenate(tensors, axis=axis)
+
+
 def expand(x: Tensor, n: int, side: str):
     if n < 0:
         raise ValueError(f"Cannot expand {n} times.")
@@ -124,6 +134,16 @@ def size_of(x) -> int:
 
     # sum up individual sizes
     return sum(size_of(tensor) for tensor in x.values())
+
+
+def stack_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor | None:
+    """Stack multiple tensors along axis, ignoring None values."""
+    tensors = [t for t in tensors if t is not None]
+
+    if not tensors:
+        return None
+
+    return keras.ops.stack(tensors, axis=axis)
 
 
 def tile_axis(x: Tensor, n: int, axis: int) -> Tensor:

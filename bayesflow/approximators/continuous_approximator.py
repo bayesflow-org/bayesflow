@@ -11,7 +11,7 @@ from keras.saving import (
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, logging, split_arrays
+from bayesflow.utils import filter_kwargs, logging, split_arrays, concatenate_valid
 from .approximator import Approximator
 
 
@@ -213,6 +213,7 @@ class ContinuousApproximator(Approximator):
     def sample(
         self,
         *,
+        num_datasets: int,
         num_samples: int,
         conditions: dict[str, np.ndarray],
         split: bool = False,
@@ -224,6 +225,8 @@ class ContinuousApproximator(Approximator):
 
         Parameters
         ----------
+        num_datasets: int, optional
+            Number of datasets to generate.
         num_samples : int
             Number of samples to generate.
         conditions : dict[str, np.ndarray]
@@ -239,17 +242,54 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        # at inference time, inference_variables are estimated by the networks and thus ignored in conditions
-        conditions.pop("inference_variables", None)
-        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-        conditions = {"inference_variables": self._sample(num_samples=num_samples, **conditions, **kwargs)}
-        conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
-        conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
+        conditions = self.adapter(conditions, strict=False)
+
+        if "inference_conditions" in conditions:
+            inference_conditions = keras.ops.convert_to_tensor(conditions["inference_conditions"])
+        else:
+            inference_conditions = None
+
+        if "summary_conditions" in conditions:
+            # we are directly supplied the summary network output
+            if self.summary_network is None:
+                raise ValueError("Cannot supply direct summary conditions without a summary network.")
+            summary_conditions = keras.ops.convert_to_tensor(conditions["summary_conditions"])
+        elif "summary_variables" in conditions:
+            # we are supplied the summary network input
+            if self.summary_network is None:
+                raise ValueError("Cannot supply summary variables without a summary network.")
+            summary_variables = keras.ops.convert_to_tensor(conditions["summary_variables"])
+            summary_conditions = self.summary_network(summary_variables)
+        else:
+            # we are not supplied any summary statistics
+            if self.summary_network is not None:
+                raise ValueError("Summary conditions are required when a summary network is present.")
+            summary_conditions = None
+
+        shape = [num_datasets, num_samples, keras.ops.shape(inference_conditions)[-1]]
+        inference_conditions = keras.ops.broadcast_to(inference_conditions, shape)
+
+        shape = [num_datasets, num_samples, keras.ops.shape(summary_conditions)[-1]]
+        summary_conditions = keras.ops.broadcast_to(summary_conditions, shape)
+
+        samples = self.inference_network.sample(
+            (num_datasets, num_samples),
+            conditions=concatenate_valid([inference_conditions, summary_conditions], axis=-1),
+            **kwargs,
+        )
+
+        samples = keras.ops.convert_to_numpy(samples)
+
+        samples = {
+            "inference_variables": samples,
+            **conditions,
+        }
+        samples = self.adapter(samples, inverse=True, strict=False)
 
         if split:
-            conditions = split_arrays(conditions, axis=-1)
-        return conditions
+            samples = split_arrays(samples, axis=-1)
+
+        return samples
 
     def _sample(
         self,

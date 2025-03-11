@@ -28,7 +28,7 @@ class BasicWorkflow(Workflow):
         inference_network: InferenceNetwork | str = "coupling_flow",
         summary_network: SummaryNetwork | str = None,
         initial_learning_rate: float = 5e-4,
-        optimizer: type = None,
+        optimizer: keras.optimizers.Optimizer | type = None,
         checkpoint_filepath: str = None,
         checkpoint_name: str = "model",
         save_weights_only: bool = False,

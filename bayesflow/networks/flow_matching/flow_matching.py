@@ -98,13 +98,8 @@ class FlowMatching(InferenceNetwork):
 
         self.use_optimal_transport = use_optimal_transport
 
-        new_integrate_kwargs = FlowMatching.INTEGRATE_DEFAULT_CONFIG.copy()
-        new_integrate_kwargs.update(integrate_kwargs or {})
-        self.integrate_kwargs = new_integrate_kwargs
-
-        new_optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG.copy()
-        new_optimal_transport_kwargs.update(optimal_transport_kwargs or {})
-        self.optimal_transport_kwargs = new_optimal_transport_kwargs
+        self.integrate_kwargs = FlowMatching.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
+        self.optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
 

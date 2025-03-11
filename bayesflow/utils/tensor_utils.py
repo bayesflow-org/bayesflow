@@ -93,6 +93,28 @@ def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:
     return tile_axis(x, n, axis=axis)
 
 
+def is_symbolic_tensor(x: Tensor) -> bool:
+    if keras.utils.is_keras_tensor(x):
+        return True
+
+    if not keras.ops.is_tensor(x):
+        return False
+
+    match keras.backend.backend():
+        case "jax":
+            import jax
+
+            return not jax.core.is_concrete(x)
+        case "tensorflow":
+            import tensorflow as tf
+
+            return tf.is_symbolic_tensor(x)
+        case "torch":
+            return False
+        case _:
+            raise NotImplementedError(f"Symbolic tensor check not implemented for backend {keras.backend.backend()!r}")
+
+
 def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both") -> Tensor:
     """
     Pad x with n values along axis on the given side.
@@ -116,6 +138,55 @@ def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both")
             raise ValueError(f"Invalid side {name!r}. Must be 'left', 'right', or 'both'.")
         case _:
             raise TypeError(f"Invalid side type {type(side)!r}. Must be str.")
+
+
+def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") -> Tensor:
+    """
+    Find indices where elements should be inserted to maintain order.
+    """
+
+    match keras.backend.backend():
+        case "jax":
+            import jax
+            import jax.numpy as jnp
+
+            logging.warn_once(f"searchsorted is not yet optimized for backend {keras.backend.backend()!r}")
+
+            # do not vmap over the side argument (we have to pass it as a positional argument)
+            in_axes = [0, 0, None]
+
+            # vmap over the batch dimension
+            vss = jax.vmap(jnp.searchsorted, in_axes=in_axes)
+
+            # flatten all batch dimensions
+            ss = sorted_sequence.reshape((-1,) + sorted_sequence.shape[-1:])
+            v = values.reshape((-1,) + values.shape[-1:])
+
+            # noinspection PyTypeChecker
+            indices = vss(ss, v, side)
+
+            # restore the batch dimensions
+            indices = indices.reshape(values.shape)
+
+            # noinspection PyTypeChecker
+            return indices
+        case "tensorflow":
+            import tensorflow as tf
+
+            # always use int64 to avoid complicated graph code
+            indices = tf.searchsorted(sorted_sequence, values, side=side, out_type="int64")
+
+            return indices
+        case "torch":
+            import torch
+
+            out_int32 = len(sorted_sequence) <= np.iinfo(np.int32).max
+
+            indices = torch.searchsorted(sorted_sequence, values, side=side, out_int32=out_int32)
+
+            return indices
+        case _:
+            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")
 
 
 def size_of(x) -> int:
@@ -189,11 +260,6 @@ def tree_concatenate(structures: Sequence[T], axis: int = 0, numpy: bool = None)
     return keras.tree.map_structure(concat, *structures)
 
 
-def concatenate(*tensors: Sequence[Tensor], axis=0):
-    """Concatenate multiple tensors along axis, some of which can be None."""
-    return keras.ops.concatenate([t for t in tensors if t is not None], axis=axis)
-
-
 def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
     """Like :func:`tree_concatenate`, except tensors are stacked instead of concatenated."""
     if numpy is None:
@@ -211,52 +277,3 @@ def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
             return keras.ops.stack(items, axis=axis)
 
     return keras.tree.map_structure(stack, *structures)
-
-
-def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") -> Tensor:
-    """
-    Find indices where elements should be inserted to maintain order.
-    """
-
-    match keras.backend.backend():
-        case "jax":
-            import jax
-            import jax.numpy as jnp
-
-            logging.warn_once(f"searchsorted is not yet optimized for backend {keras.backend.backend()!r}")
-
-            # do not vmap over the side argument (we have to pass it as a positional argument)
-            in_axes = [0, 0, None]
-
-            # vmap over the batch dimension
-            vss = jax.vmap(jnp.searchsorted, in_axes=in_axes)
-
-            # flatten all batch dimensions
-            ss = sorted_sequence.reshape((-1,) + sorted_sequence.shape[-1:])
-            v = values.reshape((-1,) + values.shape[-1:])
-
-            # noinspection PyTypeChecker
-            indices = vss(ss, v, side)
-
-            # restore the batch dimensions
-            indices = indices.reshape(values.shape)
-
-            # noinspection PyTypeChecker
-            return indices
-        case "tensorflow":
-            import tensorflow as tf
-
-            # always use int64 to avoid complicated graph code
-            indices = tf.searchsorted(sorted_sequence, values, side=side, out_type="int64")
-
-            return indices
-        case "torch":
-            import torch
-
-            out_int32 = len(sorted_sequence) <= np.iinfo(np.int32).max
-
-            indices = torch.searchsorted(sorted_sequence, values, side=side, out_int32=out_int32)
-
-            return indices
-        case _:
-            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")

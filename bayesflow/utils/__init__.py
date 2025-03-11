@@ -58,6 +58,8 @@ from .tensor_utils import (
     expand_right_as,
     expand_right_to,
     expand_tile,
+    pad,
+    searchsorted,
     size_of,
     stack_valid,
     tile_axis,

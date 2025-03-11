@@ -201,7 +201,7 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments passed to the inner network.
         """
-        xtc = concatenate(x / self.sigma_data, self.time_emb(t), conditions, axis=-1)
+        xtc = concatenate_valid([x / self.sigma_data, self.time_emb(t), conditions], axis=-1)
         f = self.subnet_projector(self.subnet(xtc, training=training, **kwargs))
         out = ops.cos(t) * x - ops.sin(t) * self.sigma_data * f
         return out

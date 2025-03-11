@@ -110,11 +110,10 @@ class FlowMatching(InferenceNetwork):
 
         self.seed_generator = keras.random.SeedGenerator()
 
+        subnet_kwargs = subnet_kwargs or {}
+
         if subnet == "mlp":
-            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG.copy()
-            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
-        else:
-            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")

@@ -65,15 +65,20 @@ class ContinuousApproximator(Approximator):
         summary_variables : Sequence of str, optional
             Names of the summary variables in the data
         """
-        adapter = Adapter.create_default(inference_variables)
+        adapter = Adapter()
+        adapter.to_array()
+        adapter.convert_dtype("float64", "float32")
+        adapter.concatenate(inference_variables, into="inference_variables")
 
         if inference_conditions is not None:
-            adapter = adapter.concatenate(inference_conditions, into="inference_conditions")
+            adapter.concatenate(inference_conditions, into="inference_conditions")
 
         if summary_variables is not None:
-            adapter = adapter.as_set(summary_variables).concatenate(summary_variables, into="summary_variables")
+            adapter.as_set(summary_variables)
+            adapter.concatenate(summary_variables, into="summary_variables")
 
-        adapter = adapter.keep(["inference_variables", "inference_conditions", "summary_variables"]).standardize()
+        adapter.keep(["inference_variables", "inference_conditions", "summary_variables"])
+        adapter.standardize()
 
         return adapter
 

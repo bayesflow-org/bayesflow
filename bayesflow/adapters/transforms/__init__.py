@@ -12,6 +12,7 @@ from .keep import Keep
 from .lambda_transform import LambdaTransform
 from .log import Log
 from .map_transform import MapTransform
+from .numpy_transform import NumpyTransform
 from .one_hot import OneHot
 from .rename import Rename
 from .sqrt import Sqrt

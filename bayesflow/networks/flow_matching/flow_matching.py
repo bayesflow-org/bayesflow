@@ -60,6 +60,7 @@ class FlowMatching(InferenceNetwork):
         loss_fn: str = "mse",
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, any] = None,
         **kwargs,
     ):
         """

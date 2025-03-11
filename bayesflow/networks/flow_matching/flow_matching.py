@@ -56,7 +56,7 @@ class FlowMatching(InferenceNetwork):
         self,
         subnet: str | type = "mlp",
         base_distribution: str = "normal",
-        use_optimal_transport: bool = False,
+        use_optimal_transport: bool = True,
         loss_fn: str = "mse",
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,

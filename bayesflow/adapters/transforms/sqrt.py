@@ -1,8 +1,10 @@
+from keras.saving import register_keras_serializable as serializable
 import numpy as np
 
 from .elementwise_transform import ElementwiseTransform
 
 
+@serializable(package="bayesflow.adapters")
 class Sqrt(ElementwiseTransform):
     """Square-root transform a variable.
 

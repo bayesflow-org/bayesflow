@@ -1,0 +1,102 @@
+---
+title: "R_example_notebook"
+author: "Leona Odole"
+date: "2025-03-02"
+output: html_document
+---
+# Set Up 
+```{r}
+library(reticulate)
+```
+
+```{r echo=FALSE}
+# explicit conda env path during dev
+# use_condaenv("/path_to_environment/environment_name")
+
+#use_condaenv("/Users/marvin/miniforge3/envs/bayesflow_r")
+use_condaenv("/Users/eodole/miniforge3/envs/bfv5_2Mar25")
+```
+
+
+```{r}
+bf <- import("bayesflow")
+keras <- import("keras")
+```
+
+```{r}
+# set backend 
+# can be set to one of the three options 
+system.environment <- Sys.getenv()
+
+if(!("KERAS_BACKEND" %in% names(system.environment))){
+  Sys.setenv(KERAS_BACKEND = "tensorflow")
+}
+
+```
+
+Users will notice that bayesflows uses a lot of dictionaries 
+
+# Generative Model
+create the likelihood model following linear regrssion 
+```{r}
+
+likelihood <- function(beta_0, beta_1, sigma, N, ...){
+  # x: predictor variable 
+  x <-  rnorm(n=N)
+  # y: response variable 
+  y <- rnorm(n=N, mean = beta_0 + beta_1 * x, sd= sigma )
+  return(dict(y=y,x=x))
+}
+```
+
+
+```{r}
+prior <- function(...){
+  # betas: regression coefficents
+  beta_0 <- rnorm(1, 2, 3)
+  beta_1 <- rnorm(1,0,1)
+  # sigma: residual stdev
+  sigma <- rgamma(1, 1, 1)
+  return(dict(beta_0=beta_0, beta_1= beta_1, sigma=sigma))
+}
+```
+
+```{r}
+meta <- function(batch_size){
+  # in case we want to determine batch size dynamically but here its ignored
+  # N: number of observations in the dataset 
+  N = sample(5:15, 1)
+  return(dict(N=N))
+}
+```
+
+```{r}
+simulator = bf$simulators$make_simulator(c(prior,likelihood), meta_fn = meta)
+```
+
+```{r}
+sim_draws = simulator$sample(10L) # note this must be an integer specify with L 
+# 10 L is the batch size 
+```
+
+
+the plot functions dont work 
+
+# Adapter 
+
+adapter lets us apply transforms to our data before training, for each of these steps we can use add transform and a string name of the tr
+
+```{r}
+
+adapter <- bf$adapters$Adapter()$broadcast("N", to="x")$as_set(c("x", "y"))$constrain("sigma", lower=0)$standardize(exclude=c("N"))$concatenate(c("beta_0", "beta_1", "sigma"), into="inference_variables")$concatenate(c("x", "y"), into="summary_variables")$rename("N", "inference_conditions")
+
+
+```
+
+
+
+```{r}
+adapter(np_array(sim_draws))
+
+```
+

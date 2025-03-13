@@ -11,18 +11,21 @@ class Rename(Transform):
     Transform to rename keys in data dictionary. Useful to rename variables to match those required by
     approximator. This transform can only rename one variable at a time.
 
-    Parameters:
-        - from_key: str of variable name that should be renamed
-        - to_key: str representing new name
+    Parameters
+    ----------
+    from_key : str
+        Variable name that should be renamed
+    to_key : str
+        New variable name
 
-    Example:
-        adapter = (
-            bf.adapters.Adapter()
-
-            # rename the variables to match the required approximator inputs
-            .rename("theta", "inference_variables")
-            .rename("x", "inference_conditions")
-        )
+    Examples
+    --------
+    >>> adapter = (
+        bf.adapters.Adapter()
+        # rename the variables to match the required approximator inputs
+        .rename("theta", "inference_variables")
+        .rename("x", "inference_conditions")
+    )
     """
 
     def __init__(self, from_key: str, to_key: str):

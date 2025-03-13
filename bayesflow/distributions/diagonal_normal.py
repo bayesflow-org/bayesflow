@@ -22,6 +22,32 @@ class DiagonalNormal(Distribution):
         seed_generator: keras.random.SeedGenerator = None,
         **kwargs,
     ):
+        """
+        Initializes a backend-agnostic diagonal Gaussian distribution with optional learnable parameters.
+
+        This class represents a Gaussian distribution with a diagonal covariance matrix, allowing for efficient
+        sampling and density evaluation.
+
+        The mean and standard deviation can be specified as fixed values or learned during training. The class also
+        supports random number generation with an optional seed for reproducibility.
+
+        Parameters
+        ----------
+        mean : int, float, np.ndarray, or Tensor, optional
+            The mean of the Gaussian distribution. Can be a scalar or a tensor. Default is 0.0.
+        std : int, float, np.ndarray, or Tensor, optional
+            The standard deviation of the Gaussian distribution. Can be a scalar or a tensor.
+            Default is 1.0.
+        use_learnable_parameters : bool, optional
+            Whether to treat the mean and standard deviation as learnable parameters. Default is False.
+        seed_generator : keras.random.SeedGenerator, optional
+            A Keras seed generator for reproducible random sampling. If None, a new seed
+            generator is created. Default is None.
+        **kwargs
+            Additional keyword arguments passed to the base `Distribution` class.
+
+        """
+
         super().__init__(**kwargs)
         self.mean = mean
         self.std = std

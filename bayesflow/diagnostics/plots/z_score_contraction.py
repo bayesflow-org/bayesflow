@@ -7,8 +7,9 @@ from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_s
 
 
 def z_score_contraction(
+    estimates: dict[str, np.ndarray] | np.ndarray,
     targets: dict[str, np.ndarray] | np.ndarray,
-    references: dict[str, np.ndarray] | np.ndarray,
+    variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -21,7 +22,7 @@ def z_score_contraction(
     """
     Implements a graphical check for global model sensitivity by plotting the
     posterior z-score over the posterior contraction for each set of posterior
-    samples in ``post_samples`` according to [1].
+    samples in ``estimates`` according to [1].
 
     - The definition of the posterior z-score is:
 
@@ -52,10 +53,13 @@ def z_score_contraction(
 
     Parameters
     ----------
-    targets      : np.ndarray of shape (num_datasets, num_post_draws, num_params)
+    estimates      : np.ndarray of shape (num_datasets, num_post_draws, num_params)
         The posterior draws obtained from num_datasets
-    references     : np.ndarray of shape (num_datasets, num_params)
+    targets     : np.ndarray of shape (num_datasets, num_params)
         The prior draws (true parameters) used for generating the num_datasets
+    variable_keys       : list or None, optional, default: None
+       Select keys from the dictionaries provided in estimates and targets.
+       By default, select all keys.
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     figsize           : tuple or None, optional, default : None
@@ -80,33 +84,34 @@ def z_score_contraction(
     Raises
     ------
     ShapeError
-        If there is a deviation from the expected shapes of ``post_samples`` and ``prior_samples``.
+        If there is a deviation from the expected shapes of ``estimates`` and ``targets``.
     """
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
+        estimates=estimates,
         targets=targets,
-        references=references,
+        variable_keys=variable_keys,
         variable_names=variable_names,
         num_col=num_col,
         num_row=num_row,
         figsize=figsize,
     )
 
+    estimates = plot_data.pop("estimates")
     targets = plot_data.pop("targets")
-    references = plot_data.pop("references")
 
     # Estimate posterior means and stds
-    post_means = targets.mean(axis=1)
-    post_vars = targets.var(axis=1, ddof=1)
+    post_means = estimates.mean(axis=1)
+    post_vars = estimates.var(axis=1, ddof=1)
     post_stds = np.sqrt(post_vars)
 
     # Estimate prior variance
-    prior_vars = references.var(axis=0, keepdims=True, ddof=1)
+    prior_vars = targets.var(axis=0, keepdims=True, ddof=1)
 
     # Compute contraction and z-score
-    contraction = 1 - (post_vars / prior_vars)
-    z_score = (post_means - references) / post_stds
+    contraction = np.clip(1 - (post_vars / prior_vars), 0, 1)
+    z_score = (post_means - targets) / post_stds
 
     # Loop and plot
     for i, ax in enumerate(plot_data["axes"].flat):
@@ -116,7 +121,7 @@ def z_score_contraction(
         ax.scatter(contraction[:, i], z_score[:, i], color=color, alpha=0.5)
         ax.set_xlim([-0.05, 1.05])
 
-    prettify_subplots(plot_data["axes"], tick_fontsize)
+    prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
     # Add labels, titles, and set font sizes
     add_titles_and_labels(

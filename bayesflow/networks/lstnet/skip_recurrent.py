@@ -3,6 +3,7 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import keras_kwargs, find_recurrent_net
+from bayesflow.utils.decorators import sanitize_input_shape
 
 
 @serializable(package="bayesflow.networks")
@@ -58,5 +59,6 @@ class SkipRecurrentNet(keras.Model):
         skip_summary = self.skip_recurrent(self.skip_conv(time_series), training=training)
         return keras.ops.concatenate((direct_summary, skip_summary), axis=-1)
 
+    @sanitize_input_shape
     def build(self, input_shape):
         self.call(keras.ops.zeros(input_shape))

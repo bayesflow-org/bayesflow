@@ -1,5 +1,8 @@
-﻿Public API: bayesflow package
-=============================
+﻿API Reference
+=============
+
+This is the reference for the public API. For a more guided introduction,
+please refer to the :doc:`Examples <../examples>` section.
 
 .. autosummary::
     :toctree: .
@@ -12,6 +15,7 @@
     bayesflow.datasets
     bayesflow.diagnostics
     bayesflow.distributions
+    bayesflow.experimental
     bayesflow.metrics
     bayesflow.networks
     bayesflow.simulators

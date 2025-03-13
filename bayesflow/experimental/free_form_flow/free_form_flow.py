@@ -14,7 +14,7 @@ from bayesflow.utils import (
     deserialize_value_or_type,
 )
 
-from ..inference_network import InferenceNetwork
+from bayesflow.networks import InferenceNetwork
 
 
 @serializable(package="networks.free_form_flow")
@@ -31,6 +31,24 @@ class FreeFormFlow(InferenceNetwork):
     In International Conference on Learning Representations.
     """
 
+    ENCODER_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
+
+    DECODER_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
+
     def __init__(
         self,
         beta: float = 50.0,
@@ -42,8 +60,8 @@ class FreeFormFlow(InferenceNetwork):
     ):
         """Creates an instance of a Free-form Flow.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         beta                  : float, optional, default: 50.0
         encoder_subnet        : str or type, optional, default: "mlp"
             A neural network type for the flow, will be instantiated using
@@ -62,9 +80,23 @@ class FreeFormFlow(InferenceNetwork):
             Additional keyword arguments
         """
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
-        self.encoder_subnet = find_network(encoder_subnet, **kwargs.get("encoder_subnet_kwargs", {}))
+
+        if encoder_subnet == "mlp":
+            encoder_subnet_kwargs = FreeFormFlow.ENCODER_MLP_DEFAULT_CONFIG.copy()
+            encoder_subnet_kwargs.update(kwargs.get("encoder_subnet_kwargs", {}))
+        else:
+            encoder_subnet_kwargs = kwargs.get("encoder_subnet_kwargs", {})
+
+        self.encoder_subnet = find_network(encoder_subnet, **encoder_subnet_kwargs)
         self.encoder_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
-        self.decoder_subnet = find_network(decoder_subnet, **kwargs.get("decoder_subnet_kwargs", {}))
+
+        if decoder_subnet == "mlp":
+            decoder_subnet_kwargs = FreeFormFlow.DECODER_MLP_DEFAULT_CONFIG.copy()
+            decoder_subnet_kwargs.update(kwargs.get("decoder_subnet_kwargs", {}))
+        else:
+            decoder_subnet_kwargs = kwargs.get("decoder_subnet_kwargs", {})
+
+        self.decoder_subnet = find_network(decoder_subnet, **decoder_subnet_kwargs)
         self.decoder_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
 
         self.hutchinson_sampling = hutchinson_sampling

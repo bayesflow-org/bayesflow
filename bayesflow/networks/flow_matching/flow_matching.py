@@ -19,13 +19,38 @@ from ..inference_network import InferenceNetwork
 
 @serializable(package="bayesflow.networks")
 class FlowMatching(InferenceNetwork):
-    """Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow,
-    with ideas incorporated from [1-3].
+    """Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas incorporated
+    from [1-3].
 
     [1] Rectified Flow: arXiv:2209.03003
     [2] Flow Matching: arXiv:2210.02747
     [3] Optimal Transport Flow Matching: arXiv:2302.00482
     """
+
+    MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
+
+    OPTIMAL_TRANSPORT_DEFAULT_CONFIG = {
+        "method": "sinkhorn",
+        "cost": "euclidean",
+        "regularization": 0.1,
+        "max_steps": 100,
+        "tolerance": 1e-4,
+    }
+
+    INTEGRATE_DEFAULT_CONFIG = {
+        "method": "rk45",
+        "steps": "adaptive",
+        "tolerance": 1e-3,
+        "min_steps": 10,
+        "max_steps": 100,
+    }
 
     def __init__(
         self,
@@ -37,45 +62,68 @@ class FlowMatching(InferenceNetwork):
         optimal_transport_kwargs: dict[str, any] = None,
         **kwargs,
     ):
+        """
+        Initializes a flow-based model with configurable subnet architecture, loss function, and optional optimal
+        transport integration.
+
+        This model learns a transformation from a base distribution to a target distribution using a specified subnet
+        type, which can be an MLP or a custom network. It supports flow matching with optional optimal transport for
+        improved sample efficiency.
+
+        The integration and transport steps can be customized with additional parameters available in the respective
+        configuration dictionaries.
+
+        Parameters
+        ----------
+        subnet : str or type, optional
+            The architecture used for the transformation network. Can be "mlp" or a custom
+            callable network. Default is "mlp".
+        base_distribution : str, optional
+            The base probability distribution from which samples are drawn, such as "normal".
+            Default is "normal".
+        use_optimal_transport : bool, optional
+            Whether to apply optimal transport for improved training stability. Default is False.
+        loss_fn : str, optional
+            The loss function used for training, such as "mse". Default is "mse".
+        integrate_kwargs : dict[str, any], optional
+            Additional keyword arguments for the integration process. Default is None.
+        optimal_transport_kwargs : dict[str, any], optional
+            Additional keyword arguments for configuring optimal transport. Default is None.
+        **kwargs
+            Additional keyword arguments passed to the subnet and other components.
+        """
+
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
 
         self.use_optimal_transport = use_optimal_transport
 
-        if integrate_kwargs is None:
-            integrate_kwargs = {
-                "method": "rk45",
-                "steps": "adaptive",
-                "tolerance": 1e-3,
-                "min_steps": 10,
-                "max_steps": 100,
-            }
+        new_integrate_kwargs = FlowMatching.INTEGRATE_DEFAULT_CONFIG.copy()
+        new_integrate_kwargs.update(integrate_kwargs or {})
+        self.integrate_kwargs = new_integrate_kwargs
 
-        self.integrate_kwargs = integrate_kwargs
-
-        if optimal_transport_kwargs is None:
-            optimal_transport_kwargs = {
-                "method": "sinkhorn",
-                "cost": "euclidean",
-                "regularization": 0.1,
-                "max_steps": 100,
-                "tolerance": 1e-4,
-            }
+        new_optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG.copy()
+        new_optimal_transport_kwargs.update(optimal_transport_kwargs or {})
+        self.optimal_transport_kwargs = new_optimal_transport_kwargs
 
         self.loss_fn = keras.losses.get(loss_fn)
 
-        self.optimal_transport_kwargs = optimal_transport_kwargs
-
         self.seed_generator = keras.random.SeedGenerator()
 
-        self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
+        if subnet == "mlp":
+            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG.copy()
+            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
+        else:
+            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+
+        self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
 
         # serialization: store all parameters necessary to call __init__
         self.config = {
             "base_distribution": base_distribution,
-            "use_optimal_transport": use_optimal_transport,
-            "optimal_transport_kwargs": optimal_transport_kwargs,
-            "integrate_kwargs": integrate_kwargs,
+            "use_optimal_transport": self.use_optimal_transport,
+            "optimal_transport_kwargs": self.optimal_transport_kwargs,
+            "integrate_kwargs": self.integrate_kwargs,
             **kwargs,
         }
         self.config = serialize_value_or_type(self.config, "subnet", subnet)

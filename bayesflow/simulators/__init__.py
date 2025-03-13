@@ -5,3 +5,7 @@ from .make_simulator import make_simulator
 from .model_comparison_simulator import ModelComparisonSimulator
 from .simulator import Simulator
 from .two_moons import TwoMoons
+
+from ..utils._docs import _add_imports_to_all
+
+_add_imports_to_all(include_modules=[])

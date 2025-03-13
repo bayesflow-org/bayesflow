@@ -4,7 +4,7 @@ from . import (
     numpy_utils,
 )
 from .callbacks import detailed_loss_callback
-from .comp_utils import expected_calibration_error
+from .devices import devices
 from .dict_utils import (
     convert_args,
     convert_kwargs,
@@ -67,3 +67,7 @@ from .tensor_utils import (
 )
 from .validators import check_lengths_same
 from .workflow_utils import find_inference_network, find_summary_network
+
+from ._docs import _add_imports_to_all
+
+_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils"])

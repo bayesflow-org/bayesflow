@@ -10,9 +10,8 @@ from .invertible_layer import InvertibleLayer
 
 @serializable(package="networks.coupling_flow")
 class ActNorm(InvertibleLayer):
-    """Implements an Activation Normalization (ActNorm) Layer.
-    Activation Normalization is learned invertible normalization, using
-    a Scale (s) and Bias (b) vector::
+    """Implements an Activation Normalization (ActNorm) Layer. Activation Normalization is learned invertible
+    normalization, using a scale (s) and a bias (b) vector::
 
        y = s * x + b(forward)
        x = (y - b) / s(inverse)
@@ -20,14 +19,11 @@ class ActNorm(InvertibleLayer):
     References
     ----------
 
-    .. [1] Kingma, D. P., & Dhariwal, P. (2018).
-        Glow: Generative flow with invertible 1x1 convolutions.
+    [1] Kingma, D. P., & Dhariwal, P. (2018). Glow: Generative flow with invertible 1x1 convolutions.
         Advances in Neural Information Processing Systems, 31.
 
-    .. [2] Salimans, Tim, and Durk P. Kingma. (2016).
-       Weight normalization: A simple reparameterization to accelerate
-       training of deep neural networks.
-       Advances in Neural Information Processing Systems, 29.
+    [2] Salimans, Tim, and Durk P. Kingma. (2016). Weight normalization: A simple reparameterization to accelerate
+       training of deep neural networks. Advances in Neural Information Processing Systems, 29.
     """
 
     def __init__(self, **kwargs):

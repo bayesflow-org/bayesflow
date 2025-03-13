@@ -1,7 +1,7 @@
 import keras
 from keras.saving import register_keras_serializable
 import numpy as np
-from ..mlp import MLP
+from bayesflow.networks.mlp import MLP
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import keras_kwargs
@@ -22,8 +22,8 @@ class ConditionalGaussian(keras.Layer):
         """Creates an instance of a `ConditionalGaussian` with configurable
         `MLP` networks for the means and standard deviations.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         depth: int, optional, default: 4
             The number of MLP hidden layers (minimum: 1)
         width: int, optional, default: 128

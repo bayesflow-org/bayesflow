@@ -4,11 +4,9 @@ name: multiversion-docs
 
 on:
   workflow_dispatch:
-# execute this workflow automatically when we push to master or dev
-#   push:
-#     branches:
-#       - master
-#       - dev
+  push:
+    branches:
+      - dev
 
 jobs:
 
@@ -47,10 +45,11 @@ jobs:
         run: |
           cd ./dev/docsrc
           make clean
-          make github
+          make docs-sequential
       - name: Commit changes to docs
         run: |
           cd ./gh-pages-dev
+          git rm --quiet -rf .
           cp -R ../dev/docs/* ./
           git config --local user.email ""
           git config --local user.name "github-actions"

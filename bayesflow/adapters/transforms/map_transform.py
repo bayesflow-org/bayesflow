@@ -14,6 +14,11 @@ class MapTransform(Transform):
     """
     Implements a transform that applies a set of elementwise transforms
     to a subset of the data as given by a mapping.
+
+    Parameters
+    ----------
+    transform_map : dict[str, ElementwiseTransform]
+        Dictionary with variable names as keys and corresponding transforms as values.
     """
 
     def __init__(self, transform_map: dict[str, ElementwiseTransform]):

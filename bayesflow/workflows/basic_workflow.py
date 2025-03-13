@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Callable
 import os
 
 import matplotlib.pyplot as plt
@@ -13,7 +13,7 @@ from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ContinuousApproximator
 from bayesflow.types import Shape
-from bayesflow.utils import find_inference_network, find_summary_network
+from bayesflow.utils import find_inference_network, find_summary_network, logging
 from bayesflow.diagnostics import metrics as bf_metrics
 from bayesflow.diagnostics import plots as bf_plots
 
@@ -32,6 +32,7 @@ class BasicWorkflow(Workflow):
         checkpoint_filepath: str = None,
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
+        save_best_only: bool = False,
         inference_variables: Sequence[str] | str = "theta",
         inference_conditions: Sequence[str] | str = "x",
         summary_variables: Sequence[str] | str = None,
@@ -39,17 +40,17 @@ class BasicWorkflow(Workflow):
         **kwargs,
     ):
         """
-        BasicWorkflow class for Bayesian inference workflows.
-
-        This class provides methods to set up, simulate, adapt, and fit models using
-        simulation-based inference. It allows for both online and offline data workflows.
+        This class provides methods to set up, simulate, and fit and validate models using
+        amortized Bayesian inference. It allows for both online and offline amortized workflows.
 
         Parameters
         ----------
         simulator : Simulator, optional
             A Simulator object to generate synthetic data for inference (default is None).
         adapter : Adapter, optional
-            Adapter for data processing. If not provided, a default adapter will be used (default is None).
+            Adapter for data processing. If not provided, a default adapter will be used (default is None), but
+            you need to make sure to provide the correct names for `inference_variables` and/or `inference_conditions`
+            and/or `summary_variables`.
         inference_network : InferenceNetwork or str, optional
             The inference network used for posterior approximation, specified as an instance or by
             name (default is "coupling_flow").
@@ -65,6 +66,11 @@ class BasicWorkflow(Workflow):
             Name of the checkpoint file (default is "model").
         save_weights_only : bool, optional
             If True, only the model weights will be saved during checkpointing (default is False).
+        save_best_only: bool, optional
+            If only the best model according to the quantity monitored (loss or validation) at the end of
+            each epoch will be saved instead of the last model (default is False). Use with caution,
+            as some losses (e.g. flow matching) do not reliably reflect model performance, and outliers in the
+            validation data can cause unwanted effects.
         inference_variables : Sequence[str] or str, optional
             Variables for inference as a sequence of strings or a single string (default is "theta").
             Important for automating diagnostics!
@@ -109,11 +115,45 @@ class BasicWorkflow(Workflow):
         self.checkpoint_filepath = checkpoint_filepath
         self.checkpoint_name = checkpoint_name
         self.save_weights_only = save_weights_only
+        self.save_best_only = save_best_only
+        if self.checkpoint_filepath is not None:
+            if self.save_weights_only:
+                file_ext = self.checkpoint_name + ".weights.h5"
+            else:
+                file_ext = self.checkpoint_name + ".keras"
+            checkpoint_full_filepath = os.path.join(self.checkpoint_filepath, file_ext)
+            if os.path.exists(checkpoint_full_filepath):
+                msg = (
+                    f"Checkpoint file exists: '{checkpoint_full_filepath}'.\n"
+                    "Existing checkpoints can _not_ be restored/loaded using this workflow. "
+                    "Upon refitting, the checkpoints will be overwritten."
+                )
+                if not self.save_weights_only:
+                    msg += (
+                        " To load the stored approximator from the checkpoint, "
+                        "use approximator = keras.saving.load_model(...)"
+                    )
+
+                logging.warning(msg)
         self.history = None
 
     @staticmethod
     def samples_to_data_frame(samples: dict[str, np.ndarray]) -> pd.DataFrame:
-        """Converts samples of a single data set to a pandas DataFrame."""
+        """
+        Convert a dictionary of samples into a pandas DataFrame.
+
+        Parameters
+        ----------
+        samples : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            arrays containing sampled data.
+
+        Returns
+        -------
+        pd.DataFrame
+            A pandas DataFrame where each column corresponds to a variable,
+            and rows represent individual samples.
+        """
         return pd.DataFrame(keras.tree.map_structure(np.squeeze, samples))
 
     @staticmethod
@@ -123,6 +163,30 @@ class BasicWorkflow(Workflow):
         summary_variables: Sequence[str] | str,
         standardize: Sequence[str] | str,
     ) -> Adapter:
+        """
+        Create a default adapter for processing inference variables, conditions,
+        summaries, and standardization.
+
+        - Converts all float64 values to float32 for computational efficiency.
+
+        Parameters
+        ----------
+        inference_variables : Sequence[str] or str
+            The variables to be treated as inference targets.
+        inference_conditions : Sequence[str] or str
+            The variables used as conditions for inference.
+        summary_variables : Sequence[str] or str
+            The variables used for summarization.
+        standardize : Sequence[str] or str
+            The variables to be standardized.
+
+        Returns
+        -------
+        Adapter
+            A configured Adapter instance that applies dtype conversion,
+            concatenation, and optional standardization.
+        """
+
         adapter = (
             Adapter()
             .convert_dtype(from_dtype="float64", to_dtype="float32")
@@ -140,12 +204,54 @@ class BasicWorkflow(Workflow):
         return adapter
 
     def simulate(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+        """
+        Generates a batch of simulations using the provided simulator.
+
+        Parameters
+        ----------
+        batch_shape : Shape
+            The shape of the batch to be simulated. Typically an integer for simple simulators.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the simulator's sample method.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the simulated variables.
+
+        Raises
+        ------
+        RuntimeError
+            If no simulator is provided.
+        """
         if self.simulator is not None:
             return self.simulator.sample(batch_shape, **kwargs)
         else:
             raise RuntimeError("No simulator provided!")
 
     def simulate_adapted(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+        """
+        Generates a batch of simulations and applies the adapter to the result.
+
+        Parameters
+        ----------
+        batch_shape : Shape
+            The shape of the batch to be simulated. Typically an integer for simple simulators.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the simulator's sample method.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the adapted simulated variables.
+
+        Raises
+        ------
+        RuntimeError
+            If no simulator is provided.
+        """
         if self.simulator is not None:
             return self.adapter(self.simulator.sample(batch_shape, **kwargs))
         else:
@@ -158,62 +264,193 @@ class BasicWorkflow(Workflow):
         conditions: dict[str, np.ndarray],
         **kwargs,
     ) -> dict[str, np.ndarray]:
+        """
+        Draws `num_samples` samples from the approximator given specified conditions.
+
+        Parameters
+        ----------
+        num_samples : int
+            The number of samples to generate.
+        conditions : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
+            conditions during training should be present.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the approximator's sampling function.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary where keys correspond to variable names and
+            values are arrays containing the generated samples.
+        """
         return self.approximator.sample(num_samples=num_samples, conditions=conditions, **kwargs)
 
     def log_prob(self, data: dict[str, np.ndarray], **kwargs) -> np.ndarray:
-        return self.approximator.log_prob(data=data)
+        """
+        Compute the log probability of given variables under the approximator.
 
-    def plot_diagnostics(
+        Parameters
+        ----------
+        data : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are arrays corresponding to the variables'
+            realizations.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the approximator's log probability function.
+
+        Returns
+        -------
+        np.ndarray
+            An array containing the log probabilities computed from the provided variables.
+        """
+        return self.approximator.log_prob(data=data, **kwargs)
+
+    def plot_default_diagnostics(
         self,
         test_data: dict[str, np.ndarray] | int,
         num_samples: int = 1000,
         variable_names: Sequence[str] = None,
-        as_pandas: bool = True,
         **kwargs,
     ) -> dict[str, plt.Figure]:
-        if isinstance(test_data, int) and self.simulator is not None:
-            test_data = self.simulator.sample(test_data, **kwargs.pop("test_data_kwargs", {}))
-        elif isinstance(test_data, int):
-            raise ValueError(f"No simulator found for generating {test_data} data sets.")
+        """
+        Generates default diagnostic plots to evaluate the quality of inference. The function produces several
+        diagnostic plots, including:
+        - Loss history (if training history is available).
+        - Parameter recovery plots.
+        - Calibration ECDF plots.
+        - Z-score contraction plots.
 
-        if isinstance(self.inference_variables, str):
-            inference_variables = {self.inference_variables: test_data.pop(self.inference_variables)}
-        else:
-            inference_variables = {k: test_data.pop(k) for k in self.inference_variables}
+        Parameters
+        ----------
+        test_data : dict[str, np.ndarray] or int
+            A dictionary containing test data where keys represent variable
+            names and values are corresponding data arrays. If an integer
+            is provided, that number of test data sets will be generated
+            using the simulator (if available).
+        num_samples : int, optional
+            The number of samples to draw from the approximator for diagnostics,
+            by default 1000.
+        variable_names : Sequence[str], optional
+            A list of variable names to include in the diagnostic plots. If
+            None, all available variables are used.
+        **kwargs : dict, optional
+            Additional keyword arguments:
 
-        post_samples = self.approximator.sample(
-            num_samples=num_samples, conditions=test_data, **kwargs.get("approximator_kwargs", {})
-        )
+            - `test_data_kwargs`: dict, optional
+                Arguments to pass to the simulator when generating test data.
+            - `approximator_kwargs`: dict, optional
+                Arguments to pass to the approximator's sampling function.
+            - `loss_kwargs`: dict, optional
+                Arguments for customizing the loss plot.
+            - `recovery_kwargs`: dict, optional
+                Arguments for customizing the parameter recovery plot.
+            - `calibration_ecdf_kwargs`: dict, optional
+                Arguments for customizing the empirical cumulative distribution
+                function (ECDF) calibration plot.
+            - `z_score_contraction_kwargs`: dict, optional
+                Arguments for customizing the z-score contraction plot.
+
+        Returns
+        -------
+        dict[str, plt.Figure]
+            A dictionary where keys correspond to different diagnostic plot
+            types, and values are the respective matplotlib Figure objects.
+        """
+
+        samples, inference_variables = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
 
         figures = dict()
 
         if self.history is not None:
             figures["losses"] = bf_plots.loss(self.history, **kwargs.get("loss_kwargs", {}))
 
-        figures["recovery"] = bf_plots.recovery(
-            targets=post_samples,
-            references=inference_variables,
-            variable_names=variable_names,
-            **kwargs.get("recovery_kwargs", {}),
-        )
+        plot_fns = {
+            "recovery": bf_plots.recovery,
+            "calibration_ecdf": bf_plots.calibration_ecdf,
+            "z_score_contraction": bf_plots.z_score_contraction,
+        }
 
-        figures["calibration_ecdf"] = bf_plots.calibration_ecdf(
-            targets=post_samples,
-            references=inference_variables,
-            variable_names=variable_names,
-            **kwargs.get("calibration_ecdf_kwargs", {}),
-        )
-
-        figures["z_score_contraction"] = bf_plots.z_score_contraction(
-            targets=post_samples,
-            references=inference_variables,
-            variable_names=variable_names,
-            **kwargs.get("z_score_contraction_kwargs", {}),
-        )
+        for k, plot_fn in plot_fns.items():
+            figures[k] = plot_fn(
+                estimates=samples,
+                targets=inference_variables,
+                variable_names=variable_names,
+                **kwargs.get(f"{k}_kwargs", {}),
+            )
 
         return figures
 
-    def compute_diagnostics(
+    def plot_custom_diagnostics(
+        self,
+        test_data: dict[str, np.ndarray] | int,
+        plot_fns: dict[str, Callable],
+        num_samples: int = 1000,
+        variable_names: Sequence[str] = None,
+        **kwargs,
+    ) -> dict[str, plt.Figure]:
+        """
+        Generates custom diagnostic plots to evaluate the quality of inference. The functions passed should have
+        the following signature:
+        - fn(samples, inference_variables, variable_names)
+
+        They should also return a single matplotlib Figure object.
+
+        Parameters
+        ----------
+        test_data : dict[str, np.ndarray] or int
+            A dictionary containing test data where keys represent variable
+            names and values are corresponding data arrays. If an integer
+            is provided, that number of test data sets will be generated
+            using the simulator (if available).
+        plot_fns: dict[str, callable]
+            A dictionary containing custom plotting functions where keys represent
+            the function names and values correspond to the functions themselves.
+            The functions should have a signature of fn(samples, inference_variables, variable_names)
+        num_samples : int, optional
+            The number of samples to draw from the approximator for diagnostics,
+            by default 1000.
+        variable_names : Sequence[str], optional
+            A list of variable names to include in the diagnostic plots. If
+            None, all available variables are used.
+        **kwargs : dict, optional
+            Additional keyword arguments:
+
+            - `test_data_kwargs`: dict, optional
+                Arguments to pass to the simulator when generating test data.
+            - `approximator_kwargs`: dict, optional
+                Arguments to pass to the approximator's sampling function.
+            - `loss_kwargs`: dict, optional
+                Arguments for customizing the loss plot.
+            - `recovery_kwargs`: dict, optional
+                Arguments for customizing the parameter recovery plot.
+            - `calibration_ecdf_kwargs`: dict, optional
+                Arguments for customizing the empirical cumulative distribution
+                function (ECDF) calibration plot.
+            - `z_score_contraction_kwargs`: dict, optional
+                Arguments for customizing the z-score contraction plot.
+
+        Returns
+        -------
+        dict[str, plt.Figure]
+            A dictionary where keys correspond to different diagnostic plot
+            types, and values are the respective matplotlib Figure objects.
+        """
+
+        samples, inference_variables = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+
+        figures = dict()
+        for key, plot_fn in plot_fns.items():
+            figures[key] = plot_fn(samples, inference_variables, variable_names)
+        return figures
+
+    def plot_diagnostics(self, **kwargs):
+        logging.warning(
+            "This function will be deprecated in future versions. Please, use plot_default_diagnostics"
+            "or plot_custom_diagnositcs if you want to use your custom diagnostics."
+        )
+        return self.plot_default_diagnostics(**kwargs)
+
+    def compute_default_diagnostics(
         self,
         test_data: dict[str, np.ndarray] | int,
         num_samples: int = 1000,
@@ -221,37 +458,70 @@ class BasicWorkflow(Workflow):
         as_data_frame: bool = True,
         **kwargs,
     ) -> Sequence[dict] | pd.DataFrame:
-        if isinstance(test_data, int) and self.simulator is not None:
-            test_data = self.simulator.sample(test_data, **kwargs.pop("test_data_kwargs", {}))
-        elif isinstance(test_data, int):
-            raise ValueError(f"No simulator found for generating {test_data} data sets.")
+        """
+        Computes default diagnostic metrics to evaluate the quality of inference. The function computes several
+        diagnostic metrics, including:
+        - Root Mean Squared Error (RMSE)
+        - Posterior contraction
+        - Calibration error
 
-        if isinstance(self.inference_variables, str):
-            inference_variables = {self.inference_variables: test_data.pop(self.inference_variables)}
-        else:
-            inference_variables = {k: test_data.pop(k) for k in self.inference_variables}
+        Parameters
+        ----------
+        test_data : dict[str, np.ndarray] or int
+            A dictionary containing test data where keys represent variable
+            names and values are corresponding realizations. If an integer
+            is provided, that number of test data sets will be generated
+            using the simulator (if available).
+        num_samples : int, optional
+            The number of samples to draw from the approximator for diagnostics,
+            by default 1000.
+        variable_names : Sequence[str], optional
+            A list of variable names to include in the diagnostics. If None,
+            all available variables are used.
+        as_data_frame : bool, optional
+            Whether to return the results as a pandas DataFrame (default: True).
+            If False, a sequence of dictionaries with metric values is returned.
+        **kwargs : dict, optional
+            Additional keyword arguments:
 
-        post_samples = self.approximator.sample(
-            num_samples=num_samples, conditions=test_data, **kwargs.get("approximator_kwargs", {})
-        )
+            - `test_data_kwargs`: dict, optional
+                Arguments to pass to the simulator when generating test data.
+            - `approximator_kwargs`: dict, optional
+                Arguments to pass to the approximator's sampling function.
+            - `root_mean_squared_error_kwargs`: dict, optional
+                Arguments for customizing the RMSE computation.
+            - `posterior_contraction_kwargs`: dict, optional
+                Arguments for customizing the posterior contraction computation.
+            - `calibration_error_kwargs`: dict, optional
+                Arguments for customizing the calibration error computation.
+
+        Returns
+        -------
+        Sequence[dict] or pd.DataFrame
+            If `as_data_frame` is True, returns a pandas DataFrame containing
+            the computed diagnostic metrics for each variable. Otherwise,
+            returns a sequence of dictionaries with metric values.
+        """
+
+        samples, inference_variables = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
 
         root_mean_squared_error = bf_metrics.root_mean_squared_error(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("root_mean_squared_error_kwargs", {}),
         )
 
         contraction = bf_metrics.posterior_contraction(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("posterior_contraction_kwargs", {}),
         )
 
         calibration_errors = bf_metrics.calibration_error(
-            targets=post_samples,
-            references=inference_variables,
+            estimates=samples,
+            targets=inference_variables,
             variable_names=variable_names,
             **kwargs.get("calibration_error_kwargs", {}),
         )
@@ -270,18 +540,126 @@ class BasicWorkflow(Workflow):
 
         return metrics
 
-    def fit_disk(
+    def compute_custom_diagnostics(
         self,
-        root: os.PathLike,
-        pattern: str = "*.pkl",
-        batch_size: int = 32,
-        load_fn: callable = None,
+        test_data: dict[str, np.ndarray] | int,
+        metrics: dict[str, Callable],
+        num_samples: int = 1000,
+        variable_names: Sequence[str] = None,
+        as_data_frame: bool = True,
+        **kwargs,
+    ) -> Sequence[dict] | pd.DataFrame:
+        """
+        Computes custom diagnostic metrics to evaluate the quality of inference. The metric functions should
+        have a signature of:
+
+        - metric_fn(samples, inference_variables, variable_names)
+
+        And return a dictionary containing the metric name in 'name' key and the metric values in a 'values' key.
+
+        Parameters
+        ----------
+        test_data : dict[str, np.ndarray] or int
+            A dictionary containing test data where keys represent variable
+            names and values are corresponding realizations. If an integer
+            is provided, that number of test data sets will be generated
+            using the simulator (if available).
+        metrics: dict[str, callable]
+            A dictionary containing custom metric functions where keys represent
+            the function names and values correspond to the functions themselves.
+            The functions should have a signature of fn(samples, inference_variables, variable_names)
+        num_samples : int, optional
+            The number of samples to draw from the approximator for diagnostics,
+            by default 1000.
+        variable_names : Sequence[str], optional
+            A list of variable names to include in the diagnostics. If None,
+            all available variables are used.
+        as_data_frame : bool, optional
+            Whether to return the results as a pandas DataFrame (default: True).
+            If False, a sequence of dictionaries with metric values is returned.
+        **kwargs : dict, optional
+            Additional keyword arguments:
+
+            - `test_data_kwargs`: dict, optional
+                Arguments to pass to the simulator when generating test data.
+            - `approximator_kwargs`: dict, optional
+                Arguments to pass to the approximator's sampling function.
+            - `root_mean_squared_error_kwargs`: dict, optional
+                Arguments for customizing the RMSE computation.
+            - `posterior_contraction_kwargs`: dict, optional
+                Arguments for customizing the posterior contraction computation.
+            - `calibration_error_kwargs`: dict, optional
+                Arguments for customizing the calibration error computation.
+
+        Returns
+        -------
+        Sequence[dict] or pd.DataFrame
+            If `as_data_frame` is True, returns a pandas DataFrame containing
+            the computed diagnostic metrics for each variable. Otherwise,
+            returns a sequence of dictionaries with metric values.
+        """
+
+        samples, inference_variables = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+
+        metrics_dict = {}
+        for key, metric_fn in metrics.items():
+            metric = metric_fn(samples, inference_variables, variable_names)
+            metrics_dict[metric["name"]] = metric["values"]
+
+        if as_data_frame:
+            return pd.DataFrame(metrics_dict, index=variable_names)
+        return metrics_dict
+
+    def compute_diagnostics(self, **kwargs):
+        logging.warning(
+            "This function will be deprecated in future versions. Please, use plot_default_diagnostics"
+            "or compute_custom_diagnositcs if you want to use your own metrics."
+        )
+        return self.compute_default_diagnostics(**kwargs)
+
+    def fit_offline(
+        self,
+        data: dict[str, np.ndarray],
         epochs: int = 100,
+        batch_size: int = 32,
         keep_optimizer: bool = False,
         validation_data: dict[str, np.ndarray] | int = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
-        dataset = DiskDataset(root=root, pattern=pattern, batch_size=batch_size, load_fn=load_fn, adapter=self.adapter)
+        """
+        Train the approximator offline using a fixed dataset. This approach will be faster than online training,
+        since no computation time is spent in generating new data for each batch, but it assumes that simulations
+        can fit in memory.
+
+        Parameters
+        ----------
+        data : dict[str, np.ndarray]
+            A dictionary containing training data where keys represent variable
+            names and values are corresponding realizations.
+        epochs : int, optional
+            The number of training epochs, by default 100. Consider increasing this number for free-form inference
+            networks, such as FlowMatching or ConsistencyModel, which generally need more epochs than CouplingFlows.
+        batch_size : int, optional
+            The batch size used for training, by default 32.
+        keep_optimizer : bool, optional
+            Whether to retain the current state of the optimizer after training,
+            by default False.
+        validation_data : dict[str, np.ndarray] or int, optional
+            A dictionary containing validation data. If an integer is provided,
+            that number of validation samples will be generated (if supported).
+            By default, no validation data is used.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the underlying `_fit` method.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary containing training history, where keys correspond to
+            logged metrics (e.g., loss values) and values are arrays tracking
+            metric evolution over epochs.
+        """
+
+        dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter)
 
         return self._fit(
             dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
@@ -296,6 +674,36 @@ class BasicWorkflow(Workflow):
         validation_data: dict[str, np.ndarray] | int = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
+        """
+        Train the approximator using an online data-generating process. The dataset is dynamically generated during
+        training, making this approach suitable for scenarios where generating new simulations is computationally cheap.
+
+        Parameters
+        ----------
+        epochs : int, optional
+            The number of training epochs, by default 100.
+        num_batches_per_epoch : int, optional
+            The number of batches generated per epoch, by default 100.
+        batch_size : int, optional
+            The batch size used for training, by default 32.
+        keep_optimizer : bool, optional
+            Whether to retain the current state of the optimizer after training,
+            by default False.
+        validation_data : dict[str, np.ndarray] or int, optional
+            A dictionary containing validation data. If an integer is provided,
+            that number of validation samples will be generated (if supported).
+            By default, no validation data is used.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the underlying `_fit` method.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary containing training history, where keys correspond to
+            logged metrics (e.g., loss values) and values are arrays tracking
+            metric evolution over epochs.
+        """
+
         dataset = OnlineDataset(
             simulator=self.simulator, batch_size=batch_size, num_batches=num_batches_per_epoch, adapter=self.adapter
         )
@@ -304,20 +712,98 @@ class BasicWorkflow(Workflow):
             dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
         )
 
-    def fit_offline(
+    def fit_disk(
         self,
-        data: dict[str, np.ndarray],
-        epochs: int = 100,
+        root: os.PathLike,
+        pattern: str = "*.pkl",
         batch_size: int = 32,
+        load_fn: callable = None,
+        epochs: int = 100,
         keep_optimizer: bool = False,
         validation_data: dict[str, np.ndarray] | int = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
-        dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter)
+        """
+        Train the approximator using data stored on disk. This approach is suitable for large sets of simulations that
+        don't fit in memory.
+
+        Parameters
+        ----------
+        root : os.PathLike
+            The root directory containing the dataset files.
+        pattern : str, optional
+            A filename pattern to match dataset files, by default ``"*.pkl"``.
+        batch_size : int, optional
+            The batch size used for training, by default 32.
+        load_fn : callable, optional
+            A function to load dataset files. If None, a default loading
+            function is used.
+        epochs : int, optional
+            The number of training epochs, by default 100. Consider increasing this number for free-form inference
+            networks, such as FlowMatching or ConsistencyModel, which generally need more epochs than CouplingFlows.
+        keep_optimizer : bool, optional
+            Whether to retain the current state of the optimizer after training,
+            by default False.
+        validation_data : dict[str, np.ndarray] or int, optional
+            A dictionary containing validation data. If an integer is provided,
+            that number of validation samples will be generated (if supported).
+            By default, no validation data is used.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the underlying `_fit` method.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary containing training history, where keys correspond to
+            logged metrics (e.g., loss values) and values are arrays tracking
+            metric evolution over epochs.
+        """
+
+        dataset = DiskDataset(root=root, pattern=pattern, batch_size=batch_size, load_fn=load_fn, adapter=self.adapter)
 
         return self._fit(
             dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
         )
+
+    def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
+        """
+        Build and initialize the optimizer based on the training strategy. Uses a cosine decay learning rate schedule,
+        where the final learning rate is proportional to the square of the initial learning rate, as found to work
+        best in SBI.
+
+        Parameters
+        ----------
+        epochs : int
+            The total number of training epochs.
+        num_batches : int
+            The number of batches per epoch.
+        strategy : str
+            The training strategy, either "online" or another mode that
+            applies weight decay. For "online" training, an Adam optimizer with gradient clipping is used. For other
+            strategies, AdamW is used with weight decay to encourage regularization.
+
+        Returns
+        -------
+        keras.Optimizer or None
+            The initialized optimizer if it was not already set. Returns None
+            if the optimizer was already defined.
+        """
+
+        if self.optimizer is not None:
+            return
+
+        # Default case
+        learning_rate = keras.optimizers.schedules.CosineDecay(
+            initial_learning_rate=self.initial_learning_rate,
+            decay_steps=epochs * num_batches,
+            alpha=self.initial_learning_rate**2,
+        )
+
+        # Use adam for online learning, apply weight decay otherwise
+        if strategy.lower() == "online":
+            self.optimizer = keras.optimizers.Adam(learning_rate, clipnorm=1.5)
+        else:
+            self.optimizer = keras.optimizers.AdamW(learning_rate, weight_decay=1e-3, clipnorm=1.5)
 
     def _fit(
         self,
@@ -349,7 +835,7 @@ class BasicWorkflow(Workflow):
                 filepath=os.path.join(self.checkpoint_filepath, file_ext),
                 monitor=monitor,
                 mode="min",
-                save_best_only=True,
+                save_best_only=self.save_best_only,
                 save_weights_only=self.save_weights_only,
                 save_freq="epoch",
             )
@@ -368,6 +854,7 @@ class BasicWorkflow(Workflow):
             self.history = self.approximator.fit(
                 dataset=dataset, epochs=epochs, validation_data=validation_data, **kwargs
             )
+            self._on_training_finished()
             return self.history
         except Exception as err:
             raise err
@@ -375,19 +862,30 @@ class BasicWorkflow(Workflow):
             if not keep_optimizer:
                 self.optimizer = None
 
-    def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
-        if self.optimizer is not None:
-            return
+    def _prepare_for_diagnostics(self, test_data: dict[str, np.ndarray] | int, num_samples: int = 1000, **kwargs):
+        if isinstance(test_data, int) and self.simulator is not None:
+            test_data = self.simulator.sample(test_data, **kwargs.pop("test_data_kwargs", {}))
+        elif isinstance(test_data, int):
+            raise ValueError(f"No simulator found for generating {test_data} data sets.")
 
-        # Default case
-        learning_rate = keras.optimizers.schedules.CosineDecay(
-            initial_learning_rate=self.initial_learning_rate,
-            decay_steps=epochs * num_batches,
-            alpha=self.initial_learning_rate**2,
+        if isinstance(self.inference_variables, str):
+            inference_variables = {self.inference_variables: test_data[self.inference_variables]}
+        else:
+            inference_variables = {k: test_data[k] for k in self.inference_variables}
+
+        samples = self.approximator.sample(
+            num_samples=num_samples, conditions=test_data, **kwargs.get("approximator_kwargs", {})
         )
 
-        # Use adam for online learning, apply weight decay otherwise
-        if strategy.lower() == "online":
-            self.optimizer = keras.optimizers.Adam(learning_rate, clipnorm=1.5)
-        else:
-            self.optimizer = keras.optimizers.AdamW(learning_rate, weight_decay=1e-3, clipnorm=1.5)
+        return samples, inference_variables
+
+    def _on_training_finished(self):
+        if self.checkpoint_filepath is not None:
+            if self.save_weights_only:
+                file_ext = self.checkpoint_name + ".weights.h5"
+            else:
+                file_ext = self.checkpoint_name + ".keras"
+
+            logging.info(f"""Training is now finished.
+            You can find the trained approximator at '{self.checkpoint_filepath}/{self.checkpoint_name}.{file_ext}'.
+            To load it, use approximator = keras.saving.load_model(...).""")

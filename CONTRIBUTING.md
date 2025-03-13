@@ -145,23 +145,37 @@ pip install .[docs]
 ```
 
 The overall *structure* of the documentation is manually designed, but the API documentation is auto-generated.
+New top-level modules (i.e., `bayesflow.mynewmodule`) have to be manually added to the list in `docsrc/source/api/bayesflow.rst` to be included.
 
-You can re-build the current documentation with
+You can re-build the for your local state with:
 
 ```bash
 cd docsrc
-make clean && make dev
+make clean && make local
 # in case of issues, try `make clean-all`
 ```
+
+Note that files ignored by git (i.e., listed in `.gitignore`) are not included in the documentation.
 
 We also provide a multi-version documentation. To generate it, run
 
 ```bash
 cd docsrc
-make clean && make github
+make clean && make docs
 ```
 
+This will create and cache virtual environments for the build at `docsrc/.docs_venvs`.
+To remove them, run `make clean-all` in the `docsrc` directory.
+
 The entry point of the rendered documentation will be at `docs/index.html`.
+To view the docs in the browser (which ensures correct redirects), run:
+
+```bash
+cd docsrc
+make view-docs
+```
+
+See `docsrc/README.md` for more details.
 
 Note that undocumented changes will likely be rejected.
 

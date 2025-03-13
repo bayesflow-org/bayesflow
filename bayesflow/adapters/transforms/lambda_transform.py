@@ -14,7 +14,22 @@ class LambdaTransform(ElementwiseTransform):
     """
     Transforms a parameter using a pair of forward and inverse functions.
 
-    Important note: This class is only serializable if the forward and inverse functions are serializable.
+    Parameters
+    ----------
+    forward : callable, no lambda
+        Function to transform the data in the forward pass.
+        For the adapter to be serializable, this function has to be serializable
+        as well (see Notes). Therefore, only proper functions and no lambda
+        functions should be used here.
+    inverse : callable, no lambda
+        Function to transform the data in the inverse pass.
+        For the adapter to be serializable, this function has to be serializable
+        as well (see Notes). Therefore, only proper functions and no lambda
+        functions should be used here.
+
+    Notes
+    -----
+    Important: This class is only serializable if the forward and inverse functions are serializable.
     This most likely means you will have to pass the scope that the forward and inverse functions are contained in
     to the `custom_objects` argument of the `deserialize` function when deserializing this class.
     """

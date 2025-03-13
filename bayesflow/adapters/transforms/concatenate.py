@@ -14,20 +14,25 @@ from .transform import Transform
 class Concatenate(Transform):
     """Concatenate multiple arrays into a new key. Used to specify how data variables should be treated by the network.
 
-    Parameters:
-        keys: Input a list of strings, where the strings are the names of data variables.
-        into: A string telling the network how to use the variables named in keys.
-        axis: integer specifing along which axis to concatonate the keys. The last axis is used by default.
+    Parameters
+    ----------
+    keys : sequence of str,
+        Input a list of strings, where the strings are the names of data variables.
+    into : str
+        A string telling the network how to use the variables named in keys.
+    axis : int, optional
+        Along which axis to concatenate the keys. The last axis is used by default.
 
-    Example:
+    Examples
+    --------
     Suppose you have a simulator that generates variables "beta" and "sigma" from priors and then observation
     variables "x" and "y". We can then use concatonate in the following way
 
-    adapter = (
+    >>> adapter = (
         bf.Adapter()
             .concatenate(["beta", "sigma"], into="inference_variables")
             .concatenate(["x", "y"], into="summary_variables")
-     )
+    )
     """
 
     def __init__(self, keys: Sequence[str], *, into: str, axis: int = -1, _indices: list | None = None):

@@ -5,6 +5,7 @@ from . import (
     datasets,
     diagnostics,
     distributions,
+    experimental,
     networks,
     simulators,
     workflows,

@@ -4,6 +4,8 @@ from typing import Protocol
 import numpy as np
 from keras.saving import (
     deserialize_keras_object as deserialize,
+    get_registered_name,
+    get_registered_object,
     register_keras_serializable as serializable,
     serialize_keras_object as serialize,
 )
@@ -20,8 +22,9 @@ class Predicate(Protocol):
 @serializable(package="bayesflow.adapters")
 class FilterTransform(Transform):
     """
-    Implements a transform that applies a different transform on a subset of the data. Used by other transforms and
-    base adapter class.
+    Implements a transform that applies a different transform on a subset of the data.
+
+    Used by other transforms and base adapter class.
     """
 
     def __init__(
@@ -79,21 +82,33 @@ class FilterTransform(Transform):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Transform":
-        def transform_constructor(*args, **kwargs):
-            raise RuntimeError(
-                "Instantiating new elementwise transforms on a deserialized FilterTransform is not yet supported (and"
-                "may never be). As a work-around, you can manually register the elementwise transform constructor after"
-                "deserialization:\n"
-                "obj = deserialize(config)\n"
-                "obj.transform_constructor = MyElementwiseTransform"
-            )
-
+        transform_constructor = get_registered_object(config["transform_constructor"])
+        try:
+            kwargs = deserialize(config["kwargs"])
+        except TypeError as e:
+            if transform_constructor.__name__ == "LambdaTransform":
+                raise TypeError(
+                    "LambdaTransform (created by Adapter.apply) could not be deserialized.\n"
+                    "This is probably because the custom transform functions `forward` and "
+                    "`backward` from `Adapter.apply` were not passed as `custom_objects`.\n"
+                    "For example, if your adapter uses\n"
+                    "`Adapter.apply(forward=forward_transform, inverse=inverse_transform)`,\n"
+                    "you have to pass\n"
+                    '`custom_objects={"forward_transform": forward_transform, '
+                    '"inverse_transform": inverse_transform}`\n'
+                    "to the function you use to load the serialized object."
+                ) from e
+            raise TypeError(
+                "The transform could not be deserialized properly. "
+                "The most likely reason is that some classes or functions "
+                "are not known during deserialization. Please pass them as `custom_objects`."
+            ) from e
         instance = cls(
             transform_constructor=transform_constructor,
             predicate=deserialize(config["predicate"], custom_objects),
             include=deserialize(config["include"], custom_objects),
             exclude=deserialize(config["exclude"], custom_objects),
-            **config["kwargs"],
+            **kwargs,
         )
 
         instance.transform_map = deserialize(config["transform_map"])
@@ -102,6 +117,7 @@ class FilterTransform(Transform):
 
     def get_config(self) -> dict:
         return {
+            "transform_constructor": get_registered_name(self.transform_constructor),
             "predicate": serialize(self.predicate),
             "include": serialize(self.include),
             "exclude": serialize(self.exclude),

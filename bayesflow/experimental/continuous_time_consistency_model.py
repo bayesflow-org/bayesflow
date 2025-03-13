@@ -46,8 +46,8 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
     ):
         """Creates an instance of an sCM to be used for consistency training (CT).
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         subnet        : str or type, optional, default: "mlp"
             A neural network type for the consistency model, will be
             instantiated using subnet_kwargs.

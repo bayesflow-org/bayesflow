@@ -16,25 +16,27 @@ def jacobian_trace(
 ):
     """Compute or estimate the trace of the Jacobian matrix of f.
 
-    :param f: The function to be differentiated.
-
-    :param x: Tensor of shape (n, ..., d)
+    Parameters
+    ----------
+    f : callable
+        The function to be differentiated.
+    x :  Tensor of shape (n, ..., d)
         The input tensor to f.
-
-    :param max_steps: The maximum number of steps to use for the estimate.
+    max_steps : int, optional
+        The maximum number of steps to use for the estimate.
         If this does not exceed the dimensionality of f(x), use Hutchinson's algorithm to
         return an unbiased estimate of the Jacobian trace.
         Otherwise, perform an exact computation.
         Default: None
-
-    :param return_output: bool
+    return_output : bool, optional
         Whether to return the output of f(x) along with the trace of the Jacobian.
         Default: False
-
-    :param seed: int or keras SeedGenerator
+    seed : int or keras SeedGenerator, optional
         The seed to use for hutchinson trace estimation. Only has an effect when max_steps < d.
 
-    :return: 2-tuple of tensors:
+    Returns
+    -------
+    2-tuple of tensors:
         1. The output of f(x) (if return_output is True)
         2. Tensor of shape (n,)
             An unbiased estimate or the exact trace of the Jacobian of f.

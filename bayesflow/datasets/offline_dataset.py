@@ -6,7 +6,9 @@ from bayesflow.adapters import Adapter
 
 class OfflineDataset(keras.utils.PyDataset):
     """
-    A dataset that is pre-simulated and stored in memory.
+    A dataset that is pre-simulated and stored in memory. When storing and loading data from disk, it is recommended to
+    save any pre-simulated data in raw form and create the `OfflineDataset` object only after loading in the raw data.
+    See the `DiskDataset` class for handling large datasets that are split into multiple smaller files.
     """
 
     def __init__(self, data: dict[str, np.ndarray], batch_size: int, adapter: Adapter | None, **kwargs):

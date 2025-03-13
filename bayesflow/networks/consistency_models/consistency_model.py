@@ -15,19 +15,26 @@ from ..inference_network import InferenceNetwork
 
 @register_keras_serializable(package="bayesflow.networks")
 class ConsistencyModel(InferenceNetwork):
-    """Implements a Consistency Model with Consistency Training (CT) as
-    described in [1-2]. The adaptations to CT described in [2] were taken
-    into account in this implementation.
+    """Implements a Consistency Model with Consistency Training (CT) a described in [1-2]. The adaptations to CT
+    described in [2] were taken into account in our implementation for ABI [3].
 
-    [1] Song, Y., Dhariwal, P., Chen, M. & Sutskever, I. (2023).
-    Consistency Models.
-    arXiv preprint arXiv:2303.01469
+    [1] Song, Y., Dhariwal, P., Chen, M. & Sutskever, I. (2023). Consistency Models. arXiv preprint arXiv:2303.01469
 
-    [2] Song, Y., & Dhariwal, P. (2023).
-    Improved Techniques for Training Consistency Models:
-    arXiv preprint arXiv:2310.14189
-    Discussion: https://openreview.net/forum?id=WNzy9bRDvG
+    [2] Song, Y., & Dhariwal, P. (2023). Improved Techniques for Training Consistency Models.
+    arXiv preprint arXiv:2310.14189. Discussion: https://openreview.net/forum?id=WNzy9bRDvG
+
+    [3] Schmitt, M., Pratz, V., Köthe, U., Bürkner, P. C., & Radev, S. T. (2023). Consistency models for scalable and
+    fast simulation-based inference. arXiv preprint arXiv:2312.05440.
     """
+
+    MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
 
     def __init__(
         self,
@@ -40,11 +47,10 @@ class ConsistencyModel(InferenceNetwork):
         s1: int | float = 50,
         **kwargs,
     ):
-        """Creates an instance of a consistency model (CM) to be used
-        for standalone consistency training (CT).
+        """Creates an instance of a consistency model (CM) to be used for standalone consistency training (CT).
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         total_steps : int
             The total number of training steps, can be calculate as
             number of epochs * number of batches
@@ -53,8 +59,7 @@ class ConsistencyModel(InferenceNetwork):
             instantiated using subnet_kwargs.
         max_time : int or float, optional, default: 200.0
             The maximum time of the diffusion
-        sigma2      : float or Tensor of dimension (input_dim, 1),
-                      optional, default: 1.0
+        sigma2      : float or Tensor of dimension (input_dim, 1), optional, default: 1.0
             Controls the shape of the skip-function
         eps         : float, optional, default: 0.001
             The minimum time
@@ -65,12 +70,18 @@ class ConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
-        # Normal is the only supported base distribution for CMs
         super().__init__(base_distribution="normal", **keras_kwargs(kwargs))
 
         self.total_steps = float(total_steps)
 
-        self.student = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
+        if subnet == "mlp":
+            subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG.copy()
+            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
+        else:
+            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+
+        self.student = find_network(subnet, **subnet_kwargs)
+
         self.student_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
 
         self.sigma2 = ops.convert_to_tensor(sigma2)
@@ -82,6 +93,7 @@ class ConsistencyModel(InferenceNetwork):
 
         self.s0 = float(s0)
         self.s1 = float(s1)
+
         # create variable that works with JIT compilation
         self.current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
         self.current_step.assign(0)

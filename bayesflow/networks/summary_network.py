@@ -3,6 +3,7 @@ import keras
 from bayesflow.metrics.functional import maximum_mean_discrepancy
 from bayesflow.types import Tensor
 from bayesflow.utils import find_distribution, keras_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
 
 
 class SummaryNetwork(keras.Layer):
@@ -10,6 +11,7 @@ class SummaryNetwork(keras.Layer):
         super().__init__(**keras_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
+    @sanitize_input_shape
     def build(self, input_shape):
         if self.base_distribution is not None:
             output_shape = keras.ops.shape(self.call(keras.ops.zeros(input_shape)))

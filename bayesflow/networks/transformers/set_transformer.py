@@ -3,6 +3,7 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
+from bayesflow.utils.decorators import sanitize_input_shape
 
 from ..summary_network import SummaryNetwork
 
@@ -150,3 +151,8 @@ class SetTransformer(SummaryNetwork):
         summary = self.pooling_by_attention(summary, training=training, **kwargs)
         summary = self.output_projector(summary)
         return summary
+
+    @sanitize_input_shape
+    def build(self, input_shape):
+        super().build(input_shape)
+        self.call(keras.ops.zeros(input_shape))

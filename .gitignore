@@ -10,6 +10,7 @@ docsrc/.docs_venvs
 docsrc/source/api
 docsrc/source/_examples
 docsrc/source/contributing.md
+examples/checkpoints/
 build
 docs/
 

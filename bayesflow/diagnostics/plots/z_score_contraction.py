@@ -121,7 +121,7 @@ def z_score_contraction(
         ax.scatter(contraction[:, i], z_score[:, i], color=color, alpha=0.5)
         ax.set_xlim([-0.05, 1.05])
 
-    prettify_subplots(plot_data["axes"], tick_fontsize)
+    prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
     # Add labels, titles, and set font sizes
     add_titles_and_labels(

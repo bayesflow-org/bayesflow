@@ -33,7 +33,7 @@ class Standardize(ElementwiseTransform):
             )
 
 
-    2) Standardize all with same known mean and std. 
+    2) Standardize all with same known mean and std.
 
         adapter = (
                 bf.adapters.Adapter()
@@ -42,17 +42,17 @@ class Standardize(ElementwiseTransform):
 
 
     3) Mix of fixed and estimated means/stds. Suppose we have priors for "beta" and "sigma" where we
-    know the means and stds. However for all other variables, the means and stds are unknown. 
+    know the means and stds. However for all other variables, the means and stds are unknown.
     Then standardize should be used in several stages specifying which variables to include or exclude.
 
         adapter = (
                 bf.adapters.Adapter()
                     # mean fixed, std estimated
-                    .standardize(include = "beta", mean = 1)  
+                    .standardize(include = "beta", mean = 1)
                     # both mean and SD fixed
-                    .standardize(include = "sigma", mean = 0.6, sd = 3) 
+                    .standardize(include = "sigma", mean = 0.6, sd = 3)
                     # both means and stds estimated for all other variables
-                    .standardize(exclude = ["beta", "sigma"]) 
+                    .standardize(exclude = ["beta", "sigma"])
             )
 
     """

@@ -27,51 +27,77 @@ class PointApproximator(ContinuousApproximator):
         if not self.built:
             raise AssertionError("PointApproximator needs to be built before predicting with it.")
 
+        # Prepare the input conditions.
+        conditions = self._prepare_conditions(conditions, **kwargs)
+        # Run the internal estimation and convert the output to numpy.
+        estimates = self._run_inference(conditions, **kwargs)
+        # Postprocess the inference output with the inverse adapter.
+        estimates = self._apply_inverse_adapter(estimates, **kwargs)
+        # Optionally split the arrays along the last axis.
+        if split:
+            estimates = split_arrays(estimates, axis=-1)
+        # Reorder the nested dictionary so that original variable names are at the top.
+        estimates = self._reorder_estimates(estimates)
+        # Remove unnecessary nesting.
+        estimates = self._squeeze_estimates(estimates)
+
+        return estimates
+
+    def _prepare_conditions(self, conditions: dict[str, np.ndarray], **kwargs) -> dict[str, Tensor]:
+        """Adapts and converts the conditions to tensors."""
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-        conditions = {"inference_variables": self._estimate(**conditions, **kwargs)}
-        conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
-        conditions = {
-            outer_key: {
-                inner_key: self.adapter(
-                    dict(inference_variables=conditions["inference_variables"][outer_key][inner_key]),
+        return keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
+
+    def _run_inference(self, conditions: dict[str, Tensor], **kwargs) -> dict[str, dict[str, np.ndarray]]:
+        """Runs the internal _estimate function and converts the result to numpy arrays."""
+        # Run the estimation.
+        inference_output = self._estimate(**conditions, **kwargs)
+        # Wrap the result in a dict and convert to numpy.
+        wrapped_output = {"inference_variables": inference_output}
+        return keras.tree.map_structure(keras.ops.convert_to_numpy, wrapped_output)
+
+    def _apply_inverse_adapter(
+        self, estimates: dict[str, dict[str, np.ndarray]], **kwargs
+    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
+        """Applies the inverse adapter on each inner element of the inference outputs."""
+        processed = {}
+        for score_key, score_val in estimates["inference_variables"].items():
+            processed[score_key] = {}
+            for head_key, estimate in score_val.items():
+                adapted = self.adapter(
+                    {"inference_variables": estimate},
                     inverse=True,
                     strict=False,
                     **kwargs,
                 )
-                for inner_key in conditions["inference_variables"][outer_key].keys()
+                processed[score_key][head_key] = adapted
+        return processed
+
+    def _reorder_estimates(
+        self, estimates: dict[str, dict[str, dict[str, np.ndarray]]]
+    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
+        """Reorders the nested dictionary so that the inference variable names become the top-level keys."""
+        # Grab the variable names from one sample inner dictionary.
+        sample_inner = next(iter(next(iter(estimates.values())).values()))
+        variable_names = sample_inner.keys()
+        reordered = {}
+        for variable in variable_names:
+            reordered[variable] = {}
+            for score_key, inner_dict in estimates.items():
+                reordered[variable][score_key] = {inner_key: value[variable] for inner_key, value in inner_dict.items()}
+        return reordered
+
+    def _squeeze_estimates(
+        self, estimates: dict[str, dict[str, dict[str, np.ndarray]]]
+    ) -> dict[str, dict[str, np.ndarray]]:
+        """Squeezes each inner estimate dictionary to remove unnecessary nesting."""
+        squeezed = {}
+        for variable, variable_estimates in estimates.items():
+            squeezed[variable] = {
+                score_key: squeeze_inner_estimates_dict(inner_estimate)
+                for score_key, inner_estimate in variable_estimates.items()
             }
-            for outer_key in conditions["inference_variables"].keys()
-        }
-
-        if split:
-            conditions = split_arrays(conditions, axis=-1)
-
-        # get original variable names to reorder them to highest level
-        inference_variable_names = next(iter(next(iter(conditions.values())).values())).keys()
-
-        # change ordering of nested dictionary
-        conditions = {
-            variable_name: {
-                outer_key: {
-                    inner_key: conditions[outer_key][inner_key][variable_name]
-                    for inner_key in conditions[outer_key].keys()
-                }
-                for outer_key in conditions.keys()
-            }
-            for variable_name in inference_variable_names
-        }
-
-        # remove unnecessary nesting
-        conditions = {
-            variable_name: {
-                outer_key: squeeze_inner_estimates_dict(conditions[variable_name][outer_key])
-                for outer_key in conditions[variable_name].keys()
-            }
-            for variable_name in conditions.keys()
-        }
-
-        return conditions
+        return squeezed
 
     def _estimate(
         self,

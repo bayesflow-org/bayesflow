@@ -165,8 +165,29 @@ class PointInferenceNetwork(keras.Layer):
 
     # WIP: untested draft of sample method
     @allow_batch_size
-    def sample(self, batch_shape: Shape, conditions: Tensor = None, **kwargs) -> dict[str, Tensor]:
-        output = self.subnet(conditions)
+    def sample(self, batch_shape: Shape, conditions: Tensor = None) -> dict[str, Tensor]:
+        """
+        Parameters
+        ----------
+        batch_shape : tuple,
+            Expected dimensions depend on `conditions`
+            - conditional sampling: (batch_size, num_samples) if `conditions` is a tensor
+              of shape (batch_size, num_samples)
+            - unconditional sampling: (num_samples,) if `conditions` is None
+        conditions : Tensor or None, default None
+            Optional inference conditions. If `conditions` is not given, the method will return unconditional samples.
+
+        Returns
+        -------
+        samples : dict[str, Tensor]
+            Samples for every parametric scoring rule. Dict values have shape (batch_size, num_samples, num_variables)
+            or (num_samples, num_variables) for conditional or unconditional sampling respectively.
+        """
+        if conditions is None:  # unconditional estimation uses a fixed input vector
+            conditions = keras.ops.ones(batch_shape, dtype="float32").reshape(1, -1, 1)
+
+        # conditions are duplicated along axis 1 num_sample times
+        output = self.subnet(conditions[:, 0, :])
         samples = {}
 
         for score_key, score in self.scores.items():

@@ -27,12 +27,9 @@ class PointApproximator(ContinuousApproximator):
         if not self.built:
             raise AssertionError("PointApproximator needs to be built before predicting with it.")
 
-        # Prepare the input conditions.
         conditions = self._prepare_conditions(conditions, **kwargs)
-        # Run the internal estimation and convert the output to numpy.
-        estimates = self._run_inference(conditions, **kwargs)
-        # Postprocess the inference output with the inverse adapter.
-        estimates = self._apply_inverse_adapter(estimates, **kwargs)
+        estimates = self._estimate(**conditions, **kwargs)
+        estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
         # Optionally split the arrays along the last axis.
         if split:
             estimates = split_arrays(estimates, axis=-1)
@@ -43,25 +40,40 @@ class PointApproximator(ContinuousApproximator):
 
         return estimates
 
+    def sample(
+        self,
+        *,
+        num_samples: int,
+        conditions: dict[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        if not self.built:
+            raise AssertionError("This model needs to be built before using it for sampling.")
+
+        conditions = self._prepare_conditions(conditions, **kwargs)
+        samples = self._sample(num_samples, **conditions, **kwargs)
+        samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
+        # Optionally split the arrays along the last axis.
+        if split:
+            samples = split_arrays(samples, axis=-1)
+        # Squeeze samples if there's only one key-value pair.
+        samples = self._squeeze_samples(samples)
+
+        return samples
+
     def _prepare_conditions(self, conditions: dict[str, np.ndarray], **kwargs) -> dict[str, Tensor]:
         """Adapts and converts the conditions to tensors."""
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
         return keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
-    def _run_inference(self, conditions: dict[str, Tensor], **kwargs) -> dict[str, dict[str, np.ndarray]]:
-        """Runs the internal _estimate function and converts the result to numpy arrays."""
-        # Run the estimation.
-        inference_output = self._estimate(**conditions, **kwargs)
-        # Wrap the result in a dict and convert to numpy.
-        wrapped_output = {"inference_variables": inference_output}
-        return keras.tree.map_structure(keras.ops.convert_to_numpy, wrapped_output)
-
-    def _apply_inverse_adapter(
-        self, estimates: dict[str, dict[str, np.ndarray]], **kwargs
+    def _apply_inverse_adapter_to_estimates(
+        self, estimates: dict[str, dict[str, Tensor]], **kwargs
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
-        """Applies the inverse adapter on each inner element of the inference outputs."""
+        """Applies the inverse adapter on each inner element of the _estimate output dictionary."""
+        estimates = keras.tree.map_structure(keras.ops.convert_to_numpy, estimates)
         processed = {}
-        for score_key, score_val in estimates["inference_variables"].items():
+        for score_key, score_val in estimates.items():
             processed[score_key] = {}
             for head_key, estimate in score_val.items():
                 adapted = self.adapter(
@@ -71,6 +83,21 @@ class PointApproximator(ContinuousApproximator):
                     **kwargs,
                 )
                 processed[score_key][head_key] = adapted
+        return processed
+
+    def _apply_inverse_adapter_to_samples(
+        self, samples: dict[str, Tensor], **kwargs
+    ) -> dict[str, dict[str, np.ndarray]]:
+        """Applies the inverse adapter to a dictionary of samples."""
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
+        processed = {}
+        for score_key, samples in samples.items():
+            processed[score_key] = self.adapter(
+                {"inference_variables": samples},
+                inverse=True,
+                strict=False,
+                **kwargs,
+            )
         return processed
 
     def _reorder_estimates(
@@ -98,6 +125,12 @@ class PointApproximator(ContinuousApproximator):
                 for score_key, inner_estimate in variable_estimates.items()
             }
         return squeezed
+
+    def _squeeze_samples(self, samples: dict[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
+        """Squeezes the samples dictionary to just the value if there is only one key-value pair."""
+        if len(samples) == 1:
+            return next(iter(samples.values()))  # Extract and return the only item's value
+        return samples
 
     def _estimate(
         self,

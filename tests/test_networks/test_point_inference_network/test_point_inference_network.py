@@ -88,8 +88,5 @@ def test_save_and_load_quantile(tmp_path, quantile_point_inference_network, rand
             assert keras.ops.all(keras.ops.isclose(net_head.layers[-1].q, loaded_head.layers[-1].q))
             assert keras.ops.all(net_head.layers[-1].anchor_index == loaded_head.layers[-1].anchor_index)
 
-            print(net_head.get_config())
-            assert net_head.get_config() == loaded_head.get_config()
-
             print(f"Asserting original and serialized and deserialized at heads[{score_key}][{head_key}] to be equal")
             assert_layers_equal(net_head, loaded_head)

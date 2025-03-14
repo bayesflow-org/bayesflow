@@ -120,6 +120,8 @@ class ContinuousApproximator(Approximator):
             else:
                 inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
 
+        # Force a conversion to Tensor
+        inference_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, inference_variables)
         inference_metrics = self.inference_network.compute_metrics(
             inference_variables, conditions=inference_conditions, stage=stage
         )

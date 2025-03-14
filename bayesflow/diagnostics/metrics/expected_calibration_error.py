@@ -13,15 +13,15 @@ def expected_calibration_error(
     n_bins: int = 10,
     return_probs: bool = False,
 ) -> Mapping[str, Any]:
-    """Estimates the expected calibration error (ECE) of a model comparison network according to [1].
+    """
+    Estimates the expected calibration error (ECE) of a model comparison network according to [1].
 
-    [1] Naeini, M. P., Cooper, G., & Hauskrecht, M. (2015).
-        Obtaining well calibrated probabilities using bayesian binning.
-        In Proceedings of the AAAI conference on artificial intelligence (Vol. 29, No. 1).
+    [1] Naeini, M. P., Cooper, G., & Hauskrecht, M. (2015). Obtaining well calibrated probabilities using
+    Bayesian binning. In Proceedings of the AAAI conference on artificial intelligence (Vol. 29, No. 1).
 
     Notes
     -----
-    Make sure that ``targets`` are **one-hot encoded** classes!
+    Make sure that ``targets`` are **one-hot encoded** classes (i.e., model indices)!
 
     Parameters
     ----------

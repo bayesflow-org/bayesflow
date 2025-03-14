@@ -18,17 +18,25 @@ try:
     from sphinx_polyversion.api import LoadError
 
     USE_POLYVERSION = True
+    data = load(globals())
+    current = data["current"].name
 except ImportError:
     USE_POLYVERSION = False
     print("sphinx_polyversion not installed, building single version")
+    current = "local"
 
 sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath("sphinxext"))
+
+# might set copyright end to wrong year -> remove
+if "SOURCE_DATE_EPOCH" in os.environ:
+    del os.environ["SOURCE_DATE_EPOCH"]
 
 # -- Project information -----------------------------------------------------
 
 project = "BayesFlow"
 author = "The BayesFlow authors"
-copyright = "2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev)"
+copyright = "2023-%Y, BayesFlow authors (lead maintainer: Stefan T. Radev)"
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,6 +58,23 @@ extensions = [
     "sphinxcontrib.bibtex",
 ]
 
+if not current.startswith("v1."):
+    extensions.extend(
+        [
+            "override_pst_pagetoc",  # local, see sphinxext folder
+            "adapt_autodoc_docstring",  # local, see sphinxext folder
+        ]
+    )
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "seaborn": ("https://seaborn.pydata.org/", None),
+}
+
 bibtex_bibfiles = ["references.bib"]
 
 numpydoc_show_class_members = False
@@ -64,7 +89,7 @@ myst_url_schemes = ["http", "https", "mailto"]
 
 # Define shorthand for external links:
 extlinks = {
-    "mainbranch": ("https://github.com/bayesflow-org/bayesflow/blob/master/%s", None),
+    "mainbranch": (f"https://github.com/bayesflow-org/bayesflow/blob/{current}/%s", None),
 }
 
 coverage_show_missing_items = True
@@ -78,29 +103,29 @@ templates_path = ["_templates"]
 exclude_patterns = []
 
 # Options for autodoc and autosummary
-autodoc_default_options = {
-    "members": True,
-    "undoc-members": True,
-    "imported-members": True,
-    "inherited-members": False,
-    "show-inheritance": True,
-    "special-members": "__call__",
-    "memberorder": "bysource",
-}
 # do not ignore __all__, use it to determine public members
 autosummary_ignore_module_all = False
-# include imported members in autosummary
 autosummary_imported_members = False
 # selects content to insert into the main body of an autoclass directive.
 autoclass_content = "both"
 
+if current.startswith("v1."):
+    autodoc_default_options = {
+        "members": True,
+        "undoc-members": True,
+        "imported-members": False,
+        "inherited-members": True,
+        "show-inheritance": True,
+        "special-members": "__call__",
+        "memberorder": "bysource",
+    }
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_book_theme"
+html_theme = "pydata_sphinx_theme"
 html_title = "BayesFlow: Amortized Bayesian Inference"
 
 # Add any paths that contain custom _static files (such as style sheets) here,
@@ -110,27 +135,29 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_show_sourcelink = False
 html_theme_options = {
-    "repository_url": "https://github.com/bayesflow-org/bayesflow",
-    "repository_branch": "master",
     "use_edit_page_button": True,
-    "use_issues_button": True,
-    "use_repository_button": True,
-    "use_download_button": True,
-    "logo": {"alt-text": "BayesFlow"},
+    "logo": {
+        "alt-text": "BayesFlow",
+        "image_light": "_static/bayesflow_hor.png",
+        "image_dark": "_static/bayesflow_hor_dark.png",
+    },
+    "navbar_center": ["version-switcher", "navbar-nav"],
+    "switcher": {
+        "json_url": "/versions.json",
+        "version_match": current,
+    },
+    "check_switcher": False,
 }
-html_logo = "_static/bayesflow_hex.png"
+html_context = {
+    "github_url": "https://github.com",  # or your GitHub Enterprise site
+    "github_user": "bayesflow-org",
+    "github_repo": "bayesflow",
+    "github_version": current,
+    "doc_path": "docsrc",
+}
+html_logo = "_static/bayesflow_hor.png"
 html_favicon = "_static/bayesflow_hex.ico"
 html_baseurl = "https://www.bayesflow.org/"
-html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"]
-html_sidebars = {
-    "**": [
-        "navbar-logo.html",
-        "icon-links.html",
-        "search-button-field.html",
-        "sbt-sidebar-nav.html",
-        "versioning.html",
-    ],
-}
 
 todo_include_todos = True
 
@@ -157,36 +184,3 @@ if USE_POLYVERSION:
         current: GitRef = data["current"]
     except LoadError:
         print("sphinx_polyversion could not load. Building single version")
-
-
-def docstring(app, what, name, obj, options, lines):
-    """Adapt autodoc docstring.
-
-    Inherited Keras docstrings do not follow the numpy docstring format.
-    Most noticably, they use Markdown code fences. To improve the situation
-    somewhat, this functions aims to convert fenced code blocks to RST
-    code blocks.
-    """
-    updated_lines = []
-    prefix = ""
-    for line in lines:
-        if line.count("```") == 1:
-            if prefix == "":
-                prefix = "    "
-                updated_lines[-1] = updated_lines[-1] + "::"
-            else:
-                prefix = ""
-            updated_lines.append("\n")
-        else:
-            updated_lines.append(prefix + line)
-    if prefix != "":
-        raise ValueError(
-            f"Uneven number of code fences in docstring:\nwhat='{what}', name='{name}'.\n" + "\n".join(lines)
-        )
-    # overwrite lines list
-    lines.clear()
-    lines += updated_lines
-
-
-def setup(app):
-    app.connect("autodoc-process-docstring", docstring)

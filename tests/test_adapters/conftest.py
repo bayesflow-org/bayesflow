@@ -30,8 +30,7 @@ def adapter():
         .concatenate(["y1", "y2"], into="y")
         .expand_dims(["z1"], axis=2)
         .apply(forward=forward_transform, inverse=inverse_transform)
-        # TODO: fix this in keras
-        # .apply(include="p1", forward=np.log, inverse=np.exp)
+        .log("p1")
         .constrain("p2", lower=0)
         .standardize(exclude=["t1", "t2", "o1"])
         .drop("d1")

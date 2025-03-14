@@ -39,9 +39,9 @@ docs = [
   "numpydoc",
   "myst-nb",
   "sphinx_design",
-  "sphinx-book-theme",
+  "pydata-sphinx-theme",
   "sphinxcontrib-bibtex",
-  "sphinx-polyversion==1.0.0",
+  "sphinx-polyversion==1.1.0",
 ]
 [tool.ruff]
 # We use ruff to lint and auto-format code

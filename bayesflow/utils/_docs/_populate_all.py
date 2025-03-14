@@ -18,4 +18,4 @@ def _add_imports_to_all(include_modules: bool | list[str] = False, exclude: list
                 included_vars.append(var_name)
         elif var_name not in exclude and not var_name.startswith("_"):
             included_vars.append(var_name)
-    global_vars["__all__"] = list(set(all_vars).union(included_vars))
+    global_vars["__all__"] = sorted(list(set(all_vars).union(included_vars)))

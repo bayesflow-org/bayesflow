@@ -12,19 +12,22 @@ def jacobian(f: Callable[[Tensor], Tensor], x: Tensor, return_output: bool = Fal
     """
     Compute the Jacobian matrix of f with respect to x.
 
-    :param f: The function to be differentiated.
-
-    :param x: Tensor of shape (..., D_in)
+    Parameters
+    ----------
+    f : callable
+        The function to be differentiated.
+    x : Tensor of shape (..., D_in)
         The input tensor to f.
-
-    :param return_output: bool
+    return_output : bool, optional
         Whether to return the output of f(x) along with the Jacobian matrix.
         Default: False
 
-    :return: Tensor of shape (..., D_out, D_in)
+    Returns
+    -------
+    Tensor of shape (..., D_out, D_in)
         The Jacobian matrix of f with respect to x.
 
-    :return: 2-tuple of tensors:
+    2-tuple of tensors
         1. The output of f(x) (if return_output is True)
         2. Tensor of shape (..., D_out, D_in)
             The Jacobian matrix of f with respect to x.

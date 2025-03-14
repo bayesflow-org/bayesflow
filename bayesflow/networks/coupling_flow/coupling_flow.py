@@ -44,6 +44,44 @@ class CouplingFlow(InferenceNetwork):
         base_distribution: str = "normal",
         **kwargs,
     ):
+        """
+        Initializes an invertible flow-based model with a sequence of transformations.
+
+        This model constructs a deep invertible architecture composed of multiple
+        layers, including ActNorm, learned permutations, and coupling layers.
+
+        The specific transformation applied in the coupling layers is determined by
+        `transform`, while the subnet type can be either an MLP or another callable
+        architecture specified by `subnet`. If `use_actnorm` is set to True, an
+        ActNorm layer is applied before each coupling layer.
+
+        The model can be initialized with a base distribution, such as a standard normal, for
+        density estimation. It can also use more flexible distributions, e.g., GMMs for
+        highly multimodal, low-dimensional distributions or Multivariate Student-t for
+        heavy-tailed distributions.
+
+        Parameters
+        ----------
+        depth : int, optional
+            The number of invertible layers in the model. Default is 6.
+        subnet : str or type, optional
+            The architecture type used within the coupling layers. Can be a string
+            identifier like "mlp" or a callable type. Default is "mlp".
+        transform : str, optional
+            The type of transformation used in the coupling layers, such as "affine".
+            Default is "affine".
+        permutation : str or None, optional
+            The type of permutation applied between layers. Can be "random" or None
+            (no permutation). Default is "random".
+        use_actnorm : bool, optional
+            Whether to apply ActNorm before each coupling layer. Default is True.
+        base_distribution : str, optional
+            The base probability distribution from which samples are drawn, such as
+            "normal". Default is "normal".
+        **kwargs
+            Additional keyword arguments passed to the ActNorm, permutation, and
+            coupling layers for customization.
+        """
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
 
         self.depth = depth

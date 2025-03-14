@@ -11,20 +11,25 @@ from .elementwise_transform import ElementwiseTransform
 @serializable(package="bayesflow.adapters")
 class Standardize(ElementwiseTransform):
     """
-    Transform that when applied standardizes data using typical z-score standardization i.e. for some unstandardized
-    data x the standardized version z would be
+    Transform that when applied standardizes data using typical z-score standardization
+    i.e. for some unstandardized data x the standardized version z would be
 
     z = (x - mean(x)) / std(x)
 
-    Parameters:
-    mean: integer or float used to specify a mean if known but will be estimated from data when not provided
-    std: integer or float used to specify a standard devation if known but will be estimated from data when not provided
-    axis: integer representing a specific axis along which standardization should take place. By default
+    Parameters
+    ----------
+    mean : int or float, optional
+        Specify a mean if known but will be estimated from data when not provided
+    std : int or float, optional
+        Specify a standard devation if known but will be estimated from data when not provided
+    axis : int, optional
+        A specific axis along which standardization should take place. By default
         standardization happens individually for each dimension
-    momentum: float in (0,1) specifying the momentum during training
+    momentum : float in (0,1)
+        The momentum during training
 
-    Examples:
-
+    Examples
+    --------
     1) Standardize all variables using their individually estimated mean and stds.
 
         adapter = (
@@ -54,7 +59,6 @@ class Standardize(ElementwiseTransform):
                     # both means and stds estimated for all other variables
                     .standardize(exclude = ["beta", "sigma"])
             )
-
     """
 
     def __init__(

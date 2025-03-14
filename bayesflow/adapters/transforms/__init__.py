@@ -10,9 +10,11 @@ from .expand_dims import ExpandDims
 from .filter_transform import FilterTransform
 from .keep import Keep
 from .lambda_transform import LambdaTransform
+from .log import Log
 from .map_transform import MapTransform
 from .one_hot import OneHot
 from .rename import Rename
+from .sqrt import Sqrt
 from .standardize import Standardize
 from .to_array import ToArray
 from .transform import Transform

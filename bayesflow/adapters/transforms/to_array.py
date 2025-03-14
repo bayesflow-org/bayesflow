@@ -13,9 +13,11 @@ from .elementwise_transform import ElementwiseTransform
 class ToArray(ElementwiseTransform):
     """
     Checks provided data for any non-arrays and converts them to numpy arrays.
+
     This ensures all data is in a format suitable for training.
 
-    Example:
+    Examples
+    --------
     >>> ta = bf.adapters.transforms.ToArray()
     >>> a = [1, 2, 3, 4]
     >>> ta.forward(a)

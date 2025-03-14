@@ -110,7 +110,7 @@ def z_score_contraction(
     prior_vars = targets.var(axis=0, keepdims=True, ddof=1)
 
     # Compute contraction and z-score
-    contraction = 1 - (post_vars / prior_vars)
+    contraction = np.clip(1 - (post_vars / prior_vars), 0, 1)
     z_score = (post_means - targets) / post_stds
 
     # Loop and plot
@@ -121,7 +121,7 @@ def z_score_contraction(
         ax.scatter(contraction[:, i], z_score[:, i], color=color, alpha=0.5)
         ax.set_xlim([-0.05, 1.05])
 
-    prettify_subplots(plot_data["axes"], tick_fontsize)
+    prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
     # Add labels, titles, and set font sizes
     add_titles_and_labels(

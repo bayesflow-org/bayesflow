@@ -27,6 +27,7 @@ def prepare_plot_data(
     ----------
     estimates           : dict[str, ndarray] or ndarray
         The model-generated predictions or estimates, which can take the following forms:
+
         - ndarray of shape (num_datasets, num_variables)
             Point estimates for each dataset, where `num_datasets` is the number of datasets
             and `num_variables` is the number of variables per dataset.
@@ -202,8 +203,8 @@ def add_y_labels(axes: np.ndarray, num_row: int = None, ylabel: Sequence[str] | 
 
 
 def add_titles(axes: np.ndarray, title: Sequence[str] | str = None, title_fontsize: int = None):
-    for i, ax in enumerate(axes.flat):
-        ax.set_title(title[i], fontsize=title_fontsize)
+    for t, ax in zip(title, axes.flat):
+        ax.set_title(t, fontsize=title_fontsize)
 
 
 def add_titles_and_labels(

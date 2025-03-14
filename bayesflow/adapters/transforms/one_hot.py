@@ -11,6 +11,11 @@ from .elementwise_transform import ElementwiseTransform
 class OneHot(ElementwiseTransform):
     """
     Changes data to be one-hot encoded.
+
+    Parameters
+    ----------
+    num_classes : int
+        Number of classes for the encoding.
     """
 
     def __init__(self, num_classes: int):

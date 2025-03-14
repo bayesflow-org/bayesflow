@@ -14,7 +14,7 @@ from bayesflow.utils import (
     deserialize_value_or_type,
 )
 
-from ..inference_network import InferenceNetwork
+from bayesflow.networks import InferenceNetwork
 
 
 @serializable(package="networks.free_form_flow")
@@ -60,8 +60,8 @@ class FreeFormFlow(InferenceNetwork):
     ):
         """Creates an instance of a Free-form Flow.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         beta                  : float, optional, default: 50.0
         encoder_subnet        : str or type, optional, default: "mlp"
             A neural network type for the flow, will be instantiated using

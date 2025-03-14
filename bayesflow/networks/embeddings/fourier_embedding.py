@@ -23,8 +23,8 @@ class FourierEmbedding(keras.Layer):
         """
         Initialize a Fourier projection instance with normally distributed frequencies.
 
-        Parameters
-        ----------
+        Parameter
+        ---------
         embed_dim        : int (even)
             Dimensionality of the Fourier projection. The resulting embedding
             has dimensionality `embed_dim + 1` if `include_identity` is set to True.
@@ -48,13 +48,13 @@ class FourierEmbedding(keras.Layer):
     def call(self, t: Tensor) -> Tensor:
         """Embeds the one-dimensional time scalar into a higher-dimensional Fourier embedding.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         t   : Tensor of shape (batch_size, 1)
             vector of times
 
-        Returns:
-        --------
+        Returns
+        -------
         emb : Tensor
             Embedding of shape (batch_size, fourier_emb_dim) if `include_identity`
             is False, else (batch_size, fourier_emb_dim+1)

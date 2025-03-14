@@ -3,6 +3,7 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
+from bayesflow.utils.decorators import sanitize_input_shape
 
 from ..summary_network import SummaryNetwork
 
@@ -21,8 +22,7 @@ class SetTransformer(SummaryNetwork):
         Set transformer: A framework for attention-based permutation-invariant neural networks.
         In International conference on machine learning (pp. 3744-3753). PMLR.
 
-    Note: Currently works only on 3D inputs but can easily be expanded by changing
-    the internals slightly or using ``keras.layers.TimeDistributed``.
+    Note: Currently works only on 3D inputs but can easily be expanded by using ``keras.layers.TimeDistributed``.
     """
 
     def __init__(
@@ -43,9 +43,10 @@ class SetTransformer(SummaryNetwork):
         **kwargs,
     ):
         """
-        Creates a many-to-one permutation-invariant encoder, typically used as a summary net
-        for compressing exchangeable sequences. The number of multi-head attention block is
-        inferred from the length of `embed_dims` tuple.
+        Creates a many-to-one permutation-invariant encoder, typically used as a summary net for embedding set-based,
+        (i.e., exchangeable or IID) data. Use a TimeSeriesTransformer or a FusionTransformer for non-IID data.
+
+        The number of multi-head attention block is inferred from the length of `embed_dims` tuple.
 
         Parameters
         ----------
@@ -150,3 +151,8 @@ class SetTransformer(SummaryNetwork):
         summary = self.pooling_by_attention(summary, training=training, **kwargs)
         summary = self.output_projector(summary)
         return summary
+
+    @sanitize_input_shape
+    def build(self, input_shape):
+        super().build(input_shape)
+        self.call(keras.ops.zeros(input_shape))

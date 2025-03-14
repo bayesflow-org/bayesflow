@@ -13,7 +13,8 @@ def root_mean_squared_error(
     normalize: bool = True,
     aggregation: Callable = np.median,
 ) -> Mapping[str, Any]:
-    """Computes the (Normalized) Root Mean Squared Error (RMSE/NRMSE) for the given posterior and prior samples.
+    """
+    Computes the (Normalized) Root Mean Squared Error (RMSE/NRMSE) for the given posterior and prior samples.
 
     Parameters
     ----------
@@ -41,6 +42,7 @@ def root_mean_squared_error(
     -------
     result : dict
         Dictionary containing:
+
         - "values" : np.ndarray
             The aggregated (N)RMSE for each variable.
         - "metric_name" : str

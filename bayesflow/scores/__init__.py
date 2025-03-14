@@ -1,5 +1,7 @@
 """Scoring rules for point estimation."""
 
+from .scoring_rule import ScoringRule
+from .parametric_distribution_score import ParametricDistributionScore
 from .normed_difference_score import NormedDifferenceScore
 from .mean_score import MeanScore
 from .median_score import MedianScore

@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 
 @pytest.fixture()
@@ -72,5 +73,5 @@ def quantile_point_inference_network():
     from bayesflow.scores import QuantileScore
 
     return PointInferenceNetwork(
-        scores=dict(quantiles=QuantileScore(q=[0.1, 0.4, 0.5, 0.7], subnets=dict(value="mlp"))),
+        scores=dict(quantiles=QuantileScore(q=np.array([0.1, 0.4, 0.5, 0.7]), subnets=dict(value="mlp"))),
     )

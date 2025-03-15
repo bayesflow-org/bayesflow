@@ -24,9 +24,6 @@ class PointApproximator(ContinuousApproximator):
         split: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
-        if not self.built:
-            raise AssertionError("PointApproximator needs to be built before predicting with it.")
-
         conditions = self._prepare_conditions(conditions, **kwargs)
         estimates = self._estimate(**conditions, **kwargs)
         estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
@@ -48,9 +45,6 @@ class PointApproximator(ContinuousApproximator):
         split: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
-        if not self.built:
-            raise AssertionError("This model needs to be built before using it for sampling.")
-
         conditions = self._prepare_conditions(conditions, **kwargs)
         samples = self._sample(num_samples, **conditions, **kwargs)
         samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)

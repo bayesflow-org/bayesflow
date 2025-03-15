@@ -23,6 +23,8 @@ class QuantileScore(ScoringRule):
             q = [0.1, 0.5, 0.9]
             logging.info(f"QuantileScore was not provided with argument `q`. Using the default quantile levels: {q}.")
 
+        # force a conversion to list for proper serialization
+        q = list(q)
         self.q = q
         self._q = keras.ops.convert_to_tensor(q, dtype="float32")
         self.links = links or {"value": OrderedQuantiles(q=q)}

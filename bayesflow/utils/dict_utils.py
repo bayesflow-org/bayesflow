@@ -317,3 +317,15 @@ def dicts_to_arrays(
         targets=targets,
         priors=priors,
     )
+
+
+def squeeze_inner_estimates_dict(estimates):
+    """If a dictionary has only one key-value pair and the key is "value", return only its value.
+    Otherwise, return the unchanged dictionary.
+
+    This method helps to remove unnecessary nesting levels.
+    """
+    if len(estimates.keys()) == 1 and "value" in estimates.keys():
+        return estimates["value"]
+    else:
+        return estimates

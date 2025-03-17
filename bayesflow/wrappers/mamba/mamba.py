@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import keras
 # from keras.saving import register_keras_serializable as serializable
 try:
-    from mamba_ssm import Mamba, Mamba2
+    from mamba_ssm import Mamba
 except ImportError:
     print("Mamba Wrapper is not available")
 
@@ -14,7 +14,7 @@ from ...networks.summary_network import SummaryNetwork
 class MambaSSM(SummaryNetwork):
     def __init__(
         self,
-        ssm_dim: int,
+        feature_dim: int,
         summary_dim: int = 8,
         mamba_blocks: int = 2,
         state_dim: int = 16,
@@ -24,19 +24,19 @@ class MambaSSM(SummaryNetwork):
         dt_max: float = 0.1,
         pooling: bool = True,
         dropout: int | float | None = 0.5,
-        mamba_version: int = 2,
         device: str = "cuda",
-        d_ssm: int = 1,
         **kwargs
     ):
         """
         A time-series summarization network using Mamba-based State Space Models (SSM).
         This model processes sequential input data using the Mamba SSM layer, followed by 
         optional pooling, dropout, and a dense layer for extracting summary statistics.
+        
+        Mamba2 support currently unabailble due to stability issues
 
         Parameters
         ----------
-        ssm_dim : int
+        feature_dim : int
             The dimensionality of the Mamba SSM model.
         summary_dim : int, optional
             The output dimensionality of the summary statistics layer (default is 8).
@@ -56,8 +56,6 @@ class MambaSSM(SummaryNetwork):
             Whether to apply global average pooling (default is True).
         dropout : int, float, or None, optional
             Dropout rate applied before the summary layer (default is 0.5).
-        mamba_version : int, optional
-            The version of Mamba to apply (default is 2).
         device : str, optional
             The computing device. Currently, only "cuda" is supported (default is "cuda").
         **kwargs : dict
@@ -68,15 +66,7 @@ class MambaSSM(SummaryNetwork):
         if device != "cuda":
             raise NotImplementedError("MambaSSM currently only supports cuda")
         
-        if mamba_version == 1:
-            self.mamba_blocks = [Mamba(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max).to(device) for _ in range(mamba_blocks)]
-        elif mamba_version == 2:
-            self.mamba_blocks = [Mamba2(d_model=ssm_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max, d_ssm=d_ssm).to(device) for _ in range(mamba_blocks)]
-        else:
-            raise NotImplementedError("Mamba version must be 1 or 2")
-        
-        
-        
+        self.mamba_blocks = [Mamba(d_model=feature_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max).to(device) for _ in range(mamba_blocks)]
         
         self.layernorm = keras.layers.LayerNormalization(axis=-1)
         

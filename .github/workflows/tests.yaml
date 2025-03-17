@@ -95,7 +95,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          pytest
+          pytest -x
 
       - name: Create Coverage Report
         run: |

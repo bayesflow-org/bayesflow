@@ -1,7 +1,6 @@
 import numpy as np
 from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.utils import filter_kwargs
 from .elementwise_transform import ElementwiseTransform
 
 
@@ -74,9 +73,7 @@ class NumpyTransform(ElementwiseTransform):
         return {"forward": self._forward.__name__, "inverse": self._inverse.__name__}
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, any]:
-        kwargs = filter_kwargs(kwargs, self._forward)
-        return self._forward(data, **kwargs)
+        return self._forward(data)
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        kwargs = filter_kwargs(kwargs, self._inverse)
-        return self._inverse(data, **kwargs)
+        return self._inverse(data)

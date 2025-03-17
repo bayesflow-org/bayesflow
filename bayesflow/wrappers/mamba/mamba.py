@@ -1,4 +1,5 @@
 import keras
+
 # from keras.saving import register_keras_serializable as serializable
 try:
     from mamba_ssm import Mamba
@@ -6,6 +7,7 @@ except ImportError:
     print("Mamba Wrapper is not available")
 
 from ...networks.summary_network import SummaryNetwork
+
 
 # @serializable(package="bayesflow.wrappers")
 class MambaSSM(SummaryNetwork):
@@ -22,13 +24,13 @@ class MambaSSM(SummaryNetwork):
         pooling: bool = True,
         dropout: int | float | None = 0.5,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ):
         """
         A time-series summarization network using Mamba-based State Space Models (SSM).
-        This model processes sequential input data using the Mamba SSM layer, followed by 
+        This model processes sequential input data using the Mamba SSM layer, followed by
         optional pooling, dropout, and a dense layer for extracting summary statistics.
-        
+
         Mamba2 support currently unabailble due to stability issues
 
         Parameters
@@ -58,31 +60,26 @@ class MambaSSM(SummaryNetwork):
         **kwargs : dict
             Additional keyword arguments passed to the `SummaryNetwork` parent class.
         """
-        
+
         super().__init__(**kwargs)
         if device != "cuda":
             raise NotImplementedError("MambaSSM currently only supports cuda")
-        
+
         self.mamba_blocks = [
             Mamba(
-                d_model=feature_dim,
-                d_state=state_dim,
-                d_conv=conv_dim,
-                expand=expand,
-                dt_min=dt_min,
-                dt_max=dt_max
+                d_model=feature_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max
             ).to(device)
             for _ in range(mamba_blocks)
         ]
-        
+
         self.layernorm = keras.layers.LayerNormalization(axis=-1)
-        
+
         self.pooling = pooling
         if pooling:
             self.pooling = keras.layers.GlobalAveragePooling1D()
         self.dropout = keras.layers.Dropout(dropout)
         self.summary_stats = keras.layers.Dense(summary_dim)
-        
+
     def call(self, time_series, **kwargs):
         summary = time_series
         for mamba_block in self.mamba_blocks:

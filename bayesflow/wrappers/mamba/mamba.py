@@ -1,5 +1,3 @@
-from collections.abc import Sequence
-
 import keras
 # from keras.saving import register_keras_serializable as serializable
 try:
@@ -7,7 +5,6 @@ try:
 except ImportError:
     print("Mamba Wrapper is not available")
 
-from bayesflow.types import Tensor
 from ...networks.summary_network import SummaryNetwork
 
 # @serializable(package="bayesflow.wrappers")
@@ -66,7 +63,17 @@ class MambaSSM(SummaryNetwork):
         if device != "cuda":
             raise NotImplementedError("MambaSSM currently only supports cuda")
         
-        self.mamba_blocks = [Mamba(d_model=feature_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max).to(device) for _ in range(mamba_blocks)]
+        self.mamba_blocks = [
+            Mamba(
+                d_model=feature_dim,
+                d_state=state_dim,
+                d_conv=conv_dim,
+                expand=expand,
+                dt_min=dt_min,
+                dt_max=dt_max
+            ).to(device)
+            for _ in range(mamba_blocks)
+        ]
         
         self.layernorm = keras.layers.LayerNormalization(axis=-1)
         

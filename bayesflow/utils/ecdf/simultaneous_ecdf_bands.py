@@ -6,7 +6,7 @@ from .minimal_coverage_probs import minimal_coverage_probs
 
 
 def simultaneous_ecdf_bands(
-    num_samples: int,
+    num_estimates: int,
     num_points: int = None,
     num_simulations: int = 1000,
     confidence: float = 0.95,
@@ -26,11 +26,11 @@ def simultaneous_ecdf_bands(
 
     Parameters
     ----------
-    num_samples     : int
-        The sample size used for computing the ECDF. Will equal to the number of posterior
-        samples when used for calibration. Corresponds to `N` in the paper above.
+    num_estimates   : int
+        The sample size used for computing the ECDF. Will equal to the number of simulated conditions when used
+        for simulation-based calibration. Corresponds to `N` in the paper above.
     num_points      : int, optional, default: None
-        The number of evaluation points on the interval (0, 1). Defaults to `num_points = num_samples` if
+        The number of evaluation points on the interval (0, 1). Defaults to `num_points = num_estimates` if
         not explicitly specified. Correspond to `K` in the paper above.
     num_simulations : int, optional, default: 1000
         The number of samples of size `n_samples` to simulate for determining the simultaneous CIs.
@@ -40,16 +40,16 @@ def simultaneous_ecdf_bands(
         Small number to add to the lower and subtract from the upper bound of the interval [0, 1]
         to avoid edge artefacts. No need to touch this.
     max_num_points  : int, optional, default: 1000
-        Upper bound on `num_points`. Saves computation time when `num_samples` is large.
+        Upper bound on `num_points`. Saves computation time when `num_estimates` is large.
 
     Returns
     -------
-    (alpha, z, L, U) - tuple of scalar and three arrays of size (num_samples,) containing the confidence level
+    (alpha, z, L, U) - tuple of scalar and three arrays of size (num_estimates,) containing the confidence level
         as well as the evaluation points, the lower, and the upper confidence bands, respectively.
     """
 
     # Use shorter variable names to match paper notation
-    N = num_samples
+    N = num_estimates
     if num_points is None:
         K = min(N, max_num_points)
     else:

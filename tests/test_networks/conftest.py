@@ -62,13 +62,59 @@ def free_form_flow_subnet(subnet):
     return FreeFormFlow(encoder_subnet=subnet, decoder_subnet=subnet)
 
 
-@pytest.fixture(params=["coupling_flow", "flow_matching", "free_form_flow"], scope="function")
+@pytest.fixture()
+def typical_point_inference_network():
+    from bayesflow.networks import PointInferenceNetwork
+    from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+
+    return PointInferenceNetwork(
+        scores=dict(
+            mean=MeanScore(),
+            median=MedianScore(),
+            quantiles=QuantileScore([0.1, 0.2, 0.5, 0.65]),
+            mvn=MultivariateNormalScore(),  # currently not stable
+        )
+    )
+
+
+@pytest.fixture()
+def typical_point_inference_network_subnet(subnet):
+    from bayesflow.networks import PointInferenceNetwork
+    from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+
+    return PointInferenceNetwork(
+        scores=dict(
+            mean=MeanScore(subnets=dict(value=subnet)),
+            median=MedianScore(subnets=dict(value=subnet)),
+            quantiles=QuantileScore(subnets=dict(value=subnet)),
+            mvn=MultivariateNormalScore(subnets=dict(mean=subnet, covariance=subnet)),
+        ),
+        subnet=subnet,
+    )
+
+
+@pytest.fixture(
+    params=["typical_point_inference_network", "coupling_flow", "flow_matching", "free_form_flow"], scope="function"
+)
 def inference_network(request):
     return request.getfixturevalue(request.param)
 
 
-@pytest.fixture(params=["coupling_flow_subnet", "flow_matching_subnet", "free_form_flow_subnet"], scope="function")
+@pytest.fixture(
+    params=[
+        "typical_point_inference_network_subnet",
+        "coupling_flow_subnet",
+        "flow_matching_subnet",
+        "free_form_flow_subnet",
+    ],
+    scope="function",
+)
 def inference_network_subnet(request):
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture(params=["coupling_flow", "flow_matching", "free_form_flow"], scope="function")
+def generative_inference_network(request):
     return request.getfixturevalue(request.param)
 
 

@@ -11,8 +11,8 @@ from .elementwise_transform import ElementwiseTransform
 @serializable(package="bayesflow.adapters")
 class Standardize(ElementwiseTransform):
     """
-    Transform that when applied standardizes data using typical z-score standardization i.e. for some unstandardized
-    data x the standardized version z  would be
+    Transform that when applied standardizes data using typical z-score standardization
+    i.e. for some unstandardized data x the standardized version z would be
 
     >>> z = (x - mean(x)) / std(x)
 
@@ -27,6 +27,38 @@ class Standardize(ElementwiseTransform):
         standardization happens individually for each dimension
     momentum : float in (0,1)
         The momentum during training
+
+    Examples
+    --------
+    1) Standardize all variables using their individually estimated mean and stds.
+
+    >>> adapter = (
+            bf.adapters.Adapter()
+                .standardize()
+        )
+
+
+    2) Standardize all with same known mean and std.
+
+    >>> adapter = (
+            bf.adapters.Adapter()
+                .standardize(mean = 5, sd = 10)
+        )
+
+
+    3) Mix of fixed and estimated means/stds. Suppose we have priors for "beta" and "sigma" where we
+    know the means and stds. However for all other variables, the means and stds are unknown.
+    Then standardize should be used in several stages specifying which variables to include or exclude.
+
+    >>> adapter = (
+            bf.adapters.Adapter()
+                # mean fixed, std estimated
+                .standardize(include = "beta", mean = 1)
+                # both mean and SD fixed
+                .standardize(include = "sigma", mean = 0.6, sd = 3)
+                # both means and stds estimated for all other variables
+                .standardize(exclude = ["beta", "sigma"])
+        )
     """
 
     def __init__(

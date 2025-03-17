@@ -12,6 +12,7 @@ from .dict_utils import (
     keras_kwargs,
     split_tensors,
     split_arrays,
+    squeeze_inner_estimates_dict,
 )
 from .dispatch import find_distribution, find_network, find_permutation, find_pooling, find_recurrent_net
 from .ecdf import simultaneous_ecdf_bands, ranks

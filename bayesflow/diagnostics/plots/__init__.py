@@ -1,4 +1,5 @@
 from .calibration_ecdf import calibration_ecdf
+from .calibration_ecdf_from_quantiles import calibration_ecdf_from_quantiles
 from .calibration_histogram import calibration_histogram
 from .loss import loss
 from .mc_calibration import mc_calibration
@@ -7,4 +8,5 @@ from .mmd_hypothesis_test import mmd_hypothesis_test
 from .pairs_posterior import pairs_posterior
 from .pairs_samples import pairs_samples
 from .recovery import recovery
+from .recovery_from_estimates import recovery_from_estimates
 from .z_score_contraction import z_score_contraction

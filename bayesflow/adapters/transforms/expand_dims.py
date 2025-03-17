@@ -1,13 +1,14 @@
 import numpy as np
-
 from keras.saving import (
     deserialize_keras_object as deserialize,
     serialize_keras_object as serialize,
 )
+from keras.saving import register_keras_serializable as serializable
 
 from .elementwise_transform import ElementwiseTransform
 
 
+@serializable(package="bayesflow.adapters")
 class ExpandDims(ElementwiseTransform):
     """
     Expand the shape of an array.

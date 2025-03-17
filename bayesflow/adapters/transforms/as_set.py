@@ -1,8 +1,10 @@
 import numpy as np
+from keras.saving import register_keras_serializable as serializable
 
 from .elementwise_transform import ElementwiseTransform
 
 
+@serializable(package="bayesflow.adapters")
 class AsSet(ElementwiseTransform):
     """The `.as_set(["x", "y"])` transform indicates that both `x` and `y` are treated as sets.
 

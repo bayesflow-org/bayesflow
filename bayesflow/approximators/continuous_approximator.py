@@ -11,7 +11,7 @@ from keras.saving import (
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, logging, split_arrays
+from bayesflow.utils import filter_kwargs, logging, split_arrays, squeeze_inner_estimates_dict
 from .approximator import Approximator
 
 
@@ -65,15 +65,20 @@ class ContinuousApproximator(Approximator):
         summary_variables : Sequence of str, optional
             Names of the summary variables in the data
         """
-        adapter = Adapter.create_default(inference_variables)
+        adapter = Adapter()
+        adapter.to_array()
+        adapter.convert_dtype("float64", "float32")
+        adapter.concatenate(inference_variables, into="inference_variables")
 
         if inference_conditions is not None:
-            adapter = adapter.concatenate(inference_conditions, into="inference_conditions")
+            adapter.concatenate(inference_conditions, into="inference_conditions")
 
         if summary_variables is not None:
-            adapter = adapter.as_set(summary_variables).concatenate(summary_variables, into="summary_variables")
+            adapter.as_set(summary_variables)
+            adapter.concatenate(summary_variables, into="summary_variables")
 
-        adapter = adapter.keep(["inference_variables", "inference_conditions", "summary_variables"]).standardize()
+        adapter.keep(["inference_variables", "inference_conditions", "summary_variables"])
+        adapter.standardize()
 
         return adapter
 
@@ -120,6 +125,8 @@ class ContinuousApproximator(Approximator):
             else:
                 inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
 
+        # Force a conversion to Tensor
+        inference_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, inference_variables)
         inference_metrics = self.inference_network.compute_metrics(
             inference_variables, conditions=inference_conditions, stage=stage
         )
@@ -204,6 +211,44 @@ class ContinuousApproximator(Approximator):
         }
 
         return base_config | config
+
+    def estimate(
+        self,
+        conditions: dict[str, np.ndarray],
+        split: bool = False,
+        estimators: dict[str, callable] = None,
+        num_samples: int = 1000,
+        **kwargs,
+    ) -> dict[str, dict[str, np.ndarray]]:
+        estimators = estimators or {}
+        estimators = (
+            dict(
+                mean=lambda x, axis: dict(value=np.mean(x, keepdims=True, axis=axis)),
+                median=lambda x, axis: dict(value=np.median(x, keepdims=True, axis=axis)),
+                quantiles=lambda x, axis: dict(value=np.moveaxis(np.quantile(x, q=[0.1, 0.5, 0.9], axis=axis), 0, 1)),
+            )
+            | estimators
+        )
+
+        samples = self.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+
+        estimates = {
+            variable_name: {
+                estimator_name: func(samples[variable_name], axis=1) for estimator_name, func in estimators.items()
+            }
+            for variable_name in samples.keys()
+        }
+
+        # remove unnecessary nesting
+        estimates = {
+            variable_name: {
+                outer_key: squeeze_inner_estimates_dict(estimates[variable_name][outer_key])
+                for outer_key in estimates[variable_name].keys()
+            }
+            for variable_name in estimates.keys()
+        }
+
+        return estimates
 
     def sample(
         self,

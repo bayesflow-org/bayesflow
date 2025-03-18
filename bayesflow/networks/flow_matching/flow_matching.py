@@ -45,21 +45,19 @@ class FlowMatching(InferenceNetwork):
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": "adaptive",
-        "tolerance": 1e-3,
-        "min_steps": 10,
-        "max_steps": 100,
+        "method": "euler",
+        "steps": 100,
     }
 
     def __init__(
         self,
         subnet: str | type = "mlp",
         base_distribution: str = "normal",
-        use_optimal_transport: bool = False,
+        use_optimal_transport: bool = True,
         loss_fn: str = "mse",
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, any] = None,
         **kwargs,
     ):
         """
@@ -97,23 +95,17 @@ class FlowMatching(InferenceNetwork):
 
         self.use_optimal_transport = use_optimal_transport
 
-        new_integrate_kwargs = FlowMatching.INTEGRATE_DEFAULT_CONFIG.copy()
-        new_integrate_kwargs.update(integrate_kwargs or {})
-        self.integrate_kwargs = new_integrate_kwargs
-
-        new_optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG.copy()
-        new_optimal_transport_kwargs.update(optimal_transport_kwargs or {})
-        self.optimal_transport_kwargs = new_optimal_transport_kwargs
+        self.integrate_kwargs = FlowMatching.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
+        self.optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
 
         self.seed_generator = keras.random.SeedGenerator()
 
+        subnet_kwargs = subnet_kwargs or {}
+
         if subnet == "mlp":
-            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG.copy()
-            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
-        else:
-            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
@@ -154,23 +146,23 @@ class FlowMatching(InferenceNetwork):
         config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
-    def velocity(self, xz: Tensor, t: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
-        t = keras.ops.convert_to_tensor(t)
-        t = expand_right_as(t, xz)
-        t = keras.ops.broadcast_to(t, keras.ops.shape(xz)[:-1] + (1,))
+    def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
+        time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
+        time = expand_right_as(time, xz)
+        time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
 
         if conditions is None:
-            xtc = keras.ops.concatenate([xz, t], axis=-1)
+            xtc = keras.ops.concatenate([xz, time], axis=-1)
         else:
-            xtc = keras.ops.concatenate([xz, t, conditions], axis=-1)
+            xtc = keras.ops.concatenate([xz, time, conditions], axis=-1)
 
         return self.output_projector(self.subnet(xtc, training=training), training=training)
 
     def _velocity_trace(
-        self, xz: Tensor, t: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
+        self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
     ) -> (Tensor, Tensor):
         def f(x):
-            return self.velocity(x, t, conditions=conditions, training=training)
+            return self.velocity(x, time=time, conditions=conditions, training=training)
 
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
@@ -181,8 +173,8 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         if density:
 
-            def deltas(t, xz):
-                v, trace = self._velocity_trace(xz, t, conditions=conditions, training=training)
+            def deltas(time, xz):
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
@@ -193,8 +185,8 @@ class FlowMatching(InferenceNetwork):
 
             return z, log_density
 
-        def deltas(t, xz):
-            return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}
+        def deltas(time, xz):
+            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": x}
         state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
@@ -208,8 +200,8 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         if density:
 
-            def deltas(t, xz):
-                v, trace = self._velocity_trace(xz, t, conditions=conditions, training=training)
+            def deltas(time, xz):
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
@@ -220,8 +212,8 @@ class FlowMatching(InferenceNetwork):
 
             return x, log_density
 
-        def deltas(t, xz):
-            return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}
+        def deltas(time, xz):
+            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": z}
         state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
@@ -258,7 +250,7 @@ class FlowMatching(InferenceNetwork):
 
         base_metrics = super().compute_metrics(x1, conditions, stage)
 
-        predicted_velocity = self.velocity(x, t, conditions, training=stage == "training")
+        predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training")
 
         loss = self.loss_fn(target_velocity, predicted_velocity)
         loss = keras.ops.mean(loss)

@@ -1,8 +1,10 @@
 import numpy as np
+from keras.saving import register_keras_serializable as serializable
 
 from .elementwise_transform import ElementwiseTransform
 
 
+@serializable(package="bayesflow.adapters")
 class AsTimeSeries(ElementwiseTransform):
     """The `.as_time_series` transform can be used to indicate that variables shall be treated as time series.
 

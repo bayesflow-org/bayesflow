@@ -1,4 +1,4 @@
-from collections.abc import Callable, MutableSequence, Sequence
+from collections.abc import MutableSequence, Sequence
 
 import numpy as np
 from keras.saving import (
@@ -18,9 +18,9 @@ from .transforms import (
     ExpandDims,
     FilterTransform,
     Keep,
-    LambdaTransform,
     Log,
     MapTransform,
+    NumpyTransform,
     OneHot,
     Rename,
     Sqrt,
@@ -234,8 +234,8 @@ class Adapter(MutableSequence[Transform]):
     def apply(
         self,
         *,
-        forward: Callable[[np.ndarray, ...], np.ndarray],
-        inverse: Callable[[np.ndarray, ...], np.ndarray],
+        forward: np.ufunc | str,
+        inverse: np.ufunc | str = None,
         predicate: Predicate = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
@@ -271,7 +271,7 @@ class Adapter(MutableSequence[Transform]):
         to the `custom_objects` argument of the `deserialize` function when deserializing this class.
         """
         transform = FilterTransform(
-            transform_constructor=LambdaTransform,
+            transform_constructor=NumpyTransform,
             predicate=predicate,
             include=include,
             exclude=exclude,

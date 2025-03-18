@@ -12,6 +12,7 @@ from .dict_utils import (
     keras_kwargs,
     split_tensors,
     split_arrays,
+    squeeze_inner_estimates_dict,
 )
 from .dispatch import find_distribution, find_network, find_permutation, find_pooling, find_recurrent_net
 from .ecdf import simultaneous_ecdf_bands, ranks
@@ -47,7 +48,7 @@ from .plot_utils import (
 )
 from .serialization import serialize_value_or_type, deserialize_value_or_type
 from .tensor_utils import (
-    concatenate,
+    concatenate_valid,
     expand,
     expand_as,
     expand_to,
@@ -58,12 +59,13 @@ from .tensor_utils import (
     expand_right_as,
     expand_right_to,
     expand_tile,
+    pad,
+    searchsorted,
     size_of,
+    stack_valid,
     tile_axis,
     tree_concatenate,
     tree_stack,
-    pad,
-    searchsorted,
 )
 from .validators import check_lengths_same
 from .workflow_utils import find_inference_network, find_summary_network

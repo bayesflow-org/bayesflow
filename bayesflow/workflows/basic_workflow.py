@@ -8,10 +8,10 @@ import pandas as pd
 import keras
 
 from bayesflow.datasets import OnlineDataset, OfflineDataset, DiskDataset
-from bayesflow.networks import InferenceNetwork, SummaryNetwork
+from bayesflow.networks import InferenceNetwork, PointInferenceNetwork, SummaryNetwork
 from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
-from bayesflow.approximators import ContinuousApproximator
+from bayesflow.approximators import ContinuousApproximator, PointApproximator
 from bayesflow.types import Shape
 from bayesflow.utils import find_inference_network, find_summary_network, logging
 from bayesflow.diagnostics import metrics as bf_metrics
@@ -28,7 +28,7 @@ class BasicWorkflow(Workflow):
         inference_network: InferenceNetwork | str = "coupling_flow",
         summary_network: SummaryNetwork | str = None,
         initial_learning_rate: float = 5e-4,
-        optimizer: type = None,
+        optimizer: keras.optimizers.Optimizer | type = None,
         checkpoint_filepath: str = None,
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
@@ -102,7 +102,11 @@ class BasicWorkflow(Workflow):
 
         self.inference_variables = inference_variables
 
-        self.approximator = ContinuousApproximator(
+        if isinstance(self.inference_network, PointInferenceNetwork):
+            Approximator = PointApproximator
+        else:
+            Approximator = ContinuousApproximator
+        self.approximator = Approximator(
             inference_network=self.inference_network, summary_network=self.summary_network, adapter=self.adapter
         )
 

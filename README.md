@@ -100,7 +100,8 @@ Check out some of our walk-through notebooks below. We are actively working on p
 5. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
 7. [Simple model comparison example (One-Sample T-Test)](examples/One_Sample_TTest.ipynb)
-8. More coming soon...
+8. [Rapid iteration with point estimation and expert statistics for Lotka-Volterra dynamics](examples/Lotka_Volterra_point_estimation_and_expert_stats.ipynb)
+9. More coming soon...
 
 ## Documentation \& Help
 

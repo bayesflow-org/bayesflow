@@ -44,16 +44,17 @@ class OrderedQuantiles(Ordered):
         else:
             # choose quantile level closest to median as anchor index
             self.anchor_index = keras.ops.argmin(keras.ops.abs(keras.ops.convert_to_tensor(self.q) - 0.5))
-            msg = (
-                "Length of `q` does not coincide with input shape: "
-                f"len(q)={len(self.q)}, position {self.axis} of shape={input_shape}"
-            )
-            assert num_quantile_levels == len(self.q), msg
 
-        msg = (
-            "The link function `OrderedQuantiles` expects at least 3 quantile levels,"
-            f" but only {num_quantile_levels} were given."
-        )
-        assert self.anchor_index not in (0, -1, num_quantile_levels - 1), msg
+            if len(self.q) != num_quantile_levels:
+                raise RuntimeError(
+                    f"Length of `q` does not coincide with input shape: len(q)={len(self.q)}, "
+                    f"position {self.axis} of shape={input_shape}"
+                )
+
+        if self.anchor_index not in [0, -1, num_quantile_levels - 1]:
+            raise RuntimeError(
+                f"The link function `OrderedQuantiles` expects at least 3 quantile levels, "
+                f"but only {num_quantile_levels} were given."
+            )
 
         super().build(input_shape)

@@ -39,7 +39,10 @@ class FourierEmbedding(keras.Layer):
         """
 
         super().__init__(**kwargs)
-        assert embed_dim % 2 == 0, f"Embedding dimension must be even, but is {embed_dim}."
+
+        if embed_dim % 2 != 0:
+            raise ValueError(f"Embedding dimension must be even, but is {embed_dim}.")
+
         self.w = self.add_weight(initializer=initializer, shape=(embed_dim // 2,), trainable=trainable)
         self.scale = scale
         self.embed_dim = embed_dim

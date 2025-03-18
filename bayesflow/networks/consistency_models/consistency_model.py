@@ -177,7 +177,10 @@ class ConsistencyModel(InferenceNetwork):
         # First, we calculate all unique numbers of discretization steps n
         # in a loop, as self.total_steps might be large
         self.max_n = int(self._schedule_discretization(self.total_steps))
-        assert self.max_n == self.s1 + 1
+
+        if self.max_n != self.s1 + 1:
+            raise ValueError("The maximum number of discretization steps must be equal to s1 + 1.")
+
         unique_n = set()
         for step in range(int(self.total_steps)):
             unique_n.add(int(self._schedule_discretization(step)))

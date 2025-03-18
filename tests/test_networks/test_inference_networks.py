@@ -12,7 +12,10 @@ from tests.utils import allclose, assert_layers_equal
 def test_build(inference_network, random_samples, random_conditions):
     assert inference_network.built is False
 
-    inference_network(random_samples, conditions=random_conditions)
+    samples_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+
+    inference_network.build(samples_shape, conditions_shape=conditions_shape)
 
     assert inference_network.built is True
 
@@ -22,7 +25,9 @@ def test_build(inference_network, random_samples, random_conditions):
 
 def test_variable_batch_size(inference_network, random_samples, random_conditions):
     # build with one batch size
-    inference_network(random_samples, conditions=random_conditions)
+    samples_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    inference_network.build(samples_shape, conditions_shape=conditions_shape)
 
     # run with another batch size
     batch_sizes = np.random.choice(10, replace=False, size=3)
@@ -38,8 +43,8 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
 
 
 @pytest.mark.parametrize("density", [True, False])
-def test_output_structure(density, inference_network, random_samples, random_conditions):
-    output = inference_network(random_samples, conditions=random_conditions, density=density)
+def test_output_structure(density, generative_inference_network, random_samples, random_conditions):
+    output = generative_inference_network(random_samples, conditions=random_conditions, density=density)
 
     if density:
         assert isinstance(output, tuple)
@@ -53,13 +58,15 @@ def test_output_structure(density, inference_network, random_samples, random_con
         assert keras.ops.is_tensor(output)
 
 
-def test_output_shape(inference_network, random_samples, random_conditions):
-    forward_output, forward_log_density = inference_network(random_samples, conditions=random_conditions, density=True)
+def test_output_shape(generative_inference_network, random_samples, random_conditions):
+    forward_output, forward_log_density = generative_inference_network(
+        random_samples, conditions=random_conditions, density=True
+    )
 
     assert keras.ops.shape(forward_output) == keras.ops.shape(random_samples)
     assert keras.ops.shape(forward_log_density) == (keras.ops.shape(random_samples)[0],)
 
-    inverse_output, inverse_log_density = inference_network(
+    inverse_output, inverse_log_density = generative_inference_network(
         random_samples, conditions=random_conditions, density=True, inverse=True
     )
 
@@ -67,10 +74,12 @@ def test_output_shape(inference_network, random_samples, random_conditions):
     assert keras.ops.shape(inverse_log_density) == (keras.ops.shape(random_samples)[0],)
 
 
-def test_cycle_consistency(inference_network, random_samples, random_conditions):
+def test_cycle_consistency(generative_inference_network, random_samples, random_conditions):
     # cycle-consistency means the forward and inverse methods are inverses of each other
-    forward_output, forward_log_density = inference_network(random_samples, conditions=random_conditions, density=True)
-    inverse_output, inverse_log_density = inference_network(
+    forward_output, forward_log_density = generative_inference_network(
+        random_samples, conditions=random_conditions, density=True
+    )
+    inverse_output, inverse_log_density = generative_inference_network(
         forward_output, conditions=random_conditions, density=True, inverse=True
     )
 
@@ -78,14 +87,17 @@ def test_cycle_consistency(inference_network, random_samples, random_conditions)
     assert allclose(forward_log_density, inverse_log_density, atol=1e-3, rtol=1e-3)
 
 
+# TODO: make this backend-agnostic
 @pytest.mark.torch
-def test_density_numerically(inference_network, random_samples, random_conditions):
+def test_density_numerically(generative_inference_network, random_samples, random_conditions):
     import torch
 
-    forward_output, forward_log_density = inference_network(random_samples, conditions=random_conditions, density=True)
+    forward_output, forward_log_density = generative_inference_network(
+        random_samples, conditions=random_conditions, density=True
+    )
 
     def f(x):
-        return inference_network(x, conditions=random_conditions)
+        return generative_inference_network(x, conditions=random_conditions)
 
     numerical_forward_jacobian, *_ = torch.autograd.functional.jacobian(f, random_samples, vectorize=True)
 
@@ -96,18 +108,18 @@ def test_density_numerically(inference_network, random_samples, random_condition
     ]
     numerical_forward_log_det = keras.ops.stack(numerical_forward_log_det, axis=0)
 
-    log_prob = inference_network.base_distribution.log_prob(forward_output)
+    log_prob = generative_inference_network.base_distribution.log_prob(forward_output)
 
     numerical_forward_log_density = log_prob + numerical_forward_log_det
 
     assert allclose(forward_log_density, numerical_forward_log_density, rtol=1e-4, atol=1e-5)
 
-    inverse_output, inverse_log_density = inference_network(
+    inverse_output, inverse_log_density = generative_inference_network(
         random_samples, conditions=random_conditions, density=True, inverse=True
     )
 
     def f(x):
-        return inference_network(x, conditions=random_conditions, inverse=True)
+        return generative_inference_network(x, conditions=random_conditions, inverse=True)
 
     numerical_inverse_jacobian, *_ = torch.autograd.functional.jacobian(f, random_samples, vectorize=True)
 
@@ -118,7 +130,7 @@ def test_density_numerically(inference_network, random_samples, random_condition
     ]
     numerical_inverse_log_det = keras.ops.stack(numerical_inverse_log_det, axis=0)
 
-    log_prob = inference_network.base_distribution.log_prob(random_samples)
+    log_prob = generative_inference_network.base_distribution.log_prob(random_samples)
 
     numerical_inverse_log_density = log_prob - numerical_inverse_log_det
 

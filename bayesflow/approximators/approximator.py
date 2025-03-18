@@ -61,6 +61,58 @@ class Approximator(BackendApproximator):
         )
 
     def fit(self, *, dataset: keras.utils.PyDataset = None, simulator: Simulator = None, **kwargs):
+        """
+        Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
+        If `dataset` is not provided, a dataset is built from the `simulator`.
+        If the model has not been built, it will be built using a batch from the dataset.
+
+        Parameters
+        ----------
+        dataset : keras.utils.PyDataset, optional
+            A dataset containing simulations for training. If provided, `simulator` must be None.
+        simulator : Simulator, optional
+            A simulator used to generate a dataset. If provided, `dataset` must be None.
+        **kwargs : dict
+            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
+
+            batch_size : int or None, default='auto'
+                Number of samples per gradient update. Do not specify if `dataset` is provided as a
+                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
+            epochs : int, default=1
+                Number of epochs to train the model.
+            verbose : {"auto", 0, 1, 2}, default="auto"
+                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+            callbacks : list of keras.callbacks.Callback, optional
+                List of callbacks to apply during training.
+            validation_split : float, optional
+                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
+                or tensors).
+            validation_data : tuple or dataset, optional
+                Data for validation, overriding `validation_split`.
+            shuffle : bool, default=True
+                Whether to shuffle the training data before each epoch (ignored for dataset generators).
+            initial_epoch : int, default=0
+                Epoch at which to start training (useful for resuming training).
+            steps_per_epoch : int or None, optional
+                Number of steps (batches) before declaring an epoch finished.
+            validation_steps : int or None, optional
+                Number of validation steps per validation epoch.
+            validation_batch_size : int or None, optional
+                Number of samples per validation batch (defaults to `batch_size`).
+            validation_freq : int, default=1
+                Specifies how many training epochs to run before performing validation.
+
+        Returns
+        -------
+        keras.callbacks.History
+            A history object containing the training loss and metrics values.
+
+        Raises
+        ------
+        ValueError
+            If both `dataset` and `simulator` are provided or neither is provided.
+        """
+
         if dataset is None:
             if simulator is None:
                 raise ValueError("Received no data to fit on. Please provide either a dataset or a simulator.")

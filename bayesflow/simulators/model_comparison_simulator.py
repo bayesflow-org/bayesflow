@@ -2,12 +2,15 @@ from collections.abc import Sequence
 import numpy as np
 
 from bayesflow.types import Shape
-from bayesflow.utils import tree_stack
+from bayesflow.utils import tree_concatenate
 from bayesflow.utils.decorators import allow_batch_size
 
 from bayesflow.utils import numpy_utils as npu
 
+from types import FunctionType
+
 from .simulator import Simulator
+from .lambda_simulator import LambdaSimulator
 
 
 class ModelComparisonSimulator(Simulator):
@@ -18,9 +21,14 @@ class ModelComparisonSimulator(Simulator):
         simulators: Sequence[Simulator],
         p: Sequence[float] = None,
         logits: Sequence[float] = None,
-        use_mixed_batches: bool = False,
+        use_mixed_batches: bool = True,
+        shared_simulator: Simulator | FunctionType = None,
     ):
         self.simulators = simulators
+
+        if isinstance(shared_simulator, FunctionType):
+            shared_simulator = LambdaSimulator(shared_simulator, is_batched=True)
+        self.shared_simulator = shared_simulator
 
         match logits, p:
             case (None, None):
@@ -43,30 +51,34 @@ class ModelComparisonSimulator(Simulator):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+        data = {}
+        if self.shared_simulator:
+            data |= self.shared_simulator.sample(batch_shape, **kwargs)
+
         if not self.use_mixed_batches:
             # draw one model index for the whole batch (faster)
             model_index = np.random.choice(len(self.simulators), p=npu.softmax(self.logits))
 
             simulator = self.simulators[model_index]
-            data = simulator.sample(batch_shape)
+            data = simulator.sample(batch_shape, **(kwargs | data))
 
             model_indices = np.full(batch_shape, model_index, dtype="int32")
+            model_indices = npu.one_hot(model_indices, len(self.simulators))
         else:
-            # draw a model index for each sample in the batch (slower)
-            model_indices = np.random.choice(len(self.simulators), p=npu.softmax(self.logits), size=batch_shape)
+            # generate data randomly from each model (slower)
+            model_counts = np.random.multinomial(n=batch_shape[0], pvals=npu.softmax(self.logits))
 
-            data = np.empty(batch_shape, dtype="object")
+            sims = []
+            for n, simulator in zip(model_counts, self.simulators):
+                if n == 0:
+                    continue
+                sim = simulator.sample(n, **(kwargs | data))
+                sims.append(sim)
 
-            for index in np.ndindex(batch_shape):
-                simulator = self.simulators[int(model_indices[index])]
-                data[index] = simulator.sample(())
+            sims = tree_concatenate(sims, numpy=True)
+            data |= sims
 
-            data = data.flatten().tolist()
-            data = tree_stack(data, axis=0, numpy=True)
-
-            # restore batch shape
-            data = {key: np.reshape(value, batch_shape + np.shape(value)[1:]) for key, value in data.items()}
-
-        model_indices = npu.one_hot(model_indices, len(self.simulators))
+            model_indices = np.eye(len(self.simulators), dtype="int32")
+            model_indices = np.repeat(model_indices, model_counts, axis=0)
 
         return data | {"model_indices": model_indices}

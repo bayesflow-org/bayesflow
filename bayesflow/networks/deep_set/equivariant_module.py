@@ -5,7 +5,7 @@ from keras import ops, layers
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
 from .invariant_module import InvariantModule
 
 
@@ -30,17 +30,44 @@ class EquivariantModule(keras.Layer):
         dropout: int | float | None = 0.05,
         layer_norm: bool = True,
         spectral_normalization: bool = False,
-        **kwargs,
     ):
-        """Creates an equivariant module according to [1] which combines equivariant transforms
-        with nested invariant transforms, thereby enabling interactions between set members.
+        """
+        Initializes an equivariant module that combines equivariant transformations with nested invariant transforms
+        to enable interactions between set members.
+
+        This module applies an equivariant transformation to each set member, followed by an invariant transformation
+        that aggregates information and injects it back into the set representation.
+
+        The architecture consists of a fully connected residual block for equivariant processing and an invariant
+        module to enhance expressiveness.
+
+        The model supports different activation functions, dropout, layer normalization, and optional spectral
+        normalization for stability.
 
         Parameters
         ----------
-        #TODO
+        mlp_widths_equivariant : Sequence[int], optional
+            Widths of the MLP layers in the equivariant transformation applied to each set member.
+            Default is (128, 128).
+        mlp_widths_invariant_inner : Sequence[int], optional
+            Widths of the inner MLP layers in the invariant module. Default is (128, 128).
+        mlp_widths_invariant_outer : Sequence[int], optional
+            Widths of the outer MLP layers in the invariant module. Default is (128, 128).
+        pooling : str, optional
+            Type of pooling operation used in the invariant module, such as "mean". Default is "mean".
+        activation : str, optional
+            Activation function applied in the MLP layers, such as "gelu". Default is "gelu".
+        kernel_initializer : str, optional
+            Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
+        dropout : int, float, or None, optional
+            Dropout rate applied within the MLP layers. Default is 0.05.
+        layer_norm : bool, optional
+            Whether to apply layer normalization after transformations. Default is True.
+        spectral_normalization : bool, optional
+            Whether to apply spectral normalization to stabilize training. Default is False.
         """
 
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__()
 
         # Invariant module to increase expressiveness by concatenating outputs to each set member
         self.invariant_module = InvariantModule(
@@ -51,7 +78,6 @@ class EquivariantModule(keras.Layer):
             dropout=dropout,
             pooling=pooling,
             spectral_normalization=spectral_normalization,
-            **kwargs,
         )
 
         # Fully connected net + residual connection for an equivariant transform applied to each set member
@@ -69,6 +95,7 @@ class EquivariantModule(keras.Layer):
 
         self.layer_norm = layers.LayerNormalization() if layer_norm else None
 
+    @sanitize_input_shape
     def build(self, input_shape):
         self.call(keras.ops.zeros(input_shape))
 
@@ -77,11 +104,19 @@ class EquivariantModule(keras.Layer):
 
         Parameters
         ----------
-        #TODO
+        input_set : Tensor
+            The input tensor representing a set, with shape
+            (batch_size, ..., set_size, input_dim).
+        training : bool, optional
+            A flag indicating whether the model is in training mode. Default is False.
+        **kwargs : dict
+            Additional keyword arguments for compatibility with other functions.
 
         Returns
         -------
-        #TODO
+        Tensor
+            The transformed output tensor with the same shape as `input_set`, where
+            each element is processed through the equivariant transformation.
         """
 
         input_set = self.input_projector(input_set)

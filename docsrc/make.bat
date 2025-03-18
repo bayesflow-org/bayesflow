@@ -2,59 +2,55 @@
 
 pushd %~dp0
 
-REM Command file for Sphinx documentation
-
-if "%SPHINXBUILD%" == "" (
-	set SPHINXBUILD=sphinx-build
-)
-set SOURCEDIR=source
-set BUILDDIR=_build
-
-if "%1" == "" goto help
-if "%1" == "github" goto github
-
-%SPHINXBUILD% >NUL 2>NUL
-if errorlevel 9009 (
-	echo.
-	echo.The 'sphinx-build' command was not found. Make sure you have Sphinx
-	echo.installed, then set the SPHINXBUILD environment variable to point
-	echo.to the full path of the 'sphinx-build' executable. Alternatively you
-	echo.may add the Sphinx directory to PATH.
-	echo.
-	echo.If you don't have Sphinx installed, grab it from
-	echo.http://sphinx-doc.org/
-	exit /b 1
-)
+REM Command file for sphinx-polyversion documentation
 
 echo.Warning: This make.bat was not tested. If you encounter errors, please
-echo.refer to Makefile.
+echo.refer to Makefile and open an issue.
 
-%SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
-goto end
+if "%1" == "" goto help
+if "%1" == "docs" goto docs
+if "%1" == "docs-sequential" goto docssequential
+if "%1" == "local" goto local
+if "%1" == "clean" goto clean
+if "%1" == "clean-all" goto cleanall
+if "%1" == "view-docs" goto viewdocs
 
 :help
-%SPHINXBUILD% -M help %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
+echo.Please specify a command (local, docs, docs-sequential, clean, clean-all)
 goto end
 
-:dev
-python pre-build.py source
-%SPHINXBUILD% -M html %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
-xcopy /y /s "%BUILDDIR%\html" ..\docs
-xcopy /y .nojekyll ..\docs\.nojekyll
-goto end
-
-:github
-set BF_DOCS_SEQUENTIAL_BUILDS=1
-sphinx-polyversion poly.py
+:docssequential
+sphinx-polyversion --local poly.py
+echo.Copying docs to ../docs
+del /q /s ..\docs\*
 xcopy /y /s _build_polyversion\ ..\docs
 xcopy /y .nojekyll ..\docs\.nojekyll
+del /q /s _build_polyversion
 goto end
 
-:parallel
-set BF_DOCS_SEQUENTIAL_BUILDS=0
-sphinx-polyversion poly.py
+:docssequential
+sphinx-polyversion --sequential poly.py
+echo.Copying docs to ../docs
+del /q /s ..\docs\*
 xcopy /y /s _build_polyversion\ ..\docs
 xcopy /y .nojekyll ..\docs\.nojekyll
+del /q /s _build_polyversion
+goto end
+
+:docs
+sphinx-polyversion poly.py
+echo.Copying docs to ../docs
+del /q /s ..\docs\*
+xcopy /y /s _build_polyversion\ ..\docs
+xcopy /y .nojekyll ..\docs\.nojekyll
+del /q /s _build_polyversion
+goto end
+
+:viewdocs
+echo.Serving the contents of '../docs'... (open the link below to view).
+echo.Interrupt with Ctrl+C.
+python -m http.server -d ../docs -b 127.0.0.1 8090
+goto end
 
 :clean
 del /q /s ..\docs\*
@@ -66,6 +62,9 @@ del /q /s source\contributing.md
 del /q /s source\installation.rst
 goto end
 
+:cleanall
+del /q /s .docs_venvs .bf_doc_gen_venv
+goto clean
 
 :end
 popd

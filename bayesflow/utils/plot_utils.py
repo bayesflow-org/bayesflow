@@ -9,14 +9,15 @@ from .dict_utils import dicts_to_arrays
 
 
 def prepare_plot_data(
+    estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray,
-    references: Mapping[str, np.ndarray] | np.ndarray,
+    variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     num_col: int = None,
     num_row: int = None,
     figsize: tuple = None,
     stacked: bool = False,
-    default_name: str = "var",
+    default_name: str = "v",
 ) -> Mapping[str, Any]:
     """
     Procedural wrapper that encompasses all preprocessing steps, including shape-checking, parameter name
@@ -24,17 +25,20 @@ def prepare_plot_data(
 
     Parameters
     ----------
-    targets           : dict[str, ndarray] or ndarray
+    estimates           : dict[str, ndarray] or ndarray
         The model-generated predictions or estimates, which can take the following forms:
+
         - ndarray of shape (num_datasets, num_variables)
             Point estimates for each dataset, where `num_datasets` is the number of datasets
             and `num_variables` is the number of variables per dataset.
         - ndarray of shape (num_datasets, num_draws, num_variables)
             Posterior samples for each dataset, where `num_datasets` is the number of datasets,
             `num_draws` is the number of posterior draws, and `num_variables` is the number of variables.
-    references        : dict[str, ndarray] or ndarray, optional (default = None)
+    targets        : dict[str, ndarray] or ndarray, optional (default = None)
         Ground truth values corresponding to the estimates. Must match the structure and dimensionality
         of `estimates` in terms of first and last axis.
+    variable_keys     : list or None, optional, default: None
+       Select keys from the dictionary provided in samples. By default, select all keys.
     variable_names    : Sequence[str], optional (default = None)
         Optional variable names to act as a filter if dicts provided or actual variable names in case of array args
     num_col           : int
@@ -45,17 +49,27 @@ def prepare_plot_data(
         Size of the figure adjusting to the display resolution
     stacked           : bool, optional, default: False
         Whether the plots are stacked horizontally
-    default_name      : str, optional (default = "var")
-        The default name to use for targets if None provided
+    default_name      : str, optional (default = "v")
+        The default name to use for estimates if None provided
     """
 
     plot_data = dicts_to_arrays(
-        targets=targets, references=references, variable_names=variable_names, default_name=default_name
+        estimates=estimates,
+        targets=targets,
+        variable_keys=variable_keys,
+        variable_names=variable_names,
+        default_name=default_name,
     )
-    check_estimates_prior_shapes(plot_data["targets"], plot_data["references"])
+    check_estimates_prior_shapes(plot_data["estimates"], plot_data["targets"])
+
+    # store variable information at top level for easy access
+    variable_names = plot_data["estimates"].variable_names
+    num_variables = len(variable_names)
+    plot_data["variable_names"] = variable_names
+    plot_data["num_variables"] = num_variables
 
     # Configure layout
-    num_row, num_col = set_layout(plot_data["num_variables"], num_row, num_col, stacked)
+    num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
 
     # Initialize figure
     fig, axes = make_figure(num_row, num_col, figsize=figsize)
@@ -130,6 +144,7 @@ def make_figure(num_row: int = None, num_col: int = None, figsize: tuple = None)
             figsize = (int(5 * num_col), int(5 * num_row))
 
         f, axes = plt.subplots(num_row, num_col, figsize=figsize)
+    axes = np.atleast_1d(axes)
 
     return f, axes
 
@@ -188,8 +203,8 @@ def add_y_labels(axes: np.ndarray, num_row: int = None, ylabel: Sequence[str] | 
 
 
 def add_titles(axes: np.ndarray, title: Sequence[str] | str = None, title_fontsize: int = None):
-    for i, ax in enumerate(axes.flat):
-        ax.set_title(title[i], fontsize=title_fontsize)
+    for t, ax in zip(title, axes.flat):
+        ax.set_title(t, fontsize=title_fontsize)
 
 
 def add_titles_and_labels(

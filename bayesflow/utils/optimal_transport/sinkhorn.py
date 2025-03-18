@@ -6,6 +6,7 @@ from bayesflow.types import Tensor
 from ..dispatch import find_cost
 from .. import logging
 from ..numpy_utils import softmax
+from ..tensor_utils import is_symbolic_tensor
 
 
 def sinkhorn(
@@ -134,8 +135,8 @@ def sinkhorn_indices(
         rng = np.random.default_rng(seed)
 
         indices = []
-        for row in range(cost.shape[0]):
-            index = rng.choice(cost.shape[1], p=plan[row])
+        for row in range(plan.shape[0]):
+            index = rng.choice(plan.shape[1], p=plan[row])
             indices.append(index)
 
         indices = np.array(indices)
@@ -189,6 +190,9 @@ def sinkhorn_plan_keras(cost: Tensor, regularization: float, max_steps: int, tol
 
     # initialize the transport plan from a gaussian kernel
     plan = keras.ops.exp(-0.5 * cost / regularization)
+
+    if is_symbolic_tensor(plan):
+        return plan
 
     def is_converged(plan):
         # check convergence: the plan should be doubly stochastic

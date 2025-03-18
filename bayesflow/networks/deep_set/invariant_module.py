@@ -6,7 +6,7 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import find_pooling
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
 
 
 @serializable(package="bayesflow.networks")
@@ -27,21 +27,41 @@ class InvariantModule(keras.Layer):
         kernel_initializer: str = "he_normal",
         dropout: int | float | None = 0.05,
         pooling: str = "mean",
+        pooling_kwargs: dict = None,
         spectral_normalization: bool = False,
-        **kwargs,
     ):
-        """Creates an invariant module according to [1] which represents a learnable permutation-invariant
-        function with an option for learnable pooling.
+        """
+        Initializes an invariant module representing a learnable permutation-invariant function with an option for
+        learnable pooling.
+
+        This module applies a two-stage transformation: an inner fully connected network processes individual
+        set elements, followed by a pooling operation that aggregates features across the set. The pooled features are
+        then passed through an outer fully connected network to produce the final invariant representation.
+
+        The model supports different activation functions, dropout, and optional spectral normalization for stability.
+        The pooling mechanism can be customized with additional arguments.
 
         Parameters
         ----------
-        # TODO
-
-        **kwargs: dict
-            Optional keyword arguments can be passed to the pooling layer as a dictionary into the
-            reserved key ``pooling_kwargs``. Example: #TODO
+        mlp_widths_inner : Sequence[int], optional
+            Widths of the MLP layers applied before pooling. Default is (128, 128).
+        mlp_widths_outer : Sequence[int], optional
+            Widths of the MLP layers applied after pooling. Default is (128, 128).
+        activation : str, optional
+            Activation function applied in the MLP layers, such as "gelu". Default is "gelu".
+        kernel_initializer : str, optional
+            Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
+        dropout : int, float, or None, optional
+            Dropout rate applied in the outer MLP layers. Default is 0.05.
+        pooling : str, optional
+            Type of pooling operation applied across set elements, such as "mean". Default is "mean".
+        pooling_kwargs : dict, optional
+            Additional keyword arguments for the pooling layer. Default is None.
+        spectral_normalization : bool, optional
+            Whether to apply spectral normalization to stabilize training. Default is False.
         """
-        super().__init__(**keras_kwargs(kwargs))
+
+        super().__init__()
 
         # Inner fully connected net for sum decomposition: inner( pooling( inner(set) ) )
         self.inner_fc = keras.Sequential()
@@ -56,7 +76,6 @@ class InvariantModule(keras.Layer):
             self.inner_fc.add(layer)
 
         # Outer fully connected net for sum decomposition: inner( pooling( inner(set) ) )
-        # TODO: why does using Sequential work here, but not in DeepSet?
         self.outer_fc = keras.Sequential()
         for width in mlp_widths_outer:
             if dropout is not None and dropout > 0:
@@ -72,8 +91,12 @@ class InvariantModule(keras.Layer):
             self.outer_fc.add(layer)
 
         # Pooling function as keras layer for sum decomposition: inner( pooling( inner(set) ) )
-        self.pooling_layer = find_pooling(pooling, **kwargs.get("pooling_kwargs", {}))
+        if pooling_kwargs is None:
+            pooling_kwargs = {}
 
+        self.pooling_layer = find_pooling(pooling, **pooling_kwargs)
+
+    @sanitize_input_shape
     def build(self, input_shape):
         self.call(keras.ops.zeros(input_shape))
 

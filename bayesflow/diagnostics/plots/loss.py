@@ -96,8 +96,7 @@ def loss(
             val_step_index = val_step_index[: val_losses.shape[0]]
 
     # Loop through loss entries and populate plot
-    looper = [axes] if num_row == 1 else axes.flat
-    for i, ax in enumerate(looper):
+    for i, ax in enumerate(axes.flat):
         # Plot train curve
         ax.plot(train_step_index, train_losses.iloc[:, i], color=train_color, lw=lw_train, alpha=0.9, label="Training")
         if moving_average and train_losses.columns[i] == "Loss":
@@ -127,7 +126,7 @@ def loss(
 
     # Add labels, titles, and set font sizes
     add_titles_and_labels(
-        axes=np.atleast_1d(axes),
+        axes=axes,
         num_row=num_row,
         num_col=1,
         title=["Loss Trajectory"],

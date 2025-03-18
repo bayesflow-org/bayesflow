@@ -14,10 +14,13 @@ class Drop(Transform):
     """
     Transform to drop variables from further calculation.
 
-    Parameters:
-        keys: list of strings, containing names of data variables that should be dropped
+    Parameters
+    ----------
+    keys : sequence of str
+        Names of data variables that should be dropped
 
-    Example:
+    Examples
+    --------
 
     >>> import bayesflow as bf
     >>> a = [1, 2, 3, 4]

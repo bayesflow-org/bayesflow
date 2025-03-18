@@ -1,12 +1,12 @@
 import numpy as np
+from keras.saving import register_keras_serializable as serializable
 
 from .elementwise_transform import ElementwiseTransform
 
 
+@serializable(package="bayesflow.adapters")
 class AsTimeSeries(ElementwiseTransform):
-    """
-    The `.as_time_series` transform can be used to indicate that
-    variables shall be treated as time series.
+    """The `.as_time_series` transform can be used to indicate that variables shall be treated as time series.
 
     Currently, all this transformation does is to ensure that the variable
     arrays are at least 3D. The 2rd dimension is treated as the
@@ -14,12 +14,10 @@ class AsTimeSeries(ElementwiseTransform):
     In the future, the transform will have more advanced behavior
     to better ensure the correct treatment of time series data.
 
-    Useage:
+    Examples
+    --------
 
-    adapter = (
-        bf.Adapter()
-        .as_time_series(["x", "y"])
-        )
+    >>> adapter = bf.Adapter().as_time_series(["x", "y"])
     """
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
@@ -30,3 +28,10 @@ class AsTimeSeries(ElementwiseTransform):
             return np.squeeze(data, axis=2)
 
         return data
+
+    @classmethod
+    def from_config(cls, config: dict, custom_objects=None) -> "AsTimeSeries":
+        return cls()
+
+    def get_config(self) -> dict:
+        return {}

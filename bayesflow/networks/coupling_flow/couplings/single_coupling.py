@@ -15,10 +15,23 @@ class SingleCoupling(InvertibleLayer):
     Subnet output tensors are linearly mapped to the correct dimension.
     """
 
+    MLP_DEFAULT_CONFIG = {
+        "widths": (128, 128),
+        "activation": "hard_silu",
+        "kernel_initializer": "glorot_uniform",
+        "residual": False,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
+
     def __init__(self, subnet: str | type = "mlp", transform: str = "affine", **kwargs):
         super().__init__(**keras_kwargs(kwargs))
 
-        self.network = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
+        subnet_kwargs = kwargs.get("subnet_kwargs", {})
+        if subnet == "mlp":
+            subnet_kwargs = SingleCoupling.MLP_DEFAULT_CONFIG | subnet_kwargs
+
+        self.network = find_network(subnet, **subnet_kwargs)
         self.transform = find_transform(transform, **kwargs.get("transform_kwargs", {}))
 
         output_projector_kwargs = kwargs.get("output_projector_kwargs", {})

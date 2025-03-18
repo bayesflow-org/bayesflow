@@ -25,6 +25,33 @@ class DiagonalStudentT(Distribution):
         seed_generator: keras.random.SeedGenerator = None,
         **kwargs,
     ):
+        """
+        Initializes a backend-agnostic Student's t-distribution with optional learnable parameters.
+
+        This class represents a Student's t-distribution, which is useful for modeling heavy-tailed data.
+        The distribution is parameterized by degrees of freedom (`df`), location (`loc`), and scale (`scale`).
+        These parameters can either be fixed or learned during training.
+
+        The class also supports random number generation with an optional seed for reproducibility.
+
+        Parameters
+        ----------
+        df : int or float
+            Degrees of freedom for the Student's t-distribution. Lower values result in
+            heavier tails, making it more robust to outliers.
+        loc : int, float, np.ndarray, or Tensor, optional
+            The location parameter (mean) of the distribution. Default is 0.0.
+        scale : int, float, np.ndarray, or Tensor, optional
+            The scale parameter (standard deviation) of the distribution. Default is 1.0.
+        use_learnable_parameters : bool, optional
+            Whether to treat `loc` and `scale` as learnable parameters. Default is False.
+        seed_generator : keras.random.SeedGenerator, optional
+            A Keras seed generator for reproducible random sampling. If None, a new seed
+            generator is created. Default is None.
+        **kwargs
+            Additional keyword arguments passed to the base `Distribution` class.
+        """
+
         super().__init__(**kwargs)
 
         self.df = df

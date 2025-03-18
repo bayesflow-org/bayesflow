@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import sys
@@ -10,16 +11,21 @@ try:
 except ImportError:
     USE_POLYVERSION = False
 
+logging.basicConfig()
+logger = logging.getLogger("pre-build.py")
+logger.setLevel(logging.DEBUG)
+
 
 def copy_files(sourcedir):
     basedir = Path(os.path.abspath(sourcedir)).parent.parent
-    print(basedir, sourcedir)
+    logger.info(f"Base directory is '{basedir}'")
+    logger.info(f"Documentation source directory is '{sourcedir}'")
 
     # copy examples
     examples_src = os.path.join(basedir, "examples")
     examples_dst = os.path.join(sourcedir, "_examples")
     if os.path.exists(examples_src):
-        print("Copying examples")
+        logger.info("Copying examples")
         shutil.copytree(examples_src, examples_dst, dirs_exist_ok=True)
     examples_in_progress = os.path.join(examples_dst, "in_progress")
     if os.path.exists(examples_in_progress):
@@ -44,30 +50,34 @@ def patch_conf(sourcedir):
         root = Git.root(Path(__file__).parent)
     else:
         root = str(Path(os.path.abspath(sourcedir)).parent.parent)
-    cursrc = os.path.join(root, "docsrc", "source")
+    sourcedir = Path(sourcedir)
+    cursrc = Path(root) / "docsrc" / "source"
     if os.path.abspath(cursrc) == os.path.abspath(sourcedir):
         return
     # copy the configuration file: shared for all versions
-    conf_src = os.path.join(cursrc, "conf.py")
-    conf_dst = os.path.join(sourcedir, "conf.py")
-    if os.path.exists(conf_src):
-        print("Overwriting old conf.py with current conf.py")
+    conf_src = Path(cursrc) / "conf.py"
+    conf_dst = Path(sourcedir) / "conf.py"
+    if conf_src.exists():
+        logger.info("Overwriting old conf.py with current conf.py")
         shutil.copy2(conf_src, conf_dst)
     # copy HTML and CSS for versioning sidebar
-    versioning_src = os.path.join(cursrc, "_templates", "versioning.html")
-    versioning_dst = os.path.join(sourcedir, "_templates", "versioning.html")
-    if os.path.exists(versioning_src):
-        os.makedirs(os.path.join(sourcedir, "_templates"), exist_ok=True)
-        shutil.copy2(versioning_src, versioning_dst)
-    css_src = os.path.join(cursrc, "_static", "custom.css")
-    css_dst = os.path.join(sourcedir, "_static", "custom.css")
-    if os.path.exists(css_src):
-        os.makedirs(os.path.join(sourcedir, "_static"), exist_ok=True)
-        shutil.copy2(css_src, css_dst)
+    copy_rel_paths = [
+        "_static/bayesflow_hor_dark.png",
+        "_static/bayesflow_hor.png",
+        "_static/custom.css",
+        "sphinxext/override_pst_pagetoc.py",
+        "sphinxext/adapt_autodoc_docstring.py",
+    ]
+    for path in copy_rel_paths:
+        srcfile = cursrc / path
+        dstfile = sourcedir / path
+        if srcfile.exists():
+            os.makedirs(dstfile.parent, exist_ok=True)
+            shutil.copy2(srcfile, dstfile)
 
 
 if __name__ == "__main__":
-    print("Running pre-build script")  # move files around if necessary
+    logger.info("Running pre-build script")  # move files around if necessary
     sourcedir = sys.argv[1]
     copy_files(sourcedir)
     patch_conf(sourcedir)

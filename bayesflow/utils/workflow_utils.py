@@ -1,9 +1,9 @@
 import bayesflow.networks
-from bayesflow.networks import InferenceNetwork, SummaryNetwork
+from bayesflow.networks import InferenceNetwork, PointInferenceNetwork, SummaryNetwork
 
 
 def find_inference_network(inference_network: InferenceNetwork | str, **kwargs) -> InferenceNetwork:
-    if isinstance(inference_network, InferenceNetwork):
+    if isinstance(inference_network, InferenceNetwork) or isinstance(inference_network, PointInferenceNetwork):
         return inference_network
     if isinstance(inference_network, type):
         return inference_network(**kwargs)
@@ -36,7 +36,7 @@ def find_summary_network(summary_network: SummaryNetwork | str, **kwargs) -> Sum
             return bayesflow.networks.FusionTransformer(**kwargs)
         case "time_series_transformer":
             return bayesflow.networks.TimeSeriesTransformer(**kwargs)
-        case "lstnet":
+        case "time_series_network":
             return bayesflow.networks.LSTNet(**kwargs)
         case str() as unknown_network:
             raise ValueError(f"Unknown summary network: '{unknown_network}'")

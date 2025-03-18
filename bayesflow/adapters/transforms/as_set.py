@@ -1,11 +1,13 @@
+from keras.saving import register_keras_serializable as serializable
 import numpy as np
 
 from .elementwise_transform import ElementwiseTransform
 
 
+@serializable(package="bayesflow.adapters")
 class AsSet(ElementwiseTransform):
-    """
-    The `.as_set(["x", "y"])` transform indicates that both `x` and `y` are treated as sets.
+    """The `.as_set(["x", "y"])` transform indicates that both `x` and `y` are treated as sets.
+
     That is, their values will be treated as *exchangable* such that they will imply
     the same inference regardless of the values' order.
     This is useful, for example, in a linear regression context where we can index
@@ -17,12 +19,9 @@ class AsSet(ElementwiseTransform):
     In the future, the transform will have more advanced behavior
     to better ensure the correct treatment of sets.
 
-    Useage:
-
-    adapter = (
-        bf.Adapter()
-        .as_set(["x", "y"])
-        )
+    Examples
+    --------
+    >>> adapter = bf.Adapter().as_set(["x", "y"])
     """
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
@@ -33,3 +32,10 @@ class AsSet(ElementwiseTransform):
             return np.squeeze(data, axis=2)
 
         return data
+
+    @classmethod
+    def from_config(cls, config: dict, custom_objects=None) -> "AsSet":
+        return cls()
+
+    def get_config(self) -> dict:
+        return {}

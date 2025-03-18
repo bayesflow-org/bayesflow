@@ -9,7 +9,7 @@ It provides users with:
 
 - A user-friendly API for rapid Bayesian workflows
 - A rich collection of neural network architectures
-- Multi-Backend Support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
+- Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
 BayesFlow is designed to be a flexible and efficient tool that enables rapid statistical inference
 fueled by continuous progress in generative AI and Bayesian inference.
@@ -29,11 +29,36 @@ neural networks for parameter estimation, model comparison, and model validation
 when working with intractable simulators whose behavior as a whole is too
 complex to be described analytically.
 
-## Disclaimer
+## Getting Started
 
-This is the current dev version of BayesFlow, which constitutes a complete refactor of the library built on Keras 3. This way, you can now use any of the major deep learning libraries as backend for BayesFlow. The refactor is still work in progress with some of the advanced features not yet implemented. We are actively working on them and promise to catch up soon.
+Using the high-level interface is easy, as demonstrated by the minimal working example below:
 
-If you encounter any issues, please don't hesitate to open an issue here on [Github](https://github.com/bayesflow-org/bayesflow/issues) or ask questions on our [Discourse Forums](https://discuss.bayesflow.org/).
+```python
+import bayesflow as bf
+
+workflow = bf.BasicWorkflow(
+    inference_network=bf.networks.FlowMatching(),
+    summary_network=bf.networks.TimeSeriesTransformer(),
+    inference_variables=["parameters"],
+    summary_variables=["observables"],
+    simulator=bf.simulators.SIR()
+)
+
+history = workflow.fit_online(epochs=50, batch_size=32, num_batches_per_epoch=500)
+
+diagnostics = workflow.plot_default_diagnostics(test_data=300)
+```
+
+For an in-depth exposition, check out our walkthrough notebooks below. More tutorials are always welcome!
+
+1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
+2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
+3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
+4. [Rapid iteration with point estimators](examples/Lotka_Volterra_point_estimation_and_expert_stats.ipynb)
+5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
+6. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
+7. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
+8. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
 
 ## Install
 
@@ -89,16 +114,9 @@ cd <local-path-to-bayesflow-repository>
 conda env create --file environment.yaml --name bayesflow
 ```
 
-## Getting Started
+## Reporting Issues
 
-Check out some of our walk-through notebooks below. We are actively working on porting all notebooks to the new interface so more will be available soon!
-
-1. [Two moons starter toy example](examples/TwoMoons_StarterNotebook.ipynb)
-2. [Linear regression](examples/Linear_Regression.ipynb)
-3. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-4. [SIR model with custom summary network](examples/SIR_PosteriorEstimation.ipynb)
-5. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
-6. Coming soon...
+If you encounter any issues, please don't hesitate to open an issue here on [Github](https://github.com/bayesflow-org/bayesflow/issues) or ask questions on our [Discourse Forums](https://discuss.bayesflow.org/).
 
 ## Documentation \& Help
 

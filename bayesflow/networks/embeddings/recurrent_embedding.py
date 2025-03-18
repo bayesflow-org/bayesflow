@@ -7,7 +7,7 @@ from bayesflow.utils import expand_tile
 
 @serializable(package="bayesflow.networks")
 class RecurrentEmbedding(keras.Layer):
-    """Implements a recurrent network for embedding time."""
+    """Implements a recurrent network for flexibly embedding time vectors."""
 
     def __init__(self, embed_dim: int = 8, embedding: str = "lstm"):
         super().__init__()
@@ -24,15 +24,15 @@ class RecurrentEmbedding(keras.Layer):
     def call(self, x: Tensor, t: Tensor = None) -> Tensor:
         """Creates time representations and concatenates them to x.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         x   : Tensor of shape (batch_size, sequence_length, dim)
             The input sequence.
         t   : Tensor of shape (batch_size, sequence_length)
             Vector of times
 
-        Returns:
-        --------
+        Returns
+        -------
         emb : Tensor
             Embedding of shape (batch_size, sequence_length, embed_dim + 1)
         """

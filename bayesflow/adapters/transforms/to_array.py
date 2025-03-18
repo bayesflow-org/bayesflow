@@ -1,9 +1,7 @@
 from numbers import Number
 
 import numpy as np
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.utils.io import deserialize_type, serialize_type
 from .elementwise_transform import ElementwiseTransform
@@ -13,9 +11,11 @@ from .elementwise_transform import ElementwiseTransform
 class ToArray(ElementwiseTransform):
     """
     Checks provided data for any non-arrays and converts them to numpy arrays.
+
     This ensures all data is in a format suitable for training.
 
-    Example:
+    Examples
+    --------
     >>> ta = bf.adapters.transforms.ToArray()
     >>> a = [1, 2, 3, 4]
     >>> ta.forward(a)

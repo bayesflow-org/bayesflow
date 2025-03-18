@@ -4,6 +4,7 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
+from bayesflow.utils.decorators import sanitize_input_shape
 
 from ..summary_network import SummaryNetwork
 
@@ -120,6 +121,7 @@ class FusionTransformer(SummaryNetwork):
             raise ValueError("Argument `template_dim` should be in ['lstm', 'gru']")
 
         self.output_projector = keras.layers.Dense(summary_dim)
+        self.summary_dim = summary_dim
 
     def call(self, input_sequence: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
@@ -150,3 +152,8 @@ class FusionTransformer(SummaryNetwork):
         summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training, **kwargs)
         summary = self.output_projector(keras.ops.squeeze(summary, axis=1))
         return summary
+
+    @sanitize_input_shape
+    def build(self, input_shape):
+        super().build(input_shape)
+        self.call(keras.ops.zeros(input_shape))

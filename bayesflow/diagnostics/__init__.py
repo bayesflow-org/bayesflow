@@ -2,6 +2,7 @@ from .metrics import root_mean_squared_error, calibration_error, posterior_contr
 
 from .plots import (
     calibration_ecdf,
+    calibration_ecdf_from_quantiles,
     calibration_histogram,
     loss,
     mc_calibration,
@@ -10,5 +11,10 @@ from .plots import (
     pairs_posterior,
     pairs_samples,
     recovery,
+    recovery_from_estimates,
     z_score_contraction,
 )
+
+from ..utils._docs import _add_imports_to_all
+
+_add_imports_to_all(include_modules=[])

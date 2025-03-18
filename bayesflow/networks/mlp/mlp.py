@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from typing import Literal
 
 import keras
-from keras import layers
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
@@ -33,23 +32,48 @@ class MLP(keras.Layer):
         **kwargs,
     ):
         """
-        Creates an instance of a flexible and simple MLP with optional residual connections and dropout.
+        Implements a flexible multi-layer perceptron (MLP) with optional residual connections, dropout, and
+        spectral normalization.
 
-        Parameters:
-        -----------
-        widths           : tuple, optional, default: (512, 512)
-            The number of hidden units for each (residual) hidden layer.
-            Note: The depth of the network is inferred from len(widths)
-        activation       : string, optional, default: 'gelu'
-            The activation function of the dense layers
-        residual         : bool, optional, default: True
-            Use residual connections in the internal layers.
-        spectral_normalization    : bool, optional, default: False
-            Use spectral normalization for the network weights, which can make
-            the learned function smoother and hence more robust to perturbations.
-        dropout          : float, optional, default: 0.05
-            Dropout rate for the hidden layers in the internal layers.
+        This MLP can be used as a general-purpose feature extractor or function approximator,supporting configurable
+        depth, width, activation functions, and weight initializations.
+
+        If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
+        supports dropout for regularization and spectral normalization for stability in learning smooth functions.
+
+        The architecture can be specified either via an explicit sequence of layer widths (`widths`) or by defining a
+        fixed depth and width (`depth` and `width`).
+
+        Parameters
+        ----------
+        depth : int, optional
+            Number of layers in the MLP when `widths` is not explicitly provided. Must be
+            used together with `width`. Default is 2.
+        width : int, optional
+            Number of units per layer when `widths` is not explicitly provided. Must be used
+            together with `depth`. Default is 256.
+        widths : Sequence[int], optional
+            Explicitly defines the number of hidden units per layer. If provided, `depth` and
+            `width` should not be specified. Default is None.
+        activation : str, optional
+            Activation function applied in the hidden layers, such as "mish". Default is "mish".
+        kernel_initializer : str, optional
+            Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
+        residual : bool, optional
+            Whether to use residual connections for improved training stability. Default is False.
+        dropout : float or None, optional
+            Dropout rate applied within the MLP layers for regularization. Default is 0.05.
+        spectral_normalization : bool, optional
+            Whether to apply spectral normalization to stabilize training. Default is False.
+        **kwargs
+            Additional keyword arguments passed to the Keras layer initialization.
+
+        Raises
+        ------
+        ValueError
+            If both `widths` and (`depth`, `width`) are provided
         """
+
         super().__init__(**keras_kwargs(kwargs))
 
         if widths is not None:
@@ -64,17 +88,6 @@ class MLP(keras.Layer):
             widths = [width] * depth
 
         self.res_blocks = []
-        projector = layers.Dense(
-            units=widths[0],
-            kernel_initializer=kernel_initializer,
-        )
-        if spectral_normalization:
-            projector = layers.SpectralNormalization(projector)
-        self.res_blocks.append(projector)
-
-        if dropout is not None and dropout > 0.0:
-            self.res_blocks.append(layers.Dropout(float(dropout)))
-
         for width in widths:
             self.res_blocks.append(
                 ConfigurableHiddenBlock(

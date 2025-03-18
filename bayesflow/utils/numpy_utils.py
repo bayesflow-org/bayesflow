@@ -4,7 +4,7 @@ from scipy import special
 
 def inverse_sigmoid(x: np.ndarray) -> np.ndarray:
     """Inverse of the sigmoid function."""
-    return np.log(x / (1 - x))
+    return np.log(x) - np.log1p(-x)
 
 
 def inverse_shifted_softplus(

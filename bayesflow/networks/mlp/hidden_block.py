@@ -35,6 +35,8 @@ class ConfigurableHiddenBlock(keras.layers.Layer):
         else:
             self.dropout = None
 
+        self.units = units
+
     def call(self, inputs: Tensor, training: bool = False, **kwargs) -> Tensor:
         x = self.dense(inputs, training=training)
 
@@ -42,33 +44,22 @@ class ConfigurableHiddenBlock(keras.layers.Layer):
             x = self.dropout(x, training=training)
 
         if self.residual:
-            x = x + inputs
+            x = x + (inputs if self.projector is None else keras.ops.matmul(inputs, self.projector))
 
         return self.activation_fn(x)
 
     def build(self, input_shape):
         self.dense.build(input_shape)
-        input_shape = self.dense.compute_output_shape(input_shape)
+
+        if input_shape[-1] != self.units and self.residual:
+            self.projector = self.add_weight(
+                shape=(input_shape[-1], self.units), initializer="glorot_uniform", trainable=True, name="projector"
+            )
+        else:
+            self.projector = None
 
         if self.dropout is not None:
-            self.dropout.build(input_shape)
+            self.dropout.build(self.dense.compute_output_shape(input_shape))
 
     def compute_output_shape(self, input_shape):
-        input_shape = self.dense.compute_output_shape(input_shape)
-
-        if self.dropout is not None:
-            input_shape = self.dropout.compute_output_shape(input_shape)
-
-        return input_shape
-
-    def get_config(self):
-        config = super().get_config()
-        config.update(
-            {
-                "residual": self.residual,
-                "activation_fn": keras.saving.serialize_keras_object(self.activation_fn),
-                "dense": keras.saving.serialize_keras_object(self.dense),
-                "dropout": keras.saving.serialize_keras_object(self.dropout),
-            }
-        )
-        return config
+        return self.dense.compute_output_shape(input_shape)

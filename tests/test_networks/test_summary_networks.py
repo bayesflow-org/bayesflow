@@ -12,7 +12,7 @@ from tests.utils import assert_layers_equal
 @pytest.mark.parametrize("automatic", [True, False])
 def test_build(automatic, summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     assert summary_network.built is False
 
@@ -29,7 +29,7 @@ def test_build(automatic, summary_network, random_set):
 
 def test_variable_batch_size(summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     # build with one batch size
     summary_network.build(keras.ops.shape(random_set))
@@ -43,7 +43,7 @@ def test_variable_batch_size(summary_network, random_set):
 
 def test_variable_set_size(summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     # build with one set size
     summary_network.build(keras.ops.shape(random_set))
@@ -58,7 +58,7 @@ def test_variable_set_size(summary_network, random_set):
 
 def test_serialize_deserialize(summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     summary_network.build(keras.ops.shape(random_set))
 
@@ -71,7 +71,7 @@ def test_serialize_deserialize(summary_network, random_set):
 
 def test_save_and_load(tmp_path, summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     summary_network.build(keras.ops.shape(random_set))
 
@@ -79,3 +79,31 @@ def test_save_and_load(tmp_path, summary_network, random_set):
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
     assert_layers_equal(summary_network, loaded)
+
+
+@pytest.mark.parametrize("stage", ["training", "validation"])
+def test_compute_metrics(stage, summary_network, random_set):
+    if summary_network is None:
+        pytest.skip()
+
+    summary_network.build(keras.ops.shape(random_set))
+
+    metrics = summary_network.compute_metrics(random_set, stage=stage)
+
+    assert "outputs" in metrics
+
+    # check that the batch dimension is preserved
+    assert keras.ops.shape(metrics["outputs"])[0] == keras.ops.shape(random_set)[0]
+
+    # check summary dimension
+    summary_dim = summary_network.summary_dim
+    assert keras.ops.shape(metrics["outputs"])[-1] == summary_dim
+
+    if summary_network.base_distribution is not None:
+        assert "loss" in metrics
+        assert keras.ops.shape(metrics["loss"]) == ()
+
+        if stage != "training":
+            for metric in summary_network.metrics:
+                assert metric.name in metrics
+                assert keras.ops.shape(metrics[metric.name]) == ()

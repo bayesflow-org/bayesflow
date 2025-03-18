@@ -15,40 +15,59 @@ class Broadcast(Transform):
     """
     Broadcasts arrays or scalars to the shape of a given other array.
 
-    Parameters:
+    Parameters
+    ----------
+    keys : sequence of str,
+        Input a list of strings, where the strings are the names of data variables.
+    to : str
+        Name of the data variable to broadcast to.
+    expand : str or int or tuple, optional
+        Where should new dimensions be added to match the number of dimensions in `to`?
+        Can be "left", "right", or an integer or tuple containing the indices of the new dimensions.
+        The latter is needed if we want to include a dimension in the middle, which will be required
+        for more advanced cases. By default we expand left.
+    exclude : int or tuple, optional
+        Which dimensions (of the dimensions after expansion) should retain their size,
+        rather than being broadcasted to the corresponding dimension size of `to`?
+        By default we exclude the last dimension (usually the data dimension) from broadcasting the size.
+    squeeze : int or tuple, optional
+        Axis to squeeze after broadcasting.
 
-    expand: Where should new dimensions be added to match the number of dimensions in `to`?
-    Can be "left", "right", or an integer or tuple containing the indices of the new dimensions.
-    The latter is needed if we want to include a dimension in the middle, which will be required
-    for more advanced cases. By default we expand left.
+    Notes
+    -----
+    Important: Do not broadcast to variables that are used as inference variables
+    (i.e., parameters to be inferred by the networks). The adapter will work during training
+    but then fail during inference because the variable being broadcasted to is not available.
 
-    exclude: Which dimensions (of the dimensions after expansion) should retain their size,
-    rather than being broadcasted to the corresponding dimension size of `to`?
-    By default we exclude the last dimension (usually the data dimension) from broadcasting the size.
+    Examples
+    --------
+    shape (1, ) array:
 
-    Examples:
-        shape (1, ) array:
-        >>> a = np.array((1,))
-        shape (2, 3) array:
-        >>> b = np.array([[1, 2, 3], [4, 5, 6]])
-        shape (2, 2, 3) array:
-        >>> c = np.array([[[1, 2, 3], [4, 5, 6]], [[4, 5, 6], [1, 2, 3]]])
-        >>> dat = dict(a=a, b=b, c=c)
+    >>> a = np.array((1,))
 
-        >>> bc = bf.adapters.transforms.Broadcast("a", to="b")
-        >>> new_dat = bc.forward(dat)
-        >>> new_dat["a"].shape
-        (2, 1)
+    shape (2, 3) array:
 
-        >>> bc = bf.adapters.transforms.Broadcast("a", to="b", exclude=None)
-        >>> new_dat = bc.forward(dat)
-        >>> new_dat["a"].shape
-        (2, 3)
+    >>> b = np.array([[1, 2, 3], [4, 5, 6]])
 
-        >>> bc = bf.adapters.transforms.Broadcast("b", to="c", expand=1)
-        >>> new_dat = bc.forward(dat)
-        >>> new_dat["b"].shape
-        (2, 2, 3)
+    shape (2, 2, 3) array:
+
+    >>> c = np.array([[[1, 2, 3], [4, 5, 6]], [[4, 5, 6], [1, 2, 3]]])
+
+    >>> dat = dict(a=a, b=b, c=c)
+    >>> bc = bf.adapters.transforms.Broadcast("a", to="b")
+    >>> new_dat = bc.forward(dat)
+    >>> new_dat["a"].shape
+    (2, 1)
+
+    >>> bc = bf.adapters.transforms.Broadcast("a", to="b", exclude=None)
+    >>> new_dat = bc.forward(dat)
+    >>> new_dat["a"].shape
+    (2, 3)
+
+    >>> bc = bf.adapters.transforms.Broadcast("b", to="c", expand=1)
+    >>> new_dat = bc.forward(dat)
+    >>> new_dat["b"].shape
+    (2, 2, 3)
 
     It is recommended to precede this transform with a :class:`bayesflow.adapters.transforms.ToArray` transform.
     """
@@ -79,12 +98,19 @@ class Broadcast(Transform):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Broadcast":
+        # Deserialize turns tuples to lists, undo it if necessary
+        exclude = deserialize(config["exclude"], custom_objects)
+        exclude = tuple(exclude) if isinstance(exclude, list) else exclude
+        expand = deserialize(config["expand"], custom_objects)
+        expand = tuple(expand) if isinstance(expand, list) else expand
+        squeeze = deserialize(config["squeeze"], custom_objects)
+        squeeze = tuple(squeeze) if isinstance(squeeze, list) else squeeze
         return cls(
             keys=deserialize(config["keys"], custom_objects),
             to=deserialize(config["to"], custom_objects),
-            expand=deserialize(config["expand"], custom_objects),
-            exclude=deserialize(config["exclude"], custom_objects),
-            squeeze=deserialize(config["squeeze"], custom_objects),
+            expand=expand,
+            exclude=exclude,
+            squeeze=squeeze,
         )
 
     def get_config(self) -> dict:

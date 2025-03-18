@@ -10,10 +10,11 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    :glob:
    :numbered:
 
-   _examples/Quickstart_Amortized_Posterior_Estimation.ipynb
-   _examples/TwoMoons_StarterNotebook.ipynb
-   _examples/SIR_PosteriorEstimation.ipynb
-   _examples/Linear_Regression.ipynb
+   _examples/Linear_Regression_Starter.ipynb
+   _examples/Two_Moons_Starter.ipynb
+   _examples/SIR_Posterior_Estimation.ipynb
    _examples/Hyperparameter_Optimization.ipynb
    _examples/Bayesian_Experimental_Design.ipynb
-   _examples/SBML_Model_Posterior_Estimation.ipynb
+   _examples/From_ABC_to_BayesFlow.ipynb
+   _examples/One_Sample_TTest.ipynb
+   _examples/Lotka_Volterra_point_estimation_and_expert_stats.ipynb

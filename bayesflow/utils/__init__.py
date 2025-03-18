@@ -4,7 +4,7 @@ from . import (
     numpy_utils,
 )
 from .callbacks import detailed_loss_callback
-from .comp_utils import expected_calibration_error
+from .devices import devices
 from .dict_utils import (
     convert_args,
     convert_kwargs,
@@ -12,6 +12,7 @@ from .dict_utils import (
     keras_kwargs,
     split_tensors,
     split_arrays,
+    squeeze_inner_estimates_dict,
 )
 from .dispatch import find_distribution, find_network, find_permutation, find_pooling, find_recurrent_net
 from .ecdf import simultaneous_ecdf_bands, ranks
@@ -22,6 +23,9 @@ from .git import (
     repo_url,
 )
 from .hparam_utils import find_batch_size, find_memory_budget
+from .integrate import (
+    integrate,
+)
 from .io import (
     pickle_load,
     format_bytes,
@@ -44,7 +48,7 @@ from .plot_utils import (
 )
 from .serialization import serialize_value_or_type, deserialize_value_or_type
 from .tensor_utils import (
-    concatenate,
+    concatenate_valid,
     expand,
     expand_as,
     expand_to,
@@ -55,12 +59,17 @@ from .tensor_utils import (
     expand_right_as,
     expand_right_to,
     expand_tile,
+    pad,
+    searchsorted,
     size_of,
+    stack_valid,
     tile_axis,
     tree_concatenate,
     tree_stack,
-    pad,
-    searchsorted,
 )
 from .validators import check_lengths_same
 from .workflow_utils import find_inference_network, find_summary_network
+
+from ._docs import _add_imports_to_all
+
+_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils"])

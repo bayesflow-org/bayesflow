@@ -2,6 +2,13 @@ import pytest
 
 
 @pytest.fixture()
+def inference_network():
+    from bayesflow.networks import CouplingFlow
+
+    return CouplingFlow(depth=2, subnet="mlp", subnet_kwargs=dict(widths=(32, 32)))
+
+
+@pytest.fixture()
 def approximator(adapter, inference_network):
     from bayesflow import ContinuousApproximator
 
@@ -21,8 +28,8 @@ def adapter():
     from bayesflow import ContinuousApproximator
 
     return ContinuousApproximator.build_adapter(
-        inference_variables=["theta"],
-        inference_conditions=["x"],
+        inference_variables=["parameters"],
+        inference_conditions=["observables"],
     )
 
 

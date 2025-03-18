@@ -12,6 +12,7 @@ class Ordered(keras.Layer):
         super().__init__(**keras_kwargs(kwargs))
         self.axis = axis
         self.anchor_index = anchor_index
+        self.group_indices = None
 
         self.config = {"axis": axis, "anchor_index": anchor_index, **kwargs}
 
@@ -22,9 +23,9 @@ class Ordered(keras.Layer):
     def build(self, input_shape):
         super().build(input_shape)
 
-        assert self.anchor_index % input_shape[self.axis] != 0 and self.anchor_index != -1, (
-            "anchor should not be first or last index."
-        )
+        if self.anchor_index % input_shape[self.axis] != 0 and self.anchor_index != -1:
+            raise RuntimeError("Anchor should not be first or last index.")
+
         self.group_indices = dict(
             below=list(range(0, self.anchor_index)),
             above=list(range(self.anchor_index + 1, input_shape[self.axis])),

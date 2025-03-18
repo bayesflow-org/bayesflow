@@ -163,12 +163,12 @@ def calibration_ecdf(
             plot_data["axes"].flat[j].plot(xx, yy, color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
 
     # Compute uniform ECDF and bands
-    alpha, z, L, H = simultaneous_ecdf_bands(estimates.shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))
+    alpha, z, L, U = simultaneous_ecdf_bands(estimates.shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))
 
     # Difference, if specified
     if difference:
         L -= z
-        H -= z
+        U -= z
         ylab = "ECDF Difference"
     else:
         ylab = "ECDF"
@@ -182,7 +182,7 @@ def calibration_ecdf(
         titles = ["Stacked ECDFs"]
 
     for ax, title in zip(plot_data["axes"].flat, titles):
-        ax.fill_between(z, L, H, color=fill_color, alpha=0.2, label=rf"{int((1 - alpha) * 100)}$\%$ Confidence Bands")
+        ax.fill_between(z, L, U, color=fill_color, alpha=0.2, label=rf"{int((1 - alpha) * 100)}$\%$ Confidence Bands")
         ax.legend(fontsize=legend_fontsize)
         ax.set_title(title, fontsize=title_fontsize)
 

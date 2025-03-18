@@ -3,6 +3,8 @@ from functools import partial
 
 import keras
 
+from typing import Literal
+
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from . import logging
@@ -238,8 +240,8 @@ def integrate(
     stop_time: ArrayLike,
     min_steps: int = 10,
     max_steps: int = 10_000,
-    steps: int = "adaptive",
-    method: str = "rk45",
+    steps: int | Literal["adaptive"] = 100,
+    method: str = "euler",
     **kwargs,
 ) -> dict[str, ArrayLike]:
     match steps:

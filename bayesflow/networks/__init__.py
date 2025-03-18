@@ -3,6 +3,7 @@ from .coupling_flow import CouplingFlow
 from .deep_set import DeepSet
 from .flow_matching import FlowMatching
 from .inference_network import InferenceNetwork
+from .point_inference_network import PointInferenceNetwork
 from .mlp import MLP
 from .lstnet import LSTNet
 from .summary_network import SummaryNetwork

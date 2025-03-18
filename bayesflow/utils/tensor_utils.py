@@ -10,6 +10,16 @@ from . import logging
 T = TypeVar("T")
 
 
+def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor | None:
+    """Concatenate multiple tensors along axis, ignoring None values."""
+    tensors = [t for t in tensors if t is not None]
+
+    if not tensors:
+        return None
+
+    return keras.ops.concatenate(tensors, axis=axis)
+
+
 def expand(x: Tensor, n: int, side: str):
     if n < 0:
         raise ValueError(f"Cannot expand {n} times.")
@@ -83,6 +93,28 @@ def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:
     return tile_axis(x, n, axis=axis)
 
 
+def is_symbolic_tensor(x: Tensor) -> bool:
+    if keras.utils.is_keras_tensor(x):
+        return True
+
+    if not keras.ops.is_tensor(x):
+        return False
+
+    match keras.backend.backend():
+        case "jax":
+            import jax
+
+            return not jax.core.is_concrete(x)
+        case "tensorflow":
+            import tensorflow as tf
+
+            return tf.is_symbolic_tensor(x)
+        case "torch":
+            return False
+        case _:
+            raise NotImplementedError(f"Symbolic tensor check not implemented for backend {keras.backend.backend()!r}")
+
+
 def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both") -> Tensor:
     """
     Pad x with n values along axis on the given side.
@@ -106,91 +138,6 @@ def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both")
             raise ValueError(f"Invalid side {name!r}. Must be 'left', 'right', or 'both'.")
         case _:
             raise TypeError(f"Invalid side type {type(side)!r}. Must be str.")
-
-
-def size_of(x) -> int:
-    """
-    :param x: A nested structure of tensors.
-    :return: The total memory footprint of x, ignoring view semantics, in bytes.
-    """
-    if keras.ops.is_tensor(x) or isinstance(x, np.ndarray):
-        return int(keras.ops.size(x)) * np.dtype(keras.ops.dtype(x)).itemsize
-
-    # flatten nested structure
-    x = keras.tree.flatten(x)
-
-    # get unique tensors by id
-    x = {id(tensor): tensor for tensor in x}
-
-    # sum up individual sizes
-    return sum(size_of(tensor) for tensor in x.values())
-
-
-def tile_axis(x: Tensor, n: int, axis: int) -> Tensor:
-    """Tile x along the given axis n times"""
-    repeats = [1] * keras.ops.ndim(x)
-    repeats[axis] = n
-
-    if keras.ops.is_tensor(x):
-        return keras.ops.tile(x, repeats)
-
-    return np.tile(x, repeats)
-
-
-# we want to annotate this as Sequence[PyTree[Tensor]], but static type checkers do not support PyTree's type expansion
-def tree_concatenate(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
-    """Concatenate all tensors in the given sequence of nested structures.
-    All objects in the given sequence must have the same structure.
-    The output will adhere to this structure.
-
-    :param structures: A sequence of nested structures of tensors.
-        All structures in the sequence must have the same layout.
-        Tensors in the same layout location must have compatible shapes for concatenation.
-    :param axis: The axis along which to concatenate tensors.
-    :param numpy: Whether to use numpy or keras for concatenation.
-        Will convert all items in the structures to numpy arrays if True, tensors otherwise.
-        Defaults to True if all tensors are numpy arrays, False otherwise.
-    :return: A structure of concatenated tensors with the same layout as each input structure.
-    """
-    if numpy is None:
-        numpy = not any(keras.tree.flatten(keras.tree.map_structure(keras.ops.is_tensor, structures)))
-
-    if numpy:
-        structures = keras.tree.map_structure(keras.ops.convert_to_numpy, structures)
-
-        def concat(*items):
-            return np.concatenate(items, axis=axis)
-    else:
-        structures = keras.tree.map_structure(keras.ops.convert_to_tensor, structures)
-
-        def concat(*items):
-            return keras.ops.concatenate(items, axis=axis)
-
-    return keras.tree.map_structure(concat, *structures)
-
-
-def concatenate(*tensors: Sequence[Tensor], axis=0):
-    """Concatenate multiple tensors along axis, some of which can be None."""
-    return keras.ops.concatenate([t for t in tensors if t is not None], axis=axis)
-
-
-def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
-    """Like :func:`tree_concatenate`, except tensors are stacked instead of concatenated."""
-    if numpy is None:
-        numpy = not any(keras.tree.flatten(keras.tree.map_structure(keras.ops.is_tensor, structures)))
-
-    if numpy:
-        structures = keras.tree.map_structure(keras.ops.convert_to_numpy, structures)
-
-        def stack(*items):
-            return np.stack(items, axis=axis)
-    else:
-        structures = keras.tree.map_structure(keras.ops.convert_to_tensor, structures)
-
-        def stack(*items):
-            return keras.ops.stack(items, axis=axis)
-
-    return keras.tree.map_structure(stack, *structures)
 
 
 def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") -> Tensor:
@@ -240,3 +187,93 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
             return indices
         case _:
             raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")
+
+
+def size_of(x) -> int:
+    """
+    :param x: A nested structure of tensors.
+    :return: The total memory footprint of x, ignoring view semantics, in bytes.
+    """
+    if keras.ops.is_tensor(x) or isinstance(x, np.ndarray):
+        return int(keras.ops.size(x)) * np.dtype(keras.ops.dtype(x)).itemsize
+
+    # flatten nested structure
+    x = keras.tree.flatten(x)
+
+    # get unique tensors by id
+    x = {id(tensor): tensor for tensor in x}
+
+    # sum up individual sizes
+    return sum(size_of(tensor) for tensor in x.values())
+
+
+def stack_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor | None:
+    """Stack multiple tensors along axis, ignoring None values."""
+    tensors = [t for t in tensors if t is not None]
+
+    if not tensors:
+        return None
+
+    return keras.ops.stack(tensors, axis=axis)
+
+
+def tile_axis(x: Tensor, n: int, axis: int) -> Tensor:
+    """Tile x along the given axis n times"""
+    repeats = [1] * keras.ops.ndim(x)
+    repeats[axis] = n
+
+    if keras.ops.is_tensor(x):
+        return keras.ops.tile(x, repeats)
+
+    return np.tile(x, repeats)
+
+
+# we want to annotate this as Sequence[PyTree[Tensor]], but static type checkers do not support PyTree's type expansion
+def tree_concatenate(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
+    """Concatenate all tensors in the given sequence of nested structures.
+    All objects in the given sequence must have the same structure.
+    The output will adhere to this structure.
+
+    :param structures: A sequence of nested structures of tensors.
+        All structures in the sequence must have the same layout.
+        Tensors in the same layout location must have compatible shapes for concatenation.
+    :param axis: The axis along which to concatenate tensors.
+    :param numpy: Whether to use numpy or keras for concatenation.
+        Will convert all items in the structures to numpy arrays if True, tensors otherwise.
+        Defaults to True if all tensors are numpy arrays, False otherwise.
+    :return: A structure of concatenated tensors with the same layout as each input structure.
+    """
+    if numpy is None:
+        numpy = not any(keras.tree.flatten(keras.tree.map_structure(keras.ops.is_tensor, structures)))
+
+    if numpy:
+        structures = keras.tree.map_structure(keras.ops.convert_to_numpy, structures)
+
+        def concat(*items):
+            return np.concatenate(items, axis=axis)
+    else:
+        structures = keras.tree.map_structure(keras.ops.convert_to_tensor, structures)
+
+        def concat(*items):
+            return keras.ops.concatenate(items, axis=axis)
+
+    return keras.tree.map_structure(concat, *structures)
+
+
+def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
+    """Like :func:`tree_concatenate`, except tensors are stacked instead of concatenated."""
+    if numpy is None:
+        numpy = not any(keras.tree.flatten(keras.tree.map_structure(keras.ops.is_tensor, structures)))
+
+    if numpy:
+        structures = keras.tree.map_structure(keras.ops.convert_to_numpy, structures)
+
+        def stack(*items):
+            return np.stack(items, axis=axis)
+    else:
+        structures = keras.tree.map_structure(keras.ops.convert_to_tensor, structures)
+
+        def stack(*items):
+            return keras.ops.stack(items, axis=axis)
+
+    return keras.tree.map_structure(stack, *structures)

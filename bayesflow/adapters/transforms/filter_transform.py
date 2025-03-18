@@ -86,18 +86,6 @@ class FilterTransform(Transform):
         try:
             kwargs = deserialize(config["kwargs"])
         except TypeError as e:
-            if transform_constructor.__name__ == "LambdaTransform":
-                raise TypeError(
-                    "LambdaTransform (created by Adapter.apply) could not be deserialized.\n"
-                    "This is probably because the custom transform functions `forward` and "
-                    "`backward` from `Adapter.apply` were not passed as `custom_objects`.\n"
-                    "For example, if your adapter uses\n"
-                    "`Adapter.apply(forward=forward_transform, inverse=inverse_transform)`,\n"
-                    "you have to pass\n"
-                    '`custom_objects={"forward_transform": forward_transform, '
-                    '"inverse_transform": inverse_transform}`\n'
-                    "to the function you use to load the serialized object."
-                ) from e
             raise TypeError(
                 "The transform could not be deserialized properly. "
                 "The most likely reason is that some classes or functions "

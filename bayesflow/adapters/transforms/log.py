@@ -1,13 +1,14 @@
 import numpy as np
-
 from keras.saving import (
     deserialize_keras_object as deserialize,
+    register_keras_serializable as serializable,
     serialize_keras_object as serialize,
 )
 
 from .elementwise_transform import ElementwiseTransform
 
 
+@serializable(package="bayesflow.adapters")
 class Log(ElementwiseTransform):
     """Log transforms a variable.
 

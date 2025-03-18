@@ -1,9 +1,15 @@
 import pytest
+from tests.utils import check_combination_simulator_adapter
 
 
 @pytest.fixture()
 def batch_size():
     return 8
+
+
+@pytest.fixture()
+def num_samples():
+    return 100
 
 
 @pytest.fixture()
@@ -19,7 +25,7 @@ def inference_network():
 
 
 @pytest.fixture()
-def approximator(adapter, inference_network, summary_network):
+def continuous_approximator(adapter, inference_network, summary_network):
     from bayesflow import ContinuousApproximator
 
     return ContinuousApproximator(
@@ -27,6 +33,67 @@ def approximator(adapter, inference_network, summary_network):
         inference_network=inference_network,
         summary_network=summary_network,
     )
+
+
+@pytest.fixture()
+def point_inference_network():
+    from bayesflow.networks import PointInferenceNetwork
+    from bayesflow.scores import NormedDifferenceScore, QuantileScore, MultivariateNormalScore
+
+    return PointInferenceNetwork(
+        scores=dict(
+            mean=NormedDifferenceScore(k=2),
+            quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
+            mvn=MultivariateNormalScore(),
+        ),
+        subnet="mlp",
+        subnet_kwargs=dict(widths=(32, 32)),
+    )
+
+
+@pytest.fixture()
+def point_inference_network_with_multiple_parametric_scores():
+    from bayesflow.networks import PointInferenceNetwork
+    from bayesflow.scores import MultivariateNormalScore
+
+    return PointInferenceNetwork(
+        scores=dict(
+            mvn1=MultivariateNormalScore(),
+            mvn2=MultivariateNormalScore(),
+        ),
+    )
+
+
+@pytest.fixture()
+def point_approximator(adapter, point_inference_network, summary_network):
+    from bayesflow import PointApproximator
+
+    return PointApproximator(
+        adapter=adapter,
+        inference_network=point_inference_network,
+        summary_network=summary_network,
+    )
+
+
+@pytest.fixture()
+def point_approximator_with_multiple_parametric_scores(
+    adapter, point_inference_network_with_multiple_parametric_scores, summary_network
+):
+    from bayesflow import PointApproximator
+
+    return PointApproximator(
+        adapter=adapter,
+        inference_network=point_inference_network_with_multiple_parametric_scores,
+        summary_network=summary_network,
+    )
+
+
+@pytest.fixture(
+    params=["continuous_approximator", "point_approximator", "point_approximator_with_multiple_parametric_scores"],
+    scope="function",
+)
+def approximator(request):
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture()
@@ -80,22 +147,7 @@ def simulator(request):
 
 @pytest.fixture()
 def train_dataset(batch_size, adapter, simulator):
-    # scan adapter representation for occurance of a rename pattern for 'sample_weight'
-    adapter_with_sample_weight = "-> 'sample_weight'" in str(adapter)
-    # check whether the simulator returns a 'weight' key
-    simulator_with_sample_weight = "weight" in simulator.sample(1).keys()
-
-    if adapter_with_sample_weight and not simulator_with_sample_weight:
-        # adapter should expect a 'weight' key and raise a KeyError.
-        with pytest.raises(KeyError):
-            adapter(simulator.sample(1))
-        # Don't use this fixture combination for further tests.
-        pytest.skip()
-    elif not adapter_with_sample_weight and simulator_with_sample_weight:
-        # When a weight key is present, but the adapter does not configure it
-        # to be used as sample weight, no error is raised currently.
-        # Don't use this fixture combination for further tests.
-        pytest.skip()
+    check_combination_simulator_adapter(simulator, adapter)
 
     from bayesflow import OfflineDataset
 

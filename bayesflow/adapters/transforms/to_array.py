@@ -1,9 +1,7 @@
 from numbers import Number
 
 import numpy as np
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.utils.io import deserialize_type, serialize_type
 from .elementwise_transform import ElementwiseTransform

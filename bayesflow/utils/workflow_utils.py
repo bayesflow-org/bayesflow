@@ -1,9 +1,9 @@
 import bayesflow.networks
-from bayesflow.networks import InferenceNetwork, SummaryNetwork
+from bayesflow.networks import InferenceNetwork, PointInferenceNetwork, SummaryNetwork
 
 
 def find_inference_network(inference_network: InferenceNetwork | str, **kwargs) -> InferenceNetwork:
-    if isinstance(inference_network, InferenceNetwork):
+    if isinstance(inference_network, InferenceNetwork) or isinstance(inference_network, PointInferenceNetwork):
         return inference_network
     if isinstance(inference_network, type):
         return inference_network(**kwargs)

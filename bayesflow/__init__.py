@@ -33,14 +33,6 @@ def setup():
 
     from bayesflow.utils import logging
 
-    if keras.backend.backend() == "torch":
-        # turn off gradients by default
-        import torch
-
-        torch.autograd.set_grad_enabled(False)
-
-        logging.warning("Disabling gradients by default. Use\nwith torch.enable_grad():\nin custom training loops.")
-
     logging.debug(f"Using backend {keras.backend.backend()!r}")
 
 

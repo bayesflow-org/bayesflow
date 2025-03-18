@@ -4,8 +4,8 @@
 [![DOI](https://img.shields.io/badge/DOI-10.21105%2Fjoss.05702-blue?style=for-the-badge)](https://doi.org/10.21105/joss.05702)
 ![PyPI - License](https://img.shields.io/pypi/l/bayesflow?style=for-the-badge)
 
-BayesFlow is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
-It provides users with:
+BayesFlow 2 is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
+It provides users and researchers with:
 
 - A user-friendly API for rapid Bayesian workflows
 - A rich collection of neural network architectures
@@ -56,9 +56,8 @@ For an in-depth exposition, check out our walkthrough notebooks below. More tuto
 3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
 4. [Rapid iteration with point estimators](examples/Lotka_Volterra_point_estimation_and_expert_stats.ipynb)
 5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
-6. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
-7. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-8. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
+6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
+7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
 
 ## Install
 
@@ -126,9 +125,8 @@ Documentation is available at https://bayesflow.org. Please use the [BayesFlow F
 
 You can cite BayesFlow along the lines of:
 
-- We approximated the posterior with neural posterior estimation and learned summary statistics (NPE; Radev et al., 2020), as implemented in the BayesFlow software for amortized Bayesian workflows (Radev et al., 2023a).
-- We approximated the likelihood with neural likelihood estimation (NLE; Papamakarios et al., 2019) without hand-crafted summary statistics, as implemented in the BayesFlow software for amortized Bayesian workflows (Radev et al., 2023b).
-- We performed simultaneous posterior and likelihood estimation with jointly amortized neural approximation (JANA; Radev et al., 2023a), as implemented in the BayesFlow software for amortized Bayesian workflows (Radev et al., 2023b).
+- We approximated the posterior using neural posterior estimation (NPE) with learned summary statistics (Radev et al., 2020), as implemented in the BayesFlow framework for amortized Bayesian inference (Radev et al., 2023a).
+- We approximated the likelihood using neural likelihood estimation (NLE) without hand-crafted summary statistics (Papamakarios et al., 2019), leveraging its implementation in BayesFlow for efficient and flexible inference.
 
 1. Radev, S. T., Schmitt, M., Schumacher, L., Elsemüller, L., Pratz, V., Schälte, Y., Köthe, U., & Bürkner, P.-C. (2023a). BayesFlow: Amortized Bayesian workflows with neural networks. *The Journal of Open Source Software, 8(89)*, 5702.([arXiv](https://arxiv.org/abs/2306.16015))([JOSS](https://joss.theoj.org/papers/10.21105/joss.05702))
 2. Radev, S. T., Mertens, U. K., Voss, A., Ardizzone, L., Köthe, U. (2020). BayesFlow: Learning complex stochastic models with invertible neural networks. *IEEE Transactions on Neural Networks and Learning Systems, 33(4)*, 1452-1466. ([arXiv](https://arxiv.org/abs/2003.06281))([IEEE TNNLS](https://ieeexplore.ieee.org/document/9298920))
@@ -168,6 +166,10 @@ You can cite BayesFlow along the lines of:
   publisher = {PMLR}
 }
 ```
+
+## Awesome Amortized Inference
+
+If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our [community-driven list](https://github.com/bayesflow-org/awesome-amortized-inference).
 
 ## Acknowledgments
 

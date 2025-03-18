@@ -40,7 +40,7 @@ jobs:
       - name: Create local branches
         run: |
           cd ./dev
-          git branch master remotes/origin/master
+          git branch main remotes/origin/main
       - name: Make the Sphinx docs
         run: |
           cd ./dev/docsrc

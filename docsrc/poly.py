@@ -17,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 root = Git.root(Path(__file__).parent)
 
 #: CodeRegex matching the branches to build docs for
-# BRANCH_REGEX = r"^(master|dev)$"
+# BRANCH_REGEX = r"^(main|dev)$"
 BRANCH_REGEX = r"^(dev)$"
 
 #: Regex matching the tags to build docs for
@@ -76,7 +76,7 @@ def data(driver, rev, env):
     branches, tags = refs_by_type(revisions)
     latest = max(tags or branches)
     for b in branches:
-        if b.name == "master":
+        if b.name == "main":
             latest = b
             break
 
@@ -95,7 +95,7 @@ def root_data(driver):
     branches, tags = refs_by_type(revisions)
     latest = max(tags or branches)
     for b in branches:
-        if b.name == "master":
+        if b.name == "main":
             latest = b
             break
     return {"revisions": revisions, "latest": latest}
@@ -123,8 +123,8 @@ async def selector(rev, keys):
     # map all v1 revisions to one configuration
     if rev.name.startswith("v1."):
         return "v1.1.6"
-    elif rev.name in ["master"]:
-        # special configuration for v1 master branch
+    elif rev.name in ["main"]:
+        # special configuration for v1 main branch
         return rev.name
     elif rev.name == "local":
         return "local"

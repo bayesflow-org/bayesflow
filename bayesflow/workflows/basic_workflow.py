@@ -33,8 +33,8 @@ class BasicWorkflow(Workflow):
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
         save_best_only: bool = False,
-        inference_variables: Sequence[str] | str = "theta",
-        inference_conditions: Sequence[str] | str = "x",
+        inference_variables: Sequence[str] | str = None,
+        inference_conditions: Sequence[str] | str = None,
         summary_variables: Sequence[str] | str = None,
         standardize: Sequence[str] | str = "inference_variables",
         **kwargs,
@@ -72,10 +72,10 @@ class BasicWorkflow(Workflow):
             as some losses (e.g. flow matching) do not reliably reflect model performance, and outliers in the
             validation data can cause unwanted effects.
         inference_variables : Sequence[str] or str, optional
-            Variables for inference as a sequence of strings or a single string (default is "theta").
+            Variables for inference as a sequence of strings or a single string (default is None).
             Important for automating diagnostics!
         inference_conditions : Sequence[str] or str, optional
-            Variables used as conditions for inference (default is "x").
+            Variables used as conditions for inference (default is None).
         summary_variables : Sequence[str] or str, optional
             Variables for summarizing data, if any (default is None).
         standardize : Sequence[str] or str, optional

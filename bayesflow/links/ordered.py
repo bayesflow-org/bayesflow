@@ -23,7 +23,7 @@ class Ordered(keras.Layer):
     def build(self, input_shape):
         super().build(input_shape)
 
-        if self.anchor_index % input_shape[self.axis] != 0 and self.anchor_index != -1:
+        if self.anchor_index % input_shape[self.axis] == 0 or self.anchor_index == -1:
             raise RuntimeError("Anchor should not be first or last index.")
 
         self.group_indices = dict(

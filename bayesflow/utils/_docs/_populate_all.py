@@ -3,7 +3,9 @@ import inspect
 
 def _add_imports_to_all(include_modules: bool | list[str] = False, exclude: list[str] | None = None):
     """Add all global variables to __all__"""
-    assert type(include_modules) in [bool, list]
+    if not isinstance(include_modules, (bool, list)):
+        raise ValueError("include_modules must be a boolean or a list of strings")
+
     exclude = exclude or []
     calling_module = inspect.stack()[1]
     local_stack = calling_module[0]

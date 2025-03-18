@@ -1,10 +1,12 @@
 import keras
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 
 from .scoring_rule import ScoringRule
 
 
+@serializable(package="bayesflow.scores")
 class NormedDifferenceScore(ScoringRule):
     r""":math:`S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k`
 

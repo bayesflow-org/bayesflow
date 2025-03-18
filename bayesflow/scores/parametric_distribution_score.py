@@ -1,8 +1,11 @@
+from keras.saving import register_keras_serializable as serializable
+
 from bayesflow.types import Tensor
 
 from .scoring_rule import ScoringRule
 
 
+@serializable(package="bayesflow.scores")
 class ParametricDistributionScore(ScoringRule):
     r""":math:`S(\hat p_\phi, \theta; k) = \log(\hat p_\phi(\theta))`
 

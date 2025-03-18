@@ -1,11 +1,13 @@
 import math
 
 import keras
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import find_network, serialize_value_or_type, deserialize_value_or_type
 
 
+@serializable(package="bayesflow.scores")
 class ScoringRule:
     """Base class for scoring rules.
 

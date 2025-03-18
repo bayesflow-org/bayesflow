@@ -1,6 +1,9 @@
+from keras.saving import register_keras_serializable as serializable
+
 from .normed_difference_score import NormedDifferenceScore
 
 
+@serializable(package="bayesflow.scores")
 class MedianScore(NormedDifferenceScore):
     r""":math:`S(\hat \theta, \theta) = | \hat \theta - \theta |`
 

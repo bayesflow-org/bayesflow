@@ -1,6 +1,7 @@
 import math
 
 import keras
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.links import PositiveSemiDefinite
@@ -9,6 +10,7 @@ from bayesflow.utils import logging
 from .parametric_distribution_score import ParametricDistributionScore
 
 
+@serializable(package="bayesflow.scores")
 class MultivariateNormalScore(ParametricDistributionScore):
     r""":math:`S(\hat p_{\mu, \Sigma}, \theta; k) = \log( \mathcal N (\theta; \mu, \Sigma))`
 

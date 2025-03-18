@@ -1,4 +1,3 @@
-from keras.saving import register_keras_serializable as serializable
 import numpy as np
 from keras.saving import (
     deserialize_keras_object as deserialize,

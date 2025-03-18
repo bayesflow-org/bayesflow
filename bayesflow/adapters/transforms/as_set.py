@@ -1,6 +1,5 @@
 from keras.saving import register_keras_serializable as serializable
 import numpy as np
-from keras.saving import register_keras_serializable as serializable
 
 from .elementwise_transform import ElementwiseTransform
 

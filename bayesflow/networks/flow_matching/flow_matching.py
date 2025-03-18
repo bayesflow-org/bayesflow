@@ -234,7 +234,7 @@ class FlowMatching(InferenceNetwork):
         self,
         x: Tensor | Sequence[Tensor, ...],
         conditions: Tensor = None,
-        sample_weights: Tensor = None,
+        sample_weight: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         if isinstance(x, Sequence):
@@ -260,11 +260,11 @@ class FlowMatching(InferenceNetwork):
             x = t * x1 + (1 - t) * x0
             target_velocity = x1 - x0
 
-        base_metrics = super().compute_metrics(x1, conditions, sample_weights, stage)
+        base_metrics = super().compute_metrics(x1, conditions, sample_weight, stage)
 
         predicted_velocity = self.velocity(x, t, conditions, training=stage == "training")
 
         loss = self.loss_fn(target_velocity, predicted_velocity)
-        loss = self.aggregate(loss, sample_weights)
+        loss = self.aggregate(loss, sample_weight)
 
         return base_metrics | {"loss": loss}

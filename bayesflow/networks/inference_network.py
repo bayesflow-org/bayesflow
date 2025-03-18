@@ -49,7 +49,7 @@ class InferenceNetwork(keras.Layer):
         return log_density
 
     def compute_metrics(
-        self, x: Tensor, conditions: Tensor = None, sample_weights: Tensor = None, stage: str = "training"
+        self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
         if not self.built:
             xz_shape = keras.ops.shape(x)

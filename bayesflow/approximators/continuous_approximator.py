@@ -53,7 +53,7 @@ class ContinuousApproximator(Approximator):
         inference_variables: Sequence[str],
         inference_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
-        sample_weights: Sequence[str] = None,
+        sample_weight: Sequence[str] = None,
     ) -> Adapter:
         """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator.
 
@@ -65,6 +65,8 @@ class ContinuousApproximator(Approximator):
             Names of the inference conditions in the data
         summary_variables : Sequence of str, optional
             Names of the summary variables in the data
+        sample_weight : str, optional
+            Name of the sample weights
         """
         adapter = Adapter.create_default(inference_variables)
 
@@ -74,12 +76,12 @@ class ContinuousApproximator(Approximator):
         if summary_variables is not None:
             adapter = adapter.as_set(summary_variables).concatenate(summary_variables, into="summary_variables")
 
-        if sample_weights is not None:  # we could provide automatic multiplication of different sample weights
-            adapter = adapter.concatenate(sample_weights, into="sample_weights")
+        if sample_weight is not None:
+            adapter = adapter.rename(sample_weight, "sample_weight")
 
         adapter = adapter.keep(
-            ["inference_variables", "inference_conditions", "summary_variables", "sample_weights"]
-        ).standardize(exclude="sample_weights")
+            ["inference_variables", "inference_conditions", "summary_variables", "sample_weight"]
+        ).standardize(exclude="sample_weight")
 
         return adapter
 
@@ -106,7 +108,7 @@ class ContinuousApproximator(Approximator):
         inference_variables: Tensor,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
-        sample_weights: Tensor = None,
+        sample_weight: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         if self.summary_network is None:
@@ -128,7 +130,7 @@ class ContinuousApproximator(Approximator):
                 inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
 
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=inference_conditions, sample_weights=sample_weights, stage=stage
+            inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
         )
 
         loss = inference_metrics.get("loss", keras.ops.zeros(())) + summary_metrics.get("loss", keras.ops.zeros(()))

@@ -1,8 +1,10 @@
 import keras
+from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.utils import keras_kwargs
 
 
+@serializable(package="bayesflow.links")
 class PositiveSemiDefinite(keras.Layer):
     """Activation function to link from any square matrix to a positive semidefinite matrix."""
 

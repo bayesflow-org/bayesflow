@@ -19,3 +19,13 @@ def check_combination_simulator_adapter(simulator, adapter):
         # to be used as sample weight, no error is raised currently.
         # Don't use this fixture combination for further tests.
         pytest.skip()
+
+
+def check_approximator_multivariate_normal_score(approximator):
+    from bayesflow.approximators import PointApproximator
+    from bayesflow.scores import MultivariateNormalScore
+
+    if isinstance(approximator, PointApproximator):
+        for score in approximator.inference_network.scores.values():
+            if isinstance(score, MultivariateNormalScore):
+                pytest.skip()

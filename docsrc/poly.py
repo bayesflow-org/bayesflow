@@ -17,12 +17,11 @@ logger.setLevel(logging.DEBUG)
 root = Git.root(Path(__file__).parent)
 
 #: CodeRegex matching the branches to build docs for
-# BRANCH_REGEX = r"^(main|dev)$"
-BRANCH_REGEX = r"^(dev)$"
+BRANCH_REGEX = r"^(main|stable-legacy)$"
 
 #: Regex matching the tags to build docs for
-TAG_REGEX = r"^v(1\.1\.6|(?!1\.)[\.0-9]*)$"
-# TAG_REGEX = r""
+# TAG_REGEX = r"^v((?!1\.)[\.0-9]*)$"
+TAG_REGEX = r""
 
 #: Output dir relative to project root
 OUTPUT_DIR = "_build_polyversion"
@@ -121,8 +120,8 @@ creator = VenvWrapper(with_pip=True)
 async def selector(rev, keys):
     """Select configuration based on revision"""
     # map all v1 revisions to one configuration
-    if rev.name.startswith("v1."):
-        return "v1.1.6"
+    if rev.name.startswith("v1.") or rev.name == "stable-legacy":
+        return "stable-legacy"
     elif rev.name == "local":
         return "local"
     # common config for everything else
@@ -138,7 +137,7 @@ ENVIRONMENT = {
         env={"KERAS_BACKEND": "jax"},
     ),
     # configuration for v1
-    "v1.1.6": DynamicPip.factory(
+    "stable-legacy": DynamicPip.factory(
         **shared_env_kwargs,
         args=["-e", "."] + SPHINX_DEPS + V1_BACKEND_DEPS,
         env={"SETUPTOOLS_SCM_PRETEND_VERSION_FOR_BAYESFLOW": "1.1.6"},

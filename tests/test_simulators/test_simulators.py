@@ -6,13 +6,11 @@ def test_two_moons(simulator, batch_size):
     samples = simulator.sample((batch_size,))
 
     assert isinstance(samples, dict)
-    assert list(samples.keys()) == ["r", "alpha", "theta", "x"]
+    assert list(samples.keys()) == ["parameters", "observables"]
     assert all(isinstance(value, np.ndarray) for value in samples.values())
 
-    assert samples["r"].shape == (batch_size, 1)
-    assert samples["alpha"].shape == (batch_size, 1)
-    assert samples["theta"].shape == (batch_size, 2)
-    assert samples["x"].shape == (batch_size, 2)
+    assert samples["parameters"].shape == (batch_size, 2)
+    assert samples["observables"].shape == (batch_size, 2)
 
 
 def test_sample(simulator, batch_size):

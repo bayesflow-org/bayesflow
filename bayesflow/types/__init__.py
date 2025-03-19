@@ -1,3 +1,12 @@
+"""
+Custom types.
+
+.. currentmodule:: bayesflow.types
+
+.. autodata:: Shape
+.. autodata:: Tensor
+"""
+
 from .shape import Shape
 from .tensor import Tensor
 

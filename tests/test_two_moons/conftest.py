@@ -28,8 +28,8 @@ def adapter():
     from bayesflow import ContinuousApproximator
 
     return ContinuousApproximator.build_adapter(
-        inference_variables=["theta"],
-        inference_conditions=["x"],
+        inference_variables=["parameters"],
+        inference_conditions=["observables"],
     )
 
 

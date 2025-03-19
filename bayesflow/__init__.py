@@ -1,17 +1,18 @@
 from . import (
     approximators,
-    benchmarks,
     adapters,
     datasets,
     diagnostics,
     distributions,
+    experimental,
     networks,
     simulators,
     workflows,
     utils,
 )
+
 from .adapters import Adapter
-from .approximators import ContinuousApproximator
+from .approximators import ContinuousApproximator, PointApproximator
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset
 from .simulators import make_simulator
 from .workflows import BasicWorkflow
@@ -28,12 +29,6 @@ def setup():
     # use a separate logger for the bayesflow package
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
-
-    if keras.backend.backend() == "torch":
-        # turn off gradients by default
-        import torch
-
-        torch.autograd.set_grad_enabled(False)
 
     from bayesflow.utils import logging
 

@@ -2,19 +2,6 @@ import numpy as np
 import pytest
 
 
-def forward_transform(x):
-    return x + 1
-
-
-def inverse_transform(x):
-    return x - 1
-
-
-@pytest.fixture()
-def custom_objects():
-    return dict(forward_transform=forward_transform, inverse_transform=inverse_transform)
-
-
 @pytest.fixture()
 def adapter():
     from bayesflow.adapters import Adapter
@@ -29,10 +16,10 @@ def adapter():
         .concatenate(["x1", "x2"], into="x")
         .concatenate(["y1", "y2"], into="y")
         .expand_dims(["z1"], axis=2)
-        .apply(forward=forward_transform, inverse=inverse_transform)
-        # TODO: fix this in keras
-        # .apply(include="p1", forward=np.log, inverse=np.exp)
+        .log("p1")
         .constrain("p2", lower=0)
+        .apply(include="p2", forward="exp", inverse="log")
+        .apply(include="p2", forward="log1p")
         .standardize(exclude=["t1", "t2", "o1"])
         .drop("d1")
         .one_hot("o1", 10)

@@ -4,12 +4,12 @@
 [![DOI](https://img.shields.io/badge/DOI-10.21105%2Fjoss.05702-blue?style=for-the-badge)](https://doi.org/10.21105/joss.05702)
 ![PyPI - License](https://img.shields.io/pypi/l/bayesflow?style=for-the-badge)
 
-BayesFlow is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
-It provides users with:
+BayesFlow 2 is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
+It provides users and researchers with:
 
 - A user-friendly API for rapid Bayesian workflows
 - A rich collection of neural network architectures
-- Multi-Backend Support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
+- Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
 BayesFlow is designed to be a flexible and efficient tool that enables rapid statistical inference
 fueled by continuous progress in generative AI and Bayesian inference.
@@ -29,11 +29,35 @@ neural networks for parameter estimation, model comparison, and model validation
 when working with intractable simulators whose behavior as a whole is too
 complex to be described analytically.
 
-## Disclaimer
+## Getting Started
 
-This is the current dev version of BayesFlow, which constitutes a complete refactor of the library built on Keras 3. This way, you can now use any of the major deep learning libraries as backend for BayesFlow. The refactor is still work in progress with some of the advanced features not yet implemented. We are actively working on them and promise to catch up soon.
+Using the high-level interface is easy, as demonstrated by the minimal working example below:
 
-If you encounter any issues, please don't hesitate to open an issue here on [Github](https://github.com/bayesflow-org/bayesflow/issues) or ask questions on our [Discourse Forums](https://discuss.bayesflow.org/).
+```python
+import bayesflow as bf
+
+workflow = bf.BasicWorkflow(
+    inference_network=bf.networks.FlowMatching(),
+    summary_network=bf.networks.TimeSeriesTransformer(),
+    inference_variables=["parameters"],
+    summary_variables=["observables"],
+    simulator=bf.simulators.SIR()
+)
+
+history = workflow.fit_online(epochs=50, batch_size=32, num_batches_per_epoch=500)
+
+diagnostics = workflow.plot_default_diagnostics(test_data=300)
+```
+
+For an in-depth exposition, check out our walkthrough notebooks below. More tutorials are always welcome!
+
+1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
+2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
+3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
+4. [Rapid iteration with point estimators](examples/Lotka_Volterra_point_estimation_and_expert_stats.ipynb)
+5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
+6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
+7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
 
 ## Install
 
@@ -89,18 +113,9 @@ cd <local-path-to-bayesflow-repository>
 conda env create --file environment.yaml --name bayesflow
 ```
 
-## Getting Started
+## Reporting Issues
 
-Check out some of our walk-through notebooks below. We are actively working on porting all notebooks to the new interface so more will be available soon!
-
-1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
-2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
-3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
-4. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
-5. [Hyperparameter optimization](examples/Hyperparameter_Optimization.ipynb)
-6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-7. [Simple model comparison example (One-Sample T-Test)](examples/One_Sample_TTest.ipynb)
-8. More coming soon...
+If you encounter any issues, please don't hesitate to open an issue here on [Github](https://github.com/bayesflow-org/bayesflow/issues) or ask questions on our [Discourse Forums](https://discuss.bayesflow.org/).
 
 ## Documentation \& Help
 
@@ -110,9 +125,8 @@ Documentation is available at https://bayesflow.org. Please use the [BayesFlow F
 
 You can cite BayesFlow along the lines of:
 
-- We approximated the posterior with neural posterior estimation and learned summary statistics (NPE; Radev et al., 2020), as implemented in the BayesFlow software for amortized Bayesian workflows (Radev et al., 2023a).
-- We approximated the likelihood with neural likelihood estimation (NLE; Papamakarios et al., 2019) without hand-crafted summary statistics, as implemented in the BayesFlow software for amortized Bayesian workflows (Radev et al., 2023b).
-- We performed simultaneous posterior and likelihood estimation with jointly amortized neural approximation (JANA; Radev et al., 2023a), as implemented in the BayesFlow software for amortized Bayesian workflows (Radev et al., 2023b).
+- We approximated the posterior using neural posterior estimation (NPE) with learned summary statistics (Radev et al., 2020), as implemented in the BayesFlow framework for amortized Bayesian inference (Radev et al., 2023a).
+- We approximated the likelihood using neural likelihood estimation (NLE) without hand-crafted summary statistics (Papamakarios et al., 2019), leveraging its implementation in BayesFlow for efficient and flexible inference.
 
 1. Radev, S. T., Schmitt, M., Schumacher, L., Elsemüller, L., Pratz, V., Schälte, Y., Köthe, U., & Bürkner, P.-C. (2023a). BayesFlow: Amortized Bayesian workflows with neural networks. *The Journal of Open Source Software, 8(89)*, 5702.([arXiv](https://arxiv.org/abs/2306.16015))([JOSS](https://joss.theoj.org/papers/10.21105/joss.05702))
 2. Radev, S. T., Mertens, U. K., Voss, A., Ardizzone, L., Köthe, U. (2020). BayesFlow: Learning complex stochastic models with invertible neural networks. *IEEE Transactions on Neural Networks and Learning Systems, 33(4)*, 1452-1466. ([arXiv](https://arxiv.org/abs/2003.06281))([IEEE TNNLS](https://ieeexplore.ieee.org/document/9298920))
@@ -152,6 +166,10 @@ You can cite BayesFlow along the lines of:
   publisher = {PMLR}
 }
 ```
+
+## Awesome Amortized Inference
+
+If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our [community-driven list](https://github.com/bayesflow-org/awesome-amortized-inference).
 
 ## Acknowledgments
 

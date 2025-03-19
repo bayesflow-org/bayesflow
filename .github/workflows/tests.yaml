@@ -5,7 +5,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - main
       - dev
       - streamlined-backend
 
@@ -95,7 +95,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          pytest
+          pytest -x
 
       - name: Create Coverage Report
         run: |

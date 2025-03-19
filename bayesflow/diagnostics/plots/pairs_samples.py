@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+import matplotlib.pyplot as plt
+
 from bayesflow.utils import logging
 from bayesflow.utils.dict_utils import dicts_to_arrays
 
@@ -122,7 +124,7 @@ def _pairs_samples(
 
     # add histograms + KDEs to the diagonal
     g.map_diag(
-        sns.histplot,
+        histplot_twinx,
         fill=True,
         kde=True,
         color=color,
@@ -169,3 +171,23 @@ def _pairs_samples(
     g.tight_layout()
 
     return g
+
+
+# create a histogram plot on a twin y axis
+# this ensures that the y scaling of the diagonal plots
+# in independent of the y scaling of the off-diagonal plots
+def histplot_twinx(x, **kwargs):
+    # Create a twin axis
+    ax2 = plt.gca().twinx()
+
+    # create a histogram on the twin axis
+    sns.histplot(x, **kwargs, ax=ax2)
+
+    # make the twin axis invisible
+    plt.gca().spines["right"].set_visible(False)
+    plt.gca().spines["top"].set_visible(False)
+    ax2.set_ylabel("")
+    ax2.set_yticks([])
+    ax2.set_yticklabels([])
+
+    return None

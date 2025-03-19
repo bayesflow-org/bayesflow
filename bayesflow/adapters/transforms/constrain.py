@@ -18,43 +18,48 @@ class Constrain(ElementwiseTransform):
     """
     Constrains neural network predictions of a data variable to specified bounds.
 
-    Parameters:
+    Parameters
+    ----------
+    * : str
         String containing the name of the data variable to be transformed e.g. "sigma". See examples below.
 
-    Named Parameters:
-        lower: Lower bound for named data variable.
-        upper: Upper bound for named data variable.
-        method: Method by which to shrink the network predictions space to specified bounds. Choose from
-            - Double bounded methods: sigmoid, expit, (default = sigmoid)
-            - Lower bound only methods: softplus, exp, (default = softplus)
-            - Upper bound only methods: softplus, exp, (default = softplus)
-        inclusive: Indicates which bounds are inclusive (or exclusive).
-            - "both" (default): Both lower and upper bounds are inclusive.
-            - "lower": Lower bound is inclusive, upper bound is exclusive.
-            - "upper": Lower bound is exclusive, upper bound is inclusive.
-            - "none": Both lower and upper bounds are exclusive.
-        epsilon: Small value to ensure inclusive bounds are not violated.
-            Current default is 1e-15 as this ensures finite outcomes
-            with the default transformations applied to data exactly at the boundaries.
+    lower : int or float or np.darray, optional
+        Lower bound for named data variable.
+    upper : int or float or np.darray, optional
+        Upper bound for named data variable.
+    method : str, optional
+        Method by which to shrink the network predictions space to specified bounds. Choose from
+        - Double bounded methods: sigmoid, expit, (default = sigmoid)
+        - Lower bound only methods: softplus, exp, (default = softplus)
+        - Upper bound only methods: softplus, exp, (default = softplus)
+    inclusive : {'both', 'lower', 'upper', 'none'}, optional
+        Indicates which bounds are inclusive (or exclusive).
+        - "both" (default): Both lower and upper bounds are inclusive.
+        - "lower": Lower bound is inclusive, upper bound is exclusive.
+        - "upper": Lower bound is exclusive, upper bound is inclusive.
+        - "none": Both lower and upper bounds are exclusive.
+    epsilon : float, optional
+        Small value to ensure inclusive bounds are not violated.
+        Current default is 1e-15 as this ensures finite outcomes
+        with the default transformations applied to data exactly at the boundaries.
 
+    Examples
+    --------
 
-    Examples:
-        1) Let sigma be the standard deviation of a normal distribution,
-        then sigma should always be greater than zero.
+    1) Let sigma be the standard deviation of a normal distribution,
+    then sigma should always be greater than zero.
 
-        Usage:
-        adapter = (
-            bf.Adapter()
-            .constrain("sigma", lower=0)
-            )
+    >>> adapter = (
+        bf.Adapter()
+        .constrain("sigma", lower=0)
+    )
 
-        2 ) Suppose p is the parameter for a binomial distribution where p must be in
-        [0,1] then we would constrain the neural network to estimate p in the following way.
+    2) Suppose p is the parameter for a binomial distribution where p must be in
+    [0,1] then we would constrain the neural network to estimate p in the following way.
 
-        Usage:
-        >>> import bayesflow as bf
-        >>> adapter = bf.Adapter()
-        >>> adapter.constrain("p", lower=0, upper=1, method="sigmoid", inclusive="both")
+    >>> import bayesflow as bf
+    >>> adapter = bf.Adapter()
+    >>> adapter.constrain("p", lower=0, upper=1, method="sigmoid", inclusive="both")
     """
 
     def __init__(

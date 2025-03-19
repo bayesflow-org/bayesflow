@@ -2,12 +2,13 @@
 
 ## Overview
 
-To install the necessary dependencies, please run `pip install -e .[docs]`.
-You can then do the following:
+To install the necessary dependencies, please run `pip install -e .[docs]` in the root directory.
+You can then do the following (inside the `docsrc` directory):
 
-1. `make dev`: Generate the docs for the current version
-2. `make github`: Build the docs for tagged versions, `master` and `dev` in a sequential fashion
-3. `make parallel`: As `make github`, but builds occur in parallel (see below for details)
+1. `make local`: Generate the docs for the current local state
+2. `make docs`: Build the docs for branches and tags specified in `poly.py` in sequential fashion. Virtual environments are cached (run `make clean-all` to delete)
+3. `make docs-sequential`: As `make docs`, but versions are built sequentially, and the build environment is deleted after each build (see below for details)
+4. `make view-docs`: Starts a local webserver to display the content of `../docs`
 
 The docs will be copied to `../docs`.
 
@@ -36,7 +37,7 @@ environments between versions.
 
 ### Setup
 
-Please refer to the [sphinx-polyversion documentation](https://real-yfprojects.github.io/sphinx-polyversion/1.0.0/index.html)
+Please refer to the [sphinx-polyversion documentation](https://real-yfprojects.github.io/sphinx-polyversion/1.1.0/index.html)
 for a getting started tutorial and general documentation.
 Important locations are the following:
 
@@ -48,11 +49,12 @@ Important locations are the following:
     This enables a unified look and avoids having to add commits to old versions.
 - `polyversion/`: Polyversion-specific files, currently only redirect template.
 - `Makefile`/`make.bat`: Define commands to build different configurations.
+- `source/api/bayesflow.rst`: Specify the submodules that should be included in the docs.
 
 ### Building
 
 For the multi-version docs, there are two ways to build them, which can be
-configured by setting the `BF_DOCS_SEQUENTIAL_BUILDS` environment variable.
+configured by setting the `--sequential` flag.
 
 #### Parallel Builds (Default)
 
@@ -63,39 +65,27 @@ is determined by the slowest build.
 
 #### Sequential Builds
 
-By setting the environment variable `BF_DOCS_SEQUENTIAL_BUILDS=1`, a
+By setting the `--sequential` flag in the `sphinx-polyversion` call, a
 resource-constrained approach is chosen. Builds are sequential, and the
 virtual environment is deleted after the build. This overcomes the disk space
-limitations in the GitHub actions, at the cost of slightly higher built times
-(currently about 30 minutes). The variable can be set in the following way,
-which is used in `make github`:
-
-```bash
-BF_DOCS_SEQUENTIAL_BUILDS=1 sphinx-polyversion -vv poly.py
-```
+limitations in the GitHub actions, at the cost of slightly higher built times.
+This is used in `make docs-sequential`.
 
 ### Internals
 
+We extend `sphinx-polyversion` in minor ways, for some fixes there are already
+open PRs in the upstream project. The patched classes are located in
+`polyversion_patches.py`.
+
 We customize the creation and loading of the virtual environment to have
-one environment per revision (`DynamicPip`). We also create a variant that
-removes the environment after leaving it (`DestructingDynamicPip`). This
-enables freeing disk space in sequential builds.
+one environment per revision (`DynamicPip`). Setting `temporary` creates the
+environment in the temporary build directory, so that it will be removed after
+the build.
 
 As only the contents of a revision, but not the `.git` folder is copied
 for the build, we have to supply `SETUPTOOLS_SCM_PRETEND_VERSION_FOR_BAYESFLOW`
 with a version, otherwise `setuptools-scm` will fail when running
-`pip install -e .`. To enable this, we accept and set environment variables
-in `DynamicPip`.
-
-The environments are created in `VENV_DIR_NAME`, and only removed if they are
-in this directory.
-
-For sequential builds, define the `SynchronousDriver` class, which builds the
-revisions sequentially.
-
-To generate redirects for the old, non-version docs, we need the driver to
-create folders for the rendered templates. This extension takes place in
-`TemplatingDriver`.
+`pip install -e .`.
 
 For all other details, please refer to `poly.py` and the code of `sphinx-polyversion`.
 

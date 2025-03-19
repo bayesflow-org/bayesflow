@@ -1,7 +1,7 @@
 import keras
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import find_distribution
+from bayesflow.utils import find_distribution, keras_kwargs
 from bayesflow.utils.decorators import allow_batch_size
 
 
@@ -9,7 +9,7 @@ class InferenceNetwork(keras.Layer):
     MLP_DEFAULT_CONFIG = {}
 
     def __init__(self, base_distribution: str = "normal", **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**keras_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
@@ -48,7 +48,9 @@ class InferenceNetwork(keras.Layer):
         _, log_density = self(samples, conditions=conditions, inverse=False, density=True, **kwargs)
         return log_density
 
-    def compute_metrics(self, x: Tensor, conditions: Tensor = None, stage: str = "training") -> dict[str, Tensor]:
+    def compute_metrics(
+        self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
+    ) -> dict[str, Tensor]:
         if not self.built:
             xz_shape = keras.ops.shape(x)
             conditions_shape = None if conditions is None else keras.ops.shape(conditions)
@@ -64,3 +66,10 @@ class InferenceNetwork(keras.Layer):
                 metrics[metric.name] = metric(samples, x)
 
         return metrics
+
+    def aggregate(self, losses: Tensor, weights: Tensor = None):
+        if weights is not None:
+            weighted = losses * weights
+        else:
+            weighted = losses
+        return keras.ops.mean(weighted)

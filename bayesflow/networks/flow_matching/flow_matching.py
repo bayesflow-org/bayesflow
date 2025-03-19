@@ -19,8 +19,8 @@ from ..inference_network import InferenceNetwork
 
 @serializable(package="bayesflow.networks")
 class FlowMatching(InferenceNetwork):
-    """Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow,
-    with ideas incorporated from [1-3].
+    """Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas incorporated
+    from [1-3].
 
     [1] Rectified Flow: arXiv:2209.03003
     [2] Flow Matching: arXiv:2210.02747
@@ -45,39 +45,68 @@ class FlowMatching(InferenceNetwork):
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": "adaptive",
-        "tolerance": 1e-3,
-        "min_steps": 10,
-        "max_steps": 100,
+        "method": "euler",
+        "steps": 100,
     }
 
     def __init__(
         self,
         subnet: str | type = "mlp",
         base_distribution: str = "normal",
-        use_optimal_transport: bool = False,
+        use_optimal_transport: bool = True,
         loss_fn: str = "mse",
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, any] = None,
         **kwargs,
     ):
+        """
+        Initializes a flow-based model with configurable subnet architecture, loss function, and optional optimal
+        transport integration.
+
+        This model learns a transformation from a base distribution to a target distribution using a specified subnet
+        type, which can be an MLP or a custom network. It supports flow matching with optional optimal transport for
+        improved sample efficiency.
+
+        The integration and transport steps can be customized with additional parameters available in the respective
+        configuration dictionaries.
+
+        Parameters
+        ----------
+        subnet : str or type, optional
+            The architecture used for the transformation network. Can be "mlp" or a custom
+            callable network. Default is "mlp".
+        base_distribution : str, optional
+            The base probability distribution from which samples are drawn, such as "normal".
+            Default is "normal".
+        use_optimal_transport : bool, optional
+            Whether to apply optimal transport for improved training stability. Default is False.
+        loss_fn : str, optional
+            The loss function used for training, such as "mse". Default is "mse".
+        integrate_kwargs : dict[str, any], optional
+            Additional keyword arguments for the integration process. Default is None.
+        optimal_transport_kwargs : dict[str, any], optional
+            Additional keyword arguments for configuring optimal transport. Default is None.
+        subnet_kwargs: dict[str, any], optional
+            Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
+        **kwargs
+            Additional keyword arguments passed to the subnet and other components.
+        """
+
         super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
 
         self.use_optimal_transport = use_optimal_transport
 
-        self.integrate_kwargs = integrate_kwargs or FlowMatching.INTEGRATE_DEFAULT_CONFIG.copy()
-        self.optimal_transport_kwargs = optimal_transport_kwargs or FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG.copy()
+        self.integrate_kwargs = FlowMatching.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
+        self.optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
 
         self.seed_generator = keras.random.SeedGenerator()
 
+        subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
-            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG.copy()
-            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
-        else:
-            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
@@ -88,6 +117,7 @@ class FlowMatching(InferenceNetwork):
             "use_optimal_transport": self.use_optimal_transport,
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
             "integrate_kwargs": self.integrate_kwargs,
+            "subnet_kwargs": subnet_kwargs,
             **kwargs,
         }
         self.config = serialize_value_or_type(self.config, "subnet", subnet)
@@ -118,23 +148,23 @@ class FlowMatching(InferenceNetwork):
         config = deserialize_value_or_type(config, "subnet")
         return cls(**config)
 
-    def velocity(self, xz: Tensor, t: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
-        t = keras.ops.convert_to_tensor(t)
-        t = expand_right_as(t, xz)
-        t = keras.ops.broadcast_to(t, keras.ops.shape(xz)[:-1] + (1,))
+    def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
+        time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
+        time = expand_right_as(time, xz)
+        time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
 
         if conditions is None:
-            xtc = keras.ops.concatenate([xz, t], axis=-1)
+            xtc = keras.ops.concatenate([xz, time], axis=-1)
         else:
-            xtc = keras.ops.concatenate([xz, t, conditions], axis=-1)
+            xtc = keras.ops.concatenate([xz, time, conditions], axis=-1)
 
         return self.output_projector(self.subnet(xtc, training=training), training=training)
 
     def _velocity_trace(
-        self, xz: Tensor, t: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
+        self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
     ) -> (Tensor, Tensor):
         def f(x):
-            return self.velocity(x, t, conditions=conditions, training=training)
+            return self.velocity(x, time=time, conditions=conditions, training=training)
 
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
@@ -145,8 +175,8 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         if density:
 
-            def deltas(t, xz):
-                v, trace = self._velocity_trace(xz, t, conditions=conditions, training=training)
+            def deltas(time, xz):
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
@@ -157,8 +187,8 @@ class FlowMatching(InferenceNetwork):
 
             return z, log_density
 
-        def deltas(t, xz):
-            return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}
+        def deltas(time, xz):
+            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": x}
         state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
@@ -172,8 +202,8 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         if density:
 
-            def deltas(t, xz):
-                v, trace = self._velocity_trace(xz, t, conditions=conditions, training=training)
+            def deltas(time, xz):
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
@@ -184,8 +214,8 @@ class FlowMatching(InferenceNetwork):
 
             return x, log_density
 
-        def deltas(t, xz):
-            return {"xz": self.velocity(xz, t, conditions=conditions, training=training)}
+        def deltas(time, xz):
+            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": z}
         state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
@@ -195,7 +225,11 @@ class FlowMatching(InferenceNetwork):
         return x
 
     def compute_metrics(
-        self, x: Tensor | Sequence[Tensor, ...], conditions: Tensor = None, stage: str = "training"
+        self,
+        x: Tensor | Sequence[Tensor, ...],
+        conditions: Tensor = None,
+        sample_weight: Tensor = None,
+        stage: str = "training",
     ) -> dict[str, Tensor]:
         if isinstance(x, Sequence):
             # already pre-configured
@@ -220,11 +254,11 @@ class FlowMatching(InferenceNetwork):
             x = t * x1 + (1 - t) * x0
             target_velocity = x1 - x0
 
-        base_metrics = super().compute_metrics(x1, conditions, stage)
+        base_metrics = super().compute_metrics(x1, conditions, sample_weight, stage)
 
-        predicted_velocity = self.velocity(x, t, conditions, training=stage == "training")
+        predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training")
 
         loss = self.loss_fn(target_velocity, predicted_velocity)
-        loss = keras.ops.mean(loss)
+        loss = self.aggregate(loss, sample_weight)
 
         return base_metrics | {"loss": loss}

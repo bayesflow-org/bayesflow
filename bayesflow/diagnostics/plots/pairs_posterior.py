@@ -30,6 +30,8 @@ def pairs_posterior(
 ) -> sns.PairGrid:
     """Generates a bivariate pair plot given posterior draws and optional prior or prior draws.
 
+    Parameters
+    ----------
     estimates   : np.ndarray of shape (n_post_draws, n_params)
         The posterior draws obtained for a SINGLE observed data set.
     targets       : np.ndarray of shape (n_params,) or None, optional, default: None

@@ -7,8 +7,6 @@ import numpy as np
 
 from sklearn.metrics import confusion_matrix
 
-from keras import ops
-
 from bayesflow.utils.plot_utils import make_figure
 
 
@@ -75,8 +73,8 @@ def mc_confusion_matrix(
         cmap = LinearSegmentedColormap.from_list("", ["white", "#132a70"])
 
     # Flatten input
-    true_models = ops.argmax(true_models, axis=1)
-    pred_models = ops.argmax(pred_models, axis=1)
+    true_models = np.argmax(true_models, axis=1)
+    pred_models = np.argmax(pred_models, axis=1)
 
     # Compute confusion matrix
     cm = confusion_matrix(true_models, pred_models, normalize=normalize)

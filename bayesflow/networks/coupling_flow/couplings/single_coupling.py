@@ -27,11 +27,9 @@ class SingleCoupling(InvertibleLayer):
     def __init__(self, subnet: str | type = "mlp", transform: str = "affine", **kwargs):
         super().__init__(**keras_kwargs(kwargs))
 
+        subnet_kwargs = kwargs.get("subnet_kwargs", {})
         if subnet == "mlp":
-            subnet_kwargs = SingleCoupling.MLP_DEFAULT_CONFIG.copy()
-            subnet_kwargs.update(kwargs.get("subnet_kwargs", {}))
-        else:
-            subnet_kwargs = kwargs.get("subnet_kwargs", {})
+            subnet_kwargs = SingleCoupling.MLP_DEFAULT_CONFIG | subnet_kwargs
 
         self.network = find_network(subnet, **subnet_kwargs)
         self.transform = find_transform(transform, **kwargs.get("transform_kwargs", {}))

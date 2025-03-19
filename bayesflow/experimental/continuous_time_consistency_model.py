@@ -9,7 +9,7 @@ import numpy as np
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     jvp,
-    concatenate,
+    concatenate_valid,
     find_network,
     keras_kwargs,
     expand_right_as,
@@ -46,8 +46,8 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
     ):
         """Creates an instance of an sCM to be used for consistency training (CT).
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         subnet        : str or type, optional, default: "mlp"
             A neural network type for the consistency model, will be
             instantiated using subnet_kwargs.
@@ -201,7 +201,7 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments passed to the inner network.
         """
-        xtc = concatenate(x / self.sigma_data, self.time_emb(t), conditions, axis=-1)
+        xtc = concatenate_valid([x / self.sigma_data, self.time_emb(t), conditions], axis=-1)
         f = self.subnet_projector(self.subnet(xtc, training=training, **kwargs))
         out = ops.cos(t) * x - ops.sin(t) * self.sigma_data * f
         return out
@@ -240,7 +240,7 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
         r = 1.0  # TODO: if consistency distillation training (not supported yet) is unstable, add schedule here
 
         def f_teacher(x, t):
-            o = self.subnet(concatenate(x, self.time_emb(t), conditions, axis=-1), training=stage == "training")
+            o = self.subnet(concatenate_valid([x, self.time_emb(t), conditions], axis=-1), training=stage == "training")
             return self.subnet_projector(o)
 
         primals = (xt / self.sigma_data, t)
@@ -254,7 +254,7 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
         cos_sin_dFdt = ops.stop_gradient(cos_sin_dFdt)
 
         # calculate output of the network
-        xtc = concatenate(xt / self.sigma_data, self.time_emb(t), conditions, axis=-1)
+        xtc = concatenate_valid([xt / self.sigma_data, self.time_emb(t), conditions], axis=-1)
         student_out = self.subnet_projector(self.subnet(xtc, training=stage == "training"))
 
         # calculate the tangent

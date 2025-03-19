@@ -12,6 +12,13 @@ from .elementwise_transform import ElementwiseTransform
 class ConvertDType(ElementwiseTransform):
     """
     Default transform used to convert all floats from float64 to float32 to be in line with keras framework.
+
+    Parameters
+    ----------
+    from_dtype : str
+        Original dtype
+    to_dtype : str
+        Target dtype
     """
 
     def __init__(self, from_dtype: str, to_dtype: str):

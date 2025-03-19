@@ -26,20 +26,18 @@ def use_squeezed(request):
 def composite_two_moons():
     from bayesflow.simulators import make_simulator
 
-    def contexts():
+    def parameters():
+        parameters = np.random.uniform(-1.0, 1.0, size=2)
+        return dict(parameters=parameters)
+
+    def observables(parameters):
         r = np.random.normal(0.1, 0.01)
         alpha = np.random.uniform(-0.5 * np.pi, 0.5 * np.pi)
-        return dict(r=r, alpha=alpha)
+        x1 = -np.abs(parameters[0] + parameters[1]) / np.sqrt(2.0) + r * np.cos(alpha) + 0.25
+        x2 = (-parameters[0] + parameters[1]) / np.sqrt(2.0) + r * np.sin(alpha)
+        return dict(observables=np.stack([x1, x2]))
 
-    def parameters():
-        return dict(theta=np.random.uniform(-1.0, 1.0, size=2))
-
-    def observables(r, alpha, theta):
-        x1 = -np.abs(theta[0] + theta[1]) / np.sqrt(2.0) + r * np.cos(alpha) + 0.25
-        x2 = (-theta[0] + theta[1]) / np.sqrt(2.0) + r * np.sin(alpha)
-        return dict(x=np.stack([x1, x2]))
-
-    return make_simulator([contexts, parameters, observables])
+    return make_simulator([parameters, observables])
 
 
 @pytest.fixture(params=["composite_two_moons", "two_moons"])

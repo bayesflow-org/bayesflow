@@ -12,7 +12,7 @@ from tests.utils import assert_layers_equal
 @pytest.mark.parametrize("automatic", [True, False])
 def test_build(automatic, summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     assert summary_network.built is False
 
@@ -29,7 +29,7 @@ def test_build(automatic, summary_network, random_set):
 
 def test_variable_batch_size(summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     # build with one batch size
     summary_network.build(keras.ops.shape(random_set))
@@ -43,7 +43,7 @@ def test_variable_batch_size(summary_network, random_set):
 
 def test_variable_set_size(summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     # build with one set size
     summary_network.build(keras.ops.shape(random_set))
@@ -58,7 +58,7 @@ def test_variable_set_size(summary_network, random_set):
 
 def test_serialize_deserialize(summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     summary_network.build(keras.ops.shape(random_set))
 
@@ -71,7 +71,7 @@ def test_serialize_deserialize(summary_network, random_set):
 
 def test_save_and_load(tmp_path, summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
 
     summary_network.build(keras.ops.shape(random_set))
 

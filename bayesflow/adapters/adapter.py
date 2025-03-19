@@ -1,4 +1,4 @@
-from collections.abc import Callable, MutableSequence, Sequence
+from collections.abc import MutableSequence, Sequence
 
 import numpy as np
 from keras.saving import (
@@ -18,10 +18,12 @@ from .transforms import (
     ExpandDims,
     FilterTransform,
     Keep,
-    LambdaTransform,
+    Log,
     MapTransform,
+    NumpyTransform,
     OneHot,
     Rename,
+    Sqrt,
     Standardize,
     ToArray,
     Transform,
@@ -31,6 +33,17 @@ from .transforms.filter_transform import Predicate
 
 @serializable(package="bayesflow.adapters")
 class Adapter(MutableSequence[Transform]):
+    """
+    Defines an adapter to apply various transforms to data.
+
+    Where possible, the transforms also supply an inverse transform.
+
+    Parameters
+    ----------
+    transforms : Sequence[Transform], optional
+        The sequence of transforms to execute.
+    """
+
     def __init__(self, transforms: Sequence[Transform] | None = None):
         if transforms is None:
             transforms = []
@@ -39,6 +52,17 @@ class Adapter(MutableSequence[Transform]):
 
     @staticmethod
     def create_default(inference_variables: Sequence[str]) -> "Adapter":
+        """Create an adapter with a set of default transforms.
+
+        Parameters
+        ----------
+        inference_variables : Sequence of str
+            The names of the variables to be inferred by an estimator.
+
+        Returns
+        -------
+        An initialized Adapter with a set of default transforms.
+        """
         return (
             Adapter()
             .to_array()
@@ -54,6 +78,20 @@ class Adapter(MutableSequence[Transform]):
         return {"transforms": serialize(self.transforms)}
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, np.ndarray]:
+        """Apply the transforms in the forward direction.
+
+        Parameters
+        ----------
+        data : dict
+            The data to be transformed.
+        **kwargs : dict
+            Additional keyword arguments passed to each transform.
+
+        Returns
+        -------
+        dict
+            The transformed data.
+        """
         data = data.copy()
 
         for transform in self.transforms:
@@ -62,6 +100,20 @@ class Adapter(MutableSequence[Transform]):
         return data
 
     def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, any]:
+        """Apply the transforms in the inverse direction.
+
+        Parameters
+        ----------
+        data : dict
+            The data to be transformed.
+        **kwargs : dict
+            Additional keyword arguments passed to each transform.
+
+        Returns
+        -------
+        dict
+            The transformed data.
+        """
         data = data.copy()
 
         for transform in reversed(self.transforms):
@@ -70,6 +122,22 @@ class Adapter(MutableSequence[Transform]):
         return data
 
     def __call__(self, data: dict[str, any], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
+        """Apply the transforms in the given direction.
+
+        Parameters
+        ----------
+        data : dict
+            The data to be transformed.
+        inverse : bool, optional
+            If False, apply the forward transform, else apply the inverse transform (default False).
+        **kwargs : dict
+            Additional keyword arguments passed to each transform.
+
+        Returns
+        -------
+        dict
+            The transformed data.
+        """
         if inverse:
             return self.inverse(data, **kwargs)
 
@@ -87,6 +155,13 @@ class Adapter(MutableSequence[Transform]):
     # list methods
 
     def append(self, value: Transform) -> "Adapter":
+        """Append a transform to the list of transforms.
+
+        Parameters
+        ----------
+        value : Transform
+            The transform to be added.
+        """
         self.transforms.append(value)
         return self
 
@@ -94,6 +169,13 @@ class Adapter(MutableSequence[Transform]):
         del self.transforms[key]
 
     def extend(self, values: Sequence[Transform]) -> "Adapter":
+        """Extend the adapter with a sequence of transforms.
+
+        Parameters
+        ----------
+        values : Sequence of Transform
+            The additional transforms to extend the adapter.
+        """
         if isinstance(values, Adapter):
             values = values.transforms
 
@@ -108,6 +190,15 @@ class Adapter(MutableSequence[Transform]):
         return Adapter(self.transforms[item])
 
     def insert(self, index: int, value: Transform | Sequence[Transform]) -> "Adapter":
+        """Insert a transform at a given index.
+
+        Parameters
+        ----------
+        index : int
+            The index to insert at.
+        value : Transform or Sequence of Transform
+            The transform or transforms to insert.
+        """
         if isinstance(value, Adapter):
             value = value.transforms
 
@@ -143,15 +234,44 @@ class Adapter(MutableSequence[Transform]):
     def apply(
         self,
         *,
-        forward: Callable[[np.ndarray, ...], np.ndarray],
-        inverse: Callable[[np.ndarray, ...], np.ndarray],
+        forward: np.ufunc | str,
+        inverse: np.ufunc | str = None,
         predicate: Predicate = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
+        """Append a :py:class:`~transforms.LambdaTransform` to the adapter.
+
+        Parameters
+        ----------
+        forward: callable, no lambda
+            Function to transform the data in the forward pass.
+            For the adapter to be serializable, this function has to be serializable
+            as well (see Notes). Therefore, only proper functions and no lambda
+            functions should be used here.
+        inverse: callable, no lambda
+            Function to transform the data in the inverse pass.
+            For the adapter to be serializable, this function has to be serializable
+            as well (see Notes). Therefore, only proper functions and no lambda
+            functions should be used here.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform.
+
+        Notes
+        -----
+        Important: This is only serializable if the forward and inverse functions are serializable.
+        This most likely means you will have to pass the scope that the forward and inverse functions are contained in
+        to the `custom_objects` argument of the `deserialize` function when deserializing this class.
+        """
         transform = FilterTransform(
-            transform_constructor=LambdaTransform,
+            transform_constructor=NumpyTransform,
             predicate=predicate,
             include=include,
             exclude=exclude,
@@ -163,6 +283,13 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def as_set(self, keys: str | Sequence[str]):
+        """Append an :py:class:`~transforms.AsSet` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to apply the transform to.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
@@ -171,6 +298,13 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def as_time_series(self, keys: str | Sequence[str]):
+        """Append an :py:class:`~transforms.AsTimeSeries` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to apply the transform to.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
@@ -187,6 +321,32 @@ class Adapter(MutableSequence[Transform]):
         exclude: int | tuple = -1,
         squeeze: int | tuple = None,
     ):
+        """Append a :py:class:`~transforms.Broadcast` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to apply the transform to.
+        to : str
+            Name of the data variable to broadcast to.
+        expand : str or int or tuple, optional
+            Where should new dimensions be added to match the number of dimensions in `to`?
+            Can be "left", "right", or an integer or tuple containing the indices of the new dimensions.
+            The latter is needed if we want to include a dimension in the middle, which will be required
+            for more advanced cases. By default we expand left.
+        exclude : int or tuple, optional
+            Which dimensions (of the dimensions after expansion) should retain their size,
+            rather than being broadcasted to the corresponding dimension size of `to`?
+            By default we exclude the last dimension (usually the data dimension) from broadcasting the size.
+        squeeze : int or tuple, optional
+            Axis to squeeze after broadcasting.
+
+        Notes
+        -----
+        Important: Do not broadcast to variables that are used as inference variables
+        (i.e., parameters to be inferred by the networks). The adapter will work during training
+        but then fail during inference because the variable being broadcasted to is not available.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
@@ -195,10 +355,22 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def clear(self):
+        """Remove all transforms from the adapter."""
         self.transforms = []
         return self
 
     def concatenate(self, keys: str | Sequence[str], *, into: str, axis: int = -1):
+        """Append a :py:class:`~transforms.Concatenate` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to concatenate.
+        into : str
+            The name of the resulting variable.
+        axis : int, optional
+            Along which axis to concatenate the keys. The last axis is used by default.
+        """
         if isinstance(keys, str):
             transform = Rename(keys, to_key=into)
         else:
@@ -215,6 +387,21 @@ class Adapter(MutableSequence[Transform]):
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
     ):
+        """Append a :py:class:`~transforms.ConvertDType` transform to the adapter.
+
+        Parameters
+        ----------
+        from_dtype : str
+            Original dtype
+        to_dtype : str
+            Target dtype
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        """
         transform = FilterTransform(
             transform_constructor=ConvertDType,
             predicate=predicate,
@@ -236,6 +423,32 @@ class Adapter(MutableSequence[Transform]):
         inclusive: str = "both",
         epsilon: float = 1e-15,
     ):
+        """Append a :py:class:`~transforms.Constrain` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to constrain.
+        lower: int or float or np.darray, optional
+            Lower bound for named data variable.
+        upper : int or float or np.darray, optional
+            Upper bound for named data variable.
+        method : str, optional
+            Method by which to shrink the network predictions space to specified bounds. Choose from
+            - Double bounded methods: sigmoid, expit, (default = sigmoid)
+            - Lower bound only methods: softplus, exp, (default = softplus)
+            - Upper bound only methods: softplus, exp, (default = softplus)
+        inclusive : {'both', 'lower', 'upper', 'none'}, optional
+            Indicates which bounds are inclusive (or exclusive).
+            - "both" (default): Both lower and upper bounds are inclusive.
+            - "lower": Lower bound is inclusive, upper bound is exclusive.
+            - "upper": Lower bound is exclusive, upper bound is inclusive.
+            - "none": Both lower and upper bounds are exclusive.
+        epsilon : float, optional
+            Small value to ensure inclusive bounds are not violated.
+            Current default is 1e-15 as this ensures finite outcomes
+            with the default transformations applied to data exactly at the boundaries.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
@@ -249,6 +462,13 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def drop(self, keys: str | Sequence[str]):
+        """Append a :py:class:`~transforms.Drop` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to drop.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
@@ -257,14 +477,30 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def expand_dims(self, keys: str | Sequence[str], *, axis: int | tuple):
+        """Append an :py:class:`~transforms.ExpandDims` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to expand.
+        axis : int or tuple
+            The axis to expand.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
-        transform = ExpandDims(keys, axis=axis)
+        transform = MapTransform({key: ExpandDims(axis=axis) for key in keys})
         self.transforms.append(transform)
         return self
 
     def keep(self, keys: str | Sequence[str]):
+        """Append a :py:class:`~transforms.Keep` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to keep.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
@@ -272,7 +508,33 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
+    def log(self, keys: str | Sequence[str], *, p1: bool = False):
+        """Append an :py:class:`~transforms.Log` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to transform.
+        p1 : boolean
+            Add 1 to the input before taking the logarithm?
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: Log(p1=p1) for key in keys})
+        self.transforms.append(transform)
+        return self
+
     def one_hot(self, keys: str | Sequence[str], num_classes: int):
+        """Append a :py:class:`~transforms.OneHot` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to transform.
+        num_classes : int
+            Number of classes for the encoding.
+        """
         if isinstance(keys, str):
             keys = [keys]
 
@@ -281,7 +543,31 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def rename(self, from_key: str, to_key: str):
+        """Append a :py:class:`~transforms.Rename` transform to the adapter.
+
+        Parameters
+        ----------
+        from_key : str
+            Variable name that should be renamed
+        to_key : str
+            New variable name
+        """
         self.transforms.append(Rename(from_key, to_key))
+        return self
+
+    def sqrt(self, keys: str | Sequence[str]):
+        """Append an :py:class:`~transforms.Sqrt` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to transform.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: Sqrt() for key in keys})
+        self.transforms.append(transform)
         return self
 
     def standardize(
@@ -292,6 +578,19 @@ class Adapter(MutableSequence[Transform]):
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
+        """Append a :py:class:`~transforms.Standardize` transform to the adapter.
+
+        Parameters
+        ----------
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform.
+        """
         transform = FilterTransform(
             transform_constructor=Standardize,
             predicate=predicate,
@@ -310,6 +609,19 @@ class Adapter(MutableSequence[Transform]):
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
+        """Append a :py:class:`~transforms.ToArray` transform to the adapter.
+
+        Parameters
+        ----------
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform.
+        """
         transform = FilterTransform(
             transform_constructor=ToArray,
             predicate=predicate,

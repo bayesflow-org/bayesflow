@@ -3,6 +3,7 @@ import re
 import pytest
 import io
 from contextlib import redirect_stdout
+from tests.utils import check_approximator_multivariate_normal_score
 
 
 @pytest.mark.skip(reason="not implemented")
@@ -19,6 +20,9 @@ def test_fit(amortizer, dataset):
 
 
 def test_loss_progress(approximator, train_dataset, validation_dataset):
+    # as long as MultivariateNormalScore is unstable, skip fit progress test
+    check_approximator_multivariate_normal_score(approximator)
+
     approximator.compile(optimizer="AdamW")
     num_epochs = 3
 

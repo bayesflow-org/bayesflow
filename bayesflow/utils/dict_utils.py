@@ -49,7 +49,7 @@ def convert_kwargs(f: Callable, *args: any, **kwargs: any) -> dict[str, any]:
     return parameters
 
 
-def filter_kwargs(kwargs: Mapping[str, T], f: Callable) -> Mapping[str, T]:
+def filter_kwargs(kwargs: dict[str, T], f: Callable) -> dict[str, T]:
     """Filter keyword arguments for f"""
     signature = inspect.signature(f)
 
@@ -63,11 +63,10 @@ def filter_kwargs(kwargs: Mapping[str, T], f: Callable) -> Mapping[str, T]:
     return kwargs
 
 
-def keras_kwargs(kwargs: Mapping[str, T]) -> dict[str, T]:
-    """Keep dictionary keys that do not end with _kwargs. Used for propagating
-    keyword arguments in nested layer classes.
-    """
-    return {key: value for key, value in kwargs.items() if not key.endswith("_kwargs")}
+def keras_kwargs(kwargs: dict[str, T]) -> dict[str, T]:
+    """Filter keyword arguments for keras.Layer"""
+    valid_keys = ["dtype", "name", "trainable"]
+    return {key: value for key, value in kwargs.items() if key in valid_keys}
 
 
 # TODO: rename and streamline and make protected
@@ -318,3 +317,15 @@ def dicts_to_arrays(
         targets=targets,
         priors=priors,
     )
+
+
+def squeeze_inner_estimates_dict(estimates):
+    """If a dictionary has only one key-value pair and the key is "value", return only its value.
+    Otherwise, return the unchanged dictionary.
+
+    This method helps to remove unnecessary nesting levels.
+    """
+    if len(estimates.keys()) == 1 and "value" in estimates.keys():
+        return estimates["value"]
+    else:
+        return estimates

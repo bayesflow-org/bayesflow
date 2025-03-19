@@ -17,10 +17,10 @@ def test_cycle_consistency(adapter, random_data):
         assert np.allclose(value, deprocessed[key])
 
 
-def test_serialize_deserialize(adapter, custom_objects, random_data):
+def test_serialize_deserialize(adapter, random_data):
     processed = adapter(random_data)
     serialized = serialize(adapter)
-    deserialized = deserialize(serialized, custom_objects)
+    deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
     assert reserialized.keys() == serialized.keys()
@@ -51,7 +51,7 @@ def test_constrain():
         "x_both_disc2": np.vstack((np.zeros(shape=(16, 1)), np.ones(shape=(16, 1)))),
     }
 
-    adapter = (
+    ad = (
         Adapter()
         .constrain("x_lower_cont", lower=0)
         .constrain("x_upper_cont", upper=0)
@@ -66,7 +66,7 @@ def test_constrain():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
-        result = adapter(data)
+        result = ad(data)
 
     # continuous variables should not have boundary issues
     assert result["x_lower_cont"].min() < 0.0
@@ -87,3 +87,26 @@ def test_constrain():
     assert np.isinf(result["x_upper_disc2"][0])
     assert np.isneginf(result["x_both_disc2"][0])
     assert np.isinf(result["x_both_disc2"][-1])
+
+
+def test_simple_transforms(random_data):
+    # check if simple transforms are applied correctly
+    from bayesflow.adapters import Adapter
+
+    ad = Adapter().log(["p2", "t2"]).log("t1", p1=True).sqrt("p1")
+
+    result = ad(random_data)
+
+    assert np.array_equal(result["p2"], np.log(random_data["p2"]))
+    assert np.array_equal(result["t2"], np.log(random_data["t2"]))
+    assert np.array_equal(result["t1"], np.log1p(random_data["t1"]))
+    assert np.array_equal(result["p1"], np.sqrt(random_data["p1"]))
+
+    # inverse results should match the original input
+    inverse = ad(result, inverse=True)
+
+    assert np.array_equal(inverse["p2"], random_data["p2"])
+    assert np.array_equal(inverse["t2"], random_data["t2"])
+    assert np.array_equal(inverse["t1"], random_data["t1"])
+    # numerical inaccuries prevent np.array_equal to work here
+    assert np.allclose(inverse["p1"], random_data["p1"])

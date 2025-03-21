@@ -1,5 +1,5 @@
 
-name: Tests
+name: Multi-Backend Tests
 
 on:
   workflow_dispatch:
@@ -7,98 +7,78 @@ on:
     branches:
       - main
       - dev
+      - update-workflows
   push:
     branches:
       - main
       - dev
+      - update-workflows
+
+defaults:
+  run:
+    shell: bash
 
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -el {0}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Conda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          environment-file: environment.yaml
-          python-version: "3.10"
-
-      - name: Show Environment Info
-        run: |
-          conda info
-          conda list
-          conda config --show-sources
-          conda config --show
-          printenv | sort
-
-      - name: Run Linter
-        run: |
-          ruff check --config pyproject.toml --verbose
-
-      - name: Run Formatter
-        run: |
-          ruff format --check --config pyproject.toml --verbose
-
   test:
-    runs-on: ${{ matrix.os }}
+    name: Run Multi-Backend Tests
+
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11"]
         backend: ["jax", "tensorflow", "torch"]
-    defaults:
-      run:
-        shell: bash -el {0}
+
+    runs-on: ${{ matrix.os }}
+
     env:
       KERAS_BACKEND: ${{ matrix.backend }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Conda
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          environment-file: environment.yaml
           python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          pip install -U pip setuptools wheel
+          pip install .[test]
 
       - name: Install JAX
         if: ${{ matrix.backend == 'jax' }}
         run: |
           pip install -U jax
-      - name: Install NumPy
-        if: ${{ matrix.backend == 'numpy' }}
-        run: |
-          conda install numpy
-      - name: Install Tensorflow
+
+      - name: Install TensorFlow
         if: ${{ matrix.backend == 'tensorflow' }}
         run: |
           pip install -U tensorflow
+
       - name: Install PyTorch
         if: ${{ matrix.backend == 'torch' }}
         run: |
-          conda install pytorch torchvision torchaudio cpuonly -c pytorch
+          pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
       - name: Show Environment Info
         run: |
-          conda info
-          conda list
-          conda config --show-sources
-          conda config --show
+          python --version
+          pip --version
           printenv | sort
-          conda env export
+          pip list
 
       - name: Run Tests
         run: |
           pytest -x
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Create Coverage Report
         run: |

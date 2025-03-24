@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - dev
+      - main
+      - stable-legacy
 
 jobs:
 
@@ -17,15 +18,10 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v3
         with:
-          path: dev
+          path: repo
+          ref: main
           fetch-depth: 0
           fetch-tags: true
-
-      - name: Checkout gh-pages-dev
-        uses: actions/checkout@v3
-        with:
-          path: gh-pages-dev
-          ref: gh-pages-dev
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -35,22 +31,31 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd ./dev
+          cd ./repo
           python -m pip install .[docs]
+
       - name: Create local branches
         run: |
-          cd ./dev
-          git branch main remotes/origin/main
+          cd ./repo
+          git branch stable-legacy remotes/origin/stable-legacy
+
       - name: Make the Sphinx docs
         run: |
-          cd ./dev/docsrc
+          cd ./repo/docsrc
           make clean
           make docs-sequential
+
+      - name: Checkout gh-pages-dev
+        uses: actions/checkout@v3
+        with:
+          path: gh-pages-dev
+          ref: gh-pages-dev
+
       - name: Commit changes to docs
         run: |
           cd ./gh-pages-dev
           git rm --quiet -rf .
-          cp -R ../dev/docs/* ./
+          cp -R ../repo/docs/* ./
           git config --local user.email ""
           git config --local user.name "github-actions"
           git add -A

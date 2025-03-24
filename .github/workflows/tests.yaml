@@ -2,12 +2,15 @@
 name: Tests
 
 on:
+  workflow_dispatch:
   pull_request:
+    branches:
+      - main
+      - dev
   push:
     branches:
       - main
       - dev
-      - streamlined-backend
 
 
 jobs:
@@ -82,7 +85,7 @@ jobs:
       - name: Install PyTorch
         if: ${{ matrix.backend == 'torch' }}
         run: |
-          conda install pytorch torchvision torchaudio cpuonly -c pytorch
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
       - name: Show Environment Info
         run: |
@@ -92,6 +95,7 @@ jobs:
           conda config --show
           printenv | sort
           conda env export
+          pip list
 
       - name: Run Tests
         run: |
@@ -100,6 +104,12 @@ jobs:
       - name: Create Coverage Report
         run: |
           coverage xml
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload Coverage Reports to CodeCov
         uses: codecov/codecov-action@v4

@@ -23,9 +23,9 @@ class PointApproximator(ContinuousApproximator):
         conditions: dict[str, np.ndarray],
         split: bool = False,
         **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
+    ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
         """
-        Provides point estimates based on provided conditions (e.g., observables).
+        Estimates point summaries of inference variables based on specified conditions.
 
         This method processes input conditions, computes estimates, applies necessary adapter transformations,
         and optionally splits the resulting arrays along the last axis.
@@ -33,7 +33,7 @@ class PointApproximator(ContinuousApproximator):
         Parameters
         ----------
         conditions : dict[str, np.ndarray]
-            A dictionary mapping variable names to NumPy arrays representing the conditions
+            A dictionary mapping variable names to arrays representing the conditions
             for the estimation process.
         split : bool, optional
             If True, the estimated arrays are split along the last axis, by default False.
@@ -42,9 +42,15 @@ class PointApproximator(ContinuousApproximator):
 
         Returns
         -------
-        dict[str, dict[str, np.ndarray]]
-            A nested dictionary where the top-level keys correspond to original variable names,
-            and values contain dictionaries mapping estimation results to NumPy arrays.
+        estimates : dict[str, dict[str, np.ndarray or dict[str, np.ndarray]]]
+            The estimates of inference variables in a nested dictionary.
+
+            1. Each first-level key is the name of an inference variable.
+            2. Each second-level key is the name of a scoring rule.
+            3. (If the scoring rule comprises multiple estimators, each third-level key is the name of an estimator.)
+
+            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
+            of shape (num_datasets, point_estimate_size, variable_block_size).
         """
 
         conditions = self._prepare_conditions(conditions, **kwargs)
@@ -67,39 +73,43 @@ class PointApproximator(ContinuousApproximator):
         conditions: dict[str, np.ndarray],
         split: bool = False,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, dict[str, np.ndarray]]:
         """
-        Generate samples from point estimates based on provided conditions. These samples
-        will generally not correspond to samples from the fully Bayesian posterior, since
-        they will assume some parametric form (e.g., Gaussian in the case of mean score).
+        Draws samples from a parametric distribution based on point estimates for given input conditions.
 
-        This method draws a specified number of samples according to the given conditions,
-        applies necessary transformations, and optionally splits the resulting arrays along the last axis.
+        These samples will generally not correspond to samples from the fully Bayesian posterior, since
+        they will assume some parametric form (e.g., multivariate normal when using the MultivariateNormalScore).
 
         Parameters
         ----------
         num_samples : int
             The number of samples to generate.
         conditions : dict[str, np.ndarray]
-            A dictionary mapping variable names to NumPy arrays representing the conditions
+            A dictionary mapping variable names to arrays representing the conditions
             for the sampling process.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
+            Currently not supported for `PointApproximator`.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
         Returns
         -------
-        dict[str, np.ndarray]
-            A dictionary where keys correspond to variable names and values are NumPy arrays
-            containing the generated samples.
-        """
+        samples : dict[str, np.ndarray or dict[str, np.ndarray]]
+            Samples for all inference variables and all parametric scoring rules in a nested dictionary.
 
+            1. Each first-level key is the name of an inference variable.
+            2. (If there are multiple parametric scores, each second-level key is the name of such a score.)
+
+            Each output (i.e., dictionary value that is not itself a dictionary) is an array
+            of shape (num_datasets, num_samples, variable_block_size).
+        """
         conditions = self._prepare_conditions(conditions, **kwargs)
         samples = self._sample(num_samples, **conditions, **kwargs)
         samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
         # Optionally split the arrays along the last axis.
         if split:
+            raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
             samples = split_arrays(samples, axis=-1)
         # Squeeze samples if there's only one key-value pair.
         samples = self._squeeze_samples(samples)

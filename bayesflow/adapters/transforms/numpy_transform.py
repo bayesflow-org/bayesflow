@@ -9,7 +9,7 @@ class NumpyTransform(ElementwiseTransform):
     """
     A class to apply element-wise transformations using plain NumPy functions.
 
-    Attributes:
+    Attributes
     ----------
     _forward : str
         The name of the NumPy function to apply in the forward transformation.
@@ -31,11 +31,11 @@ class NumpyTransform(ElementwiseTransform):
         """
         Initializes the NumpyTransform with specified forward and inverse functions.
 
-        Parameters:
+        Parameters
         ----------
-        forward: str
+        forward : str
             The name of the NumPy function to use for the forward transformation.
-        inverse: str, optional
+        inverse : str, optional
             The name of the NumPy function to use for the inverse transformation.
             By default, the inverse is inferred from the forward argument for supported methods.
         """

@@ -1,17 +1,17 @@
 # BayesFlow <img src="img/bayesflow_hex.png" style="float: right; width: 20%; height: 20%;" align="right" alt="BayesFlow Logo" />
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/bayesflow-org/bayesflow/tests.yaml?style=for-the-badge&label=Tests)
-![Codecov](https://img.shields.io/codecov/c/github/bayesflow-org/bayesflow/dev?style=for-the-badge)
+![Codecov](https://img.shields.io/codecov/c/github/bayesflow-org/bayesflow?style=for-the-badge&link=https%3A%2F%2Fapp.codecov.io%2Fgh%2Fbayesflow-org%2Fbayesflow%2Ftree%2Fmain)
 [![DOI](https://img.shields.io/badge/DOI-10.21105%2Fjoss.05702-blue?style=for-the-badge)](https://doi.org/10.21105/joss.05702)
 ![PyPI - License](https://img.shields.io/pypi/l/bayesflow?style=for-the-badge)
 
-BayesFlow 2 is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
+BayesFlow is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
 It provides users and researchers with:
 
 - A user-friendly API for rapid Bayesian workflows
 - A rich collection of neural network architectures
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
-BayesFlow is designed to be a flexible and efficient tool that enables rapid statistical inference
+BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
 fueled by continuous progress in generative AI and Bayesian inference.
 
 ## Conceptual Overview
@@ -49,7 +49,7 @@ history = workflow.fit_online(epochs=50, batch_size=32, num_batches_per_epoch=50
 diagnostics = workflow.plot_default_diagnostics(test_data=300)
 ```
 
-For an in-depth exposition, check out our walkthrough notebooks below. More tutorials are always welcome!
+For an in-depth exposition, check out our walkthrough notebooks below.
 
 1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
 2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
@@ -58,6 +58,8 @@ For an in-depth exposition, check out our walkthrough notebooks below. More tuto
 5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
 7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
+
+More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 
 ## Install
 
@@ -69,9 +71,8 @@ First, install one machine learning backend of choice. Note that BayesFlow **wil
 - [Install PyTorch](https://pytorch.org/get-started/locally/)
 - [Install TensorFlow](https://www.tensorflow.org/install)
 
-If you don't know which backend to use, we recommend JAX to get started.
-It is the fastest backend and already works pretty reliably with the current
-dev version of bayesflow.
+If you don't know which backend to use, we recommend JAX as it is currently
+the fastest backend.
 
 Once installed, [set the backend environment variable as required by keras](https://keras.io/getting_started/#configuring-your-backend). For example, inside your Python script write:
 
@@ -93,22 +94,22 @@ This way, you also don't have to manually set the backend every time you are sta
 
 ### Using pip
 
-You can install the dev version with pip:
+You can install the Bayesflow from Github with pip:
 
 ```bash
-pip install git+https://github.com/bayesflow-org/bayesflow@dev
+pip install git+https://github.com/bayesflow-org/bayesflow@main
 ```
 
-### Using Conda (coming soon)
+### Using Conda
 
-The dev version is not conda-installable yet.
+Bayesflow is currently not conda-installable.
 
 ### From Source
 
-If you want to contribute to BayesFlow, we recommend installing the dev branch from source:
+If you want to contribute to BayesFlow, we recommend installing it from source:
 
 ```bash
-git clone -b dev git@github.com:bayesflow-org/bayesflow.git
+git clone -b main git@github.com:bayesflow-org/bayesflow.git
 cd <local-path-to-bayesflow-repository>
 conda env create --file environment.yaml --name bayesflow
 ```
@@ -167,10 +168,24 @@ You can cite BayesFlow along the lines of:
 }
 ```
 
+## FAQ
+
+- *I am starting with Bayesflow, which backend shall I use?*
+**A**: We recommend JAX as it is currently the fastest backend.
+
+- *What is the difference between Bayesflow 2.0+ and previous versions?*
+**A**: BayesFlow 2.0+ is a complete rewrite of the library. It shares the same
+overall goals with previous versions, but has much better modularity
+and extensibility. What is more, the new BayesFlow has multi-backend support via Keras3,
+while the old version was based on TensorFlow.
+
+- *I still need the old BayesFlow for some of my projects. How can I install it?*
+**A**: You can find and install the old Bayesflow version via the `stable-legacy` branch on GitHub.
+
 ## Awesome Amortized Inference
 
 If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our [community-driven list](https://github.com/bayesflow-org/awesome-amortized-inference).
 
 ## Acknowledgments
 
-This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation, Project 528702768). The project is further supported by Germany's Excellence Strategy -- EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.
+This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) Projects 528702768 and 508399956. The project is further supported by Germany's Excellence Strategy -- EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), the collaborative research cluster TRR 391 – 520388526, as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.

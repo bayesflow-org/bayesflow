@@ -128,7 +128,7 @@ class PointInferenceNetwork(keras.Layer):
         conditions: Tensor = None,
         training: bool = False,
         **kwargs,
-    ) -> dict[str, Tensor]:
+    ) -> dict[str, dict[str, Tensor]]:
         if xz is None and not self.built:
             raise ValueError("Cannot build inference network without inference variables.")
         if conditions is None:  # unconditional estimation uses a fixed input vector

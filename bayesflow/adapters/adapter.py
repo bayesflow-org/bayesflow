@@ -241,7 +241,7 @@ class Adapter(MutableSequence[Transform]):
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
-        """Append a :py:class:`~transforms.LambdaTransform` to the adapter.
+        """Append a :py:class:`~transforms.NumpyTransform` to the adapter.
 
         Parameters
         ----------

@@ -13,7 +13,6 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    _examples/Linear_Regression_Starter.ipynb
    _examples/Two_Moons_Starter.ipynb
    _examples/SIR_Posterior_Estimation.ipynb
-   _examples/Hyperparameter_Optimization.ipynb
    _examples/Bayesian_Experimental_Design.ipynb
    _examples/From_ABC_to_BayesFlow.ipynb
    _examples/One_Sample_TTest.ipynb

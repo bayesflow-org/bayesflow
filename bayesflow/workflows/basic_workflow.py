@@ -290,6 +290,36 @@ class BasicWorkflow(Workflow):
         """
         return self.approximator.sample(num_samples=num_samples, conditions=conditions, **kwargs)
 
+    def estimate(
+        self,
+        *,
+        conditions: dict[str, np.ndarray],
+        **kwargs,
+    ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
+        """
+        Estimates point summaries of inference variables based on specified conditions.
+
+        Parameters
+        ----------
+        conditions : dict[str, np.ndarray]
+            A dictionary mapping variable names to arrays representing the conditions for the estimation process.
+        **kwargs
+            Additional keyword arguments passed to underlying processing functions.
+
+        Returns
+        -------
+        estimates : dict[str, dict[str, np.ndarray or dict[str, np.ndarray]]]
+            The estimates of inference variables in a nested dictionary.
+
+            1. Each first-level key is the name of an inference variable.
+            2. Each second-level key is the name of a scoring rule.
+            3. (If the scoring rule comprises multiple estimators, each third-level key is the name of an estimator.)
+
+            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
+            of shape (num_datasets, point_estimate_size, variable_block_size).
+        """
+        return self.approximator.estimate(conditions=conditions, **kwargs)
+
     def log_prob(self, data: dict[str, np.ndarray], **kwargs) -> np.ndarray:
         """
         Compute the log probability of given variables under the approximator.

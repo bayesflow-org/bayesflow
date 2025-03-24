@@ -1,4 +1,13 @@
+{% if objname == 'bayesflow' %}
+API Reference
+=============
+
+This is the reference for the public API. For a more guided introduction,
+please refer to the :doc:`Examples <../examples>` section.
+
+{% else %}
 {{ objname | escape | underline}}
+{% endif %}
 
 .. automodule:: {{ fullname }}
   :member-order: alphabetical

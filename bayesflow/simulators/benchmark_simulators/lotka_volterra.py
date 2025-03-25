@@ -35,6 +35,8 @@ class LotkaVolterra(BenchmarkSimulator):
             representation of the simulated data is returned.
         obs_noise: float, optional, default: 0.1
             The standard deviation of the log-normal likelihood.
+        dt: float, optional, default: None
+            Between 0 and 1, sampling rate 1/T of time series with length T timesteps
         rng: np.random.Generator or None, optional, default: None
             An optional random number generator to use.
         """

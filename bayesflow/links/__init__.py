@@ -2,7 +2,7 @@
 
 from .ordered import Ordered
 from .ordered_quantiles import OrderedQuantiles
-from .positive_semi_definite import PositiveSemiDefinite
+from .positive_definite import PositiveDefinite
 
 from ..utils._docs import _add_imports_to_all
 

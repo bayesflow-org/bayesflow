@@ -5,7 +5,7 @@ from keras.saving import (
 )
 
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict
+from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict, logging
 from .continuous_approximator import ContinuousApproximator
 
 
@@ -119,6 +119,7 @@ class PointApproximator(ContinuousApproximator):
     def _prepare_conditions(self, conditions: dict[str, np.ndarray], **kwargs) -> dict[str, Tensor]:
         """Adapts and converts the conditions to tensors."""
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
+        conditions.pop("inference_variables", None)
         return keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
     def _apply_inverse_adapter_to_estimates(
@@ -130,6 +131,12 @@ class PointApproximator(ContinuousApproximator):
         for score_key, score_val in estimates.items():
             processed[score_key] = {}
             for head_key, estimate in score_val.items():
+                if head_key in self.inference_network.scores[score_key].not_transforming_like_vector:
+                    logging.warning(
+                        f"Estimate '{score_key}.{head_key}' is marked to not transform like a vector. "
+                        "It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."
+                    )
+
                 adapted = self.adapter(
                     {"inference_variables": estimate},
                     inverse=True,

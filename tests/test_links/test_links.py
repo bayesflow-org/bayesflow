@@ -3,13 +3,6 @@ import numpy as np
 import pytest
 
 
-def test_link_output(link, generic_preactivation):
-    output_shape = link.compute_output_shape(generic_preactivation.shape)
-    output = link(generic_preactivation)
-
-    assert output_shape == output.shape
-
-
 def test_invalid_shape_for_ordered_quantiles(ordered_quantiles, batch_size, num_quantiles, num_variables):
     with pytest.raises(AssertionError) as excinfo:
         ordered_quantiles.build((batch_size, batch_size, num_quantiles, num_variables))
@@ -59,16 +52,17 @@ def test_quantile_ordering(quantiles, unordered):
     check_ordering(output, axis)
 
 
-def test_positive_semi_definite(random_matrix_batch):
-    from bayesflow.links import PositiveSemiDefinite
-
-    activation = PositiveSemiDefinite()
-
-    output = activation(random_matrix_batch)
+def test_positive_definite(positive_definite, batch_size, num_variables):
+    psd = positive_definite
+    input_shape = psd.compute_input_shape((batch_size, num_variables, num_variables))
+    print(input_shape)
+    random_preactivation = keras.random.normal(input_shape, seed=12)
+    output = psd(random_preactivation)
 
     output = keras.ops.convert_to_numpy(output)
     eigenvalues = np.linalg.eig(output).eigenvalues
 
     assert np.all(eigenvalues.real > 0) and np.all(np.isclose(eigenvalues.imag, 0)), (
-        f"output is not positive semi-definite: real={eigenvalues.real}, imag={eigenvalues.imag}"
+        f"output is not positive definite: min(real)={np.min(eigenvalues.real)}, "
+        f"max(abs(imag))={np.max(np.abs(eigenvalues.imag))}"
     )

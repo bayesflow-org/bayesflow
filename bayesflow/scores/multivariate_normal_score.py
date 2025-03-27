@@ -4,7 +4,7 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.links import PositiveSemiDefinite
+from bayesflow.links import PositiveDefinite
 from bayesflow.utils import logging
 
 from .parametric_distribution_score import ParametricDistributionScore
@@ -21,7 +21,11 @@ class MultivariateNormalScore(ParametricDistributionScore):
         super().__init__(links=links, **kwargs)
 
         self.dim = dim
-        self.links = links or {"covariance": PositiveSemiDefinite()}
+        self.links = links or {"covariance": PositiveDefinite()}
+
+        # mark head for covariance matrix as an exception for adapter transformations
+        self.not_transforming_like_vector = ["covariance"]
+
         self.config = {"dim": dim}
 
         logging.warning("MultivariateNormalScore is unstable.")
@@ -60,12 +64,12 @@ class MultivariateNormalScore(ParametricDistributionScore):
             A tensor containing the log probability densities for each sample in `x` under the
             given Gaussian distribution.
         """
-        diff = x[:, None, :] - mean
-        inv_covariance = keras.ops.inv(covariance)
+        diff = x - mean
+        precision = keras.ops.inv(covariance)
         log_det_covariance = keras.ops.slogdet(covariance)[1]  # Only take the log of the determinant part
 
         # Compute the quadratic term in the exponential of the multivariate Gaussian
-        quadratic_term = keras.ops.einsum("...i,...ij,...j->...", diff, inv_covariance, diff)
+        quadratic_term = keras.ops.einsum("...i,...ij,...j->...", diff, precision, diff)
 
         # Compute the log probability density
         log_prob = -0.5 * (self.dim * keras.ops.log(2 * math.pi) + log_det_covariance + quadratic_term)

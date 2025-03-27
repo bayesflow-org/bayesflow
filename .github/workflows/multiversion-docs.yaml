@@ -55,7 +55,7 @@ jobs:
         run: |
           cd ./gh-pages-dev
           git rm --quiet -rf .
-          cp -R ../repo/docs/* ./
+          cp -r ../repo/docs/. ./
           git config --local user.email ""
           git config --local user.name "github-actions"
           git add -A

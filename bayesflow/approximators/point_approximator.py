@@ -134,7 +134,7 @@ class PointApproximator(ContinuousApproximator):
                 if head_key in self.inference_network.scores[score_key].not_transforming_like_vector:
                     logging.warning(
                         f"Estimate '{score_key}.{head_key}' is marked to not transform like a vector. "
-                        "It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."
+                        f"It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."
                     )
 
                 adapted = self.adapter(

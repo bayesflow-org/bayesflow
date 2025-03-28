@@ -53,12 +53,16 @@ def test_quantile_ordering(quantiles, unordered):
 
 
 def test_positive_definite(positive_definite, batch_size, num_variables):
-    psd = positive_definite
-    input_shape = psd.compute_input_shape((batch_size, num_variables, num_variables))
-    print(input_shape)
-    random_preactivation = keras.random.normal(input_shape, seed=12)
-    output = psd(random_preactivation)
+    input_shape = positive_definite.compute_input_shape((batch_size, num_variables, num_variables))
 
+    # Too strongly negative values lead to numerical instabilities -> reduce scale
+    random_preactivation = keras.random.normal(input_shape) * 0.1
+    output = positive_definite(random_preactivation)
+
+    # Check if output is invertible
+    np.linalg.inv(output)
+
+    # Calculated eigenvalues to test for positive definiteness
     output = keras.ops.convert_to_numpy(output)
     eigenvalues = np.linalg.eig(output).eigenvalues
 

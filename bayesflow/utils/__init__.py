@@ -66,6 +66,7 @@ from .tensor_utils import (
     tile_axis,
     tree_concatenate,
     tree_stack,
+    fill_triangular_matrix,
 )
 from .validators import check_lengths_same
 from .workflow_utils import find_inference_network, find_summary_network

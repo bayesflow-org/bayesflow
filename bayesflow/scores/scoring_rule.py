@@ -29,6 +29,8 @@ class ScoringRule:
         self.subnets_kwargs = subnets_kwargs or {}
         self.links = links or {}
 
+        self.not_transforming_like_vector = []
+
         self.config = {"subnets_kwargs": self.subnets_kwargs}
 
     def get_config(self):
@@ -95,14 +97,14 @@ class ScoringRule:
         else:
             return self.links[key]
 
-    def get_head(self, key: str, shape: Shape) -> keras.Sequential:
+    def get_head(self, key: str, output_shape: Shape) -> keras.Sequential:
         """For a specified head key and shape, request corresponding head network.
 
         Parameters
         ----------
         key : str
             Name of head for which to request a link.
-        shape: Shape
+        output_shape: Shape
             The necessary shape for the point estimators.
 
         Returns
@@ -111,10 +113,19 @@ class ScoringRule:
             Head network consisting of a learnable projection, a reshape and a link operation
             to parameterize estimates.
         """
-        subnet = self.get_subnet(key)
-        dense = keras.layers.Dense(units=math.prod(shape))
-        reshape = keras.layers.Reshape(target_shape=shape)
+        # initialize head components back to front
         link = self.get_link(key)
+
+        # link input shape can differ from output shape
+        if hasattr(link, "compute_input_shape"):
+            link_input_shape = link.compute_input_shape(output_shape)
+        else:
+            link_input_shape = output_shape
+
+        reshape = keras.layers.Reshape(target_shape=link_input_shape)
+        dense = keras.layers.Dense(units=math.prod(link_input_shape))
+        subnet = self.get_subnet(key)
+
         return keras.Sequential([subnet, dense, reshape, link])
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor) -> Tensor:

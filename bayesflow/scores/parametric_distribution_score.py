@@ -51,5 +51,4 @@ class ParametricDistributionScore(ScoringRule):
         """
         scores = -self.log_prob(x=targets, **estimates)
         score = self.aggregate(scores, weights)
-        # multipy to mitigate instability due to relatively high values of parametric score
-        return score * 0.01
+        return score

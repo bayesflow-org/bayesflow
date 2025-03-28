@@ -1,5 +1,5 @@
 """
-Custom types.
+Custom types used for type annotations.
 
 .. currentmodule:: bayesflow.types
 

@@ -1,3 +1,8 @@
+"""
+A collection of :py:class:`~bayesflow.approximators.Approximator`\ s, which embody the inference task and the
+neural network components used to perform it.
+"""
+
 from .approximator import Approximator
 from .continuous_approximator import ContinuousApproximator
 from .point_approximator import PointApproximator

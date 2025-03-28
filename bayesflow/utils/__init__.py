@@ -1,3 +1,7 @@
+"""
+A collection of utility functions, mostly used for internal purposes.
+"""
+
 from . import (
     keras_utils,
     logging,

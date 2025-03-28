@@ -1,3 +1,7 @@
+"""
+A rich collection of neural network architectures for use in :py:class:`~bayesflow.approximators.Approximator`\ s.
+"""
+
 from .consistency_models import ConsistencyModel
 from .coupling_flow import CouplingFlow
 from .deep_set import DeepSet

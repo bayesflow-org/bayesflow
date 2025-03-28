@@ -132,7 +132,7 @@ class PointInferenceNetwork(keras.Layer):
         if xz is None and not self.built:
             raise ValueError("Cannot build inference network without inference variables.")
         if conditions is None:  # unconditional estimation uses a fixed input vector
-            conditions = keras.ops.convert_to_tensor([[1.0]], dtype=keras.ops.dtype(xz))
+            conditions = keras.ops.convert_to_tensor([[1.0]])
 
         # pass conditions to the shared subnet
         output = self.subnet(conditions, training=training)

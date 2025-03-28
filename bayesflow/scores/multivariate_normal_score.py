@@ -5,7 +5,6 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.links import PositiveDefinite
-from bayesflow.utils import logging
 
 from .parametric_distribution_score import ParametricDistributionScore
 
@@ -27,8 +26,6 @@ class MultivariateNormalScore(ParametricDistributionScore):
         self.not_transforming_like_vector = ["covariance"]
 
         self.config = {"dim": dim}
-
-        logging.warning("MultivariateNormalScore is unstable.")
 
     def get_config(self):
         base_config = super().get_config()

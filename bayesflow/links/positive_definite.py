@@ -19,11 +19,6 @@ class PositiveDefinite(keras.Layer):
         # Build cholesky factor from inputs
         L = fill_triangular_matrix(inputs, positive_diag=True)
 
-        # diagonal_mask = keras.ops.identity(L.shape[-1]) > 0
-        # L[..., diagonal_mask] = keras.activations.softplus(L[..., diagonal_mask])
-        # L += keras.ops.identity(L.shape[-1]) * 2
-        # L *= keras.ops.sign(keras.ops.diagonal(L, axis1=-1))[..., None]  # ensure positive diagonal entries
-
         # calculate positive definite matrix from cholesky factors
         psd = keras.ops.matmul(
             L,

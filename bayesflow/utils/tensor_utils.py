@@ -281,7 +281,7 @@ def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
 
 def fill_triangular_matrix(x: Tensor, upper: bool = False, positive_diag: bool = False):
     """
-    Reshapes a batch of matrix entries into a triangular matrix (either upper or lower).
+    Reshapes a batch of matrix elements into a triangular matrix (either upper or lower).
 
     Note: If final axis has length 1, this simply reshapes to (batch_size, 1, 1) and optionally applies softplus.
 
@@ -326,14 +326,13 @@ def fill_triangular_matrix(x: Tensor, upper: bool = False, positive_diag: bool =
     if not upper:
         y = keras.ops.concatenate([x_tail, keras.ops.flip(x, axis=-1)], axis=len(batch_shape))
         y = keras.ops.reshape(y, (-1, n, n))
-        y = keras.ops.tril(y)  # TODO: fails with tensorflow
+        y = keras.ops.tril(y)
 
         if positive_diag:
             y_offdiag = keras.ops.tril(y, k=-1)
+            # carve out diagonal, by setting upper and lower offdiagonals to zero
             y_diag = keras.ops.tril(
-                keras.ops.triu(  # carve out diagonal, by setting upper and lower offdiagonals to zero
-                    keras.activations.softplus(y)
-                ),  # apply softplus to enforce positivity
+                keras.ops.triu(keras.activations.softplus(y)),  # apply softplus to enforce positivity
             )
             y = y_diag + y_offdiag
 
@@ -346,10 +345,9 @@ def fill_triangular_matrix(x: Tensor, upper: bool = False, positive_diag: bool =
 
         if positive_diag:
             y_offdiag = keras.ops.triu(y, k=1)
+            # carve out diagonal, by setting upper and lower offdiagonals to zero
             y_diag = keras.ops.tril(
-                keras.ops.triu(  # carve out diagonal, by setting upper and lower offdiagonals to zero
-                    keras.activations.softplus(y)
-                ),  # apply softplus to enforce positivity
+                keras.ops.triu(keras.activations.softplus(y)),  # apply softplus to enforce positivity
             )
             y = y_diag + y_offdiag
 

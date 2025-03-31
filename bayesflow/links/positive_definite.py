@@ -1,6 +1,5 @@
 import keras
 
-# import numpy as np
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor

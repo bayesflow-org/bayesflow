@@ -99,7 +99,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
             A tensor of shape (batch_size, num_samples, D) containing the generated samples.
         """
         if len(batch_shape) == 1:
-            batch_shape = (1,) + batch_shape
+            batch_shape = (1,) + tuple(batch_shape)
         batch_size, num_samples = batch_shape
         dim = keras.ops.shape(mean)[-1]
         if keras.ops.shape(mean) != (batch_size, dim):

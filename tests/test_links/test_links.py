@@ -58,12 +58,12 @@ def test_positive_definite(positive_definite, batch_size, num_variables):
     # Too strongly negative values lead to numerical instabilities -> reduce scale
     random_preactivation = keras.random.normal(input_shape) * 0.1
     output = positive_definite(random_preactivation)
+    output = keras.ops.convert_to_numpy(output)
 
     # Check if output is invertible
     np.linalg.inv(output)
 
     # Calculated eigenvalues to test for positive definiteness
-    output = keras.ops.convert_to_numpy(output)
     eigenvalues = np.linalg.eig(output).eigenvalues
 
     assert np.all(eigenvalues.real > 0) and np.all(np.isclose(eigenvalues.imag, 0)), (

@@ -17,6 +17,12 @@ class ScoringRule:
 
     To define a custom ``ScoringRule``, inherit from this class and overwrite the score method.
     For proper serialization, any new constructor arguments must be taken care of in a `get_config` method.
+
+    Estimates are typically parameterized by projection heads consisting of a neural network component
+    and a link to project into the correct output space.
+
+    `ScoringRule`s can score estimates consisting of multiple parts. See `MultivariateNormalScore` for an example
+    of a `ParametricDistributionScore`. The score evaluates an estimated mean and covariance simultaneously.
     """
 
     def __init__(
@@ -29,7 +35,12 @@ class ScoringRule:
         self.subnets_kwargs = subnets_kwargs or {}
         self.links = links or {}
 
-        self.not_transforming_like_vector = []
+        # Prediction heads can output estimates in spaces other than the target distribution space.
+        # To such estimates the adapter cannot be straightforwardly applied in inverse direction,
+        # because the adapter is built to map vectors. When subclassing `ScoringRule`, add the names
+        # of such heads to the following list to warn users about difficulties with a type of estimate
+        # whenever the adapter is applied to them in inverse direction.
+        self.not_transforming_like_vector_warning = []
 
         self.config = {"subnets_kwargs": self.subnets_kwargs}
 
@@ -60,12 +71,15 @@ class ScoringRule:
 
     def get_subnet(self, key: str) -> keras.Layer:
         """For a specified key, request a subnet to be used for projecting the shared condition embedding
-        before reshaping to the heads output shape.
+        before further projection and reshaping to the heads output shape.
+
+        If no subnet was specified for the key (e.g. upon initialization),
+        return just an instance of keras.layers.Identity.
 
         Parameters
         ----------
         key : str
-            Name of head for which to request a link.
+            Name of head for which to request a subnet.
 
         Returns
         -------
@@ -79,6 +93,8 @@ class ScoringRule:
 
     def get_link(self, key: str) -> keras.Layer:
         """For a specified key, request a link from network output to estimation target.
+
+        If no link was specified for the key (e.g. upon initialization), return a linear activation.
 
         Parameters
         ----------
@@ -98,7 +114,15 @@ class ScoringRule:
             return self.links[key]
 
     def get_head(self, key: str, output_shape: Shape) -> keras.Sequential:
-        """For a specified head key and shape, request corresponding head network.
+        """For a specified head key and output shape, request corresponding head network.
+
+        A head network has the following components that are called sequentially:
+        1. subnet: A keras.Layer.
+        2. dense: A trainable linear projection with as many units as are required by the next component.
+        3. reshape: Changes shape of output of projection to match requirements of next component.
+        4. link: Transforms unconstrained values into a constrained space for the final estimator.
+
+        This method initializes the components in reverse order to meet all requirements and returns them.
 
         Parameters
         ----------

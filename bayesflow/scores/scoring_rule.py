@@ -129,7 +129,8 @@ class ScoringRule:
         key : str
             Name of head for which to request a link.
         output_shape: Shape
-            The necessary shape for the point estimators.
+            The necessary shape of estimated values for the given key as returned by
+            `scoring_rule.get_head_shapes_from_target_shape()`.
 
         Returns
         -------

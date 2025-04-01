@@ -200,7 +200,6 @@ class PointInferenceNetwork(keras.Layer):
 
         return samples
 
-    # WIP: untested draft of log_prob method
     def log_prob(self, samples: Tensor, conditions: Tensor = None, **kwargs) -> dict[str, Tensor]:
         output = self.subnet(conditions)
         log_probs = {}

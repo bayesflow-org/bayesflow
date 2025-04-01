@@ -6,6 +6,8 @@ Core maintainers
 
 * `Stefan Radev <https://github.com/stefanradev93>`__, Rensselaer Polytechnic Institute
 * `Lars Kühmichel <https://github.com/LarsKue>`__, TU Dortmund University
+* `Paul Bürkner <https://paul-buerkner.github.io/>`__, TU Dortmund University
+* `Valentin Pratz <https://valentinpratz.de/>`__, Heidelberg University
 
 Active maintainers
 ------------------

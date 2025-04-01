@@ -167,7 +167,6 @@ class PointInferenceNetwork(keras.Layer):
 
         return metrics | {"loss": neg_score}
 
-    # WIP: untested draft of sample method
     @allow_batch_size
     def sample(self, batch_shape: Shape, conditions: Tensor = None) -> dict[str, Tensor]:
         """

@@ -43,7 +43,7 @@ jobs:
         run: |
           cd ./repo/docsrc
           make clean
-          make docs-sequential
+          make production-docs-sequential
 
       - name: Checkout gh-pages-dev
         uses: actions/checkout@v3

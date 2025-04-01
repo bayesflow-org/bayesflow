@@ -31,7 +31,7 @@ jobs:
         run: |
           cd ./docsrc
           make clean
-          make local
+          make local-docs
       - name: Clean up
         run: |
           cd ./docsrc

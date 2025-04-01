@@ -1,5 +1,5 @@
-.PHONY: docs-sequential
-docs-sequential:
+.PHONY: production-docs-sequential
+production-docs-sequential:
 	@sphinx-polyversion --sequential poly.py
 	@echo 'Copying docs to ../docs'
 	@rm -rf ../docs/*
@@ -7,8 +7,8 @@ docs-sequential:
 	@cp .nojekyll ../docs/.nojekyll
 	@rm -rf _build_polyversion
 
-.PHONY: docs
-docs:
+.PHONY: production-docs
+production-docs:
 	@sphinx-polyversion poly.py
 	@echo 'Copying docs to ../docs'
 	@rm -rf ../docs/*
@@ -16,8 +16,8 @@ docs:
 	@cp .nojekyll ../docs/.nojekyll
 	@rm -rf _build_polyversion
 
-.PHONY: local
-local:
+.PHONY: local-docs
+local-docs:
 	@sphinx-polyversion --local poly.py
 	@echo 'Copying docs to ../docs'
 	@rm -rf ../docs/*

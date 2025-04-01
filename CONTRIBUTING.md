@@ -171,17 +171,17 @@ You can re-build the for your local state with:
 
 ```bash
 cd docsrc
-make clean && make local
+make clean && make local-docs
 # in case of issues, try `make clean-all`
 ```
 
 Note that files ignored by git (i.e., listed in `.gitignore`) are not included in the documentation.
 
-We also provide a multi-version documentation. To generate it, run
+We also provide a multi-version documentation, which renders the branches `main` and `stable-legacy`. To generate it, run
 
 ```bash
 cd docsrc
-make clean && make docs
+make clean && make production-docs
 ```
 
 This will create and cache virtual environments for the build at `docsrc/.docs_venvs`.

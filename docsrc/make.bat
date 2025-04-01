@@ -8,18 +8,18 @@ echo.Warning: This make.bat was not tested. If you encounter errors, please
 echo.refer to Makefile and open an issue.
 
 if "%1" == "" goto help
-if "%1" == "docs" goto docs
-if "%1" == "docs-sequential" goto docssequential
-if "%1" == "local" goto local
+if "%1" == "production-docs" goto docs
+if "%1" == "production-docs-sequential" goto docssequential
+if "%1" == "local-docs" goto localdocs
 if "%1" == "clean" goto clean
 if "%1" == "clean-all" goto cleanall
 if "%1" == "view-docs" goto viewdocs
 
 :help
-echo.Please specify a command (local, docs, docs-sequential, clean, clean-all)
+echo.Please specify a command (local-docs, production-docs, production-docs-sequential, clean, clean-all)
 goto end
 
-:docssequential
+:localdocs
 sphinx-polyversion --local poly.py
 echo.Copying docs to ../docs
 del /q /s ..\docs\*

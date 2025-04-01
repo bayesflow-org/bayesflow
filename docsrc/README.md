@@ -5,9 +5,9 @@
 To install the necessary dependencies, please run `pip install -e .[docs]` in the root directory.
 You can then do the following (inside the `docsrc` directory):
 
-1. `make local`: Generate the docs for the current local state
-2. `make docs`: Build the docs for branches and tags specified in `poly.py` in sequential fashion. Virtual environments are cached (run `make clean-all` to delete)
-3. `make docs-sequential`: As `make docs`, but versions are built sequentially, and the build environment is deleted after each build (see below for details)
+1. `make local-docs`: Generate the docs for the current local state
+2. `make production-docs`: Build the docs for branches and tags specified in `poly.py` in a parallel fashion. Virtual environments are cached (run `make clean-all` to delete)
+3. `make production-docs-sequential`: As `make production-docs`, but versions are built sequentially, and the build environment is deleted after each build (see below for details)
 4. `make view-docs`: Starts a local webserver to display the content of `../docs`
 
 The docs will be copied to `../docs`.
@@ -69,7 +69,7 @@ By setting the `--sequential` flag in the `sphinx-polyversion` call, a
 resource-constrained approach is chosen. Builds are sequential, and the
 virtual environment is deleted after the build. This overcomes the disk space
 limitations in the GitHub actions, at the cost of slightly higher built times.
-This is used in `make docs-sequential`.
+This is used in `make production-docs-sequential`.
 
 ### Internals
 

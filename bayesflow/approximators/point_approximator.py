@@ -14,8 +14,9 @@ class PointApproximator(ContinuousApproximator):
     """
     A workflow for fast amortized point estimation of a conditional distribution.
 
-    The distribution is approximated by point estimators, parameterized by a feed-forward `PointInferenceNetwork`.
-    Conditions can be compressed by an optional `SummaryNetwork` or used directly as input to the inference network.
+    The distribution is approximated by point estimators, parameterized by a feed-forward
+    :class:`bayesflow.networks.PointInferenceNetwork`. Conditions can be compressed by an optional summary network
+    (inheriting from :class:`bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.
     """
 
     def estimate(
@@ -89,7 +90,7 @@ class PointApproximator(ContinuousApproximator):
             for the sampling process.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
-            Currently not supported for `PointApproximator`.
+            Currently not supported for :class:`PointApproximator` .
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
@@ -135,14 +136,13 @@ class PointApproximator(ContinuousApproximator):
         Returns
         -------
         log_prob : np.ndarray or dict[str, np.ndarray]
-            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
-            for all parametric scoring rules.
+            Log-probabilities of the distribution
+            `p(inference_variables | inference_conditions, h(summary_conditions))` for all parametric scoring rules.
 
             If only one parametric score is available, output is an array of log-probabilities.
 
             Output is a dictionary if multiple parametric scores are available.
             Then, each key is the name of a score and values are corresponding log-probabilities.
-
 
             Log-probabilities have shape (num_datasets,).
         """
@@ -167,7 +167,7 @@ class PointApproximator(ContinuousApproximator):
         for score_key, score_val in estimates.items():
             processed[score_key] = {}
             for head_key, estimate in score_val.items():
-                if head_key in self.inference_network.scores[score_key].not_transforming_like_vector_warning:
+                if head_key in self.inference_network.scores[score_key].NOT_TRANSFORMING_LIKE_VECTOR_WARNING:
                     logging.warning(
                         f"Estimate '{score_key}.{head_key}' is marked to not transform like a vector. "
                         f"It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."

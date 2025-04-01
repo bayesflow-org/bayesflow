@@ -16,14 +16,21 @@ class MultivariateNormalScore(ParametricDistributionScore):
     Scores a predicted mean and covariance matrix with the log-score of the probability of the materialized value.
     """
 
+    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("covariance",)
+    """
+    Marks head for covariance matrix as an exception for adapter transformations.
+
+    This variable contains names of prediction heads that should lead to a warning when the adapter is applied
+    in inverse direction to them.
+
+    For more information see :class:`ScoringRule`.
+    """
+
     def __init__(self, dim: int = None, links: dict = None, **kwargs):
         super().__init__(links=links, **kwargs)
 
         self.dim = dim
         self.links = links or {"covariance": PositiveDefinite()}
-
-        # mark head for covariance matrix as an exception for adapter transformations
-        self.not_transforming_like_vector = ["covariance"]
 
         self.config = {"dim": dim}
 

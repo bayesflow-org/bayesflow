@@ -338,7 +338,7 @@ class ContinuousApproximator(Approximator):
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
 
-    def log_prob(self, data: dict[str, np.ndarray], **kwargs) -> np.ndarray:
+    def log_prob(self, data: dict[str, np.ndarray], **kwargs) -> np.ndarray | dict(str, np.ndarray):
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
         `adapter`. Log-probabilities are returned as NumPy arrays.
@@ -358,7 +358,7 @@ class ContinuousApproximator(Approximator):
         data = self.adapter(data, strict=False, stage="inference", **kwargs)
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data, **kwargs)
-        log_prob = keras.ops.convert_to_numpy(log_prob)
+        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
 
         return log_prob
 
@@ -368,7 +368,7 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         **kwargs,
-    ) -> Tensor:
+    ) -> Tensor | dict(str, Tensor):
         if self.summary_network is None:
             if summary_variables is not None:
                 raise ValueError("Cannot use summary variables without a summary network.")

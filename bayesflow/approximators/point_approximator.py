@@ -111,10 +111,46 @@ class PointApproximator(ContinuousApproximator):
         if split:
             raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
             samples = split_arrays(samples, axis=-1)
-        # Squeeze samples if there's only one key-value pair.
-        samples = self._squeeze_samples(samples)
+        # Squeeze sample dictionary if there's only one key-value pair.
+        samples = self._squeeze_parametric_score_major_dict(samples)
 
         return samples
+
+    def log_prob(
+        self,
+        *,
+        data: dict[str, np.ndarray],
+        **kwargs,
+    ) -> np.ndarray | dict[str, np.ndarray]:
+        """
+        Computes the log-probability of given data under the parametric distribution(s) for given input conditions.
+
+        Parameters
+        ----------
+        data : dict[str, np.ndarray]
+            A dictionary mapping variable names to arrays representing the inference conditions and variables.
+        **kwargs
+            Additional keyword arguments passed to underlying processing functions.
+
+        Returns
+        -------
+        log_prob : np.ndarray or dict[str, np.ndarray]
+            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
+            for all parametric scoring rules.
+
+            If only one parametric score is available, output is an array of log-probabilities.
+
+            Output is a dictionary if multiple parametric scores are available.
+            Then, each key is the name of a score and values are corresponding log-probabilities.
+
+
+            Log-probabilities have shape (num_datasets,).
+        """
+        log_prob = super().log_prob(data=data, **kwargs)
+        # Squeeze log probabilities dictionary if there's only one key-value pair.
+        log_prob = self._squeeze_parametric_score_major_dict(log_prob)
+
+        return log_prob
 
     def _prepare_conditions(self, conditions: dict[str, np.ndarray], **kwargs) -> dict[str, Tensor]:
         """Adapts and converts the conditions to tensors."""
@@ -187,8 +223,10 @@ class PointApproximator(ContinuousApproximator):
             }
         return squeezed
 
-    def _squeeze_samples(self, samples: dict[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
-        """Squeezes the samples dictionary to just the value if there is only one key-value pair."""
+    def _squeeze_parametric_score_major_dict(
+        self, samples: dict[str, np.ndarray]
+    ) -> np.ndarray or dict[str, np.ndarray]:
+        """Squeezes the dictionary to just the value if there is only one key-value pair."""
         if len(samples) == 1:
             return next(iter(samples.values()))  # Extract and return the only item's value
         return samples

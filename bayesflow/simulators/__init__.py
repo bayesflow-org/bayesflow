@@ -1,5 +1,5 @@
 """
-This module provides :py:class:`~bayesflow.simulators.Simulator`, :py:function:`~bayesflow.simulators.make_simulator`,
+This module provides :py:class:`~bayesflow.simulators.Simulator`, :py:func:`~bayesflow.simulators.make_simulator`,
 and several other kinds of :py:class:`~bayesflow.simulators.Simulator` implementations, which serve as generative
 mathematical models, or data generating processes, with their primary function being to sample data.
 """

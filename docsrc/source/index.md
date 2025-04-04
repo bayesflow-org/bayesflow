@@ -64,9 +64,7 @@ More tutorials are always welcome! Please consider making a pull request if you 
 
     .. tab-item:: pip
 
-        .. code-block:: bash
-
-            pip install bayesflow
+        The v2 version is not available on PyPI yet, please install from source.
 
     .. tab-item:: source
 

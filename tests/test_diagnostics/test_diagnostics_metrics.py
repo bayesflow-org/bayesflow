@@ -1,5 +1,7 @@
-import bayesflow as bf
+import numpy as np
 import pytest
+
+import bayesflow as bf
 
 
 def num_variables(x: dict):
@@ -71,3 +73,254 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
 
     with pytest.raises(Exception):
         out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models.transpose)
+
+
+# -------------------------------------------------------------------------------------------------------------------- #
+#                                          Unit tests for MMD Hypothesis Test                                          #
+# -------------------------------------------------------------------------------------------------------------------- #
+
+
+def test_compute_hypothesis_test_from_summaries_shapes():
+    """Test the compute_hypothesis_test_from_summaries output shapes."""
+    observed_summaries = np.random.rand(10, 5)
+    reference_summaries = np.random.rand(100, 5)
+    num_null_samples = 50
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    )
+
+    assert isinstance(mmd_observed, float)
+    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_null.shape == (num_null_samples,)
+
+
+def test_compute_hypothesis_test_from_summaries_positive():
+    """Test MMD output values of compute_hypothesis_test_from_summaries are positive."""
+    observed_summaries = np.random.rand(10, 5)
+    reference_summaries = np.random.rand(100, 5)
+    num_null_samples = 50
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    )
+
+    assert mmd_observed >= 0
+    assert np.all(mmd_null >= 0)
+
+
+def test_compute_hypothesis_test_from_summaries_same_distribution():
+    """Test compute_hypothesis_test_from_summaries on same distributions."""
+    observed_summaries = np.random.rand(10, 5)
+    reference_summaries = observed_summaries.copy()
+    num_null_samples = 5
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    )
+
+    assert mmd_observed <= np.quantile(mmd_null, 0.99)
+
+
+def test_compute_hypothesis_test_from_summaries_different_distributions():
+    """Test compute_hypothesis_test_from_summaries on different distributions."""
+    observed_summaries = np.random.rand(10, 5)
+    reference_summaries = np.random.normal(loc=0.5, scale=0.1, size=(100, 5))
+    num_null_samples = 50
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    )
+
+    assert mmd_observed >= np.quantile(mmd_null, 0.68)
+
+
+def test_compute_hypothesis_test_from_summaries_mismatched_shapes():
+    """Test that compute_hypothesis_test_from_summaries raises ValueError for mismatched shapes."""
+    observed_summaries = np.random.rand(10, 5)
+    reference_summaries = np.random.rand(20, 4)
+    num_null_samples = 10
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+            observed_summaries, reference_summaries, num_null_samples
+        )
+
+
+def test_compute_hypothesis_test_from_summaries_reference_smaller_than_observed_summaries():
+    """Test that compute_hypothesis_test_from_summaries raises ValueError if number of reference summaries smaller than
+    observed."""
+    observed_summaries = np.random.rand(20, 5)
+    reference_summaries = np.random.rand(10, 5)
+    num_null_samples = 10
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+            observed_summaries, reference_summaries, num_null_samples
+        )
+
+
+def test_compute_hypothesis_test_from_summaries_num_null_samples_zero():
+    """Test that compute_hypothesis_test_from_summaries raises ValueError if num_null_samples is zero."""
+    observed_summaries = np.random.rand(20, 5)
+    reference_summaries = np.random.rand(10, 5)
+    num_null_samples = 0
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+            observed_summaries, reference_summaries, num_null_samples
+        )
+
+
+def test_compute_hypothesis_test_from_summaries_num_null_samples_negative():
+    """Test that compute_hypothesis_test_from_summaries raises ValueError if num_null_samples is negative."""
+    observed_summaries = np.random.rand(20, 5)
+    reference_summaries = np.random.rand(10, 5)
+    num_null_samples = -1
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.compute_mmd_hypothesis_test_from_summaries(
+            observed_summaries, reference_summaries, num_null_samples
+        )
+
+
+@pytest.mark.parametrize(
+    "summary_network, is_true_approximator",
+    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
+)
+def test_compute_hypothesis_test_shapes(summary_network, is_true_approximator, monkeypatch):
+    """Test the compute_mmd_hypothesis_test output shapes."""
+    observed_data = np.random.rand(10, 5)
+    reference_data = np.random.rand(100, 5)
+    num_null_samples = 50
+
+    if is_true_approximator:
+        mock_approximator = bf.approximators.ContinuousApproximator(
+            adapter=None,
+            inference_network=None,
+            summary_network=None,
+        )
+        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
+    else:
+        mock_approximator = bf.networks.SummaryNetwork()
+        monkeypatch.setattr(mock_approximator, "call", summary_network)
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test(
+        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    )
+
+    assert isinstance(mmd_observed, float)
+    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_null.shape == (num_null_samples,)
+
+
+@pytest.mark.parametrize(
+    "summary_network, is_true_approximator",
+    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
+)
+def test_compute_hypothesis_test_positive(summary_network, is_true_approximator, monkeypatch):
+    """Test MMD output values of compute_hypothesis_test are positive."""
+    observed_data = np.random.rand(10, 5)
+    reference_data = np.random.rand(100, 5)
+    num_null_samples = 50
+
+    if is_true_approximator:
+        mock_approximator = bf.approximators.ContinuousApproximator(
+            adapter=None,
+            inference_network=None,
+            summary_network=None,
+        )
+        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
+    else:
+        mock_approximator = bf.networks.SummaryNetwork()
+        monkeypatch.setattr(mock_approximator, "call", summary_network)
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test(
+        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    )
+
+    assert mmd_observed >= 0
+    assert np.all(mmd_null >= 0)
+
+
+@pytest.mark.parametrize(
+    "summary_network, is_true_approximator",
+    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
+)
+def test_compute_hypothesis_test_same_distribution(summary_network, is_true_approximator, monkeypatch):
+    """Test compute_hypothesis_test on same distributions."""
+    observed_data = np.random.rand(10, 5)
+    reference_data = observed_data.copy()
+    num_null_samples = 5
+
+    if is_true_approximator:
+        mock_approximator = bf.approximators.ContinuousApproximator(
+            adapter=None,
+            inference_network=None,
+            summary_network=None,
+        )
+        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
+    else:
+        mock_approximator = bf.networks.SummaryNetwork()
+        monkeypatch.setattr(mock_approximator, "call", summary_network)
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test(
+        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    )
+
+    assert mmd_observed <= np.quantile(mmd_null, 0.99)
+
+
+@pytest.mark.parametrize(
+    "summary_network, is_true_approximator",
+    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
+)
+def test_compute_hypothesis_test_different_distributions(summary_network, is_true_approximator, monkeypatch):
+    """Test compute_hypothesis_test on different distributions."""
+    observed_data = np.random.rand(10, 5)
+    reference_data = np.random.normal(loc=0.5, scale=0.1, size=(100, 5))
+    num_null_samples = 50
+
+    if is_true_approximator:
+        mock_approximator = bf.approximators.ContinuousApproximator(
+            adapter=None,
+            inference_network=None,
+            summary_network=None,
+        )
+        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
+    else:
+        mock_approximator = bf.networks.SummaryNetwork()
+        monkeypatch.setattr(mock_approximator, "call", summary_network)
+
+    mmd_observed, mmd_null = bf.diagnostics.metrics.compute_mmd_hypothesis_test(
+        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    )
+
+    assert mmd_observed >= np.quantile(mmd_null, 0.68)
+
+
+@pytest.mark.parametrize(
+    "summary_network, is_true_approximator",
+    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
+)
+def test_compute_hypothesis_test_mismatched_shapes(summary_network, is_true_approximator, monkeypatch):
+    """Test that compute_hypothesis_test raises ValueError for mismatched shapes."""
+    observed_data = np.random.rand(10, 5)
+    reference_data = np.random.rand(20, 4)
+    num_null_samples = 10
+
+    if is_true_approximator:
+        mock_approximator = bf.approximators.ContinuousApproximator(
+            adapter=None,
+            inference_network=None,
+            summary_network=None,
+        )
+        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
+    else:
+        mock_approximator = bf.networks.SummaryNetwork()
+        monkeypatch.setattr(mock_approximator, "call", summary_network)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.compute_mmd_hypothesis_test(
+            observed_data, reference_data, mock_approximator, num_null_samples
+        )

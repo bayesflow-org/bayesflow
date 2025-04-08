@@ -738,8 +738,14 @@ class BasicWorkflow(Workflow):
             metric evolution over epochs.
         """
 
+        import multiprocessing as mp
+
         dataset = OnlineDataset(
-            simulator=self.simulator, batch_size=batch_size, num_batches=num_batches_per_epoch, adapter=self.adapter
+            simulator=self.simulator,
+            batch_size=batch_size,
+            num_batches=num_batches_per_epoch,
+            adapter=self.adapter,
+            workers=mp.cpu_count(),
         )
 
         return self._fit(

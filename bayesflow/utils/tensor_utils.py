@@ -202,7 +202,9 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
 
             out_int32 = len(sorted_sequence) <= np.iinfo(np.int32).max
 
-            indices = torch.searchsorted(sorted_sequence, values, side=side, out_int32=out_int32)
+            indices = torch.searchsorted(
+                sorted_sequence.contiguous(), values.contiguous(), side=side, out_int32=out_int32
+            )
 
             return indices
         case _:

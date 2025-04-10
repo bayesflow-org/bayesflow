@@ -97,8 +97,12 @@ class Adapter(MutableSequence[Transform]):
             The transformed data.
         """
         data = data.copy()
-        log_det_jac = {}
+        if not jacobian:
+            for transform in self.transforms:
+                data = transform(data, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in self.transforms:
             log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
             data = transform(data, **kwargs)

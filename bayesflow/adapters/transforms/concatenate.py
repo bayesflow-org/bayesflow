@@ -115,3 +115,19 @@ class Concatenate(Transform):
             result += f", axis={self.axis}"
 
         return result
+
+    def log_det_jac(
+        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], *, strict: bool = False, **kwargs
+    ) -> dict[str, np.ndarray]:
+        # copy to avoid side effects
+        log_det_jac = log_det_jac.copy()
+
+        required_keys = set(self.keys)
+        available_keys = set(log_det_jac.keys())
+        common_keys = available_keys & required_keys
+
+        parts = [log_det_jac.pop(key) for key in common_keys]
+
+        log_det_jac[self.into] = sum(parts)
+
+        return log_det_jac

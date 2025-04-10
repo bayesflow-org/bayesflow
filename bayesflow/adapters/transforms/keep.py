@@ -57,3 +57,6 @@ class Keep(Transform):
 
     def extra_repr(self) -> str:
         return "[" + ", ".join(map(repr, self.keys)) + "]"
+
+    def log_det_jac(self, data: dict[str, any], log_det_jac: dict[str, any], **kwargs):
+        return self.forward(data=log_det_jac)

@@ -417,12 +417,12 @@ class ContinuousApproximator(Approximator):
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
-        data = self.adapter(data, strict=False, stage="inference", **kwargs)
+        data, jacobian = self.adapter(data, strict=False, stage="inference", jacobian=True, **kwargs)
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data, **kwargs)
         log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
 
-        return log_prob
+        return log_prob + jacobian["inference_variables"]
 
     def _log_prob(
         self,

@@ -21,4 +21,5 @@ class Scale(ElementwiseTransform):
 
     def log_det_jac(self, data: np.ndarray, **kwargs) -> np.ndarray:
         ldj = np.log(np.abs(self.scale))
-        return np.repeat(ldj, data.shape[0])
+        ldj = np.full(data.shape, ldj)
+        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

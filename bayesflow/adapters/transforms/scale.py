@@ -18,3 +18,7 @@ class Scale(ElementwiseTransform):
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         return data / self.scale
+
+    def log_det_jac(self, data: np.ndarray, **kwargs) -> np.ndarray:
+        ldj = np.log(np.abs(self.scale))
+        return np.repeat(ldj, data.shape[0])

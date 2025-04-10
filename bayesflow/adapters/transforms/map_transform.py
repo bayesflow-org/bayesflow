@@ -41,12 +41,8 @@ class MapTransform(Transform):
     def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()
 
-        required_keys = set(self.transform_map.keys())
-        available_keys = set(data.keys())
-        missing_keys = required_keys - available_keys
-
-        if strict and missing_keys:
-            raise KeyError(f"Missing keys: {missing_keys!r}")
+        if strict:
+            self._check_keys(data)
 
         for key, transform in self.transform_map.items():
             if key in data:
@@ -57,15 +53,39 @@ class MapTransform(Transform):
     def inverse(self, data: dict[str, np.ndarray], *, strict: bool = False, **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()
 
-        required_keys = set(self.transform_map.keys())
-        available_keys = set(data.keys())
-        missing_keys = required_keys - available_keys
-
-        if strict and missing_keys:
-            raise KeyError(f"Missing keys: {missing_keys!r}")
+        if strict:
+            self._check_keys(data)
 
         for key, transform in self.transform_map.items():
             if key in data:
                 data[key] = transform.inverse(data[key], **kwargs)
 
         return data
+
+    def log_det_jac(
+        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], *, strict: bool = True, **kwargs
+    ) -> dict[str, np.ndarray]:
+        data = data.copy()
+
+        if strict:
+            self._check_keys(data)
+
+        for key, transform in self.transform_map.items():
+            if key in data:
+                ldj = transform.log_det_jac(data[key], **kwargs)
+            if ldj is None:
+                continue
+            elif key in log_det_jac:
+                log_det_jac[key] += ldj
+            else:
+                log_det_jac[key] = ldj
+
+        return log_det_jac
+
+    def _check_keys(self, data: dict[str, np.ndarray]):
+        required_keys = set(self.transform_map.keys())
+        available_keys = set(data.keys())
+        missing_keys = required_keys - available_keys
+
+        if missing_keys:
+            raise KeyError(f"Missing keys: {missing_keys!r}")

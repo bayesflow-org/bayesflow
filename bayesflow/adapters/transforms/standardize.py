@@ -120,3 +120,10 @@ class Standardize(ElementwiseTransform):
         std = np.broadcast_to(self.std, data.shape)
 
         return data * std + mean
+
+    def log_det_jac(self, data, **kwargs) -> np.ndarray:
+        if self.std is None:
+            return None
+        std = np.broadcast_to(self.std, data.shape)
+        ldj = np.log(np.abs(std))
+        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

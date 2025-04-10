@@ -11,6 +11,7 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    :numbered:
 
    _examples/Linear_Regression_Starter.ipynb
+   _examples/From_BayesFlow_1.1_to_2.0.ipynb
    _examples/Two_Moons_Starter.ipynb
    _examples/SIR_Posterior_Estimation.ipynb
    _examples/Bayesian_Experimental_Design.ipynb

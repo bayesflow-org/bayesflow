@@ -58,6 +58,7 @@ For an in-depth exposition, check out our walkthrough notebooks below.
 5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
 7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
+8. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

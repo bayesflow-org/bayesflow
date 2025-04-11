@@ -16,14 +16,22 @@ except ImportError:
 
 @serializable("bayesflow.wrappers")
 class MambaBlock(keras.Layer):
+    """
+    Wraps the original Mamba module from, with added functionality for bidirectional processing:
+    https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba_simple.py
+
+    Copyright (c) 2023, Tri Dao, Albert Gu.
+    """
+
     def __init__(
         self,
         state_dim: int,
         conv_dim: int,
         feature_dim: int = 16,
-        expand: int = 1,
-        dt_min=0.001,
-        dt_max=0.1,
+        expand: int = 2,
+        bidirectional: bool = True,
+        dt_min: float = 0.001,
+        dt_max: float = 0.1,
         device: str = "cuda",
         **kwargs,
     ):
@@ -58,6 +66,8 @@ class MambaBlock(keras.Layer):
         if keras.backend.backend() != "torch":
             raise EnvironmentError("Mamba is only available using torch backend.")
 
+        self.bidirectional = bidirectional
+
         self.mamba = Mamba(
             d_model=feature_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max
         ).to(device)
@@ -70,6 +80,13 @@ class MambaBlock(keras.Layer):
         self.layer_norm = keras.layers.LayerNormalization()
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
+        out_forward = self._call(x, training=training, **kwargs)
+        if self.bidirectional:
+            out_backward = self._call(keras.ops.flip(x, axis=1), training=training, **kwargs)
+            return keras.ops.concatenate((out_forward, out_backward), axis=-1)
+        return out_forward
+
+    def _call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         x = self.input_projector(x)
         h = self.mamba(x)
         out = self.layer_norm(h + x, training=training, **kwargs)
@@ -84,7 +101,7 @@ class MambaBlock(keras.Layer):
 @serializable("bayesflow.wrappers")
 class MambaSSM(SummaryNetwork):
     """
-    Wraps the original Mamba module from:
+    Wraps a sequence of Mamba modules using the simple Mamba module from:
     https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba_simple.py
 
     Copyright (c) 2023, Tri Dao, Albert Gu.
@@ -94,9 +111,10 @@ class MambaSSM(SummaryNetwork):
         self,
         summary_dim: int = 16,
         feature_dims: Sequence[int] = (64, 64),
-        state_dims: Sequence[int] = (128, 128),
+        state_dims: Sequence[int] = (64, 64),
         conv_dims: Sequence[int] = (64, 64),
         expand_dims: Sequence[int] = (2, 2),
+        bidirectional: bool = True,
         dt_min: float = 0.001,
         dt_max: float = 0.1,
         dropout: float = 0.05,
@@ -143,7 +161,8 @@ class MambaSSM(SummaryNetwork):
 
         self.mamba_blocks = []
         for feature_dim, state_dim, conv_dim, expand in zip(feature_dims, state_dims, conv_dims, expand_dims):
-            self.mamba_blocks.append(MambaBlock(feature_dim, state_dim, conv_dim, expand, dt_min, dt_max, device))
+            mamba = MambaBlock(feature_dim, state_dim, conv_dim, expand, bidirectional, dt_min, dt_max, device)
+            self.mamba_blocks.append(mamba)
 
         self.pooling_layer = keras.layers.GlobalAveragePooling1D()
         self.dropout = keras.layers.Dropout(dropout)

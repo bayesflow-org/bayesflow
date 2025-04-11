@@ -5,106 +5,23 @@ from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.networks.summary_network import SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import logging
+from bayesflow.utils import keras_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 
-try:
-    from mamba_ssm import Mamba
-except ImportError:
-    logging.error("Mamba class is not available. Please, install the mamba-ssm library via `pip install mamba-ssm`.")
+from .mamba_block import MambaBlock
 
 
 @serializable("bayesflow.wrappers")
-class MambaBlock(keras.Layer):
-    """
-    Wraps the original Mamba module from, with added functionality for bidirectional processing:
-    https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba_simple.py
-
-    Copyright (c) 2023, Tri Dao, Albert Gu.
-    """
-
-    def __init__(
-        self,
-        state_dim: int,
-        conv_dim: int,
-        feature_dim: int = 16,
-        expand: int = 2,
-        bidirectional: bool = True,
-        dt_min: float = 0.001,
-        dt_max: float = 0.1,
-        device: str = "cuda",
-        **kwargs,
-    ):
-        """
-        A Keras layer implementing a Mamba-based sequence processing block.
-
-        This layer applies a Mamba model for sequence modeling, preceded by a
-        convolutional projection and followed by layer normalization.
-
-        Parameters
-        ----------
-        state_dim : int
-            The dimension of the state space in the Mamba model.
-        conv_dim : int
-            The dimension of the convolutional layer used in Mamba.
-        feature_dim : int, optional
-            The feature dimension for input projection and Mamba processing (default is 16).
-        expand : int, optional
-            Expansion factor for Mamba's internal dimension (default is 1).
-        dt_min : float, optional
-            Minimum delta time for Mamba (default is 0.001).
-        dt_max : float, optional
-            Maximum delta time for Mamba (default is 0.1).
-        device : str, optional
-            The device to which the Mamba model is moved, typically "cuda" or "cpu" (default is "cuda").
-        **kwargs : dict
-            Additional keyword arguments passed to the `keras.layers.Layer` initializer.
-        """
-
-        super().__init__(**kwargs)
-
-        if keras.backend.backend() != "torch":
-            raise EnvironmentError("Mamba is only available using torch backend.")
-
-        self.bidirectional = bidirectional
-
-        self.mamba = Mamba(
-            d_model=feature_dim, d_state=state_dim, d_conv=conv_dim, expand=expand, dt_min=dt_min, dt_max=dt_max
-        ).to(device)
-
-        self.input_projector = keras.layers.Conv1D(
-            feature_dim,
-            kernel_size=1,
-            strides=1,
-        )
-        self.layer_norm = keras.layers.LayerNormalization()
-
-    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
-        out_forward = self._call(x, training=training, **kwargs)
-        if self.bidirectional:
-            out_backward = self._call(keras.ops.flip(x, axis=1), training=training, **kwargs)
-            return keras.ops.concatenate((out_forward, out_backward), axis=-1)
-        return out_forward
-
-    def _call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
-        x = self.input_projector(x)
-        h = self.mamba(x)
-        out = self.layer_norm(h + x, training=training, **kwargs)
-        return out
-
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)
-        self.call(keras.ops.zeros(input_shape))
-
-
-@serializable("bayesflow.wrappers")
-class MambaSSM(SummaryNetwork):
+class Mamba(SummaryNetwork):
     """
     Wraps a sequence of Mamba modules using the simple Mamba module from:
     https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba_simple.py
 
     Copyright (c) 2023, Tri Dao, Albert Gu.
+
+    Example usage in a BayesFlow workflow as a summary network:
+
+    `summary_net = bayesflow.wrappers.Mamba(summary_dim=32)`
     """
 
     def __init__(
@@ -150,11 +67,11 @@ class MambaSSM(SummaryNetwork):
             Dropout probability; dropout is applied to the pooled summary vector.
         device : str, optional
             The computing device. Currently, only "cuda" is supported (default is "cuda").
-        **kwargs : dict
+        **kwargs :
             Additional keyword arguments passed to the `SummaryNetwork` parent class.
         """
 
-        super().__init__(**kwargs)
+        super().__init__(**keras_kwargs(kwargs))
 
         if device != "cuda":
             raise NotImplementedError("MambaSSM only supports cuda as `device`.")

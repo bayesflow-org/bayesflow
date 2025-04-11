@@ -25,6 +25,7 @@ def adapter():
         .one_hot("o1", 10)
         .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "t1", "t2", "o1"])
         .rename("o1", "o2")
+        .subsample_array("s3", sample_size = 3, axis = 0)
     )
 
     return d
@@ -47,4 +48,5 @@ def random_data():
         "d1": np.random.standard_normal(size=(32, 2)),
         "d2": np.random.standard_normal(size=(32, 2)),
         "o1": np.random.randint(0, 9, size=(32, 2)),
+        "s3": np.random.standard_normal(size=(32,2))
     }

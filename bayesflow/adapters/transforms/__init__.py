@@ -19,6 +19,7 @@ from .standardize import Standardize
 from .to_array import ToArray
 from .transform import Transform
 from .subsample_array import SubsampleArray
+from .take import Take
 
 from ...utils._docs import _add_imports_to_all
 

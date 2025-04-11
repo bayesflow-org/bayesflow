@@ -27,7 +27,8 @@ from .transforms import (
     Standardize,
     ToArray,
     Transform,
-    SubsampleArray
+    SubsampleArray,
+    Take
 )
 from .transforms.filter_transform import Predicate
 
@@ -640,7 +641,7 @@ class Adapter(MutableSequence[Transform]):
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
-       """
+        """
         Append a :py:class:`~transforms.SubsampleArray` transform to the adapter.
 
         Parameters
@@ -664,3 +665,35 @@ class Adapter(MutableSequence[Transform]):
         )
         self.transforms.append(transform)
         return self
+    
+    def take(self,
+        *,
+        predicate: Predicate = None,
+        include: str | Sequence[str] = None,
+        exclude: str | Sequence[str] = None,
+        **kwargs,):
+        """
+        Append a :py:class:`~transforms.Take` transform to the adapter.
+
+        Parameters
+        ----------
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform. """
+        transform = FilterTransform(
+            transform_constructor=Take,
+            predicate=predicate,
+            include=include,
+            exclude=exclude,
+            **kwargs,
+        )
+        self.transforms.append(transform)
+        return self
+    
+    
+

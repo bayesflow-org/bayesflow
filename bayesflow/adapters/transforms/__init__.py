@@ -15,6 +15,7 @@ from .numpy_transform import NumpyTransform
 from .one_hot import OneHot
 from .rename import Rename
 from .scale import Scale
+from .serializable_custom_transform import SerializableCustomTransform
 from .shift import Shift
 from .sqrt import Sqrt
 from .standardize import Standardize

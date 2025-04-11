@@ -5,6 +5,11 @@ import pytest
 @pytest.fixture()
 def adapter():
     from bayesflow.adapters import Adapter
+    import keras
+
+    @keras.saving.register_keras_serializable("custom")
+    def serializable_fn(x):
+        return x
 
     d = (
         Adapter()
@@ -20,6 +25,7 @@ def adapter():
         .constrain("p2", lower=0)
         .apply(include="p2", forward="exp", inverse="log")
         .apply(include="p2", forward="log1p")
+        .apply_serializable(include="x", forward=serializable_fn, inverse=serializable_fn)
         .scale("x", by=[-1, 2])
         .shift("x", by=2)
         .standardize(exclude=["t1", "t2", "o1"])

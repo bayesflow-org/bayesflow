@@ -1,4 +1,4 @@
-from collections.abc import MutableSequence, Sequence, Mapping
+from collections.abc import Callable, MutableSequence, Sequence, Mapping
 
 import numpy as np
 
@@ -24,6 +24,7 @@ from .transforms import (
     NumpyTransform,
     OneHot,
     Rename,
+    SerializableCustomTransform,
     Sqrt,
     Standardize,
     ToArray,
@@ -264,6 +265,88 @@ class Adapter(MutableSequence[Transform]):
         """
         transform = FilterTransform(
             transform_constructor=NumpyTransform,
+            predicate=predicate,
+            include=include,
+            exclude=exclude,
+            forward=forward,
+            inverse=inverse,
+            **kwargs,
+        )
+        self.transforms.append(transform)
+        return self
+
+    def apply_serializable(
+        self,
+        include: str | Sequence[str] = None,
+        *,
+        forward: Callable[[np.ndarray, ...], np.ndarray],
+        inverse: Callable[[np.ndarray, ...], np.ndarray],
+        predicate: Predicate = None,
+        exclude: str | Sequence[str] = None,
+        **kwargs,
+    ):
+        """Append a :py:class:`~transforms.SerializableCustomTransform` to the adapter.
+
+        Parameters
+        ----------
+        forward : function, no lambda
+            Registered serializable function to transform the data in the forward pass.
+            For the adapter to be serializable, this function has to be serializable
+            as well (see Notes). Therefore, only proper functions and no lambda
+            functions can be used here.
+        inverse : function, no lambda
+            Registered serializable function to transform the data in the inverse pass.
+            For the adapter to be serializable, this function has to be serializable
+            as well (see Notes). Therefore, only proper functions and no lambda
+            functions can be used here.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform.
+
+        Raises
+        ------
+        ValueError
+            When the provided functions are not registered serializable functions.
+
+        Notes
+        -----
+        Important: The forward and inverse functions have to be registered with Keras.
+        To do so, use the `@keras.saving.register_keras_serializable` decorator.
+        They must also be registered (and identical) when loading the adapter
+        at a later point in time.
+
+        Examples
+        --------
+
+        The example below shows how to use the
+        `keras.saving.register_keras_serializable` decorator to
+        register functions with Keras. Note that for this simple
+        example, one usually would use the simpler :py:meth:`apply`
+        method.
+
+        >>> import keras
+        >>>
+        >>> @keras.saving.register_keras_serializable("custom")
+        >>> def forward_fn(x):
+        >>>     return x**2
+        >>>
+        >>> @keras.saving.register_keras_serializable("custom")
+        >>> def inverse_fn(x):
+        >>>     return x**0.5
+        >>>
+        >>> adapter = bf.Adapter().apply_serializable(
+        >>>     "x",
+        >>>     forward=forward_fn,
+        >>>     inverse=inverse_fn,
+        >>> )
+        """
+        transform = FilterTransform(
+            transform_constructor=SerializableCustomTransform,
             predicate=predicate,
             include=include,
             exclude=exclude,

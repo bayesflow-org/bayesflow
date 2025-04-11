@@ -1,1 +1,1 @@
-from mamba import Mamba
+from .mamba import Mamba

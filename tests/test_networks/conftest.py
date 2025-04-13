@@ -18,6 +18,23 @@ def subnet(request):
 
 
 @pytest.fixture()
+def diffusion_model():
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(
+        subnet_kwargs={"widths": [64, 64]},
+        integrate_kwargs={"method": "rk45", "steps": 100},
+    )
+
+
+@pytest.fixture()
+def diffusion_model_subnet(subnet):
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(subnet=subnet)
+
+
+@pytest.fixture()
 def flow_matching():
     from bayesflow.networks import FlowMatching
 
@@ -94,7 +111,8 @@ def typical_point_inference_network_subnet(subnet):
 
 
 @pytest.fixture(
-    params=["typical_point_inference_network", "coupling_flow", "flow_matching", "free_form_flow"], scope="function"
+    params=["typical_point_inference_network", "coupling_flow", "flow_matching", "diffusion_model", "free_form_flow"],
+    scope="function",
 )
 def inference_network(request):
     return request.getfixturevalue(request.param)
@@ -105,6 +123,7 @@ def inference_network(request):
         "typical_point_inference_network_subnet",
         "coupling_flow_subnet",
         "flow_matching_subnet",
+        "diffusion_model_subnet",
         "free_form_flow_subnet",
     ],
     scope="function",
@@ -113,7 +132,7 @@ def inference_network_subnet(request):
     return request.getfixturevalue(request.param)
 
 
-@pytest.fixture(params=["coupling_flow", "flow_matching", "free_form_flow"], scope="function")
+@pytest.fixture(params=["coupling_flow", "flow_matching", "diffusion_model", "free_form_flow"], scope="function")
 def generative_inference_network(request):
     return request.getfixturevalue(request.param)
 

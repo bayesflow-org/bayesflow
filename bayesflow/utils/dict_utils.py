@@ -222,7 +222,7 @@ def make_variable_array(
     else:
         raise TypeError(f"Only dicts and tensors are supported as arguments, but your estimates are of type {type(x)}")
 
-    if len(variable_names) == x.shape[-1]:
+    if len(variable_names) != x.shape[-1]:
         raise ValueError("Length of 'variable_names' should be the same as the number of variables.")
 
     if variable_keys is None:

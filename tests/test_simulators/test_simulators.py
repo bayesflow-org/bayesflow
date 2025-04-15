@@ -2,8 +2,8 @@ import keras
 import numpy as np
 
 
-def test_two_moons(simulator, batch_size):
-    samples = simulator.sample((batch_size,))
+def test_two_moons(two_moons_simulator, batch_size):
+    samples = two_moons_simulator.sample((batch_size,))
 
     assert isinstance(samples, dict)
     assert list(samples.keys()) == ["parameters", "observables"]
@@ -11,6 +11,14 @@ def test_two_moons(simulator, batch_size):
 
     assert samples["parameters"].shape == (batch_size, 2)
     assert samples["observables"].shape == (batch_size, 2)
+
+
+def test_gaussian_linear(gaussian_linear_simulator, batch_size):
+    samples = gaussian_linear_simulator.sample((batch_size,))
+
+    # test n_obs respected if applicable
+    if hasattr(gaussian_linear_simulator, "n_obs") and isinstance(gaussian_linear_simulator.n_obs, int):
+        assert samples["observables"].shape[1] == gaussian_linear_simulator.n_obs
 
 
 def test_sample(simulator, batch_size):

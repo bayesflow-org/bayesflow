@@ -755,3 +755,10 @@ class Adapter(MutableSequence[Transform]):
         )
         self.transforms.append(transform)
         return self
+
+    def to_dict(self):
+        from .transforms import ToDict
+
+        transform = ToDict()
+        self.transforms.append(transform)
+        return self

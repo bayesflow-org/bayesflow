@@ -109,7 +109,9 @@ class Adapter(MutableSequence[Transform]):
 
         return data, log_det_jac
 
-    def inverse(self, data: dict[str, np.ndarray], jacobian: bool = False, **kwargs) -> dict[str, any]:
+    def inverse(
+        self, data: dict[str, np.ndarray], jacobian: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
@@ -125,13 +127,17 @@ class Adapter(MutableSequence[Transform]):
             The transformed data.
         """
         data = data.copy()
-        if jacobian:
-            data = self._init_jacobian(data)
+        if not jacobian:
+            for transform in reversed(self.transforms):
+                data = transform(data, inverse=True, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in reversed(self.transforms):
-            data = transform(data, inverse=True, jacobian=jacobian, **kwargs)
+            data = transform(data, inverse=True, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
 
-        return data
+        return data, log_det_jac
 
     def __call__(self, data: Mapping[str, any], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
         """Apply the transforms in the given direction.

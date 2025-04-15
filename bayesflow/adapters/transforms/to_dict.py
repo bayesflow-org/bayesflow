@@ -23,7 +23,7 @@ class ToDict(Transform):
         data = dict(data)
 
         for key, value in data.items():
-            if isinstance(data[key], pd.Series):
+            if isinstance(value, pd.Series):
                 if value.dtype == "object":
                     value = value.astype("category")
 

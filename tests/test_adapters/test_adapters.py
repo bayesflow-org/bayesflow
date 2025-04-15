@@ -5,6 +5,8 @@ from keras.saving import (
 import numpy as np
 import pytest
 
+import bayesflow as bf
+
 
 def test_cycle_consistency(adapter, random_data):
     processed = adapter(random_data)
@@ -192,3 +194,41 @@ def test_split_transform(adapter, random_data):
 
     assert "split_2" in processed
     assert processed["split_2"].shape == target_shape
+
+
+def test_to_dict_transform():
+    import pandas as pd
+
+    data = {
+        "int32": [1, 2, 3, 4, 5],
+        "int64": [1, 2, 3, 4, 5],
+        "float32": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "float64": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "object": ["a", "b", "c", "d", "e"],
+        "category": ["one", "two", "three", "four", "five"],
+    }
+
+    df = pd.DataFrame(data)
+    df["int32"] = df["int32"].astype("int32")
+    df["int64"] = df["int64"].astype("int64")
+    df["float32"] = df["float32"].astype("float32")
+    df["float64"] = df["float64"].astype("float64")
+    df["object"] = df["object"].astype("object")
+    df["category"] = df["category"].astype("category")
+
+    ad = bf.Adapter().to_dict()
+
+    # drop one element to simulate non-complete data
+    batch = df.iloc[:-1]
+
+    processed = ad(batch)
+
+    assert isinstance(processed, dict)
+    assert list(processed.keys()) == ["int32", "int64", "float32", "float64", "object", "category"]
+
+    for key, value in processed.items():
+        assert isinstance(value, np.ndarray)
+        assert value.dtype == "float32"
+
+    # category should have 5 one-hot categories, even though it was only passed 4
+    assert processed["category"].shape[-1] == 5

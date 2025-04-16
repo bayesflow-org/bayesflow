@@ -25,5 +25,5 @@ class ElementwiseTransform:
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         raise NotImplementedError
 
-    def log_det_jac(self, data: np.ndarray, **kwargs) -> np.ndarray | None:
+    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray | None:
         return None

@@ -37,6 +37,6 @@ class Transform:
         return ""
 
     def log_det_jac(
-        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], **kwargs
+        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], inverse: bool = False, **kwargs
     ) -> dict[str, np.ndarray]:
         return log_det_jac

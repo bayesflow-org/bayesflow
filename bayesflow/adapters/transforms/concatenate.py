@@ -117,10 +117,25 @@ class Concatenate(Transform):
         return result
 
     def log_det_jac(
-        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], *, strict: bool = False, **kwargs
+        self,
+        data: dict[str, np.ndarray],
+        log_det_jac: dict[str, np.ndarray],
+        *,
+        strict: bool = False,
+        inverse: bool = False,
+        **kwargs,
     ) -> dict[str, np.ndarray]:
         # copy to avoid side effects
         log_det_jac = log_det_jac.copy()
+
+        if inverse:
+            if log_det_jac.get(self.into) is not None:
+                raise ValueError(
+                    "Cannot obtain an inverse jacobian of concatenation. "
+                    "Transform your variables before you concatenate."
+                )
+
+            return log_det_jac
 
         required_keys = set(self.keys)
         available_keys = set(log_det_jac.keys())

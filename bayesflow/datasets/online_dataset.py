@@ -16,6 +16,8 @@ class OnlineDataset(keras.utils.PyDataset):
         batch_size: int,
         num_batches: int,
         adapter: Adapter | None,
+        *,
+        stage: str = "training",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -24,12 +26,13 @@ class OnlineDataset(keras.utils.PyDataset):
         self._num_batches = num_batches
         self.adapter = adapter
         self.simulator = simulator
+        self.stage = stage
 
     def __getitem__(self, item: int) -> dict[str, np.ndarray]:
         batch = self.simulator.sample((self.batch_size,))
 
         if self.adapter is not None:
-            batch = self.adapter(batch)
+            batch = self.adapter(batch, stage=self.stage)
 
         return batch
 

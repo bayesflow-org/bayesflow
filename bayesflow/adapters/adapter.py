@@ -79,13 +79,15 @@ class Adapter(MutableSequence[Transform]):
     def get_config(self) -> dict:
         return {"transforms": serialize(self.transforms)}
 
-    def forward(self, data: dict[str, any], **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data: dict[str, any], *, stage: str = "inference", **kwargs) -> dict[str, np.ndarray]:
         """Apply the transforms in the forward direction.
 
         Parameters
         ----------
         data : dict
             The data to be transformed.
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -97,17 +99,19 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
 
         for transform in self.transforms:
-            data = transform(data, **kwargs)
+            data = transform(data, stage=stage, **kwargs)
 
         return data
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, any]:
+    def inverse(self, data: dict[str, np.ndarray], *, stage: str = "inference", **kwargs) -> dict[str, any]:
         """Apply the transforms in the inverse direction.
 
         Parameters
         ----------
         data : dict
             The data to be transformed.
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -119,11 +123,13 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
 
         for transform in reversed(self.transforms):
-            data = transform(data, inverse=True, **kwargs)
+            data = transform(data, stage=stage, inverse=True, **kwargs)
 
         return data
 
-    def __call__(self, data: Mapping[str, any], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
+    def __call__(
+        self, data: Mapping[str, any], *, inverse: bool = False, stage="inference", **kwargs
+    ) -> dict[str, np.ndarray]:
         """Apply the transforms in the given direction.
 
         Parameters
@@ -132,6 +138,8 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
         **kwargs
             Additional keyword arguments passed to each transform.
 
@@ -141,9 +149,9 @@ class Adapter(MutableSequence[Transform]):
             The transformed data.
         """
         if inverse:
-            return self.inverse(data, **kwargs)
+            return self.inverse(data, stage=stage, **kwargs)
 
-        return self.forward(data, **kwargs)
+        return self.forward(data, stage=stage, **kwargs)
 
     def __repr__(self):
         result = ""

@@ -96,7 +96,7 @@ class Standardize(ElementwiseTransform):
             "momentum": serialize(self.momentum),
         }
 
-    def forward(self, data: np.ndarray, stage: str = "training", **kwargs) -> np.ndarray:
+    def forward(self, data: np.ndarray, stage: str = "inference", **kwargs) -> np.ndarray:
         if self.axis is None:
             self.axis = tuple(range(data.ndim - 1))
 

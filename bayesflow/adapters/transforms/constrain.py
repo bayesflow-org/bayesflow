@@ -202,6 +202,8 @@ class Constrain(ElementwiseTransform):
         # inverse means network space -> data space, so constrain the data
         return self.constrain(data)
 
-    def log_det_jac(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
         ldj = self.ldj(data)
+        if inverse:
+            ldj = -ldj
         return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

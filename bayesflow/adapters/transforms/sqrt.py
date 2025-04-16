@@ -23,6 +23,8 @@ class Sqrt(ElementwiseTransform):
     def get_config(self) -> dict:
         return {}
 
-    def log_det_jac(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
         ldj = -0.5 * np.log(data) + 0.5
+        if inverse:
+            ldj = -ldj
         return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

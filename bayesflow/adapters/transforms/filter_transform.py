@@ -207,4 +207,4 @@ class FilterTransform(Transform):
                 else:
                     log_det_jac[key] = ldj
 
-        return data
+        return log_det_jac

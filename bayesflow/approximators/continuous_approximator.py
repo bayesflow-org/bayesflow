@@ -422,7 +422,11 @@ class ContinuousApproximator(Approximator):
         log_prob = self._log_prob(**data, **kwargs)
         log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
 
-        return log_prob + jacobian["inference_variables"]
+        jacobian = jacobian.get("inference_variables")
+        if jacobian is not None:
+            log_prob = log_prob + jacobian
+
+        return log_prob
 
     def _log_prob(
         self,

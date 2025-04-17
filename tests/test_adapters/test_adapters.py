@@ -1,9 +1,9 @@
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    serialize_keras_object as serialize,
-)
-import numpy as np
 import pytest
+import numpy as np
+
+import keras
+
+from bayesflow.utils.serialization import deserialize, serialize
 
 import bayesflow as bf
 
@@ -26,9 +26,7 @@ def test_serialize_deserialize(adapter, random_data):
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert reserialized.keys() == serialized.keys()
-    for key in reserialized:
-        assert reserialized[key] == serialized[key]
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
     random_data["foo"] = random_data["x1"]
     deserialized_processed = deserialized(random_data)
@@ -158,7 +156,7 @@ def test_custom_transform():
     with pytest.raises(ValueError):
         SerializableCustomTransform(forward=registered_fn, inverse=not_registered_fn)
 
-    # function does not match registered function
+    # function does not match the registered function
     with pytest.raises(ValueError):
         SerializableCustomTransform(forward=registered_but_changed, inverse=registered_fn)
     with pytest.raises(ValueError):
@@ -174,7 +172,7 @@ def test_custom_transform():
     with pytest.raises(TypeError):
         keras.saving.deserialize_keras_object(corrupt_serialized_transform)
 
-    # modify name of the inverse transform so that it cannot be found
+    # modify the name of the inverse transform so that it cannot be found
     corrupt_serialized_transform = deepcopy(serialized_transform)
     corrupt_serialized_transform["config"]["inverse"]["config"] = "nonexistent"
     with pytest.raises(TypeError):

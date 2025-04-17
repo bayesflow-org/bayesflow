@@ -1,8 +1,9 @@
-from keras.saving import register_keras_serializable as serializable
 import numpy as np
 
+from bayesflow.utils.serialization import serializable, deserialize
 
-@serializable(package="bayesflow.adapters")
+
+@serializable
 class Transform:
     """
     Base class on which other transforms are based
@@ -20,8 +21,8 @@ class Transform:
         return self.__class__.__name__
 
     @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Transform":
-        raise NotImplementedError
+    def from_config(cls, config: dict, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self) -> dict:
         raise NotImplementedError

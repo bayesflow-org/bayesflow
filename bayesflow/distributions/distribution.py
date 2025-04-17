@@ -1,12 +1,12 @@
 import keras
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils import layer_kwargs
 
 
 class Distribution(keras.Layer):
     def __init__(self, **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
 
     def call(self, samples: Tensor) -> Tensor:
         return keras.ops.exp(self.log_prob(samples))
@@ -16,3 +16,6 @@ class Distribution(keras.Layer):
 
     def sample(self, batch_shape: Shape) -> Tensor:
         raise NotImplementedError
+
+    def compute_output_shape(self, input_shape: Shape) -> Shape:
+        return keras.ops.shape(self.sample(input_shape[0:1]))

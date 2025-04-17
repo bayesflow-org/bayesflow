@@ -3,7 +3,7 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import keras_kwargs, fill_triangular_matrix
+from bayesflow.utils import layer_kwargs, fill_triangular_matrix
 
 
 @serializable(package="bayesflow.links")
@@ -11,7 +11,7 @@ class PositiveDefinite(keras.Layer):
     """Activation function to link from flat elements of a lower triangular matrix to a positive definite matrix."""
 
     def __init__(self, **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
         self.built = True
 
     def call(self, inputs: Tensor) -> Tensor:

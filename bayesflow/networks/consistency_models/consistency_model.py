@@ -1,25 +1,18 @@
 import keras
 from keras import ops
-from keras.saving import (
-    register_keras_serializable,
-)
 
 import numpy as np
 
-from bayesflow.types import Tensor
-from bayesflow.utils import (
-    find_network,
-    keras_kwargs,
-    serialize_value_or_type,
-    deserialize_value_or_type,
-    weighted_mean,
-)
+import warnings
 
+from bayesflow.types import Tensor
+from bayesflow.utils import find_network, model_kwargs, weighted_mean
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
 
 
-@register_keras_serializable(package="bayesflow.networks")
+@serializable
 class ConsistencyModel(InferenceNetwork):
     """Implements a Consistency Model with Consistency Training (CT) a described in [1-2]. The adaptations to CT
     described in [2] were taken into account in our implementation for ABI [3].
@@ -45,7 +38,7 @@ class ConsistencyModel(InferenceNetwork):
     def __init__(
         self,
         total_steps: int | float,
-        subnet: str | type = "mlp",
+        subnet: str | keras.Layer = "mlp",
         max_time: int | float = 200,
         sigma2: float = 1.0,
         eps: float = 0.001,
@@ -79,16 +72,25 @@ class ConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
-        super().__init__(base_distribution="normal", **keras_kwargs(kwargs))
+        super().__init__(base_distribution="normal", **kwargs)
 
         self.total_steps = float(total_steps)
+
+        if subnet_kwargs:
+            warnings.warn(
+                "Using `subnet_kwargs` is deprecated."
+                "Instead, instantiate the network yourself and pass the arguments directly.",
+                DeprecationWarning,
+            )
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
 
-        self.student = find_network(subnet, **subnet_kwargs)
-        self.student_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
+        self.subnet = find_network(subnet, **subnet_kwargs)
+        self.output_projector = keras.layers.Dense(
+            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="output_projector"
+        )
 
         self.sigma2 = ops.convert_to_tensor(sigma2)
         self.sigma = ops.sqrt(sigma2)
@@ -106,27 +108,29 @@ class ConsistencyModel(InferenceNetwork):
 
         self.seed_generator = keras.random.SeedGenerator()
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "total_steps": total_steps,
-            "max_time": max_time,
-            "sigma2": sigma2,
-            "eps": eps,
-            "s0": s0,
-            "s1": s1,
-            "subnet_kwargs": subnet_kwargs,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+    @property
+    def student(self):
+        return self.subnet
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
-        return base_config | self.config
+        base_config = model_kwargs(base_config)
 
-    @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
+        config = {
+            "total_steps": self.total_steps,
+            "subnet": self.subnet,
+            "max_time": self.max_time,
+            "sigma2": self.sigma2,
+            "eps": self.eps,
+            "s0": self.s0,
+            "s1": self.s1,
+        }
+
+        return base_config | serialize(config)
 
     def _schedule_discretization(self, step) -> float:
         """Schedule function for adjusting the discretization level `N` during
@@ -154,8 +158,14 @@ class ConsistencyModel(InferenceNetwork):
         return discretized_time
 
     def build(self, xz_shape, conditions_shape=None):
-        super().build(xz_shape)
-        self.student_projector.units = xz_shape[-1]
+        if self.built:
+            # building when the network is already built can cause issues with serialization
+            # see https://github.com/keras-team/keras/issues/21147
+            return
+
+        self.base_distribution.build(xz_shape)
+
+        self.output_projector.units = xz_shape[-1]
 
         input_shape = list(xz_shape)
 
@@ -167,10 +177,10 @@ class ConsistencyModel(InferenceNetwork):
 
         input_shape = tuple(input_shape)
 
-        self.student.build(input_shape)
+        self.subnet.build(input_shape)
 
-        input_shape = self.student.compute_output_shape(input_shape)
-        self.student_projector.build(input_shape)
+        input_shape = self.subnet.compute_output_shape(input_shape)
+        self.output_projector.build(input_shape)
 
         # Choose coefficient according to [2] Section 3.3
         self.c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
@@ -280,7 +290,7 @@ class ConsistencyModel(InferenceNetwork):
         else:
             xtc = ops.concatenate([x, t], axis=-1)
 
-        f = self.student_projector(self.student(xtc, **kwargs))
+        f = self.output_projector(self.subnet(xtc, **kwargs))
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)
         # Thus, we can do a cross product with the time vector which is (batch_size, 1) for

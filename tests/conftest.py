@@ -17,6 +17,14 @@ def pytest_runtest_setup(item):
     if test_backends and backend not in test_backends:
         pytest.skip(f"Skipping backend '{backend}' for test {item}, which is registered for backends {test_backends}.")
 
+    # always show full tracebacks
+    keras.config.disable_traceback_filtering()
+
+    if keras.backend.backend() == "jax":
+        import jax
+
+        jax.config.update("jax_traceback_filtering", "off")
+
 
 def pytest_make_parametrize_id(config, val, argname):
     return f"{argname}={repr(val)}"

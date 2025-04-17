@@ -1,12 +1,12 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
 
 
-@serializable("bayesflow.wrappers")
+@serializable
 class MambaBlock(keras.Layer):
     """
     Wraps the original Mamba module from, with added functionality for bidirectional processing:
@@ -53,7 +53,7 @@ class MambaBlock(keras.Layer):
             Additional keyword arguments passed to the `keras.layers.Layer` initializer.
         """
 
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
 
         if keras.backend.backend() != "torch":
             raise RuntimeError("Mamba is only available using torch backend.")

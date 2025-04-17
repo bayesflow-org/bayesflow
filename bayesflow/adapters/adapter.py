@@ -2,11 +2,7 @@ from collections.abc import Callable, MutableSequence, Sequence, Mapping
 
 import numpy as np
 
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+from bayesflow.utils.serialization import deserialize, serialize, serializable
 
 from .transforms import (
     AsSet,
@@ -33,7 +29,7 @@ from .transforms import (
 from .transforms.filter_transform import Predicate
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class Adapter(MutableSequence[Transform]):
     """
     Defines an adapter to apply various transforms to data.
@@ -74,10 +70,14 @@ class Adapter(MutableSequence[Transform]):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
-        return cls(transforms=deserialize(config["transforms"], custom_objects))
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self) -> dict:
-        return {"transforms": serialize(self.transforms)}
+        config = {
+            "transforms": self.transforms,
+        }
+
+        return serialize(config)
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, np.ndarray]:
         """Apply the transforms in the forward direction.

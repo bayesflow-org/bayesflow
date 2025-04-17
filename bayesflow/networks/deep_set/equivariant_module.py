@@ -2,15 +2,19 @@ from collections.abc import Sequence
 
 import keras
 from keras import ops, layers
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils import model_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
+
+from ..mlp import MLP
+
 from .invariant_module import InvariantModule
 
 
-@serializable(package="bayesflow.networks")
-class EquivariantModule(keras.Layer):
+@serializable
+class EquivariantModule(keras.Model):
     """Implements an equivariant module performing an equivariant transform.
 
     For details and justification, see:
@@ -30,6 +34,7 @@ class EquivariantModule(keras.Layer):
         dropout: int | float | None = 0.05,
         layer_norm: bool = True,
         spectral_normalization: bool = False,
+        **kwargs,
     ):
         """
         Initializes an equivariant module that combines equivariant transformations with nested invariant transforms
@@ -67,7 +72,7 @@ class EquivariantModule(keras.Layer):
             Whether to apply spectral normalization to stabilize training. Default is False.
         """
 
-        super().__init__()
+        super().__init__(**model_kwargs(kwargs))
 
         # Invariant module to increase expressiveness by concatenating outputs to each set member
         self.invariant_module = InvariantModule(
@@ -78,22 +83,21 @@ class EquivariantModule(keras.Layer):
             dropout=dropout,
             pooling=pooling,
             spectral_normalization=spectral_normalization,
+            name="invariant_module",
         )
 
         # Fully connected net + residual connection for an equivariant transform applied to each set member
-        self.input_projector = layers.Dense(mlp_widths_equivariant[-1])
-        self.equivariant_fc = keras.Sequential()
-        for width in mlp_widths_equivariant:
-            layer = layers.Dense(
-                units=width,
-                activation=activation,
-                kernel_initializer=kernel_initializer,
-            )
-            if spectral_normalization:
-                layer = layers.SpectralNormalization(layer)
-            self.equivariant_fc.add(layer)
+        self.input_projector = layers.Dense(mlp_widths_equivariant[-1], name="input_projector")
+        self.equivariant_fc = MLP(
+            mlp_widths_equivariant,
+            dropout=dropout,
+            activation=activation,
+            kernel_initializer=kernel_initializer,
+            spectral_normalization=spectral_normalization,
+            name="equivariant_fc",
+        )
 
-        self.layer_norm = layers.LayerNormalization() if layer_norm else None
+        self.layer_norm = layers.LayerNormalization(name="layer_norm") if layer_norm else None
 
     @sanitize_input_shape
     def build(self, input_shape):

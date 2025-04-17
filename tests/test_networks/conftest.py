@@ -1,20 +1,6 @@
 import pytest
 
-
-# For the serialization tests, we want to test passing str and type.
-# For all other tests, this is not necessary and would double test time.
-# Therefore, below we specify two variants of each network, one without and
-# one with a subnet parameter. The latter will only be used for the relevant
-# tests. If there is a better way to set the params to a single value ("mlp")
-# for a given test, maybe this can be simplified, but I did not see one.
-@pytest.fixture(params=["str", "type"], scope="function")
-def subnet(request):
-    if request.param == "str":
-        return "mlp"
-
-    from bayesflow.networks import MLP
-
-    return MLP
+from bayesflow.networks import MLP
 
 
 @pytest.fixture()
@@ -22,44 +8,23 @@ def flow_matching():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
-        subnet_kwargs={"widths": [64, 64]},
+        subnet=MLP([64, 64]),
         integrate_kwargs={"method": "rk45", "steps": 100},
     )
-
-
-@pytest.fixture()
-def flow_matching_subnet(subnet):
-    from bayesflow.networks import FlowMatching
-
-    return FlowMatching(subnet=subnet)
 
 
 @pytest.fixture()
 def coupling_flow():
     from bayesflow.networks import CouplingFlow
 
-    return CouplingFlow(depth=2)
-
-
-@pytest.fixture()
-def coupling_flow_subnet(subnet):
-    from bayesflow.networks import CouplingFlow
-
-    return CouplingFlow(depth=2, subnet=subnet)
+    return CouplingFlow(depth=2, subnet="mlp", subnet_kwargs=dict(widths=[64, 64]))
 
 
 @pytest.fixture()
 def free_form_flow():
     from bayesflow.experimental import FreeFormFlow
 
-    return FreeFormFlow()
-
-
-@pytest.fixture()
-def free_form_flow_subnet(subnet):
-    from bayesflow.experimental import FreeFormFlow
-
-    return FreeFormFlow(encoder_subnet=subnet, decoder_subnet=subnet)
+    return FreeFormFlow(encoder_subnet=MLP([64, 64]), decoder_subnet=MLP([64, 64]))
 
 
 @pytest.fixture()
@@ -78,9 +43,11 @@ def typical_point_inference_network():
 
 
 @pytest.fixture()
-def typical_point_inference_network_subnet(subnet):
+def typical_point_inference_network_subnet():
     from bayesflow.networks import PointInferenceNetwork
     from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+
+    subnet = MLP([64, 64])
 
     return PointInferenceNetwork(
         scores=dict(

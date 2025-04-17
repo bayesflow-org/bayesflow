@@ -1,5 +1,7 @@
 from functools import singledispatch
 
+from bayesflow.distributions import Distribution
+
 
 @singledispatch
 def find_distribution(arg, **kwargs):
@@ -24,3 +26,8 @@ def _(name: str, *args, **kwargs):
 @find_distribution.register
 def _(none: None, *args, **kwargs):
     return None
+
+
+@find_distribution.register
+def _(distribution: Distribution, *args, **kwargs):
+    return distribution

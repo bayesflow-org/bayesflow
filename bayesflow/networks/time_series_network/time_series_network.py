@@ -1,13 +1,14 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils import model_kwargs
+from bayesflow.utils.serialization import deserialize, serializable, serialize
+
 from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class TimeSeriesNetwork(SummaryNetwork):
     """
     Implements a LSTNet Architecture as described in [1]
@@ -87,9 +88,10 @@ class TimeSeriesNetwork(SummaryNetwork):
             kernel_sizes = (kernel_sizes,)
         if not isinstance(strides, (list, tuple)):
             strides = (strides,)
-        self.conv_blocks = []
-        for f, k, s in zip(filters, kernel_sizes, strides):
-            self.conv_blocks.append(
+
+        conv_blocks = []
+        for i, (f, k, s) in enumerate(zip(filters, kernel_sizes, strides)):
+            conv_blocks.append(
                 keras.layers.Conv1D(
                     filters=f,
                     kernel_size=k,
@@ -97,10 +99,13 @@ class TimeSeriesNetwork(SummaryNetwork):
                     activation=activation,
                     kernel_initializer=kernel_initializer,
                     padding="same",
+                    name=f"conv_{i}",
                 )
             )
             if groups is not None:
-                self.conv_blocks.append(keras.layers.GroupNormalization(groups=groups))
+                conv_blocks.append(keras.layers.GroupNormalization(groups=groups, name=f"group_norm_{i}"))
+
+        self.conv = keras.Sequential(conv_blocks, name="conv")
 
         # Recurrent and feedforward backbones
         self.recurrent = SkipRecurrentNet(
@@ -110,9 +115,22 @@ class TimeSeriesNetwork(SummaryNetwork):
             input_channels=filters[-1],
             skip_steps=skip_steps,
             dropout=dropout,
+            name="recurrent",
         )
-        self.output_projector = keras.layers.Dense(summary_dim)
+        self.output_projector = keras.layers.Dense(summary_dim, name="output_projector")
+
         self.summary_dim = summary_dim
+        self.filters = filters
+        self.kernel_sizes = kernel_sizes
+        self.strides = strides
+        self.activation = activation
+        self.kernel_initializer = kernel_initializer
+        self.groups = groups
+        self.recurrent_type = recurrent_type
+        self.recurrent_dim = recurrent_dim
+        self.bidirectional = bidirectional
+        self.dropout = dropout
+        self.skip_steps = skip_steps
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         """
@@ -139,14 +157,32 @@ class TimeSeriesNetwork(SummaryNetwork):
             Transformed tensor representing the summarized feature representation
             of the input sequence.
         """
-
-        for c in self.conv_blocks:
-            x = c(x, training=training)
-
+        x = self.conv(x, training=training)
         x = self.recurrent(x, training=training)
         x = self.output_projector(x)
         return x
 
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = model_kwargs(base_config)
+
+        config = {
+            "summary_dim": self.summary_dim,
+            "filters": self.filters,
+            "kernel_sizes": self.kernel_sizes,
+            "strides": self.strides,
+            "activation": self.activation,
+            "kernel_initializer": self.kernel_initializer,
+            "groups": self.groups,
+            "recurrent_type": self.recurrent_type,
+            "recurrent_dim": self.recurrent_dim,
+            "bidirectional": self.bidirectional,
+            "dropout": self.dropout,
+            "skip_steps": self.skip_steps,
+        }
+
+        return base_config | serialize(config)

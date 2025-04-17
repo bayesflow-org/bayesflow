@@ -1,17 +1,15 @@
 from collections.abc import Sequence
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.networks.summary_network import SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import keras_kwargs
-from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
 
 from .mamba_block import MambaBlock
 
 
-@serializable("bayesflow.wrappers")
+@serializable
 class Mamba(SummaryNetwork):
     """
     Wraps a sequence of Mamba modules using the simple Mamba module from:
@@ -71,7 +69,7 @@ class Mamba(SummaryNetwork):
             Additional keyword arguments passed to the `SummaryNetwork` parent class.
         """
 
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**kwargs)
 
         if device != "cuda":
             raise NotImplementedError("MambaSSM only supports cuda as `device`.")
@@ -115,8 +113,3 @@ class Mamba(SummaryNetwork):
         summary = self.summary_stats(summary)
 
         return summary
-
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)
-        self.call(keras.ops.zeros(input_shape))

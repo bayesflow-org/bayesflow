@@ -1,9 +1,9 @@
 from numbers import Number
 
 import numpy as np
-from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.utils.io import deserialize_type, serialize_type
+from bayesflow.utils.serialization import serializable, serialize
+
 from .elementwise_transform import ElementwiseTransform
 
 
@@ -26,18 +26,12 @@ class ToArray(ElementwiseTransform):
             [3, 4]])
     """
 
-    def __init__(self):
+    def __init__(self, original_type: type = None):
         super().__init__()
-        self.original_type = None
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "ToArray":
-        instance = cls()
-        instance.original_type = deserialize_type(config["original_type"])
-        return instance
+        self.original_type = original_type
 
     def get_config(self) -> dict:
-        return {"original_type": serialize_type(self.original_type)}
+        return serialize({"original_type": self.original_type})
 
     def forward(self, data: any, **kwargs) -> np.ndarray:
         if self.original_type is None:

@@ -1,16 +1,18 @@
 from collections.abc import Sequence
 
 import keras
-from keras import layers
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils import model_kwargs
 from bayesflow.utils import find_pooling
 from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
+
+from ..mlp import MLP
 
 
-@serializable(package="bayesflow.networks")
-class InvariantModule(keras.Layer):
+@serializable
+class InvariantModule(keras.Model):
     """Implements an invariant module performing a permutation-invariant transform.
 
     For details and rationale, see:
@@ -29,6 +31,7 @@ class InvariantModule(keras.Layer):
         pooling: str = "mean",
         pooling_kwargs: dict = None,
         spectral_normalization: bool = False,
+        **kwargs,
     ):
         """
         Initializes an invariant module representing a learnable permutation-invariant function with an option for
@@ -61,40 +64,31 @@ class InvariantModule(keras.Layer):
             Whether to apply spectral normalization to stabilize training. Default is False.
         """
 
-        super().__init__()
+        super().__init__(**model_kwargs(kwargs))
 
         # Inner fully connected net for sum decomposition: inner( pooling( inner(set) ) )
-        self.inner_fc = keras.Sequential()
-        for width in mlp_widths_inner:
-            layer = layers.Dense(
-                units=width,
-                activation=activation,
-                kernel_initializer=kernel_initializer,
-            )
-            if spectral_normalization:
-                layer = layers.SpectralNormalization(layer)
-            self.inner_fc.add(layer)
+        self.inner_fc = MLP(
+            mlp_widths_inner,
+            dropout=dropout,
+            activation=activation,
+            kernel_initializer=kernel_initializer,
+            spectral_normalization=spectral_normalization,
+        )
 
-        # Outer fully connected net for sum decomposition: inner( pooling( inner(set) ) )
-        self.outer_fc = keras.Sequential()
-        for width in mlp_widths_outer:
-            if dropout is not None and dropout > 0:
-                self.outer_fc.add(layers.Dropout(float(dropout)))
-
-            layer = layers.Dense(
-                units=width,
-                activation=activation,
-                kernel_initializer=kernel_initializer,
-            )
-            if spectral_normalization:
-                layer = layers.SpectralNormalization(layer)
-            self.outer_fc.add(layer)
+        self.outer_fc = MLP(
+            mlp_widths_outer,
+            dropout=dropout,
+            activation=activation,
+            kernel_initializer=kernel_initializer,
+            spectral_normalization=spectral_normalization,
+        )
 
         # Pooling function as keras layer for sum decomposition: inner( pooling( inner(set) ) )
         if pooling_kwargs is None:
             pooling_kwargs = {}
 
         self.pooling_layer = find_pooling(pooling, **pooling_kwargs)
+        self.pooling_layer.name = f"{pooling}_pooling"
 
     @sanitize_input_shape
     def build(self, input_shape):

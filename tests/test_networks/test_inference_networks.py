@@ -1,12 +1,10 @@
 import keras
 import numpy as np
 import pytest
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    serialize_keras_object as serialize,
-)
 
-from tests.utils import assert_allclose, assert_layers_equal
+from bayesflow.utils.serialization import serialize, deserialize
+
+from tests.utils import assert_allclose, assert_models_equal
 
 
 def test_build(inference_network, random_samples, random_conditions):
@@ -109,22 +107,26 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     assert_allclose(log_density, numerical_log_density, rtol=1e-3, atol=1e-3)
 
 
-def test_serialize_deserialize(inference_network_subnet, subnet, random_samples, random_conditions):
+def test_serialize_deserialize(inference_network, random_samples, random_conditions):
     # to save, the model must be built
-    inference_network_subnet(random_samples, conditions=random_conditions)
+    xz_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    inference_network.build(xz_shape, conditions_shape)
 
-    serialized = serialize(inference_network_subnet)
+    serialized = serialize(inference_network)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert serialized == reserialized
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
 
-def test_save_and_load(tmp_path, inference_network_subnet, subnet, random_samples, random_conditions):
+def test_save_and_load(tmp_path, inference_network, random_samples, random_conditions):
     # to save, the model must be built
-    inference_network_subnet(random_samples, conditions=random_conditions)
+    xz_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    inference_network.build(xz_shape, conditions_shape)
 
-    keras.saving.save_model(inference_network_subnet, tmp_path / "model.keras")
+    keras.saving.save_model(inference_network, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
-    assert_layers_equal(inference_network_subnet, loaded)
+    assert_models_equal(inference_network, loaded)

@@ -1,8 +1,6 @@
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
 import numpy as np
 
+from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.utils.numpy_utils import (
     inverse_sigmoid,
     inverse_softplus,
@@ -13,7 +11,7 @@ from bayesflow.utils.numpy_utils import (
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class Constrain(ElementwiseTransform):
     """
     Constrains neural network predictions of a data variable to specified bounds.
@@ -163,18 +161,15 @@ class Constrain(ElementwiseTransform):
             case other:
                 raise ValueError(f"Unsupported value for 'inclusive': {other!r}.")
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Constrain":
-        return cls(**config)
-
     def get_config(self) -> dict:
-        return {
+        config = {
             "lower": self.lower,
             "upper": self.upper,
             "method": self.method,
             "inclusive": self.inclusive,
             "epsilon": self.epsilon,
         }
+        return serialize(config)
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # forward means data space -> network space, so unconstrain the data

@@ -821,6 +821,9 @@ class BasicWorkflow(Workflow):
         where the final learning rate is proportional to the square of the initial learning rate, as found to work
         best in SBI.
 
+        The default optimizer will use 5% of the epochs as warmup; during the warmup phase, the learning rate
+        will be increased from 10% of the initial learning rate to initial learning rate supplied to the workflow.
+
         Parameters
         ----------
         epochs : int
@@ -842,12 +845,16 @@ class BasicWorkflow(Workflow):
         if self.optimizer is not None:
             return
 
+        total_steps = int(epochs * num_batches)
+        warmup_steps = int(0.05 * epochs * num_batches)
+        decay_steps = total_steps - warmup_steps
+
         # Default case
         learning_rate = keras.optimizers.schedules.CosineDecay(
-            initial_learning_rate=0.5 * self.initial_learning_rate,
+            initial_learning_rate=0.1 * self.initial_learning_rate,
             warmup_target=self.initial_learning_rate,
-            warmup_steps=num_batches,
-            decay_steps=epochs * num_batches,
+            warmup_steps=warmup_steps,
+            decay_steps=decay_steps,
             alpha=0,
         )
 
@@ -855,7 +862,7 @@ class BasicWorkflow(Workflow):
         if strategy.lower() == "online":
             self.optimizer = keras.optimizers.Adam(learning_rate, clipnorm=1.5)
         else:
-            self.optimizer = keras.optimizers.AdamW(learning_rate, weight_decay=1e-3, clipnorm=1.5)
+            self.optimizer = keras.optimizers.AdamW(learning_rate, weight_decay=5e-3, clipnorm=1.5)
 
     def _fit(
         self,

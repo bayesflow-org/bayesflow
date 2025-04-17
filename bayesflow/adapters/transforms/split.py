@@ -1,16 +1,12 @@
 from collections.abc import Sequence
 import numpy as np
 
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from .transform import Transform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class Split(Transform):
     """This is the effective inverse of the :py:class:`~Concatenate` Transform.
 
@@ -38,20 +34,16 @@ class Split(Transform):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Split":
-        return cls(
-            key=deserialize(config["key"], custom_objects),
-            into=deserialize(config["into"], custom_objects),
-            indices_or_sections=deserialize(config["indices_or_sections"], custom_objects),
-            axis=deserialize(config["axis"], custom_objects),
-        )
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self) -> dict:
-        return {
-            "key": serialize(self.key),
-            "into": serialize(self.into),
-            "indices_or_sections": serialize(self.indices_or_sections),
-            "axis": serialize(self.axis),
+        config = {
+            "key": self.key,
+            "into": self.into,
+            "indices_or_sections": self.indices_or_sections,
+            "axis": self.axis,
         }
+        return serialize(config)
 
     def forward(self, data: dict[str, np.ndarray], strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
         # avoid side effects

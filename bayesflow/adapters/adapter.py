@@ -79,7 +79,9 @@ class Adapter(MutableSequence[Transform]):
     def get_config(self) -> dict:
         return {"transforms": serialize(self.transforms)}
 
-    def forward(self, data: dict[str, any], **kwargs) -> dict[str, np.ndarray]:
+    def forward(
+        self, data: dict[str, any], jacobian: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the forward direction.
 
         Parameters
@@ -95,13 +97,21 @@ class Adapter(MutableSequence[Transform]):
             The transformed data.
         """
         data = data.copy()
+        if not jacobian:
+            for transform in self.transforms:
+                data = transform(data, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in self.transforms:
+            log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
             data = transform(data, **kwargs)
 
-        return data
+        return data, log_det_jac
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, any]:
+    def inverse(
+        self, data: dict[str, np.ndarray], jacobian: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
@@ -117,11 +127,17 @@ class Adapter(MutableSequence[Transform]):
             The transformed data.
         """
         data = data.copy()
+        if not jacobian:
+            for transform in reversed(self.transforms):
+                data = transform(data, inverse=True, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in reversed(self.transforms):
             data = transform(data, inverse=True, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
 
-        return data
+        return data, log_det_jac
 
     def __call__(self, data: Mapping[str, any], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
         """Apply the transforms in the given direction.

@@ -48,3 +48,12 @@ class Log(ElementwiseTransform):
         return {
             "p1": serialize(self.p1),
         }
+
+    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+        if self.p1:
+            ldj = -np.log1p(data)
+        else:
+            ldj = -np.log(data)
+        if inverse:
+            ldj = -ldj
+        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

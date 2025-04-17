@@ -141,6 +141,9 @@ class Concatenate(Transform):
         available_keys = set(log_det_jac.keys())
         common_keys = available_keys & required_keys
 
+        if len(common_keys) == 0:
+            return log_det_jac
+
         parts = [log_det_jac.pop(key) for key in common_keys]
 
         log_det_jac[self.into] = sum(parts)

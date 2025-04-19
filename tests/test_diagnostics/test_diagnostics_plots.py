@@ -45,6 +45,15 @@ def test_calibration_histogram(random_estimates, random_targets):
     assert out.axes[0].title._text == "beta_0"
 
 
+def test_loss(history):
+    import matplotlib.pyplot as plt
+
+    out = bf.diagnostics.loss(history)
+    plt.show()
+    assert len(out.axes) == 1
+    assert out.axes[0].title._text == "Loss Trajectory"
+
+
 def test_recovery(random_estimates, random_targets):
     # basic functionality: automatic variable names
     out = bf.diagnostics.plots.recovery(random_estimates, random_targets)

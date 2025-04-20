@@ -85,6 +85,7 @@ def typical_point_inference_network_subnet():
         "spline_coupling_flow",
         "flow_matching",
         "free_form_flow",
+        "consistency_model",
     ],
     scope="function",
 )
@@ -106,7 +107,8 @@ def inference_network_subnet(request):
 
 
 @pytest.fixture(
-    params=["affine_coupling_flow", "spline_coupling_flow", "flow_matching", "free_form_flow"], scope="function"
+    params=["affine_coupling_flow", "spline_coupling_flow", "flow_matching", "free_form_flow", "consistency_model"],
+    scope="function",
 )
 def generative_inference_network(request):
     return request.getfixturevalue(request.param)

@@ -16,7 +16,7 @@ def sinkhorn(
     cost: str | Tensor = "euclidean",
     seed: int = None,
     regularization: float = 1.0,
-    max_steps: int = 10000,
+    max_steps: int | None = 10_000,
     tolerance: float = 1e-6,
     numpy: bool = False,
 ) -> (Tensor, Tensor):
@@ -88,7 +88,7 @@ def sinkhorn_indices(
     cost: str | Tensor = "euclidean",
     seed: int = None,
     regularization: float = 1.0,
-    max_steps: int = 1000,
+    max_steps: int | None = 10_000,
     tolerance: float = 1e-6,
     numpy: bool = False,
 ) -> Tensor | np.ndarray:
@@ -111,7 +111,7 @@ def sinkhorn_indices(
         Default: 1.0
 
     :param max_steps: Maximum number of iterations.
-        Default: 1000
+        Default: 10_000
 
     :param tolerance: Absolute tolerance for convergence.
         Default: 1e-6
@@ -164,15 +164,13 @@ def sinkhorn_plan(
 
     :param regularization: Regularization parameter.
         Controls the standard deviation of the Gaussian kernel.
-        Default: 1.0
 
     :param max_steps: Maximum number of iterations.
-        Default: 1000
 
     :param tolerance: Absolute tolerance for convergence.
-        Default: 1e-6
 
     :param numpy: Whether to use numpy or keras backend.
+        Default: False
 
     :return: Tensor of shape (n, m)
         The transport probabilities.

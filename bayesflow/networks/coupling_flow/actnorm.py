@@ -1,13 +1,12 @@
 from keras import ops
 
-from keras.saving import register_keras_serializable as serializable
-
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils.serialization import serializable
 
 from .invertible_layer import InvertibleLayer
 
 
-@serializable(package="networks.coupling_flow")
+@serializable
 class ActNorm(InvertibleLayer):
     """Implements an Activation Normalization (ActNorm) Layer. Activation Normalization is learned invertible
     normalization, using a scale (s) and a bias (b) vector::

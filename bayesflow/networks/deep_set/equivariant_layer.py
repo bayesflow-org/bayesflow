@@ -4,17 +4,17 @@ import keras
 from keras import ops, layers
 
 from bayesflow.types import Tensor
-from bayesflow.utils import model_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 from ..mlp import MLP
 
-from .invariant_module import InvariantModule
+from .invariant_layer import InvariantLayer
 
 
 @serializable
-class EquivariantModule(keras.Model):
+class EquivariantLayer(keras.Layer):
     """Implements an equivariant module performing an equivariant transform.
 
     For details and justification, see:
@@ -72,10 +72,10 @@ class EquivariantModule(keras.Model):
             Whether to apply spectral normalization to stabilize training. Default is False.
         """
 
-        super().__init__(**model_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
 
         # Invariant module to increase expressiveness by concatenating outputs to each set member
-        self.invariant_module = InvariantModule(
+        self.invariant_module = InvariantLayer(
             mlp_widths_inner=mlp_widths_invariant_inner,
             mlp_widths_outer=mlp_widths_invariant_outer,
             activation=activation,
@@ -83,21 +83,19 @@ class EquivariantModule(keras.Model):
             dropout=dropout,
             pooling=pooling,
             spectral_normalization=spectral_normalization,
-            name="invariant_module",
         )
 
         # Fully connected net + residual connection for an equivariant transform applied to each set member
-        self.input_projector = layers.Dense(mlp_widths_equivariant[-1], name="input_projector")
+        self.input_projector = layers.Dense(mlp_widths_equivariant[-1])
         self.equivariant_fc = MLP(
             mlp_widths_equivariant,
             dropout=dropout,
             activation=activation,
             kernel_initializer=kernel_initializer,
             spectral_normalization=spectral_normalization,
-            name="equivariant_fc",
         )
 
-        self.layer_norm = layers.LayerNormalization(name="layer_norm") if layer_norm else None
+        self.layer_norm = layers.LayerNormalization() if layer_norm else None
 
     @sanitize_input_shape
     def build(self, input_shape):

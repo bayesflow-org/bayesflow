@@ -2,8 +2,8 @@ import keras
 from keras import layers
 
 from bayesflow.types import Tensor
-from bayesflow.utils import check_lengths_same, model_kwargs
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils import check_lengths_same
+from bayesflow.utils.serialization import serializable
 
 from ..summary_network import SummaryNetwork
 
@@ -121,19 +121,6 @@ class FusionTransformer(SummaryNetwork):
 
         self.output_projector = keras.layers.Dense(summary_dim)
         self.summary_dim = summary_dim
-        self.embed_dims = embed_dims
-        self.num_heads = num_heads
-        self.mlp_depths = mlp_depths
-        self.mlp_widths = mlp_widths
-        self.dropout = dropout
-        self.mlp_activation = mlp_activation
-        self.kernel_initializer = kernel_initializer
-        self.use_bias = use_bias
-        self.layer_norm = layer_norm
-        self.template_type = template_type
-        self.bidirectional = bidirectional
-        self.template_dim = template_dim
-        self._kwargs = kwargs
 
     def call(self, input_sequence: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
@@ -164,30 +151,3 @@ class FusionTransformer(SummaryNetwork):
         summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training, **kwargs)
         summary = self.output_projector(keras.ops.squeeze(summary, axis=1))
         return summary
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
-    def get_config(self):
-        base_config = super().get_config()
-        base_config = model_kwargs(base_config)
-
-        config = {
-            "summary_dim": self.summary_dim,
-            "embed_dims": self.embed_dims,
-            "num_heads": self.num_heads,
-            "mlp_depths": self.mlp_depths,
-            "mlp_widths": self.mlp_widths,
-            "dropout": self.dropout,
-            "mlp_activation": self.mlp_activation,
-            "kernel_initializer": self.kernel_initializer,
-            "use_bias": self.use_bias,
-            "layer_norm": self.layer_norm,
-            "template_type": self.template_type,
-            "bidirectional": self.bidirectional,
-            "template_dim": self.template_dim,
-            **self._kwargs,
-        }
-
-        return base_config | serialize(config)

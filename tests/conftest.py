@@ -1,6 +1,6 @@
-import logging
-
 import keras
+import logging
+import matplotlib
 import pytest
 
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
@@ -24,6 +24,16 @@ def pytest_runtest_setup(item):
         import jax
 
         jax.config.update("jax_traceback_filtering", "off")
+
+    # use a non-GUI plotting backend for tests
+    matplotlib.use("Agg")
+
+
+def pytest_runtest_teardown(item, nextitem):
+    import matplotlib.pyplot as plt
+
+    # close all plots at the end of each test
+    plt.close("all")
 
 
 def pytest_make_parametrize_id(config, val, argname):

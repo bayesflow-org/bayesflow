@@ -1,13 +1,13 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import model_kwargs, find_recurrent_net
+from bayesflow.utils import find_recurrent_net, layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 
 @serializable
-class SkipRecurrentNet(keras.Model):
+class SkipRecurrentNet(keras.Layer):
     """
     Implements a Skip recurrent layer as described in [1], allowing a more flexible recurrent backbone
     and a more efficient implementation.
@@ -52,7 +52,7 @@ class SkipRecurrentNet(keras.Model):
         **kwargs
             Additional keyword arguments passed to the parent class constructor.
         """
-        super().__init__(**model_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
 
         self.skip_conv = keras.layers.Conv1D(
             filters=input_channels * skip_steps,

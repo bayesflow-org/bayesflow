@@ -1,8 +1,7 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import model_kwargs
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable
 
 from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
@@ -120,17 +119,6 @@ class TimeSeriesNetwork(SummaryNetwork):
         self.output_projector = keras.layers.Dense(summary_dim, name="output_projector")
 
         self.summary_dim = summary_dim
-        self.filters = filters
-        self.kernel_sizes = kernel_sizes
-        self.strides = strides
-        self.activation = activation
-        self.kernel_initializer = kernel_initializer
-        self.groups = groups
-        self.recurrent_type = recurrent_type
-        self.recurrent_dim = recurrent_dim
-        self.bidirectional = bidirectional
-        self.dropout = dropout
-        self.skip_steps = skip_steps
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         """
@@ -161,28 +149,3 @@ class TimeSeriesNetwork(SummaryNetwork):
         x = self.recurrent(x, training=training)
         x = self.output_projector(x)
         return x
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
-    def get_config(self):
-        base_config = super().get_config()
-        base_config = model_kwargs(base_config)
-
-        config = {
-            "summary_dim": self.summary_dim,
-            "filters": self.filters,
-            "kernel_sizes": self.kernel_sizes,
-            "strides": self.strides,
-            "activation": self.activation,
-            "kernel_initializer": self.kernel_initializer,
-            "groups": self.groups,
-            "recurrent_type": self.recurrent_type,
-            "recurrent_dim": self.recurrent_dim,
-            "bidirectional": self.bidirectional,
-            "dropout": self.dropout,
-            "skip_steps": self.skip_steps,
-        }
-
-        return base_config | serialize(config)

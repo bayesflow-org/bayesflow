@@ -15,14 +15,16 @@ class RandomPermutation(FixedPermutation):
 
         self.forward_indices = self.add_weight(
             shape=(xz_shape[-1],),
-            initializer=keras.initializers.Constant(forward_indices),
+            # Best practice: https://github.com/keras-team/keras/pull/20457#discussion_r1832081248
+            initializer=keras.initializers.get(forward_indices),
             trainable=False,
             dtype="int",
         )
 
         self.inverse_indices = self.add_weight(
             shape=(xz_shape[-1],),
-            initializer=keras.initializers.Constant(inverse_indices),
+            # Best practice: https://github.com/keras-team/keras/pull/20457#discussion_r1832081248
+            initializer=keras.initializers.get(inverse_indices),
             trainable=False,
             dtype="int",
         )

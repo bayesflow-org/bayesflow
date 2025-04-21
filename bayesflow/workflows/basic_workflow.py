@@ -348,7 +348,7 @@ class BasicWorkflow(Workflow):
     ) -> dict[str, plt.Figure]:
         """
         Generates default diagnostic plots to evaluate the quality of inference. The function produces several
-        diagnostic plots, including:
+        diagnostic plots, including
         - Loss history (if training history is available).
         - Parameter recovery plots.
         - Calibration ECDF plots.

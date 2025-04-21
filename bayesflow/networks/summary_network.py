@@ -3,14 +3,14 @@ import keras
 from bayesflow.distributions import find_distribution
 from bayesflow.metrics.functional import maximum_mean_discrepancy
 from bayesflow.types import Tensor
-from bayesflow.utils import model_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import deserialize
 
 
-class SummaryNetwork(keras.Model):
+class SummaryNetwork(keras.Layer):
     def __init__(self, base_distribution: str = None, **kwargs):
-        super().__init__(**model_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
     @sanitize_input_shape

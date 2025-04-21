@@ -2,13 +2,13 @@ import keras
 
 from bayesflow.distributions import find_distribution
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import model_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import allow_batch_size
 
 
-class InferenceNetwork(keras.Model):
+class InferenceNetwork(keras.Layer):
     def __init__(self, base_distribution: str = "normal", **kwargs):
-        super().__init__(**model_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:

@@ -3,11 +3,11 @@ from collections.abc import Sequence
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import model_kwargs
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable
 
-from .equivariant_module import EquivariantModule
-from .invariant_module import InvariantModule
+from .equivariant_layer import EquivariantLayer
+from .invariant_layer import InvariantLayer
+
 from ..summary_network import SummaryNetwork
 
 
@@ -88,7 +88,7 @@ class DeepSet(SummaryNetwork):
         # Stack of equivariant modules for a many-to-many learnable transformation
         self.equivariant_modules = []
         for _ in range(depth):
-            equivariant_module = EquivariantModule(
+            equivariant_module = EquivariantLayer(
                 mlp_widths_equivariant=mlp_widths_equivariant,
                 mlp_widths_invariant_inner=mlp_widths_invariant_inner,
                 mlp_widths_invariant_outer=mlp_widths_invariant_outer,
@@ -97,12 +97,11 @@ class DeepSet(SummaryNetwork):
                 spectral_normalization=spectral_normalization,
                 dropout=dropout,
                 pooling=inner_pooling,
-                name="equivariant_module",
             )
             self.equivariant_modules.append(equivariant_module)
 
         # Invariant module for a many-to-one transformation
-        self.invariant_module = InvariantModule(
+        self.invariant_module = InvariantLayer(
             mlp_widths_inner=mlp_widths_invariant_last,
             mlp_widths_outer=mlp_widths_invariant_last,
             activation=activation,
@@ -110,24 +109,12 @@ class DeepSet(SummaryNetwork):
             dropout=dropout,
             pooling=output_pooling,
             spectral_normalization=spectral_normalization,
-            name="invariant_module",
         )
 
         # Output linear layer to project set representation down to "summary_dim" learned summary statistics
         self.output_projector = keras.layers.Dense(summary_dim, activation="linear", name="output_projector")
 
         self.summary_dim = summary_dim
-        self.depth = depth
-        self.inner_pooling = inner_pooling
-        self.output_pooling = output_pooling
-        self.mlp_widths_equivariant = mlp_widths_equivariant
-        self.mlp_widths_invariant_inner = mlp_widths_invariant_inner
-        self.mlp_widths_invariant_outer = mlp_widths_invariant_outer
-        self.mlp_widths_invariant_last = mlp_widths_invariant_last
-        self.activation = activation
-        self.kernel_initializer = kernel_initializer
-        self.dropout = dropout
-        self.spectral_normalization = spectral_normalization
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         """
@@ -161,28 +148,3 @@ class DeepSet(SummaryNetwork):
         x = self.invariant_module(x, training=training)
 
         return self.output_projector(x)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
-    def get_config(self):
-        base_config = super().get_config()
-        base_config = model_kwargs(base_config)
-
-        config = {
-            "summary_dim": self.summary_dim,
-            "depth": self.depth,
-            "inner_pooling": self.inner_pooling,
-            "output_pooling": self.output_pooling,
-            "mlp_widths_equivariant": self.mlp_widths_equivariant,
-            "mlp_widths_invariant_inner": self.mlp_widths_invariant_inner,
-            "mlp_widths_invariant_outer": self.mlp_widths_invariant_outer,
-            "mlp_widths_invariant_last": self.mlp_widths_invariant_last,
-            "activation": self.activation,
-            "kernel_initializer": self.kernel_initializer,
-            "dropout": self.dropout,
-            "spectral_normalization": self.spectral_normalization,
-        }
-
-        return base_config | serialize(config)

@@ -3,7 +3,9 @@ import keras
 from bayesflow.utils import model_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Tensor
+
 from .single_coupling import SingleCoupling
+
 from ..invertible_layer import InvertibleLayer
 
 

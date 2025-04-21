@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+
 import keras
 
 from bayesflow.types import Tensor

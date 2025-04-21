@@ -11,7 +11,7 @@ from bayesflow.utils import (
     find_network,
     integrate,
     jacobian_trace,
-    model_kwargs,
+    layer_kwargs,
     optimal_transport,
     weighted_mean,
 )
@@ -146,7 +146,7 @@ class FlowMatching(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = model_kwargs(base_config)
+        base_config = layer_kwargs(base_config)
 
         config = {
             "subnet": self.subnet,

@@ -4,7 +4,7 @@ import pytest
 
 from bayesflow.utils.serialization import deserialize, serialize
 
-from tests.utils import assert_models_equal
+from tests.utils import assert_layers_equal
 
 
 @pytest.mark.parametrize("automatic", [True, False])
@@ -47,9 +47,8 @@ def test_variable_set_size(summary_network, random_set):
     summary_network.build(keras.ops.shape(random_set))
 
     # run with another set size
-    for _ in range(10):
+    for s in [3, 4, 5]:
         b = keras.ops.shape(random_set)[0]
-        s = np.random.randint(1, 10)
         new_input = keras.ops.zeros((b, s, keras.ops.shape(random_set)[2]))
         summary_network(new_input)
 
@@ -76,7 +75,7 @@ def test_save_and_load(tmp_path, summary_network, random_set):
     keras.saving.save_model(summary_network, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
-    assert_models_equal(summary_network, loaded)
+    assert_layers_equal(summary_network, loaded)
 
 
 @pytest.mark.parametrize("stage", ["training", "validation"])

@@ -12,7 +12,7 @@ from bayesflow.utils.decorators import allow_batch_size
 
 
 @serializable(package="networks.point_inference_network")
-class PointInferenceNetwork(keras.Model):
+class PointInferenceNetwork(keras.Layer):
     """Implements point estimation for user specified scoring rules by a shared feed forward architecture
     with separate heads for each scoring rule.
     """

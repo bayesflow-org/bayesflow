@@ -3,14 +3,14 @@ import keras.ops as ops
 
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
-from bayesflow.utils import model_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable
 
 from .mab import MultiHeadAttentionBlock
 
 
 @serializable
-class PoolingByMultiHeadAttention(keras.Model):
+class PoolingByMultiHeadAttention(keras.Layer):
     """Implements the pooling with multi-head attention (PMA) block from [1] which represents
     a permutation-invariant encoder for set-based inputs.
 
@@ -69,7 +69,7 @@ class PoolingByMultiHeadAttention(keras.Model):
             Additional keyword arguments passed to the Keras Layer base class.
         """
 
-        super().__init__(**model_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
 
         self.mab = MultiHeadAttentionBlock(
             embed_dim=embed_dim,

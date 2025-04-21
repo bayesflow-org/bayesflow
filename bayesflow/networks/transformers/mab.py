@@ -3,12 +3,12 @@ from keras import layers
 
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
-from bayesflow.utils import model_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable
 
 
 @serializable
-class MultiHeadAttentionBlock(keras.Model):
+class MultiHeadAttentionBlock(keras.Layer):
     """Implements the MAB block from [1] which represents learnable cross-attention.
 
     In particular, it uses a so-called "Post-LN" transformer block [2] which applies
@@ -64,7 +64,7 @@ class MultiHeadAttentionBlock(keras.Model):
             Additional keyword arguments passed to the Keras Layer base class.
         """
 
-        super().__init__(**model_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
 
         self.input_projector = layers.Dense(embed_dim, name="input_projector")
         self.attention = layers.MultiHeadAttention(

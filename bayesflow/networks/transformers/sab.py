@@ -2,6 +2,7 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable
+
 from .mab import MultiHeadAttentionBlock
 
 

@@ -6,7 +6,7 @@ import numpy as np
 import warnings
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, model_kwargs, weighted_mean
+from bayesflow.utils import find_network, layer_kwargs, weighted_mean
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -118,7 +118,7 @@ class ConsistencyModel(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = model_kwargs(base_config)
+        base_config = layer_kwargs(base_config)
 
         config = {
             "total_steps": self.total_steps,
@@ -128,6 +128,7 @@ class ConsistencyModel(InferenceNetwork):
             "eps": self.eps,
             "s0": self.s0,
             "s1": self.s1,
+            # we do not need to store subnet_kwargs
         }
 
         return base_config | serialize(config)

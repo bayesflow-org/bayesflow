@@ -1,3 +1,4 @@
+import keras
 import numpy as np
 import pytest
 from bayesflow.utils.numpy_utils import softmax
@@ -61,3 +62,19 @@ def pred_models(true_models):
     pred_models = np.random.normal(loc=true_models)
     pred_models = softmax(pred_models, axis=-1)
     return pred_models
+
+
+@pytest.fixture()
+def history():
+    h = keras.callbacks.History()
+
+    step = np.linspace(0, 1, 10_000)
+    train_loss = (1.0 - step) ** 2 + np.random.normal(loc=0, scale=0.02, size=step.shape)
+    validation_loss = 0.1 + (0.75 - step) ** 2 + np.random.normal(loc=0, scale=0.02, size=step.shape)
+
+    h.history = {
+        "loss": train_loss.tolist(),
+        "val_loss": validation_loss.tolist(),
+    }
+
+    return h

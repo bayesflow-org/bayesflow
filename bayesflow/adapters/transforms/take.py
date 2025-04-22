@@ -9,7 +9,7 @@ class Take(ElementwiseTransform):
     """
     A transform to reduce the dimensionality of arrays output by the summary network
     Axis is a mandatory argument and will default  to the last axis.
-    Example: adapter.take("x", np.arange(0,3), axis = -1)
+    Example: adapter.take("x", np.arange(0,3), axis=-1)
 
     """
 

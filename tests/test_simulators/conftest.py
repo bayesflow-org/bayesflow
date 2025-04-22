@@ -148,6 +148,35 @@ def two_moons_simulator(request):
     return request.getfixturevalue(request.param)
 
 
+@pytest.fixture()
+def composite_gaussian():
+    from bayesflow.simulators import make_simulator
+
+    def context():
+        n = np.random.randint(10, 100)
+        return dict(n=n)
+
+    def prior():
+        mu = np.random.normal(0, 1)
+        return dict(mu=mu)
+
+    def likelihood(mu, n):
+        y = np.random.normal(mu, 1, n)
+        return dict(y=y)
+
+    return make_simulator([prior, likelihood], meta_fn=context)
+
+
+@pytest.fixture()
+def fixed_n():
+    return 5
+
+
+@pytest.fixture()
+def fixed_mu():
+    return 100
+
+
 @pytest.fixture(
     params=[
         "bernoulli_glm",

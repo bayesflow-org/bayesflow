@@ -38,3 +38,12 @@ def test_sample(simulator, batch_size):
 
         # test batch randomness
         assert not np.allclose(value, value[0])
+
+
+def test_fixed_sample(composite_gaussian, batch_size, fixed_n, fixed_mu):
+    samples = composite_gaussian.sample((batch_size,), n=fixed_n, mu=fixed_mu)
+
+    assert samples["n"] == fixed_n
+    assert samples["mu"].shape == (batch_size, 1)
+    assert np.all(samples["mu"] == fixed_mu)
+    assert samples["y"].shape == (batch_size, fixed_n)

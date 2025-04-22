@@ -2,11 +2,6 @@ from collections.abc import Mapping, Sequence
 
 import keras
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
@@ -14,10 +9,12 @@ from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import filter_kwargs, logging
+from bayesflow.utils.serialization import serialize, deserialize, serializable
+
 from .approximator import Approximator
 
 
-@serializable(package="bayesflow.approximators")
+@serializable
 class ModelComparisonApproximator(Approximator):
     """
     Defines an approximator for model (simulator) comparison, where the (discrete) posterior model probabilities are
@@ -251,28 +248,24 @@ class ModelComparisonApproximator(Approximator):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        config["num_models"] = deserialize(config["num_models"], custom_objects=custom_objects)
-        config["adapter"] = deserialize(config["adapter"], custom_objects=custom_objects)
-        (config["classifier_network"],) = deserialize(config["classifier_network"], custom_objects=custom_objects)
-        config["summary_network"] = deserialize(config["summary_network"], custom_objects=custom_objects)
-        return super().from_config(config, custom_objects=custom_objects)
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
 
         config = {
-            "num_models": serialize(self.num_models),
-            "adapter": serialize(self.adapter),
-            "classifier_network": serialize(self.classifier_network),
-            "summary_network": serialize(self.summary_network),
+            "num_models": self.num_models,
+            "adapter": self.adapter,
+            "classifier_network": self.classifier_network,
+            "summary_network": self.summary_network,
         }
 
-        return base_config | config
+        return base_config | serialize(config)
 
     def predict(
         self,
         *,
-        conditions: dict[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray],
         logits: bool = False,
         **kwargs,
     ) -> np.ndarray:
@@ -282,7 +275,7 @@ class ModelComparisonApproximator(Approximator):
 
         Parameters
         ----------
-        conditions : dict[str, np.ndarray]
+        conditions : Mapping[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
         logits: bool, default=False
             Should the posterior model probabilities be on the (unconstrained) logit space?

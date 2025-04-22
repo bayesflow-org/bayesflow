@@ -63,9 +63,20 @@ def filter_kwargs(kwargs: dict[str, T], f: Callable) -> dict[str, T]:
     return kwargs
 
 
-def keras_kwargs(kwargs: dict[str, T]) -> dict[str, T]:
+def layer_kwargs(kwargs: dict[str, T]) -> dict[str, T]:
     """Filter keyword arguments for keras.Layer"""
     valid_keys = ["dtype", "name", "trainable"]
+    return {key: value for key, value in kwargs.items() if key in valid_keys}
+
+
+def model_kwargs(kwargs: dict[str, T]) -> dict[str, T]:
+    """Filter keyword arguments for keras.Model"""
+    return layer_kwargs(kwargs)
+
+
+def sequential_kwargs(kwargs: dict[str, T]) -> dict[str, T]:
+    """Filter keyword arguments for keras.Sequential"""
+    valid_keys = ["name", "trainable"]
     return {key: value for key, value in kwargs.items() if key in valid_keys}
 
 

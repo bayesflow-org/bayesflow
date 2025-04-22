@@ -1,19 +1,26 @@
 import keras
 
+from bayesflow.distributions import find_distribution
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import find_distribution, keras_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import allow_batch_size
 
 
 class InferenceNetwork(keras.Layer):
-    MLP_DEFAULT_CONFIG = {}
-
     def __init__(self, base_distribution: str = "normal", **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
+        if self.built:
+            # building when the network is already built can cause issues with serialization
+            # see https://github.com/keras-team/keras/issues/21147
+            return
+
         self.base_distribution.build(xz_shape)
+        x = keras.ops.zeros(xz_shape)
+        conditions = keras.ops.zeros(conditions_shape) if conditions_shape is not None else None
+        self.call(x, conditions, training=True)
 
     def call(
         self,

@@ -1,7 +1,7 @@
 import keras
 from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.utils import keras_kwargs, logging
+from bayesflow.utils import layer_kwargs, logging
 
 from collections.abc import Sequence
 
@@ -13,7 +13,7 @@ class OrderedQuantiles(Ordered):
     """Activation function to link to monotonously increasing quantile estimates."""
 
     def __init__(self, q: Sequence[float] = None, axis: int = None, **kwargs):
-        super().__init__(axis, None, **keras_kwargs(kwargs))
+        super().__init__(axis, None, **layer_kwargs(kwargs))
         self.q = q
 
         self.config = {

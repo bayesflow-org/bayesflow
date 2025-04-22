@@ -1,24 +1,25 @@
 import keras
 from keras import ops
-from keras.saving import register_keras_serializable as serializable
 
+import warnings
+
+from bayesflow.distributions import Distribution
 from bayesflow.types import Tensor
 from bayesflow.utils import (
-    find_network,
-    keras_kwargs,
     concatenate_valid,
+    find_network,
     jacobian,
     jvp,
+    model_kwargs,
     vjp,
-    serialize_value_or_type,
-    deserialize_value_or_type,
     weighted_mean,
 )
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from bayesflow.networks import InferenceNetwork
 
 
-@serializable(package="networks.free_form_flow")
+@serializable
 class FreeFormFlow(InferenceNetwork):
     """Implements a dimensionality-preserving Free-form Flow.
     Incorporates ideas from [1-2].
@@ -53,10 +54,12 @@ class FreeFormFlow(InferenceNetwork):
     def __init__(
         self,
         beta: float = 50.0,
-        encoder_subnet: str | type = "mlp",
-        decoder_subnet: str | type = "mlp",
-        base_distribution: str = "normal",
+        encoder_subnet: str | keras.Layer = "mlp",
+        decoder_subnet: str | keras.Layer = "mlp",
+        base_distribution: str | Distribution = "normal",
         hutchinson_sampling: str = "qr",
+        encoder_subnet_kwargs: dict = None,
+        decoder_subnet_kwargs: dict = None,
         **kwargs,
     ):
         """Creates an instance of a Free-form Flow.
@@ -80,54 +83,48 @@ class FreeFormFlow(InferenceNetwork):
         **kwargs              : dict, optional, default: {}
             Additional keyword arguments
         """
-        super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
+        super().__init__(base_distribution, **kwargs)
+
+        if encoder_subnet_kwargs or decoder_subnet_kwargs:
+            warnings.warn(
+                "Using `subnet_kwargs` is deprecated."
+                "Instead, instantiate the network yourself and pass the arguments directly.",
+                DeprecationWarning,
+            )
+
+        encoder_subnet_kwargs = encoder_subnet_kwargs or {}
+        decoder_subnet_kwargs = decoder_subnet_kwargs or {}
 
         if encoder_subnet == "mlp":
-            encoder_subnet_kwargs = FreeFormFlow.ENCODER_MLP_DEFAULT_CONFIG.copy()
-            encoder_subnet_kwargs.update(kwargs.get("encoder_subnet_kwargs", {}))
-        else:
-            encoder_subnet_kwargs = kwargs.get("encoder_subnet_kwargs", {})
-
-        self.encoder_subnet = find_network(encoder_subnet, **encoder_subnet_kwargs)
-        self.encoder_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
+            encoder_subnet_kwargs = FreeFormFlow.ENCODER_MLP_DEFAULT_CONFIG.copy() | encoder_subnet_kwargs
 
         if decoder_subnet == "mlp":
-            decoder_subnet_kwargs = FreeFormFlow.DECODER_MLP_DEFAULT_CONFIG.copy()
-            decoder_subnet_kwargs.update(kwargs.get("decoder_subnet_kwargs", {}))
-        else:
-            decoder_subnet_kwargs = kwargs.get("decoder_subnet_kwargs", {})
+            decoder_subnet_kwargs = FreeFormFlow.DECODER_MLP_DEFAULT_CONFIG.copy() | decoder_subnet_kwargs
+
+        self.encoder_subnet = find_network(encoder_subnet, **encoder_subnet_kwargs)
+        self.encoder_projector = keras.layers.Dense(
+            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="encoder_projector"
+        )
 
         self.decoder_subnet = find_network(decoder_subnet, **decoder_subnet_kwargs)
-        self.decoder_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
+        self.decoder_projector = keras.layers.Dense(
+            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="decoder_projector"
+        )
 
         self.hutchinson_sampling = hutchinson_sampling
         self.beta = beta
 
         self.seed_generator = keras.random.SeedGenerator()
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "beta": beta,
-            "base_distribution": base_distribution,
-            "hutchinson_sampling": hutchinson_sampling,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "encoder_subnet", encoder_subnet)
-        self.config = serialize_value_or_type(self.config, "decoder_subnet", decoder_subnet)
-
-    def get_config(self):
-        base_config = super().get_config()
-        return base_config | self.config
-
-    @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "encoder_subnet")
-        config = deserialize_value_or_type(config, "decoder_subnet")
-        return cls(**config)
-
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):
-        super().build(xz_shape)
+        if self.built:
+            # building when the network is already built can cause issues with serialization
+            # see https://github.com/keras-team/keras/issues/21147
+            return
+
+        self.base_distribution.build(xz_shape)
+
         self.encoder_projector.units = xz_shape[-1]
         self.decoder_projector.units = xz_shape[-1]
 
@@ -142,11 +139,11 @@ class FreeFormFlow(InferenceNetwork):
         self.encoder_subnet.build(input_shape)
         self.decoder_subnet.build(input_shape)
 
-        input_shape = self.encoder_subnet.compute_output_shape(input_shape)
-        self.encoder_projector.build(input_shape)
+        output_shape = self.encoder_subnet.compute_output_shape(input_shape)
+        self.encoder_projector.build(output_shape)
 
-        input_shape = self.decoder_subnet.compute_output_shape(input_shape)
-        self.decoder_projector.build(input_shape)
+        output_shape = self.decoder_subnet.compute_output_shape(input_shape)
+        self.decoder_projector.build(output_shape)
 
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
@@ -244,3 +241,22 @@ class FreeFormFlow(InferenceNetwork):
         loss = weighted_mean(losses, sample_weight)
 
         return base_metrics | {"loss": loss}
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = model_kwargs(base_config)
+
+        config = {
+            "beta": self.beta,
+            "encoder_subnet": self.encoder_subnet,
+            "decoder_subnet": self.decoder_subnet,
+            "base_distribution": self.base_distribution,
+            "hutchinson_sampling": self.hutchinson_sampling,
+            # we do not need to store subnet_kwargs
+        }
+
+        return base_config | serialize(config)

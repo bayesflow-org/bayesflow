@@ -1,17 +1,16 @@
 import keras
 import numpy as np
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
 
 from bayesflow.types import Tensor
 from bayesflow.utils import pad, searchsorted
 from bayesflow.utils.keras_utils import shifted_softplus
+from bayesflow.utils.serialization import serializable
+
 from ._rational_quadratic import _rational_quadratic_spline
 from .transform import Transform
 
 
-@serializable(package="networks.coupling_flow")
+@serializable
 class SplineTransform(Transform):
     def __init__(
         self,

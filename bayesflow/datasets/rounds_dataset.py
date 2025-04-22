@@ -18,6 +18,8 @@ class RoundsDataset(keras.utils.PyDataset):
         num_batches: int,
         epochs_per_round: int,
         adapter: Adapter | None,
+        *,
+        stage: str = "training",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -27,6 +29,7 @@ class RoundsDataset(keras.utils.PyDataset):
         self.batch_size = batch_size
         self.adapter = adapter
         self.epoch = 0
+        self.stage = stage
 
         if epochs_per_round == 1:
             logging.warning(
@@ -45,7 +48,7 @@ class RoundsDataset(keras.utils.PyDataset):
         batch = self.batches[item]
 
         if self.adapter is not None:
-            batch = self.adapter(batch)
+            batch = self.adapter(batch, stage=self.stage)
 
         return batch
 

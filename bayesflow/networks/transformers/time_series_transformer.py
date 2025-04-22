@@ -1,9 +1,8 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
-from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
 
 from ..embeddings import Time2Vec, RecurrentEmbedding
 from ..summary_network import SummaryNetwork
@@ -11,7 +10,7 @@ from ..summary_network import SummaryNetwork
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class TimeSeriesTransformer(SummaryNetwork):
     def __init__(
         self,
@@ -22,7 +21,7 @@ class TimeSeriesTransformer(SummaryNetwork):
         mlp_widths: tuple = (128, 128),
         dropout: float = 0.05,
         mlp_activation: str = "gelu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
         time_embedding: str = "time2vec",
@@ -50,7 +49,7 @@ class TimeSeriesTransformer(SummaryNetwork):
             Dropout rate applied to the attention and MLP layers. If set to None, no dropout is applied.
         mlp_activation : str, optional (default - 'gelu')
             Activation function used in the dense layers. Common choices include "relu", "elu", and "gelu".
-        kernel_initializer : str, optional (default - 'he_normal')
+        kernel_initializer : str, optional (default - 'lecun_normal')
             Initializer for the kernel weights matrix. Common choices include "glorot_uniform", "he_normal", etc.
         use_bias : bool, optional (default - True)
             Whether to include a bias term in the dense layers.
@@ -104,8 +103,8 @@ class TimeSeriesTransformer(SummaryNetwork):
         # Pooling will be applied as a final step to the abstract representations obtained from set attention
         self.pooling = keras.layers.GlobalAvgPool1D()
         self.output_projector = keras.layers.Dense(summary_dim)
-        self.summary_dim = summary_dim
 
+        self.summary_dim = summary_dim
         self.time_axis = time_axis
 
     def call(self, input_sequence: Tensor, training: bool = False, **kwargs) -> Tensor:
@@ -148,8 +147,3 @@ class TimeSeriesTransformer(SummaryNetwork):
         summary = self.pooling(inp)
         summary = self.output_projector(summary)
         return summary
-
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)
-        self.call(keras.ops.zeros(input_shape))

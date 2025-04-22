@@ -1,13 +1,12 @@
 import numpy as np
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
+
+from bayesflow.utils.serialization import serializable, serialize
 
 from bayesflow.utils.numpy_utils import one_hot
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class OneHot(ElementwiseTransform):
     """
     Changes data to be one-hot encoded.
@@ -22,12 +21,8 @@ class OneHot(ElementwiseTransform):
         super().__init__()
         self.num_classes = num_classes
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "OneHot":
-        return cls(num_classes=config["num_classes"])
-
     def get_config(self) -> dict:
-        return {"num_classes": self.num_classes}
+        return serialize({"num_classes": self.num_classes})
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         return one_hot(data, self.num_classes)

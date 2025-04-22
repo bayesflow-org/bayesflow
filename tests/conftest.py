@@ -1,11 +1,9 @@
-import logging
-
 import keras
+import logging
+import matplotlib
 import pytest
 
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
-
-logging.getLogger("bayesflow").setLevel(logging.DEBUG)
 
 
 def pytest_runtest_setup(item):
@@ -16,6 +14,27 @@ def pytest_runtest_setup(item):
 
     if test_backends and backend not in test_backends:
         pytest.skip(f"Skipping backend '{backend}' for test {item}, which is registered for backends {test_backends}.")
+
+    # always show full tracebacks
+    keras.config.disable_traceback_filtering()
+
+    if keras.backend.backend() == "jax":
+        import jax
+
+        jax.config.update("jax_traceback_filtering", "off")
+
+    # use a non-GUI plotting backend for tests
+    matplotlib.use("Agg")
+
+    # set the logging level to debug for all tests
+    logging.getLogger("bayesflow").setLevel(logging.DEBUG)
+
+
+def pytest_runtest_teardown(item, nextitem):
+    import matplotlib.pyplot as plt
+
+    # close all plots at the end of each test
+    plt.close("all")
 
 
 def pytest_make_parametrize_id(config, val, argname):

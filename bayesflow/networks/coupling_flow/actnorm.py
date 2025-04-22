@@ -1,14 +1,12 @@
 from keras import ops
 
-from keras.saving import register_keras_serializable as serializable
-
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils.serialization import serializable
 
 from .invertible_layer import InvertibleLayer
 
 
-@serializable(package="networks.coupling_flow")
+@serializable
 class ActNorm(InvertibleLayer):
     """Implements an Activation Normalization (ActNorm) Layer. Activation Normalization is learned invertible
     normalization, using a scale (s) and a bias (b) vector::
@@ -27,7 +25,7 @@ class ActNorm(InvertibleLayer):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**kwargs)
         self.scale = None
         self.bias = None
 
@@ -35,7 +33,7 @@ class ActNorm(InvertibleLayer):
         self.scale = self.add_weight(shape=(xz_shape[-1],), initializer="ones", name="scale")
         self.bias = self.add_weight(shape=(xz_shape[-1],), initializer="zeros", name="bias")
 
-    def call(self, xz: Tensor, inverse: bool = False, **kwargs):
+    def call(self, xz: Tensor, inverse: bool = False, **kwargs) -> (Tensor, Tensor):
         if inverse:
             return self._inverse(xz, **kwargs)
         return self._forward(xz, **kwargs)

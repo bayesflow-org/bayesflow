@@ -1,9 +1,11 @@
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    serialize_keras_object as serialize,
-)
-import numpy as np
 import pytest
+import numpy as np
+
+import keras
+
+from bayesflow.utils.serialization import deserialize, serialize
+
+import bayesflow as bf
 
 
 def test_cycle_consistency(adapter, random_data):
@@ -24,9 +26,7 @@ def test_serialize_deserialize(adapter, random_data):
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert reserialized.keys() == serialized.keys()
-    for key in reserialized:
-        assert reserialized[key] == serialized[key]
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
     random_data["foo"] = random_data["x1"]
     deserialized_processed = deserialized(random_data)
@@ -156,7 +156,7 @@ def test_custom_transform():
     with pytest.raises(ValueError):
         SerializableCustomTransform(forward=registered_fn, inverse=not_registered_fn)
 
-    # function does not match registered function
+    # function does not match the registered function
     with pytest.raises(ValueError):
         SerializableCustomTransform(forward=registered_but_changed, inverse=registered_fn)
     with pytest.raises(ValueError):
@@ -172,7 +172,7 @@ def test_custom_transform():
     with pytest.raises(TypeError):
         keras.saving.deserialize_keras_object(corrupt_serialized_transform)
 
-    # modify name of the inverse transform so that it cannot be found
+    # modify the name of the inverse transform so that it cannot be found
     corrupt_serialized_transform = deepcopy(serialized_transform)
     corrupt_serialized_transform["config"]["inverse"]["config"] = "nonexistent"
     with pytest.raises(TypeError):
@@ -192,3 +192,41 @@ def test_split_transform(adapter, random_data):
 
     assert "split_2" in processed
     assert processed["split_2"].shape == target_shape
+
+
+def test_to_dict_transform():
+    import pandas as pd
+
+    data = {
+        "int32": [1, 2, 3, 4, 5],
+        "int64": [1, 2, 3, 4, 5],
+        "float32": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "float64": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "object": ["a", "b", "c", "d", "e"],
+        "category": ["one", "two", "three", "four", "five"],
+    }
+
+    df = pd.DataFrame(data)
+    df["int32"] = df["int32"].astype("int32")
+    df["int64"] = df["int64"].astype("int64")
+    df["float32"] = df["float32"].astype("float32")
+    df["float64"] = df["float64"].astype("float64")
+    df["object"] = df["object"].astype("object")
+    df["category"] = df["category"].astype("category")
+
+    ad = bf.Adapter().to_dict()
+
+    # drop one element to simulate non-complete data
+    batch = df.iloc[:-1]
+
+    processed = ad(batch)
+
+    assert isinstance(processed, dict)
+    assert list(processed.keys()) == ["int32", "int64", "float32", "float64", "object", "category"]
+
+    for key, value in processed.items():
+        assert isinstance(value, np.ndarray)
+        assert value.dtype == "float32"
+
+    # category should have 5 one-hot categories, even though it was only passed 4
+    assert processed["category"].shape[-1] == 5

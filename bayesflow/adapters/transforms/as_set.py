@@ -1,10 +1,11 @@
-from keras.saving import register_keras_serializable as serializable
 import numpy as np
+
+from bayesflow.utils.serialization import serializable
 
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class AsSet(ElementwiseTransform):
     """The `.as_set(["x", "y"])` transform indicates that both `x` and `y` are treated as sets.
 
@@ -32,10 +33,6 @@ class AsSet(ElementwiseTransform):
             return np.squeeze(data, axis=2)
 
         return data
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "AsSet":
-        return cls()
 
     def get_config(self) -> dict:
         return {}

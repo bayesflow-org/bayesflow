@@ -64,15 +64,19 @@ More tutorials are always welcome! Please consider making a pull request if you 
 
 ## Install
 
-BayesFlow v2 is not yet installable via PyPI, but you can use the following command to install the latest version of the `main` branch:
+You can install the latest stable version from PyPI using:
 
 ```bash
-pip install git+https://github.com/bayesflow-org/bayesflow.git
+pip install bayesflow
+```
+
+If you want the latest features, you can install from source:
+
+```bash
+pip install git+https://github.com/bayesflow-org/bayesflow.git@dev
 ```
 
 If you encounter problems with this or require more control, please refer to the instructions to install from source below.
-
-Note: `pip install bayesflow` will install the v1 version of BayesFlow.
 
 ### Backend
 

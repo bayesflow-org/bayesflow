@@ -1,9 +1,8 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
-from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
 
 from ..summary_network import SummaryNetwork
 
@@ -12,7 +11,7 @@ from .isab import InducedSetAttentionBlock
 from .pma import PoolingByMultiHeadAttention
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class SetTransformer(SummaryNetwork):
     """Implements the set transformer architecture from [1] which ultimately represents
     a learnable permutation-invariant function. Designed to naturally model interactions in
@@ -35,7 +34,7 @@ class SetTransformer(SummaryNetwork):
         num_seeds: int = 1,
         dropout: float = 0.05,
         mlp_activation: str = "gelu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
         num_inducing_points: int = None,
@@ -66,7 +65,7 @@ class SetTransformer(SummaryNetwork):
             Dropout rate applied to the attention and MLP layers. If set to None, no dropout is applied.
         mlp_activation : str, optional (default - 'gelu')
             Activation function used in the dense layers. Common choices include "relu", "elu", and "gelu".
-        kernel_initializer : str, optional (default - 'he_normal')
+        kernel_initializer : str, optional (default - 'lecun_normal')
             Initializer for the kernel weights matrix. Common choices include "glorot_uniform", "he_normal", etc.
         use_bias : bool, optional (default - True)
             Whether to include a bias term in the dense layers.
@@ -126,6 +125,7 @@ class SetTransformer(SummaryNetwork):
         )
         self.pooling_by_attention = PoolingByMultiHeadAttention(**(global_attention_settings | pooling_settings))
         self.output_projector = keras.layers.Dense(summary_dim)
+
         self.summary_dim = summary_dim
 
     def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
@@ -151,8 +151,3 @@ class SetTransformer(SummaryNetwork):
         summary = self.pooling_by_attention(summary, training=training, **kwargs)
         summary = self.output_projector(summary)
         return summary
-
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)
-        self.call(keras.ops.zeros(input_shape))

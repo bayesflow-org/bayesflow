@@ -3,20 +3,17 @@ from collections.abc import Mapping, Sequence, Callable
 import numpy as np
 
 import keras
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, logging, split_arrays, squeeze_inner_estimates_dict
+from bayesflow.utils.serialization import serialize, deserialize, serializable
+
 from .approximator import Approximator
 
 
-@serializable(package="bayesflow.approximators")
+@serializable
 class ContinuousApproximator(Approximator):
     """
     Defines a workflow for performing fast posterior or likelihood inference.
@@ -204,21 +201,17 @@ class ContinuousApproximator(Approximator):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        config["adapter"] = deserialize(config["adapter"], custom_objects=custom_objects)
-        config["inference_network"] = deserialize(config["inference_network"], custom_objects=custom_objects)
-        config["summary_network"] = deserialize(config["summary_network"], custom_objects=custom_objects)
-
-        return super().from_config(config, custom_objects=custom_objects)
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
         config = {
-            "adapter": serialize(self.adapter),
-            "inference_network": serialize(self.inference_network),
-            "summary_network": serialize(self.summary_network),
+            "adapter": self.adapter,
+            "inference_network": self.inference_network,
+            "summary_network": self.summary_network,
         }
 
-        return base_config | config
+        return base_config | serialize(config)
 
     def estimate(
         self,

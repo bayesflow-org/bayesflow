@@ -634,7 +634,7 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
     
-    def subsample_array(self,
+    def random_subsample(self,
         *,
         predicate: Predicate = None,
         include: str | Sequence[str] = None,

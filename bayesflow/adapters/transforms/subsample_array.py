@@ -9,7 +9,7 @@ class SubsampleArray(ElementwiseTransform):
     """
     A transform that takes a random subsample of the data within an axis.
 
-    Example: adapter.subsample("x", sample_size = 3, axis = -1)
+    Example: adapter.random_subsample("x", sample_size = 3, axis = -1)
 
     """
 

@@ -13,10 +13,19 @@ class SubsampleArray(ElementwiseTransform):
 
     """
 
-    def __init__(self):
+    def __init__(
+            self,
+            sample_size: int, 
+            axis: int = -1, 
+                 ):
         super().__init__()
+        self.sample_size = sample_size
+        self.axis = axis 
 
-    def forward(self, data: np.ndarray, sample_size: int, axis=-1):
+    def forward(self, data: np.ndarray):
+        sample_size = self.sample_size
+        axis = self.axis 
+        
         max_sample_size = data.shape[axis]
 
         sample_indices = np.random.permutation(max_sample_size)[

@@ -545,12 +545,10 @@ class Adapter(MutableSequence[Transform]):
         return self
     
     def random_subsample(self,
+        keys: str | Sequence[str],
+        *,
         sample_size: int,
         axis: int=-1,
-        *,
-        predicate: Predicate = None,
-        include: str | Sequence[str] = None,
-        exclude: str | Sequence[str] = None,
         **kwargs,
     ):
         """
@@ -568,13 +566,17 @@ class Adapter(MutableSequence[Transform]):
             Additional keyword arguments passed to the transform.
         
         """
+        if isinstance(keys, str):
+            keys = [keys]
+
         transform = MapTransform(
-            transform_constructor=SubsampleArray(sample_size=sample_size, axis=axis),
-            predicate=predicate,
-            include=include,
-            exclude=exclude,
-            **kwargs,
+            transform_map={
+                key: SubsampleArray(sample_size=sample_size, axis=axis)
+                for key in keys
+            }
+            
         )
+        
         self.transforms.append(transform)
         return self
 

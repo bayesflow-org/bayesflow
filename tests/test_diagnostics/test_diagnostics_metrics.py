@@ -83,11 +83,6 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
         out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models.transpose)
 
 
-# -------------------------------------------------------------------------------------------------------------------- #
-#                                          Unit tests for bootstrap_comparison                                         #
-# -------------------------------------------------------------------------------------------------------------------- #
-
-
 def test_bootstrap_comparison_shapes():
     """Test the bootstrap_comparison output shapes."""
     observed_samples = np.random.rand(10, 5)
@@ -154,11 +149,6 @@ def test_bootstrap_comparison_num_observed_exceeds_num_reference():
         )
 
 
-# -------------------------------------------------------------------------------------------------------------------- #
-#                                     Unit tests for mmd_comparison_from_summaries                                     #
-# -------------------------------------------------------------------------------------------------------------------- #
-
-
 def test_mmd_comparison_from_summaries_shapes():
     """Test the mmd_comparison_from_summaries output shapes."""
     observed_summaries = np.random.rand(10, 5)
@@ -212,11 +202,6 @@ def test_mmd_comparison_from_summaries_different_distributions():
     )
 
     assert mmd_observed >= np.quantile(mmd_null, 0.68)
-
-
-# -------------------------------------------------------------------------------------------------------------------- #
-#                                             Unit tests for mmd_comparison                                            #
-# -------------------------------------------------------------------------------------------------------------------- #
 
 
 @pytest.mark.parametrize(

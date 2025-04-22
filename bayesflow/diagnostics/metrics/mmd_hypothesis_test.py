@@ -1,5 +1,5 @@
 """
-This module provides functions for computing distances between observation samples and reference samples with distance 
+This module provides functions for computing distances between observation samples and reference samples with distance
 distributions within the reference samples for hypothesis testing.
 
 Functions:
@@ -7,7 +7,7 @@ Functions:
 - bootstrap_comparison: Computes distance between observed and reference samples and generates a distribution of null
   sample distances by bootstrapping for hypothesis testing.
 - mmd_comparison_from_summaries: Computes the Maximum Mean Discrepancy (MMD) between observed and reference summaries
-  and generates a distribution of MMD values under the null hypothesis to assess model misspecification.    
+  and generates a distribution of MMD values under the null hypothesis to assess model misspecification.
 - mmd_comparison: Computes the Maximum Mean Discrepancy (MMD) between observed and reference data and generates a
   distribution of MMD values under the null hypothesis to assess model misspecification.
 

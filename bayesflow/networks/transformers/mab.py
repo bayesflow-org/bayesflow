@@ -4,6 +4,7 @@ from keras import layers
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 
@@ -122,8 +123,10 @@ class MultiHeadAttentionBlock(keras.Layer):
         return out
 
     # noinspection PyMethodOverriding
+    @sanitize_input_shape
     def build(self, seq_x_shape, seq_y_shape):
         self.call(keras.ops.zeros(seq_x_shape), keras.ops.zeros(seq_y_shape))
 
+    @sanitize_input_shape
     def compute_output_shape(self, seq_x_shape, seq_y_shape):
         return keras.ops.shape(self.call(keras.ops.zeros(seq_x_shape), keras.ops.zeros(seq_y_shape)))

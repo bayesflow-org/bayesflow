@@ -19,6 +19,8 @@ def loss(
     figsize: Sequence[float] = None,
     train_color: str = "#132a70",
     val_color: str = "black",
+    val_marker: str = "o",
+    val_marker_size: float = 5,
     lw_train: float = 2.0,
     lw_val: float = 2.0,
     grid_alpha: float = 0.2,
@@ -49,10 +51,14 @@ def loss(
         The color for the train loss trajectory
     val_color          : str, optional, default: None
         The color for the optional validation loss trajectory
+    val_marker: str
+        Marker style for the validation loss curve. Default is "o".
+    val_marker_size: float
+        Marker size for the validation loss curve. Default is 5.
     lw_train           : int, optional, default: 2
-        The linewidth for the training loss curve
+        The line width for the training loss curve
     lw_val             : int, optional, default: 2
-        The linewidth for the validation loss curve
+        The line width for the validation loss curve
     grid_alpha          : float, optional, default: 0.2
         The transparency of the background grid
     legend_fontsize    : int, optional, default: 14
@@ -130,6 +136,9 @@ def loss(
                 color=val_color,
                 lw=lw_val,
                 alpha=alpha_unsmoothed,
+                linestyle="--",
+                marker=val_marker,
+                markersize=val_marker_size,
                 label="Validation",
             )
 
@@ -140,6 +149,7 @@ def loss(
                     val_step_index,
                     smoothed_val_loss,
                     color=val_color,
+                    linestyle="--",
                     lw=lw_val,
                     alpha=0.8,
                     label="Validation (Moving Average)",

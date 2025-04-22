@@ -5,8 +5,6 @@ import pytest
 
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
 
-logging.getLogger("bayesflow").setLevel(logging.DEBUG)
-
 
 def pytest_runtest_setup(item):
     """Skips backends by test markers. Unmarked tests are treated as backend-agnostic"""
@@ -27,6 +25,9 @@ def pytest_runtest_setup(item):
 
     # use a non-GUI plotting backend for tests
     matplotlib.use("Agg")
+
+    # set the logging level to debug for all tests
+    logging.getLogger("bayesflow").setLevel(logging.DEBUG)
 
 
 def pytest_runtest_teardown(item, nextitem):

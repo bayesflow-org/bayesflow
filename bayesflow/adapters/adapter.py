@@ -543,6 +543,40 @@ class Adapter(MutableSequence[Transform]):
         transform = MapTransform({key: OneHot(num_classes=num_classes) for key in keys})
         self.transforms.append(transform)
         return self
+    
+    def random_subsample(self,
+        sample_size: int,
+        axis: int=-1,
+        *,
+        predicate: Predicate = None,
+        include: str | Sequence[str] = None,
+        exclude: str | Sequence[str] = None,
+        **kwargs,
+    ):
+        """
+        Append a :py:class:`~transforms.SubsampleArray` transform to the adapter.
+
+        Parameters
+        ----------
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform.
+        
+        """
+        transform = MapTransform(
+            transform_constructor=SubsampleArray(sample_size=sample_size, axis=axis),
+            predicate=predicate,
+            include=include,
+            exclude=exclude,
+            **kwargs,
+        )
+        self.transforms.append(transform)
+        return self
 
     def rename(self, from_key: str, to_key: str):
         """Append a :py:class:`~transforms.Rename` transform to the adapter.
@@ -603,6 +637,36 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
+    def take(self,
+        *,
+        predicate: Predicate = None,
+        include: str | Sequence[str] = None,
+        exclude: str | Sequence[str] = None,
+        **kwargs,):
+        """
+        Append a :py:class:`~transforms.Take` transform to the adapter.
+
+        Parameters
+        ----------
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform. """
+        transform = FilterTransform(
+            transform_constructor=Take,
+            predicate=predicate,
+            include=include,
+            exclude=exclude,
+            **kwargs,
+        )
+        self.transforms.append(transform)
+        return self
+    
+    
     def to_array(
         self,
         *,
@@ -634,66 +698,8 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
     
-    def random_subsample(self,
-        *,
-        predicate: Predicate = None,
-        include: str | Sequence[str] = None,
-        exclude: str | Sequence[str] = None,
-        **kwargs,
-    ):
-        """
-        Append a :py:class:`~transforms.SubsampleArray` transform to the adapter.
-
-        Parameters
-        ----------
-        predicate : Predicate, optional
-            Function that indicates which variables should be transformed.
-        include : str or Sequence of str, optional
-            Names of variables to include in the transform.
-        exclude : str or Sequence of str, optional
-            Names of variables to exclude from the transform.
-        **kwargs : dict
-            Additional keyword arguments passed to the transform.
-        
-        """
-        transform = FilterTransform(
-            transform_constructor=SubsampleArray,
-            predicate=predicate,
-            include=include,
-            exclude=exclude,
-            **kwargs,
-        )
-        self.transforms.append(transform)
-        return self
     
-    def take(self,
-        *,
-        predicate: Predicate = None,
-        include: str | Sequence[str] = None,
-        exclude: str | Sequence[str] = None,
-        **kwargs,):
-        """
-        Append a :py:class:`~transforms.Take` transform to the adapter.
-
-        Parameters
-        ----------
-        predicate : Predicate, optional
-            Function that indicates which variables should be transformed.
-        include : str or Sequence of str, optional
-            Names of variables to include in the transform.
-        exclude : str or Sequence of str, optional
-            Names of variables to exclude from the transform.
-        **kwargs : dict
-            Additional keyword arguments passed to the transform. """
-        transform = FilterTransform(
-            transform_constructor=Take,
-            predicate=predicate,
-            include=include,
-            exclude=exclude,
-            **kwargs,
-        )
-        self.transforms.append(transform)
-        return self
+    
     
     
 

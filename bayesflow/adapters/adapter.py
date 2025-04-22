@@ -545,7 +545,7 @@ class Adapter(MutableSequence[Transform]):
         return self
     
     def random_subsample(self,
-        keys: str | Sequence[str],
+        key: str | Sequence[str],
         *,
         sample_size: int | float,
         axis: int=-1,
@@ -566,8 +566,13 @@ class Adapter(MutableSequence[Transform]):
             Additional keyword arguments passed to the transform.
         
         """
-        if isinstance(keys, str):
-            keys = [keys]
+        
+        
+        if isinstance(key, Sequence[str]) and len(keys) >1:
+            TypeError("`key` should be either a string or a list of length one. Only one dataset may be modified at a time.")
+
+        if isinstance(key, str):
+            keys = [key]
 
         transform = MapTransform(
             transform_map={
@@ -688,7 +693,7 @@ class Adapter(MutableSequence[Transform]):
         include : str or Sequence of str, optional
             Names of variables to include in the transform.
         exclude : str or Sequence of str, optional
-            Names of variables to exclude from the transform.
+            Names of variabxles to exclude from the transform.
         **kwargs : dict
             Additional keyword arguments passed to the transform.
         """

@@ -547,7 +547,7 @@ class Adapter(MutableSequence[Transform]):
     def random_subsample(self,
         keys: str | Sequence[str],
         *,
-        sample_size: int,
+        sample_size: int | float,
         axis: int=-1,
         **kwargs,
     ):

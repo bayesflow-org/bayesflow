@@ -1,4 +1,5 @@
 import numpy as np
+import keras
 import pytest
 
 import bayesflow as bf
@@ -90,7 +91,7 @@ def test_bootstrap_comparison_shapes():
     num_null_samples = 50
 
     distance_observed, distance_null = bf.diagnostics.metrics.bootstrap_comparison(
-        observed_samples, reference_samples, lambda x, y: np.abs(np.mean(x) - np.mean(y)), num_null_samples
+        observed_samples, reference_samples, lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)), num_null_samples
     )
 
     assert isinstance(distance_observed, float)
@@ -105,7 +106,7 @@ def test_bootstrap_comparison_same_distribution():
     num_null_samples = 5
 
     distance_observed, distance_null = bf.diagnostics.metrics.bootstrap_comparison(
-        observed_samples, reference_samples, lambda x, y: np.abs(np.mean(x) - np.mean(y)), num_null_samples
+        observed_samples, reference_samples, lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)), num_null_samples
     )
 
     assert distance_observed <= np.quantile(distance_null, 0.99)
@@ -118,7 +119,7 @@ def test_bootstrap_comparison_different_distributions():
     num_null_samples = 50
 
     distance_observed, distance_null = bf.diagnostics.metrics.bootstrap_comparison(
-        observed_samples, reference_samples, lambda x, y: np.abs(np.mean(x) - np.mean(y)), num_null_samples
+        observed_samples, reference_samples, lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)), num_null_samples
     )
 
     assert distance_observed >= np.quantile(distance_null, 0.68)
@@ -132,7 +133,7 @@ def test_bootstrap_comparison_mismatched_shapes():
 
     with pytest.raises(ValueError):
         bf.diagnostics.metrics.bootstrap_comparison(
-            observed_samples, reference_samples, lambda x, y: np.abs(np.mean(x) - np.mean(y)), num_null_samples
+            observed_samples, reference_samples, lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)), num_null_samples
         )
 
 
@@ -145,7 +146,7 @@ def test_bootstrap_comparison_num_observed_exceeds_num_reference():
 
     with pytest.raises(ValueError):
         bf.diagnostics.metrics.bootstrap_comparison(
-            observed_samples, reference_samples, lambda x, y: np.abs(np.mean(x) - np.mean(y)), num_null_samples
+            observed_samples, reference_samples, lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)), num_null_samples
         )
 
 

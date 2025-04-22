@@ -576,7 +576,7 @@ class Adapter(MutableSequence[Transform]):
             }
             
         )
-        
+
         self.transforms.append(transform)
         return self
 
@@ -640,6 +640,8 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def take(self,
+        indices, 
+        axis,
         *,
         predicate: Predicate = None,
         include: str | Sequence[str] = None,
@@ -659,7 +661,7 @@ class Adapter(MutableSequence[Transform]):
         **kwargs : dict
             Additional keyword arguments passed to the transform. """
         transform = FilterTransform(
-            transform_constructor=Take,
+            transform_constructor=Take(indices=indices, axis=axis),
             predicate=predicate,
             include=include,
             exclude=exclude,

@@ -3,6 +3,7 @@ import pytest
 
 # Import the dispatch functions
 from bayesflow.utils import find_network, find_permutation, find_pooling, find_recurrent_net
+from tests.utils import assert_allclose
 
 # --- Tests for find_network.py ---
 
@@ -118,23 +119,21 @@ def test_find_pooling_mean():
     # Check that a keras Lambda layer is returned
     assert isinstance(pooling, keras.layers.Lambda)
     # Test that the lambda function produces a mean when applied to a sample tensor.
-    import numpy as np
 
-    sample = np.array([[1, 2], [3, 4]])
+    sample = keras.ops.convert_to_tensor([[1, 2], [3, 4]])
     # Keras Lambda layers expect tensors via call(), here we simply call the layer's function.
     result = pooling.call(sample)
-    np.testing.assert_allclose(result, sample.mean(axis=-2))
+    assert_allclose(result, keras.ops.mean(sample, axis=-2))
 
 
 @pytest.mark.parametrize("name,func", [("max", keras.ops.max), ("min", keras.ops.min)])
 def test_find_pooling_max_min(name, func):
     pooling = find_pooling(name)
     assert isinstance(pooling, keras.layers.Lambda)
-    import numpy as np
 
-    sample = np.array([[1, 2], [3, 4]])
+    sample = keras.ops.convert_to_tensor([[1, 2], [3, 4]])
     result = pooling.call(sample)
-    np.testing.assert_allclose(result, func(sample, axis=-2))
+    assert_allclose(result, func(sample, axis=-2))
 
 
 def test_find_pooling_learnable(monkeypatch):

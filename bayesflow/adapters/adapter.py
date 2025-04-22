@@ -27,7 +27,7 @@ from .transforms import (
     Standardize,
     ToArray,
     Transform,
-    SubsampleArray,
+    RandomSubsample,
     Take
 )
 from .transforms.filter_transform import Predicate
@@ -571,7 +571,7 @@ class Adapter(MutableSequence[Transform]):
 
         transform = MapTransform(
             transform_map={
-                key: SubsampleArray(sample_size=sample_size, axis=axis)
+                key:RandomSubsample(sample_size=sample_size, axis=axis)
                 for key in keys
             }
             

@@ -5,7 +5,7 @@ from .elementwise_transform import ElementwiseTransform
 
 
 @serializable(package="bayesflow.adapters")
-class SubsampleArray(ElementwiseTransform):
+class RandomSubsample(ElementwiseTransform):
     """
     A transform that takes a random subsample of the data within an axis.
 

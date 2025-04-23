@@ -90,13 +90,15 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
+        jacobian: bool, optional
+            Whether to return the log determinant jacobians of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and jacobians.
         """
         data = data.copy()
         if not jacobian:
@@ -122,13 +124,15 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
+        jacobian: bool, optional
+            Whether to return the log determinant jacobians of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and jacobians.
         """
         data = data.copy()
         if not jacobian:
@@ -145,7 +149,7 @@ class Adapter(MutableSequence[Transform]):
 
     def __call__(
         self, data: Mapping[str, any], *, inverse: bool = False, stage="inference", **kwargs
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the given direction.
 
         Parameters
@@ -161,8 +165,8 @@ class Adapter(MutableSequence[Transform]):
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and jacobians.
         """
         if inverse:
             return self.inverse(data, stage=stage, **kwargs)

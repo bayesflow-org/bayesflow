@@ -77,7 +77,7 @@ class CouplingFlow(InferenceNetwork):
             The type of transformation used in the coupling layers, such as "affine".
             Default is "affine".
         permutation : str or None, optional
-            The type of permutation applied between layers. Can be "random" or None
+            The type of permutation applied between layers. Can be "orthogonal", "random", "swap", or None
             (no permutation). Default is "random".
         use_actnorm : bool, optional
             Whether to apply ActNorm before each coupling layer. Default is True.

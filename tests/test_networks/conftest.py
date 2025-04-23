@@ -111,7 +111,15 @@ def typical_point_inference_network_subnet(subnet):
 
 
 @pytest.fixture(
-    params=["typical_point_inference_network", "coupling_flow", "flow_matching", "diffusion_model", "free_form_flow"],
+    params=[
+        "typical_point_inference_network",
+        "affine_coupling_flow",
+        "spline_coupling_flow",
+        "flow_matching",
+        "diffusion_model",
+        "free_form_flow",
+        "consistency_model",
+    ],
     scope="function",
 )
 def inference_network(request):
@@ -132,7 +140,10 @@ def inference_network_subnet(request):
     return request.getfixturevalue(request.param)
 
 
-@pytest.fixture(params=["coupling_flow", "flow_matching", "diffusion_model", "free_form_flow"], scope="function")
+@pytest.fixture(
+    params=["coupling_flow", "flow_matching", "diffusion_model", "free_form_flow", "consistency_model"],
+    scope="function",
+)
 def generative_inference_network(request):
     return request.getfixturevalue(request.param)
 

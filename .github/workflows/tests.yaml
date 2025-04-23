@@ -73,8 +73,11 @@ jobs:
           pytest -x -m "not slow"
 
       - name: Run Slow Tests
-        # run all slow tests only on manual trigger
-        if: github.event_name == 'workflow_dispatch'
+        # Run slow tests on manual trigger and pushes/PRs to main.
+        # Limit to one OS and Python version to save compute.
+        # Multiline if statements are weird, https://github.com/orgs/community/discussions/25641,
+        # but feel free to convert it.
+        if: ${{ ((github.event_name == 'workflow_dispatch') || (github.event_name == 'push' && github.ref_name == 'main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && ((matrix.os == 'windows-latest') && (matrix.python-version == '3.10')) }}
         run: |
           pytest -m "slow"
 

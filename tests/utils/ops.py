@@ -1,17 +1,35 @@
 import keras
-
-
-def isclose(x1, x2, rtol=1e-5, atol=1e-5):
-    return keras.ops.abs(x1 - x2) <= atol + rtol * keras.ops.abs(x2)
+import numpy as np
 
 
 def allclose(x1, x2, rtol=1e-5, atol=1e-5):
-    return keras.ops.all(isclose(x1, x2, rtol, atol))
+    return keras.ops.all(keras.ops.isclose(x1, x2, rtol, atol))
 
 
 def assert_allclose(x1, x2, rtol=1e-5, atol=1e-8, msg=""):
-    mse = keras.ops.mean(keras.ops.square(x1 - x2))
-    assert allclose(x1, x2, rtol, atol), f"{msg} - mse={mse}"
+    x1 = keras.ops.convert_to_numpy(x1)
+    x2 = keras.ops.convert_to_numpy(x2)
+
+    assert x1.shape == x2.shape, "Input shapes do not match."
+
+    mse = np.mean(np.square(x1 - x2)).item()
+    largest_deviation = np.max(np.abs(x1 - x2)).item()
+    largest_deviation_index = np.unravel_index(np.argmax(np.abs(x1 - x2)), x1.shape)
+    largest_deviation_value1 = x1[largest_deviation_index].item()
+    largest_deviation_value2 = x2[largest_deviation_index].item()
+
+    if msg:
+        msg = f"{msg}\n"
+    else:
+        msg = "Inputs significantly differ:\n"
+
+    msg += "Largest Deviation:\n"
+    msg += f"|{largest_deviation_value1:.02e} - {largest_deviation_value2:.02e}| = {largest_deviation:.02e}\n"
+    msg += "\n"
+    msg += "MSE:\n"
+    msg += f"{mse:.02e}"
+
+    assert allclose(x1, x2, rtol, atol), msg
 
 
 def max_mean_discrepancy(x, y):

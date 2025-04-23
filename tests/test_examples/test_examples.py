@@ -3,6 +3,7 @@ import pytest
 from tests.utils import run_notebook
 
 
+@pytest.mark.skip(reason="requires setting up Stan")
 @pytest.mark.slow
 def test_bayesian_experimental_design(examples_path):
     run_notebook(examples_path / "Bayesian_Experimental_Design.ipynb")
@@ -30,7 +31,7 @@ def test_one_sample_ttest(examples_path):
 
 @pytest.mark.slow
 def test_sir_posterior_estimation(examples_path):
-    run_notebook(examples_path / "SIR_Posterior_estimation.ipynb")
+    run_notebook(examples_path / "SIR_Posterior_Estimation.ipynb")
 
 
 @pytest.mark.slow

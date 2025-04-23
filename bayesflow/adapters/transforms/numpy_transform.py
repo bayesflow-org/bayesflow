@@ -1,10 +1,11 @@
 import numpy as np
-from keras.saving import register_keras_serializable as serializable
+
+from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class NumpyTransform(ElementwiseTransform):
     """
     A class to apply element-wise transformations using plain NumPy functions.
@@ -63,15 +64,8 @@ class NumpyTransform(ElementwiseTransform):
         self._forward = forward
         self._inverse = inverse
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "ElementwiseTransform":
-        return cls(
-            forward=config["forward"],
-            inverse=config["inverse"],
-        )
-
     def get_config(self) -> dict:
-        return {"forward": self._forward.__name__, "inverse": self._inverse.__name__}
+        return serialize({"forward": self._forward.__name__, "inverse": self._inverse.__name__})
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, any]:
         return self._forward(data)

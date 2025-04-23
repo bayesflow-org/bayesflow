@@ -1,11 +1,13 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils import layer_kwargs
+from bayesflow.utils.serialization import serializable
+
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class InducedSetAttentionBlock(keras.Layer):
     """Implements the ISAB block from [1] which represents learnable self-attention specifically
     designed to deal with large sets via a learnable set of "inducing points".
@@ -24,7 +26,7 @@ class InducedSetAttentionBlock(keras.Layer):
         mlp_depth: int = 2,
         mlp_width: int = 128,
         mlp_activation: str = "gelu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
         **kwargs,
@@ -49,7 +51,7 @@ class InducedSetAttentionBlock(keras.Layer):
         mlp_activation : str, optional
             Activation function used in the MLP block, by default "gelu".
         kernel_initializer : str, optional
-            Initializer for kernel weights, by default "he_normal".
+            Initializer for kernel weights, by default "lecun_normal".
         use_bias : bool, optional
             Whether to include bias terms in dense layers, by default True.
         layer_norm : bool, optional
@@ -58,7 +60,7 @@ class InducedSetAttentionBlock(keras.Layer):
             Additional keyword arguments passed to the Keras Layer base class.
         """
 
-        super().__init__(**kwargs)
+        super().__init__(**layer_kwargs(kwargs))
 
         self.num_inducing_points = num_inducing_points
         self.inducing_points = self.add_weight(
@@ -107,6 +109,3 @@ class InducedSetAttentionBlock(keras.Layer):
         inducing_points_tiled = keras.ops.tile(inducing_points_expanded, [batch_size, 1, 1])
         h = self.mab0(inducing_points_tiled, input_set, training=training, **kwargs)
         return self.mab1(input_set, h, training=training, **kwargs)
-
-    def build(self, input_shape):
-        super().build(input_shape)

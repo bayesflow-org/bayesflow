@@ -5,7 +5,7 @@ from keras.saving import (
     register_keras_serializable as serializable,
 )
 
-from bayesflow.utils import keras_kwargs, find_network, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import model_kwargs, find_network, serialize_value_or_type, deserialize_value_or_type
 from bayesflow.types import Shape, Tensor
 from bayesflow.scores import ScoringRule, ParametricDistributionScore
 from bayesflow.utils.decorators import allow_batch_size
@@ -20,10 +20,10 @@ class PointInferenceNetwork(keras.Layer):
     def __init__(
         self,
         scores: dict[str, ScoringRule],
-        subnet: str | type = "mlp",
+        subnet: str | keras.Layer = "mlp",
         **kwargs,
     ):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**model_kwargs(kwargs))
 
         self.scores = scores
 

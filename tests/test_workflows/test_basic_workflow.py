@@ -1,7 +1,7 @@
 import bayesflow as bf
 
 
-def test_classifier_two_sample_test(inference_network, summary_network):
+def test_basic_workflow(inference_network, summary_network):
     workflow = bf.BasicWorkflow(
         inference_network=inference_network,
         summary_network=summary_network,

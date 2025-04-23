@@ -1,7 +1,21 @@
+from copy import copy
+
+import builtins
+import inspect
 import keras
+import numpy as np
+import sys
+
+# this import needs to be exactly like this to work with monkey patching
+from keras.saving import deserialize_keras_object
+
+from .context_managers import monkey_patch
+from .decorators import allow_args
 
 
 PREFIX = "_bayesflow_"
+
+_type_prefix = "__bayesflow_type__"
 
 
 def serialize_value_or_type(config, name, obj):
@@ -76,3 +90,52 @@ def deserialize_value_or_type(config, name):
         updated_config[name] = keras.saving.deserialize_keras_object(config[f"{PREFIX}{name}_val"])
         del updated_config[f"{PREFIX}{name}_val"]
     return updated_config
+
+
+def deserialize(obj, custom_objects=None, safe_mode=True, **kwargs):
+    with monkey_patch(deserialize_keras_object, deserialize) as original_deserialize:
+        if isinstance(obj, str) and obj.startswith(_type_prefix):
+            # we marked this as a type during serialization
+            obj = obj[len(_type_prefix) :]
+            tp = keras.saving.get_registered_object(
+                # TODO: can we pass module objects without overwriting numpy's dict with builtins?
+                obj,
+                custom_objects=custom_objects,
+                module_objects=np.__dict__ | builtins.__dict__,
+            )
+            if tp is None:
+                raise ValueError(
+                    f"Could not deserialize type {obj!r}. Make sure it is registered with "
+                    f"`keras.saving.register_keras_serializable` or pass it in `custom_objects`."
+                )
+            return tp
+        if inspect.isclass(obj):
+            # add this base case since keras does not cover it
+            return obj
+
+        obj = original_deserialize(obj, custom_objects=custom_objects, safe_mode=safe_mode, **kwargs)
+
+        return obj
+
+
+@allow_args
+def serializable(cls, package=None, name=None):
+    if package is None:
+        frame = sys._getframe(1)
+        g = frame.f_globals
+        package = g.get("__name__", "bayesflow")
+
+    if name is None:
+        name = copy(cls.__name__)
+
+    # register subclasses as keras serializable
+    return keras.saving.register_keras_serializable(package=package, name=name)(cls)
+
+
+def serialize(obj):
+    if isinstance(obj, (tuple, list, dict)):
+        return keras.tree.map_structure(serialize, obj)
+    elif inspect.isclass(obj):
+        return _type_prefix + keras.saving.get_registered_name(obj)
+
+    return keras.saving.serialize_keras_object(obj)

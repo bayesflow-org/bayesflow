@@ -2,11 +2,7 @@ from collections.abc import Callable, MutableSequence, Sequence, Mapping
 
 import numpy as np
 
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+from bayesflow.utils.serialization import deserialize, serialize, serializable
 
 from .transforms import (
     AsSet,
@@ -33,7 +29,7 @@ from .transforms import (
 from .transforms.filter_transform import Predicate
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class Adapter(MutableSequence[Transform]):
     """
     Defines an adapter to apply various transforms to data.
@@ -74,18 +70,24 @@ class Adapter(MutableSequence[Transform]):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
-        return cls(transforms=deserialize(config["transforms"], custom_objects))
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self) -> dict:
-        return {"transforms": serialize(self.transforms)}
+        config = {
+            "transforms": self.transforms,
+        }
 
-    def forward(self, data: dict[str, any], **kwargs) -> dict[str, np.ndarray]:
+        return serialize(config)
+
+    def forward(self, data: dict[str, any], *, stage: str = "inference", **kwargs) -> dict[str, np.ndarray]:
         """Apply the transforms in the forward direction.
 
         Parameters
         ----------
         data : dict
             The data to be transformed.
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -97,17 +99,19 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
 
         for transform in self.transforms:
-            data = transform(data, **kwargs)
+            data = transform(data, stage=stage, **kwargs)
 
         return data
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, any]:
+    def inverse(self, data: dict[str, np.ndarray], *, stage: str = "inference", **kwargs) -> dict[str, any]:
         """Apply the transforms in the inverse direction.
 
         Parameters
         ----------
         data : dict
             The data to be transformed.
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -119,11 +123,13 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
 
         for transform in reversed(self.transforms):
-            data = transform(data, inverse=True, **kwargs)
+            data = transform(data, stage=stage, inverse=True, **kwargs)
 
         return data
 
-    def __call__(self, data: Mapping[str, any], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
+    def __call__(
+        self, data: Mapping[str, any], *, inverse: bool = False, stage="inference", **kwargs
+    ) -> dict[str, np.ndarray]:
         """Apply the transforms in the given direction.
 
         Parameters
@@ -132,6 +138,8 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
         **kwargs
             Additional keyword arguments passed to each transform.
 
@@ -141,9 +149,9 @@ class Adapter(MutableSequence[Transform]):
             The transformed data.
         """
         if inverse:
-            return self.inverse(data, **kwargs)
+            return self.inverse(data, stage=stage, **kwargs)
 
-        return self.forward(data, **kwargs)
+        return self.forward(data, stage=stage, **kwargs)
 
     def __repr__(self):
         result = ""
@@ -667,6 +675,18 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(MapTransform({key: Shift(shift=by) for key in keys}))
         return self
 
+    def split(self, key: str, *, into: Sequence[str], indices_or_sections: int | Sequence[int] = None, axis: int = -1):
+        from .transforms import Split
+
+        if isinstance(into, str):
+            transform = Rename(key, into)
+        else:
+            transform = Split(key, into, indices_or_sections, axis)
+
+        self.transforms.append(transform)
+
+        return self
+
     def sqrt(self, keys: str | Sequence[str]):
         """Append an :py:class:`~transforms.Sqrt` transform to the adapter.
 
@@ -741,5 +761,12 @@ class Adapter(MutableSequence[Transform]):
             exclude=exclude,
             **kwargs,
         )
+        self.transforms.append(transform)
+        return self
+
+    def to_dict(self):
+        from .transforms import ToDict
+
+        transform = ToDict()
         self.transforms.append(transform)
         return self

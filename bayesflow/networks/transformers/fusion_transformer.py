@@ -1,17 +1,16 @@
 import keras
 from keras import layers
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
-from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
 
 from ..summary_network import SummaryNetwork
 
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class FusionTransformer(SummaryNetwork):
     """Implements a more flexible version of the TimeSeriesTransformer that applies a series of self-attention layers
     followed by cross-attention between the representation and a learnable template summarized via a recurrent net."""
@@ -25,7 +24,7 @@ class FusionTransformer(SummaryNetwork):
         mlp_widths: tuple = (128, 128),
         dropout: float = 0.05,
         mlp_activation: str = "gelu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
         template_type: str = "lstm",
@@ -56,7 +55,7 @@ class FusionTransformer(SummaryNetwork):
             Dropout rate applied to the attention and MLP layers. If set to None, no dropout is applied.
         mlp_activation : str, optional (default - 'gelu')
             Activation function used in the dense layers. Common choices include "relu", "elu", and "gelu".
-        kernel_initializer : str, optional (default - 'he_normal')
+        kernel_initializer : str, optional (default - 'lecun_normal')
             Initializer for the kernel weights matrix. Common choices include "glorot_uniform", "he_normal", etc.
         use_bias : bool, optional (default - True)
             Whether to include a bias term in the dense layers.
@@ -152,8 +151,3 @@ class FusionTransformer(SummaryNetwork):
         summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training, **kwargs)
         summary = self.output_projector(keras.ops.squeeze(summary, axis=1))
         return summary
-
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)
-        self.call(keras.ops.zeros(input_shape))

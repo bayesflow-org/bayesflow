@@ -79,5 +79,10 @@ class GaussianLinearUniform(BenchmarkSimulator):
         # Generate prior predictive samples, possibly a single if n_obs is None
         if self.n_obs is None:
             return self.rng.normal(loc=params, scale=self.obs_scale)
-        x = self.rng.normal(loc=params, scale=self.obs_scale, size=(self.n_obs, params.shape[0], params.shape[1]))
-        return np.transpose(x, (1, 0, 2))
+        if params.ndim == 2:
+            # batched sampling with n_obs
+            x = self.rng.normal(loc=params, scale=self.obs_scale, size=(self.n_obs, params.shape[0], params.shape[1]))
+            return np.transpose(x, (1, 0, 2))
+        elif params.ndim == 1:
+            # non-batched sampling with n_obs
+            return self.rng.normal(loc=params, scale=self.obs_scale, size=(self.n_obs, params.shape[0]))

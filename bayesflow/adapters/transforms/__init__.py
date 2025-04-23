@@ -17,9 +17,11 @@ from .rename import Rename
 from .scale import Scale
 from .serializable_custom_transform import SerializableCustomTransform
 from .shift import Shift
+from .split import Split
 from .sqrt import Sqrt
 from .standardize import Standardize
 from .to_array import ToArray
+from .to_dict import ToDict
 from .transform import Transform
 
 from ...utils._docs import _add_imports_to_all

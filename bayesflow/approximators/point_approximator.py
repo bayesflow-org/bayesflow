@@ -3,16 +3,15 @@ from collections.abc import Mapping
 import numpy as np
 
 import keras
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict, logging
+from bayesflow.utils.serialization import serializable
+
 from .continuous_approximator import ContinuousApproximator
 
 
-@serializable(package="bayesflow.approximators")
+@serializable
 class PointApproximator(ContinuousApproximator):
     """
     A workflow for fast amortized point estimation of a conditional distribution.
@@ -64,9 +63,9 @@ class PointApproximator(ContinuousApproximator):
         if split:
             estimates = split_arrays(estimates, axis=-1)
         # Reorder the nested dictionary so that original variable names are at the top.
-        estimates = self._reorder_estimates(estimates)
+        estimates = PointApproximator._reorder_estimates(estimates)
         # Remove unnecessary nesting.
-        estimates = self._squeeze_estimates(estimates)
+        estimates = PointApproximator._squeeze_estimates(estimates)
 
         return estimates
 
@@ -88,7 +87,7 @@ class PointApproximator(ContinuousApproximator):
         ----------
         num_samples : int
             The number of samples to generate.
-        conditions : dict[str, np.ndarray]
+        conditions : Mapping[str, np.ndarray]
             A dictionary mapping variable names to arrays representing the conditions
             for the sampling process.
         split : bool, optional
@@ -151,7 +150,7 @@ class PointApproximator(ContinuousApproximator):
         """
         log_prob = super().log_prob(data=data, **kwargs)
         # Squeeze log probabilities dictionary if there's only one key-value pair.
-        log_prob = self._squeeze_parametric_score_major_dict(log_prob)
+        log_prob = PointApproximator._squeeze_parametric_score_major_dict(log_prob)
 
         return log_prob
 
@@ -200,8 +199,9 @@ class PointApproximator(ContinuousApproximator):
             )
         return processed
 
+    @staticmethod
     def _reorder_estimates(
-        self, estimates: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]]
+        estimates: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]],
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         """Reorders the nested dictionary so that the inference variable names become the top-level keys."""
         # Grab the variable names from one sample inner dictionary.
@@ -214,8 +214,9 @@ class PointApproximator(ContinuousApproximator):
                 reordered[variable][score_key] = {inner_key: value[variable] for inner_key, value in inner_dict.items()}
         return reordered
 
+    @staticmethod
     def _squeeze_estimates(
-        self, estimates: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]]
+        estimates: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]],
     ) -> dict[str, dict[str, np.ndarray]]:
         """Squeezes each inner estimate dictionary to remove unnecessary nesting."""
         squeezed = {}
@@ -226,9 +227,8 @@ class PointApproximator(ContinuousApproximator):
             }
         return squeezed
 
-    def _squeeze_parametric_score_major_dict(
-        self, samples: Mapping[str, np.ndarray]
-    ) -> np.ndarray or dict[str, np.ndarray]:
+    @staticmethod
+    def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
         """Squeezes the dictionary to just the value if there is only one key-value pair."""
         if len(samples) == 1:
             return next(iter(samples.values()))  # Extract and return the only item's value

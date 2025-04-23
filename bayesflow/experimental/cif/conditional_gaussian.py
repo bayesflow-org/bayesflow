@@ -4,7 +4,7 @@ import numpy as np
 from bayesflow.networks.mlp import MLP
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils import layer_kwargs
 
 
 @register_keras_serializable(package="bayesflow.networks.cif")
@@ -32,7 +32,7 @@ class ConditionalGaussian(keras.Layer):
             The MLP activation function
         """
 
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
         self.means = MLP([width] * depth, activation=activation)
         self.stds = MLP([width] * depth, activation=activation)
         self.output_projector = keras.layers.Dense(None)

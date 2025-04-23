@@ -1,13 +1,17 @@
-from bayesflow.types import Tensor
+import keras
 
-from .hungarian import hungarian
-from .random import random
+from .log_sinkhorn import log_sinkhorn
 from .sinkhorn import sinkhorn
 
+methods = {
+    "sinkhorn": sinkhorn,
+    "sinkhorn_knopp": sinkhorn,
+    "log_sinkhorn": log_sinkhorn,
+    "log_sinkhorn_knopp": log_sinkhorn,
+}
 
-def optimal_transport(
-    x1: Tensor, x2: Tensor, *aux: Tensor, method: str = "sinkhorn_knopp", **kwargs
-) -> (Tensor, Tensor):
+
+def optimal_transport(x1, x2, method="log_sinkhorn", return_assignments=False, **kwargs):
     """Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method
     and cost matrix used.
 
@@ -23,28 +27,21 @@ def optimal_transport(
     :param x2: Tensor of shape (m, ...)
         Samples from the second distribution.
 
-    :param aux: Tensors of shape (n, ...)
-        Auxiliary tensors to be permuted along with x1.
-        Note that x2 is never permuted for all currently available methods.
-
     :param method: Method used to compute the transport cost.
-        Default: 'sinkhorn_knopp'
+        Default: 'log_sinkhorn'
 
-    :param kwargs: Additional keyword arguments passed to the optimization method.
+    :param return_assignments: Whether to return the assignment indices.
+        Default: False
+
+    :param kwargs: Additional keyword arguments that are passed to the optimization method.
 
     :return: Tensors of shapes (n, ...) and (m, ...)
         x1 and x2 in optimal transport permutation order.
     """
-    methods = {
-        "hungarian": hungarian,
-        "sinkhorn": sinkhorn,
-        "sinkhorn_knopp": sinkhorn,
-        "random": random,
-    }
+    assignments = methods[method.lower()](x1, x2, **kwargs)
+    x2 = keras.ops.take(x2, assignments, axis=0)
 
-    method = method.lower()
+    if return_assignments:
+        return x1, x2, assignments
 
-    if method not in methods:
-        raise ValueError(f"Unsupported method name: '{method}'.")
-
-    return methods[method](x1, x2, *aux, **kwargs)
+    return x1, x2

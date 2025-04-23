@@ -1,16 +1,12 @@
 from collections.abc import Sequence
 import numpy as np
 
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+from bayesflow.utils.serialization import serialize, serializable
 
 from .transform import Transform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class Broadcast(Transform):
     """
     Broadcasts arrays or scalars to the shape of a given other array.
@@ -96,31 +92,15 @@ class Broadcast(Transform):
         self.exclude = exclude
         self.squeeze = squeeze
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Broadcast":
-        # Deserialize turns tuples to lists, undo it if necessary
-        exclude = deserialize(config["exclude"], custom_objects)
-        exclude = tuple(exclude) if isinstance(exclude, list) else exclude
-        expand = deserialize(config["expand"], custom_objects)
-        expand = tuple(expand) if isinstance(expand, list) else expand
-        squeeze = deserialize(config["squeeze"], custom_objects)
-        squeeze = tuple(squeeze) if isinstance(squeeze, list) else squeeze
-        return cls(
-            keys=deserialize(config["keys"], custom_objects),
-            to=deserialize(config["to"], custom_objects),
-            expand=expand,
-            exclude=exclude,
-            squeeze=squeeze,
-        )
-
     def get_config(self) -> dict:
-        return {
-            "keys": serialize(self.keys),
-            "to": serialize(self.to),
-            "expand": serialize(self.expand),
-            "exclude": serialize(self.exclude),
-            "squeeze": serialize(self.squeeze),
+        config = {
+            "keys": self.keys,
+            "to": self.to,
+            "expand": self.expand,
+            "exclude": self.exclude,
+            "squeeze": self.squeeze,
         }
+        return serialize(config)
 
     # noinspection PyMethodOverriding
     def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:

@@ -28,10 +28,11 @@ def adapter():
         .apply_serializable(include="x", forward=serializable_fn, inverse=serializable_fn)
         .scale("x", by=[-1, 2])
         .shift("x", by=2)
+        .split("key_to_split", into=["split_1", "split_2"])
         .standardize(exclude=["t1", "t2", "o1"])
         .drop("d1")
         .one_hot("o1", 10)
-        .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "t1", "t2", "o1"])
+        .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "t1", "t2", "o1", "split_1", "split_2"])
         .rename("o1", "o2")
     )
 
@@ -55,4 +56,5 @@ def random_data():
         "d1": np.random.standard_normal(size=(32, 2)),
         "d2": np.random.standard_normal(size=(32, 2)),
         "o1": np.random.randint(0, 9, size=(32, 2)),
+        "key_to_split": np.random.standard_normal(size=(32, 10)),
     }

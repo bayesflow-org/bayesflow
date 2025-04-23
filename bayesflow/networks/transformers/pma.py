@@ -1,13 +1,15 @@
 import keras
 import keras.ops as ops
-from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.types import Tensor
 from bayesflow.networks import MLP
+from bayesflow.types import Tensor
+from bayesflow.utils import layer_kwargs
+from bayesflow.utils.serialization import serializable
+
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class PoolingByMultiHeadAttention(keras.Layer):
     """Implements the pooling with multi-head attention (PMA) block from [1] which represents
     a permutation-invariant encoder for set-based inputs.
@@ -30,7 +32,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
         mlp_depth: int = 2,
         mlp_width: int = 128,
         mlp_activation: str = "gelu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
         **kwargs,
@@ -57,17 +59,17 @@ class PoolingByMultiHeadAttention(keras.Layer):
             Number of units in each hidden layer of the MLP.
         mlp_activation : str, optional (default="gelu")
             Activation function used in the MLP.
-        kernel_initializer : str, optional (default="he_normal")
+        kernel_initializer : str, optional (default="lecun_normal")
             Initializer for kernel weights in dense layers.
         use_bias : bool, optional (default=True)
             Whether to include bias terms in dense layers.
         layer_norm : bool, optional (default=True)
             Whether to apply layer normalization before and after attention.
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments passed to the Keras Layer base class.
         """
 
-        super().__init__(**kwargs)
+        super().__init__(**layer_kwargs(kwargs))
 
         self.mab = MultiHeadAttentionBlock(
             embed_dim=embed_dim,
@@ -122,3 +124,6 @@ class PoolingByMultiHeadAttention(keras.Layer):
         seed_tiled = ops.tile(seed_vector_expanded, [batch_size, 1, 1])
         summaries = self.mab(seed_tiled, set_x_transformed, training=training, **kwargs)
         return ops.reshape(summaries, (ops.shape(summaries)[0], -1))
+
+    def compute_output_shape(self, input_shape):
+        return keras.ops.shape(self.call(keras.ops.zeros(input_shape)))

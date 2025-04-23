@@ -1,14 +1,9 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Mapping
 from typing import Protocol
 
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    get_registered_name,
-    get_registered_object,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+
+from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
 from .transform import Transform
@@ -19,7 +14,7 @@ class Predicate(Protocol):
         raise NotImplementedError
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class FilterTransform(Transform):
     """
     Implements a transform that applies a different transform on a subset of the data.
@@ -34,6 +29,7 @@ class FilterTransform(Transform):
         transform_constructor: Callable[..., ElementwiseTransform],
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
+        transform_map: Mapping[str, ElementwiseTransform] = None,
         **kwargs,
     ):
         super().__init__()
@@ -52,7 +48,7 @@ class FilterTransform(Transform):
 
         self.kwargs = kwargs
 
-        self.transform_map = {}
+        self.transform_map = transform_map or {}
 
     def __repr__(self):
         if e := self.extra_repr():
@@ -80,38 +76,16 @@ class FilterTransform(Transform):
 
         return result
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Transform":
-        transform_constructor = get_registered_object(config["transform_constructor"])
-        try:
-            kwargs = deserialize(config["kwargs"])
-        except TypeError as e:
-            raise TypeError(
-                "The transform could not be deserialized properly. "
-                "The most likely reason is that some classes or functions "
-                "are not known during deserialization. Please pass them as `custom_objects`."
-            ) from e
-        instance = cls(
-            transform_constructor=transform_constructor,
-            predicate=deserialize(config["predicate"], custom_objects),
-            include=deserialize(config["include"], custom_objects),
-            exclude=deserialize(config["exclude"], custom_objects),
-            **kwargs,
-        )
-
-        instance.transform_map = deserialize(config["transform_map"])
-
-        return instance
-
     def get_config(self) -> dict:
-        return {
-            "transform_constructor": get_registered_name(self.transform_constructor),
-            "predicate": serialize(self.predicate),
-            "include": serialize(self.include),
-            "exclude": serialize(self.exclude),
-            "kwargs": serialize(self.kwargs),
-            "transform_map": serialize(self.transform_map),
+        config = {
+            "include": self.include,
+            "transform_constructor": self.transform_constructor,
+            "predicate": self.predicate,
+            "exclude": self.exclude,
+            "transform_map": self.transform_map,
+            **self.kwargs,
         }
+        return serialize(config)
 
     def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()

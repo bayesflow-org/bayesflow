@@ -4,6 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from matplotlib.collections import LineCollection
+from matplotlib.colors import Normalize
+from matplotlib.patches import Rectangle
+from matplotlib.legend_handler import HandlerPatch
+
 from .validators import check_estimates_prior_shapes
 from .dict_utils import dicts_to_arrays
 
@@ -260,3 +265,96 @@ def make_quadratic(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray):
         alpha=0.9,
         linestyle="dashed",
     )
+
+
+def gradient_line(x, y, c=None, cmap: str = "viridis", lw: float = 2.0, alpha: float = 1, ax=None):
+    """
+    Plot a 1D line with color gradient determined by `c` (same shape as x and y).
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    # Default color value = y
+    if c is None:
+        c = y
+
+    # Create segments for LineCollection
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+    norm = Normalize(np.min(c), np.max(c))
+    lc = LineCollection(segments, array=c, cmap=cmap, norm=norm, linewidth=lw, alpha=alpha)
+
+    ax.add_collection(lc)
+    ax.set_xlim(np.min(x), np.max(x))
+    ax.set_ylim(np.min(y), np.max(y))
+    return lc
+
+
+def gradient_legend(ax, label, cmap, norm, loc="upper right"):
+    """
+    Adds a single gradient swatch to the legend of the given Axes.
+
+    Parameters
+    ----------
+    - ax: matplotlib Axes
+    - label: str, label to display in the legend
+    - cmap: matplotlib colormap
+    - norm: matplotlib Normalize object
+    - loc: legend location (default 'upper right')
+    """
+
+    # Custom dummy handle to represent the gradient
+    class _GradientSwatch(Rectangle):
+        pass
+
+    # Custom legend handler that draws a horizontal gradient
+    class _HandlerGradient(HandlerPatch):
+        def create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans):
+            gradient = np.linspace(0, 1, 256).reshape(1, -1)
+            im = ax.imshow(
+                gradient,
+                aspect="auto",
+                extent=[xdescent, xdescent + width, ydescent, ydescent + height],
+                transform=trans,
+                cmap=cmap,
+                norm=norm,
+            )
+            return [im]
+
+    # Add to existing legend entries
+    handles, labels = ax.get_legend_handles_labels()
+    handles.append(_GradientSwatch((0, 0), 1, 1))
+    labels.append(label)
+
+    ax.legend(handles=handles, labels=labels, loc=loc, handler_map={_GradientSwatch: _HandlerGradient()})
+
+
+def add_gradient_plot(
+    x,
+    y,
+    ax,
+    cmap: str = "viridis",
+    lw: float = 3.0,
+    marker: bool = True,
+    marker_type: str = "o",
+    marker_size: int = 34,
+    alpha: float = 1,
+    label: str = "Validation",
+):
+    gradient_line(x, y, c=x, cmap=cmap, lw=lw, alpha=alpha, ax=ax)
+
+    # Optionally add markers
+    if marker:
+        ax.scatter(
+            x,
+            y,
+            c=x,
+            cmap=cmap,
+            marker=marker_type,
+            s=marker_size,
+            zorder=10,
+            edgecolors="none",
+            label=label,
+            alpha=0.01,
+        )

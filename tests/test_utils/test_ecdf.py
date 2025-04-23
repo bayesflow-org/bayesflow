@@ -15,7 +15,7 @@ def test_data():
 
 def test_fractional_ranks(test_data):
     post_samples, prior_samples, _ = test_data
-    # Compute expected result manually
+    # Compute the expected result manually
     expected = np.mean(post_samples < prior_samples[:, np.newaxis, :], axis=1)
     result = fractional_ranks(post_samples, prior_samples)
     np.testing.assert_almost_equal(result, expected, decimal=6)

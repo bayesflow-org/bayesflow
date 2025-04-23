@@ -1,20 +1,6 @@
 import pytest
 
-
-# For the serialization tests, we want to test passing str and type.
-# For all other tests, this is not necessary and would double test time.
-# Therefore, below we specify two variants of each network, one without and
-# one with a subnet parameter. The latter will only be used for the relevant
-# tests. If there is a better way to set the params to a single value ("mlp")
-# for a given test, maybe this can be simplified, but I did not see one.
-@pytest.fixture(params=["str", "type"], scope="function")
-def subnet(request):
-    if request.param == "str":
-        return "mlp"
-
-    from bayesflow.networks import MLP
-
-    return MLP
+from bayesflow.networks import MLP
 
 
 @pytest.fixture()
@@ -39,44 +25,41 @@ def flow_matching():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
-        subnet_kwargs={"widths": [64, 64]},
+        subnet=MLP([8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 100},
     )
 
 
 @pytest.fixture()
-def flow_matching_subnet(subnet):
-    from bayesflow.networks import FlowMatching
+def consistency_model():
+    from bayesflow.networks import ConsistencyModel
 
-    return FlowMatching(subnet=subnet)
-
-
-@pytest.fixture()
-def coupling_flow():
-    from bayesflow.networks import CouplingFlow
-
-    return CouplingFlow(depth=2)
+    return ConsistencyModel(total_steps=100, subnet=MLP([8, 8]))
 
 
 @pytest.fixture()
-def coupling_flow_subnet(subnet):
+def affine_coupling_flow():
     from bayesflow.networks import CouplingFlow
 
-    return CouplingFlow(depth=2, subnet=subnet)
+    return CouplingFlow(
+        depth=2, subnet="mlp", subnet_kwargs=dict(widths=[8, 8]), transform="affine", transform_kwargs=dict(clamp=1.8)
+    )
+
+
+@pytest.fixture()
+def spline_coupling_flow():
+    from bayesflow.networks import CouplingFlow
+
+    return CouplingFlow(
+        depth=2, subnet="mlp", subnet_kwargs=dict(widths=[8, 8]), transform="spline", transform_kwargs=dict(bins=8)
+    )
 
 
 @pytest.fixture()
 def free_form_flow():
     from bayesflow.experimental import FreeFormFlow
 
-    return FreeFormFlow()
-
-
-@pytest.fixture()
-def free_form_flow_subnet(subnet):
-    from bayesflow.experimental import FreeFormFlow
-
-    return FreeFormFlow(encoder_subnet=subnet, decoder_subnet=subnet)
+    return FreeFormFlow(encoder_subnet=MLP([16, 16]), decoder_subnet=MLP([16, 16]))
 
 
 @pytest.fixture()
@@ -95,9 +78,11 @@ def typical_point_inference_network():
 
 
 @pytest.fixture()
-def typical_point_inference_network_subnet(subnet):
+def typical_point_inference_network_subnet():
     from bayesflow.networks import PointInferenceNetwork
     from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+
+    subnet = MLP([16, 8])
 
     return PointInferenceNetwork(
         scores=dict(
@@ -141,7 +126,7 @@ def inference_network_subnet(request):
 
 
 @pytest.fixture(
-    params=["coupling_flow", "flow_matching", "diffusion_model", "free_form_flow", "consistency_model"],
+    params=["affine_coupling_flow", "spline_coupling_flow", "flow_matching", "diffusion_model", "free_form_flow", "consistency_model"],
     scope="function",
 )
 def generative_inference_network(request):
@@ -153,6 +138,20 @@ def time_series_network(summary_dim):
     from bayesflow.networks import TimeSeriesNetwork
 
     return TimeSeriesNetwork(summary_dim=summary_dim)
+
+
+@pytest.fixture(scope="function")
+def time_series_transformer(summary_dim):
+    from bayesflow.networks import TimeSeriesTransformer
+
+    return TimeSeriesTransformer(summary_dim=summary_dim)
+
+
+@pytest.fixture(scope="function")
+def fusion_transformer(summary_dim):
+    from bayesflow.networks import FusionTransformer
+
+    return FusionTransformer(summary_dim=summary_dim)
 
 
 @pytest.fixture(scope="function")
@@ -169,7 +168,17 @@ def deep_set(summary_dim):
     return DeepSet(summary_dim=summary_dim)
 
 
-@pytest.fixture(params=[None, "time_series_network", "set_transformer", "deep_set"], scope="function")
+@pytest.fixture(
+    params=[
+        None,
+        "time_series_network",
+        "time_series_transformer",
+        "fusion_transformer",
+        "set_transformer",
+        "deep_set",
+    ],
+    scope="function",
+)
 def summary_network(request, summary_dim):
     if request.param is None:
         return None

@@ -1,14 +1,11 @@
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+
+from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class ExpandDims(ElementwiseTransform):
     """
     Expand the shape of an array.
@@ -51,16 +48,8 @@ class ExpandDims(ElementwiseTransform):
         super().__init__()
         self.axis = axis
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "ExpandDims":
-        return cls(
-            axis=deserialize(config["axis"], custom_objects),
-        )
-
     def get_config(self) -> dict:
-        return {
-            "axis": serialize(self.axis),
-        }
+        return serialize({"axis": self.axis})
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         return np.expand_dims(data, axis=self.axis)

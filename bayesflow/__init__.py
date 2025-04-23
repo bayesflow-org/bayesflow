@@ -51,6 +51,17 @@ def setup():
         )
 
 
+# dynamically add version dunder variable
+try:
+    from importlib.metadata import version, PackageNotFoundError
+
+    __version__ = version(__name__)
+except PackageNotFoundError:
+    __version__ = "2.0.0"
+finally:
+    del version
+    del PackageNotFoundError
+
 # call and clean up namespace
 setup()
 del setup

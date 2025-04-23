@@ -1,16 +1,13 @@
 from collections.abc import Sequence
 
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+
+from bayesflow.utils.serialization import serialize, serializable
 
 from .transform import Transform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable
 class Concatenate(Transform):
     """Concatenate multiple arrays into a new key. Used to specify how data variables should be treated by the network.
 
@@ -26,7 +23,7 @@ class Concatenate(Transform):
     Examples
     --------
     Suppose you have a simulator that generates variables "beta" and "sigma" from priors and then observation
-    variables "x" and "y". We can then use concatonate in the following way
+    variables "x" and "y". We can then use concatenate in the following way
 
     >>> adapter = (
         bf.Adapter()
@@ -35,29 +32,21 @@ class Concatenate(Transform):
     )
     """
 
-    def __init__(self, keys: Sequence[str], *, into: str, axis: int = -1, _indices: list | None = None):
+    def __init__(self, keys: Sequence[str], *, into: str, axis: int = -1, indices: list | None = None):
         self.keys = keys
         self.into = into
         self.axis = axis
 
-        self.indices = _indices
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Concatenate":
-        return cls(
-            keys=deserialize(config["keys"], custom_objects),
-            into=deserialize(config["into"], custom_objects),
-            axis=deserialize(config["axis"], custom_objects),
-            _indices=deserialize(config["indices"], custom_objects),
-        )
+        self.indices = indices
 
     def get_config(self) -> dict:
-        return {
-            "keys": serialize(self.keys),
-            "into": serialize(self.into),
-            "axis": serialize(self.axis),
-            "indices": serialize(self.indices),
+        config = {
+            "keys": self.keys,
+            "into": self.into,
+            "axis": self.axis,
+            "indices": self.indices,
         }
+        return serialize(config)
 
     def forward(self, data: dict[str, any], *, strict: bool = True, **kwargs) -> dict[str, any]:
         if not strict and self.indices is None:

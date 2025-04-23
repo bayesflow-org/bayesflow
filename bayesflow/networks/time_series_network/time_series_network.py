@@ -1,13 +1,13 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
+
 from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class TimeSeriesNetwork(SummaryNetwork):
     """
     Implements a LSTNet Architecture as described in [1]
@@ -87,9 +87,10 @@ class TimeSeriesNetwork(SummaryNetwork):
             kernel_sizes = (kernel_sizes,)
         if not isinstance(strides, (list, tuple)):
             strides = (strides,)
-        self.conv_blocks = []
-        for f, k, s in zip(filters, kernel_sizes, strides):
-            self.conv_blocks.append(
+
+        conv_blocks = []
+        for i, (f, k, s) in enumerate(zip(filters, kernel_sizes, strides)):
+            conv_blocks.append(
                 keras.layers.Conv1D(
                     filters=f,
                     kernel_size=k,
@@ -97,10 +98,13 @@ class TimeSeriesNetwork(SummaryNetwork):
                     activation=activation,
                     kernel_initializer=kernel_initializer,
                     padding="same",
+                    name=f"conv_{i}",
                 )
             )
             if groups is not None:
-                self.conv_blocks.append(keras.layers.GroupNormalization(groups=groups))
+                conv_blocks.append(keras.layers.GroupNormalization(groups=groups, name=f"group_norm_{i}"))
+
+        self.conv = keras.Sequential(conv_blocks, name="conv")
 
         # Recurrent and feedforward backbones
         self.recurrent = SkipRecurrentNet(
@@ -110,8 +114,10 @@ class TimeSeriesNetwork(SummaryNetwork):
             input_channels=filters[-1],
             skip_steps=skip_steps,
             dropout=dropout,
+            name="recurrent",
         )
-        self.output_projector = keras.layers.Dense(summary_dim)
+        self.output_projector = keras.layers.Dense(summary_dim, name="output_projector")
+
         self.summary_dim = summary_dim
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
@@ -139,14 +145,7 @@ class TimeSeriesNetwork(SummaryNetwork):
             Transformed tensor representing the summarized feature representation
             of the input sequence.
         """
-
-        for c in self.conv_blocks:
-            x = c(x, training=training)
-
+        x = self.conv(x, training=training)
         x = self.recurrent(x, training=training)
         x = self.output_projector(x)
         return x
-
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)

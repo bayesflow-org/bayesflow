@@ -1,11 +1,11 @@
 import keras
 
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils import model_kwargs
 
 
-class InvertibleLayer(keras.Layer):
+class InvertibleLayer(keras.Model):
     def __init__(self, **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**model_kwargs(kwargs))
 
     def call(self, *args, **kwargs):
         # we cannot provide a default implementation for this

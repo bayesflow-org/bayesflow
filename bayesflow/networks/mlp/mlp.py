@@ -1,16 +1,16 @@
 from collections.abc import Sequence
-from typing import Literal
+from typing import Literal, Callable
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.types import Tensor
-from bayesflow.utils import keras_kwargs
-from .hidden_block import ConfigurableHiddenBlock
+from bayesflow.utils import sequential_kwargs
+from bayesflow.utils.serialization import deserialize, serializable, serialize
+
+from ..residual import Residual
 
 
-@serializable(package="bayesflow.networks")
-class MLP(keras.Layer):
+@serializable
+class MLP(keras.Sequential):
     """
     Implements a simple configurable MLP with optional residual connections and dropout.
 
@@ -22,10 +22,11 @@ class MLP(keras.Layer):
         self,
         widths: Sequence[int] = (256, 256),
         *,
-        activation: str = "mish",
-        kernel_initializer: str = "he_normal",
-        residual: bool = False,
+        activation: str | Callable[[], keras.Layer] = "mish",
+        kernel_initializer: str | keras.Initializer = "he_normal",
+        residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
+        norm: Literal["batch", "layer"] | keras.Layer = None,
         spectral_normalization: bool = False,
         **kwargs,
     ):
@@ -33,14 +34,11 @@ class MLP(keras.Layer):
         Implements a flexible multi-layer perceptron (MLP) with optional residual connections, dropout, and
         spectral normalization.
 
-        This MLP can be used as a general-purpose feature extractor or function approximator,supporting configurable
+        This MLP can be used as a general-purpose feature extractor or function approximator, supporting configurable
         depth, width, activation functions, and weight initializations.
 
         If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
         supports dropout for regularization and spectral normalization for stability in learning smooth functions.
-
-        The architecture can be specified either via an explicit sequence of layer widths (`widths`) or by defining a
-        fixed depth and width (`depth` and `width`).
 
         Parameters
         ----------
@@ -54,44 +52,100 @@ class MLP(keras.Layer):
             Whether to use residual connections for improved training stability. Default is False.
         dropout : float or None, optional
             Dropout rate applied within the MLP layers for regularization. Default is 0.05.
+        norm: str, optional
+
         spectral_normalization : bool, optional
             Whether to apply spectral normalization to stabilize training. Default is False.
         **kwargs
             Additional keyword arguments passed to the Keras layer initialization.
-
-        Raises
-        ------
-        ValueError
-            If both `widths` and (`depth`, `width`) are provided
         """
+        self.widths = list(widths)
+        self.activation = activation
+        self.kernel_initializer = kernel_initializer
+        self.residual = residual
+        self.dropout = dropout
+        self.norm = norm
+        self.spectral_normalization = spectral_normalization
 
-        super().__init__(**keras_kwargs(kwargs))
+        layers = []
 
-        self.res_blocks = []
         for width in widths:
-            self.res_blocks.append(
-                ConfigurableHiddenBlock(
-                    units=width,
-                    activation=activation,
-                    kernel_initializer=kernel_initializer,
-                    residual=residual,
-                    dropout=dropout,
-                    spectral_normalization=spectral_normalization,
-                )
+            layer = self._make_layer(
+                width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization
             )
+            layers.append(layer)
 
-    def build(self, input_shape):
-        for layer in self.res_blocks:
+        super().__init__(layers, **sequential_kwargs(kwargs))
+
+    def build(self, input_shape=None):
+        if self.built:
+            # building when the network is already built can cause issues with serialization
+            # see https://github.com/keras-team/keras/issues/21147
+            return
+
+        # we only care about the last dimension, and using ... signifies to keras.Sequential
+        # that any number of batch dimensions is valid (which is what we want for all sublayers)
+        # we also have to avoid calling super().build() because this causes
+        # shape errors when building on non-sets but doing inference on sets
+        # this is a work-around for https://github.com/keras-team/keras/issues/21158
+        input_shape = (..., input_shape[-1])
+
+        for layer in self._layers:
             layer.build(input_shape)
             input_shape = layer.compute_output_shape(input_shape)
 
-    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
-        for layer in self.res_blocks:
-            x = layer(x, training=training)
-        return x
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
-    def compute_output_shape(self, input_shape):
-        for layer in self.res_blocks:
-            input_shape = layer.compute_output_shape(input_shape)
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = sequential_kwargs(base_config)
 
-        return input_shape
+        config = {
+            "widths": self.widths,
+            "activation": self.activation,
+            "kernel_initializer": self.kernel_initializer,
+            "residual": self.residual,
+            "dropout": self.dropout,
+            "norm": self.norm,
+            "spectral_normalization": self.spectral_normalization,
+        }
+
+        return base_config | serialize(config)
+
+    @staticmethod
+    def _make_layer(width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization):
+        layers = []
+
+        dense = keras.layers.Dense(width, kernel_initializer=kernel_initializer)
+        if spectral_normalization:
+            dense = keras.layers.SpectralNormalization(dense)
+        layers.append(dense)
+
+        if dropout is not None and dropout > 0:
+            layers.append(keras.layers.Dropout(dropout))
+
+        activation = keras.activations.get(activation)
+        if not isinstance(activation, keras.Layer):
+            activation = keras.layers.Activation(activation)
+
+        layers.append(activation)
+
+        if norm == "batch":
+            layers.append(keras.layers.BatchNormalization())
+        elif norm == "layer":
+            layers.append(keras.layers.LayerNormalization())
+        elif isinstance(norm, str):
+            raise ValueError(f"Unknown normalization strategy: {norm!r}.")
+        elif isinstance(norm, keras.Layer):
+            layers.append(norm)
+        elif norm is None:
+            pass
+        else:
+            raise TypeError(f"Cannot infer norm from {norm!r} of type {type(norm)}.")
+
+        if residual:
+            return Residual(*layers)
+
+        return keras.Sequential(layers)

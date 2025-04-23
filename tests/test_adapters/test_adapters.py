@@ -13,7 +13,7 @@ def test_cycle_consistency(adapter, random_data):
     deprocessed = adapter(processed, inverse=True)
 
     for key, value in random_data.items():
-        if key in ["d1", "d2"]:
+        if key in ["d1", "d2", "p3", "n1", "u1"]:
             # dropped
             continue
         assert key in deprocessed
@@ -230,3 +230,36 @@ def test_to_dict_transform():
 
     # category should have 5 one-hot categories, even though it was only passed 4
     assert processed["category"].shape[-1] == 5
+
+
+def test_jacobian(adapter_jacobian, random_data):
+    d, jacobian = adapter_jacobian(random_data, jacobian=True)
+
+    assert np.allclose(jacobian["x1"], np.log(2))
+
+    p1 = -np.log1p(random_data["p1"])
+    p2 = -0.5 * np.log(random_data["p2"]) + 0.5
+    p3 = random_data["p3"] - np.log(np.exp(random_data["p3"]) - 1)
+    p = np.sum(p1, axis=-1) + np.sum(p2, axis=-1) + np.sum(p3, axis=-1)
+
+    assert np.allclose(jacobian["p"], p)
+
+    n1 = -(random_data["n1"] - 1)
+    n1 = n1 - np.log(np.exp(n1) - 1)
+    n1 = np.sum(n1, axis=-1)
+
+    assert np.allclose(jacobian["n1"], n1)
+
+    u1 = random_data["u1"]
+    u1 = (u1 + 1) / 3
+    u1 = -np.log(u1) - np.log1p(-u1) - np.log(3)
+
+    assert np.allclose(jacobian["u"], u1[:, 0])
+
+
+def test_jacobian_inverse(adapter_jacobian_inverse, random_data):
+    d, forward_jacobian = adapter_jacobian_inverse(random_data, jacobian=True)
+    d, inverse_jacobian = adapter_jacobian_inverse(d, inverse=True, jacobian=True)
+
+    for key in forward_jacobian.keys():
+        assert np.allclose(forward_jacobian[key], -inverse_jacobian[key])

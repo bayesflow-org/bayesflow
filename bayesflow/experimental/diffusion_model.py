@@ -18,6 +18,7 @@ from bayesflow.utils import (
     layer_kwargs,
     weighted_mean,
     integrate,
+    integrate_stochastic,
 )
 
 
@@ -550,10 +551,43 @@ class DiffusionModel(InferenceNetwork):
 
         # compute velocity for the ODE depending on the noise schedule
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz)
-        out = f - 0.5 * g_squared * score
+        # out = f - 0.5 * g_squared * score
+        out = f - g_squared * score
 
         # todo: for the SDE: d(z) = [ f(z, t) - g(t)^2 * score(z, lambda) ] dt + g(t) dW
         return out
+
+    def velocity2(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        conditions: Tensor = None,
+        training: bool = False,
+        clip_x: bool = False,
+    ) -> Tensor:
+        # calculate the current noise level and transform into correct shape
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = keras.ops.broadcast_to(log_snr_t, keras.ops.shape(xz)[:-1] + (1,))
+        # alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t, training=training)
+
+        # if conditions is None:
+        #    xtc = keras.ops.concatenate([xz, log_snr_t], axis=-1)
+        # else:
+        #    xtc = keras.ops.concatenate([xz, log_snr_t, conditions], axis=-1)
+        # pred = self.output_projector(self.subnet(xtc, training=training), training=training)
+
+        # x_pred = self.convert_prediction_to_x(
+        #    pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=clip_x
+        # )
+        # convert x to score
+        # score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+
+        # compute velocity for the ODE depending on the noise schedule
+        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz)
+        # out = f - 0.5 * g_squared * score
+        # out = f - g_squared * score
+
+        return ops.sqrt(g_squared)
 
     def _velocity_trace(
         self,
@@ -655,9 +689,18 @@ class DiffusionModel(InferenceNetwork):
         def deltas(time, xz):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
+        def diffusion(time, xz):
+            return {"xz": self.velocity2(xz, time=time, conditions=conditions, training=training)}
+
         state = {"xz": z}
-        state = integrate(
+        # state = integrate(
+        #    deltas,
+        #    state,
+        #    **integrate_kwargs,
+        # )
+        state = integrate_stochastic(
             deltas,
+            diffusion,
             state,
             **integrate_kwargs,
         )

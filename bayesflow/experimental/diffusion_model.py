@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from abc import ABC, abstractmethod
 import keras
 from keras import ops
-from keras.saving import register_keras_serializable as serializable
 
+from bayesflow.utils.serialization import serialize, deserialize, serializable
 from bayesflow.types import Tensor, Shape
 import bayesflow as bf
 from bayesflow.networks import InferenceNetwork
@@ -13,9 +13,7 @@ from bayesflow.utils import (
     expand_right_as,
     find_network,
     jacobian_trace,
-    keras_kwargs,
-    serialize_value_or_type,
-    deserialize_value_or_type,
+    layer_kwargs,
     weighted_mean,
     integrate,
 )
@@ -145,8 +143,8 @@ class LinearNoiseSchedule(NoiseSchedule):
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15):
         super().__init__(name="linear_noise_schedule")
-        self._log_snr_min = ops.convert_to_tensor(min_log_snr)
-        self._log_snr_max = ops.convert_to_tensor(max_log_snr)
+        self._log_snr_min = min_log_snr
+        self._log_snr_max = max_log_snr
 
         self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
@@ -192,11 +190,11 @@ class CosineNoiseSchedule(NoiseSchedule):
     [1] Diffusion models beat gans on image synthesis: Dhariwal and Nichol (2022)
     """
 
-    def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0):
+    def __init__(self, min_log_snr: float = -15.0, max_log_snr: float = 15.0, s_shift_cosine: float = 0.0):
         super().__init__(name="cosine_noise_schedule")
-        self._log_snr_min = ops.convert_to_tensor(min_log_snr)
-        self._log_snr_max = ops.convert_to_tensor(max_log_snr)
-        self._s_shift_cosine = ops.convert_to_tensor(s_shift_cosine)
+        self._log_snr_min = min_log_snr
+        self._log_snr_max = max_log_snr
+        self._s_shift_cosine = s_shift_cosine
 
         self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
@@ -210,7 +208,8 @@ class CosineNoiseSchedule(NoiseSchedule):
     def get_t_from_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         # SNR = -2 * log(tan(pi*t/2)) => t = 2/pi * arctan(exp(-snr/2))
-        return 2 / math.pi * ops.arctan(ops.exp((2 * self._s_shift_cosine - log_snr_t) / 2))
+        print("p", log_snr_t)
+        return 2.0 / math.pi * ops.arctan(ops.exp((2.0 * self._s_shift_cosine - log_snr_t) / 2.0))
 
     def derivative_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
         """Compute d/dt log(1 + e^(-snr(t))), which is used for the reverse SDE."""
@@ -241,12 +240,12 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     def __init__(self, sigma_data: float = 0.5, sigma_min: float = 0.002, sigma_max: float = 80):
         super().__init__(name="edm_noise_schedule")
-        self.sigma_data = ops.convert_to_tensor(sigma_data)
-        self.sigma_max = ops.convert_to_tensor(sigma_max)
-        self.sigma_min = ops.convert_to_tensor(sigma_min)
-        self.p_mean = ops.convert_to_tensor(-1.2)
-        self.p_std = ops.convert_to_tensor(1.2)
-        self.rho = ops.convert_to_tensor(7)
+        self.sigma_data = sigma_data
+        self.sigma_max = sigma_max
+        self.sigma_min = sigma_min
+        self.p_mean = -1.2
+        self.p_std = 1.2
+        self.rho = 7
 
         # convert EDM parameters to signal-to-noise ratio formulation
         self._log_snr_min = -2 * ops.log(sigma_max)
@@ -336,7 +335,7 @@ class EDMNoiseSchedule(NoiseSchedule):
         return ops.exp(-log_snr_t) + 0.5**2
 
 
-@serializable(package="bayesflow.networks")
+@serializable
 class DiffusionModel(InferenceNetwork):
     """Diffusion Model as described in this overview paper [1].
 
@@ -395,7 +394,7 @@ class DiffusionModel(InferenceNetwork):
             Additional keyword arguments passed to the subnet and other components.
         """
 
-        super().__init__(base_distribution=None, **keras_kwargs(kwargs))
+        super().__init__(base_distribution=None, **kwargs)
 
         if isinstance(noise_schedule, str):
             if noise_schedule == "linear":
@@ -432,18 +431,11 @@ class DiffusionModel(InferenceNetwork):
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "integrate_kwargs": self.integrate_kwargs,
-            "subnet_kwargs": subnet_kwargs,
-            "noise_schedule": self.noise_schedule,
-            "prediction_type": self.prediction_type,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
-
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
-        super().build(xz_shape, conditions_shape=conditions_shape)
+        if self.built:
+            return
+
+        self.base_distribution.build(xz_shape)
 
         self.output_projector.units = xz_shape[-1]
         input_shape = list(xz_shape)
@@ -461,12 +453,19 @@ class DiffusionModel(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        return base_config | self.config
+        base_config = layer_kwargs(base_config)
+
+        config = {
+            "subnet": self.subnet,
+            "noise_schedule": self.noise_schedule,
+            "integrate_kwargs": self.integrate_kwargs,
+            "prediction_type": self.prediction_type,
+        }
+        return base_config | serialize(config)
 
     @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def convert_prediction_to_x(
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, clip_x: bool
@@ -546,7 +545,14 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = self.integrate_kwargs | kwargs
+        integrate_kwargs = (
+            {
+                "start_time": self.noise_schedule._t_min,
+                "stop_time": self.noise_schedule._t_max,
+            }
+            | self.integrate_kwargs
+            | kwargs
+        )
         if density:
 
             def deltas(time, xz):
@@ -588,7 +594,14 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = self.integrate_kwargs | kwargs
+        integrate_kwargs = (
+            {
+                "start_time": self.noise_schedule._t_max,
+                "stop_time": self.noise_schedule._t_min,
+            }
+            | self.integrate_kwargs
+            | kwargs
+        )
         if density:
 
             def deltas(time, xz):

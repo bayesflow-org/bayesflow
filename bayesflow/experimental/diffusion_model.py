@@ -137,9 +137,9 @@ class NoiseSchedule(ABC):
         if self._log_snr_min >= self._log_snr_max:
             raise ValueError("min_log_snr must be less than max_log_snr.")
         for training in [True, False]:
-            if not ops.isfinite(self.get_log_snr(ops.convert_to_tensor(0), training=training)):
+            if not ops.isfinite(self.get_log_snr(0.0, training=training)):
                 raise ValueError("log_snr(0) must be finite.")
-            if not ops.isfinite(self.get_log_snr(ops.convert_to_tensor(1), training=training)):
+            if not ops.isfinite(self.get_log_snr(1.0, training=training)):
                 raise ValueError("log_snr(1) must be finite.")
             if not ops.isfinite(self.get_t_from_log_snr(self._log_snr_max, training=training)):
                 raise ValueError("t(0) must be finite.")

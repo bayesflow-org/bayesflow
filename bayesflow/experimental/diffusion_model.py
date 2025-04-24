@@ -257,7 +257,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda).
         Default is the sigmoid weighting based on Kingma et al. (2023).
         """
-        return ops.sigmoid(-log_snr_t / 2)
+        return ops.sigmoid(-log_snr_t + 2)
 
     def get_config(self):
         return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max, s_shift_cosine=self._s_shift_cosine)
@@ -270,6 +270,7 @@ class CosineNoiseSchedule(NoiseSchedule):
 @serializable
 class EDMNoiseSchedule(NoiseSchedule):
     """EDM noise schedule for diffusion models. This schedule is based on the EDM paper [1].
+    This should be used with the F-prediction type in the diffusion model.
 
     [1] Elucidating the Design Space of Diffusion-Based Generative Models: Karras et al. (2022)
     """
@@ -350,7 +351,7 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""
-        return ops.exp(-log_snr_t) + 0.5**2
+        return (ops.exp(-log_snr_t) + ops.square(self.sigma_data)) / ops.square(self.sigma_data)
 
 
 @serializable
@@ -432,6 +433,10 @@ class DiffusionModel(InferenceNetwork):
         if prediction_type not in ["velocity", "noise", "F"]:  # F is EDM
             raise ValueError(f"Unknown prediction type: {prediction_type}")
         self.prediction_type = prediction_type
+        if noise_schedule.name == "edm_noise_schedule" and prediction_type != "F":
+            warnings.warn(
+                "EDM noise schedule is build for F-prediction. Consider using F-prediction instead.",
+            )
 
         # clipping of prediction (after it was transformed to x-prediction)
         self._clip_min = -5.0

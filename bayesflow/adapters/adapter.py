@@ -91,14 +91,14 @@ class Adapter(MutableSequence[Transform]):
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
         log_det_jac: bool, optional
-            Whether to return the log determinant jacobians of the transforms.
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
         dict | tuple[dict, dict]
-            The transformed data or tuple of transformed data and log determinant jacobians.
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
         if not log_det_jac:
@@ -125,14 +125,14 @@ class Adapter(MutableSequence[Transform]):
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
         log_det_jac: bool, optional
-            Whether to return the log determinant jacobians of the transforms.
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
         dict | tuple[dict, dict]
-            The transformed data or tuple of transformed data and log determinant jacobians.
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
         if not log_det_jac:
@@ -166,7 +166,7 @@ class Adapter(MutableSequence[Transform]):
         Returns
         -------
         dict | tuple[dict, dict]
-            The transformed data or tuple of transformed data and log determinant jacobians.
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         if inverse:
             return self.inverse(data, stage=stage, **kwargs)

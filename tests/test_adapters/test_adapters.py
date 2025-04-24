@@ -263,3 +263,29 @@ def test_log_det_jac_inverse(adapter_log_det_jac_inverse, random_data):
 
     for key in forward_log_det_jac.keys():
         assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])
+
+
+def test_log_det_jac_exceptions(random_data):
+    # Test cannot compute inverse log_det_jac
+    # e.g., when we apply a concat and then a transform that
+    # we cannot "unconcatenate" the log_det_jac
+    # (because the log_det_jac are summed, not concatenated)
+    adapter = bf.Adapter().concatenate(["p1", "p2", "p3"], into="p").sqrt("p")
+    transformed_data, log_det_jac = adapter(random_data, log_det_jac=True)
+
+    # test that inverse raises error
+    with pytest.raises(ValueError):
+        adapter(transformed_data, inverse=True, log_det_jac=True)
+
+    # test resolvable order: first transform, then concatenate
+    adapter = bf.Adapter().sqrt(["p1", "p2", "p3"]).concatenate(["p1", "p2", "p3"], into="p")
+
+    transformed_data, forward_log_det_jac = adapter(random_data, log_det_jac=True)
+    data, inverse_log_det_jac = adapter(transformed_data, inverse=True, log_det_jac=True)
+    inverse_log_det_jac = sum(inverse_log_det_jac.values())
+
+    # forward is the same regardless
+    assert np.allclose(forward_log_det_jac["p"], log_det_jac["p"])
+
+    # inverse works when concatenation is used after transforms
+    assert np.allclose(forward_log_det_jac["p"], -inverse_log_det_jac)

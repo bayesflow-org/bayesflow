@@ -108,8 +108,9 @@ class Adapter(MutableSequence[Transform]):
 
         log_det_jac = {}
         for transform in self.transforms:
+            transformed_data = transform(data, stage=stage, **kwargs)
             log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
-            data = transform(data, stage=stage, **kwargs)
+            data = transformed_data
 
         return data, log_det_jac
 

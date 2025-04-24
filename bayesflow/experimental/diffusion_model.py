@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from abc import ABC, abstractmethod
 import keras
 from keras import ops
+import warnings
 
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 from bayesflow.types import Tensor, Shape
@@ -389,7 +390,7 @@ class DiffusionModel(InferenceNetwork):
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
-        super().__init__(base_distribution="normal", **kwargs)
+        super().__init__(base_distribution=None, **kwargs)
 
         if isinstance(noise_schedule, str):
             if noise_schedule == "linear":
@@ -418,6 +419,13 @@ class DiffusionModel(InferenceNetwork):
         )
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
+
+        if subnet_kwargs:
+            warnings.warn(
+                "Using `subnet_kwargs` is deprecated."
+                "Instead, instantiate the network yourself and pass the arguments directly.",
+                DeprecationWarning,
+            )
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
@@ -643,7 +651,7 @@ class DiffusionModel(InferenceNetwork):
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
         # t_i = \mod (u_0 + i/k, 1)
-        u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x))
+        u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
         i = ops.arange(0, keras.ops.shape(x)[0], dtype=ops.dtype(x))  # tensor of indices
         t = (u0 + i / ops.cast(keras.ops.shape(x)[0], dtype=ops.dtype(x))) % 1
         # i = keras.random.randint((keras.ops.shape(x)[0],), minval=0, maxval=self._timesteps)

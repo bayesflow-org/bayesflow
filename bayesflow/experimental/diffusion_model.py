@@ -13,49 +13,11 @@ from bayesflow.utils import (
     expand_right_as,
     find_network,
     jacobian_trace,
-    keras_kwargs,
     serialize_value_or_type,
     deserialize_value_or_type,
     weighted_mean,
     integrate,
 )
-
-
-match keras.backend.backend():
-    case "jax":
-        from jax.scipy.special import erf, erfinv
-
-        def cdf_gaussian(x, loc, scale):
-            return 0.5 * (1 + erf((x - loc) / (scale * math.sqrt(2.0))))
-
-        def icdf_gaussian(x, loc, scale):
-            return loc + scale * erfinv(2 * x - 1) * math.sqrt(2)
-    case "numpy":
-        from scipy.special import erf, erfinv
-
-        def cdf_gaussian(x, loc, scale):
-            return 0.5 * (1 + erf((x - loc) / (scale * math.sqrt(2.0))))
-
-        def icdf_gaussian(x, loc, scale):
-            return loc + scale * erfinv(2 * x - 1) * math.sqrt(2.0)
-    case "tensorflow":
-        from tensorflow.math import erf, erfinv
-
-        def cdf_gaussian(x, loc, scale):
-            return 0.5 * (1 + erf((x - loc) / (scale * math.sqrt(2.0))))
-
-        def icdf_gaussian(x, loc, scale):
-            return loc + scale * erfinv(2 * x - 1) * math.sqrt(2.0)
-    case "torch":
-        from torch import erf, erfinv
-
-        def cdf_gaussian(x, loc, scale):
-            return 0.5 * (1 + erf((x - loc) / (scale * math.sqrt(2.0))))
-
-        def icdf_gaussian(x, loc, scale):
-            return loc + scale * erfinv(2 * x - 1) * math.sqrt(2.0)
-    case other:
-        raise ValueError(f"Backend '{other}' is not supported.")
 
 
 class NoiseSchedule(ABC):
@@ -401,8 +363,7 @@ class DiffusionModel(InferenceNetwork):
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
-
-        super().__init__(base_distribution=None, **keras_kwargs(kwargs))
+        super().__init__(base_distribution="normal", **kwargs)
 
         if isinstance(noise_schedule, str):
             if noise_schedule == "linear":

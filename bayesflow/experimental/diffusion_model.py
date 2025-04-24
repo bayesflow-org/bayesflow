@@ -479,7 +479,7 @@ class DiffusionModel(InferenceNetwork):
         if self.prediction_type == "v":
             # convert v into x
             x = alpha_t * z - sigma_t * pred
-        elif self.prediction_type == "e":
+        elif self.prediction_type == "eps":
             # convert noise prediction into x
             x = (z - sigma_t * pred) / alpha_t
         elif self.prediction_type == "x":
@@ -553,8 +553,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": 1.0,
-                "stop_time": 0.0,
+                "start_time": 0.0,
+                "stop_time": 1.0,
             }
             | self.integrate_kwargs
             | kwargs
@@ -602,8 +602,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": 0.0,
-                "stop_time": 1.0,
+                "start_time": 1.0,
+                "stop_time": 0.0,
             }
             | self.integrate_kwargs
             | kwargs

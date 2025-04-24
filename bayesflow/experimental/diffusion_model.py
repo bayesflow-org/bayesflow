@@ -67,7 +67,7 @@ class NoiseSchedule(ABC):
         pass
 
     @abstractmethod
-    def derivative_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
+    def derivative_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
         r"""Compute \beta(t) = d/dt log(1 + e^(-snr(t))). This is usually used for the reverse SDE."""
         pass
 
@@ -131,6 +131,24 @@ class NoiseSchedule(ABC):
     def from_config(cls, config, custom_objects=None):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
+    def validate(self):
+        """Validate the noise schedule."""
+        if self._log_snr_min >= self._log_snr_max:
+            raise ValueError("min_log_snr must be less than max_log_snr.")
+        for training in [True, False]:
+            if not ops.isfinite(self.get_log_snr(ops.convert_to_tensor(0), training=training)):
+                raise ValueError("log_snr(0) must be finite.")
+            if not ops.isfinite(self.get_log_snr(ops.convert_to_tensor(1), training=training)):
+                raise ValueError("log_snr(1) must be finite.")
+            if not ops.isfinite(self.get_t_from_log_snr(self._log_snr_max, training=training)):
+                raise ValueError("t(0) must be finite.")
+            if not ops.isfinite(self.get_t_from_log_snr(self._log_snr_min, training=training)):
+                raise ValueError("t(1) must be finite.")
+            if not ops.isfinite(self.derivative_log_snr(self._log_snr_max, training=training)):
+                raise ValueError("dt/t log_snr(0) must be finite.")
+            if not ops.isfinite(self.derivative_log_snr(self._log_snr_min, training=training)):
+                raise ValueError("dt/t log_snr(1) must be finite.")
+
 
 @serializable
 class LinearNoiseSchedule(NoiseSchedule):
@@ -167,7 +185,7 @@ class LinearNoiseSchedule(NoiseSchedule):
 
         # Compute the truncated time t_trunc
         t_trunc = self._t_min + (self._t_max - self._t_min) * t
-        dsnr_dx = -(2 * t_trunc * ops.exp(t_trunc**2)) / (ops.exp(t_trunc**2) - 1)
+        dsnr_dx = -2 * t_trunc / (1 - ops.exp(-(t_trunc**2)))
 
         # Using the chain rule on f(t) = log(1 + e^(-snr(t))):
         # f'(t) = - (e^{-snr(t)} / (1 + e^{-snr(t)})) * dsnr_dt
@@ -362,7 +380,7 @@ class DiffusionModel(InferenceNetwork):
         subnet: str | type = "mlp",
         integrate_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
-        noise_schedule: str = "cosine",
+        noise_schedule: str | NoiseSchedule = "cosine",
         prediction_type: str = "v",
         **kwargs,
     ):
@@ -384,7 +402,7 @@ class DiffusionModel(InferenceNetwork):
             Additional keyword arguments for the integration process. Default is None.
         subnet_kwargs : dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
-        noise_schedule : str, optional
+        noise_schedule : str or NoiseSchedule, optional
             The noise schedule used for the diffusion process. Can be "linear", "cosine", or "edm".
             Default is "cosine".
         prediction_type: str, optional
@@ -406,6 +424,8 @@ class DiffusionModel(InferenceNetwork):
         elif not isinstance(noise_schedule, NoiseSchedule):
             raise ValueError(f"Unknown noise schedule: {noise_schedule}")
         self.noise_schedule = noise_schedule
+        # validate noise model
+        self.noise_schedule.validate()
 
         if prediction_type not in ["eps", "v", "F"]:  # F is EDM
             raise ValueError(f"Unknown prediction type: {prediction_type}")

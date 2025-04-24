@@ -69,8 +69,8 @@ class NoiseSchedule(ABC):
         r"""Compute \beta(t) = d/dt log(1 + e^(-snr(t))). This is usually used for the reverse SDE."""
         pass
 
-    def get_drift_diffusion(self, log_snr_t: Tensor, x: Tensor = None, training: bool = True) -> tuple[Tensor, Tensor]:
-        r"""Compute the drift and optionally the diffusion term for the reverse SDE.
+    def get_drift_diffusion(self, log_snr_t: Tensor, x: Tensor = None, training: bool = False) -> tuple[Tensor, Tensor]:
+        r"""Compute the drift and optionally the squared diffusion term for the reverse SDE.
         Usually it can be derived from the derivative of the schedule:
             \beta(t) = d/dt log(1 + e^(-snr(t)))
             f(z, t) = -0.5 * \beta(t) * z
@@ -84,14 +84,14 @@ class NoiseSchedule(ABC):
         # Default implementation is to return the diffusion term only
         beta = self.derivative_log_snr(log_snr_t=log_snr_t, training=training)
         if x is None:  # return g only
-            return ops.sqrt(beta)
+            return beta
         if self.variance_type == "preserving":
             f = -0.5 * beta * x
         elif self.variance_type == "exploding":
             f = ops.zeros_like(beta)
         else:
             raise ValueError(f"Unknown variance type: {self.variance_type}")
-        return f, ops.sqrt(beta)
+        return f, beta
 
     def get_alpha_sigma(self, log_snr_t: Tensor, training: bool) -> tuple[Tensor, Tensor]:
         """Get alpha and sigma for a given log signal-to-noise ratio (lambda).
@@ -144,7 +144,7 @@ class LinearNoiseSchedule(NoiseSchedule):
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
 
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
 
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
@@ -176,9 +176,9 @@ class LinearNoiseSchedule(NoiseSchedule):
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda).
         Default is the likelihood weighting based on Song et al. (2021).
         """
-        g = self.get_drift_diffusion(log_snr_t=log_snr_t)
+        g_squared = self.get_drift_diffusion(log_snr_t=log_snr_t)
         sigma_t = self.get_alpha_sigma(log_snr_t=log_snr_t, training=True)[1]
-        return ops.square(g / sigma_t)
+        return g_squared / ops.square(sigma_t)
 
     def get_config(self):
         return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max)
@@ -203,7 +203,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         self._log_snr_max = max_log_snr
         self._s_shift_cosine = s_shift_cosine
 
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
 
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
@@ -254,7 +254,6 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     def __init__(self, sigma_data: float = 0.5, sigma_min: float = 0.002, sigma_max: float = 80):
         super().__init__(name="edm_noise_schedule", variance_type="exploding")
-        super().__init__(name="edm_noise_schedule")
         self.sigma_data = sigma_data
         self.sigma_max = sigma_max
         self.sigma_min = sigma_min
@@ -265,7 +264,7 @@ class EDMNoiseSchedule(NoiseSchedule):
         # convert EDM parameters to signal-to-noise ratio formulation
         self._log_snr_min = -2 * ops.log(sigma_max)
         self._log_snr_max = -2 * ops.log(sigma_min)
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
 
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
@@ -513,8 +512,8 @@ class DiffusionModel(InferenceNetwork):
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
         # compute velocity for the ODE depending on the noise schedule
-        f, g = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz)
-        out = f - 0.5 * ops.square(g) * score
+        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz)
+        out = f - 0.5 * g_squared * score
 
         # todo: for the SDE: d(z) = [ f(z, t) - g(t)^2 * score(z, lambda) ] dt + g(t) dW
         return out
@@ -680,5 +679,5 @@ class DiffusionModel(InferenceNetwork):
         # apply sample weight
         loss = weighted_mean(loss, sample_weight)
 
-        base_metrics = super().compute_metrics(x, conditions, sample_weight, stage)
+        base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
         return base_metrics | {"loss": loss}

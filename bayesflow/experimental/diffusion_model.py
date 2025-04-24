@@ -552,8 +552,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": 0.0,
-                "stop_time": 1.0,
+                "start_time": 1.0,
+                "stop_time": 0.0,
             }
             | self.integrate_kwargs
             | kwargs
@@ -601,8 +601,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": 1.0,
-                "stop_time": 0.0,
+                "start_time": 0.0,
+                "stop_time": 1.0,
             }
             | self.integrate_kwargs
             | kwargs

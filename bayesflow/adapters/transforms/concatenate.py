@@ -131,7 +131,7 @@ class Concatenate(Transform):
         if inverse:
             if log_det_jac.get(self.into) is not None:
                 raise ValueError(
-                    "Cannot obtain an inverse jacobian of concatenation. "
+                    "Cannot obtain an inverse jacobian determinant of concatenation. "
                     "Transform your variables before you concatenate."
                 )
 

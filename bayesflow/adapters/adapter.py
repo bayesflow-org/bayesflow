@@ -80,7 +80,7 @@ class Adapter(MutableSequence[Transform]):
         return serialize(config)
 
     def forward(
-        self, data: dict[str, any], *, stage: str = "inference", jacobian: bool = False, **kwargs
+        self, data: dict[str, any], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
     ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the forward direction.
 
@@ -90,7 +90,7 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
-        jacobian: bool, optional
+        log_det_jac: bool, optional
             Whether to return the log determinant jacobians of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
@@ -98,10 +98,10 @@ class Adapter(MutableSequence[Transform]):
         Returns
         -------
         dict | tuple[dict, dict]
-            The transformed data or tuple of transformed data and jacobians.
+            The transformed data or tuple of transformed data and log determinant jacobians.
         """
         data = data.copy()
-        if not jacobian:
+        if not log_det_jac:
             for transform in self.transforms:
                 data = transform(data, stage=stage, **kwargs)
             return data
@@ -114,7 +114,7 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def inverse(
-        self, data: dict[str, np.ndarray], *, stage: str = "inference", jacobian: bool = False, **kwargs
+        self, data: dict[str, np.ndarray], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
     ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the inverse direction.
 
@@ -124,7 +124,7 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
-        jacobian: bool, optional
+        log_det_jac: bool, optional
             Whether to return the log determinant jacobians of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
@@ -132,10 +132,10 @@ class Adapter(MutableSequence[Transform]):
         Returns
         -------
         dict | tuple[dict, dict]
-            The transformed data or tuple of transformed data and jacobians.
+            The transformed data or tuple of transformed data and log determinant jacobians.
         """
         data = data.copy()
-        if not jacobian:
+        if not log_det_jac:
             for transform in reversed(self.transforms):
                 data = transform(data, stage=stage, inverse=True, **kwargs)
             return data
@@ -166,7 +166,7 @@ class Adapter(MutableSequence[Transform]):
         Returns
         -------
         dict | tuple[dict, dict]
-            The transformed data or tuple of transformed data and jacobians.
+            The transformed data or tuple of transformed data and log determinant jacobians.
         """
         if inverse:
             return self.inverse(data, stage=stage, **kwargs)

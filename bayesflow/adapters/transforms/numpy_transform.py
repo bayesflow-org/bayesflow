@@ -74,4 +74,4 @@ class NumpyTransform(ElementwiseTransform):
         return self._inverse(data)
 
     def log_det_jac(self, data, inverse=False, **kwargs):
-        raise NotImplementedError("Jacobian of the numpy transforms are not implemented yet")
+        raise NotImplementedError("Log determinand jacobian of the numpy transforms are not implemented yet")

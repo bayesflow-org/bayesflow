@@ -64,7 +64,7 @@ def random_data():
 
 
 @pytest.fixture()
-def adapter_jacobian():
+def adapter_log_det_jac():
     from bayesflow.adapters import Adapter
 
     adapter = (
@@ -83,7 +83,7 @@ def adapter_jacobian():
 
 
 @pytest.fixture()
-def adapter_jacobian_inverse():
+def adapter_log_det_jac_inverse():
     from bayesflow.adapters import Adapter
 
     adapter = (

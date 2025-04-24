@@ -232,34 +232,34 @@ def test_to_dict_transform():
     assert processed["category"].shape[-1] == 5
 
 
-def test_jacobian(adapter_jacobian, random_data):
-    d, jacobian = adapter_jacobian(random_data, jacobian=True)
+def test_log_det_jac(adapter_log_det_jac, random_data):
+    d, log_det_jac = adapter_log_det_jac(random_data, log_det_jac=True)
 
-    assert np.allclose(jacobian["x1"], np.log(2))
+    assert np.allclose(log_det_jac["x1"], np.log(2))
 
     p1 = -np.log1p(random_data["p1"])
-    p2 = -0.5 * np.log(random_data["p2"]) + 0.5
+    p2 = -0.5 * np.log(random_data["p2"]) - np.log(2)
     p3 = random_data["p3"] - np.log(np.exp(random_data["p3"]) - 1)
     p = np.sum(p1, axis=-1) + np.sum(p2, axis=-1) + np.sum(p3, axis=-1)
 
-    assert np.allclose(jacobian["p"], p)
+    assert np.allclose(log_det_jac["p"], p)
 
     n1 = -(random_data["n1"] - 1)
     n1 = n1 - np.log(np.exp(n1) - 1)
     n1 = np.sum(n1, axis=-1)
 
-    assert np.allclose(jacobian["n1"], n1)
+    assert np.allclose(log_det_jac["n1"], n1)
 
     u1 = random_data["u1"]
     u1 = (u1 + 1) / 3
     u1 = -np.log(u1) - np.log1p(-u1) - np.log(3)
 
-    assert np.allclose(jacobian["u"], u1[:, 0])
+    assert np.allclose(log_det_jac["u"], u1[:, 0])
 
 
-def test_jacobian_inverse(adapter_jacobian_inverse, random_data):
-    d, forward_jacobian = adapter_jacobian_inverse(random_data, jacobian=True)
-    d, inverse_jacobian = adapter_jacobian_inverse(d, inverse=True, jacobian=True)
+def test_log_det_jac_inverse(adapter_log_det_jac_inverse, random_data):
+    d, forward_log_det_jac = adapter_log_det_jac_inverse(random_data, log_det_jac=True)
+    d, inverse_log_det_jac = adapter_log_det_jac_inverse(d, inverse=True, log_det_jac=True)
 
-    for key in forward_jacobian.keys():
-        assert np.allclose(forward_jacobian[key], -inverse_jacobian[key])
+    for key in forward_log_det_jac.keys():
+        assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])

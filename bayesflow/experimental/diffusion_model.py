@@ -18,6 +18,7 @@ from bayesflow.utils import (
     layer_kwargs,
     weighted_mean,
     integrate,
+    integrate_stochastic,
 )
 
 
@@ -373,7 +374,7 @@ class DiffusionModel(InferenceNetwork):
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "euler",
+        "method": "euler",  # or euler_maruyama
         "steps": 100,
     }
 
@@ -529,6 +530,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         conditions: Tensor = None,
         training: bool = False,
+        stochastic_solver: bool = False,
         clip_x: bool = False,
     ) -> Tensor:
         # calculate the current noise level and transform into correct shape
@@ -548,12 +550,29 @@ class DiffusionModel(InferenceNetwork):
         # convert x to score
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
-        # compute velocity for the ODE depending on the noise schedule
+        # compute velocity f, g of the SDE or ODE
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz)
-        out = f - 0.5 * g_squared * score
 
-        # todo: for the SDE: d(z) = [ f(z, t) - g(t)^2 * score(z, lambda) ] dt + g(t) dW
+        if stochastic_solver:
+            # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
+            out = f - g_squared * score
+        else:
+            # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
+            out = f - 0.5 * g_squared * score
+
         return out
+
+    def compute_diffusion_term(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        training: bool = False,
+    ) -> Tensor:
+        # calculate the current noise level and transform into correct shape
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = keras.ops.broadcast_to(log_snr_t, keras.ops.shape(xz)[:-1] + (1,))
+        g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t)
+        return ops.sqrt(g_squared)
 
     def _velocity_trace(
         self,
@@ -586,6 +605,9 @@ class DiffusionModel(InferenceNetwork):
             | self.integrate_kwargs
             | kwargs
         )
+        if integrate_kwargs["method"] == "euler_maruyama":
+            raise ValueError("Stoachastic methods are not supported for forward integration.")
+
         if density:
 
             def deltas(time, xz):
@@ -636,6 +658,8 @@ class DiffusionModel(InferenceNetwork):
             | kwargs
         )
         if density:
+            if integrate_kwargs["method"] == "euler_maruyama":
+                raise ValueError("Stoachastic methods are not supported for density computation.")
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
@@ -656,11 +680,23 @@ class DiffusionModel(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": z}
-        state = integrate(
-            deltas,
-            state,
-            **integrate_kwargs,
-        )
+        if integrate_kwargs["method"] == "euler_maruyama":
+
+            def diffusion(time, xz):
+                return {"xz": self.compute_diffusion_term(xz, time=time, training=training)}
+
+            state = integrate_stochastic(
+                deltas,
+                diffusion,
+                state,
+                **integrate_kwargs,
+            )
+        else:
+            state = integrate(
+                deltas,
+                state,
+                **integrate_kwargs,
+            )
 
         x = state["xz"]
         return x

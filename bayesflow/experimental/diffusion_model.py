@@ -58,7 +58,7 @@ class NoiseSchedule(ABC):
             raise ValueError(f"Unknown variance type: {self.variance_type}")
 
     @abstractmethod
-    def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
+    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         pass
 
@@ -145,10 +145,10 @@ class NoiseSchedule(ABC):
                 raise ValueError("t(0) must be finite.")
             if not ops.isfinite(self.get_t_from_log_snr(self._log_snr_min, training=training)):
                 raise ValueError("t(1) must be finite.")
-            if not ops.isfinite(self.derivative_log_snr(self._log_snr_max, training=training)):
-                raise ValueError("dt/t log_snr(0) must be finite.")
-            if not ops.isfinite(self.derivative_log_snr(self._log_snr_min, training=training)):
-                raise ValueError("dt/t log_snr(1) must be finite.")
+        if not ops.isfinite(self.derivative_log_snr(self._log_snr_max, training=False)):
+            raise ValueError("dt/t log_snr(0) must be finite.")
+        if not ops.isfinite(self.derivative_log_snr(self._log_snr_min, training=False)):
+            raise ValueError("dt/t log_snr(1) must be finite.")
 
 
 @serializable
@@ -168,7 +168,7 @@ class LinearNoiseSchedule(NoiseSchedule):
         self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
 
-    def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
+    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         t_trunc = self._t_min + (self._t_max - self._t_min) * t
         # SNR = -log(exp(t^2) - 1)
@@ -228,7 +228,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
 
-    def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
+    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         t_trunc = self._t_min + (self._t_max - self._t_min) * t
         # SNR = -2 * log(tan(pi*t/2))
@@ -289,7 +289,7 @@ class EDMNoiseSchedule(NoiseSchedule):
         self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
 
-    def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
+    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         t_trunc = self._t_min + (self._t_max - self._t_min) * t
         if training:

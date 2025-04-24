@@ -19,8 +19,9 @@ from bayesflow.utils import (
 )
 
 
+@serializable
 class NoiseSchedule(ABC):
-    """Noise schedule for diffusion models. We follow the notation from [1].
+    r"""Noise schedule for diffusion models. We follow the notation from [1].
 
     The diffusion process is defined by a noise schedule, which determines how the noise level changes over time.
     We define the noise schedule as a function of the log signal-to-noise ratio (lambda), which can be
@@ -39,8 +40,8 @@ class NoiseSchedule(ABC):
     def __init__(self, name: str, variance_type: str):
         self.name = name
         self.variance_type = variance_type  # 'exploding' or 'preserving'
-        self._log_snr_min = ops.convert_to_tensor(-15)  # should be set in the subclasses
-        self._log_snr_max = ops.convert_to_tensor(15)  # should be set in the subclasses
+        self._log_snr_min = -15  # should be set in the subclasses
+        self._log_snr_max = 15  # should be set in the subclasses
 
     @property
     def scale_base_distribution(self):
@@ -65,11 +66,11 @@ class NoiseSchedule(ABC):
 
     @abstractmethod
     def derivative_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
-        """Compute \beta(t) = d/dt log(1 + e^(-snr(t))). This is usually used for the reverse SDE."""
+        r"""Compute \beta(t) = d/dt log(1 + e^(-snr(t))). This is usually used for the reverse SDE."""
         pass
 
     def get_drift_diffusion(self, log_snr_t: Tensor, x: Tensor = None, training: bool = True) -> tuple[Tensor, Tensor]:
-        """Compute the drift and optionally the diffusion term for the reverse SDE.
+        r"""Compute the drift and optionally the diffusion term for the reverse SDE.
         Usually it can be derived from the derivative of the schedule:
             \beta(t) = d/dt log(1 + e^(-snr(t)))
             f(z, t) = -0.5 * \beta(t) * z
@@ -121,7 +122,15 @@ class NoiseSchedule(ABC):
         # 1 / ops.cosh(log_snr_t / 2) * ops.minimum(ops.ones_like(log_snr_t), gamma * ops.exp(-log_snr_t))
         return ops.ones_like(log_snr_t)
 
+    def get_config(self):
+        return dict(name=self.name, variance_type=self.variance_type)
 
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+
+@serializable
 class LinearNoiseSchedule(NoiseSchedule):
     """Linear noise schedule for diffusion models.
 
@@ -171,7 +180,15 @@ class LinearNoiseSchedule(NoiseSchedule):
         sigma_t = self.get_alpha_sigma(log_snr_t=log_snr_t, training=True)[1]
         return ops.square(g / sigma_t)
 
+    def get_config(self):
+        return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max)
 
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+
+@serializable
 class CosineNoiseSchedule(NoiseSchedule):
     """Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].
     For images, use s_shift_cosine = log(base_resolution / d), where d is the used resolution of the image.
@@ -181,7 +198,7 @@ class CosineNoiseSchedule(NoiseSchedule):
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0):
         super().__init__(name="cosine_noise_schedule", variance_type="preserving")
-        self._s_shift_cosine = ops.convert_to_tensor(s_shift_cosine)
+        self._s_shift_cosine = s_shift_cosine
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
         self._s_shift_cosine = s_shift_cosine
@@ -220,7 +237,15 @@ class CosineNoiseSchedule(NoiseSchedule):
         """
         return ops.sigmoid(-log_snr_t / 2)
 
+    def get_config(self):
+        return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max, s_shift_cosine=self._s_shift_cosine)
 
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+
+@serializable
 class EDMNoiseSchedule(NoiseSchedule):
     """EDM noise schedule for diffusion models. This schedule is based on the EDM paper [1].
 
@@ -472,6 +497,7 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor:
         # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = keras.ops.broadcast_to(log_snr_t, keras.ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t, training=training)
 
         if conditions is None:

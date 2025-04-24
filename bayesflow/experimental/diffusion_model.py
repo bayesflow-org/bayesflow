@@ -44,6 +44,7 @@ class NoiseSchedule(ABC):
         self.variance_type = variance_type  # 'exploding' or 'preserving'
         self._log_snr_min = -15  # should be set in the subclasses
         self._log_snr_max = 15  # should be set in the subclasses
+        self.sigma_data = 1.0
 
     @property
     def scale_base_distribution(self):
@@ -381,7 +382,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
         noise_schedule: str | NoiseSchedule = "cosine",
-        prediction_type: str = "v",
+        prediction_type: str = "velocity",
         **kwargs,
     ):
         """
@@ -406,7 +407,8 @@ class DiffusionModel(InferenceNetwork):
             The noise schedule used for the diffusion process. Can be "linear", "cosine", or "edm".
             Default is "cosine".
         prediction_type: str, optional
-            The type of prediction used in the diffusion model. Can be "eps", "v" or "F" (EDM). Default is "v".
+            The type of prediction used in the diffusion model. Can be "velocity", "noise" or "F" (EDM).
+             Default is "velocity".
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
@@ -427,7 +429,7 @@ class DiffusionModel(InferenceNetwork):
         # validate noise model
         self.noise_schedule.validate()
 
-        if prediction_type not in ["eps", "v", "F"]:  # F is EDM
+        if prediction_type not in ["velocity", "noise", "F"]:  # F is EDM
             raise ValueError(f"Unknown prediction type: {prediction_type}")
         self.prediction_type = prediction_type
 
@@ -496,10 +498,10 @@ class DiffusionModel(InferenceNetwork):
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, clip_x: bool
     ) -> Tensor:
         """Convert the prediction of the neural network to the x space."""
-        if self.prediction_type == "v":
+        if self.prediction_type == "velocity":
             # convert v into x
             x = alpha_t * z - sigma_t * pred
-        elif self.prediction_type == "eps":
+        elif self.prediction_type == "noise":
             # convert noise prediction into x
             x = (z - sigma_t * pred) / alpha_t
         elif self.prediction_type == "x":
@@ -700,11 +702,11 @@ class DiffusionModel(InferenceNetwork):
             pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=False
         )
         # convert x to epsilon prediction
-        out = (alpha_t * diffused_x - x_pred) / sigma_t
+        noise_pred = (alpha_t * diffused_x - x_pred) / sigma_t
 
         # Calculate loss based on noise prediction
         weights_for_snr = self.noise_schedule.get_weights_for_snr(log_snr_t=log_snr_t)
-        loss = weights_for_snr * ops.mean((out - eps_t) ** 2, axis=-1)
+        loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
 
         # apply sample weight
         loss = weighted_mean(loss, sample_weight)

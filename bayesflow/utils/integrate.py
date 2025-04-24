@@ -336,7 +336,7 @@ def euler_maruyama_step(
         noise = {}
         for key in diffusion.keys():
             shape = keras.ops.shape(diffusion[key])
-            noise[key] = keras.random.normal(shape) * keras.ops.sqrt(step_size)
+            noise[key] = keras.random.normal(shape) * keras.ops.sqrt(keras.ops.abs(step_size))
 
     # Check if diffusion and noise have the same keys
     if set(diffusion.keys()) != set(noise.keys()):
@@ -391,7 +391,6 @@ def integrate_stochastic(
     steps: int,
     method: str = "euler_maruyama",
     seed: int = None,
-    return_noise: bool = False,
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, List[ArrayLike]]]]:
     """
@@ -406,7 +405,6 @@ def integrate_stochastic(
         steps: Number of integration steps.
         method: Integration method to use ('euler_maruyama').
         seed: Random seed for noise generation.
-        return_noise: Whether to return the generated noise terms.
         **kwargs: Additional arguments to pass to the step function.
 
     Returns:
@@ -435,9 +433,6 @@ def integrate_stochastic(
 
     time = start_time
 
-    # Store noise history if requested
-    noise_history = {key: [] for key in state.keys()} if return_noise else None
-
     def body(_loop_var, _loop_state):
         _state, _time = _loop_state
 
@@ -445,12 +440,7 @@ def integrate_stochastic(
         _noise = {}
         for key in _state.keys():
             shape = keras.ops.shape(_state[key])
-            _noise[key] = keras.random.normal(shape) * keras.ops.sqrt(step_size)
-
-        # Store noise if requested
-        if return_noise:
-            for key in _noise:
-                noise_history[key].append(_noise[key])
+            _noise[key] = keras.random.normal(shape) * keras.ops.sqrt(keras.ops.abs(step_size))
 
         # Perform integration step
         _state, _time, _ = step_fn(_state, _time, step_size, noise=_noise)
@@ -458,8 +448,4 @@ def integrate_stochastic(
         return _state, _time
 
     state, time = keras.ops.fori_loop(0, steps, body, (state, time))
-
-    if return_noise:
-        return state, noise_history
-    else:
-        return state
+    return state

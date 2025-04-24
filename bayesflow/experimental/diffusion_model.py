@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from abc import ABC, abstractmethod
+from typing import Union
 import keras
 from keras import ops
 import warnings
@@ -61,7 +62,7 @@ class NoiseSchedule(ABC):
         pass
 
     @abstractmethod
-    def get_t_from_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
+    def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         pass
 
@@ -141,7 +142,7 @@ class LinearNoiseSchedule(NoiseSchedule):
     """
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15):
-        super().__init__(name="linear_noise_schedule")
+        super().__init__(name="linear_noise_schedule", variance_type="preserving")
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
 
@@ -154,7 +155,7 @@ class LinearNoiseSchedule(NoiseSchedule):
         # SNR = -log(exp(t^2) - 1)
         return -ops.log(ops.exp(ops.square(t_trunc)) - 1)
 
-    def get_t_from_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
+    def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         # SNR = -log(exp(t^2) - 1) => t = sqrt(log(1 + exp(-snr)))
         return ops.sqrt(ops.log(1 + ops.exp(-log_snr_t)))
@@ -213,7 +214,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         # SNR = -2 * log(tan(pi*t/2))
         return -2 * ops.log(ops.tan(math.pi * t_trunc / 2)) + 2 * self._s_shift_cosine
 
-    def get_t_from_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
+    def get_t_from_log_snr(self, log_snr_t: Union[Tensor, float], training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         # SNR = -2 * log(tan(pi*t/2)) => t = 2/pi * arctan(exp(-snr/2))
         return 2 / math.pi * ops.arctan(ops.exp((2 * self._s_shift_cosine - log_snr_t) / 2))
@@ -289,7 +290,7 @@ class EDMNoiseSchedule(NoiseSchedule):
             )
         return snr
 
-    def get_t_from_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
+    def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         if training:
             # SNR = -dist.icdf(t_trunc) => t = dist.cdf(-snr)
@@ -551,8 +552,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": self.noise_schedule._t_min,
-                "stop_time": self.noise_schedule._t_max,
+                "start_time": 1.0,
+                "stop_time": 0.0,
             }
             | self.integrate_kwargs
             | kwargs
@@ -600,8 +601,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": self.noise_schedule._t_max,
-                "stop_time": self.noise_schedule._t_min,
+                "start_time": 1.0,
+                "stop_time": 0.0,
             }
             | self.integrate_kwargs
             | kwargs

@@ -37,11 +37,22 @@ class NoiseSchedule(ABC):
         Augmentation: Kingma et al. (2023)
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, variance_type: str):
         self.name = name
+        self.variance_type = variance_type  # 'exploding' or 'preserving'
+        self._log_snr_min = ops.convert_to_tensor(-15)  # should be set in the subclasses
+        self._log_snr_max = ops.convert_to_tensor(15)  # should be set in the subclasses
 
-        # for variance preserving schedules
-        self.scale_base_distribution = 1.0
+    @property
+    def scale_base_distribution(self):
+        """Get the scale of the base distribution."""
+        if self.variance_type == "preserving":
+            return 1.0
+        elif self.variance_type == "exploding":
+            # e.g., EDM is a variance exploding schedule
+            return ops.exp(-self._log_snr_min)
+        else:
+            raise ValueError(f"Unknown variance type: {self.variance_type}")
 
     @abstractmethod
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
@@ -74,17 +85,32 @@ class NoiseSchedule(ABC):
         beta = self.derivative_log_snr(log_snr_t=log_snr_t, training=training)
         if x is None:  # return g only
             return ops.sqrt(beta)
-        f = -0.5 * beta * x
+        if self.variance_type == "preserving":
+            f = -0.5 * beta * x
+        elif self.variance_type == "exploding":
+            f = ops.zeros_like(beta)
+        else:
+            raise ValueError(f"Unknown variance type: {self.variance_type}")
         return f, ops.sqrt(beta)
 
     def get_alpha_sigma(self, log_snr_t: Tensor, training: bool) -> tuple[Tensor, Tensor]:
         """Get alpha and sigma for a given log signal-to-noise ratio (lambda).
 
-        Default is a variance preserving schedule.
+        Default is a variance preserving schedule:
+            alpha(t) = sqrt(sigmoid(log_snr_t))
+            sigma(t) = sqrt(sigmoid(-log_snr_t))
         For a variance exploding schedule, one should set alpha^2 = 1 and sigma^2 = exp(-lambda)
         """
-        alpha_t = keras.ops.sqrt(keras.ops.sigmoid(log_snr_t))
-        sigma_t = keras.ops.sqrt(keras.ops.sigmoid(-log_snr_t))
+        if self.variance_type == "preserving":
+            # variance preserving schedule
+            alpha_t = keras.ops.sqrt(keras.ops.sigmoid(log_snr_t))
+            sigma_t = keras.ops.sqrt(keras.ops.sigmoid(-log_snr_t))
+        elif self.variance_type == "exploding":
+            # variance exploding schedule
+            alpha_t = ops.ones_like(log_snr_t)
+            sigma_t = ops.sqrt(ops.exp(-log_snr_t))
+        else:
+            raise ValueError(f"Unknown variance type: {self.variance_type}")
         return alpha_t, sigma_t
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
@@ -106,7 +132,7 @@ class LinearNoiseSchedule(NoiseSchedule):
     """
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15):
-        super().__init__(name="linear_noise_schedule")
+        super().__init__(name="linear_noise_schedule", variance_type="preserving")
         self._log_snr_min = ops.convert_to_tensor(min_log_snr)
         self._log_snr_max = ops.convert_to_tensor(max_log_snr)
 
@@ -155,7 +181,7 @@ class CosineNoiseSchedule(NoiseSchedule):
     """
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0):
-        super().__init__(name="cosine_noise_schedule")
+        super().__init__(name="cosine_noise_schedule", variance_type="preserving")
         self._log_snr_min = ops.convert_to_tensor(min_log_snr)
         self._log_snr_max = ops.convert_to_tensor(max_log_snr)
         self._s_shift_cosine = ops.convert_to_tensor(s_shift_cosine)
@@ -202,7 +228,7 @@ class EDMNoiseSchedule(NoiseSchedule):
     """
 
     def __init__(self, sigma_data: float = 0.5, sigma_min: float = 0.002, sigma_max: float = 80):
-        super().__init__(name="edm_noise_schedule")
+        super().__init__(name="edm_noise_schedule", variance_type="exploding")
         self.sigma_data = ops.convert_to_tensor(sigma_data)
         self.sigma_max = ops.convert_to_tensor(sigma_max)
         self.sigma_min = ops.convert_to_tensor(sigma_min)
@@ -215,9 +241,6 @@ class EDMNoiseSchedule(NoiseSchedule):
         self._log_snr_max = -2 * ops.log(sigma_min)
         self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
         self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
-
-        # EDM is a variance exploding schedule
-        self.scale_base_distribution = ops.exp(-self._log_snr_min)
 
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
@@ -277,28 +300,6 @@ class EDMNoiseSchedule(NoiseSchedule):
         dsnr_dt = dsnr_dx * (self._t_max - self._t_min)
         factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
         return -factor * dsnr_dt
-
-    def get_drift_diffusion(self, log_snr_t: Tensor, x: Tensor = None, training: bool = True) -> tuple[Tensor, Tensor]:
-        """Compute the drift and optionally the diffusion term for the variance exploding reverse SDE.
-        \beta(t) = d/dt log(1 + e^(-snr(t)))
-        f(z, t) = 0
-        g(t)^2 = \beta(t)
-
-        SDE: d(z) = [ f(z, t) - g(t)^2 * score(z, lambda) ] dt + g(t) dW
-        ODE: dz = [ f(z, t) - 0.5 * g(t)^2 * score(z, lambda) ] dt
-        """
-        # Default implementation is to return the diffusion term only
-        beta = self.derivative_log_snr(log_snr_t=log_snr_t, training=training)
-        if x is None:  # return g only
-            return ops.sqrt(beta)
-        f = ops.zeros_like(beta)  # variance exploding schedule
-        return f, ops.sqrt(beta)
-
-    def get_alpha_sigma(self, log_snr_t: Tensor, training: bool) -> tuple[Tensor, Tensor]:
-        """Get alpha and sigma for a given log signal-to-noise ratio (lambda) for a variance exploding schedule."""
-        alpha_t = ops.ones_like(log_snr_t)
-        sigma_t = ops.sqrt(ops.exp(-log_snr_t))
-        return alpha_t, sigma_t
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""

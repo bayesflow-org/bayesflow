@@ -493,7 +493,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         conditions: Tensor = None,
         training: bool = False,
-        clip_x: bool = True,
+        clip_x: bool = False,
     ) -> Tensor:
         # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
@@ -668,7 +668,7 @@ class DiffusionModel(InferenceNetwork):
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(
-            pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=True
+            pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=False
         )
         # convert x to epsilon prediction
         out = (alpha_t * diffused_x - x_pred) / sigma_t

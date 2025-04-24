@@ -261,7 +261,11 @@ class EDMNoiseSchedule(NoiseSchedule):
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         t_trunc = self._t_min + (self._t_max - self._t_min) * t
         if training:
-            snr = -icdf_gaussian(x=t_trunc, loc=-2 * self.p_mean, scale=2 * self.p_std)
+            # SNR = -dist.icdf(t_trunc)
+            loc = -2 * self.p_mean
+            scale = 2 * self.p_std
+            x = t_trunc
+            snr = -(loc + scale * ops.erfinv(2 * x - 1) * math.sqrt(2))
             snr = keras.ops.clip(snr, x_min=self._log_snr_min, x_max=self._log_snr_max)
         else:  # sampling
             snr = (
@@ -278,7 +282,10 @@ class EDMNoiseSchedule(NoiseSchedule):
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         if training:
             # SNR = -dist.icdf(t_trunc) => t = dist.cdf(-snr)
-            t = cdf_gaussian(x=-log_snr_t, loc=-2 * self.p_mean, scale=2 * self.p_std)
+            loc = -2 * self.p_mean
+            scale = 2 * self.p_std
+            x = -log_snr_t
+            t = 0.5 * (1 + ops.erf((x - loc) / (scale * math.sqrt(2.0))))
         else:  # sampling
             # SNR = -2 * rho * log(sigma_max ** (1/rho) + (1 - t) * (sigma_min ** (1/rho) - sigma_max ** (1/rho)))
             # => t = 1 - ((exp(-snr/(2*rho)) - sigma_max ** (1/rho)) / (sigma_min ** (1/rho) - sigma_max ** (1/rho)))
@@ -632,8 +639,11 @@ class DiffusionModel(InferenceNetwork):
             conditions_shape = None if conditions is None else keras.ops.shape(conditions)
             self.build(xz_shape, conditions_shape)
 
-        # sample training diffusion time
-        t = keras.random.uniform((keras.ops.shape(x)[0],))
+        # sample training diffusion time as low discrepancy sequence to decrease variance
+        # t_i = \mod (u_0 + i/k, 1)
+        u0 = keras.random.uniform(shape=(1,))
+        i = ops.arange(0, keras.ops.shape(x)[0])  # tensor of indices
+        t = (u0 + i / keras.ops.shape(x)[0]) % 1
         # i = keras.random.randint((keras.ops.shape(x)[0],), minval=0, maxval=self._timesteps)
         # t = keras.ops.cast(i, keras.ops.dtype(x)) / keras.ops.cast(self._timesteps, keras.ops.dtype(x))
 

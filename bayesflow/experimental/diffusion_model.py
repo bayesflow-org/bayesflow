@@ -644,9 +644,9 @@ class DiffusionModel(InferenceNetwork):
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
         # t_i = \mod (u_0 + i/k, 1)
-        u0 = keras.random.uniform(shape=(1,))
-        i = ops.arange(0, keras.ops.shape(x)[0])  # tensor of indices
-        t = (u0 + i / keras.ops.shape(x)[0]) % 1
+        u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x))
+        i = ops.arange(0, keras.ops.shape(x)[0], dtype=ops.dtype(x))  # tensor of indices
+        t = (u0 + i / ops.cast(keras.ops.shape(x)[0], dtype=ops.dtype(x))) % 1
         # i = keras.random.randint((keras.ops.shape(x)[0],), minval=0, maxval=self._timesteps)
         # t = keras.ops.cast(i, keras.ops.dtype(x)) / keras.ops.cast(self._timesteps, keras.ops.dtype(x))
 

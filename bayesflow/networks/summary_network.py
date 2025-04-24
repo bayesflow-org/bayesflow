@@ -21,6 +21,7 @@ class SummaryNetwork(keras.Layer):
         if self.base_distribution is not None:
             self.base_distribution.build(keras.ops.shape(z))
 
+    @sanitize_input_shape
     def compute_output_shape(self, input_shape):
         return keras.ops.shape(self.call(keras.ops.zeros(input_shape)))
 

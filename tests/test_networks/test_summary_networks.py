@@ -25,6 +25,28 @@ def test_build(automatic, summary_network, random_set):
     assert summary_network.variables, "Model has no variables."
 
 
+@pytest.mark.parametrize("automatic", [True, False])
+def test_build_functional_api(automatic, summary_network, random_set):
+    if summary_network is None:
+        pytest.skip(reason="Nothing to do, because there is no summary network.")
+
+    assert summary_network.built is False
+
+    inputs = keras.layers.Input(shape=keras.ops.shape(random_set)[1:])
+    outputs = summary_network(inputs)
+    model = keras.Model(inputs=inputs, outputs=outputs)
+
+    if automatic:
+        model(random_set)
+    else:
+        model.build(keras.ops.shape(random_set))
+
+    assert model.built is True
+
+    # check the model has variables
+    assert summary_network.variables, "Model has no variables."
+
+
 def test_variable_batch_size(summary_network, random_set):
     if summary_network is None:
         pytest.skip(reason="Nothing to do, because there is no summary network.")

@@ -2,6 +2,7 @@ import keras
 from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.utils import layer_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
 
 
 @serializable(package="links.ordered")
@@ -49,5 +50,6 @@ class Ordered(keras.Layer):
         x = keras.ops.concatenate([below, anchor_input, above], self.axis)
         return x
 
+    @sanitize_input_shape
     def compute_output_shape(self, input_shape):
         return input_shape

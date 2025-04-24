@@ -146,8 +146,8 @@ class LinearNoiseSchedule(NoiseSchedule):
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
 
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
 
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
@@ -205,8 +205,8 @@ class CosineNoiseSchedule(NoiseSchedule):
         self._log_snr_max = max_log_snr
         self._s_shift_cosine = s_shift_cosine
 
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
 
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
@@ -266,8 +266,8 @@ class EDMNoiseSchedule(NoiseSchedule):
         # convert EDM parameters to signal-to-noise ratio formulation
         self._log_snr_min = -2 * ops.log(sigma_max)
         self._log_snr_max = -2 * ops.log(sigma_min)
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
+        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
 
     def get_log_snr(self, t: Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
@@ -478,7 +478,7 @@ class DiffusionModel(InferenceNetwork):
         if self.prediction_type == "v":
             # convert v into x
             x = alpha_t * z - sigma_t * pred
-        elif self.prediction_type == "e":
+        elif self.prediction_type == "eps":
             # convert noise prediction into x
             x = (z - sigma_t * pred) / alpha_t
         elif self.prediction_type == "x":
@@ -552,8 +552,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": 1.0,
-                "stop_time": 0.0,
+                "start_time": 0.0,
+                "stop_time": 1.0,
             }
             | self.integrate_kwargs
             | kwargs
@@ -601,8 +601,8 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = (
             {
-                "start_time": 0.0,
-                "stop_time": 1.0,
+                "start_time": 1.0,
+                "stop_time": 0.0,
             }
             | self.integrate_kwargs
             | kwargs

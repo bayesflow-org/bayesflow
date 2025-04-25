@@ -6,12 +6,10 @@ on:
     branches:
       - main
       - dev
-      - update-workflows
   push:
     branches:
       - main
       - dev
-      - update-workflows
 
 jobs:
   check-code-style:

@@ -82,8 +82,3 @@ def quantiles(request):
 @pytest.fixture()
 def unordered(batch_size, num_quantiles, num_variables):
     return keras.random.normal((batch_size, num_quantiles, num_variables))
-
-
-# @pytest.fixture()
-# def random_matrix_batch(batch_size, num_variables):
-#     return keras.random.normal((batch_size, num_variables, num_variables))

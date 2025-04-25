@@ -103,7 +103,7 @@ def test_save_and_load(tmp_path, summary_network, random_set):
 @pytest.mark.parametrize("stage", ["training", "validation"])
 def test_compute_metrics(stage, summary_network, random_set):
     if summary_network is None:
-        pytest.skip()
+        pytest.skip("Nothing to do, because there is no summary network.")
 
     summary_network.build(keras.ops.shape(random_set))
 

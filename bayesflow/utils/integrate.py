@@ -436,5 +436,5 @@ def integrate_stochastic(
 
         return _state, _time
 
-    state, time = keras.ops.fori_loop(0, steps, body, (state, time, seed))
+    state, time = keras.ops.fori_loop(0, steps, body, (state, time))
     return state

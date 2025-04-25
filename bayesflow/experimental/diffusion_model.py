@@ -276,7 +276,7 @@ class EDMNoiseSchedule(NoiseSchedule):
     [1] Elucidating the Design Space of Diffusion-Based Generative Models: Karras et al. (2022)
     """
 
-    def __init__(self, sigma_data: float = 0.5, sigma_min: float = 0.002, sigma_max: float = 80):
+    def __init__(self, sigma_data: float = 0.5, sigma_min: float = 0.002, sigma_max: float = 80.0):
         super().__init__(name="edm_noise_schedule", variance_type="exploding")
         self.sigma_data = sigma_data
         # training settings
@@ -291,26 +291,25 @@ class EDMNoiseSchedule(NoiseSchedule):
         self._log_snr_min = -2 * ops.log(sigma_max)
         self._log_snr_max = -2 * ops.log(sigma_min)
         # t is not truncated for EDM by definition of the sampling schedule
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=False)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=False)
+        # training bounds are not so important, but should be set to avoid numerical issues
+        self._log_snr_min_training = self._log_snr_min * 2  # one is never sampler during training
+        self._log_snr_max_training = self._log_snr_max * 2  # 0 is almost surely never sampled during training
 
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
-        t_trunc = self._t_min + (self._t_max - self._t_min) * t
         if training:
             # SNR = -dist.icdf(t_trunc)
             loc = -2 * self.p_mean
             scale = 2 * self.p_std
-            x = t_trunc
-            snr = -(loc + scale * ops.erfinv(2 * x - 1) * math.sqrt(2))
-            snr = keras.ops.clip(snr, x_min=self._log_snr_min, x_max=self._log_snr_max)
+            snr = -(loc + scale * ops.erfinv(2 * t - 1) * math.sqrt(2))
+            snr = keras.ops.clip(snr, x_min=self._log_snr_min_training, x_max=self._log_snr_max_training)
         else:  # sampling
             snr = (
                 -2
                 * self.rho
                 * ops.log(
                     self.sigma_max ** (1 / self.rho)
-                    + (1 - t_trunc) * (self.sigma_min ** (1 / self.rho) - self.sigma_max ** (1 / self.rho))
+                    + (1 - t) * (self.sigma_min ** (1 / self.rho) - self.sigma_max ** (1 / self.rho))
                 )
             )
         return snr
@@ -338,20 +337,18 @@ class EDMNoiseSchedule(NoiseSchedule):
             raise NotImplementedError("Derivative of log SNR is not implemented for training mode.")
         # sampling mode
         t = self.get_t_from_log_snr(log_snr_t=log_snr_t, training=training)
-        t_trunc = self._t_min + (self._t_max - self._t_min) * t
 
         # SNR = -2*rho*log(s_max + (1 - x)*(s_min - s_max))
         s_max = self.sigma_max ** (1 / self.rho)
         s_min = self.sigma_min ** (1 / self.rho)
-        u = s_max + (1 - t_trunc) * (s_min - s_max)
+        u = s_max + (1 - t) * (s_min - s_max)
         # d/dx snr = 2*rho*(s_min - s_max) / u
         dsnr_dx = 2 * self.rho * (s_min - s_max) / u
 
         # Using the chain rule on f(t) = log(1 + e^(-snr(t))):
         # f'(t) = - (e^{-snr(t)} / (1 + e^{-snr(t)})) * dsnr_dt
-        dsnr_dt = dsnr_dx * (self._t_max - self._t_min)
         factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
-        return -factor * dsnr_dt
+        return -factor * dsnr_dx
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""

@@ -383,7 +383,7 @@ def integrate_stochastic(
     stop_time: ArrayLike,
     steps: int,
     method: str = "euler_maruyama",
-    seed: int = None,
+    seed: int | keras.random.SeedGenerator = None,
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, List[ArrayLike]]]]:
     """

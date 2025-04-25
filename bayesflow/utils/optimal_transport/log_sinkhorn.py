@@ -1,7 +1,6 @@
 import keras
 
 from .. import logging
-from ..tensor_utils import is_symbolic_tensor
 
 from .euclidean import euclidean
 
@@ -26,9 +25,6 @@ def log_sinkhorn_plan(x1, x2, regularization: float = 1.0, rtol=1e-5, atol=1e-8,
     cost = euclidean(x1, x2)
 
     log_plan = cost / -(regularization * keras.ops.mean(cost) + 1e-16)
-
-    if is_symbolic_tensor(log_plan):
-        return log_plan
 
     def contains_nans(plan):
         return keras.ops.any(keras.ops.isnan(plan))

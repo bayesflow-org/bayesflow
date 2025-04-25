@@ -3,7 +3,6 @@ import keras
 from bayesflow.types import Tensor
 
 from .. import logging
-from ..tensor_utils import is_symbolic_tensor
 
 from .euclidean import euclidean
 
@@ -75,9 +74,6 @@ def sinkhorn_plan(
 
     # initialize the transport plan from a gaussian kernel
     plan = keras.ops.exp(cost / -(regularization * keras.ops.mean(cost) + 1e-16))
-
-    if is_symbolic_tensor(plan):
-        return plan
 
     def contains_nans(plan):
         return keras.ops.any(keras.ops.isnan(plan))

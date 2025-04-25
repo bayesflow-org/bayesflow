@@ -7,7 +7,6 @@ import warnings
 
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 from bayesflow.types import Tensor, Shape
-import bayesflow as bf
 from bayesflow.networks import InferenceNetwork
 import math
 
@@ -334,7 +333,7 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""
-        return (ops.exp(-log_snr_t) + ops.square(self.sigma_data)) / ops.square(self.sigma_data)
+        return ops.exp(-log_snr_t) + ops.square(self.sigma_data)  # / ops.square(self.sigma_data)
 
     def get_config(self):
         return dict(sigma_data=self.sigma_data, sigma_min=self.sigma_min, sigma_max=self.sigma_max)
@@ -403,7 +402,7 @@ class DiffusionModel(InferenceNetwork):
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
-        super().__init__(base_distribution=None, **kwargs)
+        super().__init__(base_distribution="normal", **kwargs)
 
         if isinstance(noise_schedule, str):
             if noise_schedule == "linear":
@@ -433,7 +432,6 @@ class DiffusionModel(InferenceNetwork):
         self._clip_max = 5.0
 
         # latent distribution (not configurable)
-        self.base_distribution = bf.distributions.DiagonalNormal()
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 

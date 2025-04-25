@@ -423,18 +423,18 @@ def integrate_stochastic(
     time = start_time
 
     def body(_loop_var, _loop_state):
-        _state, _time = _loop_state
+        _state, _time, _seed = _loop_state
 
         # Generate noise for this step
         _noise = {}
         for key in _state.keys():
             shape = keras.ops.shape(_state[key])
-            _noise[key] = keras.random.normal(shape, seed=seed) * keras.ops.sqrt(keras.ops.abs(step_size))
+            _noise[key] = keras.random.normal(shape, seed=_seed) * keras.ops.sqrt(keras.ops.abs(step_size))
 
         # Perform integration step
         _state, _time, _ = step_fn(_state, _time, step_size, noise=_noise)
 
-        return _state, _time
+        return _state, _time, _seed
 
-    state, time = keras.ops.fori_loop(0, steps, body, (state, time))
+    state, time = keras.ops.fori_loop(0, steps, body, (state, time, seed))
     return state

@@ -383,7 +383,7 @@ def integrate_stochastic(
     stop_time: ArrayLike,
     steps: int,
     method: str = "euler_maruyama",
-    seed: int | keras.random.SeedGenerator = None,
+    seed: keras.random.SeedGenerator = None,
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, List[ArrayLike]]]]:
     """
@@ -428,8 +428,8 @@ def integrate_stochastic(
         # Generate noise for this step
         _noise = {}
         for key in _state.keys():
-            shape = keras.ops.shape(_state[key])
-            _noise[key] = keras.random.normal(shape, seed=_seed) * keras.ops.sqrt(keras.ops.abs(step_size))
+            _eps = keras.random.normal(keras.ops.shape(_state[key]), dtype=keras.ops.dtype(_state[key]), seed=_seed)
+            _noise[key] = _eps * keras.ops.sqrt(keras.ops.abs(step_size))
 
         # Perform integration step
         _state, _time, _ = step_fn(_state, _time, step_size, noise=_noise)

@@ -102,22 +102,18 @@ def sinkhorn_plan(
         pass
 
     def log_steps():
-        msg = "Sinkhorn-Knopp converged after {:d} steps."
+        msg = "Sinkhorn-Knopp converged after {} steps."
 
         logging.info(msg, max_steps)
 
     def warn_convergence():
-        marginals = keras.ops.sum(plan, axis=0)
-        deviations = keras.ops.abs(marginals - 1.0)
-        badness = 100.0 * keras.ops.max(deviations)
+        msg = "Sinkhorn-Knopp did not converge after {}."
 
-        msg = "Sinkhorn-Knopp did not converge after {:d} steps (badness: {:.1f}%)."
-
-        logging.warning(msg, max_steps, badness)
+        logging.warning(msg, max_steps)
 
     def warn_nans():
-        msg = "Sinkhorn-Knopp produced NaNs."
-        logging.warning(msg)
+        msg = "Sinkhorn-Knopp produced NaNs after {} steps."
+        logging.warning(msg, steps)
 
     keras.ops.cond(contains_nans(plan), warn_nans, do_nothing)
     keras.ops.cond(is_converged(plan), log_steps, warn_convergence)

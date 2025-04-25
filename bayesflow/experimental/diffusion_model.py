@@ -45,18 +45,6 @@ class NoiseSchedule(ABC):
         self.variance_type = variance_type  # 'exploding' or 'preserving'
         self._log_snr_min = -15  # should be set in the subclasses
         self._log_snr_max = 15  # should be set in the subclasses
-        self.sigma_data = 1.0
-
-    @property
-    def scale_base_distribution(self):
-        """Get the scale of the base distribution."""
-        if self.variance_type == "preserving":
-            return 1.0
-        elif self.variance_type == "exploding":
-            # e.g., EDM is a variance exploding schedule
-            return ops.sqrt(ops.exp(-self._log_snr_min))
-        else:
-            raise ValueError(f"Unknown variance type: {self.variance_type}")
 
     @abstractmethod
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
@@ -106,8 +94,8 @@ class NoiseSchedule(ABC):
         """
         if self.variance_type == "preserving":
             # variance preserving schedule
-            alpha_t = keras.ops.sqrt(keras.ops.sigmoid(log_snr_t))
-            sigma_t = keras.ops.sqrt(keras.ops.sigmoid(-log_snr_t))
+            alpha_t = ops.sqrt(ops.sigmoid(log_snr_t))
+            sigma_t = ops.sqrt(ops.sigmoid(-log_snr_t))
         elif self.variance_type == "exploding":
             # variance exploding schedule
             alpha_t = ops.ones_like(log_snr_t)
@@ -271,6 +259,7 @@ class CosineNoiseSchedule(NoiseSchedule):
 class EDMNoiseSchedule(NoiseSchedule):
     """EDM noise schedule for diffusion models. This schedule is based on the EDM paper [1].
     This should be used with the F-prediction type in the diffusion model.
+    Since the schedule is variance exploding, the base distribution is a Gaussian with scale 'sigma_max'.
 
     [1] Elucidating the Design Space of Diffusion-Based Generative Models: Karras et al. (2022)
     """
@@ -301,7 +290,7 @@ class EDMNoiseSchedule(NoiseSchedule):
             loc = -2 * self.p_mean
             scale = 2 * self.p_std
             snr = -(loc + scale * ops.erfinv(2 * t - 1) * math.sqrt(2))
-            snr = keras.ops.clip(snr, x_min=self._log_snr_min_training, x_max=self._log_snr_max_training)
+            snr = ops.clip(snr, x_min=self._log_snr_min_training, x_max=self._log_snr_max_training)
         else:  # sampling
             sigma_min_rho = self.sigma_min ** (1 / self.rho)
             sigma_max_rho = self.sigma_max ** (1 / self.rho)
@@ -375,7 +364,7 @@ class DiffusionModel(InferenceNetwork):
 
     INTEGRATE_DEFAULT_CONFIG = {
         "method": "euler",  # or euler_maruyama
-        "steps": 100,
+        "steps": 250,
     }
 
     def __init__(
@@ -444,9 +433,7 @@ class DiffusionModel(InferenceNetwork):
         self._clip_max = 5.0
 
         # latent distribution (not configurable)
-        self.base_distribution = bf.distributions.DiagonalNormal(
-            mean=0.0, std=self.noise_schedule.scale_base_distribution
-        )
+        self.base_distribution = bf.distributions.DiagonalNormal()
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
@@ -521,7 +508,7 @@ class DiffusionModel(InferenceNetwork):
             x = (z + sigma_t**2 * pred) / alpha_t
 
         if clip_x:
-            x = keras.ops.clip(x, self._clip_min, self._clip_max)
+            x = ops.clip(x, self._clip_min, self._clip_max)
         return x
 
     def velocity(
@@ -535,13 +522,13 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor:
         # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = keras.ops.broadcast_to(log_snr_t, keras.ops.shape(xz)[:-1] + (1,))
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t, training=training)
 
         if conditions is None:
-            xtc = keras.ops.concatenate([xz, log_snr_t], axis=-1)
+            xtc = ops.concatenate([xz, log_snr_t], axis=-1)
         else:
-            xtc = keras.ops.concatenate([xz, log_snr_t, conditions], axis=-1)
+            xtc = ops.concatenate([xz, log_snr_t, conditions], axis=-1)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(
@@ -570,7 +557,7 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor:
         # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = keras.ops.broadcast_to(log_snr_t, keras.ops.shape(xz)[:-1] + (1,))
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t)
         return ops.sqrt(g_squared)
 
@@ -587,7 +574,7 @@ class DiffusionModel(InferenceNetwork):
 
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
-        return v, keras.ops.expand_dims(trace, axis=-1)
+        return v, ops.expand_dims(trace, axis=-1)
 
     def _forward(
         self,
@@ -616,7 +603,7 @@ class DiffusionModel(InferenceNetwork):
 
             state = {
                 "xz": x,
-                "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x)),
+                "trace": ops.zeros(ops.shape(x)[:-1] + (1,), dtype=ops.dtype(x)),
             }
             state = integrate(
                 deltas,
@@ -625,7 +612,7 @@ class DiffusionModel(InferenceNetwork):
             )
 
             z = state["xz"]
-            log_density = self.base_distribution.log_prob(z) + keras.ops.squeeze(state["trace"], axis=-1)
+            log_density = self.base_distribution.log_prob(z) + ops.squeeze(state["trace"], axis=-1)
 
             return z, log_density
 
@@ -669,12 +656,12 @@ class DiffusionModel(InferenceNetwork):
 
             state = {
                 "xz": z,
-                "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z)),
+                "trace": ops.zeros(ops.shape(z)[:-1] + (1,), dtype=ops.dtype(z)),
             }
             state = integrate(deltas, state, **integrate_kwargs)
 
             x = state["xz"]
-            log_density = self.base_distribution.log_prob(z) - keras.ops.squeeze(state["trace"], axis=-1)
+            log_density = self.base_distribution.log_prob(z) - ops.squeeze(state["trace"], axis=-1)
 
             return x, log_density
 
@@ -723,17 +710,17 @@ class DiffusionModel(InferenceNetwork):
         training = stage == "training"
         noise_schedule_training_stage = stage == "training" or stage == "validation"
         if not self.built:
-            xz_shape = keras.ops.shape(x)
-            conditions_shape = None if conditions is None else keras.ops.shape(conditions)
+            xz_shape = ops.shape(x)
+            conditions_shape = None if conditions is None else ops.shape(conditions)
             self.build(xz_shape, conditions_shape)
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
         # t_i = \mod (u_0 + i/k, 1)
         u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
-        i = ops.arange(0, keras.ops.shape(x)[0], dtype=ops.dtype(x))  # tensor of indices
-        t = (u0 + i / ops.cast(keras.ops.shape(x)[0], dtype=ops.dtype(x))) % 1
-        # i = keras.random.randint((keras.ops.shape(x)[0],), minval=0, maxval=self._timesteps)
-        # t = keras.ops.cast(i, keras.ops.dtype(x)) / keras.ops.cast(self._timesteps, keras.ops.dtype(x))
+        i = ops.arange(0, ops.shape(x)[0], dtype=ops.dtype(x))  # tensor of indices
+        t = (u0 + i / ops.cast(ops.shape(x)[0], dtype=ops.dtype(x))) % 1
+        # i = keras.random.randint((ops.shape(x)[0],), minval=0, maxval=self._timesteps)
+        # t = ops.cast(i, ops.dtype(x)) / ops.cast(self._timesteps, ops.dtype(x))
 
         # calculate the noise level
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t, training=noise_schedule_training_stage), x)
@@ -749,9 +736,9 @@ class DiffusionModel(InferenceNetwork):
 
         # calculate output of the network
         if conditions is None:
-            xtc = keras.ops.concatenate([diffused_x, log_snr_t], axis=-1)
+            xtc = ops.concatenate([diffused_x, log_snr_t], axis=-1)
         else:
-            xtc = keras.ops.concatenate([diffused_x, log_snr_t, conditions], axis=-1)
+            xtc = ops.concatenate([diffused_x, log_snr_t, conditions], axis=-1)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(

@@ -1,6 +1,5 @@
 from functools import singledispatch
-
-from bayesflow.distributions import Distribution
+import keras
 
 
 @singledispatch
@@ -15,8 +14,20 @@ def _(name: str, *args, **kwargs):
             from bayesflow.distributions import DiagonalNormal
 
             distribution = DiagonalNormal(*args, **kwargs)
+
+        case "student" | "student-t" | "student_t":
+            from bayesflow.distributions import DiagonalStudentT
+
+            distribution = DiagonalStudentT(*args, **kwargs)
+
+        case "mixture":
+            raise ValueError(
+                "Mixture distributions need to be explicitly defined as bf.distributions.Mixture(...) "
+                "and passed to the constructor."
+            )
         case "none":
             distribution = None
+
         case other:
             raise ValueError(f"Unsupported distribution name '{other}'.")
 
@@ -29,5 +40,5 @@ def _(none: None, *args, **kwargs):
 
 
 @find_distribution.register
-def _(distribution: Distribution, *args, **kwargs):
+def _(distribution: keras.Layer, *args, **kwargs):
     return distribution

@@ -50,21 +50,17 @@ class Mixture(Distribution):
 
         super().__init__(**kwargs)
 
-        self.dim = None
         self.distributions = distributions
 
         if mixture_logits is None:
-            mixture_logits = keras.ops.ones(shape=len(distributions))
-
-        self.mixture_logits = mixture_logits
-        self._mixture_logits = self.add_weight(
-            shape=(len(distributions),),
-            initializer=keras.initializers.Constant(value=mixture_logits),
-            dtype="float32",
-            trainable=trainable_mixture,
-        )
+            self.mixture_logits = ops.ones(shape=len(distributions))
+        else:
+            self.mixture_logits = ops.convert_to_tensor(mixture_logits)
 
         self.trainable_mixture = trainable_mixture
+
+        self.dim = None
+        self._mixture_logits = None
 
     @allow_batch_size
     def sample(self, batch_shape: Shape) -> Tensor:
@@ -138,10 +134,20 @@ class Mixture(Distribution):
         return log_prob
 
     def build(self, input_shape: Shape) -> None:
+        if self.built:
+            return
+
+        self.dim = input_shape[-1]
+
         for distribution in self.distributions:
             distribution.build(input_shape)
 
-        self.dim = input_shape[-1]
+        self._mixture_logits = self.add_weight(
+            shape=(len(self.distributions),),
+            initializer=keras.initializers.get(self.mixture_logits),
+            dtype="float32",
+            trainable=self.trainable_mixture,
+        )
 
     def get_config(self):
         base_config = super().get_config()

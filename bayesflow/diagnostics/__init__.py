@@ -1,4 +1,4 @@
-"""
+r"""
 A collection of plotting utilities and metrics for evaluating trained :py:class:`~bayesflow.workflows.Workflow`\ s.
 """
 

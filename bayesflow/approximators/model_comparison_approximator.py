@@ -118,6 +118,9 @@ class ModelComparisonApproximator(Approximator):
 
         return super().compile(*args, **kwargs)
 
+    def compile_from_config(self, config):
+        return self.compile(**deserialize(config))
+
     def compute_metrics(
         self,
         *,
@@ -258,6 +261,16 @@ class ModelComparisonApproximator(Approximator):
             "adapter": self.adapter,
             "classifier_network": self.classifier_network,
             "summary_network": self.summary_network,
+        }
+
+        return base_config | serialize(config)
+
+    def get_compile_config(self):
+        base_config = super().get_compile_config() or {}
+
+        config = {
+            "classifier_metrics": self.classifier_network._metrics,
+            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
         }
 
         return base_config | serialize(config)

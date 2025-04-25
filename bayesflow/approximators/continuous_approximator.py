@@ -105,7 +105,10 @@ class ContinuousApproximator(Approximator):
         return super().compile(*args, **kwargs)
 
     def compile_from_config(self, config):
-        return self.compile(**deserialize(config))
+        self.compile(**deserialize(config))
+        if hasattr(self, "optimizer") and self.built:
+            # Create optimizer variables.
+            self.optimizer.build(self.trainable_variables)
 
     def compute_metrics(
         self,

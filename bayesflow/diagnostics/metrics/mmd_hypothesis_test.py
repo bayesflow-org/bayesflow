@@ -1,44 +1,26 @@
 """
 This module provides functions for computing distances between observation samples and reference samples with distance
 distributions within the reference samples for hypothesis testing.
-
-Functions:
-----------
-- bootstrap_comparison: Computes distance between observed and reference samples and generates a distribution of null
-  sample distances by bootstrapping for hypothesis testing.
-- mmd_comparison_from_summaries: Computes the Maximum Mean Discrepancy (MMD) between observed and reference summaries
-  and generates a distribution of MMD values under the null hypothesis to assess model misspecification.
-- mmd_comparison: Computes the Maximum Mean Discrepancy (MMD) between observed and reference data and generates a
-  distribution of MMD values under the null hypothesis to assess model misspecification.
-
-Dependencies:
--------------
-- numpy: For numerical operations.
-- keras.ops: For converting data to numpy and tensor formats.
-- bayesflow.networks: Provides the `SummaryNetwork` class for extracting summary statistics.
-- bayesflow.approximators: Provides the `Approximator` class for extracting summary statistics.
-- bayesflow.metrics: Provides the `maximum_mean_discrepancy` function for computing the MMD.
 """
 
-import typing
+from collections.abc import Mapping, Callable
 
 import numpy as np
 from keras.ops import convert_to_numpy, convert_to_tensor
 
 from bayesflow.approximators import ContinuousApproximator
 from bayesflow.metrics.functional import maximum_mean_discrepancy
-from bayesflow.networks import SummaryNetwork
 from bayesflow.types import Tensor
 
 
 def bootstrap_comparison(
     observed_samples: np.ndarray,
     reference_samples: np.ndarray,
-    comparison_fn: typing.Callable[[Tensor, Tensor], Tensor],
+    comparison_fn: Callable[[Tensor, Tensor], Tensor],
     num_null_samples: int = 100,
 ) -> tuple[float, np.ndarray]:
-    """Compute distance between observed and reference samples and generated a distribution of null sample distances by
-    bootstrapping for hypothesis testing.
+    """Computes the distance between observed and reference samples and generates a distribution of null sample
+    distances by bootstrapping for hypothesis testing.
 
     Parameters
     ----------
@@ -46,7 +28,7 @@ def bootstrap_comparison(
         Observed samples, shape (num_observed, ...).
     reference_samples : np.ndarray
         Reference samples, shape (num_reference, ...).
-    comparison_fn : typing.Callable[[Tensor, Tensor], Tensor]
+    comparison_fn : Callable[[Tensor, Tensor], Tensor]
         Function to compute the distance metric.
     num_null_samples : int
         Number of null samples to generate for hypothesis testing. Default is 100.
@@ -98,108 +80,76 @@ def bootstrap_comparison(
     return distance_observed, distance_null_samples
 
 
-def mmd_comparison_from_summaries(
-    observed_summaries: np.ndarray,
-    reference_summaries: np.ndarray,
+def summary_space_comparison(
+    observed_data: Mapping[str, np.ndarray],
+    reference_data: Mapping[str, np.ndarray],
+    approximator: ContinuousApproximator,
     num_null_samples: int = 100,
+    comparison_fn: Callable = maximum_mean_discrepancy,
+    **kwargs,
 ) -> tuple[float, np.ndarray]:
-    """Computes the Maximum Mean Discrepancy (MMD) between observed and reference summaries and generates a distribution
-    of MMD values under the null hypothesis to assess model misspecification.
+    """Computes the distance between observed and reference data in the summary space and
+    generates a distribution of distance values under the null hypothesis to assess model misspecification.
+
+    By default, the Maximum Mean Discrepancy (MMD) is used as a distance function.
 
     [1] M. Schmitt, P.-C. Bürkner, U. Köthe, and S. T. Radev, "Detecting model misspecification in amortized Bayesian
     inference with neural networks," arXiv e-prints, Dec. 2021, Art. no. arXiv:2112.08866.
     URL: https://arxiv.org/abs/2112.08866
 
-
     Parameters
     ----------
-    observed_summary : np.ndarray
-        Summary statistics of observed data, shape (num_observed, ...).
-    reference_summary : np.ndarray
-        Summary statistics of reference data, shape (num_reference, ...).
-    num_null_samples : int
+    observed_data : dict[str, np.ndarray]
+        Dictionary of observed data as NumPy arrays, which will be preprocessed by the approximators adapter and passed
+        through its summary network.
+    reference_data : dict[str, np.ndarray]
+        Dictionary of reference data as NumPy arrays, which will be preprocessed by the approximators adapter and passed
+        through its summary network.
+    approximator : ContinuousApproximator
+        An instance of :py:class:`~bayesflow.approximators.ContinuousApproximator` used to compute summary statistics
+        from the data.
+    num_null_samples : int, optional
         Number of null samples to generate for hypothesis testing. Default is 100.
+    comparison_fn : Callable, optional
+        Distance function to compare the data in the summary space.
+    **kwargs : dict
+        Additional keyword arguments for the adapter and sampling process.
 
     Returns
     -------
-    mmd_observed : float
+    distance_observed : float
         The MMD value between observed and reference summaries.
-    mmd_null : np.ndarray
+    distance_null : np.ndarray
         A distribution of MMD values under the null hypothesis.
+
+    Raises
+    ------
+    ValueError
+        If approximator is not an instance of ContinuousApproximator or does not have a summary network.
     """
-    mmd_observed, mmd_null_samples = bootstrap_comparison(
+
+    if not isinstance(approximator, ContinuousApproximator):
+        raise ValueError("The approximator must be an instance of ContinuousApproximator.")
+
+    if not hasattr(approximator, "summary_network") or approximator.summary_network is None:
+        comparison_fn_name = (
+            "bayesflow.metrics.functional.maximum_mean_discrepancy"
+            if comparison_fn is maximum_mean_discrepancy
+            else comparison_fn.__name__
+        )
+        raise ValueError(
+            "The approximator must have a summary network. If you have manually crafted summary "
+            "statistics, or want to compare raw data and not summary statistics, please use the "
+            f"`bootstrap_comparison` function with `comparison_fn={comparison_fn_name}` on the respective arrays."
+        )
+    observed_summaries = convert_to_numpy(approximator.summary_outputs(observed_data))
+    reference_summaries = convert_to_numpy(approximator.summary_outputs(reference_data))
+
+    distance_observed, distance_null = bootstrap_comparison(
         observed_samples=observed_summaries,
         reference_samples=reference_summaries,
-        comparison_fn=maximum_mean_discrepancy,
+        comparison_fn=comparison_fn,
         num_null_samples=num_null_samples,
     )
 
-    return mmd_observed, mmd_null_samples
-
-
-def mmd_comparison(
-    observed_data: np.ndarray,
-    reference_data: np.ndarray,
-    approximator: ContinuousApproximator | SummaryNetwork,
-    num_null_samples: int = 100,
-) -> tuple[float, np.ndarray]:
-    """Computes the Maximum Mean Discrepancy (MMD) between observed and reference data and generates a distribution of
-    MMD values under the null hypothesis to assess model misspecification.
-
-    [1] M. Schmitt, P.-C. Bürkner, U. Köthe, and S. T. Radev, "Detecting model misspecification in amortized Bayesian
-    inference with neural networks," arXiv e-prints, Dec. 2021, Art. no. arXiv:2112.08866.
-    URL: https://arxiv.org/abs/2112.08866
-
-
-    Parameters
-    ----------
-    observed_data : np.ndarray
-        Observed data, shape (num_observed, ...).
-    reference_data : np.ndarray
-        Reference data, shape (num_reference, ...).
-    approximator : ContinuousApproximator or SummaryNetwork
-        An instance of the ContinuousApproximator or SummaryNetwork class use to extract summary statistics from data.
-    num_null_samples : int
-        Number of null samples to generate for hypothesis testing. Default is 100.
-
-    Returns
-    -------
-    mmd_observed : float
-        The MMD value between observed and reference data.
-    mmd_null : np.ndarray
-        A distribution of MMD values under the null hypothesis.
-
-    Raises:
-    ------
-    ValueError
-        - If the shapes of observed and reference data do not match on dimensions besides the first one.
-        - If approximator is not an instance of ContinuousApproximator or SummaryNetwork.
-    """
-    if observed_data.shape[1:] != reference_data.shape[1:]:
-        raise ValueError(
-            f"Expected observed and reference data to have the same shape, "
-            f"but got {observed_data.shape[1:]} != {reference_data.shape[1:]}."
-        )
-
-    if isinstance(approximator, ContinuousApproximator):
-        if approximator.summary_network is not None:
-            observed_data_tensor: Tensor = convert_to_tensor(observed_data)
-            reference_data_tensor: Tensor = convert_to_tensor(reference_data)
-            observed_summaries: np.ndarray = convert_to_numpy(approximator.summary_network(observed_data_tensor))
-            reference_summaries: np.ndarray = convert_to_numpy(approximator.summary_network(reference_data_tensor))
-        else:
-            observed_summaries: np.ndarray = observed_data
-            reference_summaries: np.ndarray = reference_data
-    elif isinstance(approximator, SummaryNetwork):
-        observed_data_tensor: Tensor = convert_to_tensor(observed_data)
-        reference_data_tensor: Tensor = convert_to_tensor(reference_data)
-        observed_summaries: np.ndarray = convert_to_numpy(approximator(observed_data_tensor))
-        reference_summaries: np.ndarray = convert_to_numpy(approximator(reference_data_tensor))
-    else:
-        raise ValueError("The approximator must be an instance of ContinuousApproximator or SummaryNetwork.")
-
-    mmd_observed, mmd_null = mmd_comparison_from_summaries(
-        observed_summaries, reference_summaries, num_null_samples=num_null_samples
-    )
-
-    return mmd_observed, mmd_null
+    return distance_observed, distance_null

@@ -78,3 +78,23 @@ def history():
     }
 
     return h
+
+
+@pytest.fixture()
+def adapter():
+    from bayesflow.adapters import Adapter
+
+    return Adapter.create_default("parameters").rename("observables", "summary_variables")
+
+
+@pytest.fixture()
+def summary_network():
+    from bayesflow.networks import SummaryNetwork
+
+    class DummySummaryNetwork(SummaryNetwork):
+        def call(self, x):
+            summary_outputs = keras.ops.stack([keras.ops.mean(x, axis=-1), keras.ops.std(x, axis=-1)], axis=-1)
+            print("summary_outputs", summary_outputs)
+            return summary_outputs
+
+    return DummySummaryNetwork()

@@ -171,8 +171,11 @@ def test_mmd_comparison_from_summaries_shapes():
     reference_summaries = np.random.rand(100, 5)
     num_null_samples = 50
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison_from_summaries(
-        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.bootstrap_comparison(
+        observed_summaries,
+        reference_summaries,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
+        num_null_samples=num_null_samples,
     )
 
     assert isinstance(mmd_observed, float)
@@ -186,8 +189,11 @@ def test_mmd_comparison_from_summaries_positive():
     reference_summaries = np.random.rand(100, 5)
     num_null_samples = 50
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison_from_summaries(
-        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.bootstrap_comparison(
+        observed_summaries,
+        reference_summaries,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
+        num_null_samples=num_null_samples,
     )
 
     assert mmd_observed >= 0
@@ -200,8 +206,11 @@ def test_mmd_comparison_from_summaries_same_distribution():
     reference_summaries = observed_summaries.copy()
     num_null_samples = 5
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison_from_summaries(
-        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.bootstrap_comparison(
+        observed_summaries,
+        reference_summaries,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
+        num_null_samples=num_null_samples,
     )
 
     assert mmd_observed <= np.quantile(mmd_null, 0.99)
@@ -213,36 +222,34 @@ def test_mmd_comparison_from_summaries_different_distributions():
     reference_summaries = np.random.normal(loc=0.5, scale=0.1, size=(100, 5))
     num_null_samples = 50
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison_from_summaries(
-        observed_summaries, reference_summaries, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.bootstrap_comparison(
+        observed_summaries,
+        reference_summaries,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
+        num_null_samples=num_null_samples,
     )
 
     assert mmd_observed >= np.quantile(mmd_null, 0.68)
 
 
-@pytest.mark.parametrize(
-    "summary_network, is_true_approximator",
-    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
-)
-def test_mmd_comparison_shapes(summary_network, is_true_approximator, monkeypatch):
+def test_mmd_comparison_shapes(summary_network, adapter):
     """Test the mmd_comparison output shapes."""
-    observed_data = np.random.rand(10, 5)
-    reference_data = np.random.rand(100, 5)
+    observed_data = dict(observables=np.random.rand(10, 5))
+    reference_data = dict(observables=np.random.rand(100, 5))
     num_null_samples = 50
 
-    if is_true_approximator:
-        mock_approximator = bf.approximators.ContinuousApproximator(
-            adapter=None,
-            inference_network=None,
-            summary_network=None,
-        )
-        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
-    else:
-        mock_approximator = bf.networks.SummaryNetwork()
-        monkeypatch.setattr(mock_approximator, "call", summary_network)
+    mock_approximator = bf.approximators.ContinuousApproximator(
+        adapter=adapter,
+        inference_network=None,
+        summary_network=summary_network,
+    )
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison(
-        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
+        observed_data=observed_data,
+        reference_data=reference_data,
+        approximator=mock_approximator,
+        num_null_samples=num_null_samples,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
     assert isinstance(mmd_observed, float)
@@ -250,120 +257,80 @@ def test_mmd_comparison_shapes(summary_network, is_true_approximator, monkeypatc
     assert mmd_null.shape == (num_null_samples,)
 
 
-@pytest.mark.parametrize(
-    "summary_network, is_true_approximator",
-    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
-)
-def test_mmd_comparison_positive(summary_network, is_true_approximator, monkeypatch):
+def test_mmd_comparison_positive(summary_network, adapter):
     """Test MMD output values of mmd_comparison are positive."""
-    observed_data = np.random.rand(10, 5)
-    reference_data = np.random.rand(100, 5)
+    observed_data = dict(observables=np.random.rand(10, 5))
+    reference_data = dict(observables=np.random.rand(100, 5))
     num_null_samples = 50
 
-    if is_true_approximator:
-        mock_approximator = bf.approximators.ContinuousApproximator(
-            adapter=None,
-            inference_network=None,
-            summary_network=None,
-        )
-        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
-    else:
-        mock_approximator = bf.networks.SummaryNetwork()
-        monkeypatch.setattr(mock_approximator, "call", summary_network)
+    mock_approximator = bf.approximators.ContinuousApproximator(
+        adapter=adapter,
+        inference_network=None,
+        summary_network=summary_network,
+    )
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison(
-        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
+        observed_data=observed_data,
+        reference_data=reference_data,
+        approximator=mock_approximator,
+        num_null_samples=num_null_samples,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
     assert mmd_observed >= 0
     assert np.all(mmd_null >= 0)
 
 
-@pytest.mark.parametrize(
-    "summary_network, is_true_approximator",
-    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
-)
-def test_mmd_comparison_same_distribution(summary_network, is_true_approximator, monkeypatch):
+def test_mmd_comparison_same_distribution(summary_network, adapter):
     """Test mmd_comparison on same distributions."""
-    observed_data = np.random.rand(10, 5)
-    reference_data = observed_data.copy()
+    observed_data = dict(observables=np.random.rand(10, 5))
+    reference_data = observed_data
     num_null_samples = 5
 
-    if is_true_approximator:
-        mock_approximator = bf.approximators.ContinuousApproximator(
-            adapter=None,
-            inference_network=None,
-            summary_network=None,
-        )
-        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
-    else:
-        mock_approximator = bf.networks.SummaryNetwork()
-        monkeypatch.setattr(mock_approximator, "call", summary_network)
+    mock_approximator = bf.approximators.ContinuousApproximator(
+        adapter=adapter,
+        inference_network=None,
+        summary_network=summary_network,
+    )
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison(
-        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
+        observed_data=observed_data,
+        reference_data=reference_data,
+        approximator=mock_approximator,
+        num_null_samples=num_null_samples,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
     assert mmd_observed <= np.quantile(mmd_null, 0.99)
 
 
-@pytest.mark.parametrize(
-    "summary_network, is_true_approximator",
-    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
-)
-def test_mmd_comparison_different_distributions(summary_network, is_true_approximator, monkeypatch):
+def test_mmd_comparison_different_distributions(summary_network, adapter):
     """Test mmd_comparison on different distributions."""
-    observed_data = np.random.rand(10, 5)
-    reference_data = np.random.normal(loc=0.5, scale=0.1, size=(100, 5))
+    observed_data = dict(observables=np.random.rand(10, 5))
+    reference_data = dict(observables=np.random.normal(loc=0.5, scale=0.1, size=(100, 5)))
     num_null_samples = 50
 
-    if is_true_approximator:
-        mock_approximator = bf.approximators.ContinuousApproximator(
-            adapter=None,
-            inference_network=None,
-            summary_network=None,
-        )
-        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
-    else:
-        mock_approximator = bf.networks.SummaryNetwork()
-        monkeypatch.setattr(mock_approximator, "call", summary_network)
+    mock_approximator = bf.approximators.ContinuousApproximator(
+        adapter=adapter,
+        inference_network=None,
+        summary_network=summary_network,
+    )
 
-    mmd_observed, mmd_null = bf.diagnostics.metrics.mmd_comparison(
-        observed_data, reference_data, mock_approximator, num_null_samples=num_null_samples
+    mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
+        observed_data=observed_data,
+        reference_data=reference_data,
+        approximator=mock_approximator,
+        num_null_samples=num_null_samples,
+        comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
     assert mmd_observed >= np.quantile(mmd_null, 0.68)
 
 
-@pytest.mark.parametrize(
-    "summary_network, is_true_approximator",
-    [(lambda data: data + 1, True), (None, True), (lambda data: data + 1, False)],
-)
-def test_mmd_comparison_mismatched_shapes(summary_network, is_true_approximator, monkeypatch):
-    """Test mmd_comparison raises ValueError for mismatched shapes."""
-    observed_data = np.random.rand(10, 5)
-    reference_data = np.random.rand(100, 4)
-    num_null_samples = 10
-
-    if is_true_approximator:
-        mock_approximator = bf.approximators.ContinuousApproximator(
-            adapter=None,
-            inference_network=None,
-            summary_network=None,
-        )
-        monkeypatch.setattr(mock_approximator, "summary_network", summary_network)
-    else:
-        mock_approximator = bf.networks.SummaryNetwork()
-        monkeypatch.setattr(mock_approximator, "call", summary_network)
-
-    with pytest.raises(ValueError):
-        bf.diagnostics.metrics.mmd_comparison(observed_data, reference_data, mock_approximator, num_null_samples)
-
-
 def test_mmd_comparison_approximator_incorrect_instance():
     """Test mmd_comparison raises ValueError for incorrect approximator instance."""
-    observed_data = np.random.rand(10, 5)
-    reference_data = np.random.rand(100, 5)
+    observed_data = dict(observables=np.random.rand(10, 5))
+    reference_data = dict(observables=np.random.rand(100, 5))
     num_null_samples = 50
 
     class IncorrectApproximator:
@@ -372,4 +339,10 @@ def test_mmd_comparison_approximator_incorrect_instance():
     mock_approximator = IncorrectApproximator()
 
     with pytest.raises(ValueError):
-        bf.diagnostics.metrics.mmd_comparison(observed_data, reference_data, mock_approximator, num_null_samples)
+        bf.diagnostics.metrics.summary_space_comparison(
+            observed_data=observed_data,
+            reference_data=reference_data,
+            approximator=mock_approximator,
+            num_null_samples=num_null_samples,
+            comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
+        )

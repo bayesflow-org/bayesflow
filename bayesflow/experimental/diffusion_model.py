@@ -528,9 +528,9 @@ class DiffusionModel(InferenceNetwork):
         self,
         xz: Tensor,
         time: float | Tensor,
+        stochastic_solver: bool,
         conditions: Tensor = None,
         training: bool = False,
-        stochastic_solver: bool = False,
         clip_x: bool = False,
     ) -> Tensor:
         # calculate the current noise level and transform into correct shape
@@ -583,7 +583,7 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
     ) -> (Tensor, Tensor):
         def f(x):
-            return self.velocity(x, time=time, conditions=conditions, training=training)
+            return self.velocity(x, time=time, stochastic_solver=False, conditions=conditions, training=training)
 
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
@@ -630,7 +630,9 @@ class DiffusionModel(InferenceNetwork):
             return z, log_density
 
         def deltas(time, xz):
-            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
+            return {
+                "xz": self.velocity(xz, time=time, stochastic_solver=False, conditions=conditions, training=training)
+            }
 
         state = {"xz": x}
         state = integrate(
@@ -676,11 +678,13 @@ class DiffusionModel(InferenceNetwork):
 
             return x, log_density
 
-        def deltas(time, xz):
-            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
-
         state = {"xz": z}
         if integrate_kwargs["method"] == "euler_maruyama":
+
+            def deltas(time, xz):
+                return {
+                    "xz": self.velocity(xz, time=time, stochastic_solver=True, conditions=conditions, training=training)
+                }
 
             def diffusion(time, xz):
                 return {"xz": self.compute_diffusion_term(xz, time=time, training=training)}
@@ -692,6 +696,14 @@ class DiffusionModel(InferenceNetwork):
                 **integrate_kwargs,
             )
         else:
+
+            def deltas(time, xz):
+                return {
+                    "xz": self.velocity(
+                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                    )
+                }
+
             state = integrate(
                 deltas,
                 state,
@@ -709,6 +721,7 @@ class DiffusionModel(InferenceNetwork):
         stage: str = "training",
     ) -> dict[str, Tensor]:
         training = stage == "training"
+        noise_schedule_training_stage = stage == "training" or stage == "validation"
         if not self.built:
             xz_shape = keras.ops.shape(x)
             conditions_shape = None if conditions is None else keras.ops.shape(conditions)
@@ -723,8 +736,10 @@ class DiffusionModel(InferenceNetwork):
         # t = keras.ops.cast(i, keras.ops.dtype(x)) / keras.ops.cast(self._timesteps, keras.ops.dtype(x))
 
         # calculate the noise level
-        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t, training=training), x)
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t, training=training)
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t, training=noise_schedule_training_stage), x)
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(
+            log_snr_t=log_snr_t, training=noise_schedule_training_stage
+        )
 
         # generate noise vector
         eps_t = keras.random.normal(ops.shape(x), dtype=ops.dtype(x), seed=self.seed_generator)

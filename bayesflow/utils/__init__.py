@@ -7,8 +7,11 @@ from . import (
     logging,
     numpy_utils,
 )
+
 from .callbacks import detailed_loss_callback
+
 from .devices import devices
+
 from .dict_utils import (
     convert_args,
     convert_kwargs,
@@ -20,30 +23,48 @@ from .dict_utils import (
     split_arrays,
     squeeze_inner_estimates_dict,
 )
-from .dispatch import find_network, find_permutation, find_pooling, find_recurrent_net
+
+from .dispatch import (
+    find_network,
+    find_permutation,
+    find_pooling,
+    find_recurrent_net,
+    find_summary_network,
+    find_inference_network,
+    find_distribution,
+)
+
 from .ecdf import simultaneous_ecdf_bands, ranks
+
 from .functional import batched_call
+
 from .git import (
     issue_url,
     pull_url,
     repo_url,
 )
+
 from .hparam_utils import find_batch_size, find_memory_budget
+
 from .integrate import (
     integrate,
 )
+
 from .io import (
     pickle_load,
     format_bytes,
     parse_bytes,
 )
+
 from .jacobian import (
     jacobian,
     jacobian_trace,
     jvp,
     vjp,
 )
+
 from .optimal_transport import optimal_transport
+
 from .plot_utils import (
     check_estimates_prior_shapes,
     prepare_plot_data,
@@ -53,6 +74,7 @@ from .plot_utils import (
     add_metric,
 )
 from .serialization import serialize_value_or_type, deserialize_value_or_type
+
 from .tensor_utils import (
     concatenate_valid,
     expand,
@@ -75,9 +97,10 @@ from .tensor_utils import (
     fill_triangular_matrix,
     weighted_mean,
 )
+
 from .classification import calibration_curve, confusion_matrix
+
 from .validators import check_lengths_same
-from .workflow_utils import find_inference_network, find_summary_network
 
 from ._docs import _add_imports_to_all
 

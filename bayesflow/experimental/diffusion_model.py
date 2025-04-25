@@ -677,9 +677,10 @@ class DiffusionModel(InferenceNetwork):
                 return {"xz": self.compute_diffusion_term(xz, time=time, training=training)}
 
             state = integrate_stochastic(
-                deltas,
-                diffusion,
-                state,
+                drift_fn=deltas,
+                diffusion_fn=diffusion,
+                state=state,
+                seed=self.seed_generator,
                 **integrate_kwargs,
             )
         else:

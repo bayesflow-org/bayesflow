@@ -301,7 +301,7 @@ def euler_maruyama_step(
     state: dict[str, ArrayLike],
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: dict[str, ArrayLike] = None,
+    noise: dict[str, ArrayLike],
     tolerance: ArrayLike = 1e-6,
     min_step_size: ArrayLike = -float("inf"),
     max_step_size: ArrayLike = float("inf"),
@@ -330,13 +330,6 @@ def euler_maruyama_step(
 
     # Compute diffusion term
     diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))
-
-    # Generate noise if not provided
-    if noise is None:
-        noise = {}
-        for key in diffusion.keys():
-            shape = keras.ops.shape(diffusion[key])
-            noise[key] = keras.random.normal(shape) * keras.ops.sqrt(keras.ops.abs(step_size))
 
     # Check if diffusion and noise have the same keys
     if set(diffusion.keys()) != set(noise.keys()):
@@ -414,10 +407,6 @@ def integrate_stochastic(
     if steps <= 0:
         raise ValueError("Number of steps must be positive.")
 
-    # Set random seed if provided
-    if seed is not None:
-        keras.random.set_seed(seed)
-
     # Select step function based on method
     match method:
         case "euler_maruyama":
@@ -440,7 +429,7 @@ def integrate_stochastic(
         _noise = {}
         for key in _state.keys():
             shape = keras.ops.shape(_state[key])
-            _noise[key] = keras.random.normal(shape) * keras.ops.sqrt(keras.ops.abs(step_size))
+            _noise[key] = keras.random.normal(shape, seed=seed) * keras.ops.sqrt(keras.ops.abs(step_size))
 
         # Perform integration step
         _state, _time, _ = step_fn(_state, _time, step_size, noise=_noise)

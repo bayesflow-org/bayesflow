@@ -54,7 +54,7 @@ class NoiseSchedule(ABC):
             return 1.0
         elif self.variance_type == "exploding":
             # e.g., EDM is a variance exploding schedule
-            return ops.exp(-self._log_snr_min)
+            return ops.sqrt(ops.exp(-self._log_snr_min))
         else:
             raise ValueError(f"Unknown variance type: {self.variance_type}")
 
@@ -279,17 +279,20 @@ class EDMNoiseSchedule(NoiseSchedule):
     def __init__(self, sigma_data: float = 0.5, sigma_min: float = 0.002, sigma_max: float = 80):
         super().__init__(name="edm_noise_schedule", variance_type="exploding")
         self.sigma_data = sigma_data
-        self.sigma_max = sigma_max
-        self.sigma_min = sigma_min
+        # training settings
         self.p_mean = -1.2
         self.p_std = 1.2
+        # sampling settings
+        self.sigma_max = sigma_max
+        self.sigma_min = sigma_min
         self.rho = 7
 
         # convert EDM parameters to signal-to-noise ratio formulation
         self._log_snr_min = -2 * ops.log(sigma_max)
         self._log_snr_max = -2 * ops.log(sigma_min)
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
+        # t is not truncated for EDM by definition of the sampling schedule
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=False)
+        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=False)
 
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""

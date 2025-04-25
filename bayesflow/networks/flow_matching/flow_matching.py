@@ -39,11 +39,11 @@ class FlowMatching(InferenceNetwork):
     }
 
     OPTIMAL_TRANSPORT_DEFAULT_CONFIG = {
-        "method": "sinkhorn",
-        "cost": "euclidean",
+        "method": "log_sinkhorn",
         "regularization": 0.1,
         "max_steps": 100,
-        "tolerance": 1e-4,
+        "atol": 1e-5,
+        "rtol": 1e-4,
     }
 
     INTEGRATE_DEFAULT_CONFIG = {

@@ -4,6 +4,7 @@ import builtins
 import inspect
 import keras
 import numpy as np
+import sys
 
 # this import needs to be exactly like this to work with monkey patching
 from keras.saving import deserialize_keras_object
@@ -97,7 +98,10 @@ def deserialize(obj, custom_objects=None, safe_mode=True, **kwargs):
             # we marked this as a type during serialization
             obj = obj[len(_type_prefix) :]
             tp = keras.saving.get_registered_object(
-                obj, custom_objects=custom_objects, module_objects=builtins.__dict__ | np.__dict__
+                # TODO: can we pass module objects without overwriting numpy's dict with builtins?
+                obj,
+                custom_objects=custom_objects,
+                module_objects=np.__dict__ | builtins.__dict__,
             )
             if tp is None:
                 raise ValueError(
@@ -117,10 +121,9 @@ def deserialize(obj, custom_objects=None, safe_mode=True, **kwargs):
 @allow_args
 def serializable(cls, package=None, name=None):
     if package is None:
-        # get the calling module's name, e.g. "bayesflow.networks.inference_network"
-        stack = inspect.stack()
-        module = inspect.getmodule(stack[1][0])
-        package = copy(module.__name__)
+        frame = sys._getframe(1)
+        g = frame.f_globals
+        package = g.get("__name__", "bayesflow")
 
     if name is None:
         name = copy(cls.__name__)

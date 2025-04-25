@@ -141,7 +141,29 @@ html_theme_options = {
         "image_light": "_static/bayesflow_hor.png",
         "image_dark": "_static/bayesflow_hor_dark.png",
     },
-    "navbar_center": ["version-switcher", "navbar-nav"],
+    "icon_links_label": "Icon Links",
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/bayesflow-org/bayesflow",
+            "icon": "fa-brands fa-square-github",
+            "type": "fontawesome",
+        },
+        {
+            "name": "Discourse Forum",
+            "url": "https://discuss.bayesflow.org/",
+            "icon": "fa-brands fa-discourse",
+            "type": "fontawesome",
+        },
+    ],
+    "navbar_align": "left",
+    # -- Template placement in theme layouts ----------------------------------
+    "navbar_start": ["navbar-logo"],
+    # Note that the alignment of navbar_center is controlled by navbar_align
+    "navbar_center": ["navbar-nav"],
+    "navbar_end": ["theme-switcher", "navbar-icon-links", "version-switcher"],
+    # navbar_persistent is persistent right (even when on mobiles)
+    "navbar_persistent": ["search-button"],
     "switcher": {
         "json_url": "/versions.json",
         "version_match": current,

@@ -1,6 +1,7 @@
 import keras
 
 from bayesflow.types import Tensor
+from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 from .mab import MultiHeadAttentionBlock
@@ -16,6 +17,7 @@ class SetAttentionBlock(MultiHeadAttentionBlock):
     """
 
     # noinspection PyMethodOverriding
+    @sanitize_input_shape
     def build(self, input_set_shape):
         self.call(keras.ops.zeros(input_set_shape))
 
@@ -42,5 +44,6 @@ class SetAttentionBlock(MultiHeadAttentionBlock):
         return super().call(input_set, input_set, training=training, **kwargs)
 
     # noinspection PyMethodOverriding
+    @sanitize_input_shape
     def compute_output_shape(self, input_set_shape):
         return keras.ops.shape(self.call(keras.ops.zeros(input_set_shape)))

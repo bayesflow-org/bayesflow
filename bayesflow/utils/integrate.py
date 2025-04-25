@@ -8,6 +8,8 @@ from typing import Literal, Union, List
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
+
+from .tensor_utils import is_symbolic_tensor
 from . import logging
 
 ArrayLike = int | float | Tensor
@@ -424,6 +426,9 @@ def integrate_stochastic(
 
     def body(_loop_var, _loop_state):
         _state, _time = _loop_state
+
+        if any(is_symbolic_tensor(v) for v in _state.values()):
+            return _state, _time
 
         # Generate noise for this step
         _noise = {}

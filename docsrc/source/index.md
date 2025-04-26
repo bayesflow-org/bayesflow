@@ -237,6 +237,8 @@ If you are interested in a curated list of resources, including reviews, softwar
 
 This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation, Project 528702768). The project is further supported by Germany's Excellence Strategy -- EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.
 
+The [scikit-learn](https://scikit-learn.org/) website was a great resource and inspration for this site and the API documentation. We thank the scikit-learn community for sharing their configurations, which allowed us to include many nice features into this site as well.
+
 ## License \& Source Code
 
 BayesFlow is released under {mainbranch}`MIT License <LICENSE>`.
@@ -258,5 +260,5 @@ examples
 api/bayesflow
 about
 Contributing <contributing>
-Developer docs <development/index>
+Developer Docs <development/index>
 ```

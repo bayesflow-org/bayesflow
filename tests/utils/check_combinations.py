@@ -13,12 +13,12 @@ def check_combination_simulator_adapter(simulator, adapter):
         with pytest.raises(KeyError):
             adapter(simulator.sample(1))
         # Don't use this fixture combination for further tests.
-        pytest.skip()
+        pytest.skip(reason="Do not use this fixture combination for further tests")  # TODO: better reason
     elif simulator_with_sample_weight and not adapter_with_sample_weight:
         # When a weight key is present, but the adapter does not configure it
         # to be used as sample weight, no error is raised currently.
         # Don't use this fixture combination for further tests.
-        pytest.skip()
+        pytest.skip(reason="Do not use this fixture combination for further tests")  # TODO: better reason
 
 
 def check_approximator_multivariate_normal_score(approximator):
@@ -28,4 +28,4 @@ def check_approximator_multivariate_normal_score(approximator):
     if isinstance(approximator, PointApproximator):
         for score in approximator.inference_network.scores.values():
             if isinstance(score, MultivariateNormalScore):
-                pytest.skip()
+                pytest.skip(reason="MultivariateNormalScore is unstable")

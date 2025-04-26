@@ -4,6 +4,7 @@ import keras.ops as ops
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 from .mab import MultiHeadAttentionBlock
@@ -125,5 +126,6 @@ class PoolingByMultiHeadAttention(keras.Layer):
         summaries = self.mab(seed_tiled, set_x_transformed, training=training, **kwargs)
         return ops.reshape(summaries, (ops.shape(summaries)[0], -1))
 
+    @sanitize_input_shape
     def compute_output_shape(self, input_shape):
         return keras.ops.shape(self.call(keras.ops.zeros(input_shape)))

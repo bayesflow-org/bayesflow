@@ -9,6 +9,7 @@ def test_bayesian_experimental_design(examples_path):
     run_notebook(examples_path / "Bayesian_Experimental_Design.ipynb")
 
 
+@pytest.mark.skip(reason="requires setting up pyabc")
 @pytest.mark.slow
 def test_from_abc_to_bayesflow(examples_path):
     run_notebook(examples_path / "From_ABC_to_BayesFlow.ipynb")

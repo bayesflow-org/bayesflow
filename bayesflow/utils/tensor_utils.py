@@ -97,9 +97,6 @@ def is_symbolic_tensor(x: Tensor) -> bool:
     if keras.utils.is_keras_tensor(x):
         return True
 
-    if not keras.ops.is_tensor(x):
-        return False
-
     match keras.backend.backend():
         case "jax":
             import jax

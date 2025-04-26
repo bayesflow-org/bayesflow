@@ -10,10 +10,10 @@ def run_notebook(path):
     checkpoint_path = path.parent / "checkpoints"
     # only clean up if the directory did not exist before the test
     cleanup_checkpoints = not checkpoint_path.exists()
-    with open(str(path)) as f:
+    with open(str(path), encoding="utf-8") as f:
         nb = nbformat.read(f, nbformat.NO_CONVERT)
 
-    kernel = ExecutePreprocessor(timeout=600, kernel_name="python3", resources={"metadata": {"path": path.parent}})
+    kernel = ExecutePreprocessor(timeout=3600, kernel_name="python3", resources={"metadata": {"path": path.parent}})
 
     try:
         result = kernel.preprocess(nb)

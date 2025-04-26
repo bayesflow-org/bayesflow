@@ -397,7 +397,7 @@ def integrate_stochastic(
 
     def body(_loop_var, _loop_state):
         _state, _time = _loop_state
-        _state, _time = step_fn(_state, _time, step_size)
+        _state, _time = step_fn(state=_state, time=_time, step_size=step_size)
 
         return _state, _time
 

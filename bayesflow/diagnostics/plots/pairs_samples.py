@@ -5,6 +5,7 @@ import pandas as pd
 import seaborn as sns
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 from bayesflow.utils import logging
 from bayesflow.utils.dict_utils import dicts_to_arrays
@@ -146,11 +147,6 @@ def _pairs_samples(
         logging.exception("KDE failed due to the following exception:\n" + repr(e) + "\nSubstituting scatter plot.")
         g.map_lower(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
 
-    # need to add legend here such that colors are recognized
-    if plot_data["priors"] is not None:
-        g.add_legend(fontsize=legend_fontsize, loc="center right")
-        g._legend.set_title(None)
-
     # Generate grids
     dim = g.axes.shape[0]
     for i in range(dim):
@@ -170,6 +166,11 @@ def _pairs_samples(
         g.axes[i, 0].set_ylabel(variable_names[i], fontsize=label_fontsize)
         g.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
 
+    # need to add legend here such that colors are recognized
+    if plot_data["priors"] is not None:
+        g.add_legend(fontsize=legend_fontsize, loc="center right")
+        g._legend.set_title(None)
+
     # Return figure
     g.tight_layout()
 
@@ -181,16 +182,28 @@ def _pairs_samples(
 # in independent of the y scaling of the off-diagonal plots
 def histplot_twinx(x, **kwargs):
     # Create a twin axis
-    ax2 = plt.gca().twinx()
+    # ax2 = plt.gca().twinx()
+
+    label = kwargs.pop("labels", None)
+    color = kwargs.get("colors", None)
+
+    ax = plt.gca()
 
     # create a histogram on the twin axis
-    sns.histplot(x, **kwargs, ax=ax2)
+    sns.histplot(x, **kwargs)
+
+    if label is not None:
+        legend_artist = Patch(color=color, label=label)
+        # Store the artist for later
+        if not hasattr(ax, '_legend_handles'):
+            ax._legend_handles = []
+        ax._legend_handles.append(legend_artist)
 
     # make the twin axis invisible
     plt.gca().spines["right"].set_visible(False)
     plt.gca().spines["top"].set_visible(False)
-    ax2.set_ylabel("")
-    ax2.set_yticks([])
-    ax2.set_yticklabels([])
+    # ax2.set_ylabel("")
+    # ax2.set_yticks([])
+    # ax2.set_yticklabels([])
 
     return None

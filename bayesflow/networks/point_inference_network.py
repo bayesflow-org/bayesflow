@@ -1,11 +1,7 @@
 import keras
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    serialize_keras_object as serialize,
-    register_keras_serializable as serializable,
-)
 
-from bayesflow.utils import model_kwargs, find_network, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import model_kwargs, find_network
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Shape, Tensor
 from bayesflow.scores import ScoringRule, ParametricDistributionScore
 from bayesflow.utils.decorators import allow_batch_size
@@ -30,10 +26,10 @@ class PointInferenceNetwork(keras.Layer):
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
 
         self.config = {
+            "subnet": serialize(subnet),
+            "scores": serialize(scores),
             **kwargs,
         }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
-        self.config["scores"] = serialize(self.scores)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         """Builds all network components based on shapes of conditions and targets.
@@ -119,7 +115,7 @@ class PointInferenceNetwork(keras.Layer):
     def from_config(cls, config):
         config = config.copy()
         config["scores"] = deserialize(config["scores"])
-        config = deserialize_value_or_type(config, "subnet")
+        config["subnet"] = deserialize(config["subnet"])
         return cls(**config)
 
     def call(

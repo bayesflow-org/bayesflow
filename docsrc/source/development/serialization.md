@@ -21,8 +21,6 @@ We mainly provide three convenience functions:
 - The {py:func}`~bayesflow.utils.serialization.serialize` function, which adds support for serializing classes.
 - Its counterpart {py:func}`~bayesflow.utils.serialization.deserialize`, adds support to deserialize classes.
 
-_Note: The `(de)serialize_value_or_type` functions are made obsolete by the functions given above and will probably be deprecated soon._
-
 ## Usage
 
 To use the adapted serialization functions, you have to use them in the `get_config` and `from_config` method. Please refer to existing classes in the library for usage examples.

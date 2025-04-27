@@ -170,7 +170,7 @@ def serializable(cls, package: str | None = None, name: str | None = None):
         If None is provided, the classe's __name__ attribute is used.
     """
     if package is None:
-        frame = sys._getframe(1)
+        frame = sys._getframe(2)
         g = frame.f_globals
         package = g.get("__name__", "bayesflow")
 

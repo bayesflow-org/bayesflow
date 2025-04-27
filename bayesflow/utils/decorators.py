@@ -17,6 +17,7 @@ def allow_args(fn: Decorator) -> Decorator:
     def wrapper(f: Fn) -> Fn: ...
     @overload
     def wrapper(*fargs: any, **fkwargs: any) -> Fn: ...
+    @wraps(fn)
     def wrapper(*fargs: any, **fkwargs: any) -> Fn:
         if len(fargs) == 1 and not fkwargs and callable(fargs[0]):
             # called without arguments

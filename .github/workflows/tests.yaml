@@ -43,7 +43,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install -U pip setuptools wheel
+          python -m pip install -U pip setuptools wheel
           pip install .[test]
 
       - name: Install JAX

@@ -73,12 +73,13 @@ class MapTransform(Transform):
         for key, transform in self.transform_map.items():
             if key in data:
                 ldj = transform.log_det_jac(data[key], **kwargs)
-            if ldj is None:
-                continue
-            elif key in log_det_jac:
-                log_det_jac[key] += ldj
-            else:
-                log_det_jac[key] = ldj
+
+                if ldj is None:
+                    continue
+                elif key in log_det_jac:
+                    log_det_jac[key] += ldj
+                else:
+                    log_det_jac[key] = ldj
 
         return log_det_jac
 

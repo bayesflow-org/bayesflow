@@ -333,7 +333,7 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""
-        return ops.exp(-log_snr_t) + ops.square(self.sigma_data)  # / ops.square(self.sigma_data)
+        return ops.exp(-log_snr_t) / ops.square(self.sigma_data) + 1
 
     def get_config(self):
         return dict(sigma_data=self.sigma_data, sigma_min=self.sigma_min, sigma_max=self.sigma_max)
@@ -373,7 +373,6 @@ class DiffusionModel(InferenceNetwork):
         subnet_kwargs: dict[str, any] = None,
         noise_schedule: str | NoiseSchedule = "cosine",
         prediction_type: str = "velocity",
-        loss_type: str = "noise",
         **kwargs,
     ):
         """

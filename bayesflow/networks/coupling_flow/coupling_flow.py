@@ -152,7 +152,7 @@ class CouplingFlow(InferenceNetwork):
         z = x
         log_det = keras.ops.zeros(keras.ops.shape(x)[:-1])
         for layer in self.invertible_layers:
-            z, det = layer(z, conditions=conditions, inverse=False, training=training, **kwargs)
+            z, det = layer(z, conditions=conditions, inverse=False, training=training)
             log_det += det
 
         if density:
@@ -168,7 +168,7 @@ class CouplingFlow(InferenceNetwork):
         x = z
         log_det = keras.ops.zeros(keras.ops.shape(z)[:-1])
         for layer in reversed(self.invertible_layers):
-            x, det = layer(x, conditions=conditions, inverse=True, training=training, **kwargs)
+            x, det = layer(x, conditions=conditions, inverse=True, training=training)
             log_det += det
 
         if density:

@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 import numpy as np
 
 from bayesflow.types import Shape
@@ -22,10 +22,10 @@ class ModelComparisonSimulator(Simulator):
         p: Sequence[float] = None,
         logits: Sequence[float] = None,
         use_mixed_batches: bool = True,
-        shared_simulator: Simulator | FunctionType = None,
+        shared_simulator: Simulator | Callable[[Sequence[int]], dict[str, any]] = None,
     ):
         """
-        Initialize a multi-model simulator that can generate data for mixture / model comparison problems.
+        Initialize a multimodel simulator that can generate data for mixture / model comparison problems.
 
         Parameters
         ----------
@@ -40,7 +40,7 @@ class ModelComparisonSimulator(Simulator):
         use_mixed_batches : bool, optional
             If True, samples in a batch are drawn from different models. If False, the entire batch
             is drawn from a single model chosen according to the model probabilities. Default is True.
-        shared_simulator : Simulator or FunctionType, optional
+        shared_simulator : Simulator or Callable, optional
             A shared simulator whose outputs are passed to all model simulators. If a function is
             provided, it is wrapped in a `LambdaSimulator` with batching enabled.
         """

@@ -156,8 +156,10 @@ class PointApproximator(ContinuousApproximator):
 
     def _prepare_conditions(self, conditions: Mapping[str, np.ndarray], **kwargs) -> dict[str, Tensor]:
         """Adapts and converts the conditions to tensors."""
+
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        conditions.pop("inference_variables", None)
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.SAMPLE_KEYS}
+
         return keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
     def _apply_inverse_adapter_to_estimates(

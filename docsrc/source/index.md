@@ -45,15 +45,7 @@ history = workflow.fit_online(epochs=50, batch_size=32, num_batches_per_epoch=50
 diagnostics = workflow.plot_default_diagnostics(test_data=300)
 ```
 
-For an in-depth exposition, check out our walkthrough notebooks below.
-
-1. [Linear regression starter example](_examples/Linear_Regression_Starter.ipynb)
-2. [From ABC to BayesFlow](_examples/From_ABC_to_BayesFlow.ipynb)
-3. [Two moons starter example](_examples/Two_Moons_Starter.ipynb)
-4. [Rapid iteration with point estimators](_examples/Lotka_Volterra_point_estimation_and_expert_stats.ipynb)
-5. [SIR model with custom summary network](_examples/SIR_Posterior_Estimation.ipynb)
-6. [Bayesian experimental design](_examples/Bayesian_Experimental_Design.ipynb)
-7. [Simple model comparison example](_examples/One_Sample_TTest.ipynb)
+For an in-depth exposition, check out our walkthrough notebooks in the {doc}`Examples <../examples>` section.
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

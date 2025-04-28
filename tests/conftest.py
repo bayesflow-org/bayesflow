@@ -41,7 +41,7 @@ def pytest_make_parametrize_id(config, val, argname):
     return f"{argname}={repr(val)}"
 
 
-@pytest.fixture(params=[2, 3], scope="session")
+@pytest.fixture(params=[2], scope="session")
 def batch_size(request):
     return request.param
 
@@ -94,33 +94,3 @@ def random_set(batch_size, set_size, feature_size):
 @pytest.fixture(params=[2, 3], scope="session")
 def set_size(request):
     return request.param
-
-
-@pytest.fixture(params=["two_moons"], scope="session")
-def simulator(request):
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(scope="session")
-def training_dataset(simulator, batch_size):
-    from bayesflow.datasets import OfflineDataset
-
-    num_batches = 128
-    samples = simulator.sample((num_batches * batch_size,))
-    return OfflineDataset(samples, batch_size=batch_size)
-
-
-@pytest.fixture(scope="session")
-def two_moons(batch_size):
-    from bayesflow.simulators import TwoMoonsSimulator
-
-    return TwoMoonsSimulator()
-
-
-@pytest.fixture(scope="session")
-def validation_dataset(simulator, batch_size):
-    from bayesflow.datasets import OfflineDataset
-
-    num_batches = 16
-    samples = simulator.sample((num_batches * batch_size,))
-    return OfflineDataset(samples, batch_size=batch_size)

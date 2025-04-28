@@ -23,7 +23,7 @@ class Approximator(BackendApproximator):
         raise NotImplementedError
 
     def build_from_data(self, data: Mapping[str, any]) -> None:
-        self.compute_metrics(**data, stage="training")
+        self.compute_metrics(**filter_kwargs(data, self.compute_metrics), stage="training")
         self.built = True
 
     @classmethod

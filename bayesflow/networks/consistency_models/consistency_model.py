@@ -187,7 +187,7 @@ class ConsistencyModel(InferenceNetwork):
         self.c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
         self.c_huber2 = self.c_huber**2
 
-        ## Calculate discretization schedule in advance
+        # Calculate discretization schedule in advance
         # The Jax compiler requires fixed-size arrays, so we have
         # to store all the discretized_times in one matrix in advance
         # and later only access the relevant entries.
@@ -213,34 +213,24 @@ class ConsistencyModel(InferenceNetwork):
             disc = ops.convert_to_numpy(self._discretize_time(n))
             discretized_times[i, : len(disc)] = disc
             discretization_map[n] = i
+
         # Finally, we convert the vectors to tensors
         self.discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
         self.discretization_map = ops.convert_to_tensor(discretization_map)
 
-    def call(
-        self,
-        xz: Tensor,
-        conditions: Tensor = None,
-        inverse: bool = False,
-        **kwargs,
-    ):
-        if inverse:
-            return self._inverse(xz, conditions=conditions, **kwargs)
-        return self._forward(xz, conditions=conditions, **kwargs)
-
-    def _forward_train(self, x: Tensor, noise: Tensor, t: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
-        """Forward function for training. Calls consistency function with
-        noisy input
-        """
+    def _forward_train(
+        self, x: Tensor, noise: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False, **kwargs
+    ) -> Tensor:
+        """Forward function for training. Calls consistency function with noisy input"""
         inp = x + t * noise
-        return self.consistency_function(inp, t, conditions=conditions, **kwargs)
+        return self.consistency_function(inp, t, conditions=conditions, training=training)
 
     def _forward(self, x: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
         # Consistency Models only learn the direction from noise distribution
         # to target distribution, so we cannot implement this function.
         raise NotImplementedError("Consistency Models are not invertible")
 
-    def _inverse(self, z: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
+    def _inverse(self, z: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> Tensor:
         """Generate random draws from the approximate target distribution
         using the multistep sampling algorithm from [1], Algorithm 1.
 
@@ -249,7 +239,9 @@ class ConsistencyModel(InferenceNetwork):
         z           : Tensor
             Samples from a standard normal distribution
         conditions  : Tensor, optional, default: None
-            Conditions for a approximate conditional distribution
+            Conditions for the approximate conditional distribution
+        training    : bool, optional, default: True
+            Whether internal layers (e.g., dropout) should behave in train or inference mode.
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments. Include `steps` (default: 10) to
             adjust the number of sampling steps.
@@ -263,15 +255,17 @@ class ConsistencyModel(InferenceNetwork):
         x = keras.ops.copy(z) * self.max_time
         discretized_time = keras.ops.flip(self._discretize_time(steps), axis=-1)
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
-        x = self.consistency_function(x, t, conditions=conditions)
+
+        x = self.consistency_function(x, t, conditions=conditions, training=training)
+
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
             x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x = self.consistency_function(x_n, t, conditions=conditions)
+            x = self.consistency_function(x_n, t, conditions=conditions, training=training)
         return x
 
-    def consistency_function(self, x: Tensor, t: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
+    def consistency_function(self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         """Compute consistency function.
 
         Parameters
@@ -282,8 +276,8 @@ class ConsistencyModel(InferenceNetwork):
             Vector of time samples in [eps, T]
         conditions  : Tensor
             The conditioning vector
-        **kwargs    : dict, optional, default: {}
-            Additional keyword arguments passed to the network.
+        training    : bool, optional, default: True
+            Whether internal layers (e.g., dropout) should behave in train or inference mode.
         """
 
         if conditions is not None:
@@ -291,7 +285,7 @@ class ConsistencyModel(InferenceNetwork):
         else:
             xtc = ops.concatenate([x, t], axis=-1)
 
-        f = self.output_projector(self.subnet(xtc, **kwargs))
+        f = self.output_projector(self.subnet(xtc, training=training))
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)
         # Thus, we can do a cross product with the time vector which is (batch_size, 1) for

@@ -373,6 +373,7 @@ class DiffusionModel(InferenceNetwork):
         subnet_kwargs: dict[str, any] = None,
         noise_schedule: str | NoiseSchedule = "cosine",
         prediction_type: str = "velocity",
+        loss_type: str = "noise",
         **kwargs,
     ):
         """
@@ -726,6 +727,7 @@ class DiffusionModel(InferenceNetwork):
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(
             log_snr_t=log_snr_t, training=noise_schedule_training_stage
         )
+        weights_for_snr = self.noise_schedule.get_weights_for_snr(log_snr_t=log_snr_t)
 
         # generate noise vector
         eps_t = keras.random.normal(ops.shape(x), dtype=ops.dtype(x), seed=self.seed_generator)
@@ -743,11 +745,10 @@ class DiffusionModel(InferenceNetwork):
         x_pred = self.convert_prediction_to_x(
             pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=False
         )
-        # convert x to epsilon prediction
-        noise_pred = (alpha_t * diffused_x - x_pred) / sigma_t
 
-        # Calculate loss based on noise prediction
-        weights_for_snr = self.noise_schedule.get_weights_for_snr(log_snr_t=log_snr_t)
+        # convert x to epsilon prediction
+        noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
+        # Calculate loss
         loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
 
         # apply sample weight

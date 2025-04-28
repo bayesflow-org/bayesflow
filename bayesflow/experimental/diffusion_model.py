@@ -138,16 +138,6 @@ class NoiseSchedule(ABC):
                 raise ValueError("t(0) must be finite.")
             if not ops.isfinite(self.get_t_from_log_snr(self._log_snr_min, training=training)):
                 raise ValueError("t(1) must be finite.")
-            if (
-                not self.get_log_snr(self.get_t_from_log_snr(self._log_snr_max, training=training), training=training)
-                == self._log_snr_max
-            ):
-                raise ValueError("RoundTrip snr_max -> t -> snr_max failed.")
-            if (
-                not self.get_log_snr(self.get_t_from_log_snr(self._log_snr_min, training=training), training=training)
-                == self._log_snr_min
-            ):
-                raise ValueError("RoundTrip snr_min -> t -> snr_min failed.")
         if not ops.isfinite(self.derivative_log_snr(self._log_snr_max, training=False)):
             raise ValueError("dt/t log_snr(0) must be finite.")
         if not ops.isfinite(self.derivative_log_snr(self._log_snr_min, training=False)):

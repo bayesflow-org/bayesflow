@@ -327,6 +327,27 @@ def test_mmd_comparison_different_distributions(summary_network, adapter):
     assert mmd_observed >= np.quantile(mmd_null, 0.68)
 
 
+def test_mmd_comparison_no_summary_network(adapter):
+    observed_data = dict(observables=np.random.rand(10, 5))
+    reference_data = dict(observables=np.random.rand(100, 5))
+    num_null_samples = 50
+
+    mock_approximator = bf.approximators.ContinuousApproximator(
+        adapter=adapter,
+        inference_network=None,
+        summary_network=None,
+    )
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.summary_space_comparison(
+            observed_data=observed_data,
+            reference_data=reference_data,
+            approximator=mock_approximator,
+            num_null_samples=num_null_samples,
+            comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
+        )
+
+
 def test_mmd_comparison_approximator_incorrect_instance():
     """Test mmd_comparison raises ValueError for incorrect approximator instance."""
     observed_data = dict(observables=np.random.rand(10, 5))

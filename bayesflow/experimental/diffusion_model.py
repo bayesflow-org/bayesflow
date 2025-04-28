@@ -275,8 +275,8 @@ class EDMNoiseSchedule(NoiseSchedule):
     [1] Elucidating the Design Space of Diffusion-Based Generative Models: Karras et al. (2022)
     """
 
-    def __init__(self, sigma_data: float = 1.0, sigma_min: float = 0.002, sigma_max: float = 80.0):
-        super().__init__(name="edm_noise_schedule", variance_type=VarianceType.EXPLODING)
+    def __init__(self, sigma_data: float = 1.0, sigma_min: float = 1e-4, sigma_max: float = 80.0):
+        super().__init__(name="edm_noise_schedule", variance_type=VarianceType.PRESERVING)
         self.sigma_data = sigma_data
         # training settings
         self.p_mean = -1.2
@@ -297,10 +297,10 @@ class EDMNoiseSchedule(NoiseSchedule):
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         if training:
-            # SNR = -dist.icdf(t_trunc)
+            # SNR = -dist.icdf(t_trunc) # negative seems to be wrong in the paper in the Kingma paper
             loc = -2 * self.p_mean
             scale = 2 * self.p_std
-            snr = -(loc + scale * ops.erfinv(2 * t - 1) * math.sqrt(2))
+            snr = loc + scale * ops.erfinv(2 * t - 1) * math.sqrt(2)
             snr = ops.clip(snr, x_min=self._log_snr_min_training, x_max=self._log_snr_max_training)
         else:  # sampling
             sigma_min_rho = self.sigma_min ** (1 / self.rho)
@@ -311,10 +311,10 @@ class EDMNoiseSchedule(NoiseSchedule):
     def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         if training:
-            # SNR = -dist.icdf(t_trunc) => t = dist.cdf(-snr)
+            # SNR = -dist.icdf(t_trunc) => t = dist.cdf(-snr)  # negative seems to be wrong in the Kingma paper
             loc = -2 * self.p_mean
             scale = 2 * self.p_std
-            x = -log_snr_t
+            x = log_snr_t
             t = 0.5 * (1 + ops.erf((x - loc) / (scale * math.sqrt(2.0))))
         else:  # sampling
             # SNR = -2 * rho * log(sigma_max ** (1/rho) + (1 - t) * (sigma_min ** (1/rho) - sigma_max ** (1/rho)))

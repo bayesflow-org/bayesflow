@@ -106,8 +106,10 @@ class InvariantLayer(keras.Layer):
         """
 
         set_summary = self.inner_fc(input_set, training=training)
+        set_summary = self.inner_projector(set_summary, training=training)
         set_summary = self.pooling_layer(set_summary, training=training)
         set_summary = self.outer_fc(set_summary, training=training)
+        set_summary = self.outer_projector(set_summary, training=training)
         return set_summary
 
     @sanitize_input_shape

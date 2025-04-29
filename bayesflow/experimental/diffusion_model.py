@@ -27,6 +27,14 @@ class VarianceType(Enum):
     EXPLODING = "exploding"
 
 
+class PredictionType(Enum):
+    VELOCITY = "velocity"
+    NOISE = "noise"
+    X = "x"
+    F = "F"  # EDM
+    SCORE = "score"
+
+
 @serializable
 class NoiseSchedule(ABC):
     r"""Noise schedule for diffusion models. We follow the notation from [1].
@@ -45,11 +53,12 @@ class NoiseSchedule(ABC):
         Augmentation: Kingma et al. (2023)
     """
 
-    def __init__(self, name: str, variance_type: VarianceType):
+    def __init__(self, name: str, variance_type: VarianceType, weighting: str = None):
         self.name = name
         self.variance_type = variance_type  # 'exploding' or 'preserving'
         self._log_snr_min = -15  # should be set in the subclasses
         self._log_snr_max = 15  # should be set in the subclasses
+        self.weighting = weighting
 
     @abstractmethod
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
@@ -113,10 +122,18 @@ class NoiseSchedule(ABC):
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda). Default is 1.
         Generally, weighting functions should be defined for a noise prediction loss.
         """
-        # sigmoid: ops.sigmoid(-log_snr_t + 2), based on Kingma et al. (2023)
-        # min-snr with gamma = 5, based on Hang et al. (2023)
-        # 1 / ops.cosh(log_snr_t / 2) * ops.minimum(ops.ones_like(log_snr_t), gamma * ops.exp(-log_snr_t))
-        return ops.ones_like(log_snr_t)
+        if self.weighting is None:
+            return ops.ones_like(log_snr_t)
+        elif self.weighting == "sigmoid":
+            # sigmoid weighting based on Kingma et al. (2023)
+            return ops.sigmoid(-log_snr_t + 2)
+        elif self.weighting == "likelihood_weighting":
+            # likelihood weighting based on Song et al. (2021)
+            g_squared = self.get_drift_diffusion(log_snr_t=log_snr_t)
+            sigma_t = self.get_alpha_sigma(log_snr_t=log_snr_t, training=True)[1]
+            return g_squared / ops.square(sigma_t)
+        else:
+            raise ValueError(f"Unknown weighting type: {self.weighting}")
 
     def get_config(self):
         return dict(name=self.name, variance_type=self.variance_type)
@@ -154,7 +171,9 @@ class LinearNoiseSchedule(NoiseSchedule):
     """
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15):
-        super().__init__(name="linear_noise_schedule", variance_type=VarianceType.PRESERVING)
+        super().__init__(
+            name="linear_noise_schedule", variance_type=VarianceType.PRESERVING, weighting="likelihood_weighting"
+        )
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
 
@@ -190,14 +209,6 @@ class LinearNoiseSchedule(NoiseSchedule):
         factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
         return -factor * dsnr_dt
 
-    def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
-        """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda).
-        Default is the likelihood weighting based on Song et al. (2021).
-        """
-        g_squared = self.get_drift_diffusion(log_snr_t=log_snr_t)
-        sigma_t = self.get_alpha_sigma(log_snr_t=log_snr_t, training=True)[1]
-        return g_squared / ops.square(sigma_t)
-
     def get_config(self):
         return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max)
 
@@ -214,8 +225,10 @@ class CosineNoiseSchedule(NoiseSchedule):
     [1] Diffusion models beat gans on image synthesis: Dhariwal and Nichol (2022)
     """
 
-    def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0):
-        super().__init__(name="cosine_noise_schedule", variance_type=VarianceType.PRESERVING)
+    def __init__(
+        self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0, weighting: str = "sigmoid"
+    ):
+        super().__init__(name="cosine_noise_schedule", variance_type=VarianceType.PRESERVING, weighting=weighting)
         self._s_shift_cosine = s_shift_cosine
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
@@ -251,12 +264,6 @@ class CosineNoiseSchedule(NoiseSchedule):
         dsnr_dt = dsnr_dx * (self._t_max - self._t_min)
         factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
         return -factor * dsnr_dt
-
-    def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
-        """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda).
-        Default is the sigmoid weighting based on Kingma et al. (2023).
-        """
-        return ops.sigmoid(-log_snr_t + 2)
 
     def get_config(self):
         return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max, s_shift_cosine=self._s_shift_cosine)
@@ -345,6 +352,7 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""
+        # for F-prediction: w = (ops.exp(-log_snr_t) + sigma_data^2) / (ops.exp(-log_snr_t)*sigma_data^2)
         return ops.exp(-log_snr_t) / ops.square(self.sigma_data) + 1
 
     def get_config(self):
@@ -384,7 +392,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
         noise_schedule: str | NoiseSchedule = "cosine",
-        prediction_type: str = "velocity",
+        prediction_type: PredictionType = "velocity",
         **kwargs,
     ):
         """
@@ -431,12 +439,20 @@ class DiffusionModel(InferenceNetwork):
         # validate noise model
         self.noise_schedule.validate()
 
-        if prediction_type not in ["velocity", "noise", "F"]:  # F is EDM
+        if prediction_type in [PredictionType.NOISE, PredictionType.VELOCITY, PredictionType.F]:  # F is EDM
             raise ValueError(f"Unknown prediction type: {prediction_type}")
-        self.prediction_type = prediction_type
-        if noise_schedule.name == "edm_noise_schedule" and prediction_type != "F":
+        self._prediction_type = prediction_type
+        if noise_schedule.name == "edm_noise_schedule" and prediction_type != PredictionType.F:
             warnings.warn(
                 "EDM noise schedule is build for F-prediction. Consider using F-prediction instead.",
+            )
+        self._loss_type = kwargs.get("loss_type", PredictionType.NOISE)
+        if self._loss_type not in [PredictionType.NOISE, PredictionType.VELOCITY, PredictionType.F]:
+            raise ValueError(f"Unknown loss type: {self._loss_type}")
+        if self._loss_type != PredictionType.NOISE:
+            warnings.warn(
+                "the standard schedules have weighting functions defined for the noise prediction loss. "
+                "You might want to replace them, if you use a different loss function."
             )
 
         # clipping of prediction (after it was transformed to x-prediction)
@@ -489,7 +505,8 @@ class DiffusionModel(InferenceNetwork):
             "subnet": self.subnet,
             "noise_schedule": self.noise_schedule,
             "integrate_kwargs": self.integrate_kwargs,
-            "prediction_type": self.prediction_type,
+            "prediction_type": self._prediction_type,
+            "loss_type": self._loss_type,
         }
         return base_config | serialize(config)
 
@@ -501,18 +518,18 @@ class DiffusionModel(InferenceNetwork):
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, clip_x: bool
     ) -> Tensor:
         """Convert the prediction of the neural network to the x space."""
-        if self.prediction_type == "velocity":
+        if self._prediction_type == PredictionType.VELOCITY:
             # convert v into x
             x = alpha_t * z - sigma_t * pred
-        elif self.prediction_type == "noise":
+        elif self._prediction_type == PredictionType.NOISE:
             # convert noise prediction into x
             x = (z - sigma_t * pred) / alpha_t
-        elif self.prediction_type == "F":  # EDM
+        elif self._prediction_type == PredictionType.F:  # EDM
             sigma_data = self.noise_schedule.sigma_data
             x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
             x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
             x = x1 * z + x2 * pred
-        elif self.prediction_type == "x":
+        elif self._prediction_type == PredictionType.X:
             x = pred
         else:  # "score"
             x = (z + sigma_t**2 * pred) / alpha_t
@@ -757,10 +774,26 @@ class DiffusionModel(InferenceNetwork):
             pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=False
         )
 
-        # convert x to epsilon prediction
-        noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
         # Calculate loss
-        loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
+        if self._loss_type == PredictionType.NOISE:
+            # convert x to epsilon prediction
+            noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
+            loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
+        elif self._loss_type == PredictionType.VELOCITY:
+            # convert x to velocity prediction
+            velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
+            v_t = alpha_t * eps_t - sigma_t * x
+            loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
+        elif self._loss_type == PredictionType.F:
+            # convert x to F prediction
+            sigma_data = self.noise_schedule.sigma_data
+            x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
+            x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
+            f_pred = x1 * x_pred - x2 * diffused_x
+            f_t = x1 * x - x2 * diffused_x
+            loss = weights_for_snr * ops.mean((f_pred - f_t) ** 2, axis=-1)
+        else:
+            raise ValueError(f"Unknown loss type: {self._loss_type}")
 
         # apply sample weight
         loss = weighted_mean(loss, sample_weight)

@@ -144,7 +144,7 @@ class ModelComparisonSimulator(Simulator):
             sims = [{k: v for k, v in sim.items() if k in common_keys} for sim in sims]
             return sims
 
-        # try to fill values with key_conflicts to shape of sims from other models
+        # try to fill with key_conflicts to shape of the values from other model
         if isinstance(self.key_conflicts, (float, int)):
             combined_sims = {}
             for sim in sims:
@@ -153,7 +153,7 @@ class ModelComparisonSimulator(Simulator):
             for i, sim in enumerate(sims):
                 for missing_key in missing_keys[i]:
                     shape = combined_sims[missing_key].shape
-                    shape = [s for s in shape]
+                    shape = list(shape)
                     shape[0] = batch_sizes[i]
 
                     sim[missing_key] = np.full(shape=shape, fill_value=self.key_conflicts)

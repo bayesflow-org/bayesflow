@@ -30,10 +30,12 @@ class ModelComparisonApproximator(Approximator):
         The network backbone (e.g, an MLP) that is used for model classification.
         The input of the classifier network is created by concatenating `classifier_variables`
         and (optional) output of the summary_network.
-    summary_network: bg.networks.SummaryNetwork, optional
+    summary_network: bf.networks.SummaryNetwork, optional
         The summary network used for data summarization (default is None).
         The input of the summary network is `summary_variables`.
     """
+
+    SAMPLE_KEYS = ["summary_variables", "classifier_conditions"]
 
     def __init__(
         self,
@@ -117,6 +119,12 @@ class ModelComparisonApproximator(Approximator):
                 self.summary_network._metrics = summary_metrics
 
         return super().compile(*args, **kwargs)
+
+    def compile_from_config(self, config):
+        self.compile(**deserialize(config))
+        if hasattr(self, "optimizer") and self.built:
+            # Create optimizer variables.
+            self.optimizer.build(self.trainable_variables)
 
     def compute_metrics(
         self,
@@ -262,6 +270,16 @@ class ModelComparisonApproximator(Approximator):
 
         return base_config | serialize(config)
 
+    def get_compile_config(self):
+        base_config = super().get_compile_config() or {}
+
+        config = {
+            "classifier_metrics": self.classifier_network._metrics,
+            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
+        }
+
+        return base_config | serialize(config)
+
     def predict(
         self,
         *,
@@ -288,9 +306,13 @@ class ModelComparisonApproximator(Approximator):
         np.ndarray
             Predicted posterior model probabilities given `conditions`.
         """
+
+        # Apply adapter transforms to raw simulated / real quantities
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        # at inference time, model_indices are predicted by the networks and thus ignored in conditions
-        conditions.pop("model_indices", None)
+
+        # Ensure only keys relevant for sampling are present in the conditions dictionary
+        conditions = {k: v for k, v in conditions.items() if k in ModelComparisonApproximator.SAMPLE_KEYS}
+
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         output = self._predict(**conditions, **kwargs)

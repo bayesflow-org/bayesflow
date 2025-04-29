@@ -77,7 +77,7 @@ class CouplingFlow(InferenceNetwork):
             The type of transformation used in the coupling layers, such as "affine".
             Default is "affine".
         permutation : str or None, optional
-            The type of permutation applied between layers. Can be "random" or None
+            The type of permutation applied between layers. Can be "orthogonal", "random", "swap", or None
             (no permutation). Default is "random".
         use_actnorm : bool, optional
             Whether to apply ActNorm before each coupling layer. Default is True.
@@ -152,7 +152,7 @@ class CouplingFlow(InferenceNetwork):
         z = x
         log_det = keras.ops.zeros(keras.ops.shape(x)[:-1])
         for layer in self.invertible_layers:
-            z, det = layer(z, conditions=conditions, inverse=False, training=training, **kwargs)
+            z, det = layer(z, conditions=conditions, inverse=False, training=training)
             log_det += det
 
         if density:
@@ -168,7 +168,7 @@ class CouplingFlow(InferenceNetwork):
         x = z
         log_det = keras.ops.zeros(keras.ops.shape(z)[:-1])
         for layer in reversed(self.invertible_layers):
-            x, det = layer(x, conditions=conditions, inverse=True, training=training, **kwargs)
+            x, det = layer(x, conditions=conditions, inverse=True, training=training)
             log_det += det
 
         if density:

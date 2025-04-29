@@ -33,7 +33,7 @@ def setup():
 
     from bayesflow.utils import logging
 
-    logging.debug(f"Using backend {keras.backend.backend()!r}")
+    logging.info(f"Using backend {keras.backend.backend()!r}")
 
     if keras.backend.backend() == "torch":
         import torch

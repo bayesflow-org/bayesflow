@@ -3,6 +3,7 @@
 ![Codecov](https://img.shields.io/codecov/c/github/bayesflow-org/bayesflow?style=for-the-badge&link=https%3A%2F%2Fapp.codecov.io%2Fgh%2Fbayesflow-org%2Fbayesflow%2Ftree%2Fmain)
 [![DOI](https://img.shields.io/badge/DOI-10.21105%2Fjoss.05702-blue?style=for-the-badge)](https://doi.org/10.21105/joss.05702)
 ![PyPI - License](https://img.shields.io/pypi/l/bayesflow?style=for-the-badge)
+![NumFOCUS Affiliated Project](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange?style=for-the-badge)
 
 BayesFlow is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
 It provides users and researchers with:
@@ -13,6 +14,19 @@ It provides users and researchers with:
 
 BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
 fueled by continuous progress in generative AI and Bayesian inference.
+
+## Important Note for Existing Users
+
+You are currently looking at BayesFlow 2.0+, which is a complete rewrite of the library.
+While it shares the same overall goals with the 1.x versions, the API is not compatible.
+
+> [!CAUTION]
+> A few features, most notably hierarchical models, have not been ported to BayesFlow 2.0+
+> yet. We are working on those features and plan to add them soon. You can find the complete
+> list in the [FAQ](#faq) below.
+
+The [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb) guide
+highlights how concepts and classes relate between the two versions.
 
 ## Conceptual Overview
 
@@ -216,17 +230,55 @@ while the old version was based on TensorFlow.
 -------------
 
 **Question:**
+Should I switch to BayesFlow 2.0+ now? Are there features that are still missing?
+
+**Answer:**
+In general, we recommend to switch, as the new version is easier to use and will continue
+to receive improvements and new features. However, a few features are still missing, so you
+might want to wait until everything you need has been ported to BayesFlow 2.0+.
+
+Depending on your needs, you might not want to upgrade yet if one of the following applies:
+
+- You have an ongoing project that uses BayesFlow 1.x, and you do not want to allocate
+  time for migrating it to the new API.
+- You have already trained models in BayesFlow 1.x, that you do not want to re-train
+  with the new version. Loading models from version 1.x in version 2.0+ is not supported.
+- You require a feature that was not ported to BayesFlow 2.0+ yet. To our knowledge,
+  this applies to:
+  * Two-level/Hierarchical models: `TwoLevelGenerativeModel`, `TwoLevelPrior`.
+  * Sensitivity analysis: functionality from the `bayesflow.sensitivity` module.
+  * MCMC (discontinued): The `bayesflow.mcmc` module. We are considering other options
+    to enable the use of BayesFlow in an MCMC setting.
+  * Networks: `EvidentialNetwork`.
+  * Model misspecification detection: MMD test in the summary space (see #384).
+
+If you encounter any functionality that is missing and not listed here, please let us
+know by opening an issue.
+
+-------------
+
+**Question:**
 I still need the old BayesFlow for some of my projects. How can I install it?
 
 **Answer:**
 You can find and install the old Bayesflow version via the `stable-legacy` branch on GitHub.
+The corresponding [documentation](https://bayesflow.org/stable-legacy/index.html) can be
+accessed by selecting the "stable-legacy" entry in the version picker of the documentation.
+
+You can also install the latest version of BayesFlow v1.x from PyPI using
+
+```
+pip install "bayesflow<2.0"
+```
 
 -------------
 
 ## Awesome Amortized Inference
 
-If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our [community-driven list](https://github.com/bayesflow-org/awesome-amortized-inference).
+If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our [community-driven list](https://github.com/bayesflow-org/awesome-amortized-inference). If you'd like a paper (by yourself or someone else) featured, please add it to the list with a pull request, an issue, or a message to the maintainers.
 
 ## Acknowledgments
 
 This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) Projects 528702768 and 508399956. The project is further supported by Germany's Excellence Strategy -- EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), the collaborative research cluster TRR 391 – 520388526, as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.
+
+BayesFlow is a [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects).

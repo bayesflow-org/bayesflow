@@ -1,4 +1,4 @@
-About us
+About Us
 ========
 
 Core maintainers

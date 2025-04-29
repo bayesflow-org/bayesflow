@@ -55,7 +55,7 @@ class FlowMatching(InferenceNetwork):
         self,
         subnet: str | keras.Layer = "mlp",
         base_distribution: str | Distribution = "normal",
-        use_optimal_transport: bool = True,
+        use_optimal_transport: bool = False,
         loss_fn: str | keras.Loss = "mse",
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
@@ -82,7 +82,8 @@ class FlowMatching(InferenceNetwork):
             The base probability distribution from which samples are drawn, such as "normal".
             Default is "normal".
         use_optimal_transport : bool, optional
-            Whether to apply optimal transport for improved training stability. Default is True.
+            Whether to apply optimal transport for improved training stability. Default is False.
+            Note: this will increase training time by approximately ~2.5 times, but may lead to faster inference.
         loss_fn : str, optional
             The loss function used for training, such as "mse". Default is "mse".
         integrate_kwargs : dict[str, any], optional

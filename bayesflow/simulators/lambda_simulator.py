@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence, Mapping
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -12,13 +12,13 @@ from ..types import Shape
 class LambdaSimulator(Simulator):
     """Implements a simulator based on a sampling function."""
 
-    def __init__(self, sample_fn: Callable[[Sequence[int]], Mapping[str, any]], *, is_batched: bool = False):
+    def __init__(self, sample_fn: Callable[[Sequence[int]], dict[str, any]], *, is_batched: bool = False):
         """
         Initialize a simulator based on a simple callable function
 
         Parameters
         ----------
-        sample_fn : Callable[[Sequence[int]], Mapping[str, any]]
+        sample_fn : Callable[[Sequence[int]], dict[str, any]]
             A function that generates samples. It should accept `batch_shape` as its first argument
             (if `is_batched=True`), followed by keyword arguments.
         is_batched : bool, optional

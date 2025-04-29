@@ -391,15 +391,18 @@ def integrate_stochastic(
 
     # Prepare step function with partial application
     step_fn = partial(step_fn, drift_fn=drift_fn, diffusion_fn=diffusion_fn, seed=seed, **kwargs)
+
     step_size = (stop_time - start_time) / steps
-
     time = start_time
+    current_state = state.copy()
 
-    def body(_loop_var, _loop_state):
-        _state, _time = _loop_state
-        _state, _time = step_fn(state=_state, time=_time, step_size=step_size)
+    # keras.ops.fori_loop does not support keras seed generator in jax
+    for i in range(steps):
+        # Execute the step with the specific seed for this step
+        current_state, time = step_fn(
+            state=current_state,
+            time=time,
+            step_size=step_size,
+        )
 
-        return _state, _time
-
-    state, time = keras.ops.fori_loop(0, steps, body, (state, time))
-    return state
+    return current_state

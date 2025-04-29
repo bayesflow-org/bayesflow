@@ -374,8 +374,8 @@ class DiffusionModel(InferenceNetwork):
         subnet: str | type = "mlp",
         integrate_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
-        noise_schedule: str | NoiseSchedule = "cosine",
-        prediction_type: str = "velocity",
+        noise_schedule: str | NoiseSchedule = "edm",
+        prediction_type: str = "F",
         **kwargs,
     ):
         """
@@ -398,10 +398,10 @@ class DiffusionModel(InferenceNetwork):
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         noise_schedule : str or NoiseSchedule, optional
             The noise schedule used for the diffusion process. Can be "linear", "cosine", or "edm".
-            Default is "cosine".
+            Default is "edm".
         prediction_type: str, optional
             The type of prediction used in the diffusion model. Can be "velocity", "noise" or "F" (EDM).
-             Default is "velocity".
+             Default is "F".
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
@@ -425,10 +425,6 @@ class DiffusionModel(InferenceNetwork):
         if prediction_type not in ["noise", "velocity", "F"]:  # F is EDM
             raise ValueError(f"Unknown prediction type: {prediction_type}")
         self._prediction_type = prediction_type
-        if noise_schedule.name == "edm_noise_schedule" and prediction_type != "F":
-            warnings.warn(
-                "EDM noise schedule is build for F-prediction. Consider using F-prediction instead.",
-            )
         self._loss_type = kwargs.get("loss_type", "noise")
         if self._loss_type not in ["noise", "velocity", "F"]:
             raise ValueError(f"Unknown loss type: {self._loss_type}")

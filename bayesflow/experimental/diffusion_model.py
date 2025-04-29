@@ -4,7 +4,6 @@ from typing import Union
 import keras
 from keras import ops
 import warnings
-from enum import Enum
 
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 from bayesflow.types import Tensor, Shape
@@ -20,19 +19,6 @@ from bayesflow.utils import (
     integrate,
     integrate_stochastic,
 )
-
-
-class VarianceType(Enum):
-    PRESERVING = "preserving"
-    EXPLODING = "exploding"
-
-
-class PredictionType(Enum):
-    VELOCITY = "velocity"
-    NOISE = "noise"
-    X = "x"
-    F = "F"  # EDM
-    SCORE = "score"
 
 
 @serializable
@@ -53,7 +39,7 @@ class NoiseSchedule(ABC):
         Augmentation: Kingma et al. (2023)
     """
 
-    def __init__(self, name: str, variance_type: VarianceType, weighting: str = None):
+    def __init__(self, name: str, variance_type: str, weighting: str = None):
         self.name = name
         self.variance_type = variance_type  # 'exploding' or 'preserving'
         self._log_snr_min = -15  # should be set in the subclasses
@@ -90,9 +76,9 @@ class NoiseSchedule(ABC):
         beta = self.derivative_log_snr(log_snr_t=log_snr_t, training=training)
         if x is None:  # return g^2 only
             return beta
-        if self.variance_type == VarianceType.PRESERVING:
+        if self.variance_type == "preserving":
             f = -0.5 * beta * x
-        elif self.variance_type == VarianceType.EXPLODING:
+        elif self.variance_type == "exploding":
             f = ops.zeros_like(beta)
         else:
             raise ValueError(f"Unknown variance type: {self.variance_type}")
@@ -106,11 +92,11 @@ class NoiseSchedule(ABC):
             sigma(t) = sqrt(sigmoid(-log_snr_t))
         For a variance exploding schedule, one should set alpha^2 = 1 and sigma^2 = exp(-lambda)
         """
-        if self.variance_type == VarianceType.PRESERVING:
+        if self.variance_type == "preserving":
             # variance preserving schedule
             alpha_t = ops.sqrt(ops.sigmoid(log_snr_t))
             sigma_t = ops.sqrt(ops.sigmoid(-log_snr_t))
-        elif self.variance_type == VarianceType.EXPLODING:
+        elif self.variance_type == "exploding":
             # variance exploding schedule
             alpha_t = ops.ones_like(log_snr_t)
             sigma_t = ops.sqrt(ops.exp(-log_snr_t))
@@ -171,9 +157,7 @@ class LinearNoiseSchedule(NoiseSchedule):
     """
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15):
-        super().__init__(
-            name="linear_noise_schedule", variance_type=VarianceType.PRESERVING, weighting="likelihood_weighting"
-        )
+        super().__init__(name="linear_noise_schedule", variance_type="preserving", weighting="likelihood_weighting")
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
 
@@ -228,7 +212,7 @@ class CosineNoiseSchedule(NoiseSchedule):
     def __init__(
         self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0, weighting: str = "sigmoid"
     ):
-        super().__init__(name="cosine_noise_schedule", variance_type=VarianceType.PRESERVING, weighting=weighting)
+        super().__init__(name="cosine_noise_schedule", variance_type="preserving", weighting=weighting)
         self._s_shift_cosine = s_shift_cosine
         self._log_snr_min = min_log_snr
         self._log_snr_max = max_log_snr
@@ -283,7 +267,7 @@ class EDMNoiseSchedule(NoiseSchedule):
     """
 
     def __init__(self, sigma_data: float = 1.0, sigma_min: float = 1e-4, sigma_max: float = 80.0):
-        super().__init__(name="edm_noise_schedule", variance_type=VarianceType.PRESERVING)
+        super().__init__(name="edm_noise_schedule", variance_type="preserving")
         self.sigma_data = sigma_data
         # training settings
         self.p_mean = -1.2
@@ -392,7 +376,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
         noise_schedule: str | NoiseSchedule = "cosine",
-        prediction_type: PredictionType = "velocity",
+        prediction_type: str = "velocity",
         **kwargs,
     ):
         """
@@ -439,17 +423,17 @@ class DiffusionModel(InferenceNetwork):
         # validate noise model
         self.noise_schedule.validate()
 
-        if prediction_type in [PredictionType.NOISE, PredictionType.VELOCITY, PredictionType.F]:  # F is EDM
+        if prediction_type not in ["noise", "velocity", "F"]:  # F is EDM
             raise ValueError(f"Unknown prediction type: {prediction_type}")
         self._prediction_type = prediction_type
-        if noise_schedule.name == "edm_noise_schedule" and prediction_type != PredictionType.F:
+        if noise_schedule.name == "edm_noise_schedule" and prediction_type != "F":
             warnings.warn(
                 "EDM noise schedule is build for F-prediction. Consider using F-prediction instead.",
             )
-        self._loss_type = kwargs.get("loss_type", PredictionType.NOISE)
-        if self._loss_type not in [PredictionType.NOISE, PredictionType.VELOCITY, PredictionType.F]:
+        self._loss_type = kwargs.get("loss_type", "noise")
+        if self._loss_type not in ["noise", "velocity", "F"]:
             raise ValueError(f"Unknown loss type: {self._loss_type}")
-        if self._loss_type != PredictionType.NOISE:
+        if self._loss_type != "noise":
             warnings.warn(
                 "the standard schedules have weighting functions defined for the noise prediction loss. "
                 "You might want to replace them, if you use a different loss function."
@@ -518,18 +502,18 @@ class DiffusionModel(InferenceNetwork):
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, clip_x: bool
     ) -> Tensor:
         """Convert the prediction of the neural network to the x space."""
-        if self._prediction_type == PredictionType.VELOCITY:
+        if self._prediction_type == "velocity":
             # convert v into x
             x = alpha_t * z - sigma_t * pred
-        elif self._prediction_type == PredictionType.NOISE:
+        elif self._prediction_type == "noise":
             # convert noise prediction into x
             x = (z - sigma_t * pred) / alpha_t
-        elif self._prediction_type == PredictionType.F:  # EDM
+        elif self._prediction_type == "F":  # EDM
             sigma_data = self.noise_schedule.sigma_data
             x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
             x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
             x = x1 * z + x2 * pred
-        elif self._prediction_type == PredictionType.X:
+        elif self._prediction_type == "x":
             x = pred
         else:  # "score"
             x = (z + sigma_t**2 * pred) / alpha_t
@@ -775,16 +759,16 @@ class DiffusionModel(InferenceNetwork):
         )
 
         # Calculate loss
-        if self._loss_type == PredictionType.NOISE:
+        if self._loss_type == "noise":
             # convert x to epsilon prediction
             noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
             loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
-        elif self._loss_type == PredictionType.VELOCITY:
+        elif self._loss_type == "velocity":
             # convert x to velocity prediction
             velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
             v_t = alpha_t * eps_t - sigma_t * x
             loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
-        elif self._loss_type == PredictionType.F:
+        elif self._loss_type == "F":
             # convert x to F prediction
             sigma_data = self.noise_schedule.sigma_data
             x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)

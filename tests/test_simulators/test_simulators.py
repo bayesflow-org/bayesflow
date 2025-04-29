@@ -47,3 +47,13 @@ def test_fixed_sample(composite_gaussian, batch_size, fixed_n, fixed_mu):
     assert samples["mu"].shape == (batch_size, 1)
     assert np.all(samples["mu"] == fixed_mu)
     assert samples["y"].shape == (batch_size, fixed_n)
+
+
+def test_multimodel_sample(multimodel, batch_size):
+    samples = multimodel.sample(batch_size)
+
+    if multimodel.key_conflicts == "drop":
+        assert set(samples) == {"x", "model_indices"}
+    else:
+        assert set(samples) == {"x", "model_indices", "c", "w"}
+        assert np.sum(np.isnan(samples["c"])) + np.sum(np.isnan(samples["w"])) == batch_size

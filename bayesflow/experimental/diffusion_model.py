@@ -41,10 +41,10 @@ class NoiseSchedule(ABC):
 
     def __init__(self, name: str, variance_type: str, weighting: str = None):
         self.name = name
-        self.variance_type = variance_type  # 'exploding' or 'preserving'
-        self._log_snr_min = -15  # should be set in the subclasses
-        self._log_snr_max = 15  # should be set in the subclasses
-        self.weighting = weighting
+        self._variance_type = variance_type  # 'exploding' or 'preserving'
+        self.log_snr_min = -15  # should be set in the subclasses
+        self.log_snr_max = 15  # should be set in the subclasses
+        self._weighting = weighting
 
     @abstractmethod
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
@@ -76,12 +76,12 @@ class NoiseSchedule(ABC):
         beta = self.derivative_log_snr(log_snr_t=log_snr_t, training=training)
         if x is None:  # return g^2 only
             return beta
-        if self.variance_type == "preserving":
+        if self._variance_type == "preserving":
             f = -0.5 * beta * x
-        elif self.variance_type == "exploding":
+        elif self._variance_type == "exploding":
             f = ops.zeros_like(beta)
         else:
-            raise ValueError(f"Unknown variance type: {self.variance_type}")
+            raise ValueError(f"Unknown variance type: {self._variance_type}")
         return f, beta
 
     def get_alpha_sigma(self, log_snr_t: Tensor, training: bool) -> tuple[Tensor, Tensor]:
@@ -92,37 +92,37 @@ class NoiseSchedule(ABC):
             sigma(t) = sqrt(sigmoid(-log_snr_t))
         For a variance exploding schedule, one should set alpha^2 = 1 and sigma^2 = exp(-lambda)
         """
-        if self.variance_type == "preserving":
+        if self._variance_type == "preserving":
             # variance preserving schedule
             alpha_t = ops.sqrt(ops.sigmoid(log_snr_t))
             sigma_t = ops.sqrt(ops.sigmoid(-log_snr_t))
-        elif self.variance_type == "exploding":
+        elif self._variance_type == "exploding":
             # variance exploding schedule
             alpha_t = ops.ones_like(log_snr_t)
             sigma_t = ops.sqrt(ops.exp(-log_snr_t))
         else:
-            raise ValueError(f"Unknown variance type: {self.variance_type}")
+            raise ValueError(f"Unknown variance type: {self._variance_type}")
         return alpha_t, sigma_t
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda). Default is 1.
         Generally, weighting functions should be defined for a noise prediction loss.
         """
-        if self.weighting is None:
+        if self._weighting is None:
             return ops.ones_like(log_snr_t)
-        elif self.weighting == "sigmoid":
+        elif self._weighting == "sigmoid":
             # sigmoid weighting based on Kingma et al. (2023)
             return ops.sigmoid(-log_snr_t + 2)
-        elif self.weighting == "likelihood_weighting":
+        elif self._weighting == "likelihood_weighting":
             # likelihood weighting based on Song et al. (2021)
             g_squared = self.get_drift_diffusion(log_snr_t=log_snr_t)
             sigma_t = self.get_alpha_sigma(log_snr_t=log_snr_t, training=True)[1]
             return g_squared / ops.square(sigma_t)
         else:
-            raise ValueError(f"Unknown weighting type: {self.weighting}")
+            raise ValueError(f"Unknown weighting type: {self._weighting}")
 
     def get_config(self):
-        return dict(name=self.name, variance_type=self.variance_type)
+        return dict(name=self.name, variance_type=self._variance_type)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -130,20 +130,20 @@ class NoiseSchedule(ABC):
 
     def validate(self):
         """Validate the noise schedule."""
-        if self._log_snr_min >= self._log_snr_max:
+        if self.log_snr_min >= self.log_snr_max:
             raise ValueError("min_log_snr must be less than max_log_snr.")
         for training in [True, False]:
             if not ops.isfinite(self.get_log_snr(0.0, training=training)):
                 raise ValueError("log_snr(0) must be finite.")
             if not ops.isfinite(self.get_log_snr(1.0, training=training)):
                 raise ValueError("log_snr(1) must be finite.")
-            if not ops.isfinite(self.get_t_from_log_snr(self._log_snr_max, training=training)):
+            if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_max, training=training)):
                 raise ValueError("t(0) must be finite.")
-            if not ops.isfinite(self.get_t_from_log_snr(self._log_snr_min, training=training)):
+            if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_min, training=training)):
                 raise ValueError("t(1) must be finite.")
-        if not ops.isfinite(self.derivative_log_snr(self._log_snr_max, training=False)):
+        if not ops.isfinite(self.derivative_log_snr(self.log_snr_max, training=False)):
             raise ValueError("dt/t log_snr(0) must be finite.")
-        if not ops.isfinite(self.derivative_log_snr(self._log_snr_min, training=False)):
+        if not ops.isfinite(self.derivative_log_snr(self.log_snr_min, training=False)):
             raise ValueError("dt/t log_snr(1) must be finite.")
 
 
@@ -158,11 +158,11 @@ class LinearNoiseSchedule(NoiseSchedule):
 
     def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15):
         super().__init__(name="linear_noise_schedule", variance_type="preserving", weighting="likelihood_weighting")
-        self._log_snr_min = min_log_snr
-        self._log_snr_max = max_log_snr
+        self.log_snr_min = min_log_snr
+        self.log_snr_max = max_log_snr
 
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self.log_snr_max, training=True)
+        self._t_max = self.get_t_from_log_snr(log_snr_t=self.log_snr_min, training=True)
 
     def _truncated_t(self, t: Tensor) -> Tensor:
         return self._t_min + (self._t_max - self._t_min) * t
@@ -194,7 +194,7 @@ class LinearNoiseSchedule(NoiseSchedule):
         return -factor * dsnr_dt
 
     def get_config(self):
-        return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max)
+        return dict(min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -214,12 +214,11 @@ class CosineNoiseSchedule(NoiseSchedule):
     ):
         super().__init__(name="cosine_noise_schedule", variance_type="preserving", weighting=weighting)
         self._s_shift_cosine = s_shift_cosine
-        self._log_snr_min = min_log_snr
-        self._log_snr_max = max_log_snr
-        self._s_shift_cosine = s_shift_cosine
+        self.log_snr_min = min_log_snr
+        self.log_snr_max = max_log_snr
 
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self._log_snr_max, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self._log_snr_min, training=True)
+        self._t_min = self.get_t_from_log_snr(log_snr_t=self.log_snr_max, training=True)
+        self._t_max = self.get_t_from_log_snr(log_snr_t=self.log_snr_min, training=True)
 
     def _truncated_t(self, t: Tensor) -> Tensor:
         return self._t_min + (self._t_max - self._t_min) * t
@@ -250,7 +249,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         return -factor * dsnr_dt
 
     def get_config(self):
-        return dict(min_log_snr=self._log_snr_min, max_log_snr=self._log_snr_max, s_shift_cosine=self._s_shift_cosine)
+        return dict(min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max, s_shift_cosine=self._s_shift_cosine)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -278,12 +277,12 @@ class EDMNoiseSchedule(NoiseSchedule):
         self.rho = 7
 
         # convert EDM parameters to signal-to-noise ratio formulation
-        self._log_snr_min = -2 * ops.log(sigma_max)
-        self._log_snr_max = -2 * ops.log(sigma_min)
+        self.log_snr_min = -2 * ops.log(sigma_max)
+        self.log_snr_max = -2 * ops.log(sigma_min)
         # t is not truncated for EDM by definition of the sampling schedule
         # training bounds should be set to avoid numerical issues
-        self._log_snr_min_training = self._log_snr_min - 1  # one is never sampler during training
-        self._log_snr_max_training = self._log_snr_max + 1  # 0 is almost surely never sampled during training
+        self._log_snr_min_training = self.log_snr_min - 1  # one is never sampler during training
+        self._log_snr_max_training = self.log_snr_max + 1  # 0 is almost surely never sampled during training
 
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
@@ -537,9 +536,9 @@ class DiffusionModel(InferenceNetwork):
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t, training=training)
 
         if conditions is None:
-            xtc = ops.concatenate([xz, log_snr_t], axis=-1)
+            xtc = ops.concatenate([xz, self._transform_log_snr(log_snr_t)], axis=-1)
         else:
-            xtc = ops.concatenate([xz, log_snr_t, conditions], axis=-1)
+            xtc = ops.concatenate([xz, self._transform_log_snr(log_snr_t), conditions], axis=-1)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(
@@ -586,6 +585,16 @@ class DiffusionModel(InferenceNetwork):
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
         return v, ops.expand_dims(trace, axis=-1)
+
+    def _transform_log_snr(self, log_snr: Tensor) -> Tensor:
+        """Transform the log_snr to the range [-1, 1] for the diffusion process."""
+        # Transform the log_snr to the range [-1, 1]
+        return (
+            2
+            * (log_snr - self.noise_schedule.log_snr_min)
+            / (self.noise_schedule.log_snr_max - self.noise_schedule.log_snr_min)
+            - 1
+        )
 
     def _forward(
         self,
@@ -749,9 +758,9 @@ class DiffusionModel(InferenceNetwork):
 
         # calculate output of the network
         if conditions is None:
-            xtc = ops.concatenate([diffused_x, log_snr_t], axis=-1)
+            xtc = ops.concatenate([diffused_x, self._transform_log_snr(log_snr_t)], axis=-1)
         else:
-            xtc = ops.concatenate([diffused_x, log_snr_t, conditions], axis=-1)
+            xtc = ops.concatenate([diffused_x, self._transform_log_snr(log_snr_t), conditions], axis=-1)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(

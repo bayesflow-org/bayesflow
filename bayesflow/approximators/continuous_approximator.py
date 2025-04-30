@@ -400,9 +400,9 @@ class ContinuousApproximator(Approximator):
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
 
-    def summary_outputs(self, data: Mapping[str, np.ndarray], **kwargs):
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs):
         """
-        Computes the summary outputs of given data.
+        Computes the summaries of given data.
 
         The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
 
@@ -415,7 +415,7 @@ class ContinuousApproximator(Approximator):
 
         Returns
         -------
-        summary_outputs : np.ndarray
+        summaries : np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
 
         Raises
@@ -425,13 +425,13 @@ class ContinuousApproximator(Approximator):
             by the summary network.
         """
         if self.summary_network is None:
-            raise ValueError("A summary network is required to compute summary outputs.")
+            raise ValueError("A summary network is required to compute summeries.")
         data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
-            raise ValueError("Summary variables are required to compute summary outputs")
+            raise ValueError("Summary variables are required to compute summaries.")
         summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
-        summary_outputs = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
-        return summary_outputs
+        summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
+        return summaries
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
         """

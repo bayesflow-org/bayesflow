@@ -345,3 +345,36 @@ class ModelComparisonApproximator(Approximator):
         output = self.logits_projector(output)
 
         return output
+
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs):
+        """
+        Computes the summaries of given data.
+
+        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Dictionary of data as NumPy arrays.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and the summary network.
+
+        Returns
+        -------
+        summaries : np.ndarray
+            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
+
+        Raises
+        ------
+        ValueError
+            If the approximator does not have a summary network, or the adapter does not produce the output required
+            by the summary network.
+        """
+        if self.summary_network is None:
+            raise ValueError("A summary network is required to compute summaries.")
+        data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
+        if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
+            raise ValueError("Summary variables are required to compute summaries.")
+        summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
+        summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
+        return summaries

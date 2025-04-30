@@ -89,12 +89,6 @@ def adapter():
 
 @pytest.fixture()
 def summary_network():
-    from bayesflow.networks import SummaryNetwork
+    from tests.utils import MeanStdSummaryNetwork
 
-    class DummySummaryNetwork(SummaryNetwork):
-        def call(self, x):
-            summary_outputs = keras.ops.stack([keras.ops.mean(x, axis=-1), keras.ops.std(x, axis=-1)], axis=-1)
-            print("summary_outputs", summary_outputs)
-            return summary_outputs
-
-    return DummySummaryNetwork()
+    return MeanStdSummaryNetwork()

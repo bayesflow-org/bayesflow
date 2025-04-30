@@ -42,10 +42,12 @@ class ModelComparisonSimulator(Simulator):
             If neither `p` nor `logits` is provided, defaults to uniform logits.
         use_mixed_batches : bool, optional
             Whether to draw samples in a batch from different models.
+
             - If True (default), each sample in a batch may come from a different model.
             - If False, the entire batch is drawn from a single model, selected according to model probabilities.
         key_conflicts : str, optional
             Policy for handling keys that are missing in the output of some models, when using mixed batches.
+
             - "drop" (default): Drop conflicting keys from the batch output.
             - "fill": Fill missing keys with the specified value.
             - "error": An error is raised when key conflicts are detected.
@@ -53,7 +55,7 @@ class ModelComparisonSimulator(Simulator):
             If `key_conflicts=="fill"`, the missing keys will be filled with the value of this argument.
         shared_simulator : Simulator or Callable, optional
             A shared simulator whose outputs are passed to all model simulators. If a function is
-            provided, it is wrapped in a `LambdaSimulator` with batching enabled.
+            provided, it is wrapped in a :py:class:`~bayesflow.simulators.LambdaSimulator` with batching enabled.
         """
         self.simulators = simulators
 

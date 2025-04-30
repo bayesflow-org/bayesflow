@@ -148,65 +148,11 @@ class NoiseSchedule(ABC):
 
 
 @serializable
-class LinearNoiseSchedule(NoiseSchedule):
-    """Linear noise schedule for diffusion models.
-
-    The linear noise schedule with likelihood weighting is based on [1].
-
-    [1] Maximum Likelihood Training of Score-Based Diffusion Models: Song et al. (2021)
-    """
-
-    def __init__(self, min_log_snr: float = -15, max_log_snr: float = 15):
-        super().__init__(name="linear_noise_schedule", variance_type="preserving", weighting="likelihood_weighting")
-        self.log_snr_min = min_log_snr
-        self.log_snr_max = max_log_snr
-
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self.log_snr_max, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self.log_snr_min, training=True)
-
-    def _truncated_t(self, t: Tensor) -> Tensor:
-        return self._t_min + (self._t_max - self._t_min) * t
-
-    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
-        """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
-        t_trunc = self._truncated_t(t)
-        # SNR = -log(exp(t^2) - 1)
-        # equivalent, but more stable: -t^2 - log(1 - exp(-t^2))
-        return -ops.square(t_trunc) - ops.log(1 - ops.exp(-ops.square(t_trunc)))
-
-    def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
-        """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
-        # SNR = -log(exp(t^2) - 1) => t = sqrt(log(1 + exp(-snr)))
-        return ops.sqrt(ops.softplus(-log_snr_t))
-
-    def derivative_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
-        """Compute d/dt log(1 + e^(-snr(t))), which is used for the reverse SDE."""
-        t = self.get_t_from_log_snr(log_snr_t=log_snr_t, training=training)
-
-        # Compute the truncated time t_trunc
-        t_trunc = self._truncated_t(t)
-        dsnr_dx = -2 * t_trunc / (1 - ops.exp(-(t_trunc**2)))
-
-        # Using the chain rule on f(t) = log(1 + e^(-snr(t))):
-        # f'(t) = - (e^{-snr(t)} / (1 + e^{-snr(t)})) * dsnr_dt
-        dsnr_dt = dsnr_dx * (self._t_max - self._t_min)
-        factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
-        return -factor * dsnr_dt
-
-    def get_config(self):
-        return dict(min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
-
-@serializable
 class CosineNoiseSchedule(NoiseSchedule):
     """Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].
     For images, use s_shift_cosine = log(base_resolution / d), where d is the used resolution of the image.
 
-    [1] Diffusion models beat gans on image synthesis: Dhariwal and Nichol (2022)
+    [1] Diffusion Models Beat GANs on Image Synthesis: Dhariwal and Nichol (2022)
     """
 
     def __init__(
@@ -371,6 +317,7 @@ class DiffusionModel(InferenceNetwork):
 
     def __init__(
         self,
+        *,
         subnet: str | type = "mlp",
         integrate_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
@@ -384,8 +331,8 @@ class DiffusionModel(InferenceNetwork):
         This model learns a transformation from a Gaussian latent distribution to a target distribution using a
         specified subnet type, which can be an MLP or a custom network.
 
-        The integration steps can be customized with additional parameters available in the respective
-        configuration dictionary.
+        The integration can be customized with additional parameters available in the integrate_kwargs
+        configuration dictionary. Different noise schedules and prediction types are available.
 
         Parameters
         ----------
@@ -397,7 +344,7 @@ class DiffusionModel(InferenceNetwork):
         subnet_kwargs : dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         noise_schedule : str or NoiseSchedule, optional
-            The noise schedule used for the diffusion process. Can be "linear", "cosine", or "edm".
+            The noise schedule used for the diffusion process. Can be "cosine" or "edm".
             Default is "edm".
         prediction_type: str, optional
             The type of prediction used in the diffusion model. Can be "velocity", "noise" or "F" (EDM).
@@ -408,9 +355,7 @@ class DiffusionModel(InferenceNetwork):
         super().__init__(base_distribution="normal", **kwargs)
 
         if isinstance(noise_schedule, str):
-            if noise_schedule == "linear":
-                noise_schedule = LinearNoiseSchedule()
-            elif noise_schedule == "cosine":
+            if noise_schedule == "cosine":
                 noise_schedule = CosineNoiseSchedule()
             elif noise_schedule == "edm":
                 noise_schedule = EDMNoiseSchedule()
@@ -435,10 +380,12 @@ class DiffusionModel(InferenceNetwork):
             )
 
         # clipping of prediction (after it was transformed to x-prediction)
-        self._clip_min = -5.0
-        self._clip_max = 5.0
+        # keeping this private for now, as it is usually not required in SBI and somewhat dangerous
+        self._clip_x = kwargs.get("clip_x", None)
+        if self._clip_x is not None:
+            if len(self._clip_x) != 2 or self._clip_x[0] > self._clip_x[1]:
+                raise ValueError("'clip_x' has to be a list or tuple with the values [x_min, x_max]")
 
-        # latent distribution (not configurable)
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
@@ -455,6 +402,8 @@ class DiffusionModel(InferenceNetwork):
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
+
+        self._kwargs = kwargs
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -480,7 +429,7 @@ class DiffusionModel(InferenceNetwork):
         base_config = super().get_config()
         base_config = layer_kwargs(base_config)
 
-        config = {
+        config = self._kwargs | {
             "subnet": self.subnet,
             "noise_schedule": self.noise_schedule,
             "integrate_kwargs": self.integrate_kwargs,
@@ -494,7 +443,7 @@ class DiffusionModel(InferenceNetwork):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
     def convert_prediction_to_x(
-        self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, clip_x: bool
+        self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
     ) -> Tensor:
         """Convert the prediction of the neural network to the x space."""
         if self._prediction_type == "velocity":
@@ -504,7 +453,7 @@ class DiffusionModel(InferenceNetwork):
             # convert noise prediction into x
             x = (z - sigma_t * pred) / alpha_t
         elif self._prediction_type == "F":  # EDM
-            sigma_data = self.noise_schedule.sigma_data
+            sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
             x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
             x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
             x = x1 * z + x2 * pred
@@ -513,8 +462,8 @@ class DiffusionModel(InferenceNetwork):
         else:  # "score"
             x = (z + sigma_t**2 * pred) / alpha_t
 
-        if clip_x:
-            x = ops.clip(x, self._clip_min, self._clip_max)
+        if self._clip_x is not None:
+            x = ops.clip(x, self._clip_x[0], self._clip_x[1])
         return x
 
     def velocity(
@@ -524,7 +473,6 @@ class DiffusionModel(InferenceNetwork):
         stochastic_solver: bool,
         conditions: Tensor = None,
         training: bool = False,
-        clip_x: bool = False,
     ) -> Tensor:
         # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
@@ -537,9 +485,7 @@ class DiffusionModel(InferenceNetwork):
             xtc = ops.concatenate([xz, self._transform_log_snr(log_snr_t), conditions], axis=-1)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
-        x_pred = self.convert_prediction_to_x(
-            pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=clip_x
-        )
+        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
         # convert x to score
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
@@ -725,6 +671,7 @@ class DiffusionModel(InferenceNetwork):
         stage: str = "training",
     ) -> dict[str, Tensor]:
         training = stage == "training"
+        # use same noise schedule for training and validation to keep them comparable
         noise_schedule_training_stage = stage == "training" or stage == "validation"
         if not self.built:
             xz_shape = ops.shape(x)
@@ -760,7 +707,7 @@ class DiffusionModel(InferenceNetwork):
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(
-            pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, clip_x=False
+            pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
         )
 
         # Calculate loss
@@ -775,7 +722,7 @@ class DiffusionModel(InferenceNetwork):
             loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
         elif self._loss_type == "F":
             # convert x to F prediction
-            sigma_data = self.noise_schedule.sigma_data
+            sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
             x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
             x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
             f_pred = x1 * x_pred - x2 * diffused_x

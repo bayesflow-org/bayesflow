@@ -79,7 +79,9 @@ class Adapter(MutableSequence[Transform]):
 
         return serialize(config)
 
-    def forward(self, data: dict[str, any], *, stage: str = "inference", **kwargs) -> dict[str, np.ndarray]:
+    def forward(
+        self, data: dict[str, any], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the forward direction.
 
         Parameters
@@ -88,22 +90,33 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
+        log_det_jac: bool, optional
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
+        if not log_det_jac:
+            for transform in self.transforms:
+                data = transform(data, stage=stage, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in self.transforms:
-            data = transform(data, stage=stage, **kwargs)
+            transformed_data = transform(data, stage=stage, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
+            data = transformed_data
 
-        return data
+        return data, log_det_jac
 
-    def inverse(self, data: dict[str, np.ndarray], *, stage: str = "inference", **kwargs) -> dict[str, any]:
+    def inverse(
+        self, data: dict[str, np.ndarray], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
@@ -112,24 +125,32 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
+        log_det_jac: bool, optional
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
+        if not log_det_jac:
+            for transform in reversed(self.transforms):
+                data = transform(data, stage=stage, inverse=True, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in reversed(self.transforms):
             data = transform(data, stage=stage, inverse=True, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
 
-        return data
+        return data, log_det_jac
 
     def __call__(
         self, data: Mapping[str, any], *, inverse: bool = False, stage="inference", **kwargs
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the given direction.
 
         Parameters
@@ -145,8 +166,8 @@ class Adapter(MutableSequence[Transform]):
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         if inverse:
             return self.inverse(data, stage=stage, **kwargs)

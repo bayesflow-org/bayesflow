@@ -150,9 +150,35 @@ class FilterTransform(Transform):
                 return predicate(key, value, inverse=inverse)
 
     def _apply_transform(self, key: str, value: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+        transform = self._get_transform(key)
+
+        return transform(value, inverse=inverse, **kwargs)
+
+    def _get_transform(self, key: str) -> ElementwiseTransform:
         if key not in self.transform_map:
             self.transform_map[key] = self.transform_constructor(**self.kwargs)
 
-        transform = self.transform_map[key]
+        return self.transform_map[key]
 
-        return transform(value, inverse=inverse, **kwargs)
+    def log_det_jac(
+        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], *, strict: bool = True, **kwargs
+    ):
+        data = data.copy()
+
+        if strict and self.include is not None:
+            missing_keys = set(self.include) - set(data.keys())
+            if missing_keys:
+                raise KeyError(f"Missing keys from include list: {missing_keys!r}")
+
+        for key, value in data.items():
+            if self._should_transform(key, value, inverse=False):
+                transform = self._get_transform(key)
+                ldj = transform.log_det_jac(value, **kwargs)
+                if ldj is None:
+                    continue
+                elif key in log_det_jac:
+                    log_det_jac[key] += ldj
+                else:
+                    log_det_jac[key] = ldj
+
+        return log_det_jac

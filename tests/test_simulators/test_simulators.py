@@ -1,3 +1,4 @@
+import pytest
 import keras
 import numpy as np
 
@@ -52,8 +53,19 @@ def test_fixed_sample(composite_gaussian, batch_size, fixed_n, fixed_mu):
 def test_multimodel_sample(multimodel, batch_size):
     samples = multimodel.sample(batch_size)
 
-    if multimodel.key_conflicts == "drop":
+    assert set(samples) == {"n", "mu", "y", "model_indices"}
+    assert samples["mu"].shape == (batch_size, 1)
+    assert samples["y"].shape == (batch_size, samples["n"])
+
+
+def test_multimodel_key_conflicts_sample(multimodel_key_conflicts, batch_size):
+    if multimodel_key_conflicts.key_conflicts == "drop":
+        samples = multimodel_key_conflicts.sample(batch_size)
         assert set(samples) == {"x", "model_indices"}
-    else:
+    elif multimodel_key_conflicts.key_conflicts == "fill":
+        samples = multimodel_key_conflicts.sample(batch_size)
         assert set(samples) == {"x", "model_indices", "c", "w"}
         assert np.sum(np.isnan(samples["c"])) + np.sum(np.isnan(samples["w"])) == batch_size
+    elif multimodel_key_conflicts.key_conflicts == "error":
+        with pytest.raises(Exception):
+            samples = multimodel_key_conflicts.sample(batch_size)

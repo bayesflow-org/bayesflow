@@ -206,7 +206,6 @@ class CosineNoiseSchedule(NoiseSchedule):
 class EDMNoiseSchedule(NoiseSchedule):
     """EDM noise schedule for diffusion models. This schedule is based on the EDM paper [1].
     This should be used with the F-prediction type in the diffusion model.
-    Since the schedule is variance exploding, the base distribution is a Gaussian with scale 'sigma_max'.
 
     [1] Elucidating the Design Space of Diffusion-Based Generative Models: Karras et al. (2022)
     """

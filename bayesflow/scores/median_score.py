@@ -1,5 +1,4 @@
-from keras.saving import register_keras_serializable as serializable
-
+from bayesflow.utils.serialization import serializable
 from .normed_difference_score import NormedDifferenceScore
 
 

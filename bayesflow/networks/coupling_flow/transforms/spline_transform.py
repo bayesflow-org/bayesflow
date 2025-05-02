@@ -10,7 +10,7 @@ from ._rational_quadratic import _rational_quadratic_spline
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.networks")
 class SplineTransform(Transform):
     def __init__(
         self,

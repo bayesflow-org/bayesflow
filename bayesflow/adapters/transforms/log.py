@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Log(ElementwiseTransform):
     """Log transforms a variable.
 

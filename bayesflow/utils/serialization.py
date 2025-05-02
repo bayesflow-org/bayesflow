@@ -96,28 +96,47 @@ def deserialize(config: dict, custom_objects=None, safe_mode=True, **kwargs):
 
 
 @allow_args
-def serializable(cls, package: str | None = None, name: str | None = None):
-    """Register class as Keras serialize.
+def serializable(cls, package: str, name: str | None = None, disable_module_check: bool = False):
+    """Register class as Keras serializable.
 
-    Wrapper function around `keras.saving.register_keras_serializable` to automatically
-    set the `package` and `name` arguments.
+    Wrapper function around `keras.saving.register_keras_serializable` to automatically check consistency
+    of the supplied `package` argument with the module a class resides in. The `package` name should generally
+    be the module the class resides in, truncated at depth two. Valid examples would be "bayesflow.networks"
+    or "bayesflow.adapters". The check can be disabled if necessary by setting `disable_module_check` to True.
+    This should only be done in exceptional cases, and accompanied by a comment why it is necessary for a given
+    class.
 
     Parameters
     ----------
     cls : type
         The class to register.
-    package : str, optional
+    package : str
         `package` argument forwarded to `keras.saving.register_keras_serializable`.
-        If None is provided, the package is automatically inferred using the __name__
-        attribute of the module the class resides in.
+        Should generally correspond to the module of the class, truncated at depth two (e.g., "bayesflow.networks").
     name : str, optional
         `name` argument forwarded to `keras.saving.register_keras_serializable`.
         If None is provided, the classe's __name__ attribute is used.
+    disable_module_check : bool, optional
+        Disable check that the provided `package` is consistent with the location of the class within the library.
+
+    Raises
+    ------
+    ValueError
+        If the supplied `package` does not correspond to the module of the class, truncated at depth two, and
+        `disable_module_check` is False.
     """
-    if package is None:
+    if not disable_module_check:
         frame = sys._getframe(2)
         g = frame.f_globals
-        package = g.get("__name__", "bayesflow")
+        module_name = g.get("__name__", "bayesflow")
+        auto_package = ".".join(module_name.split(".")[:2])
+        if package != auto_package:
+            raise ValueError(
+                "'package' should be the first two levels of the module the class resides in (e.g., bayesflow.networks)"
+                f'. In this case it should be \'package="{auto_package}"\' (was "{package}"). If this is not possible'
+                " (e.g., because a class was moved to a different module, and serializability should be preserved),"
+                " please set 'disable_module_check=True' and add a comment why it is necessary for this class."
+            )
 
     if name is None:
         name = copy(cls.__name__)

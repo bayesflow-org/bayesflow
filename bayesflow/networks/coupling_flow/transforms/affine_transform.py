@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.networks")
 class AffineTransform(Transform):
     def __init__(self, clamp: bool = True, **kwargs):
         super().__init__(**kwargs)

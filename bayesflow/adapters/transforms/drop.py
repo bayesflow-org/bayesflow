@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Drop(Transform):
     """
     Transform to drop variables from further calculation.

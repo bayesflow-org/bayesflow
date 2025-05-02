@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class NumpyTransform(ElementwiseTransform):
     """
     A class to apply element-wise transformations using plain NumPy functions.

@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Sqrt(ElementwiseTransform):
     """Square-root transform a variable.
 

@@ -29,7 +29,7 @@ from .transforms import (
 from .transforms.filter_transform import Predicate
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Adapter(MutableSequence[Transform]):
     """
     Defines an adapter to apply various transforms to data.

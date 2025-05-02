@@ -6,7 +6,7 @@ from bayesflow.utils import expand_tile
 from bayesflow.utils.serialization import serializable
 
 
-@serializable
+@serializable("bayesflow.networks")
 class RecurrentEmbedding(keras.Layer):
     """Implements a recurrent network for flexibly embedding time vectors."""
 

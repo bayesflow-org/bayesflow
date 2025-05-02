@@ -11,7 +11,7 @@ from .isab import InducedSetAttentionBlock
 from .pma import PoolingByMultiHeadAttention
 
 
-@serializable
+@serializable("bayesflow.networks")
 class SetTransformer(SummaryNetwork):
     """Implements the set transformer architecture from [1] which ultimately represents
     a learnable permutation-invariant function. Designed to naturally model interactions in

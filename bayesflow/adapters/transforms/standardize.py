@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Standardize(ElementwiseTransform):
     """
     Transform that when applied standardizes data using typical z-score standardization

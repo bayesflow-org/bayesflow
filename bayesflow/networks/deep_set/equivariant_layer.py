@@ -13,7 +13,7 @@ from ..mlp import MLP
 from .invariant_layer import InvariantLayer
 
 
-@serializable
+@serializable("bayesflow.networks")
 class EquivariantLayer(keras.Layer):
     """Implements an equivariant module performing an equivariant transform.
 

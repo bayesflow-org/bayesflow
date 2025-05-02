@@ -13,7 +13,7 @@ from bayesflow.utils.serialization import serialize, deserialize, serializable
 from .approximator import Approximator
 
 
-@serializable
+@serializable("bayesflow.approximators")
 class ContinuousApproximator(Approximator):
     """
     Defines a workflow for performing fast posterior or likelihood inference.

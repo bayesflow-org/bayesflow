@@ -10,7 +10,7 @@ from ..summary_network import SummaryNetwork
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable
+@serializable("bayesflow.networks")
 class TimeSeriesTransformer(SummaryNetwork):
     def __init__(
         self,

@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import serializable
 from ..mlp import MLP
 
 
-@serializable
+@serializable("bayesflow.networks")
 class InvariantLayer(keras.Layer):
     """Implements an invariant module performing a permutation-invariant transform.
 

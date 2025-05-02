@@ -8,7 +8,7 @@ from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 
-@serializable
+@serializable("bayesflow.networks")
 class MultiHeadAttentionBlock(keras.Layer):
     """Implements the MAB block from [1] which represents learnable cross-attention.
 

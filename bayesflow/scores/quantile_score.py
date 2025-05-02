@@ -1,10 +1,10 @@
 from typing import Sequence
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import logging, weighted_mean
+from bayesflow.utils.serialization import serializable
 from bayesflow.links import OrderedQuantiles
 
 from .scoring_rule import ScoringRule

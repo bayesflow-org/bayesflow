@@ -1,10 +1,10 @@
 import math
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.links import PositiveDefinite
+from bayesflow.utils.serialization import serializable
 
 from .parametric_distribution_score import ParametricDistributionScore
 

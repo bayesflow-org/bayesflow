@@ -11,7 +11,7 @@ from bayesflow.utils.numpy_utils import (
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Constrain(ElementwiseTransform):
     """
     Constrains neural network predictions of a data variable to specified bounds.

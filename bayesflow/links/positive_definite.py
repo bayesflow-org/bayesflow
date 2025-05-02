@@ -1,9 +1,8 @@
 import keras
 
-from keras.saving import register_keras_serializable as serializable
-
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs, fill_triangular_matrix
+from bayesflow.utils.serialization import serializable
 
 
 @serializable(package="bayesflow.links")

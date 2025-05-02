@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serialize, serializable
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Broadcast(Transform):
     """
     Broadcasts arrays or scalars to the shape of a given other array.

@@ -6,7 +6,7 @@ from .elementwise_transform import ElementwiseTransform
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class MapTransform(Transform):
     """
     Implements a transform that applies a set of elementwise transforms

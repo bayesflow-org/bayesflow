@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class ConvertDType(ElementwiseTransform):
     """
     Default transform used to convert all floats from float64 to float32 to be in line with keras framework.

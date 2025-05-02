@@ -13,7 +13,7 @@ from .couplings import DualCoupling
 from ..inference_network import InferenceNetwork
 
 
-@serializable
+@serializable("bayesflow.networks")
 class CouplingFlow(InferenceNetwork):
     """Implements a coupling flow as a sequence of dual couplings with permutations and activation
     normalization. Incorporates ideas from [1-5].

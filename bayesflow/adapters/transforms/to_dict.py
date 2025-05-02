@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serializable
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class ToDict(Transform):
     """Convert non-dict batches (e.g., pandas.DataFrame) to dict batches"""
 

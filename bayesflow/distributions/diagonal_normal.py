@@ -12,7 +12,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .distribution import Distribution
 
 
-@serializable
+@serializable("bayesflow.distributions")
 class DiagonalNormal(Distribution):
     """Implements a backend-agnostic diagonal Gaussian distribution."""
 

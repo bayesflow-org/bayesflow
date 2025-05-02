@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Keep(Transform):
     """
     Name the data parameters that should be kept for futher calculation.

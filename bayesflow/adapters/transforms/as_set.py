@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class AsSet(ElementwiseTransform):
     """The `.as_set(["x", "y"])` transform indicates that both `x` and `y` are treated as sets.
 

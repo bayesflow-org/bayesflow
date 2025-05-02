@@ -1,7 +1,6 @@
-from keras.saving import register_keras_serializable as serializable
-
 from bayesflow.types import Tensor
 from bayesflow.utils import weighted_mean
+from bayesflow.utils.serialization import serializable
 
 from .scoring_rule import ScoringRule
 

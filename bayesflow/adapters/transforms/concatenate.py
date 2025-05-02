@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serialize, serializable
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Concatenate(Transform):
     """Concatenate multiple arrays into a new key. Used to specify how data variables should be treated by the network.
 

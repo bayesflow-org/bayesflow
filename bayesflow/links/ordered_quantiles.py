@@ -1,14 +1,14 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.utils import layer_kwargs, logging
+from bayesflow.utils.serialization import serializable
 
 from collections.abc import Sequence
 
 from .ordered import Ordered
 
 
-@serializable(package="links.ordered_quantiles")
+@serializable(package="bayesflow.links")
 class OrderedQuantiles(Ordered):
     """Activation function to link to monotonously increasing quantile estimates."""
 

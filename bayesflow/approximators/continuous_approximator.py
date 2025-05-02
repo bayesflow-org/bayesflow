@@ -450,10 +450,15 @@ class ContinuousApproximator(Approximator):
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
-        data = self.adapter(data, strict=False, stage="inference", **kwargs)
+        data, log_det_jac = self.adapter(data, strict=False, stage="inference", log_det_jac=True, **kwargs)
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data, **kwargs)
         log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
+
+        # change of variables formula
+        log_det_jac = log_det_jac.get("inference_variables")
+        if log_det_jac is not None:
+            log_prob = log_prob + log_det_jac
 
         return log_prob
 

@@ -10,6 +10,9 @@ It provides users and researchers with:
 BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
 fueled by continuous progress in generative AI and Bayesian inference.
 
+To access the documentation for [BayesFlow version 1.x](https://github.com/bayesflow-org/bayesflow/tree/stable-legacy), select `stable-legacy` in the version picker above.
+For advice on the migration from version 1.x to version 2+, please refer to the [README](https://github.com/bayesflow-org/bayesflow/blob/main/README.md).
+
 ## Conceptual Overview
 
 <div align="center">

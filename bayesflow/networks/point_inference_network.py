@@ -7,7 +7,7 @@ from bayesflow.scores import ScoringRule, ParametricDistributionScore
 from bayesflow.utils.decorators import allow_batch_size
 
 
-@serializable(package="bayesflow.networks")
+@serializable("bayesflow.networks")
 class PointInferenceNetwork(keras.Layer):
     """Implements point estimation for user specified scoring rules by a shared feed forward architecture
     with separate heads for each scoring rule.

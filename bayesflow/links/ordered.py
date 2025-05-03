@@ -5,7 +5,7 @@ from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 
-@serializable(package="bayesflow.links")
+@serializable("bayesflow.links")
 class Ordered(keras.Layer):
     """Activation function to link to a tensor which is monotonously increasing along a specified axis."""
 

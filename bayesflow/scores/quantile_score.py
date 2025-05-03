@@ -10,7 +10,7 @@ from bayesflow.links import OrderedQuantiles
 from .scoring_rule import ScoringRule
 
 
-@serializable(package="bayesflow.scores")
+@serializable("bayesflow.scores")
 class QuantileScore(ScoringRule):
     r""":math:`S(\hat \theta_i, \theta; \tau_i)
     = (\hat \theta_i - \theta)(\mathbf{1}_{\hat \theta - \theta > 0} - \tau_i)`

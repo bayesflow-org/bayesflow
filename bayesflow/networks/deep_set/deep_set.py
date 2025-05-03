@@ -30,7 +30,7 @@ class DeepSet(SummaryNetwork):
         mlp_widths_invariant_inner: Sequence[int] = (64, 64),
         mlp_widths_invariant_outer: Sequence[int] = (64, 64),
         mlp_widths_invariant_last: Sequence[int] = (64, 64),
-        activation: str = "gelu",
+        activation: str = "silu",
         kernel_initializer: str = "he_normal",
         dropout: int | float | None = 0.05,
         spectral_normalization: bool = False,
@@ -72,7 +72,7 @@ class DeepSet(SummaryNetwork):
         mlp_widths_invariant_last : Sequence[int], optional
             Widths of the MLP layers in the final invariant transformation. Default is (64, 64).
         activation : str, optional
-            Activation function used throughout the network, such as "gelu". Default is "gelu".
+            Activation function used throughout the network, such as "gelu". Default is "silu".
         kernel_initializer : str, optional
             Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
         dropout : int, float, or None, optional

@@ -88,7 +88,7 @@ class EquivariantLayer(keras.Layer):
         # Fully connected net + residual connection for an equivariant transform applied to each set member
         self.input_projector = layers.Dense(mlp_widths_equivariant[-1])
         self.equivariant_fc = MLP(
-            mlp_widths_equivariant[:-1],
+            mlp_widths_equivariant,
             dropout=dropout,
             activation=activation,
             kernel_initializer=kernel_initializer,

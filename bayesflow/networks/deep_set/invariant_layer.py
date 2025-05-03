@@ -68,7 +68,7 @@ class InvariantLayer(keras.Layer):
 
         # Inner fully connected net for sum decomposition: inner( pooling( inner(set) ) )
         self.inner_fc = MLP(
-            mlp_widths_inner[:-1],
+            mlp_widths_inner,
             dropout=dropout,
             activation=activation,
             kernel_initializer=kernel_initializer,
@@ -77,7 +77,7 @@ class InvariantLayer(keras.Layer):
         self.inner_projector = keras.layers.Dense(mlp_widths_inner[-1], kernel_initializer=kernel_initializer)
 
         self.outer_fc = MLP(
-            mlp_widths_outer[:-1],
+            mlp_widths_outer,
             dropout=dropout,
             activation=activation,
             kernel_initializer=kernel_initializer,
@@ -108,10 +108,10 @@ class InvariantLayer(keras.Layer):
         """
 
         set_summary = self.inner_fc(input_set, training=training)
-        set_summary = self.inner_projector(set_summary, training=training)
+        set_summary = self.inner_projector(set_summary)
         set_summary = self.pooling_layer(set_summary, training=training)
         set_summary = self.outer_fc(set_summary, training=training)
-        set_summary = self.outer_projector(set_summary, training=training)
+        set_summary = self.outer_projector(set_summary)
         return set_summary
 
     @sanitize_input_shape

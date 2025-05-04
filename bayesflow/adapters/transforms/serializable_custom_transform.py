@@ -1,13 +1,11 @@
 from collections.abc import Callable
 import numpy as np
 from keras.saving import (
-    deserialize_keras_object as deserialize,
-    serialize_keras_object as serialize,
     get_registered_name,
     get_registered_object,
 )
 
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 from ...utils import filter_kwargs
 import inspect

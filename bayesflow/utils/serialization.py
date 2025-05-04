@@ -123,14 +123,16 @@ def serializable(cls, package: str, name: str | None = None, disable_module_chec
     ------
     ValueError
         If the supplied `package` does not correspond to the module of the class, truncated at depth two, and
-        `disable_module_check` is False.
+        `disable_module_check` is False. No error is thrown when a class is not part of the bayesflow module.
     """
     if not disable_module_check:
         frame = sys._getframe(2)
         g = frame.f_globals
-        module_name = g.get("__name__", "bayesflow")
+        module_name = g.get("__name__", "")
+        # only apply this check if the class is inside the bayesflow module
+        is_bayesflow = module_name.split(".")[0] == "bayesflow"
         auto_package = ".".join(module_name.split(".")[:2])
-        if package != auto_package:
+        if is_bayesflow and package != auto_package:
             raise ValueError(
                 "'package' should be the first two levels of the module the class resides in (e.g., bayesflow.networks)"
                 f'. In this case it should be \'package="{auto_package}"\' (was "{package}"). If this is not possible'

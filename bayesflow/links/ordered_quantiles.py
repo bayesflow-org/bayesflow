@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from .ordered import Ordered
 
 
-@serializable(package="bayesflow.links")
+@serializable("bayesflow.links")
 class OrderedQuantiles(Ordered):
     """Activation function to link to monotonously increasing quantile estimates."""
 

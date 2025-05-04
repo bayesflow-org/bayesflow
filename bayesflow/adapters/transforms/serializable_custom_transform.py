@@ -11,7 +11,7 @@ from ...utils import filter_kwargs
 import inspect
 
 
-@serializable(package="bayesflow.adapters")
+@serializable("bayesflow.adapters")
 class SerializableCustomTransform(ElementwiseTransform):
     """
     Transforms a parameter using a pair of registered serializable forward and inverse functions.

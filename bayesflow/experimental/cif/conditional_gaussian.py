@@ -8,7 +8,7 @@ from bayesflow.utils.serialization import serializable
 
 
 # disable module check, use potential module after moving from experimental
-@serializable(package="bayesflow.networks", disable_module_check=True)
+@serializable("bayesflow.networks", disable_module_check=True)
 class ConditionalGaussian(keras.Layer):
     """Implements a conditional gaussian distribution with neural networks for
     the means and standard deviations respectively. Bulit in reference to [1].

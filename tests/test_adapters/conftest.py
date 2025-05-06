@@ -11,7 +11,7 @@ def adapter():
     def serializable_fn(x):
         return x
 
-    d = (
+    return (
         Adapter()
         .to_array()
         .as_set(["s1", "s2"])
@@ -37,8 +37,6 @@ def adapter():
         .random_subsample("s3", sample_size=33, axis=0)
         .take("s3", indices=np.arange(0, 32), axis=0)
     )
-
-    return d
 
 
 @pytest.fixture()
@@ -70,7 +68,7 @@ def random_data():
 def adapter_log_det_jac():
     from bayesflow.adapters import Adapter
 
-    adapter = (
+    return (
         Adapter()
         .scale("x1", by=2)
         .log("p1", p1=True)
@@ -82,14 +80,12 @@ def adapter_log_det_jac():
         .rename("u1", "u")
     )
 
-    return adapter
-
 
 @pytest.fixture()
 def adapter_log_det_jac_inverse():
     from bayesflow.adapters import Adapter
 
-    adapter = (
+    return (
         Adapter()
         .standardize("x1", mean=1, std=2)
         .log("p1")
@@ -99,5 +95,3 @@ def adapter_log_det_jac_inverse():
         .constrain("u1", lower=-1, upper=2)
         .scale(["p1", "p2", "p3"], by=3.5)
     )
-
-    return adapter

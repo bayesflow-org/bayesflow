@@ -1,5 +1,5 @@
 import numpy as np
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
@@ -41,3 +41,8 @@ class RandomSubsample(ElementwiseTransform):
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # non invertible transform
         return data
+
+    def get_config(self) -> dict:
+        config = {"sample_size": self.sample_size, "axis": self.axis}
+
+        return serialize(config)

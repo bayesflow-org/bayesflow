@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 import numpy as np
 
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
 
@@ -24,3 +24,8 @@ class Take(ElementwiseTransform):
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # not a true invertible function
         return data
+
+    def get_config(self) -> dict:
+        config = {"indices": self.indices, "axis": self.axis}
+
+        return serialize(config)

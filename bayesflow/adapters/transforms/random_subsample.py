@@ -20,11 +20,11 @@ class RandomSubsample(ElementwiseTransform):
         super().__init__()
         if isinstance(sample_size, float):
             if sample_size <= 0 or sample_size >= 1:
-                ValueError("Sample size as a percentage must be a float between 0 and 1 exclustive. ")
+                ValueError("Sample size as a percentage must be a float between 0 and 1 exclusive. ")
         self.sample_size = sample_size
         self.axis = axis
 
-    def forward(self, data: np.ndarray):
+    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         axis = self.axis
         max_sample_size = data.shape[axis]
 
@@ -38,6 +38,6 @@ class RandomSubsample(ElementwiseTransform):
 
         return np.take(data, sample_indices, axis)
 
-    def inverse(self, data, **kwargs):
+    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # non invertible transform
         return data

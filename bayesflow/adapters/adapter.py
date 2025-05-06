@@ -667,41 +667,24 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
-    def random_subsample(
-        self,
-        key: str | Sequence[str],
-        *,
-        sample_size: int | float,
-        axis: int = -1,
-        **kwargs,
-    ):
+    def random_subsample(self, key: str, *, sample_size: int | float, axis: int = -1):
         """
         Append a :py:class:`~transforms.RandomSubsample` transform to the adapter.
 
         Parameters
         ----------
-        predicate : Predicate, optional
-            Function that indicates which variables should be transformed.
-        include : str or Sequence of str, optional
-            Names of variables to include in the transform.
-        exclude : str or Sequence of str, optional
-            Names of variables to exclude from the transform.
-        **kwargs : dict
-            Additional keyword arguments passed to the transform.
-
+        key : str or Sequence of str
+            The name of the variable to subsample.
+        sample_size : int or float
+            The number of samples to draw, or a fraction between 0 and 1 of the total number of samples to draw.
+        axis: int, optional
+            Which axis to draw samples over. The last axis is used by default.
         """
 
-        if isinstance(key, Sequence[str]) and len(key) > 1:
-            TypeError(
-                "`key` should be either a string or a list of length one. Only one dataset may be modified at a time."
-            )
+        if not isinstance(key, str):
+            raise TypeError("Can only subsample one batch entry at a time.")
 
-        if isinstance(key, str):
-            keys = [key]
-
-        transform = MapTransform(
-            transform_map={key: RandomSubsample(sample_size=sample_size, axis=axis) for key in keys}
-        )
+        transform = MapTransform({key: RandomSubsample(sample_size=sample_size, axis=axis)})
 
         self.transforms.append(transform)
         return self

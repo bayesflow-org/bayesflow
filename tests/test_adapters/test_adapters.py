@@ -34,6 +34,10 @@ def test_serialize_deserialize(adapter, random_data):
     random_data["foo"] = random_data["x1"]
     deserialized_processed = deserialized(random_data)
     for key, value in processed.items():
+        if key == "s3":
+            # skip this key because it is *randomly* subsampled
+            continue
+
         assert np.allclose(value, deserialized_processed[key])
 
 

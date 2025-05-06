@@ -10,6 +10,11 @@ from .simulator import Simulator
 
 @singledispatch
 def make_simulator(arg, *_, **__):
+    """
+    This is a dispatch function that will accept a list of simulators (callables) returning
+    dictionaries with simulated outputs. The outputs of simulators will be passed to following
+    simulators if the latter accept keyword arguments associated with the keys of previous outputs.
+    """
     raise TypeError(f"Cannot infer simulator from {arg!r}.")
 
 

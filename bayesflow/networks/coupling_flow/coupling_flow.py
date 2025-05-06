@@ -1,15 +1,19 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_permutation, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import (
+    find_permutation,
+    layer_kwargs,
+    weighted_mean,
+)
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from .actnorm import ActNorm
 from .couplings import DualCoupling
 from ..inference_network import InferenceNetwork
 
 
-@serializable(package="networks.coupling_flow")
+@serializable("bayesflow.networks")
 class CouplingFlow(InferenceNetwork):
     """Implements a coupling flow as a sequence of dual couplings with permutations and activation
     normalization. Incorporates ideas from [1-5].
@@ -42,6 +46,8 @@ class CouplingFlow(InferenceNetwork):
         permutation: str | None = "random",
         use_actnorm: bool = True,
         base_distribution: str = "normal",
+        subnet_kwargs: dict[str, any] = None,
+        transform_kwargs: dict[str, any] = None,
         **kwargs,
     ):
         """
@@ -71,57 +77,74 @@ class CouplingFlow(InferenceNetwork):
             The type of transformation used in the coupling layers, such as "affine".
             Default is "affine".
         permutation : str or None, optional
-            The type of permutation applied between layers. Can be "random" or None
+            The type of permutation applied between layers. Can be "orthogonal", "random", "swap", or None
             (no permutation). Default is "random".
         use_actnorm : bool, optional
             Whether to apply ActNorm before each coupling layer. Default is True.
         base_distribution : str, optional
             The base probability distribution from which samples are drawn, such as
             "normal". Default is "normal".
+        subnet_kwargs : dict of str to any, optional
+            Keyword arguments forwarded to the subnet (e.g., MLP) constructor within
+            each coupling layer, such as hidden sizes or activation choices.
+        transform_kwargs : dict of str to any, optional
+            Keyword arguments forwarded to the affine or spline transforms
+            (e.g., bins for splines)
         **kwargs
-            Additional keyword arguments passed to the ActNorm, permutation, and
-            coupling layers for customization.
-        """
-        super().__init__(base_distribution=base_distribution, **keras_kwargs(kwargs))
+            Additional keyword arguments passed to `InvertibleLayer`.
 
+        """
+        super().__init__(base_distribution=base_distribution, **kwargs)
+
+        self.subnet = subnet
         self.depth = depth
+        self.transform = transform
+        self.permutation = permutation
+        self.use_actnorm = use_actnorm
 
         self.invertible_layers = []
         for i in range(depth):
             if use_actnorm:
-                self.invertible_layers.append(ActNorm(**kwargs.get("actnorm_kwargs", {})))
+                self.invertible_layers.append(ActNorm())
 
-            if (p := find_permutation(permutation, **kwargs.get("permutation_kwargs", {}))) is not None:
+            if (p := find_permutation(permutation)) is not None:
                 self.invertible_layers.append(p)
 
-            self.invertible_layers.append(DualCoupling(subnet, transform, **kwargs.get("coupling_kwargs", {})))
+            self.invertible_layers.append(
+                DualCoupling(subnet, transform, subnet_kwargs=subnet_kwargs, transform_kwargs=transform_kwargs)
+            )
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "depth": depth,
-            "transform": transform,
-            "permutation": permutation,
-            "use_actnorm": use_actnorm,
-            "base_distribution": base_distribution,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+        # We only need to do this from coupling flows, since we do not serialize invertible layers
+        self.subnet_kwargs = subnet_kwargs
+        self.transform_kwargs = transform_kwargs
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):
-        super().build(xz_shape)
-
         for layer in self.invertible_layers:
             layer.build(xz_shape=xz_shape, conditions_shape=conditions_shape)
 
-    def get_config(self):
-        base_config = super().get_config()
-        return base_config | self.config
+        self.base_distribution.build(xz_shape)
 
     @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = layer_kwargs(base_config)
+
+        config = {
+            "subnet": self.subnet,
+            "depth": self.depth,
+            "transform": self.transform,
+            "permutation": self.permutation,
+            "use_actnorm": self.use_actnorm,
+            "base_distribution": self.base_distribution,
+            "subnet_kwargs": self.subnet_kwargs,
+            "transform_kwargs": self.transform_kwargs,
+        }
+
+        return base_config | serialize(config)
 
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
@@ -129,7 +152,7 @@ class CouplingFlow(InferenceNetwork):
         z = x
         log_det = keras.ops.zeros(keras.ops.shape(x)[:-1])
         for layer in self.invertible_layers:
-            z, det = layer(z, conditions=conditions, inverse=False, training=training, **kwargs)
+            z, det = layer(z, conditions=conditions, inverse=False, training=training)
             log_det += det
 
         if density:
@@ -145,7 +168,7 @@ class CouplingFlow(InferenceNetwork):
         x = z
         log_det = keras.ops.zeros(keras.ops.shape(z)[:-1])
         for layer in reversed(self.invertible_layers):
-            x, det = layer(x, conditions=conditions, inverse=True, training=training, **kwargs)
+            x, det = layer(x, conditions=conditions, inverse=True, training=training)
             log_det += det
 
         if density:
@@ -158,11 +181,9 @@ class CouplingFlow(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
-        if sample_weight is not None:
-            print(sample_weight)
-        base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
+        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
 
         z, log_density = self(x, conditions=conditions, inverse=False, density=True)
-        loss = self.aggregate(-log_density, sample_weight)
+        loss = weighted_mean(-log_density, sample_weight)
 
         return base_metrics | {"loss": loss}

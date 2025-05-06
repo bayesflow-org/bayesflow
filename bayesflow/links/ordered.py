@@ -1,15 +1,16 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.utils import keras_kwargs
+from bayesflow.utils import layer_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
 
 
-@serializable(package="links.ordered")
+@serializable("bayesflow.links")
 class Ordered(keras.Layer):
     """Activation function to link to a tensor which is monotonously increasing along a specified axis."""
 
     def __init__(self, axis: int, anchor_index: int, **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**layer_kwargs(kwargs))
         self.axis = axis
         self.anchor_index = anchor_index
         self.group_indices = None
@@ -49,5 +50,6 @@ class Ordered(keras.Layer):
         x = keras.ops.concatenate([below, anchor_input, above], self.axis)
         return x
 
+    @sanitize_input_shape
     def compute_output_shape(self, input_shape):
         return input_shape

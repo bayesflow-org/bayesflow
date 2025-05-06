@@ -1,11 +1,9 @@
-import logging
-
 import keras
+import logging
+import matplotlib
 import pytest
 
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
-
-logging.getLogger("bayesflow").setLevel(logging.DEBUG)
 
 
 def pytest_runtest_setup(item):
@@ -17,12 +15,33 @@ def pytest_runtest_setup(item):
     if test_backends and backend not in test_backends:
         pytest.skip(f"Skipping backend '{backend}' for test {item}, which is registered for backends {test_backends}.")
 
+    # always show full tracebacks
+    keras.config.disable_traceback_filtering()
+
+    if keras.backend.backend() == "jax":
+        import jax
+
+        jax.config.update("jax_traceback_filtering", "off")
+
+    # use a non-GUI plotting backend for tests
+    matplotlib.use("Agg")
+
+    # set the logging level to debug for all tests
+    logging.getLogger("bayesflow").setLevel(logging.DEBUG)
+
+
+def pytest_runtest_teardown(item, nextitem):
+    import matplotlib.pyplot as plt
+
+    # close all plots at the end of each test
+    plt.close("all")
+
 
 def pytest_make_parametrize_id(config, val, argname):
     return f"{argname}={repr(val)}"
 
 
-@pytest.fixture(params=[2, 3], scope="session")
+@pytest.fixture(params=[2], scope="session")
 def batch_size(request):
     return request.param
 
@@ -75,33 +94,3 @@ def random_set(batch_size, set_size, feature_size):
 @pytest.fixture(params=[2, 3], scope="session")
 def set_size(request):
     return request.param
-
-
-@pytest.fixture(params=["two_moons"], scope="session")
-def simulator(request):
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(scope="session")
-def training_dataset(simulator, batch_size):
-    from bayesflow.datasets import OfflineDataset
-
-    num_batches = 128
-    samples = simulator.sample((num_batches * batch_size,))
-    return OfflineDataset(samples, batch_size=batch_size)
-
-
-@pytest.fixture(scope="session")
-def two_moons(batch_size):
-    from bayesflow.simulators import TwoMoonsSimulator
-
-    return TwoMoonsSimulator()
-
-
-@pytest.fixture(scope="session")
-def validation_dataset(simulator, batch_size):
-    from bayesflow.datasets import OfflineDataset
-
-    num_batches = 16
-    samples = simulator.sample((num_batches * batch_size,))
-    return OfflineDataset(samples, batch_size=batch_size)

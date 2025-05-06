@@ -1,26 +1,29 @@
-from typing import Sequence
+from collections.abc import Sequence
 
-import keras.src.callbacks
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+import keras.src.callbacks
+
 from ...utils.plot_utils import make_figure, add_titles_and_labels
 
 
 def loss(
-    history: keras.src.callbacks.History,
+    history: keras.callbacks.History,
     train_key: str = "loss",
     val_key: str = "val_loss",
-    moving_average: bool = False,
     per_training_step: bool = False,
-    ma_window_fraction: float = 0.01,
+    smoothing_factor: float = 0.8,
     figsize: Sequence[float] = None,
     train_color: str = "#132a70",
     val_color: str = "black",
+    val_marker: str = "o",
+    val_marker_size: float = 5,
     lw_train: float = 2.0,
-    lw_val: float = 3.0,
+    lw_val: float = 2.0,
+    grid_alpha: float = 0.2,
     legend_fontsize: int = 14,
     label_fontsize: int = 14,
     title_fontsize: int = 16,
@@ -37,24 +40,27 @@ def loss(
         The training loss key to look for in the history
     val_key     : str, optional, default: "val_loss"
         The validation loss key to look for in the history
-    moving_average     : bool, optional, default: False
-        A flag for adding a moving average line of the train_losses.
     per_training_step : bool, optional, default: False
         A flag for making loss trajectory detailed (to training steps) rather than per epoch.
-    ma_window_fraction : int, optional, default: 0.01
-        Window size for the moving average as a fraction of total
-        training steps.
+    smoothing_factor : float, optional, default: 0.8
+        If greater than zero, smooth the loss curves by applying an exponential moving average.
     figsize            : tuple or None, optional, default: None
         The figure size passed to the ``matplotlib`` constructor.
         Inferred if ``None``
-    train_color        : str, optional, default: '#8f2727'
+    train_color        : str, optional, default: '#132a70'
         The color for the train loss trajectory
-    val_color          : str, optional, default: black
+    val_color          : str, optional, default: None
         The color for the optional validation loss trajectory
+    val_marker: str
+        Marker style for the validation loss curve. Default is "o".
+    val_marker_size: float
+        Marker size for the validation loss curve. Default is 5.
     lw_train           : int, optional, default: 2
-        The linewidth for the training loss curve
-    lw_val             : int, optional, default: 3
-        The linewidth for the validation loss curve
+        The line width for the training loss curve
+    lw_val             : int, optional, default: 2
+        The line width for the validation loss curve
+    grid_alpha          : float, optional, default: 0.2
+        The transparency of the background grid
     legend_fontsize    : int, optional, default: 14
         The font size of the legend text
     label_fontsize     : int, optional, default: 14
@@ -97,31 +103,65 @@ def loss(
 
     # Loop through loss entries and populate plot
     for i, ax in enumerate(axes.flat):
-        # Plot train curve
-        ax.plot(train_step_index, train_losses.iloc[:, i], color=train_color, lw=lw_train, alpha=0.9, label="Training")
-        if moving_average and train_losses.columns[i] == "Loss":
-            moving_average_window = int(train_losses.shape[0] * ma_window_fraction)
-            smoothed_loss = train_losses.iloc[:, i].rolling(window=moving_average_window).mean()
-            ax.plot(train_step_index, smoothed_loss, color="grey", lw=lw_train, label="Training (Moving Average)")
+        if smoothing_factor > 0:
+            # plot unsmoothed train loss
+            ax.plot(
+                train_step_index, train_losses.iloc[:, 0], color=train_color, lw=lw_train, alpha=0.3, label="Training"
+            )
 
-        # Plot optional val curve
-        if val_losses is not None:
-            if i < val_losses.shape[1]:
+            # plot smoothed train loss
+            smoothed_train_loss = train_losses.iloc[:, 0].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
+            ax.plot(
+                train_step_index,
+                smoothed_train_loss,
+                color=train_color,
+                lw=lw_train,
+                alpha=0.8,
+                label="Training (Moving Average)",
+            )
+        else:
+            # Plot unsmoothed train loss
+            ax.plot(
+                train_step_index, train_losses.iloc[:, 0], color=train_color, lw=lw_train, alpha=0.8, label="Training"
+            )
+
+        # Only plot if we actually have validation losses and a color assigned
+        if val_losses is not None and val_color is not None:
+            alpha_unsmoothed = 0.3 if smoothing_factor > 0 else 0.8
+
+            # Plot unsmoothed val loss
+            ax.plot(
+                val_step_index,
+                val_losses.iloc[:, 0],
+                color=val_color,
+                lw=lw_val,
+                alpha=alpha_unsmoothed,
+                linestyle="--",
+                marker=val_marker,
+                markersize=val_marker_size,
+                label="Validation",
+            )
+
+            # if requested, plot a second, smoothed curve
+            if smoothing_factor > 0:
+                smoothed_val_loss = val_losses.iloc[:, 0].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
                 ax.plot(
                     val_step_index,
-                    val_losses.iloc[:, i],
-                    linestyle="--",
-                    marker="o",
+                    smoothed_val_loss,
                     color=val_color,
+                    linestyle="--",
                     lw=lw_val,
-                    label="Validation",
+                    alpha=0.8,
+                    label="Validation (Moving Average)",
                 )
 
+        # rest of the styling
         sns.despine(ax=ax)
-        ax.grid(alpha=0.5)
+        ax.grid(alpha=grid_alpha)
+        ax.set_xlim(train_step_index[0], train_step_index[-1])
 
-        # Only add legend if there is a validation curve
-        if val_losses is not None or moving_average:
+        # legend only if there's at least one validation curve or smoothing was on
+        if val_losses is not None or smoothing_factor > 0:
             ax.legend(fontsize=legend_fontsize)
 
     # Add labels, titles, and set font sizes

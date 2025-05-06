@@ -1,13 +1,16 @@
 import keras
 import keras.ops as ops
-from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.types import Tensor
 from bayesflow.networks import MLP
+from bayesflow.types import Tensor
+from bayesflow.utils import layer_kwargs
+from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
+
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
+@serializable("bayesflow.networks")
 class PoolingByMultiHeadAttention(keras.Layer):
     """Implements the pooling with multi-head attention (PMA) block from [1] which represents
     a permutation-invariant encoder for set-based inputs.
@@ -30,22 +33,44 @@ class PoolingByMultiHeadAttention(keras.Layer):
         mlp_depth: int = 2,
         mlp_width: int = 128,
         mlp_activation: str = "gelu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
         **kwargs,
     ):
-        """Creates a multi-head attention block (MAB) which will perform cross-attention between an input sequence
-        and a set of seed vectors (typically one for a single summary) with summary_dim output dimensions.
-
-        Could also be used as part of a ``DeepSet`` for representing learnable instead of fixed pooling.
+        """
+        Creates a PoolingByMultiHeadAttention (PMA) block for permutation-invariant set encoding using
+        multi-head attention pooling. Can also be used us a building block for `DeepSet` architectures.
 
         Parameters
         ----------
-        ##TODO
+        num_seeds : int, optional (default=1)
+            Number of seed vectors used for pooling. Acts as the number of summary outputs.
+        embed_dim : int, optional (default=64)
+            Dimensionality of the embedding space used in the attention mechanism.
+        num_heads : int, optional (default=4)
+            Number of attention heads in the multi-head attention block.
+        seed_dim : int or None, optional (default=None)
+            Dimensionality of each seed vector. If None, defaults to `embed_dim`.
+        dropout : float, optional (default=0.05)
+            Dropout rate applied to attention and MLP layers.
+        mlp_depth : int, optional (default=2)
+            Number of layers in the feedforward MLP applied before attention.
+        mlp_width : int, optional (default=128)
+            Number of units in each hidden layer of the MLP.
+        mlp_activation : str, optional (default="gelu")
+            Activation function used in the MLP.
+        kernel_initializer : str, optional (default="lecun_normal")
+            Initializer for kernel weights in dense layers.
+        use_bias : bool, optional (default=True)
+            Whether to include bias terms in dense layers.
+        layer_norm : bool, optional (default=True)
+            Whether to apply layer normalization before and after attention.
+        **kwargs
+            Additional keyword arguments passed to the Keras Layer base class.
         """
 
-        super().__init__(**kwargs)
+        super().__init__(**layer_kwargs(kwargs))
 
         self.mab = MultiHeadAttentionBlock(
             embed_dim=embed_dim,
@@ -100,3 +125,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
         seed_tiled = ops.tile(seed_vector_expanded, [batch_size, 1, 1])
         summaries = self.mab(seed_tiled, set_x_transformed, training=training, **kwargs)
         return ops.reshape(summaries, (ops.shape(summaries)[0], -1))
+
+    @sanitize_input_shape
+    def compute_output_shape(self, input_shape):
+        return keras.ops.shape(self.call(keras.ops.zeros(input_shape)))

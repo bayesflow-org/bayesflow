@@ -12,8 +12,16 @@ from .model_comparison_simulator import ModelComparisonSimulator
 from .simulator import Simulator
 
 from .benchmark_simulators import (
+    BernoulliGLM,
+    BernoulliGLMRaw,
+    GaussianLinear,
+    GaussianLinearUniform,
+    GaussianMixture,
+    InverseKinematics,
     LotkaVolterra,
     SIR,
+    SLCP,
+    SLCPDistractors,
     TwoMoons,
 )
 

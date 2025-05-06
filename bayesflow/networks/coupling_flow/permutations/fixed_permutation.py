@@ -1,16 +1,22 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils.serialization import serializable
+
 from ..invertible_layer import InvertibleLayer
 
 
-@serializable(package="networks.coupling_flow")
+@serializable("bayesflow.networks")
 class FixedPermutation(InvertibleLayer):
-    def __init__(self, forward_indices=None, inverse_indices=None, **kwargs):
+    """
+    Interface class for permutations with no learnable parameters. Child classes should
+    create forward and inverse indices in the associated build() method.
+    """
+
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.forward_indices = forward_indices
-        self.inverse_indices = inverse_indices
+        self.forward_indices = None
+        self.inverse_indices = None
 
     def call(self, xz: Tensor, inverse: bool = False, **kwargs):
         if inverse:

@@ -1,10 +1,8 @@
 import keras
 import numpy as np
 import pytest
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    serialize_keras_object as serialize,
-)
+
+from bayesflow.utils.serialization import serialize, deserialize
 
 from tests.utils import assert_allclose, assert_layers_equal
 
@@ -38,13 +36,21 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
         else:
             new_conditions = keras.ops.zeros((bs,) + keras.ops.shape(random_conditions)[1:])
 
-        inference_network(new_input, conditions=new_conditions)
+        try:
+            inference_network(new_input, conditions=new_conditions)
+        except NotImplementedError:
+            # network is not invertible
+            pass
         inference_network(new_input, conditions=new_conditions, inverse=True)
 
 
 @pytest.mark.parametrize("density", [True, False])
 def test_output_structure(density, generative_inference_network, random_samples, random_conditions):
-    output = generative_inference_network(random_samples, conditions=random_conditions, density=density)
+    try:
+        output = generative_inference_network(random_samples, conditions=random_conditions, density=density)
+    except NotImplementedError:
+        # network not invertible
+        return
 
     if density:
         assert isinstance(output, tuple)
@@ -59,9 +65,13 @@ def test_output_structure(density, generative_inference_network, random_samples,
 
 
 def test_output_shape(generative_inference_network, random_samples, random_conditions):
-    forward_output, forward_log_density = generative_inference_network(
-        random_samples, conditions=random_conditions, density=True
-    )
+    try:
+        forward_output, forward_log_density = generative_inference_network(
+            random_samples, conditions=random_conditions, density=True
+        )
+    except NotImplementedError:
+        # network is not invertible, not forward function available
+        return
 
     assert keras.ops.shape(forward_output) == keras.ops.shape(random_samples)
     assert keras.ops.shape(forward_log_density) == (keras.ops.shape(random_samples)[0],)
@@ -76,9 +86,13 @@ def test_output_shape(generative_inference_network, random_samples, random_condi
 
 def test_cycle_consistency(generative_inference_network, random_samples, random_conditions):
     # cycle-consistency means the forward and inverse methods are inverses of each other
-    forward_output, forward_log_density = generative_inference_network(
-        random_samples, conditions=random_conditions, density=True
-    )
+    try:
+        forward_output, forward_log_density = generative_inference_network(
+            random_samples, conditions=random_conditions, density=True
+        )
+    except NotImplementedError:
+        # network is not invertible, cycle consistency cannot be tested.
+        return
     inverse_output, inverse_log_density = generative_inference_network(
         forward_output, conditions=random_conditions, density=True, inverse=True
     )
@@ -90,7 +104,11 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
 def test_density_numerically(generative_inference_network, random_samples, random_conditions):
     from bayesflow.utils import jacobian
 
-    output, log_density = generative_inference_network(random_samples, conditions=random_conditions, density=True)
+    try:
+        output, log_density = generative_inference_network(random_samples, conditions=random_conditions, density=True)
+    except NotImplementedError:
+        # network does not support density estimation
+        return
 
     def f(x):
         return generative_inference_network(x, conditions=random_conditions)
@@ -98,7 +116,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_output, numerical_jacobian = jacobian(f, random_samples, return_output=True)
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
-    assert keras.ops.all(keras.ops.isclose(output, numerical_output))
+    assert_allclose(output, numerical_output)
 
     log_prob = generative_inference_network.base_distribution.log_prob(output)
 
@@ -109,22 +127,26 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     assert_allclose(log_density, numerical_log_density, rtol=1e-3, atol=1e-3)
 
 
-def test_serialize_deserialize(inference_network_subnet, subnet, random_samples, random_conditions):
+def test_serialize_deserialize(inference_network, random_samples, random_conditions):
     # to save, the model must be built
-    inference_network_subnet(random_samples, conditions=random_conditions)
+    xz_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    inference_network.build(xz_shape, conditions_shape)
 
-    serialized = serialize(inference_network_subnet)
+    serialized = serialize(inference_network)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert serialized == reserialized
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
 
-def test_save_and_load(tmp_path, inference_network_subnet, subnet, random_samples, random_conditions):
+def test_save_and_load(tmp_path, inference_network, random_samples, random_conditions):
     # to save, the model must be built
-    inference_network_subnet(random_samples, conditions=random_conditions)
+    xz_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    inference_network.build(xz_shape, conditions_shape)
 
-    keras.saving.save_model(inference_network_subnet, tmp_path / "model.keras")
+    keras.saving.save_model(inference_network, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
-    assert_layers_equal(inference_network_subnet, loaded)
+    assert_layers_equal(inference_network, loaded)

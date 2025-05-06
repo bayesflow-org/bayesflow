@@ -1,12 +1,13 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils import weighted_mean
+from bayesflow.utils.serialization import serializable
 
 from .scoring_rule import ScoringRule
 
 
-@serializable(package="bayesflow.scores")
+@serializable("bayesflow.scores")
 class NormedDifferenceScore(ScoringRule):
     r""":math:`S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k`
 
@@ -15,7 +16,10 @@ class NormedDifferenceScore(ScoringRule):
 
     def __init__(self, k: int, **kwargs):
         super().__init__(**kwargs)
+
+        #: Exponent to absolute difference
         self.k = k
+
         self.config = {"k": k}
 
     def get_head_shapes_from_target_shape(self, target_shape: Shape):
@@ -24,13 +28,15 @@ class NormedDifferenceScore(ScoringRule):
         return dict(value=target_shape[1:])
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
-        """
-        Computes the scoring function based on the absolute difference between estimates and targets.
+        r"""
+        Computes the scoring function based on the absolute difference between **estimates** and **targets**.
 
-        This function extracts the "value" tensor from the `estimates` dictionary and computes
+        :math:`S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k`
+
+        This function extracts the Tensor named ``"value"`` from the **estimates** dictionary and computes
         the element-wise absolute difference between the estimates and the true targets. The
-        difference is then exponentiated by `self.k`. The final score is computed using the
-        `aggregate` method, which optionally applies weighting.
+        difference is then exponentiated by :py:attr:`k`. The final score is computed using the
+        :py:func:`aggregate()` method, which optionally applies weighting.
 
         Parameters
         ----------
@@ -50,7 +56,7 @@ class NormedDifferenceScore(ScoringRule):
         """
         estimates = estimates["value"]
         scores = keras.ops.absolute(estimates - targets) ** self.k
-        score = self.aggregate(scores, weights)
+        score = weighted_mean(scores, weights)
         return score
 
     def get_config(self):

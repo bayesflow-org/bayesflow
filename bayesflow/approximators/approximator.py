@@ -1,5 +1,8 @@
-import keras
+from collections.abc import Mapping
+
 import multiprocessing as mp
+
+import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
@@ -19,8 +22,8 @@ class Approximator(BackendApproximator):
         # implemented by each respective architecture
         raise NotImplementedError
 
-    def build_from_data(self, data: dict[str, any]) -> None:
-        self.compute_metrics(**data, stage="training")
+    def build_from_data(self, data: Mapping[str, any]) -> None:
+        self.compute_metrics(**filter_kwargs(data, self.compute_metrics), stage="training")
         self.built = True
 
     @classmethod
@@ -72,7 +75,7 @@ class Approximator(BackendApproximator):
             A dataset containing simulations for training. If provided, `simulator` must be None.
         simulator : Simulator, optional
             A simulator used to generate a dataset. If provided, `dataset` must be None.
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
 
             batch_size : int or None, default='auto'

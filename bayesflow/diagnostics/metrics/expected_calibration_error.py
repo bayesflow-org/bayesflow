@@ -1,18 +1,19 @@
+from collections.abc import Sequence
+
 import numpy as np
 from keras import ops
-from typing import Sequence, Any, Mapping
 
 from ...utils.exceptions import ShapeError
-from sklearn.calibration import calibration_curve
+from ...utils.classification import calibration_curve
 
 
 def expected_calibration_error(
     estimates: np.ndarray,
     targets: np.ndarray,
     model_names: Sequence[str] = None,
-    n_bins: int = 10,
+    num_bins: int = 10,
     return_probs: bool = False,
-) -> Mapping[str, Any]:
+) -> dict[str, any]:
     """
     Estimates the expected calibration error (ECE) of a model comparison network according to [1].
 
@@ -31,11 +32,11 @@ def expected_calibration_error(
         The one-hot-encoded true model indices.
     model_names : Sequence[str], optional (default = None)
         Optional model names to show in the output. By default, models are called "M_" + model index.
-    n_bins    : int, optional, default: 10
+    num_bins    : int, optional, default: 10
         The number of bins to use for the calibration curves (and marginal histograms).
-        Passed into ``sklearn.calibration.calibration_curve()``.
+        Passed into ``bayesflow.utils.calibration_curve()``.
     return_probs : bool (default = False)
-        Do you want to obtain the output of ``sklearn.calibration.calibration_curve()``?
+        Do you want to obtain the output of ``bayesflow.utils.calibration_curve()``?
 
     Returns
     -------
@@ -48,9 +49,9 @@ def expected_calibration_error(
         - "model_names" : str
             The (inferred) variable names.
         - "probs_true": (optional) list[np.ndarray]:
-            Outputs of ``sklearn.calibration.calibration_curve()`` per model
+            Outputs of ``bayesflow.utils.calibration.calibration_curve()`` per model
         - "probs_pred": (optional) list[np.ndarray]:
-            Outputs of ``sklearn.calibration.calibration_curve()`` per model
+            Outputs of ``bayesflow.utils.calibration.calibration_curve()`` per model
     """
 
     # Convert tensors to numpy, if passed
@@ -76,10 +77,10 @@ def expected_calibration_error(
     for model_index in range(estimates.shape[-1]):
         y_true = (targets == model_index).astype(np.float32)
         y_prob = estimates[..., model_index]
-        prob_true, prob_pred = calibration_curve(y_true, y_prob, n_bins=n_bins)
+        prob_true, prob_pred = calibration_curve(y_true, y_prob, num_bins=num_bins)
 
         # Compute ECE by weighting bin errors by bin size
-        bins = np.linspace(0.0, 1.0, n_bins + 1)
+        bins = np.linspace(0.0, 1.0, num_bins + 1)
         binids = np.searchsorted(bins[1:-1], y_prob)
         bin_total = np.bincount(binids, minlength=len(bins))
         nonzero = bin_total != 0

@@ -1,29 +1,29 @@
 import keras
 from keras import ops
-from keras.saving import (
-    register_keras_serializable,
-)
 
 import numpy as np
 
+import warnings
+
+from bayesflow.networks import MLP
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     jvp,
     concatenate_valid,
     find_network,
-    keras_kwargs,
     expand_right_as,
     expand_right_to,
-    serialize_value_or_type,
-    deserialize_value_or_type,
+    model_kwargs,
 )
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
 from bayesflow.networks import InferenceNetwork
 from bayesflow.networks.embeddings import FourierEmbedding
 
 
-@register_keras_serializable(package="bayesflow.networks")
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class ContinuousTimeConsistencyModel(InferenceNetwork):
     """Implements an sCM (simple, stable, and scalable Consistency Model)
     with continous-time Consistency Training (CT) as described in [1].
@@ -40,8 +40,10 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | type = "mlp",
+        subnet: str | keras.Layer = "mlp",
         sigma_data: float = 1.0,
+        subnet_kwargs: dict[str, any] = None,
+        embedding_kwargs: dict[str, any] = None,
         **kwargs,
     ):
         """Creates an instance of an sCM to be used for consistency training (CT).
@@ -53,39 +55,52 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
             instantiated using subnet_kwargs.
         sigma_data    : float, optional, default: 1.0
             Standard deviation of the target distribution
-        **kwargs      : dict, optional, default: {}
-            Additional keyword arguments, such as
+        **kwargs
+            Additional keyword arguments to the layer.
         """
-        super().__init__(base_distribution="normal", **keras_kwargs(kwargs))
+        super().__init__(base_distribution="normal", **kwargs)
 
-        self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
-        self.subnet_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
+        if subnet_kwargs:
+            warnings.warn(
+                "Using `subnet_kwargs` is deprecated."
+                "Instead, instantiate the network yourself and pass the arguments directly.",
+                DeprecationWarning,
+            )
 
-        self.weight_fn = find_network("mlp", widths=(256,), dropout=0.0)
-        self.weight_fn_projector = keras.layers.Dense(units=1, bias_initializer="zeros", kernel_initializer="zeros")
+        subnet_kwargs = subnet_kwargs or {}
 
-        self.time_emb = FourierEmbedding(**kwargs.get("embedding_kwargs", {}))
+        self.subnet = find_network(subnet, **subnet_kwargs)
+        self.subnet_projector = keras.layers.Dense(
+            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="subnet_projector"
+        )
+
+        self.weight_fn = MLP([256], dropout=0.0)
+        self.weight_fn_projector = keras.layers.Dense(
+            units=1, bias_initializer="zeros", kernel_initializer="zeros", name="weight_fn_projector"
+        )
+
+        embedding_kwargs = embedding_kwargs or {}
+        self.time_emb = FourierEmbedding(**embedding_kwargs)
         self.time_emb_dim = self.time_emb.embed_dim
 
         self.sigma_data = sigma_data
 
         self.seed_generator = keras.random.SeedGenerator()
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "sigma_data": sigma_data,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
-        return base_config | self.config
+        base_config = model_kwargs(base_config)
 
-    @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
+        config = {
+            "subnet": self.subnet,
+            "sigma_data": self.sigma_data,
+        }
+
+        return base_config | serialize(config)
 
     def _discretize_time(self, num_steps: int, rho: float = 3.5, **kwargs):
         t = np.linspace(0.0, np.pi / 2, num_steps)
@@ -206,7 +221,9 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
         out = ops.cos(t) * x - ops.sin(t) * self.sigma_data * f
         return out
 
-    def compute_metrics(self, x: Tensor, conditions: Tensor = None, stage: str = "training") -> dict[str, Tensor]:
+    def compute_metrics(
+        self, x: Tensor, conditions: Tensor = None, stage: str = "training", **kwargs
+    ) -> dict[str, Tensor]:
         base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
 
         # $# Implements Algorithm 1 from [1]

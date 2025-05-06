@@ -7,8 +7,9 @@ from . import (
     experimental,
     networks,
     simulators,
-    workflows,
     utils,
+    workflows,
+    wrappers,
 )
 
 from .adapters import Adapter
@@ -32,7 +33,7 @@ def setup():
 
     from bayesflow.utils import logging
 
-    logging.debug(f"Using backend {keras.backend.backend()!r}")
+    logging.info(f"Using backend {keras.backend.backend()!r}")
 
     if keras.backend.backend() == "torch":
         import torch
@@ -40,10 +41,19 @@ def setup():
         torch.autograd.set_grad_enabled(False)
 
         logging.warning(
+            "\n"
             "When using torch backend, we need to disable autograd by default to avoid excessive memory usage. Use\n"
+            "\n"
             "with torch.enable_grad():\n"
+            "    ...\n"
+            "\n"
             "in contexts where you need gradients (e.g. custom training loops)."
         )
+
+    # dynamically add __version__ attribute
+    from importlib.metadata import version
+
+    globals()["__version__"] = version("bayesflow")
 
 
 # call and clean up namespace

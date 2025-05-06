@@ -1,8 +1,7 @@
-from typing import Sequence
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 
 from bayesflow.utils import (
     prepare_plot_data,
@@ -15,10 +14,10 @@ from bayesflow.diagnostics.metrics import expected_calibration_error
 
 
 def mc_calibration(
-    pred_models: dict[str, np.ndarray] | np.ndarray,
-    true_models: dict[str, np.ndarray] | np.ndarray,
+    pred_models: Mapping[str, np.ndarray] | np.ndarray,
+    true_models: Mapping[str, np.ndarray] | np.ndarray,
     model_names: Sequence[str] = None,
-    n_bins: int = 10,
+    num_bins: int = 10,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
     metric_fontsize: int = 14,
@@ -41,12 +40,12 @@ def mc_calibration(
         The one-hot-encoded true model indices per data set.
     model_names       : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.
-    n_bins          : int, optional, default: 10
+    num_bins          : int, optional, default: 10
         The number of bins to use for the calibration curves (and marginal histograms).
     label_fontsize    : int, optional, default: 16
         The font size of the y-label and y-label texts
-    legend_fontsize   : int, optional, default: 14
-        The font size of the legend text (ECE value)
+    metric_fontsize   : int, optional, default: 14
+        The font size of the metric (e.g., ECE)
     title_fontsize    : int, optional, default: 18
         The font size of the title text. Only relevant if `stacked=False`
     tick_fontsize     : int, optional, default: 12
@@ -83,7 +82,7 @@ def mc_calibration(
         estimates=pred_models,
         targets=true_models,
         model_names=plot_data["variable_names"],
-        n_bins=n_bins,
+        num_bins=num_bins,
         return_probs=True,
     )
 
@@ -92,7 +91,7 @@ def mc_calibration(
         ax.plot(ece["probs_pred"][j], ece["probs_true"][j], "o-", color=color)
 
         # Plot PMP distribution over bins
-        uniform_bins = np.linspace(0.0, 1.0, n_bins + 1)
+        uniform_bins = np.linspace(0.0, 1.0, num_bins + 1)
         norm_weights = np.ones_like(plot_data["estimates"]) / len(plot_data["estimates"])
         ax.hist(plot_data["estimates"][:, j], bins=uniform_bins, weights=norm_weights[:, j], color="grey", alpha=0.3)
 

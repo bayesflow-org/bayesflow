@@ -1,8 +1,6 @@
-from keras.saving import (
-    register_keras_serializable as serializable,
-)
 import numpy as np
 
+from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.utils.numpy_utils import (
     inverse_sigmoid,
     inverse_softplus,
@@ -13,7 +11,7 @@ from bayesflow.utils.numpy_utils import (
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable("bayesflow.adapters")
 class Constrain(ElementwiseTransform):
     """
     Constrains neural network predictions of a data variable to specified bounds.
@@ -89,6 +87,11 @@ class Constrain(ElementwiseTransform):
 
                     def unconstrain(x):
                         return inverse_sigmoid((x - lower) / (upper - lower))
+
+                    def ldj(x):
+                        x = (x - lower) / (upper - lower)
+                        return -np.log(x) - np.log1p(-x) - np.log(upper - lower)
+
                 case str() as name:
                     raise ValueError(f"Unsupported method name for double bounded constraint: '{name}'.")
                 case other:
@@ -103,6 +106,11 @@ class Constrain(ElementwiseTransform):
 
                     def unconstrain(x):
                         return inverse_softplus(x - lower)
+
+                    def ldj(x):
+                        x = x - lower
+                        return x - np.log(np.exp(x) - 1)
+
                 case "exp" | "log":
 
                     def constrain(x):
@@ -110,6 +118,10 @@ class Constrain(ElementwiseTransform):
 
                     def unconstrain(x):
                         return np.log(x - lower)
+
+                    def ldj(x):
+                        return -np.log(x - lower)
+
                 case str() as name:
                     raise ValueError(f"Unsupported method name for single bounded constraint: '{name}'.")
                 case other:
@@ -124,12 +136,20 @@ class Constrain(ElementwiseTransform):
 
                     def unconstrain(x):
                         return -inverse_softplus(-(x - upper))
+
+                    def ldj(x):
+                        x = -(x - upper)
+                        return x - np.log(np.exp(x) - 1)
+
                 case "exp" | "log":
 
                     def constrain(x):
                         return -np.exp(-x) + upper
 
                     def unconstrain(x):
+                        return -np.log(-x + upper)
+
+                    def ldj(x):
                         return -np.log(-x + upper)
                 case str() as name:
                     raise ValueError(f"Unsupported method name for single bounded constraint: '{name}'.")
@@ -144,6 +164,7 @@ class Constrain(ElementwiseTransform):
 
         self.constrain = constrain
         self.unconstrain = unconstrain
+        self.ldj = ldj
 
         # do this last to avoid serialization issues
         match inclusive:
@@ -163,18 +184,15 @@ class Constrain(ElementwiseTransform):
             case other:
                 raise ValueError(f"Unsupported value for 'inclusive': {other!r}.")
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Constrain":
-        return cls(**config)
-
     def get_config(self) -> dict:
-        return {
+        config = {
             "lower": self.lower,
             "upper": self.upper,
             "method": self.method,
             "inclusive": self.inclusive,
             "epsilon": self.epsilon,
         }
+        return serialize(config)
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # forward means data space -> network space, so unconstrain the data
@@ -183,3 +201,9 @@ class Constrain(ElementwiseTransform):
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # inverse means network space -> data space, so constrain the data
         return self.constrain(data)
+
+    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+        ldj = self.ldj(data)
+        if inverse:
+            ldj = -ldj
+        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

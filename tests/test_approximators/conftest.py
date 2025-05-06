@@ -163,3 +163,34 @@ def validation_dataset(batch_size, adapter, simulator):
     num_batches = 2
     data = simulator.sample((num_batches * batch_size,))
     return OfflineDataset(data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches)
+
+
+@pytest.fixture()
+def mean_std_summary_network():
+    from tests.utils import MeanStdSummaryNetwork
+
+    return MeanStdSummaryNetwork()
+
+
+@pytest.fixture(params=["continuous_approximator", "point_approximator", "model_comparison_approximator"])
+def approximator_with_summaries(request):
+    from bayesflow.adapters import Adapter
+
+    adapter = Adapter()
+    match request.param:
+        case "continuous_approximator":
+            from bayesflow.approximators import ContinuousApproximator
+
+            return ContinuousApproximator(adapter=adapter, inference_network=None, summary_network=None)
+        case "point_approximator":
+            from bayesflow.approximators import PointApproximator
+
+            return PointApproximator(adapter=adapter, inference_network=None, summary_network=None)
+        case "model_comparison_approximator":
+            from bayesflow.approximators import ModelComparisonApproximator
+
+            return ModelComparisonApproximator(
+                num_models=2, classifier_network=None, adapter=adapter, summary_network=None
+            )
+        case _:
+            raise ValueError("Invalid param for approximator class.")

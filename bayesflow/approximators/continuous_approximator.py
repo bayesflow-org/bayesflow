@@ -1,21 +1,19 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence, Callable
+
+import numpy as np
 
 import keras
-import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, logging, split_arrays, squeeze_inner_estimates_dict
+from bayesflow.utils.serialization import serialize, deserialize, serializable
+
 from .approximator import Approximator
 
 
-@serializable(package="bayesflow.approximators")
+@serializable("bayesflow.approximators")
 class ContinuousApproximator(Approximator):
     """
     Defines a workflow for performing fast posterior or likelihood inference.
@@ -23,7 +21,7 @@ class ContinuousApproximator(Approximator):
 
     Parameters
     ----------
-    adapter : Adapter
+    adapter : bayesflow.adapters.Adapter
         Adapter for data processing. You can use :py:meth:`build_adapter`
         to create it.
     inference_network : InferenceNetwork
@@ -33,6 +31,8 @@ class ContinuousApproximator(Approximator):
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
+
+    SAMPLE_KEYS = ["summary_variables", "inference_conditions"]
 
     def __init__(
         self,
@@ -53,7 +53,8 @@ class ContinuousApproximator(Approximator):
         inference_variables: Sequence[str],
         inference_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
-        sample_weight: Sequence[str] = None,
+        standardize: bool = True,
+        sample_weight: str = None,
     ) -> Adapter:
         """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator.
 
@@ -65,9 +66,12 @@ class ContinuousApproximator(Approximator):
             Names of the inference conditions in the data
         summary_variables : Sequence of str, optional
             Names of the summary variables in the data
+        standardize : bool, optional
+            Decide whether to standardize all variables, default is True
         sample_weight : str, optional
             Name of the sample weights
         """
+
         adapter = Adapter()
         adapter.to_array()
         adapter.convert_dtype("float64", "float32")
@@ -84,7 +88,9 @@ class ContinuousApproximator(Approximator):
             adapter = adapter.rename(sample_weight, "sample_weight")
 
         adapter.keep(["inference_variables", "inference_conditions", "summary_variables", "sample_weight"])
-        adapter.standardize(exclude="sample_weight")
+
+        if standardize:
+            adapter.standardize(exclude="sample_weight")
 
         return adapter
 
@@ -105,6 +111,12 @@ class ContinuousApproximator(Approximator):
                 self.summary_network._metrics = summary_metrics
 
         return super().compile(*args, **kwargs)
+
+    def compile_from_config(self, config):
+        self.compile(**deserialize(config))
+        if hasattr(self, "optimizer") and self.built:
+            # Create optimizer variables.
+            self.optimizer.build(self.trainable_variables)
 
     def compute_metrics(
         self,
@@ -159,7 +171,7 @@ class ContinuousApproximator(Approximator):
             A dataset containing simulations for training. If provided, `simulator` must be None.
         simulator : Simulator, optional
             A simulator used to generate a dataset. If provided, `dataset` must be None.
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
 
             batch_size : int or None, default='auto'
@@ -203,30 +215,74 @@ class ContinuousApproximator(Approximator):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        config["adapter"] = deserialize(config["adapter"], custom_objects=custom_objects)
-        config["inference_network"] = deserialize(config["inference_network"], custom_objects=custom_objects)
-        config["summary_network"] = deserialize(config["summary_network"], custom_objects=custom_objects)
-
-        return super().from_config(config, custom_objects=custom_objects)
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
         config = {
-            "adapter": serialize(self.adapter),
-            "inference_network": serialize(self.inference_network),
-            "summary_network": serialize(self.summary_network),
+            "adapter": self.adapter,
+            "inference_network": self.inference_network,
+            "summary_network": self.summary_network,
         }
 
-        return base_config | config
+        return base_config | serialize(config)
+
+    def get_compile_config(self):
+        base_config = super().get_compile_config() or {}
+
+        config = {
+            "inference_metrics": self.inference_network._metrics,
+            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
+        }
+
+        return base_config | serialize(config)
 
     def estimate(
         self,
-        conditions: dict[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray],
         split: bool = False,
-        estimators: dict[str, callable] = None,
+        estimators: Mapping[str, Callable] = None,
         num_samples: int = 1000,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
+        """
+        Estimate summary statistics for variables based on given conditions.
+
+        This function samples data using the object's ``sample`` method according to the provided
+        conditions and then computes summary statistics for each variable using a set of estimator
+        functions. By default, it calculates the mean, median, and selected quantiles (10th, 50th,
+        and 90th percentiles). Users can also supply custom estimators that override or extend the
+        default ones.
+
+        Parameters
+        ----------
+        conditions : Mapping[str, np.ndarray]
+            A mapping from variable names to numpy arrays representing the conditions under which
+            samples should be generated.
+        split : bool, optional
+            If True, indicates that the data sampling process should split the samples based on an
+            internal logic. The default is False.
+        estimators : Mapping[str, Callable], optional
+            A dictionary where keys are estimator names and values are callables. Each callable must
+            accept an array and an axis parameter, and return a dictionary with the computed statistic.
+            If not provided, a default set of estimators is used:
+                - 'mean': Computes the mean along the specified axis.
+                - 'median': Computes the median along the specified axis.
+                - 'quantiles': Computes the 10th, 50th, and 90th percentiles along the specified axis,
+                  then rearranges the axes for convenience.
+        num_samples : int, optional
+            The number of samples to generate for each variable. The default is 1000.
+        **kwargs
+            Additional keyword arguments passed to the ``sample`` method.
+
+        Returns
+        -------
+        dict[str, dict[str, np.ndarray]]
+            A nested dictionary where the outer keys correspond to variable names and the inner keys
+            correspond to estimator names. Each inner dictionary contains the computed statistic(s) for
+            the variable, potentially with reduced nesting via ``squeeze_inner_estimates_dict``.
+        """
+
         estimators = estimators or {}
         estimators = (
             dict(
@@ -261,7 +317,7 @@ class ContinuousApproximator(Approximator):
         self,
         *,
         num_samples: int,
-        conditions: dict[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray],
         split: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
@@ -286,12 +342,18 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
+
+        # Apply adapter transforms to raw simulated / real quantities
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        # at inference time, inference_variables are estimated by the networks and thus ignored in conditions
-        conditions.pop("inference_variables", None)
+
+        # Ensure only keys relevant for sampling are present in the conditions dictionary
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.SAMPLE_KEYS}
+
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
         conditions = {"inference_variables": self._sample(num_samples=num_samples, **conditions, **kwargs)}
         conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
+
+        # Back-transform quantities and samples
         conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
 
         if split:
@@ -338,14 +400,47 @@ class ContinuousApproximator(Approximator):
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
 
-    def log_prob(self, data: dict[str, np.ndarray], **kwargs) -> np.ndarray:
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs):
+        """
+        Computes the summaries of given data.
+
+        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Dictionary of data as NumPy arrays.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and the summary network.
+
+        Returns
+        -------
+        summaries : np.ndarray
+            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
+
+        Raises
+        ------
+        ValueError
+            If the approximator does not have a summary network, or the adapter does not produce the output required
+            by the summary network.
+        """
+        if self.summary_network is None:
+            raise ValueError("A summary network is required to compute summeries.")
+        data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
+        if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
+            raise ValueError("Summary variables are required to compute summaries.")
+        summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
+        summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
+        return summaries
+
+    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
         `adapter`. Log-probabilities are returned as NumPy arrays.
 
         Parameters
         ----------
-        data : dict[str, np.ndarray]
+        data : Mapping[str, np.ndarray]
             Dictionary of observed data as NumPy arrays.
         **kwargs : dict
             Additional keyword arguments for the adapter and log-probability computation.
@@ -355,10 +450,15 @@ class ContinuousApproximator(Approximator):
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
-        data = self.adapter(data, strict=False, stage="inference", **kwargs)
+        data, log_det_jac = self.adapter(data, strict=False, stage="inference", log_det_jac=True, **kwargs)
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data, **kwargs)
-        log_prob = keras.ops.convert_to_numpy(log_prob)
+        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
+
+        # change of variables formula
+        log_det_jac = log_det_jac.get("inference_variables")
+        if log_det_jac is not None:
+            log_prob = log_prob + log_det_jac
 
         return log_prob
 
@@ -368,7 +468,7 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         **kwargs,
-    ) -> Tensor:
+    ) -> Tensor | dict[str, Tensor]:
         if self.summary_network is None:
             if summary_variables is not None:
                 raise ValueError("Cannot use summary variables without a summary network.")

@@ -1,10 +1,13 @@
-from keras.saving import register_keras_serializable as serializable
+import keras
 
 from bayesflow.types import Tensor
+from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
+
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
+@serializable("bayesflow.networks")
 class SetAttentionBlock(MultiHeadAttentionBlock):
     """Implements the SAB block from [1] which represents learnable self-attention.
 
@@ -12,6 +15,11 @@ class SetAttentionBlock(MultiHeadAttentionBlock):
         Set transformer: A framework for attention-based permutation-invariant neural networks.
         In International conference on machine learning (pp. 3744-3753). PMLR.
     """
+
+    # noinspection PyMethodOverriding
+    @sanitize_input_shape
+    def build(self, input_set_shape):
+        self.call(keras.ops.zeros(input_set_shape))
 
     def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass through the self-attention layer.
@@ -34,3 +42,8 @@ class SetAttentionBlock(MultiHeadAttentionBlock):
         """
 
         return super().call(input_set, input_set, training=training, **kwargs)
+
+    # noinspection PyMethodOverriding
+    @sanitize_input_shape
+    def compute_output_shape(self, input_set_shape):
+        return keras.ops.shape(self.call(keras.ops.zeros(input_set_shape)))

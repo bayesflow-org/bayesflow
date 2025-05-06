@@ -1,19 +1,18 @@
 import keras
 from keras import ops
-from keras.saving import (
-    register_keras_serializable,
-)
 
 import numpy as np
 
-from bayesflow.types import Tensor
-from bayesflow.utils import find_network, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
+import warnings
 
+from bayesflow.types import Tensor
+from bayesflow.utils import find_network, layer_kwargs, weighted_mean
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
 
 
-@register_keras_serializable(package="bayesflow.networks")
+@serializable("bayesflow.networks")
 class ConsistencyModel(InferenceNetwork):
     """Implements a Consistency Model with Consistency Training (CT) a described in [1-2]. The adaptations to CT
     described in [2] were taken into account in our implementation for ABI [3].
@@ -39,7 +38,7 @@ class ConsistencyModel(InferenceNetwork):
     def __init__(
         self,
         total_steps: int | float,
-        subnet: str | type = "mlp",
+        subnet: str | keras.Layer = "mlp",
         max_time: int | float = 200,
         sigma2: float = 1.0,
         eps: float = 0.001,
@@ -73,16 +72,25 @@ class ConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
-        super().__init__(base_distribution="normal", **keras_kwargs(kwargs))
+        super().__init__(base_distribution="normal", **kwargs)
 
         self.total_steps = float(total_steps)
+
+        if subnet_kwargs:
+            warnings.warn(
+                "Using `subnet_kwargs` is deprecated."
+                "Instead, instantiate the network yourself and pass the arguments directly.",
+                DeprecationWarning,
+            )
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
 
-        self.student = find_network(subnet, **subnet_kwargs)
-        self.student_projector = keras.layers.Dense(units=None, bias_initializer="zeros", kernel_initializer="zeros")
+        self.subnet = find_network(subnet, **subnet_kwargs)
+        self.output_projector = keras.layers.Dense(
+            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="output_projector"
+        )
 
         self.sigma2 = ops.convert_to_tensor(sigma2)
         self.sigma = ops.sqrt(sigma2)
@@ -100,27 +108,30 @@ class ConsistencyModel(InferenceNetwork):
 
         self.seed_generator = keras.random.SeedGenerator()
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "total_steps": total_steps,
-            "max_time": max_time,
-            "sigma2": sigma2,
-            "eps": eps,
-            "s0": s0,
-            "s1": s1,
-            "subnet_kwargs": subnet_kwargs,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+    @property
+    def student(self):
+        return self.subnet
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
-        return base_config | self.config
+        base_config = layer_kwargs(base_config)
 
-    @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
+        config = {
+            "total_steps": self.total_steps,
+            "subnet": self.subnet,
+            "max_time": self.max_time,
+            "sigma2": self.sigma2,
+            "eps": self.eps,
+            "s0": self.s0,
+            "s1": self.s1,
+            # we do not need to store subnet_kwargs
+        }
+
+        return base_config | serialize(config)
 
     def _schedule_discretization(self, step) -> float:
         """Schedule function for adjusting the discretization level `N` during
@@ -148,8 +159,14 @@ class ConsistencyModel(InferenceNetwork):
         return discretized_time
 
     def build(self, xz_shape, conditions_shape=None):
-        super().build(xz_shape)
-        self.student_projector.units = xz_shape[-1]
+        if self.built:
+            # building when the network is already built can cause issues with serialization
+            # see https://github.com/keras-team/keras/issues/21147
+            return
+
+        self.base_distribution.build(xz_shape)
+
+        self.output_projector.units = xz_shape[-1]
 
         input_shape = list(xz_shape)
 
@@ -161,16 +178,16 @@ class ConsistencyModel(InferenceNetwork):
 
         input_shape = tuple(input_shape)
 
-        self.student.build(input_shape)
+        self.subnet.build(input_shape)
 
-        input_shape = self.student.compute_output_shape(input_shape)
-        self.student_projector.build(input_shape)
+        input_shape = self.subnet.compute_output_shape(input_shape)
+        self.output_projector.build(input_shape)
 
         # Choose coefficient according to [2] Section 3.3
         self.c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
         self.c_huber2 = self.c_huber**2
 
-        ## Calculate discretization schedule in advance
+        # Calculate discretization schedule in advance
         # The Jax compiler requires fixed-size arrays, so we have
         # to store all the discretized_times in one matrix in advance
         # and later only access the relevant entries.
@@ -196,34 +213,24 @@ class ConsistencyModel(InferenceNetwork):
             disc = ops.convert_to_numpy(self._discretize_time(n))
             discretized_times[i, : len(disc)] = disc
             discretization_map[n] = i
+
         # Finally, we convert the vectors to tensors
         self.discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
         self.discretization_map = ops.convert_to_tensor(discretization_map)
 
-    def call(
-        self,
-        xz: Tensor,
-        conditions: Tensor = None,
-        inverse: bool = False,
-        **kwargs,
-    ):
-        if inverse:
-            return self._inverse(xz, conditions=conditions, **kwargs)
-        return self._forward(xz, conditions=conditions, **kwargs)
-
-    def _forward_train(self, x: Tensor, noise: Tensor, t: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
-        """Forward function for training. Calls consistency function with
-        noisy input
-        """
+    def _forward_train(
+        self, x: Tensor, noise: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False, **kwargs
+    ) -> Tensor:
+        """Forward function for training. Calls consistency function with noisy input"""
         inp = x + t * noise
-        return self.consistency_function(inp, t, conditions=conditions, **kwargs)
+        return self.consistency_function(inp, t, conditions=conditions, training=training)
 
     def _forward(self, x: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
         # Consistency Models only learn the direction from noise distribution
         # to target distribution, so we cannot implement this function.
         raise NotImplementedError("Consistency Models are not invertible")
 
-    def _inverse(self, z: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
+    def _inverse(self, z: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> Tensor:
         """Generate random draws from the approximate target distribution
         using the multistep sampling algorithm from [1], Algorithm 1.
 
@@ -232,7 +239,9 @@ class ConsistencyModel(InferenceNetwork):
         z           : Tensor
             Samples from a standard normal distribution
         conditions  : Tensor, optional, default: None
-            Conditions for a approximate conditional distribution
+            Conditions for the approximate conditional distribution
+        training    : bool, optional, default: True
+            Whether internal layers (e.g., dropout) should behave in train or inference mode.
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments. Include `steps` (default: 10) to
             adjust the number of sampling steps.
@@ -246,15 +255,17 @@ class ConsistencyModel(InferenceNetwork):
         x = keras.ops.copy(z) * self.max_time
         discretized_time = keras.ops.flip(self._discretize_time(steps), axis=-1)
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
-        x = self.consistency_function(x, t, conditions=conditions)
+
+        x = self.consistency_function(x, t, conditions=conditions, training=training)
+
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
             x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x = self.consistency_function(x_n, t, conditions=conditions)
+            x = self.consistency_function(x_n, t, conditions=conditions, training=training)
         return x
 
-    def consistency_function(self, x: Tensor, t: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
+    def consistency_function(self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         """Compute consistency function.
 
         Parameters
@@ -265,8 +276,8 @@ class ConsistencyModel(InferenceNetwork):
             Vector of time samples in [eps, T]
         conditions  : Tensor
             The conditioning vector
-        **kwargs    : dict, optional, default: {}
-            Additional keyword arguments passed to the network.
+        training    : bool, optional, default: True
+            Whether internal layers (e.g., dropout) should behave in train or inference mode.
         """
 
         if conditions is not None:
@@ -274,7 +285,7 @@ class ConsistencyModel(InferenceNetwork):
         else:
             xtc = ops.concatenate([x, t], axis=-1)
 
-        f = self.student_projector(self.student(xtc, **kwargs))
+        f = self.output_projector(self.subnet(xtc, training=training))
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)
         # Thus, we can do a cross product with the time vector which is (batch_size, 1) for
@@ -285,7 +296,9 @@ class ConsistencyModel(InferenceNetwork):
         out = skip * x + out * f
         return out
 
-    def compute_metrics(self, x: Tensor, conditions: Tensor = None, stage: str = "training") -> dict[str, Tensor]:
+    def compute_metrics(
+        self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
+    ) -> dict[str, Tensor]:
         base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
 
         # The discretization schedule requires the number of passed training steps.
@@ -328,6 +341,7 @@ class ConsistencyModel(InferenceNetwork):
         lam = 1 / (t2 - t1)
 
         # Pseudo-huber loss, see [2], Section 3.3
-        loss = ops.mean(lam * (ops.sqrt(ops.square(teacher_out - student_out) + self.c_huber2) - self.c_huber))
+        loss = lam * (ops.sqrt(ops.square(teacher_out - student_out) + self.c_huber2) - self.c_huber)
+        loss = weighted_mean(loss, sample_weight)
 
         return base_metrics | {"loss": loss}

@@ -1,4 +1,4 @@
-from typing import Sequence, Any, Mapping, Callable
+from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
 
@@ -11,7 +11,7 @@ def posterior_contraction(
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     aggregation: Callable = np.median,
-) -> Mapping[str, Any]:
+) -> dict[str, any]:
     """
     Computes the posterior contraction (PC) from prior to posterior for the given samples.
 

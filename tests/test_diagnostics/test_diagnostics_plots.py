@@ -6,6 +6,15 @@ def num_variables(x: dict):
     return sum(arr.shape[-1] for arr in x.values())
 
 
+def test_backend():
+    import matplotlib.pyplot as plt
+
+    # if the local testing backend is not Agg
+    # then you may run into issues once you run workflow tests
+    # on GitHub, since these use the Agg backend
+    assert plt.get_backend() == "Agg"
+
+
 def test_calibration_ecdf(random_estimates, random_targets, var_names):
     # basic functionality: automatic variable names
     out = bf.diagnostics.plots.calibration_ecdf(random_estimates, random_targets)
@@ -43,6 +52,12 @@ def test_calibration_histogram(random_estimates, random_targets):
     out = bf.diagnostics.plots.calibration_histogram(random_estimates, random_targets)
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[0].title._text == "beta_0"
+
+
+def test_loss(history):
+    out = bf.diagnostics.loss(history)
+    assert len(out.axes) == 1
+    assert out.axes[0].title._text == "Loss Trajectory"
 
 
 def test_recovery(random_estimates, random_targets):

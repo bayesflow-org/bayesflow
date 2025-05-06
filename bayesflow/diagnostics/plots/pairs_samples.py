@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence, Mapping
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ from bayesflow.utils.dict_utils import dicts_to_arrays
 
 
 def pairs_samples(
-    samples: dict[str, np.ndarray] | np.ndarray = None,
+    samples: Mapping[str, np.ndarray] | np.ndarray = None,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     height: float = 2.5,

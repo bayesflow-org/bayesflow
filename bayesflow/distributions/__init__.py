@@ -7,6 +7,7 @@ or the summary space of :py:class:`~bayesflow.networks.SummaryNetwork`\ s.
 from .distribution import Distribution
 from .diagonal_normal import DiagonalNormal
 from .diagonal_student_t import DiagonalStudentT
+from .mixture import Mixture
 
 from ..utils._docs import _add_imports_to_all
 

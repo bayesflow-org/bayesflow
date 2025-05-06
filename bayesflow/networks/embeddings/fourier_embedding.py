@@ -2,12 +2,12 @@ import numpy as np
 
 import keras
 from keras import ops
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils.serialization import serializable
 
 
-@serializable(package="bayesflow.networks")
+@serializable("bayesflow.networks")
 class FourierEmbedding(keras.Layer):
     """Implements a Fourier projection with normally distributed frequencies."""
 

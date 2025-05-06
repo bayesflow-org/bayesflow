@@ -1,18 +1,19 @@
-import keras
-from keras.saving import register_keras_serializable as serializable
-
 import math
+
 import numpy as np
 
+import keras
+from keras import ops
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import expand_tile
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.serialization import serializable, serialize
 
 from .distribution import Distribution
 
 
-@serializable(package="bayesflow.distributions")
+@serializable("bayesflow.distributions")
 class DiagonalStudentT(Distribution):
     """Implements a backend-agnostic diagonal Student-t distribution."""
 
@@ -21,7 +22,7 @@ class DiagonalStudentT(Distribution):
         df: int | float,
         loc: int | float | np.ndarray | Tensor = 0.0,
         scale: int | float | np.ndarray | Tensor = 1.0,
-        use_learnable_parameters: bool = False,
+        trainable_parameters: bool = False,
         seed_generator: keras.random.SeedGenerator = None,
         **kwargs,
     ):
@@ -43,8 +44,8 @@ class DiagonalStudentT(Distribution):
             The location parameter (mean) of the distribution. Default is 0.0.
         scale : int, float, np.ndarray, or Tensor, optional
             The scale parameter (standard deviation) of the distribution. Default is 1.0.
-        use_learnable_parameters : bool, optional
-            Whether to treat `loc` and `scale` as learnable parameters. Default is False.
+        trainable_parameters : bool, optional
+            Whether to treat `loc` and `scale` as trainable parameters. Default is False.
         seed_generator : keras.random.SeedGenerator, optional
             A Keras seed generator for reproducible random sampling. If None, a new seed
             generator is created. Default is None.
@@ -58,54 +59,50 @@ class DiagonalStudentT(Distribution):
         self.loc = loc
         self.scale = scale
 
-        self.dim = None
+        self.trainable_parameters = trainable_parameters
+
+        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+
         self.log_normalization_constant = None
-
-        self.use_learnable_parameters = use_learnable_parameters
-
-        if seed_generator is None:
-            seed_generator = keras.random.SeedGenerator()
-
-        self.seed_generator = seed_generator
+        self.dim = None
+        self._loc = None
+        self._scale = None
 
     def build(self, input_shape: Shape) -> None:
+        if self.built:
+            return
+
         self.dim = int(input_shape[-1])
 
         # convert to tensor and broadcast if necessary
-        self.loc = keras.ops.broadcast_to(self.loc, (self.dim,))
-        self.loc = keras.ops.cast(self.loc, "float32")
-
-        self.scale = keras.ops.broadcast_to(self.scale, (self.dim,))
-        self.scale = keras.ops.cast(self.scale, "float32")
+        self.loc = ops.cast(ops.broadcast_to(self.loc, (self.dim,)), "float32")
+        self.scale = ops.cast(ops.broadcast_to(self.scale, (self.dim,)), "float32")
 
         self.log_normalization_constant = (
             -0.5 * self.dim * math.log(self.df)
             - 0.5 * self.dim * math.log(math.pi)
             - math.lgamma(0.5 * self.df)
             + math.lgamma(0.5 * (self.df + self.dim))
-            - keras.ops.sum(keras.ops.log(self.scale))
+            - ops.sum(keras.ops.log(self.scale))
         )
 
-        if self.use_learnable_parameters:
-            loc = self.loc
-            self.loc = self.add_weight(
-                shape=keras.ops.shape(loc),
-                initializer="zeros",
-                dtype="float32",
+        if self.trainable_parameters:
+            self._loc = self.add_weight(
+                shape=ops.shape(self.loc), initializer=keras.initializers.get(self.loc), dtype="float32", trainable=True
             )
-            self.loc.assign(loc)
-
-            scale = self.scale
-            self.scale = self.add_weight(
-                shape=keras.ops.shape(scale),
-                initializer="ones",
+            self._scale = self.add_weight(
+                shape=ops.shape(self.scale),
+                initializer=keras.initializers.get(self.scale),
                 dtype="float32",
+                trainable=True,
             )
-            self.scale.assign(scale)
+        else:
+            self._loc = self.loc
+            self._scale = self.scale
 
     def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
-        mahalanobis_term = keras.ops.sum((samples - self.loc) ** 2 / self.scale**2, axis=-1)
-        result = -0.5 * (self.df + self.dim) * keras.ops.log1p(mahalanobis_term / self.df)
+        mahalanobis_term = ops.sum((samples - self._loc) ** 2 / self._scale**2, axis=-1)
+        result = -0.5 * (self.df + self.dim) * ops.log1p(mahalanobis_term / self.df)
 
         if normalize:
             result += self.log_normalization_constant
@@ -125,4 +122,17 @@ class DiagonalStudentT(Distribution):
 
         normal_samples = keras.random.normal(batch_shape + (self.dim,), seed=self.seed_generator)
 
-        return self.loc + self.scale * normal_samples * keras.ops.sqrt(self.df / chi2_samples)
+        return self._loc + self._scale * normal_samples * ops.sqrt(self.df / chi2_samples)
+
+    def get_config(self):
+        base_config = super().get_config()
+
+        config = {
+            "df": self.df,
+            "loc": self.loc,
+            "scale": self.scale,
+            "trainable_parameters": self.trainable_parameters,
+            "seed_generator": self.seed_generator,
+        }
+
+        return base_config | serialize(config)

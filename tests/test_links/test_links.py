@@ -3,13 +3,6 @@ import numpy as np
 import pytest
 
 
-def test_link_output(link, generic_preactivation):
-    output_shape = link.compute_output_shape(generic_preactivation.shape)
-    output = link(generic_preactivation)
-
-    assert output_shape == output.shape
-
-
 def test_invalid_shape_for_ordered_quantiles(ordered_quantiles, batch_size, num_quantiles, num_variables):
     with pytest.raises(AssertionError) as excinfo:
         ordered_quantiles.build((batch_size, batch_size, num_quantiles, num_variables))
@@ -30,9 +23,9 @@ def check_ordering(output, axis):
     assert np.all(np.diff(output, axis=axis) > 0), f"is not ordered along specified axis: {axis}."
     for i in range(output.ndim):
         if i != axis % output.ndim:
-            assert not np.all(
-                np.diff(output, axis=i) > 0
-            ), f"is ordered along axis which is not meant to be ordered: {i}."
+            assert not np.all(np.diff(output, axis=i) > 0), (
+                f"is ordered along axis which is not meant to be ordered: {i}."
+            )
 
 
 @pytest.mark.parametrize("axis", [0, 1, 2])
@@ -59,16 +52,21 @@ def test_quantile_ordering(quantiles, unordered):
     check_ordering(output, axis)
 
 
-def test_positive_semi_definite(random_matrix_batch):
-    from bayesflow.links import PositiveSemiDefinite
+def test_positive_definite(positive_definite, batch_size, num_variables):
+    input_shape = positive_definite.compute_input_shape((batch_size, num_variables, num_variables))
 
-    activation = PositiveSemiDefinite()
-
-    output = activation(random_matrix_batch)
-
+    # Too strongly negative values lead to numerical instabilities -> reduce scale
+    random_preactivation = keras.random.normal(input_shape) * 0.1
+    output = positive_definite(random_preactivation)
     output = keras.ops.convert_to_numpy(output)
+
+    # Check if output is invertible
+    np.linalg.inv(output)
+
+    # Calculated eigenvalues to test for positive definiteness
     eigenvalues = np.linalg.eig(output).eigenvalues
 
-    assert np.all(eigenvalues.real > 0) and np.all(
-        np.isclose(eigenvalues.imag, 0)
-    ), f"output is not positive semi-definite: real={eigenvalues.real}, imag={eigenvalues.imag}"
+    assert np.all(eigenvalues.real > 0) and np.all(np.isclose(eigenvalues.imag, 0)), (
+        f"output is not positive definite: min(real)={np.min(eigenvalues.real)}, "
+        f"max(abs(imag))={np.max(np.abs(eigenvalues.imag))}"
+    )

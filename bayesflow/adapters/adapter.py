@@ -1,11 +1,8 @@
-from collections.abc import MutableSequence, Sequence
+from collections.abc import Callable, MutableSequence, Sequence, Mapping
 
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+
+from bayesflow.utils.serialization import deserialize, serialize, serializable
 
 from .transforms import (
     AsSet,
@@ -23,6 +20,7 @@ from .transforms import (
     NumpyTransform,
     OneHot,
     Rename,
+    SerializableCustomTransform,
     Sqrt,
     Standardize,
     ToArray,
@@ -33,7 +31,7 @@ from .transforms import (
 from .transforms.filter_transform import Predicate
 
 
-@serializable(package="bayesflow.adapters")
+@serializable("bayesflow.adapters")
 class Adapter(MutableSequence[Transform]):
     """
     Defines an adapter to apply various transforms to data.
@@ -74,76 +72,109 @@ class Adapter(MutableSequence[Transform]):
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
-        return cls(transforms=deserialize(config["transforms"], custom_objects))
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self) -> dict:
-        return {"transforms": serialize(self.transforms)}
+        config = {
+            "transforms": self.transforms,
+        }
 
-    def forward(self, data: dict[str, any], **kwargs) -> dict[str, np.ndarray]:
+        return serialize(config)
+
+    def forward(
+        self, data: dict[str, any], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the forward direction.
 
         Parameters
         ----------
         data : dict
             The data to be transformed.
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
+        log_det_jac: bool, optional
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
+        if not log_det_jac:
+            for transform in self.transforms:
+                data = transform(data, stage=stage, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in self.transforms:
-            data = transform(data, **kwargs)
+            transformed_data = transform(data, stage=stage, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
+            data = transformed_data
 
-        return data
+        return data, log_det_jac
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, any]:
+    def inverse(
+        self, data: dict[str, np.ndarray], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
         ----------
         data : dict
             The data to be transformed.
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
+        log_det_jac: bool, optional
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
+        if not log_det_jac:
+            for transform in reversed(self.transforms):
+                data = transform(data, stage=stage, inverse=True, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in reversed(self.transforms):
-            data = transform(data, inverse=True, **kwargs)
+            data = transform(data, stage=stage, inverse=True, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
 
-        return data
+        return data, log_det_jac
 
-    def __call__(self, data: dict[str, any], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
+    def __call__(
+        self, data: Mapping[str, any], *, inverse: bool = False, stage="inference", **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the given direction.
 
         Parameters
         ----------
-        data : dict
+        data : Mapping[str, any]
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
-        **kwargs : dict
+        stage : str, one of ["training", "validation", "inference"]
+            The stage the function is called in.
+        **kwargs
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         if inverse:
-            return self.inverse(data, **kwargs)
+            return self.inverse(data, stage=stage, **kwargs)
 
-        return self.forward(data, **kwargs)
+        return self.forward(data, stage=stage, **kwargs)
 
     def __repr__(self):
         result = ""
@@ -235,11 +266,11 @@ class Adapter(MutableSequence[Transform]):
 
     def apply(
         self,
+        include: str | Sequence[str] = None,
         *,
         forward: np.ufunc | str,
         inverse: np.ufunc | str = None,
         predicate: Predicate = None,
-        include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
@@ -247,16 +278,58 @@ class Adapter(MutableSequence[Transform]):
 
         Parameters
         ----------
-        forward: callable, no lambda
-            Function to transform the data in the forward pass.
+        forward : str or np.ufunc
+            The name of the NumPy function to use for the forward transformation.
+        inverse : str or np.ufunc, optional
+            The name of the NumPy function to use for the inverse transformation.
+            By default, the inverse is inferred from the forward argument for supported methods.
+            You can find the supported methods in
+            :py:const:`~bayesflow.adapters.transforms.NumpyTransform.INVERSE_METHODS`.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        **kwargs : dict
+            Additional keyword arguments passed to the transform.
+        """
+        transform = FilterTransform(
+            transform_constructor=NumpyTransform,
+            predicate=predicate,
+            include=include,
+            exclude=exclude,
+            forward=forward,
+            inverse=inverse,
+            **kwargs,
+        )
+        self.transforms.append(transform)
+        return self
+
+    def apply_serializable(
+        self,
+        include: str | Sequence[str] = None,
+        *,
+        forward: Callable[[np.ndarray, ...], np.ndarray],
+        inverse: Callable[[np.ndarray, ...], np.ndarray],
+        predicate: Predicate = None,
+        exclude: str | Sequence[str] = None,
+        **kwargs,
+    ):
+        """Append a :py:class:`~transforms.SerializableCustomTransform` to the adapter.
+
+        Parameters
+        ----------
+        forward : function, no lambda
+            Registered serializable function to transform the data in the forward pass.
             For the adapter to be serializable, this function has to be serializable
             as well (see Notes). Therefore, only proper functions and no lambda
-            functions should be used here.
-        inverse: callable, no lambda
-            Function to transform the data in the inverse pass.
+            functions can be used here.
+        inverse : function, no lambda
+            Registered serializable function to transform the data in the inverse pass.
             For the adapter to be serializable, this function has to be serializable
             as well (see Notes). Therefore, only proper functions and no lambda
-            functions should be used here.
+            functions can be used here.
         predicate : Predicate, optional
             Function that indicates which variables should be transformed.
         include : str or Sequence of str, optional
@@ -266,14 +339,45 @@ class Adapter(MutableSequence[Transform]):
         **kwargs : dict
             Additional keyword arguments passed to the transform.
 
+        Raises
+        ------
+        ValueError
+            When the provided functions are not registered serializable functions.
+
         Notes
         -----
-        Important: This is only serializable if the forward and inverse functions are serializable.
-        This most likely means you will have to pass the scope that the forward and inverse functions are contained in
-        to the `custom_objects` argument of the `deserialize` function when deserializing this class.
+        Important: The forward and inverse functions have to be registered with Keras.
+        To do so, use the `@keras.saving.register_keras_serializable` decorator.
+        They must also be registered (and identical) when loading the adapter
+        at a later point in time.
+
+        Examples
+        --------
+
+        The example below shows how to use the
+        `keras.saving.register_keras_serializable` decorator to
+        register functions with Keras. Note that for this simple
+        example, one usually would use the simpler :py:meth:`apply`
+        method.
+
+        >>> import keras
+        >>>
+        >>> @keras.saving.register_keras_serializable("custom")
+        >>> def forward_fn(x):
+        >>>     return x**2
+        >>>
+        >>> @keras.saving.register_keras_serializable("custom")
+        >>> def inverse_fn(x):
+        >>>     return x**0.5
+        >>>
+        >>> adapter = bf.Adapter().apply_serializable(
+        >>>     "x",
+        >>>     forward=forward_fn,
+        >>>     inverse=inverse_fn,
+        >>> )
         """
         transform = FilterTransform(
-            transform_constructor=NumpyTransform,
+            transform_constructor=SerializableCustomTransform,
             predicate=predicate,
             include=include,
             exclude=exclude,
@@ -390,6 +494,7 @@ class Adapter(MutableSequence[Transform]):
         exclude: str | Sequence[str] = None,
     ):
         """Append a :py:class:`~transforms.ConvertDType` transform to the adapter.
+        See also :py:meth:`~bayesflow.adapters.Adapter.map_dtype`.
 
         Parameters
         ----------
@@ -527,6 +632,24 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
+    def map_dtype(self, keys: str | Sequence[str], to_dtype: str):
+        """Append a :py:class:`~transforms.ConvertDType` transform to the adapter.
+        See also :py:meth:`~bayesflow.adapters.Adapter.convert_dtype`.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to transform.
+        to_dtype : str
+            Target dtype
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: ConvertDType(to_dtype) for key in keys})
+        self.transforms.append(transform)
+        return self
+
     def one_hot(self, keys: str | Sequence[str], num_classes: int):
         """Append a :py:class:`~transforms.OneHot` transform to the adapter.
 
@@ -596,6 +719,36 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(Rename(from_key, to_key))
         return self
 
+    def scale(self, keys: str | Sequence[str], by: float | np.ndarray):
+        from .transforms import Scale
+
+        if isinstance(keys, str):
+            keys = [keys]
+
+        self.transforms.append(MapTransform({key: Scale(scale=by) for key in keys}))
+        return self
+
+    def shift(self, keys: str | Sequence[str], by: float | np.ndarray):
+        from .transforms import Shift
+
+        if isinstance(keys, str):
+            keys = [keys]
+
+        self.transforms.append(MapTransform({key: Shift(shift=by) for key in keys}))
+        return self
+
+    def split(self, key: str, *, into: Sequence[str], indices_or_sections: int | Sequence[int] = None, axis: int = -1):
+        from .transforms import Split
+
+        if isinstance(into, str):
+            transform = Rename(key, into)
+        else:
+            transform = Split(key, into, indices_or_sections, axis)
+
+        self.transforms.append(transform)
+
+        return self
+
     def sqrt(self, keys: str | Sequence[str]):
         """Append an :py:class:`~transforms.Sqrt` transform to the adapter.
 
@@ -613,9 +766,9 @@ class Adapter(MutableSequence[Transform]):
 
     def standardize(
         self,
+        include: str | Sequence[str] = None,
         *,
         predicate: Predicate = None,
-        include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
@@ -677,9 +830,9 @@ class Adapter(MutableSequence[Transform]):
 
     def to_array(
         self,
+        include: str | Sequence[str] = None,
         *,
         predicate: Predicate = None,
-        include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
@@ -703,5 +856,12 @@ class Adapter(MutableSequence[Transform]):
             exclude=exclude,
             **kwargs,
         )
+        self.transforms.append(transform)
+        return self
+
+    def to_dict(self):
+        from .transforms import ToDict
+
+        transform = ToDict()
         self.transforms.append(transform)
         return self

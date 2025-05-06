@@ -1,17 +1,13 @@
 import keras
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    serialize_keras_object as serialize,
-    register_keras_serializable as serializable,
-)
 
-from bayesflow.utils import keras_kwargs, find_network, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import model_kwargs, find_network
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Shape, Tensor
 from bayesflow.scores import ScoringRule, ParametricDistributionScore
 from bayesflow.utils.decorators import allow_batch_size
 
 
-@serializable(package="networks.point_inference_network")
+@serializable("bayesflow.networks")
 class PointInferenceNetwork(keras.Layer):
     """Implements point estimation for user specified scoring rules by a shared feed forward architecture
     with separate heads for each scoring rule.
@@ -20,20 +16,20 @@ class PointInferenceNetwork(keras.Layer):
     def __init__(
         self,
         scores: dict[str, ScoringRule],
-        subnet: str | type = "mlp",
+        subnet: str | keras.Layer = "mlp",
         **kwargs,
     ):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**model_kwargs(kwargs))
 
         self.scores = scores
 
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
 
         self.config = {
+            "subnet": serialize(subnet),
+            "scores": serialize(scores),
             **kwargs,
         }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
-        self.config["scores"] = serialize(self.scores)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         """Builds all network components based on shapes of conditions and targets.
@@ -119,7 +115,7 @@ class PointInferenceNetwork(keras.Layer):
     def from_config(cls, config):
         config = config.copy()
         config["scores"] = deserialize(config["scores"])
-        config = deserialize_value_or_type(config, "subnet")
+        config["subnet"] = deserialize(config["subnet"])
         return cls(**config)
 
     def call(
@@ -128,11 +124,13 @@ class PointInferenceNetwork(keras.Layer):
         conditions: Tensor = None,
         training: bool = False,
         **kwargs,
-    ) -> dict[str, Tensor]:
+    ) -> dict[str, dict[str, Tensor]]:
         if xz is None and not self.built:
             raise ValueError("Cannot build inference network without inference variables.")
         if conditions is None:  # unconditional estimation uses a fixed input vector
-            conditions = keras.ops.convert_to_tensor([[1.0]], dtype=keras.ops.dtype(xz))
+            conditions = keras.ops.convert_to_tensor(
+                [[1.0]], dtype=keras.ops.dtype(xz) if xz is not None else "float32"
+            )
 
         # pass conditions to the shared subnet
         output = self.subnet(conditions, training=training)
@@ -165,7 +163,6 @@ class PointInferenceNetwork(keras.Layer):
 
         return metrics | {"loss": neg_score}
 
-    # WIP: untested draft of sample method
     @allow_batch_size
     def sample(self, batch_shape: Shape, conditions: Tensor = None) -> dict[str, Tensor]:
         """
@@ -199,7 +196,6 @@ class PointInferenceNetwork(keras.Layer):
 
         return samples
 
-    # WIP: untested draft of log_prob method
     def log_prob(self, samples: Tensor, conditions: Tensor = None, **kwargs) -> dict[str, Tensor]:
         output = self.subnet(conditions)
         log_probs = {}

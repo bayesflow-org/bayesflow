@@ -1,14 +1,13 @@
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+from collections.abc import Sequence
+
 import numpy as np
+
+from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable(package="bayesflow.adapters")
+@serializable("bayesflow.adapters")
 class Standardize(ElementwiseTransform):
     """
     Transform that when applied standardizes data using typical z-score standardization
@@ -65,38 +64,30 @@ class Standardize(ElementwiseTransform):
         self,
         mean: int | float | np.ndarray = None,
         std: int | float | np.ndarray = None,
-        axis: int = None,
+        axis: int | Sequence[int] = None,
         momentum: float | None = 0.99,
     ):
         super().__init__()
 
         self.mean = mean
         self.std = std
+
+        if isinstance(axis, Sequence):
+            # numpy hates lists
+            axis = tuple(axis)
         self.axis = axis
         self.momentum = momentum
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Standardize":
-        # Deserialize turns tuples to lists, undo it if necessary
-        deserialized_axis = deserialize(config["axis"], custom_objects)
-        if isinstance(deserialized_axis, list):
-            deserialized_axis = tuple(deserialized_axis)
-        return cls(
-            mean=deserialize(config["mean"], custom_objects),
-            std=deserialize(config["std"], custom_objects),
-            axis=deserialized_axis,
-            momentum=deserialize(config["momentum"], custom_objects),
-        )
-
     def get_config(self) -> dict:
-        return {
-            "mean": serialize(self.mean),
-            "std": serialize(self.std),
-            "axis": serialize(self.axis),
-            "momentum": serialize(self.momentum),
+        config = {
+            "mean": self.mean,
+            "std": self.std,
+            "axis": self.axis,
+            "momentum": self.momentum,
         }
+        return serialize(config)
 
-    def forward(self, data: np.ndarray, stage: str = "training", **kwargs) -> np.ndarray:
+    def forward(self, data: np.ndarray, stage: str = "inference", **kwargs) -> np.ndarray:
         if self.axis is None:
             self.axis = tuple(range(data.ndim - 1))
 
@@ -129,3 +120,10 @@ class Standardize(ElementwiseTransform):
         std = np.broadcast_to(self.std, data.shape)
 
         return data * std + mean
+
+    def log_det_jac(self, data, inverse: bool = False, **kwargs) -> np.ndarray:
+        std = np.broadcast_to(self.std, data.shape)
+        ldj = np.log(np.abs(std))
+        if inverse:
+            ldj = -ldj
+        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

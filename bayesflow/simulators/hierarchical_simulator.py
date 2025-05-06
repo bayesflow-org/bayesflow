@@ -10,10 +10,38 @@ from .simulator import Simulator
 
 class HierarchicalSimulator(Simulator):
     def __init__(self, hierarchy: Sequence[Simulator]):
+        """
+        Initialize the hierarchical simulator with a sequence of simulators.
+
+        Parameters
+        ----------
+        hierarchy : Sequence[Simulator]
+            A sequence of simulator instances representing each level of the hierarchy.
+            Each level's output is used as input for the next, with increasing batch dimensions.
+        """
         self.hierarchy = hierarchy
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+        """
+        Sample from a hierarchy of simulators.
+
+        Parameters
+        ----------
+        batch_shape : Shape
+            A tuple where each element specifies the number of samples at the corresponding level
+            of the hierarchy. The total batch size increases multiplicatively through the levels.
+        **kwargs
+            Additional keyword arguments passed to each simulator. These are combined with outputs
+            from previous levels and repeated appropriately.
+
+        Returns
+        -------
+        output_data : dict of str to np.ndarray
+            A dictionary containing the outputs from the entire hierarchy. Outputs are reshaped to
+            match the hierarchical batch shape, i.e., with shape equal to `batch_shape + original_shape`.
+        """
+
         input_data = {}
         output_data = {}
 

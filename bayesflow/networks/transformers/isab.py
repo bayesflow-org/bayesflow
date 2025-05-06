@@ -1,11 +1,13 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
+from bayesflow.utils import layer_kwargs
+from bayesflow.utils.serialization import serializable
+
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable(package="bayesflow.networks")
+@serializable("bayesflow.networks")
 class InducedSetAttentionBlock(keras.Layer):
     """Implements the ISAB block from [1] which represents learnable self-attention specifically
     designed to deal with large sets via a learnable set of "inducing points".
@@ -24,7 +26,7 @@ class InducedSetAttentionBlock(keras.Layer):
         mlp_depth: int = 2,
         mlp_width: int = 128,
         mlp_activation: str = "gelu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
         **kwargs,
@@ -34,10 +36,31 @@ class InducedSetAttentionBlock(keras.Layer):
 
         Parameters
         ----------
-        #TODO
+        num_inducing_points : int, optional
+            The number of inducing points for set-based dimensionality reduction.
+        embed_dim : int, optional
+            Dimensionality of the embedding space, by default 64.
+        num_heads : int, optional
+            Number of attention heads, by default 4.
+        dropout : float, optional
+            Dropout rate applied to attention and MLP layers, by default 0.05.
+        mlp_depth : int, optional
+            Number of layers in the feedforward MLP block, by default 2.
+        mlp_width : int, optional
+            Width of each hidden layer in the MLP block, by default 128.
+        mlp_activation : str, optional
+            Activation function used in the MLP block, by default "gelu".
+        kernel_initializer : str, optional
+            Initializer for kernel weights, by default "lecun_normal".
+        use_bias : bool, optional
+            Whether to include bias terms in dense layers, by default True.
+        layer_norm : bool, optional
+            Whether to apply layer normalization before and after attention, by default True.
+        **kwargs : dict
+            Additional keyword arguments passed to the Keras Layer base class.
         """
 
-        super().__init__(**kwargs)
+        super().__init__(**layer_kwargs(kwargs))
 
         self.num_inducing_points = num_inducing_points
         self.inducing_points = self.add_weight(

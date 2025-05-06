@@ -1,5 +1,8 @@
-import keras
+from collections.abc import Mapping
+
 import numpy as np
+
+import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.utils import logging
@@ -13,12 +16,20 @@ class OfflineDataset(keras.utils.PyDataset):
     """
 
     def __init__(
-        self, data: dict[str, np.ndarray], batch_size: int, adapter: Adapter | None, num_samples: int = None, **kwargs
+        self,
+        data: Mapping[str, np.ndarray],
+        batch_size: int,
+        adapter: Adapter | None,
+        num_samples: int = None,
+        *,
+        stage: str = "training",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.batch_size = batch_size
         self.data = data
         self.adapter = adapter
+        self.stage = stage
 
         if num_samples is None:
             self.num_samples = self._get_num_samples_from_data(data)
@@ -44,7 +55,7 @@ class OfflineDataset(keras.utils.PyDataset):
         }
 
         if self.adapter is not None:
-            batch = self.adapter(batch)
+            batch = self.adapter(batch, stage=self.stage)
 
         return batch
 
@@ -60,7 +71,7 @@ class OfflineDataset(keras.utils.PyDataset):
         np.random.shuffle(self.indices)
 
     @staticmethod
-    def _get_num_samples_from_data(data: dict) -> int:
+    def _get_num_samples_from_data(data: Mapping) -> int:
         for key, value in data.items():
             if hasattr(value, "shape"):
                 ndim = len(value.shape)

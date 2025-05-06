@@ -1,12 +1,13 @@
 import keras.ops as ops
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
 from bayesflow.utils.keras_utils import shifted_softplus
+from bayesflow.utils.serialization import serializable
+
 from .transform import Transform
 
 
-@serializable(package="networks.coupling_flow")
+@serializable("bayesflow.networks")
 class AffineTransform(Transform):
     def __init__(self, clamp: bool = True, **kwargs):
         super().__init__(**kwargs)

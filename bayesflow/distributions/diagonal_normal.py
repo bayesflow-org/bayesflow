@@ -1,16 +1,18 @@
-import keras
-from keras.saving import register_keras_serializable as serializable
-
 import math
+
 import numpy as np
+
+import keras
+from keras import ops
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.serialization import serializable, serialize
 
 from .distribution import Distribution
 
 
-@serializable(package="bayesflow.distributions")
+@serializable("bayesflow.distributions")
 class DiagonalNormal(Distribution):
     """Implements a backend-agnostic diagonal Gaussian distribution."""
 
@@ -18,7 +20,7 @@ class DiagonalNormal(Distribution):
         self,
         mean: int | float | np.ndarray | Tensor = 0.0,
         std: int | float | np.ndarray | Tensor = 1.0,
-        use_learnable_parameters: bool = False,
+        trainable_parameters: bool = False,
         seed_generator: keras.random.SeedGenerator = None,
         **kwargs,
     ):
@@ -38,7 +40,7 @@ class DiagonalNormal(Distribution):
         std : int, float, np.ndarray, or Tensor, optional
             The standard deviation of the Gaussian distribution. Can be a scalar or a tensor.
             Default is 1.0.
-        use_learnable_parameters : bool, optional
+        trainable_parameters : bool, optional
             Whether to treat the mean and standard deviation as learnable parameters. Default is False.
         seed_generator : keras.random.SeedGenerator, optional
             A Keras seed generator for reproducible random sampling. If None, a new seed
@@ -52,49 +54,41 @@ class DiagonalNormal(Distribution):
         self.mean = mean
         self.std = std
 
+        self.trainable_parameters = trainable_parameters
+        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+
         self.dim = None
         self.log_normalization_constant = None
-
-        self.use_learnable_parameters = use_learnable_parameters
-
-        if seed_generator is None:
-            seed_generator = keras.random.SeedGenerator()
-
-        self.seed_generator = seed_generator
+        self._mean = None
+        self._std = None
 
     def build(self, input_shape: Shape) -> None:
+        if self.built:
+            return
+
         self.dim = int(input_shape[-1])
 
-        # convert to tensor and broadcast if necessary
-        self.mean = keras.ops.broadcast_to(self.mean, (self.dim,))
-        self.mean = keras.ops.cast(self.mean, "float32")
+        self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), "float32")
+        self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), "float32")
 
-        self.std = keras.ops.broadcast_to(self.std, (self.dim,))
-        self.std = keras.ops.cast(self.std, "float32")
+        self.log_normalization_constant = -0.5 * self.dim * math.log(2.0 * math.pi) - ops.sum(ops.log(self.std))
 
-        self.log_normalization_constant = -0.5 * self.dim * math.log(2.0 * math.pi) - keras.ops.sum(
-            keras.ops.log(self.std)
-        )
-
-        if self.use_learnable_parameters:
-            mean = self.mean
-            self.mean = self.add_weight(
-                shape=keras.ops.shape(mean),
-                initializer="zeros",
+        if self.trainable_parameters:
+            self._mean = self.add_weight(
+                shape=ops.shape(self.mean),
+                initializer=keras.initializers.get(self.mean),
                 dtype="float32",
+                trainable=True,
             )
-            self.mean.assign(mean)
-
-            std = self.std
-            self.std = self.add_weight(
-                shape=keras.ops.shape(std),
-                initializer="ones",
-                dtype="float32",
+            self._std = self.add_weight(
+                shape=ops.shape(self.std), initializer=keras.initializers.get(self.std), dtype="float32", trainable=True
             )
-            self.std.assign(std)
+        else:
+            self._mean = self.mean
+            self._std = self.std
 
     def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
-        result = -0.5 * keras.ops.sum((samples - self.mean) ** 2 / self.std**2, axis=-1)
+        result = -0.5 * ops.sum((samples - self._mean) ** 2 / self._std**2, axis=-1)
 
         if normalize:
             result += self.log_normalization_constant
@@ -103,4 +97,16 @@ class DiagonalNormal(Distribution):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape) -> Tensor:
-        return self.mean + self.std * keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)
+        return self._mean + self._std * keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)
+
+    def get_config(self):
+        base_config = super().get_config()
+
+        config = {
+            "mean": self.mean,
+            "std": self.std,
+            "trainable_parameters": self.trainable_parameters,
+            "seed_generator": self.seed_generator,
+        }
+
+        return base_config | serialize(config)

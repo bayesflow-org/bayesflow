@@ -17,6 +17,7 @@ def allow_args(fn: Decorator) -> Decorator:
     def wrapper(f: Fn) -> Fn: ...
     @overload
     def wrapper(*fargs: any, **fkwargs: any) -> Fn: ...
+    @wraps(fn)
     def wrapper(*fargs: any, **fkwargs: any) -> Fn:
         if len(fargs) == 1 and not fkwargs and callable(fargs[0]):
             # called without arguments
@@ -114,7 +115,7 @@ def allow_batch_size(fn: Callable):
 
 
 def sanitize_input_shape(fn: Callable):
-    """Decorator to replace the first dimension in input_shape with a dummy batch size if it is None"""
+    """Decorator to replace the first dimension in ..._shape arguments with a dummy batch size if it is None"""
 
     # The Keras functional API passes input_shape = (None, second_dim, third_dim, ...), which
     # causes problems when constructions like self.call(keras.ops.zeros(input_shape)) are used
@@ -126,5 +127,8 @@ def sanitize_input_shape(fn: Callable):
             return tuple(input_shape)
         return input_shape
 
-    fn = argument_callback("input_shape", callback)(fn)
+    args = inspect.getfullargspec(fn).args
+    for arg in args:
+        if arg.endswith("_shape"):
+            fn = argument_callback(arg, callback)(fn)
     return fn

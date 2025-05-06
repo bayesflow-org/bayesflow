@@ -1,14 +1,9 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Mapping
 from typing import Protocol
 
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    get_registered_name,
-    get_registered_object,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
+
+from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
 from .transform import Transform
@@ -19,7 +14,7 @@ class Predicate(Protocol):
         raise NotImplementedError
 
 
-@serializable(package="bayesflow.adapters")
+@serializable("bayesflow.adapters")
 class FilterTransform(Transform):
     """
     Implements a transform that applies a different transform on a subset of the data.
@@ -29,11 +24,12 @@ class FilterTransform(Transform):
 
     def __init__(
         self,
+        include: str | Sequence[str] = None,
         *,
         transform_constructor: Callable[..., ElementwiseTransform],
         predicate: Predicate = None,
-        include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
+        transform_map: Mapping[str, ElementwiseTransform] = None,
         **kwargs,
     ):
         super().__init__()
@@ -52,7 +48,7 @@ class FilterTransform(Transform):
 
         self.kwargs = kwargs
 
-        self.transform_map = {}
+        self.transform_map = transform_map or {}
 
     def __repr__(self):
         if e := self.extra_repr():
@@ -80,38 +76,16 @@ class FilterTransform(Transform):
 
         return result
 
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "Transform":
-        transform_constructor = get_registered_object(config["transform_constructor"])
-        try:
-            kwargs = deserialize(config["kwargs"])
-        except TypeError as e:
-            raise TypeError(
-                "The transform could not be deserialized properly. "
-                "The most likely reason is that some classes or functions "
-                "are not known during deserialization. Please pass them as `custom_objects`."
-            ) from e
-        instance = cls(
-            transform_constructor=transform_constructor,
-            predicate=deserialize(config["predicate"], custom_objects),
-            include=deserialize(config["include"], custom_objects),
-            exclude=deserialize(config["exclude"], custom_objects),
-            **kwargs,
-        )
-
-        instance.transform_map = deserialize(config["transform_map"])
-
-        return instance
-
     def get_config(self) -> dict:
-        return {
-            "transform_constructor": get_registered_name(self.transform_constructor),
-            "predicate": serialize(self.predicate),
-            "include": serialize(self.include),
-            "exclude": serialize(self.exclude),
-            "kwargs": serialize(self.kwargs),
-            "transform_map": serialize(self.transform_map),
+        config = {
+            "include": self.include,
+            "transform_constructor": self.transform_constructor,
+            "predicate": self.predicate,
+            "exclude": self.exclude,
+            "transform_map": self.transform_map,
+            **self.kwargs,
         }
+        return serialize(config)
 
     def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
         data = data.copy()
@@ -176,9 +150,35 @@ class FilterTransform(Transform):
                 return predicate(key, value, inverse=inverse)
 
     def _apply_transform(self, key: str, value: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+        transform = self._get_transform(key)
+
+        return transform(value, inverse=inverse, **kwargs)
+
+    def _get_transform(self, key: str) -> ElementwiseTransform:
         if key not in self.transform_map:
             self.transform_map[key] = self.transform_constructor(**self.kwargs)
 
-        transform = self.transform_map[key]
+        return self.transform_map[key]
 
-        return transform(value, inverse=inverse, **kwargs)
+    def log_det_jac(
+        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], *, strict: bool = True, **kwargs
+    ):
+        data = data.copy()
+
+        if strict and self.include is not None:
+            missing_keys = set(self.include) - set(data.keys())
+            if missing_keys:
+                raise KeyError(f"Missing keys from include list: {missing_keys!r}")
+
+        for key, value in data.items():
+            if self._should_transform(key, value, inverse=False):
+                transform = self._get_transform(key)
+                ldj = transform.log_det_jac(value, **kwargs)
+                if ldj is None:
+                    continue
+                elif key in log_det_jac:
+                    log_det_jac[key] += ldj
+                else:
+                    log_det_jac[key] = ldj
+
+        return log_det_jac

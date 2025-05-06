@@ -1,14 +1,14 @@
-import numpy as np
-import matplotlib.pyplot as plt
+from collections.abc import Sequence, Mapping
 
-from typing import Sequence
+import matplotlib.pyplot as plt
+import numpy as np
 
 from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_subplots
 
 
 def z_score_contraction(
-    estimates: dict[str, np.ndarray] | np.ndarray,
-    targets: dict[str, np.ndarray] | np.ndarray,
+    estimates: Mapping[str, np.ndarray] | np.ndarray,
+    targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     figsize: Sequence[int] = None,

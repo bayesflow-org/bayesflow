@@ -31,6 +31,7 @@ class DiskDataset(keras.utils.PyDataset):
         batch_size: int,
         load_fn: callable = None,
         adapter: Adapter | None,
+        stage: str = "training",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -39,10 +40,11 @@ class DiskDataset(keras.utils.PyDataset):
         self.load_fn = load_fn or pickle_load
         self.adapter = adapter
         self.files = list(map(str, self.root.glob(pattern)))
+        self.stage = stage
 
         self.shuffle()
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> dict[str, np.ndarray]:
         if not 0 <= item < self.num_batches:
             raise IndexError(f"Index {item} is out of bounds for dataset with {self.num_batches} batches.")
 
@@ -55,7 +57,7 @@ class DiskDataset(keras.utils.PyDataset):
         batch = tree_stack(batch)
 
         if self.adapter is not None:
-            batch = self.adapter(batch)
+            batch = self.adapter(batch, stage=self.stage)
 
         return batch
 

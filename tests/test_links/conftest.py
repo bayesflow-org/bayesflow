@@ -15,7 +15,7 @@ def num_variables():
 
 @pytest.fixture()
 def generic_preactivation(batch_size):
-    return keras.ops.ones((batch_size, 4, 4))
+    return keras.ops.ones((batch_size, 6))
 
 
 @pytest.fixture()
@@ -33,10 +33,10 @@ def ordered_quantiles():
 
 
 @pytest.fixture()
-def positive_semi_definite():
-    from bayesflow.links import PositiveSemiDefinite
+def positive_definite():
+    from bayesflow.links import PositiveDefinite
 
-    return PositiveSemiDefinite()
+    return PositiveDefinite()
 
 
 @pytest.fixture()
@@ -44,7 +44,7 @@ def linear():
     return keras.layers.Activation("linear")
 
 
-@pytest.fixture(params=["ordered", "ordered_quantiles", "positive_semi_definite", "linear"], scope="function")
+@pytest.fixture(params=["ordered", "ordered_quantiles", "positive_definite", "linear"], scope="function")
 def link(request):
     return request.getfixturevalue(request.param)
 
@@ -82,8 +82,3 @@ def quantiles(request):
 @pytest.fixture()
 def unordered(batch_size, num_quantiles, num_variables):
     return keras.random.normal((batch_size, num_quantiles, num_variables))
-
-
-@pytest.fixture()
-def random_matrix_batch(batch_size, num_variables):
-    return keras.random.normal((batch_size, num_variables, num_variables))

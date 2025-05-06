@@ -1,35 +1,39 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
-from bayesflow.utils import keras_kwargs, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import model_kwargs
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Tensor
+
 from .single_coupling import SingleCoupling
+
 from ..invertible_layer import InvertibleLayer
 
 
-@serializable(package="networks.coupling_flow")
+@serializable("bayesflow.networks")
 class DualCoupling(InvertibleLayer):
     def __init__(self, subnet: str | type = "mlp", transform: str = "affine", **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+        super().__init__(**kwargs)
+        self.subnet = subnet
+        self.transform = transform
+
         self.coupling1 = SingleCoupling(subnet, transform, **kwargs)
         self.coupling2 = SingleCoupling(subnet, transform, **kwargs)
         self.pivot = None
 
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "transform": transform,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
-
     def get_config(self):
         base_config = super().get_config()
-        return base_config | self.config
+        base_config = model_kwargs(base_config)
+
+        config = {
+            "subnet": self.subnet,
+            "transform": self.transform,
+        }
+
+        return base_config | serialize(config)
 
     @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):

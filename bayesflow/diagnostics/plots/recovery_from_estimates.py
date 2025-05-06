@@ -1,5 +1,4 @@
-from typing import Sequence
-from collections.abc import Callable
+from collections.abc import Callable, Sequence, Mapping
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,8 +8,8 @@ from bayesflow.utils import prepare_plot_data, prettify_subplots, make_quadratic
 
 
 def recovery_from_estimates(
-    estimates: dict[str, dict[str, np.ndarray]],
-    targets: dict[str, np.ndarray],
+    estimates: Mapping[str, Mapping[str, np.ndarray]],
+    targets: Mapping[str, np.ndarray],
     marker_mapping: dict[str, str],
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,

@@ -1,13 +1,14 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, keras_kwargs, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import filter_kwargs, find_network, model_kwargs
+from bayesflow.utils.serialization import deserialize, serializable, serialize
+
 from ..invertible_layer import InvertibleLayer
 from ..transforms import find_transform
 
 
-@serializable(package="networks.coupling_flow")
+@serializable("bayesflow.networks")
 class SingleCoupling(InvertibleLayer):
     """
     Implements a single coupling layer as a composition of a subnet and a transform.
@@ -24,36 +25,44 @@ class SingleCoupling(InvertibleLayer):
         "spectral_normalization": False,
     }
 
-    def __init__(self, subnet: str | type = "mlp", transform: str = "affine", **kwargs):
-        super().__init__(**keras_kwargs(kwargs))
+    def __init__(
+        self,
+        subnet: str | type = "mlp",
+        transform: str = "affine",
+        subnet_kwargs: dict[str, any] = None,
+        transform_kwargs: dict[str, any] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
 
-        subnet_kwargs = kwargs.get("subnet_kwargs", {})
+        subnet_kwargs = subnet_kwargs or {}
+        transform_kwargs = transform_kwargs or {}
+
         if subnet == "mlp":
             subnet_kwargs = SingleCoupling.MLP_DEFAULT_CONFIG | subnet_kwargs
 
-        self.network = find_network(subnet, **subnet_kwargs)
-        self.transform = find_transform(transform, **kwargs.get("transform_kwargs", {}))
+        self.subnet = find_network(subnet, **subnet_kwargs)
+        self.transform = find_transform(transform, **transform_kwargs)
 
-        output_projector_kwargs = kwargs.get("output_projector_kwargs", {})
-        output_projector_kwargs.setdefault("kernel_initializer", "zeros")
-        output_projector_kwargs.setdefault("bias_initializer", "zeros")
-        self.output_projector = keras.layers.Dense(units=None, **output_projector_kwargs)
-
-        # serialization: store all parameters necessary to call __init__
-        self.config = {
-            "transform": transform,
-            **kwargs,
-        }
-        self.config = serialize_value_or_type(self.config, "subnet", subnet)
+        self.output_projector = keras.layers.Dense(
+            units=None, kernel_initializer="zeros", bias_initializer="zeros", name="output_projector"
+        )
 
     def get_config(self):
         base_config = super().get_config()
-        return base_config | self.config
+        base_config = model_kwargs(base_config)
+
+        config = {
+            "subnet": self.subnet,
+            "transform": self.transform,
+            "output_projector": self.output_projector,
+        }
+
+        return base_config | serialize(config)
 
     @classmethod
-    def from_config(cls, config):
-        config = deserialize_value_or_type(config, "subnet")
-        return cls(**config)
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     # noinspection PyMethodOverriding
     def build(self, x1_shape, x2_shape, conditions_shape=None):
@@ -105,7 +114,7 @@ class SingleCoupling(InvertibleLayer):
         if conditions is not None:
             x = keras.ops.concatenate([x, conditions], axis=-1)
 
-        parameters = self.output_projector(self.network(x, training=training, **kwargs))
+        parameters = self.output_projector(self.subnet(x, training=training, **filter_kwargs(kwargs, self.subnet.call)))
         parameters = self.transform.split_parameters(parameters)
         parameters = self.transform.constrain_parameters(parameters)
 

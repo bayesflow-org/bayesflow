@@ -1,28 +1,27 @@
+from collections.abc import Sequence, Mapping
+
 import matplotlib.pyplot as plt
 
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
-# from matplotlib.lines import Line2D
-
-from typing import Sequence
 from bayesflow.utils.dict_utils import dicts_to_arrays
 
 from .pairs_samples import _pairs_samples
 
 
 def pairs_posterior(
-    estimates: dict[str, np.ndarray] | np.ndarray,
-    targets: dict[str, np.ndarray] | np.ndarray = None,
-    priors: dict[str, np.ndarray] | np.ndarray = None,
+    estimates: Mapping[str, np.ndarray] | np.ndarray,
+    targets: Mapping[str, np.ndarray] | np.ndarray = None,
+    priors: Mapping[str, np.ndarray] | np.ndarray = None,
     dataset_id: int = None,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     height: int = 3,
     post_color: str | tuple = "#132a70",
     prior_color: str | tuple = "gray",
-    alpha=0.9,
+    alpha: float = 0.9,
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
@@ -55,12 +54,11 @@ def pairs_posterior(
         The font size of the legend text
     post_color        : str, optional, default: '#132a70'
         The color for the posterior histograms and KDEs
-    priors_color      : str, optional, default: gray
+    prior_color      : str, optional, default: gray
         The color for the optional prior histograms and KDEs
-    post_alpha        : float in [0, 1], optional, default: 0.9
+    alpha             : float in [0, 1], optional, default: 0.9
         The opacity of the posterior plots
-    prior_alpha       : float in [0, 1], optional, default: 0.7
-        The opacity of the prior plots
+
     **kwargs          : dict, optional, default: {}
         Further optional keyword arguments propagated to `_pairs_samples`
 

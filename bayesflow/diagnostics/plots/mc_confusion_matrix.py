@@ -1,18 +1,17 @@
-from typing import Sequence
+from collections.abc import Sequence, Mapping
 
 import matplotlib.colors
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 
-from sklearn.metrics import confusion_matrix
-
-from bayesflow.utils.plot_utils import make_figure
+from ...utils.plot_utils import make_figure
+from ...utils.classification import confusion_matrix
 
 
 def mc_confusion_matrix(
-    pred_models: dict[str, np.ndarray] | np.ndarray,
-    true_models: dict[str, np.ndarray] | np.ndarray,
+    pred_models: Mapping[str, np.ndarray] | np.ndarray,
+    true_models: Mapping[str, np.ndarray] | np.ndarray,
     model_names: Sequence[str] = None,
     fig_size: tuple = (5, 5),
     label_fontsize: int = 16,
@@ -50,10 +49,9 @@ def mc_confusion_matrix(
     ytick_rotation: int, optional, default: None
         Rotation of y-axis tick labels (helps with long model names).
     normalize : {'true', 'pred', 'all'}, default=None
-        Passed to sklearn.metrics.confusion_matrix.
-        Normalizes confusion matrix over the true (rows), predicted (columns)
-        conditions or all the population. If None, confusion matrix will not be
-        normalized.
+        Passed to confusion matrix. Normalizes confusion matrix over the true (rows),
+        predicted (columns) conditions or all the population. If None, confusion matrix
+        will not be normalized.
     cmap           : matplotlib.colors.Colormap or str, optional, default: None
         Colormap to be used for the cells. If a str, it should be the name of a registered colormap,
         e.g., 'viridis'. Default colormap matches the BayesFlow defaults by ranging from white to red.

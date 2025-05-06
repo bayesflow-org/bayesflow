@@ -2,11 +2,6 @@ from collections.abc import Mapping, Sequence
 
 import keras
 import numpy as np
-from keras.saving import (
-    deserialize_keras_object as deserialize,
-    register_keras_serializable as serializable,
-    serialize_keras_object as serialize,
-)
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
@@ -14,10 +9,12 @@ from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import filter_kwargs, logging
+from bayesflow.utils.serialization import serialize, deserialize, serializable
+
 from .approximator import Approximator
 
 
-@serializable(package="bayesflow.approximators")
+@serializable("bayesflow.approximators")
 class ModelComparisonApproximator(Approximator):
     """
     Defines an approximator for model (simulator) comparison, where the (discrete) posterior model probabilities are
@@ -25,18 +22,20 @@ class ModelComparisonApproximator(Approximator):
 
     Parameters
     ----------
-    adapter: Adapter
-        Adapter for data processing.
+    adapter: bf.adapters.Adapter
+        Adapter for data pre-processing.
     num_models: int
         Number of models (simulators) that the approximator will compare
-    classifier_network: keras.Model
-        The network (e.g, an MLP) that is used for model classification.
+    classifier_network: keras.Layer
+        The network backbone (e.g, an MLP) that is used for model classification.
         The input of the classifier network is created by concatenating `classifier_variables`
         and (optional) output of the summary_network.
-    summary_network: SummaryNetwork, optional
-        The summary network used for data summarisation (default is None).
+    summary_network: bf.networks.SummaryNetwork, optional
+        The summary network used for data summarization (default is None).
         The input of the summary network is `summary_variables`.
     """
+
+    SAMPLE_KEYS = ["summary_variables", "classifier_conditions"]
 
     def __init__(
         self,
@@ -51,7 +50,7 @@ class ModelComparisonApproximator(Approximator):
         self.classifier_network = classifier_network
         self.adapter = adapter
         self.summary_network = summary_network
-
+        self.num_models = num_models
         self.logits_projector = keras.layers.Dense(num_models)
 
     def build(self, data_shapes: Mapping[str, Shape]):
@@ -61,6 +60,7 @@ class ModelComparisonApproximator(Approximator):
     @classmethod
     def build_adapter(
         cls,
+        num_models: int,
         classifier_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
         model_index_name: str = "model_indices",
@@ -80,10 +80,8 @@ class ModelComparisonApproximator(Approximator):
             adapter.rename(model_index_name, "model_indices")
             .keep(["classifier_conditions", "summary_variables", "model_indices"])
             .standardize(exclude="model_indices")
+            .one_hot("model_indices", num_models)
         )
-
-        # TODO: add one-hot encoding
-        # .one_hot("model_indices", self.num_models)
 
         return adapter
 
@@ -121,6 +119,12 @@ class ModelComparisonApproximator(Approximator):
                 self.summary_network._metrics = summary_metrics
 
         return super().compile(*args, **kwargs)
+
+    def compile_from_config(self, config):
+        self.compile(**deserialize(config))
+        if hasattr(self, "optimizer") and self.built:
+            # Create optimizer variables.
+            self.optimizer.build(self.trainable_variables)
 
     def compute_metrics(
         self,
@@ -239,7 +243,7 @@ class ModelComparisonApproximator(Approximator):
 
         if adapter == "auto":
             logging.info("Building automatic data adapter.")
-            adapter = self.build_adapter(**filter_kwargs(kwargs, self.build_adapter))
+            adapter = self.build_adapter(num_models=self.num_models, **filter_kwargs(kwargs, self.build_adapter))
 
         if simulator is not None:
             return super().fit(simulator=simulator, adapter=adapter, **kwargs)
@@ -252,26 +256,34 @@ class ModelComparisonApproximator(Approximator):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        adapter = deserialize(config["adapter"], custom_objects=custom_objects)
-        classifier_network = deserialize(config["classifier_network"], custom_objects=custom_objects)
-        summary_network = deserialize(config["summary_network"], custom_objects=custom_objects)
-        return cls(adapter=adapter, classifier_network=classifier_network, summary_network=summary_network, **config)
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
 
         config = {
-            "adapter": serialize(self.adapter),
-            "classifier_network": serialize(self.classifier_network),
-            "summary_network": serialize(self.summary_network),
+            "num_models": self.num_models,
+            "adapter": self.adapter,
+            "classifier_network": self.classifier_network,
+            "summary_network": self.summary_network,
         }
 
-        return base_config | config
+        return base_config | serialize(config)
+
+    def get_compile_config(self):
+        base_config = super().get_compile_config() or {}
+
+        config = {
+            "classifier_metrics": self.classifier_network._metrics,
+            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
+        }
+
+        return base_config | serialize(config)
 
     def predict(
         self,
         *,
-        conditions: dict[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray],
         logits: bool = False,
         **kwargs,
     ) -> np.ndarray:
@@ -281,7 +293,7 @@ class ModelComparisonApproximator(Approximator):
 
         Parameters
         ----------
-        conditions : dict[str, np.ndarray]
+        conditions : Mapping[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
         logits: bool, default=False
             Should the posterior model probabilities be on the (unconstrained) logit space?
@@ -294,9 +306,13 @@ class ModelComparisonApproximator(Approximator):
         np.ndarray
             Predicted posterior model probabilities given `conditions`.
         """
+
+        # Apply adapter transforms to raw simulated / real quantities
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        # at inference time, model_indices are predicted by the networks and thus ignored in conditions
-        conditions.pop("model_indices", None)
+
+        # Ensure only keys relevant for sampling are present in the conditions dictionary
+        conditions = {k: v for k, v in conditions.items() if k in ModelComparisonApproximator.SAMPLE_KEYS}
+
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         output = self._predict(**conditions, **kwargs)
@@ -329,3 +345,36 @@ class ModelComparisonApproximator(Approximator):
         output = self.logits_projector(output)
 
         return output
+
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs):
+        """
+        Computes the summaries of given data.
+
+        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Dictionary of data as NumPy arrays.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and the summary network.
+
+        Returns
+        -------
+        summaries : np.ndarray
+            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
+
+        Raises
+        ------
+        ValueError
+            If the approximator does not have a summary network, or the adapter does not produce the output required
+            by the summary network.
+        """
+        if self.summary_network is None:
+            raise ValueError("A summary network is required to compute summaries.")
+        data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
+        if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
+            raise ValueError("Summary variables are required to compute summaries.")
+        summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
+        summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
+        return summaries

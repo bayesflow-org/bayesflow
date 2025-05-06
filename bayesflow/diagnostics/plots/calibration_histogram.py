@@ -1,8 +1,9 @@
+from collections.abc import Sequence, Mapping
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from typing import Sequence
 from scipy.stats import binom
 
 from bayesflow.utils import logging
@@ -10,8 +11,8 @@ from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_s
 
 
 def calibration_histogram(
-    estimates: dict[str, np.ndarray] | np.ndarray,
-    targets: dict[str, np.ndarray] | np.ndarray,
+    estimates: Mapping[str, np.ndarray] | np.ndarray,
+    targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     figsize: Sequence[float] = None,
@@ -102,7 +103,7 @@ def calibration_histogram(
             "Confidence intervals might be unreliable!"
         )
 
-    # Set n_bins automatically, if nothing provided
+    # Set num_bins automatically, if nothing provided
     if num_bins is None:
         num_bins = int(ratio / 2)
         # Attempt a fix if a single bin is determined so plot still makes sense

@@ -1,14 +1,15 @@
+from collections.abc import Mapping, Sequence
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-from typing import Sequence
 from ...utils.plot_utils import prepare_plot_data, add_titles_and_labels, prettify_subplots
 from ...utils.ecdf import pointwise_ecdf_bands
 
 
 def calibration_ecdf_from_quantiles(
-    estimates: dict[str, dict[str, np.ndarray]],
-    targets: dict[str, np.ndarray],
+    estimates: Mapping[str, Mapping[str, np.ndarray]],
+    targets: Mapping[str, np.ndarray],
     quantile_levels: Sequence[float],
     quantiles_key: str = "quantiles",
     variable_keys: Sequence[str] = None,
@@ -18,6 +19,7 @@ def calibration_ecdf_from_quantiles(
     figsize: Sequence[float] = None,
     label_fontsize: int = 16,
     legend_fontsize: int = 14,
+    legend_location: str = "upper right",
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
     rank_ecdf_color: str = "#132a70",
@@ -172,7 +174,7 @@ def calibration_ecdf_from_quantiles(
             alpha=0.2,
             label=rf"{int((1 - alpha) * 100)}$\%$ Confidence Bands" + "\n(pointwise)",
         )
-        ax.legend(fontsize=legend_fontsize)
+        ax.legend(fontsize=legend_fontsize, loc=legend_location)
         ax.set_title(title, fontsize=title_fontsize)
 
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)

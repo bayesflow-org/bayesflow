@@ -1,4 +1,4 @@
-from typing import Sequence, Any, Mapping, Callable
+from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
 
@@ -12,7 +12,7 @@ def root_mean_squared_error(
     variable_names: Sequence[str] = None,
     normalize: bool = True,
     aggregation: Callable = np.median,
-) -> Mapping[str, Any]:
+) -> dict[str, any]:
     """
     Computes the (Normalized) Root Mean Squared Error (RMSE/NRMSE) for the given posterior and prior samples.
 

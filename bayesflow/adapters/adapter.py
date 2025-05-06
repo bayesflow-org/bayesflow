@@ -765,7 +765,7 @@ class Adapter(MutableSequence[Transform]):
             Names of variables to include in the transform.
         exclude : str or Sequence of str, optional
             Names of variables to exclude from the transform.
-        **kwargs : dict
+        **kwargs :
             Additional keyword arguments passed to the transform.
         """
         transform = FilterTransform(
@@ -780,33 +780,36 @@ class Adapter(MutableSequence[Transform]):
 
     def take(
         self,
-        indices,
-        axis,
-        *,
-        predicate: Predicate = None,
         include: str | Sequence[str] = None,
+        *,
+        indices: Sequence[int],
+        axis: int = -1,
+        predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
-        **kwargs,
     ):
         """
         Append a :py:class:`~transforms.Take` transform to the adapter.
 
         Parameters
         ----------
-        predicate : Predicate, optional
-            Function that indicates which variables should be transformed.
         include : str or Sequence of str, optional
             Names of variables to include in the transform.
+        indices : Sequence of int
+            Which indices to take from the data.
+        axis : int, optional
+            Which axis to take from. The last axis is used by default.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
         exclude : str or Sequence of str, optional
             Names of variables to exclude from the transform.
-        **kwargs : dict
-            Additional keyword arguments passed to the transform."""
+        """
         transform = FilterTransform(
-            transform_constructor=Take(indices=indices, axis=axis),
+            transform_constructor=Take,
             predicate=predicate,
             include=include,
             exclude=exclude,
-            **kwargs,
+            indices=indices,
+            axis=axis,
         )
         self.transforms.append(transform)
         return self

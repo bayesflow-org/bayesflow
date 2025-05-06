@@ -32,7 +32,7 @@ def adapter():
         .standardize(exclude=["t1", "t2", "o1"])
         .drop("d1")
         .one_hot("o1", 10)
-        .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "t1", "t2", "o1", "split_1", "split_2"])
+        .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "s3", "t1", "t2", "o1", "split_1", "split_2"])
         .rename("o1", "o2")
         .random_subsample("s3", sample_size=33, axis=0)
         .take("s3", indices=np.arange(0, 32), axis=0)

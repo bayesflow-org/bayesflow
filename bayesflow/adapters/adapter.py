@@ -28,7 +28,7 @@ from .transforms import (
     ToArray,
     Transform,
     RandomSubsample,
-    Take
+    Take,
 )
 from .transforms.filter_transform import Predicate
 
@@ -543,16 +543,17 @@ class Adapter(MutableSequence[Transform]):
         transform = MapTransform({key: OneHot(num_classes=num_classes) for key in keys})
         self.transforms.append(transform)
         return self
-    
-    def random_subsample(self,
+
+    def random_subsample(
+        self,
         key: str | Sequence[str],
         *,
         sample_size: int | float,
-        axis: int=-1,
+        axis: int = -1,
         **kwargs,
     ):
         """
-        Append a :py:class:`~transforms.SubsampleArray` transform to the adapter.
+        Append a :py:class:`~transforms.RandomSubsample` transform to the adapter.
 
         Parameters
         ----------
@@ -564,22 +565,19 @@ class Adapter(MutableSequence[Transform]):
             Names of variables to exclude from the transform.
         **kwargs : dict
             Additional keyword arguments passed to the transform.
-        
+
         """
-        
-        
-        if isinstance(key, Sequence[str]) and len(keys) >1:
-            TypeError("`key` should be either a string or a list of length one. Only one dataset may be modified at a time.")
+
+        if isinstance(key, Sequence[str]) and len(key) > 1:
+            TypeError(
+                "`key` should be either a string or a list of length one. Only one dataset may be modified at a time."
+            )
 
         if isinstance(key, str):
             keys = [key]
 
         transform = MapTransform(
-            transform_map={
-                key:RandomSubsample(sample_size=sample_size, axis=axis)
-                for key in keys
-            }
-            
+            transform_map={key: RandomSubsample(sample_size=sample_size, axis=axis) for key in keys}
         )
 
         self.transforms.append(transform)
@@ -644,14 +642,16 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
-    def take(self,
-        indices, 
+    def take(
+        self,
+        indices,
         axis,
         *,
         predicate: Predicate = None,
         include: str | Sequence[str] = None,
         exclude: str | Sequence[str] = None,
-        **kwargs,):
+        **kwargs,
+    ):
         """
         Append a :py:class:`~transforms.Take` transform to the adapter.
 
@@ -664,7 +664,7 @@ class Adapter(MutableSequence[Transform]):
         exclude : str or Sequence of str, optional
             Names of variables to exclude from the transform.
         **kwargs : dict
-            Additional keyword arguments passed to the transform. """
+            Additional keyword arguments passed to the transform."""
         transform = FilterTransform(
             transform_constructor=Take(indices=indices, axis=axis),
             predicate=predicate,
@@ -674,8 +674,7 @@ class Adapter(MutableSequence[Transform]):
         )
         self.transforms.append(transform)
         return self
-    
-    
+
     def to_array(
         self,
         *,
@@ -693,7 +692,7 @@ class Adapter(MutableSequence[Transform]):
         include : str or Sequence of str, optional
             Names of variables to include in the transform.
         exclude : str or Sequence of str, optional
-            Names of variabxles to exclude from the transform.
+            Names of variables to exclude from the transform.
         **kwargs : dict
             Additional keyword arguments passed to the transform.
         """
@@ -706,9 +705,3 @@ class Adapter(MutableSequence[Transform]):
         )
         self.transforms.append(transform)
         return self
-    
-    
-    
-    
-    
-

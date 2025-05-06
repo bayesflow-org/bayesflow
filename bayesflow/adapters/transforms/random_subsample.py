@@ -1,6 +1,5 @@
 import numpy as np
-from keras.saving import register_keras_serializable as serializable
-
+from bayesflow.utils.serialization import serializable
 from .elementwise_transform import ElementwiseTransform
 
 
@@ -14,31 +13,28 @@ class RandomSubsample(ElementwiseTransform):
     """
 
     def __init__(
-            self,
-            sample_size: int | float, 
-            axis: int = -1, 
-                 ):
+        self,
+        sample_size: int | float,
+        axis: int = -1,
+    ):
         super().__init__()
         if isinstance(sample_size, float):
-            if sample_size <= 0 or sample_size >= 1: 
+            if sample_size <= 0 or sample_size >= 1:
                 ValueError("Sample size as a percentage must be a float between 0 and 1 exclustive. ")
         self.sample_size = sample_size
-        self.axis = axis 
-
+        self.axis = axis
 
     def forward(self, data: np.ndarray):
-        
-        axis = self.axis 
+        axis = self.axis
         max_sample_size = data.shape[axis]
-        
+
         if isinstance(self.sample_size, int):
             sample_size = self.sample_size
-        else: 
+        else:
             sample_size = np.round(self.sample_size * max_sample_size)
 
-        sample_indices = np.random.permutation(max_sample_size)[
-            0 : sample_size - 1
-        ]  # random sample without replacement
+        # random sample without replacement
+        sample_indices = np.random.permutation(max_sample_size)[0 : sample_size - 1]
 
         return np.take(data, sample_indices, axis)
 

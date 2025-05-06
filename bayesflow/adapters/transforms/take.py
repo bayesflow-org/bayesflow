@@ -13,11 +13,10 @@ class Take(ElementwiseTransform):
 
     """
 
-    def __init__(self,indices, axis=-1):
+    def __init__(self, indices, axis=-1):
         super().__init__()
         self.indices = indices
-        self.axis = axis 
-
+        self.axis = axis
 
     def forward(self, data):
         return np.take(data, self.indices, self.axis)

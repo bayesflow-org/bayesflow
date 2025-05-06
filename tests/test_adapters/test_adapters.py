@@ -16,6 +16,9 @@ def test_cycle_consistency(adapter, random_data):
         if key in ["d1", "d2", "p3", "n1", "u1"]:
             # dropped
             continue
+        if key == "s3":
+            # we subsampled this key, so it is expected for its shape to change
+            continue
         assert key in deprocessed
         assert np.allclose(value, deprocessed[key])
 

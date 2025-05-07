@@ -12,7 +12,7 @@ from .conditional_gaussian import ConditionalGaussian
 # disable module check, use potential module after moving from experimental
 @serializable("bayesflow.networks", disable_module_check=True)
 class CIF(InferenceNetwork):
-    """Implements a continuously indexed flow (CIF) with a `CouplingFlow`
+    """(IN) Implements a continuously indexed flow (CIF) with a `CouplingFlow`
     bijection and `ConditionalGaussian` distributions p and q. Improves on
     eliminating leaky sampling found topologically in normalizing flows.
     Built in reference to [1].

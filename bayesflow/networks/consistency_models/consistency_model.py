@@ -14,8 +14,8 @@ from ..inference_network import InferenceNetwork
 
 @serializable("bayesflow.networks")
 class ConsistencyModel(InferenceNetwork):
-    """Implements a Consistency Model with Consistency Training (CT) a described in [1-2]. The adaptations to CT
-    described in [2] were taken into account in our implementation for ABI [3].
+    """(IN) Implements a Consistency Model with Consistency Training (CT) as described in [1-2].
+    The adaptations to CT described in [2] were taken into account in our implementation for ABI [3].
 
     [1] Song, Y., Dhariwal, P., Chen, M. & Sutskever, I. (2023). Consistency Models. arXiv preprint arXiv:2303.01469
 

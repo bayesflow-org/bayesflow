@@ -10,7 +10,7 @@ from ..summary_network import SummaryNetwork
 @serializable("bayesflow.networks")
 class TimeSeriesNetwork(SummaryNetwork):
     """
-    Implements a LSTNet Architecture as described in [1]
+    (SN) Implements a LSTNet Architecture as described in [1]
 
     [1] Y. Zhang and L. Mikelsons, Solving Stochastic Inverse Problems with Stochastic BayesFlow,
     2023 IEEE/ASME International Conference on Advanced Intelligent Mechatronics (AIM),

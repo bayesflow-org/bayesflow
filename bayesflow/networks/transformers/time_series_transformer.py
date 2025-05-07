@@ -29,9 +29,9 @@ class TimeSeriesTransformer(SummaryNetwork):
         time_axis: int = None,
         **kwargs,
     ):
-        """Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time series.
-        If the time intervals vary across batches, it is highly recommended that your simulator also returns a "time"
-        vector appended to the simulator outputs and specified via the "time_axis" argument.
+        """(SN) Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time
+        series. If the time intervals vary across batches, it is highly recommended that your simulator also returns a
+        "time" vector appended to the simulator outputs and specified via the "time_axis" argument.
 
         Parameters
         ----------

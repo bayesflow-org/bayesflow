@@ -25,7 +25,7 @@ from bayesflow.networks.embeddings import FourierEmbedding
 # disable module check, use potential module after moving from experimental
 @serializable("bayesflow.networks", disable_module_check=True)
 class ContinuousTimeConsistencyModel(InferenceNetwork):
-    """Implements an sCM (simple, stable, and scalable Consistency Model)
+    """(IN) Implements an sCM (simple, stable, and scalable Consistency Model)
     with continous-time Consistency Training (CT) as described in [1].
     The sampling procedure is taken from [2].
 

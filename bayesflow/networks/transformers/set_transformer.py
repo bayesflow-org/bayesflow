@@ -13,7 +13,7 @@ from .pma import PoolingByMultiHeadAttention
 
 @serializable("bayesflow.networks")
 class SetTransformer(SummaryNetwork):
-    """Implements the set transformer architecture from [1] which ultimately represents
+    """(SN) Implements the set transformer architecture from [1] which ultimately represents
     a learnable permutation-invariant function. Designed to naturally model interactions in
     the input set, which may be hard to capture with the simpler ``DeepSet`` architecture.
 

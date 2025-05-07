@@ -15,7 +15,7 @@ from ..inference_network import InferenceNetwork
 
 @serializable("bayesflow.networks")
 class CouplingFlow(InferenceNetwork):
-    """Implements a coupling flow as a sequence of dual couplings with permutations and activation
+    """(IN) Implements a coupling flow as a sequence of dual couplings with permutations and activation
     normalization. Incorporates ideas from [1-5].
 
     [1] Kingma, D. P., & Dhariwal, P. (2018).

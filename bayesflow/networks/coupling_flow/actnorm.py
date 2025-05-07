@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serializable
 from .invertible_layer import InvertibleLayer
 
 
-@serializable
+@serializable("bayesflow.networks")
 class ActNorm(InvertibleLayer):
     """Implements an Activation Normalization (ActNorm) Layer. Activation Normalization is learned invertible
     normalization, using a scale (s) and a bias (b) vector::

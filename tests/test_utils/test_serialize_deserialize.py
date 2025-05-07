@@ -3,7 +3,7 @@ import pytest
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
-@serializable
+@serializable("test", disable_module_check=True)
 class Foo:
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -13,7 +13,7 @@ class Foo:
         return {}
 
 
-@serializable
+@serializable("test", disable_module_check=True)
 class Bar:
     @classmethod
     def from_config(cls, config, custom_objects=None):

@@ -1,13 +1,14 @@
 import keras
-from keras.saving import register_keras_serializable
 import numpy as np
 from bayesflow.networks.mlp import MLP
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs
+from bayesflow.utils.serialization import serializable
 
 
-@register_keras_serializable(package="bayesflow.networks.cif")
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class ConditionalGaussian(keras.Layer):
     """Implements a conditional gaussian distribution with neural networks for
     the means and standard deviations respectively. Bulit in reference to [1].

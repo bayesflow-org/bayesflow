@@ -1,11 +1,11 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils.serialization import serializable
 
 
-@serializable(package="links.ordered")
+@serializable("bayesflow.links")
 class Ordered(keras.Layer):
     """Activation function to link to a tensor which is monotonously increasing along a specified axis."""
 

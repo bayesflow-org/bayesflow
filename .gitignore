@@ -39,3 +39,6 @@ docs/
 
 # MacOS
 .DS_Store
+
+# Rproj
+.Rproj.user

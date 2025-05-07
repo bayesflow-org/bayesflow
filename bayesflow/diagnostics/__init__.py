@@ -1,8 +1,13 @@
-"""
+r"""
 A collection of plotting utilities and metrics for evaluating trained :py:class:`~bayesflow.workflows.Workflow`\ s.
 """
 
-from .metrics import root_mean_squared_error, calibration_error, posterior_contraction
+from .metrics import (
+    bootstrap_comparison,
+    calibration_error,
+    posterior_contraction,
+    summary_space_comparison,
+)
 
 from .plots import (
     calibration_ecdf,

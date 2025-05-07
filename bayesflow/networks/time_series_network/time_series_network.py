@@ -7,7 +7,7 @@ from .skip_recurrent import SkipRecurrentNet
 from ..summary_network import SummaryNetwork
 
 
-@serializable
+@serializable("bayesflow.networks")
 class TimeSeriesNetwork(SummaryNetwork):
     """
     Implements a LSTNet Architecture as described in [1]

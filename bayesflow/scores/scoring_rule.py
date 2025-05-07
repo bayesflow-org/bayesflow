@@ -1,13 +1,13 @@
 import math
 
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import find_network, serialize_value_or_type, deserialize_value_or_type
+from bayesflow.utils import find_network
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
-@serializable(package="bayesflow.scores")
+@serializable("bayesflow.scores")
 class ScoringRule:
     """Base class for scoring rules.
 
@@ -51,23 +51,16 @@ class ScoringRule:
         self.config = {"subnets_kwargs": self.subnets_kwargs}
 
     def get_config(self):
-        self.config["subnets"] = {
-            key: serialize_value_or_type({}, "subnet", subnet) for key, subnet in self.subnets.items()
-        }
-        self.config["links"] = {key: serialize_value_or_type({}, "link", link) for key, link in self.links.items()}
+        self.config["subnets"] = {key: serialize(subnet) for key, subnet in self.subnets.items()}
+        self.config["links"] = {key: serialize(link) for key, link in self.links.items()}
 
         return self.config
 
     @classmethod
     def from_config(cls, config):
         config = config.copy()
-        config["subnets"] = {
-            key: deserialize_value_or_type(subnet_dict, "subnet")["subnet"]
-            for key, subnet_dict in config["subnets"].items()
-        }
-        config["links"] = {
-            key: deserialize_value_or_type(link_dict, "link")["link"] for key, link_dict in config["links"].items()
-        }
+        config["subnets"] = {key: deserialize(subnet_dict) for key, subnet_dict in config["subnets"].items()}
+        config["links"] = {key: deserialize(link_dict) for key, link_dict in config["links"].items()}
 
         return cls(**config)
 

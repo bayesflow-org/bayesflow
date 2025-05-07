@@ -15,6 +15,12 @@ It provides users and researchers with:
 BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
 fueled by continuous progress in generative AI and Bayesian inference.
 
+> [!IMPORTANT]
+> As the 2.0 version introduced many new features, we still have to make breaking changes from time to time.
+> This especially concerns **saving and loading** of models. We aim to stabilize this from the 2.1 release onwards.
+> Until then, consider pinning your BayesFlow 2.0 installation to an exact version, or re-training after an update
+> for less costly models.
+
 ## Important Note for Existing Users
 
 You are currently looking at BayesFlow 2.0+, which is a complete rewrite of the library.
@@ -245,8 +251,9 @@ Depending on your needs, you might not want to upgrade yet if one of the followi
   with the new version. Loading models from version 1.x in version 2.0+ is not supported.
 - You require a feature that was not ported to BayesFlow 2.0+ yet. To our knowledge,
   this applies to:
-  * Two-level/Hierarchical models: `TwoLevelGenerativeModel`, `TwoLevelPrior`.
-  * Sensitivity analysis: functionality from the `bayesflow.sensitivity` module.
+  * Two-level/Hierarchical models (planned for version 2.1): `TwoLevelGenerativeModel`, `TwoLevelPrior`.
+  * Sensitivity analysis (partially discontinued): functionality from the `bayesflow.sensitivity` module. This is still
+    possible, but we do no longer offer a special module for it. We plan to add a tutorial on this, see [#455](https://github.com/bayesflow-org/bayesflow/issues/455).
   * MCMC (discontinued): The `bayesflow.mcmc` module. We are considering other options
     to enable the use of BayesFlow in an MCMC setting.
   * Networks: `EvidentialNetwork`.

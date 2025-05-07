@@ -12,7 +12,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 from ..inference_network import InferenceNetwork
 
 
-@serializable
+@serializable("bayesflow.networks")
 class ConsistencyModel(InferenceNetwork):
     """Implements a Consistency Model with Consistency Training (CT) a described in [1-2]. The adaptations to CT
     described in [2] were taken into account in our implementation for ABI [3].

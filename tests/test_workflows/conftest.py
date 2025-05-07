@@ -40,7 +40,7 @@ def summary_network(request):
     elif request.param == "custom":
         from bayesflow.networks import SummaryNetwork
 
-        @serializable
+        @serializable("test", disable_module_check=True)
         class Custom(SummaryNetwork):
             def __init__(self, **kwargs):
                 super().__init__(**kwargs)

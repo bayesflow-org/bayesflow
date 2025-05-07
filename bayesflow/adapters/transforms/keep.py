@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Keep(Transform):
     """
     Name the data parameters that should be kept for futher calculation.
@@ -57,3 +57,6 @@ class Keep(Transform):
 
     def extra_repr(self) -> str:
         return "[" + ", ".join(map(repr, self.keys)) + "]"
+
+    def log_det_jac(self, data: dict[str, any], log_det_jac: dict[str, any], inverse: bool = False, **kwargs):
+        return self.inverse(data=log_det_jac) if inverse else self.forward(data=log_det_jac)

@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serializable
 from ..invertible_layer import InvertibleLayer
 
 
-@serializable
+@serializable("bayesflow.networks")
 class FixedPermutation(InvertibleLayer):
     """
     Interface class for permutations with no learnable parameters. Child classes should

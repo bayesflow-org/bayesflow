@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Log(ElementwiseTransform):
     """Log transforms a variable.
 
@@ -37,3 +37,12 @@ class Log(ElementwiseTransform):
 
     def get_config(self) -> dict:
         return serialize({"p1": self.p1})
+
+    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+        if self.p1:
+            ldj = -np.log1p(data)
+        else:
+            ldj = -np.log(data)
+        if inverse:
+            ldj = -ldj
+        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

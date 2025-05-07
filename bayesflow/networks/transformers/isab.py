@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable
+@serializable("bayesflow.networks")
 class InducedSetAttentionBlock(keras.Layer):
     """Implements the ISAB block from [1] which represents learnable self-attention specifically
     designed to deal with large sets via a learnable set of "inducing points".

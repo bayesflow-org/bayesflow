@@ -13,7 +13,7 @@ from bayesflow.utils.serialization import serialize, deserialize, serializable
 from .approximator import Approximator
 
 
-@serializable
+@serializable("bayesflow.approximators")
 class ContinuousApproximator(Approximator):
     """
     Defines a workflow for performing fast posterior or likelihood inference.
@@ -400,6 +400,39 @@ class ContinuousApproximator(Approximator):
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
 
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs):
+        """
+        Computes the summaries of given data.
+
+        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Dictionary of data as NumPy arrays.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and the summary network.
+
+        Returns
+        -------
+        summaries : np.ndarray
+            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
+
+        Raises
+        ------
+        ValueError
+            If the approximator does not have a summary network, or the adapter does not produce the output required
+            by the summary network.
+        """
+        if self.summary_network is None:
+            raise ValueError("A summary network is required to compute summeries.")
+        data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
+        if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
+            raise ValueError("Summary variables are required to compute summaries.")
+        summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
+        summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
+        return summaries
+
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
@@ -417,10 +450,15 @@ class ContinuousApproximator(Approximator):
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
-        data = self.adapter(data, strict=False, stage="inference", **kwargs)
+        data, log_det_jac = self.adapter(data, strict=False, stage="inference", log_det_jac=True, **kwargs)
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data, **kwargs)
         log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
+
+        # change of variables formula
+        log_det_jac = log_det_jac.get("inference_variables")
+        if log_det_jac is not None:
+            log_prob = log_prob + log_det_jac
 
         return log_prob
 

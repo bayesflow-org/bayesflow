@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import serializable
 from ..mlp import MLP
 
 
-@serializable
+@serializable("bayesflow.networks")
 class InvariantLayer(keras.Layer):
     """Implements an invariant module performing a permutation-invariant transform.
 
@@ -74,6 +74,7 @@ class InvariantLayer(keras.Layer):
             kernel_initializer=kernel_initializer,
             spectral_normalization=spectral_normalization,
         )
+        self.inner_projector = keras.layers.Dense(mlp_widths_inner[-1], kernel_initializer=kernel_initializer)
 
         self.outer_fc = MLP(
             mlp_widths_outer,
@@ -82,6 +83,7 @@ class InvariantLayer(keras.Layer):
             kernel_initializer=kernel_initializer,
             spectral_normalization=spectral_normalization,
         )
+        self.outer_projector = keras.layers.Dense(mlp_widths_outer[-1], kernel_initializer=kernel_initializer)
 
         # Pooling function as keras layer for sum decomposition: inner( pooling( inner(set) ) )
         if pooling_kwargs is None:
@@ -106,8 +108,10 @@ class InvariantLayer(keras.Layer):
         """
 
         set_summary = self.inner_fc(input_set, training=training)
+        set_summary = self.inner_projector(set_summary)
         set_summary = self.pooling_layer(set_summary, training=training)
         set_summary = self.outer_fc(set_summary, training=training)
+        set_summary = self.outer_projector(set_summary)
         return set_summary
 
     @sanitize_input_shape

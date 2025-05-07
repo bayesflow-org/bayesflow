@@ -3,7 +3,7 @@ import numpy as np
 from bayesflow.utils.serialization import serializable, deserialize
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class ElementwiseTransform:
     """Base class on which other transforms are based"""
 
@@ -25,3 +25,6 @@ class ElementwiseTransform:
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         raise NotImplementedError
+
+    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray | None:
+        return None

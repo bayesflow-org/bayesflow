@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.distributions import Distribution
 
 
-@serializable
+@serializable("bayesflow.distributions")
 class Mixture(Distribution):
     """Utility class for a backend-agnostic mixture distributions."""
 

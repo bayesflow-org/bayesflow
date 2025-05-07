@@ -6,7 +6,7 @@ from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 
-@serializable
+@serializable("bayesflow.networks")
 class SkipRecurrentNet(keras.Layer):
     """
     Implements a Skip recurrent layer as described in [1], allowing a more flexible recurrent backbone

@@ -13,7 +13,7 @@ from ..mlp import MLP
 from .invariant_layer import InvariantLayer
 
 
-@serializable
+@serializable("bayesflow.networks")
 class EquivariantLayer(keras.Layer):
     """Implements an equivariant module performing an equivariant transform.
 
@@ -94,6 +94,7 @@ class EquivariantLayer(keras.Layer):
             kernel_initializer=kernel_initializer,
             spectral_normalization=spectral_normalization,
         )
+        self.out_fc_projector = keras.layers.Dense(mlp_widths_equivariant[-1], kernel_initializer=kernel_initializer)
 
         self.layer_norm = layers.LayerNormalization() if layer_norm else None
 
@@ -137,7 +138,10 @@ class EquivariantLayer(keras.Layer):
         output_set = ops.concatenate([input_set, invariant_summary], axis=-1)
 
         # Pass through final equivariant transform + residual
-        output_set = input_set + self.equivariant_fc(output_set, training=training)
+        out_fc = self.equivariant_fc(output_set, training=training)
+        out_projected = self.out_fc_projector(out_fc)
+        output_set = input_set + out_projected
+
         if self.layer_norm is not None:
             output_set = self.layer_norm(output_set, training=training)
 

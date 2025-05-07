@@ -8,7 +8,8 @@ from bayesflow.networks.residual import Residual
 from .double_linear import DoubleLinear
 
 
-@serializable
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class DenseResNet(keras.Sequential):
     """
     Implements the fully-connected analogue of the ResNet architecture.

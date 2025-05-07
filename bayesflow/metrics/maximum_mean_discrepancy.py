@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serializable
 from .functional import maximum_mean_discrepancy
 
 
-@serializable
+@serializable("bayesflow.metrics")
 class MaximumMeanDiscrepancy(keras.Metric):
     def __init__(
         self,

@@ -13,8 +13,11 @@ def test_cycle_consistency(adapter, random_data):
     deprocessed = adapter(processed, inverse=True)
 
     for key, value in random_data.items():
-        if key in ["d1", "d2"]:
+        if key in ["d1", "d2", "p3", "n1", "u1"]:
             # dropped
+            continue
+        if key == "s3":
+            # we subsampled this key, so it is expected for its shape to change
             continue
         assert key in deprocessed
         assert np.allclose(value, deprocessed[key])
@@ -31,6 +34,10 @@ def test_serialize_deserialize(adapter, random_data):
     random_data["foo"] = random_data["x1"]
     deserialized_processed = deserialized(random_data)
     for key, value in processed.items():
+        if key == "s3":
+            # skip this key because it is *randomly* subsampled
+            continue
+
         assert np.allclose(value, deserialized_processed[key])
 
 
@@ -230,3 +237,62 @@ def test_to_dict_transform():
 
     # category should have 5 one-hot categories, even though it was only passed 4
     assert processed["category"].shape[-1] == 5
+
+
+def test_log_det_jac(adapter_log_det_jac, random_data):
+    d, log_det_jac = adapter_log_det_jac(random_data, log_det_jac=True)
+
+    assert np.allclose(log_det_jac["x1"], np.log(2))
+
+    p1 = -np.log1p(random_data["p1"])
+    p2 = -0.5 * np.log(random_data["p2"]) - np.log(2)
+    p3 = random_data["p3"] - np.log(np.exp(random_data["p3"]) - 1)
+    p = np.sum(p1, axis=-1) + np.sum(p2, axis=-1) + np.sum(p3, axis=-1)
+
+    assert np.allclose(log_det_jac["p"], p)
+
+    n1 = -(random_data["n1"] - 1)
+    n1 = n1 - np.log(np.exp(n1) - 1)
+    n1 = np.sum(n1, axis=-1)
+
+    assert np.allclose(log_det_jac["n1"], n1)
+
+    u1 = random_data["u1"]
+    u1 = (u1 + 1) / 3
+    u1 = -np.log(u1) - np.log1p(-u1) - np.log(3)
+
+    assert np.allclose(log_det_jac["u"], u1[:, 0])
+
+
+def test_log_det_jac_inverse(adapter_log_det_jac_inverse, random_data):
+    d, forward_log_det_jac = adapter_log_det_jac_inverse(random_data, log_det_jac=True)
+    d, inverse_log_det_jac = adapter_log_det_jac_inverse(d, inverse=True, log_det_jac=True)
+
+    for key in forward_log_det_jac.keys():
+        assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])
+
+
+def test_log_det_jac_exceptions(random_data):
+    # Test cannot compute inverse log_det_jac
+    # e.g., when we apply a concat and then a transform that
+    # we cannot "unconcatenate" the log_det_jac
+    # (because the log_det_jac are summed, not concatenated)
+    adapter = bf.Adapter().concatenate(["p1", "p2", "p3"], into="p").sqrt("p")
+    transformed_data, log_det_jac = adapter(random_data, log_det_jac=True)
+
+    # test that inverse raises error
+    with pytest.raises(ValueError):
+        adapter(transformed_data, inverse=True, log_det_jac=True)
+
+    # test resolvable order: first transform, then concatenate
+    adapter = bf.Adapter().sqrt(["p1", "p2", "p3"]).concatenate(["p1", "p2", "p3"], into="p")
+
+    transformed_data, forward_log_det_jac = adapter(random_data, log_det_jac=True)
+    data, inverse_log_det_jac = adapter(transformed_data, inverse=True, log_det_jac=True)
+    inverse_log_det_jac = sum(inverse_log_det_jac.values())
+
+    # forward is the same regardless
+    assert np.allclose(forward_log_det_jac["p"], log_det_jac["p"])
+
+    # inverse works when concatenation is used after transforms
+    assert np.allclose(forward_log_det_jac["p"], -inverse_log_det_jac)

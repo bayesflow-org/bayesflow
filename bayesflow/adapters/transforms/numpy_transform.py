@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class NumpyTransform(ElementwiseTransform):
     """
     A class to apply element-wise transformations using plain NumPy functions.
@@ -72,3 +72,6 @@ class NumpyTransform(ElementwiseTransform):
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         return self._inverse(data)
+
+    def log_det_jac(self, data, inverse=False, **kwargs):
+        raise NotImplementedError("log determinant of the Jacobian of the numpy transforms are not implemented yet")

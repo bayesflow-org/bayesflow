@@ -9,7 +9,7 @@ from .single_coupling import SingleCoupling
 from ..invertible_layer import InvertibleLayer
 
 
-@serializable
+@serializable("bayesflow.networks")
 class DualCoupling(InvertibleLayer):
     def __init__(self, subnet: str | type = "mlp", transform: str = "affine", **kwargs):
         super().__init__(**kwargs)

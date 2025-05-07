@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable
+@serializable("bayesflow.networks")
 class SetAttentionBlock(MultiHeadAttentionBlock):
     """Implements the SAB block from [1] which represents learnable self-attention.
 

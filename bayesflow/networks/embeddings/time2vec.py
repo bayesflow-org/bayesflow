@@ -5,7 +5,7 @@ from bayesflow.utils import expand_tile
 from bayesflow.utils.serialization import serializable
 
 
-@serializable
+@serializable("bayesflow.networks")
 class Time2Vec(keras.Layer):
     """
     Implements the Time2Vec learnbale embedding from [1].

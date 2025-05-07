@@ -78,3 +78,17 @@ def history():
     }
 
     return h
+
+
+@pytest.fixture()
+def adapter():
+    from bayesflow.adapters import Adapter
+
+    return Adapter.create_default("parameters").rename("observables", "summary_variables")
+
+
+@pytest.fixture()
+def summary_network():
+    from tests.utils import MeanStdSummaryNetwork
+
+    return MeanStdSummaryNetwork()

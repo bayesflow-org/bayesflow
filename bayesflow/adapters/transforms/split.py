@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Split(Transform):
     """This is the effective inverse of the :py:class:`~Concatenate` Transform.
 

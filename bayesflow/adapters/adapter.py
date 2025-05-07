@@ -25,11 +25,13 @@ from .transforms import (
     Standardize,
     ToArray,
     Transform,
+    RandomSubsample,
+    Take,
 )
 from .transforms.filter_transform import Predicate
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Adapter(MutableSequence[Transform]):
     """
     Defines an adapter to apply various transforms to data.
@@ -79,7 +81,9 @@ class Adapter(MutableSequence[Transform]):
 
         return serialize(config)
 
-    def forward(self, data: dict[str, any], *, stage: str = "inference", **kwargs) -> dict[str, np.ndarray]:
+    def forward(
+        self, data: dict[str, any], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the forward direction.
 
         Parameters
@@ -88,22 +92,33 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
+        log_det_jac: bool, optional
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
+        if not log_det_jac:
+            for transform in self.transforms:
+                data = transform(data, stage=stage, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in self.transforms:
-            data = transform(data, stage=stage, **kwargs)
+            transformed_data = transform(data, stage=stage, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
+            data = transformed_data
 
-        return data
+        return data, log_det_jac
 
-    def inverse(self, data: dict[str, np.ndarray], *, stage: str = "inference", **kwargs) -> dict[str, any]:
+    def inverse(
+        self, data: dict[str, np.ndarray], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
@@ -112,24 +127,32 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         stage : str, one of ["training", "validation", "inference"]
             The stage the function is called in.
+        log_det_jac: bool, optional
+            Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         data = data.copy()
+        if not log_det_jac:
+            for transform in reversed(self.transforms):
+                data = transform(data, stage=stage, inverse=True, **kwargs)
+            return data
 
+        log_det_jac = {}
         for transform in reversed(self.transforms):
             data = transform(data, stage=stage, inverse=True, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
 
-        return data
+        return data, log_det_jac
 
     def __call__(
         self, data: Mapping[str, any], *, inverse: bool = False, stage="inference", **kwargs
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the given direction.
 
         Parameters
@@ -145,8 +168,8 @@ class Adapter(MutableSequence[Transform]):
 
         Returns
         -------
-        dict
-            The transformed data.
+        dict | tuple[dict, dict]
+            The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         if inverse:
             return self.inverse(data, stage=stage, **kwargs)
@@ -644,6 +667,28 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
+    def random_subsample(self, key: str, *, sample_size: int | float, axis: int = -1):
+        """
+        Append a :py:class:`~transforms.RandomSubsample` transform to the adapter.
+
+        Parameters
+        ----------
+        key : str or Sequence of str
+            The name of the variable to subsample.
+        sample_size : int or float
+            The number of samples to draw, or a fraction between 0 and 1 of the total number of samples to draw.
+        axis: int, optional
+            Which axis to draw samples over. The last axis is used by default.
+        """
+
+        if not isinstance(key, str):
+            raise TypeError("Can only subsample one batch entry at a time.")
+
+        transform = MapTransform({key: RandomSubsample(sample_size=sample_size, axis=axis)})
+
+        self.transforms.append(transform)
+        return self
+
     def rename(self, from_key: str, to_key: str):
         """Append a :py:class:`~transforms.Rename` transform to the adapter.
 
@@ -720,7 +765,7 @@ class Adapter(MutableSequence[Transform]):
             Names of variables to include in the transform.
         exclude : str or Sequence of str, optional
             Names of variables to exclude from the transform.
-        **kwargs : dict
+        **kwargs :
             Additional keyword arguments passed to the transform.
         """
         transform = FilterTransform(
@@ -729,6 +774,42 @@ class Adapter(MutableSequence[Transform]):
             include=include,
             exclude=exclude,
             **kwargs,
+        )
+        self.transforms.append(transform)
+        return self
+
+    def take(
+        self,
+        include: str | Sequence[str] = None,
+        *,
+        indices: Sequence[int],
+        axis: int = -1,
+        predicate: Predicate = None,
+        exclude: str | Sequence[str] = None,
+    ):
+        """
+        Append a :py:class:`~transforms.Take` transform to the adapter.
+
+        Parameters
+        ----------
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        indices : Sequence of int
+            Which indices to take from the data.
+        axis : int, optional
+            Which axis to take from. The last axis is used by default.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        """
+        transform = FilterTransform(
+            transform_constructor=Take,
+            predicate=predicate,
+            include=include,
+            exclude=exclude,
+            indices=indices,
+            axis=axis,
         )
         self.transforms.append(transform)
         return self

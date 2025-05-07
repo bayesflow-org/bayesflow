@@ -158,16 +158,34 @@ class NoiseSchedule(ABC):
 @serializable("bayesflow.experimental")
 class CosineNoiseSchedule(NoiseSchedule):
     """Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].
-    For images, use s_shift_cosine = log(base_resolution / d), where d is the used resolution of the image.
 
     [1] Diffusion Models Beat GANs on Image Synthesis: Dhariwal and Nichol (2022)
     """
 
     def __init__(
-        self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0, weighting: str = "sigmoid"
+        self,
+        min_log_snr: float = -15,
+        max_log_snr: float = 15,
+        shift: float = 0.0,
+        weighting: Literal["sigmoid", "likelihood_weighting"] = "sigmoid",
     ):
+        """
+        Initialize the cosine noise schedule.
+
+        Parameters
+        ----------
+        min_log_snr : float, optional
+            The minimum log signal-to-noise ratio (lambda). Default is -15.
+        max_log_snr : float, optional
+            The maximum log signal-to-noise ratio (lambda). Default is 15.
+        shift : float, optional
+            Shift the log signal-to-noise ratio (lambda) by this amount. Default is 0.0.
+            For images, use shift = log(base_resolution / d), where d is the used resolution of the image.
+        weighting : Literal["sigmoid", "likelihood_weighting"], optional
+            The type of weighting function to use for the noise schedule. Default is "sigmoid".
+        """
         super().__init__(name="cosine_noise_schedule", variance_type="preserving", weighting=weighting)
-        self._s_shift_cosine = s_shift_cosine
+        self._shift = shift
         self.log_snr_min = min_log_snr
         self.log_snr_max = max_log_snr
 
@@ -180,12 +198,12 @@ class CosineNoiseSchedule(NoiseSchedule):
     def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         t_trunc = self._truncated_t(t)
-        return -2 * ops.log(ops.tan(math.pi * t_trunc * 0.5)) + 2 * self._s_shift_cosine
+        return -2 * ops.log(ops.tan(math.pi * t_trunc * 0.5)) + 2 * self._shift
 
     def get_t_from_log_snr(self, log_snr_t: Union[Tensor, float], training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         # SNR = -2 * log(tan(pi*t/2)) => t = 2/pi * arctan(exp(-snr/2))
-        return 2 / math.pi * ops.arctan(ops.exp((2 * self._s_shift_cosine - log_snr_t) * 0.5))
+        return 2 / math.pi * ops.arctan(ops.exp((2 * self._shift - log_snr_t) * 0.5))
 
     def derivative_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
         """Compute d/dt log(1 + e^(-snr(t))), which is used for the reverse SDE."""
@@ -202,7 +220,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         return -factor * dsnr_dt
 
     def get_config(self):
-        return dict(min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max, s_shift_cosine=self._s_shift_cosine)
+        return dict(min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max, shift=self._shift)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

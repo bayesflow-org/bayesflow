@@ -4,7 +4,7 @@ from functools import partial
 import keras
 
 import numpy as np
-from typing import Literal, Union, List
+from typing import Literal, Union
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
@@ -358,7 +358,7 @@ def integrate_stochastic(
     seed: keras.random.SeedGenerator,
     method: str = "euler_maruyama",
     **kwargs,
-) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, List[ArrayLike]]]]:
+) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
     """
     Integrates a stochastic differential equation from start_time to stop_time.
 

@@ -1,15 +1,11 @@
 from collections.abc import Sequence
-from abc import ABC, abstractmethod
-from typing import Union
+from typing import Literal
+
 import keras
 from keras import ops
-import warnings
 
-from bayesflow.utils.serialization import serialize, deserialize, serializable
-from bayesflow.types import Tensor, Shape
 from bayesflow.networks import InferenceNetwork
-import math
-
+from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
     find_network,
@@ -18,277 +14,11 @@ from bayesflow.utils import (
     weighted_mean,
     integrate,
     integrate_stochastic,
+    find_noise_schedule,
+    logging,
+    tensor_utils,
 )
-
-
-@serializable
-class NoiseSchedule(ABC):
-    r"""Noise schedule for diffusion models. We follow the notation from [1].
-
-    The diffusion process is defined by a noise schedule, which determines how the noise level changes over time.
-    We define the noise schedule as a function of the log signal-to-noise ratio (lambda), which can be
-    interchangeably used with the diffusion time (t).
-
-    The noise process is defined as: z = alpha(t) * x + sigma(t) * e, where e ~ N(0, I).
-    The schedule is defined as: \lambda(t) = \log \sigma^2(t) - \log \alpha^2(t).
-
-    We can also define a weighting function for each noise level for the loss function. Often the noise schedule is
-    the same for the forward and reverse process, but this is not necessary and can be changed via the training flag.
-
-    [1] Variational Diffusion Models 2.0: Understanding Diffusion Model Objectives as the ELBO with Simple Data
-        Augmentation: Kingma et al. (2023)
-    """
-
-    def __init__(self, name: str, variance_type: str, weighting: str = None):
-        self.name = name
-        self._variance_type = variance_type  # 'exploding' or 'preserving'
-        self.log_snr_min = -15  # should be set in the subclasses
-        self.log_snr_max = 15  # should be set in the subclasses
-        self._weighting = weighting
-
-    @abstractmethod
-    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
-        """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
-        pass
-
-    @abstractmethod
-    def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
-        """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
-        pass
-
-    @abstractmethod
-    def derivative_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
-        r"""Compute \beta(t) = d/dt log(1 + e^(-snr(t))). This is usually used for the reverse SDE."""
-        pass
-
-    def get_drift_diffusion(self, log_snr_t: Tensor, x: Tensor = None, training: bool = False) -> tuple[Tensor, Tensor]:
-        r"""Compute the drift and optionally the squared diffusion term for the reverse SDE.
-        It can be derived from the derivative of the schedule:
-            \beta(t) = d/dt log(1 + e^(-snr(t)))
-            f(z, t) = -0.5 * \beta(t) * z
-            g(t)^2 = \beta(t)
-
-            SDE: d(z) = [ f(z, t) - g(t)^2 * score(z, lambda) ] dt + g(t) dW
-            ODE: dz = [ f(z, t) - 0.5 * g(t)^2 * score(z, lambda) ] dt
-
-        For a variance exploding schedule, one should set f(z, t) = 0.
-        """
-        beta = self.derivative_log_snr(log_snr_t=log_snr_t, training=training)
-        if x is None:  # return g^2 only
-            return beta
-        if self._variance_type == "preserving":
-            f = -0.5 * beta * x
-        elif self._variance_type == "exploding":
-            f = ops.zeros_like(beta)
-        else:
-            raise ValueError(f"Unknown variance type: {self._variance_type}")
-        return f, beta
-
-    def get_alpha_sigma(self, log_snr_t: Tensor, training: bool) -> tuple[Tensor, Tensor]:
-        """Get alpha and sigma for a given log signal-to-noise ratio (lambda).
-
-        Default is a variance preserving schedule:
-            alpha(t) = sqrt(sigmoid(log_snr_t))
-            sigma(t) = sqrt(sigmoid(-log_snr_t))
-        For a variance exploding schedule, one should set alpha^2 = 1 and sigma^2 = exp(-lambda)
-        """
-        if self._variance_type == "preserving":
-            # variance preserving schedule
-            alpha_t = ops.sqrt(ops.sigmoid(log_snr_t))
-            sigma_t = ops.sqrt(ops.sigmoid(-log_snr_t))
-        elif self._variance_type == "exploding":
-            # variance exploding schedule
-            alpha_t = ops.ones_like(log_snr_t)
-            sigma_t = ops.sqrt(ops.exp(-log_snr_t))
-        else:
-            raise ValueError(f"Unknown variance type: {self._variance_type}")
-        return alpha_t, sigma_t
-
-    def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
-        """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda). Default is 1.
-        Generally, weighting functions should be defined for a noise prediction loss.
-        """
-        if self._weighting is None:
-            return ops.ones_like(log_snr_t)
-        elif self._weighting == "sigmoid":
-            # sigmoid weighting based on Kingma et al. (2023)
-            return ops.sigmoid(-log_snr_t + 2)
-        elif self._weighting == "likelihood_weighting":
-            # likelihood weighting based on Song et al. (2021)
-            g_squared = self.get_drift_diffusion(log_snr_t=log_snr_t)
-            sigma_t = self.get_alpha_sigma(log_snr_t=log_snr_t, training=True)[1]
-            return g_squared / ops.square(sigma_t)
-        else:
-            raise ValueError(f"Unknown weighting type: {self._weighting}")
-
-    def get_config(self):
-        return dict(name=self.name, variance_type=self._variance_type)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
-    def validate(self):
-        """Validate the noise schedule."""
-        if self.log_snr_min >= self.log_snr_max:
-            raise ValueError("min_log_snr must be less than max_log_snr.")
-        for training in [True, False]:
-            if not ops.isfinite(self.get_log_snr(0.0, training=training)):
-                raise ValueError("log_snr(0) must be finite.")
-            if not ops.isfinite(self.get_log_snr(1.0, training=training)):
-                raise ValueError("log_snr(1) must be finite.")
-            if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_max, training=training)):
-                raise ValueError("t(0) must be finite.")
-            if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_min, training=training)):
-                raise ValueError("t(1) must be finite.")
-        if not ops.isfinite(self.derivative_log_snr(self.log_snr_max, training=False)):
-            raise ValueError("dt/t log_snr(0) must be finite.")
-        if not ops.isfinite(self.derivative_log_snr(self.log_snr_min, training=False)):
-            raise ValueError("dt/t log_snr(1) must be finite.")
-
-
-@serializable
-class CosineNoiseSchedule(NoiseSchedule):
-    """Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].
-    For images, use s_shift_cosine = log(base_resolution / d), where d is the used resolution of the image.
-
-    [1] Diffusion Models Beat GANs on Image Synthesis: Dhariwal and Nichol (2022)
-    """
-
-    def __init__(
-        self, min_log_snr: float = -15, max_log_snr: float = 15, s_shift_cosine: float = 0.0, weighting: str = "sigmoid"
-    ):
-        super().__init__(name="cosine_noise_schedule", variance_type="preserving", weighting=weighting)
-        self._s_shift_cosine = s_shift_cosine
-        self.log_snr_min = min_log_snr
-        self.log_snr_max = max_log_snr
-
-        self._t_min = self.get_t_from_log_snr(log_snr_t=self.log_snr_max, training=True)
-        self._t_max = self.get_t_from_log_snr(log_snr_t=self.log_snr_min, training=True)
-
-    def _truncated_t(self, t: Tensor) -> Tensor:
-        return self._t_min + (self._t_max - self._t_min) * t
-
-    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
-        """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
-        t_trunc = self._truncated_t(t)
-        # SNR = -2 * log(tan(pi*t/2))
-        return -2 * ops.log(ops.tan(math.pi * t_trunc / 2)) + 2 * self._s_shift_cosine
-
-    def get_t_from_log_snr(self, log_snr_t: Union[Tensor, float], training: bool) -> Tensor:
-        """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
-        # SNR = -2 * log(tan(pi*t/2)) => t = 2/pi * arctan(exp(-snr/2))
-        return 2 / math.pi * ops.arctan(ops.exp((2 * self._s_shift_cosine - log_snr_t) / 2))
-
-    def derivative_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
-        """Compute d/dt log(1 + e^(-snr(t))), which is used for the reverse SDE."""
-        t = self.get_t_from_log_snr(log_snr_t=log_snr_t, training=training)
-
-        # Compute the truncated time t_trunc
-        t_trunc = self._truncated_t(t)
-        dsnr_dx = -(2 * math.pi) / ops.sin(math.pi * t_trunc)
-
-        # Using the chain rule on f(t) = log(1 + e^(-snr(t))):
-        # f'(t) = - (e^{-snr(t)} / (1 + e^{-snr(t)})) * dsnr_dt
-        dsnr_dt = dsnr_dx * (self._t_max - self._t_min)
-        factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
-        return -factor * dsnr_dt
-
-    def get_config(self):
-        return dict(min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max, s_shift_cosine=self._s_shift_cosine)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
-
-@serializable
-class EDMNoiseSchedule(NoiseSchedule):
-    """EDM noise schedule for diffusion models. This schedule is based on the EDM paper [1].
-    This should be used with the F-prediction type in the diffusion model.
-
-    [1] Elucidating the Design Space of Diffusion-Based Generative Models: Karras et al. (2022)
-    """
-
-    def __init__(self, sigma_data: float = 1.0, sigma_min: float = 1e-4, sigma_max: float = 80.0):
-        super().__init__(name="edm_noise_schedule", variance_type="preserving")
-        self.sigma_data = sigma_data
-        # training settings
-        self.p_mean = -1.2
-        self.p_std = 1.2
-        # sampling settings
-        self.sigma_max = sigma_max
-        self.sigma_min = sigma_min
-        self.rho = 7
-
-        # convert EDM parameters to signal-to-noise ratio formulation
-        self.log_snr_min = -2 * ops.log(sigma_max)
-        self.log_snr_max = -2 * ops.log(sigma_min)
-        # t is not truncated for EDM by definition of the sampling schedule
-        # training bounds should be set to avoid numerical issues
-        self._log_snr_min_training = self.log_snr_min - 1  # one is never sampler during training
-        self._log_snr_max_training = self.log_snr_max + 1  # 0 is almost surely never sampled during training
-
-    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
-        """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
-        if training:
-            # SNR = -dist.icdf(t_trunc) # negative seems to be wrong in the paper in the Kingma paper
-            loc = -2 * self.p_mean
-            scale = 2 * self.p_std
-            snr = loc + scale * ops.erfinv(2 * t - 1) * math.sqrt(2)
-            snr = ops.clip(snr, x_min=self._log_snr_min_training, x_max=self._log_snr_max_training)
-        else:  # sampling
-            sigma_min_rho = self.sigma_min ** (1 / self.rho)
-            sigma_max_rho = self.sigma_max ** (1 / self.rho)
-            snr = -2 * self.rho * ops.log(sigma_max_rho + (1 - t) * (sigma_min_rho - sigma_max_rho))
-        return snr
-
-    def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
-        """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
-        if training:
-            # SNR = -dist.icdf(t_trunc) => t = dist.cdf(-snr)  # negative seems to be wrong in the Kingma paper
-            loc = -2 * self.p_mean
-            scale = 2 * self.p_std
-            x = log_snr_t
-            t = 0.5 * (1 + ops.erf((x - loc) / (scale * math.sqrt(2.0))))
-        else:  # sampling
-            # SNR = -2 * rho * log(sigma_max ** (1/rho) + (1 - t) * (sigma_min ** (1/rho) - sigma_max ** (1/rho)))
-            # => t = 1 - ((exp(-snr/(2*rho)) - sigma_max ** (1/rho)) / (sigma_min ** (1/rho) - sigma_max ** (1/rho)))
-            sigma_min_rho = self.sigma_min ** (1 / self.rho)
-            sigma_max_rho = self.sigma_max ** (1 / self.rho)
-            t = 1 - ((ops.exp(-log_snr_t / (2 * self.rho)) - sigma_max_rho) / (sigma_min_rho - sigma_max_rho))
-        return t
-
-    def derivative_log_snr(self, log_snr_t: Tensor, training: bool) -> Tensor:
-        """Compute d/dt log(1 + e^(-snr(t))), which is used for the reverse SDE."""
-        if training:
-            raise NotImplementedError("Derivative of log SNR is not implemented for training mode.")
-        # sampling mode
-        t = self.get_t_from_log_snr(log_snr_t=log_snr_t, training=training)
-
-        # SNR = -2*rho*log(s_max + (1 - x)*(s_min - s_max))
-        s_max = self.sigma_max ** (1 / self.rho)
-        s_min = self.sigma_min ** (1 / self.rho)
-        u = s_max + (1 - t) * (s_min - s_max)
-        # d/dx snr = 2*rho*(s_min - s_max) / u
-        dsnr_dx = 2 * self.rho * (s_min - s_max) / u
-
-        # Using the chain rule on f(t) = log(1 + e^(-snr(t))):
-        # f'(t) = - (e^{-snr(t)} / (1 + e^{-snr(t)})) * dsnr_dt
-        factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
-        return -factor * dsnr_dx
-
-    def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
-        """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""
-        # for F-prediction: w = (ops.exp(-log_snr_t) + sigma_data^2) / (ops.exp(-log_snr_t)*sigma_data^2)
-        return ops.exp(-log_snr_t) / ops.square(self.sigma_data) + 1
-
-    def get_config(self):
-        return dict(sigma_data=self.sigma_data, sigma_min=self.sigma_min, sigma_max=self.sigma_max)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
+from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 
 @serializable
@@ -319,9 +49,8 @@ class DiffusionModel(InferenceNetwork):
         *,
         subnet: str | type = "mlp",
         integrate_kwargs: dict[str, any] = None,
-        subnet_kwargs: dict[str, any] = None,
-        noise_schedule: str | NoiseSchedule = "edm",
-        prediction_type: str = "F",
+        noise_schedule: Literal["edm", "cosine"] | type = "edm",
+        prediction_type: Literal["velocity", "noise", "F"] = "F",
         **kwargs,
     ):
         """
@@ -340,12 +69,10 @@ class DiffusionModel(InferenceNetwork):
             callable network. Default is "mlp".
         integrate_kwargs : dict[str, any], optional
             Additional keyword arguments for the integration process. Default is None.
-        subnet_kwargs : dict[str, any], optional
-            Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
-        noise_schedule : str or NoiseSchedule, optional
-            The noise schedule used for the diffusion process. Can be "cosine" or "edm".
+        noise_schedule : Literal['edm', 'cosine'] or type, optional
+            The noise schedule used for the diffusion process. Can be "cosine" or "edm" or a custom noise schedule.
             Default is "edm".
-        prediction_type: str, optional
+        prediction_type: Literal['velocity', 'noise', 'F'], optional
             The type of prediction used in the diffusion model. Can be "velocity", "noise" or "F" (EDM).
              Default is "F".
         **kwargs
@@ -353,17 +80,7 @@ class DiffusionModel(InferenceNetwork):
         """
         super().__init__(base_distribution="normal", **kwargs)
 
-        if isinstance(noise_schedule, str):
-            if noise_schedule == "cosine":
-                noise_schedule = CosineNoiseSchedule()
-            elif noise_schedule == "edm":
-                noise_schedule = EDMNoiseSchedule()
-            else:
-                raise ValueError(f"Unknown noise schedule: {noise_schedule}")
-        elif not isinstance(noise_schedule, NoiseSchedule):
-            raise ValueError(f"Unknown noise schedule: {noise_schedule}")
-        self.noise_schedule = noise_schedule
-        # validate noise model
+        self.noise_schedule = find_noise_schedule(noise_schedule)
         self.noise_schedule.validate()
 
         if prediction_type not in ["noise", "velocity", "F"]:  # F is EDM
@@ -373,7 +90,7 @@ class DiffusionModel(InferenceNetwork):
         if self._loss_type not in ["noise", "velocity", "F"]:
             raise ValueError(f"Unknown loss type: {self._loss_type}")
         if self._loss_type != "noise":
-            warnings.warn(
+            logging.warning(
                 "the standard schedules have weighting functions defined for the noise prediction loss. "
                 "You might want to replace them, if you use a different loss function."
             )
@@ -388,21 +105,11 @@ class DiffusionModel(InferenceNetwork):
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
-        if subnet_kwargs:
-            warnings.warn(
-                "Using `subnet_kwargs` is deprecated."
-                "Instead, instantiate the network yourself and pass the arguments directly.",
-                DeprecationWarning,
-            )
-
-        subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
-            subnet_kwargs = self.MLP_DEFAULT_CONFIG | subnet_kwargs
-
-        self.subnet = find_network(subnet, **subnet_kwargs)
+            self.subnet = find_network(subnet, **self.MLP_DEFAULT_CONFIG)
+        else:
+            self.subnet = find_network(subnet)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros")
-
-        self._kwargs = kwargs
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -428,7 +135,7 @@ class DiffusionModel(InferenceNetwork):
         base_config = super().get_config()
         base_config = layer_kwargs(base_config)
 
-        config = self._kwargs | {
+        config = {
             "subnet": self.subnet,
             "noise_schedule": self.noise_schedule,
             "integrate_kwargs": self.integrate_kwargs,
@@ -479,9 +186,9 @@ class DiffusionModel(InferenceNetwork):
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t, training=training)
 
         if conditions is None:
-            xtc = ops.concatenate([xz, self._transform_log_snr(log_snr_t)], axis=-1)
+            xtc = tensor_utils.concatenate_valid([xz, self._transform_log_snr(log_snr_t)], axis=-1)
         else:
-            xtc = ops.concatenate([xz, self._transform_log_snr(log_snr_t), conditions], axis=-1)
+            xtc = tensor_utils.concatenate_valid([xz, self._transform_log_snr(log_snr_t), conditions], axis=-1)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
@@ -529,13 +236,15 @@ class DiffusionModel(InferenceNetwork):
 
     def _transform_log_snr(self, log_snr: Tensor) -> Tensor:
         """Transform the log_snr to the range [-1, 1] for the diffusion process."""
-        # Transform the log_snr to the range [-1, 1]
-        return (
-            2
-            * (log_snr - self.noise_schedule.log_snr_min)
-            / (self.noise_schedule.log_snr_max - self.noise_schedule.log_snr_min)
-            - 1
-        )
+        log_snr_min = self.noise_schedule.log_snr_min
+        log_snr_max = self.noise_schedule.log_snr_max
+
+        # Calculate normalized value within the range [0, 1]
+        normalized_snr = (log_snr - log_snr_min) / (log_snr_max - log_snr_min)
+
+        # Scale to [-1, 1] range
+        scaled_value = 2 * normalized_snr - 1
+        return scaled_value
 
     def _forward(
         self,
@@ -545,14 +254,9 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = (
-            {
-                "start_time": 0.0,
-                "stop_time": 1.0,
-            }
-            | self.integrate_kwargs
-            | kwargs
-        )
+        integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
+        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
+        integrate_kwargs = integrate_kwargs | kwargs
         if integrate_kwargs["method"] == "euler_maruyama":
             raise ValueError("Stochastic methods are not supported for forward integration.")
 
@@ -599,14 +303,9 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = (
-            {
-                "start_time": 1.0,
-                "stop_time": 0.0,
-            }
-            | self.integrate_kwargs
-            | kwargs
-        )
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
+        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
+        integrate_kwargs = integrate_kwargs | kwargs
         if density:
             if integrate_kwargs["method"] == "euler_maruyama":
                 raise ValueError("Stochastic methods are not supported for density computation.")
@@ -678,12 +377,9 @@ class DiffusionModel(InferenceNetwork):
             self.build(xz_shape, conditions_shape)
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
-        # t_i = \mod (u_0 + i/k, 1)
         u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
         i = ops.arange(0, ops.shape(x)[0], dtype=ops.dtype(x))  # tensor of indices
         t = (u0 + i / ops.cast(ops.shape(x)[0], dtype=ops.dtype(x))) % 1
-        # i = keras.random.randint((ops.shape(x)[0],), minval=0, maxval=self._timesteps)
-        # t = ops.cast(i, ops.dtype(x)) / ops.cast(self._timesteps, ops.dtype(x))
 
         # calculate the noise level
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t, training=noise_schedule_training_stage), x)
@@ -700,9 +396,9 @@ class DiffusionModel(InferenceNetwork):
 
         # calculate output of the network
         if conditions is None:
-            xtc = ops.concatenate([diffused_x, self._transform_log_snr(log_snr_t)], axis=-1)
+            xtc = tensor_utils.concatenate_valid([diffused_x, self._transform_log_snr(log_snr_t)], axis=-1)
         else:
-            xtc = ops.concatenate([diffused_x, self._transform_log_snr(log_snr_t), conditions], axis=-1)
+            xtc = tensor_utils.concatenate_valid([diffused_x, self._transform_log_snr(log_snr_t), conditions], axis=-1)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(

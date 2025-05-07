@@ -356,7 +356,7 @@ def integrate_stochastic(
     stop_time: ArrayLike,
     steps: int,
     seed: keras.random.SeedGenerator,
-    method: str = "euler_maruyama",
+    method: Literal["euler_maruyama"] = "euler_maruyama",
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
     """
@@ -384,13 +384,11 @@ def integrate_stochastic(
     match method:
         case "euler_maruyama":
             step_fn = euler_maruyama_step
-        case str() as name:
-            raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
     # Prepare step function with partial application
-    step_fn = partial(step_fn, drift_fn=drift_fn, diffusion_fn=diffusion_fn, seed=seed, **kwargs)
+    step_fn = partial(step_fn, drift_fn=drift_fn, diffusion_fn=diffusion_fn, **kwargs)
 
     step_size = (stop_time - start_time) / steps
     time = start_time
@@ -403,6 +401,7 @@ def integrate_stochastic(
             state=current_state,
             time=time,
             step_size=step_size,
+            seed=seed,
         )
 
     return current_state

@@ -8,7 +8,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serializable
 
 
-@serializable
+@serializable("bayesflow.experimental")
 class NoiseSchedule(ABC):
     r"""Noise schedule for diffusion models. We follow the notation from [1].
 
@@ -155,7 +155,7 @@ class NoiseSchedule(ABC):
             raise ValueError("dt/t log_snr(1) must be finite.")
 
 
-@serializable
+@serializable("bayesflow.experimental")
 class CosineNoiseSchedule(NoiseSchedule):
     """Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].
     For images, use s_shift_cosine = log(base_resolution / d), where d is the used resolution of the image.
@@ -209,7 +209,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
 
-@serializable
+@serializable("bayesflow.experimental")
 class EDMNoiseSchedule(NoiseSchedule):
     """EDM noise schedule for diffusion models. This schedule is based on the EDM paper [1].
     This should be used with the F-prediction type in the diffusion model.

@@ -21,7 +21,7 @@ from bayesflow.utils import (
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 
-@serializable
+@serializable("bayesflow.experimental")
 class DiffusionModel(InferenceNetwork):
     """Diffusion Model as described in this overview paper [1].
 
@@ -49,7 +49,7 @@ class DiffusionModel(InferenceNetwork):
         *,
         subnet: str | type = "mlp",
         integrate_kwargs: dict[str, any] = None,
-        noise_schedule: Literal["edm", "cosine"] | type = "edm",
+        noise_schedule: Literal["edm", "cosine"] | dict | type = "edm",
         prediction_type: Literal["velocity", "noise", "F"] = "F",
         **kwargs,
     ):
@@ -69,8 +69,10 @@ class DiffusionModel(InferenceNetwork):
             callable network. Default is "mlp".
         integrate_kwargs : dict[str, any], optional
             Additional keyword arguments for the integration process. Default is None.
-        noise_schedule : Literal['edm', 'cosine'] or type, optional
+        noise_schedule : Literal['edm', 'cosine'], dict or type, optional
             The noise schedule used for the diffusion process. Can be "cosine" or "edm" or a custom noise schedule.
+            You can also pass a dictionary with the configuration for the noise schedule, e.g.,
+                {'type': cosine, 's_shift_cosine': 1.0}
             Default is "edm".
         prediction_type: Literal['velocity', 'noise', 'F'], optional
             The type of prediction used in the diffusion model. Can be "velocity", "noise" or "F" (EDM).

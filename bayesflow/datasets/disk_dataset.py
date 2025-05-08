@@ -92,9 +92,11 @@ class DiskDataset(keras.utils.PyDataset):
 
         batch = tree_stack(batch)
 
-        if isinstance(self.augmentations, Mapping):
-            for key in self.augmentations:
-                batch[key] = self.augmentations[key](batch[key])
+        if self.augmentations is None:
+            pass
+        elif isinstance(self.augmentations, Mapping):
+            for key, fn in self.augmentations.items():
+                batch[key] = fn(batch[key])
         elif isinstance(self.augmentations, Callable):
             batch = self.augmentations(batch)
         else:

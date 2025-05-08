@@ -36,7 +36,7 @@ class DiskDataset(keras.utils.PyDataset):
         load_fn: Callable = None,
         adapter: Adapter | None,
         stage: str = "training",
-        augmentations: Mapping[str, Callable] = None,
+        augmentations: Mapping[str, Callable] | Callable = None,
         **kwargs,
     ):
         """
@@ -57,9 +57,11 @@ class DiskDataset(keras.utils.PyDataset):
             Optional adapter to transform the loaded batch.
         stage : str, default="training"
             Current stage (e.g., "training", "validation", etc.) used by the adapter.
-        augmentations : Mapping[str, Callable], optional
-            Dictionary of augmentation functions to apply to each corresponding key in the batch.
-            Note - augmentations are applied before the adapter.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
         **kwargs
             Additional keyword arguments passed to the base `PyDataset`.
         """
@@ -85,9 +87,13 @@ class DiskDataset(keras.utils.PyDataset):
 
         batch = tree_stack(batch)
 
-        if self.augmentations is not None:
+        if isinstance(self.augmentations, Mapping):
             for key in self.augmentations:
                 batch[key] = self.augmentations[key](batch[key])
+        elif isinstance(self.augmentations, Callable):
+            batch = self.augmentations(batch)
+        else:
+            raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
         if self.adapter is not None:
             batch = self.adapter(batch, stage=self.stage)

@@ -14,14 +14,15 @@ from bayesflow.utils import (
     weighted_mean,
     integrate,
     integrate_stochastic,
-    find_noise_schedule,
     logging,
     tensor_utils,
 )
+from .dispatch import find_noise_schedule
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 
-@serializable("bayesflow.experimental")
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class DiffusionModel(InferenceNetwork):
     """Diffusion Model as described in this overview paper [1].
 

@@ -8,7 +8,8 @@ from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serializable
 
 
-@serializable("bayesflow.experimental")
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class NoiseSchedule(ABC):
     r"""Noise schedule for diffusion models. We follow the notation from [1].
 
@@ -227,7 +228,8 @@ class CosineNoiseSchedule(NoiseSchedule):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
 
-@serializable("bayesflow.experimental")
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class EDMNoiseSchedule(NoiseSchedule):
     """EDM noise schedule for diffusion models. This schedule is based on the EDM paper [1].
     This should be used with the F-prediction type in the diffusion model.

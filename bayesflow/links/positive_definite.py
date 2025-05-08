@@ -14,8 +14,6 @@ class PositiveDefinite(keras.Layer):
 
         self.layer_norm = keras.layers.LayerNormalization()
 
-        self.built = True
-
     def call(self, inputs: Tensor) -> Tensor:
         # normalize the activation at initialization time mean = 0.0, std = 0.1
         inputs = self.layer_norm(inputs) / 10

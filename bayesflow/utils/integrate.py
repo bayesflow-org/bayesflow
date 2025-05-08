@@ -302,50 +302,39 @@ def euler_maruyama_step(
     state: dict[str, ArrayLike],
     time: ArrayLike,
     step_size: ArrayLike,
-    seed: keras.random.SeedGenerator,
+    noise: dict[str, ArrayLike],
 ) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
     """
     Performs a single Euler-Maruyama step for stochastic differential equations.
 
     Args:
-        drift_fn: Function that computes the drift term.
-        diffusion_fn: Function that computes the diffusion term.
-        state: Dictionary containing the current state.
-        time: Current time.
-        step_size: Size of the integration step.
-        seed: Random seed for noise generation.
+        drift_fn: Function computing the drift term f(t, **state).
+        diffusion_fn: Function computing the diffusion term g(t, **state).
+        state: Current state, mapping variable names to tensors.
+        time: Current time scalar tensor.
+        step_size: Time increment dt.
+        noise: Mapping of variable names to dW noise tensors.
 
     Returns:
-        Tuple of (new_state, new_time, new_step_size).
+        new_state: Updated state after one Euler-Maruyama step.
+        new_time: time + dt.
     """
-    # Compute drift term
+    # Compute drift and diffusion
     drift = drift_fn(time, **filter_kwargs(state, drift_fn))
-
-    # Compute diffusion term
     diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))
 
-    # Generate noise for this step
-    noise = {}
-    for key in state.keys():
-        eps = keras.random.normal(keras.ops.shape(state[key]), dtype=keras.ops.dtype(state[key]), seed=seed)
-        noise[key] = eps * keras.ops.sqrt(keras.ops.abs(step_size))
-
-    # Check if diffusion and noise have the same keys
+    # Check noise keys
     if set(diffusion.keys()) != set(noise.keys()):
         raise ValueError("Keys of diffusion terms and noise do not match.")
 
-    # Apply updates using Euler-Maruyama formula: dx = f(x)dt + g(x)dW
-    new_state = state.copy()
-    for key in drift.keys():
-        if key in diffusion:
-            new_state[key] = state[key] + (step_size * drift[key]) + (diffusion[key] * noise[key])
-        else:
-            # If no diffusion term for this variable, apply deterministic update
-            new_state[key] = state[key] + step_size * drift[key]
+    new_state = {}
+    for key, d in drift.items():
+        base = state[key] + step_size * d
+        if key in diffusion:  # stochastic update
+            base = base + diffusion[key] * noise[key]
+        new_state[key] = base
 
-    new_time = time + step_size
-
-    return new_state, new_time
+    return new_state, time + step_size
 
 
 def integrate_stochastic(
@@ -356,7 +345,7 @@ def integrate_stochastic(
     stop_time: ArrayLike,
     steps: int,
     seed: keras.random.SeedGenerator,
-    method: Literal["euler_maruyama"] = "euler_maruyama",
+    method: str = "euler_maruyama",
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
     """
@@ -370,7 +359,7 @@ def integrate_stochastic(
         stop_time: Ending time for integration.
         steps: Number of integration steps.
         seed: Random seed for noise generation.
-        method: Integration method to use ('euler_maruyama').
+        method: Integration method to use, e.g., 'euler_maruyama'.
         **kwargs: Additional arguments to pass to the step function.
 
     Returns:
@@ -390,18 +379,22 @@ def integrate_stochastic(
     # Prepare step function with partial application
     step_fn = partial(step_fn, drift_fn=drift_fn, diffusion_fn=diffusion_fn, **kwargs)
 
+    # Time step
     step_size = (stop_time - start_time) / steps
-    time = start_time
-    current_state = state.copy()
+    sqrt_dt = keras.ops.sqrt(keras.ops.abs(step_size))
 
-    # keras.ops.fori_loop does not support keras seed generator in jax
-    for i in range(steps):
-        # Execute the step with the specific seed for this step
-        current_state, time = step_fn(
-            state=current_state,
-            time=time,
-            step_size=step_size,
-            seed=seed,
+    # Pre-generate noise history: shape = (steps, *state_shape)
+    noise_history = {}
+    for key, val in state.items():
+        noise_history[key] = (
+            keras.random.normal((steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed) * sqrt_dt
         )
 
-    return current_state
+    def body(_loop_var, _loop_state):
+        _current_state, _current_time = _loop_state
+        _noise_i = {k: noise_history[k][_loop_var] for k in _current_state.keys()}
+        new_state, new_time = step_fn(state=_current_state, time=_current_time, step_size=step_size, noise=_noise_i)
+        return new_state, new_time
+
+    final_state, final_time = keras.ops.fori_loop(0, steps, body, (state, start_time))
+    return final_state

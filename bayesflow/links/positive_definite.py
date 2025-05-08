@@ -38,13 +38,14 @@ class PositiveDefinite(keras.Layer):
 
     def compute_input_shape(self, output_shape):
         """
-        Returns the shape of parameterization of a cholesky factor triangular matrix.
+        Returns the shape of parameterization of a Cholesky factor triangular matrix.
 
-        There are m nonzero elements of a lower triangular nxn matrix with m = n * (n + 1) / 2.
+        There are :math:`m` nonzero elements of a lower triangular :math:`n \\times n` matrix with
+        :math:`m = n (n + 1) / 2`, so for output shape (..., n, n) the returned shape is (..., m).
 
-        Example
-        -------
-        >>> PositiveDefinite().compute_output_shape((None, 3, 3))
+        Examples
+        --------
+        >>> PositiveDefinite().compute_input_shape((None, 3, 3))
         6
         """
         n = output_shape[-1]

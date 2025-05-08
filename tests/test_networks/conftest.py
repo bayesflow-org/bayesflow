@@ -8,8 +8,8 @@ def diffusion_model_edm_F():
     from bayesflow.experimental import DiffusionModel
 
     return DiffusionModel(
-        subnet_kwargs={"widths": [64, 64]},
-        integrate_kwargs={"method": "rk45", "steps": 100},
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="edm",
         prediction_type="F",
     )
@@ -20,8 +20,8 @@ def diffusion_model_edm_velocity():
     from bayesflow.experimental import DiffusionModel
 
     return DiffusionModel(
-        subnet_kwargs={"widths": [64, 64]},
-        integrate_kwargs={"method": "rk45", "steps": 100},
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="edm",
         prediction_type="velocity",
     )
@@ -32,8 +32,8 @@ def diffusion_model_edm_noise():
     from bayesflow.experimental import DiffusionModel
 
     return DiffusionModel(
-        subnet_kwargs={"widths": [64, 64]},
-        integrate_kwargs={"method": "rk45", "steps": 100},
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="edm",
         prediction_type="noise",
     )
@@ -44,8 +44,8 @@ def diffusion_model_cosine_F():
     from bayesflow.experimental import DiffusionModel
 
     return DiffusionModel(
-        subnet_kwargs={"widths": [64, 64]},
-        integrate_kwargs={"method": "rk45", "steps": 100},
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="cosine",
         prediction_type="F",
     )
@@ -56,8 +56,8 @@ def diffusion_model_cosine_velocity():
     from bayesflow.experimental import DiffusionModel
 
     return DiffusionModel(
-        subnet_kwargs={"widths": [64, 64]},
-        integrate_kwargs={"method": "rk45", "steps": 100},
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="cosine",
         prediction_type="velocity",
     )
@@ -68,8 +68,8 @@ def diffusion_model_cosine_noise():
     from bayesflow.experimental import DiffusionModel
 
     return DiffusionModel(
-        subnet_kwargs={"widths": [64, 64]},
-        integrate_kwargs={"method": "rk45", "steps": 100},
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="cosine",
         prediction_type="noise",
     )

@@ -60,6 +60,11 @@ class DiskDataset(keras.utils.PyDataset):
         augmentations : dict of str to Callable or Callable, optional
             Dictionary of augmentation functions to apply to each corresponding key in the batch
             or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
             Note - augmentations are applied before the adapter is called and are generally
             transforms that you only want to apply during training.
         **kwargs

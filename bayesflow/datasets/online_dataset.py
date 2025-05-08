@@ -90,3 +90,7 @@ class OnlineDataset(keras.utils.PyDataset):
             batch = self.adapter(batch, stage=self.stage)
 
         return batch
+
+    @property
+    def num_batches(self) -> int:
+        return self._num_batches

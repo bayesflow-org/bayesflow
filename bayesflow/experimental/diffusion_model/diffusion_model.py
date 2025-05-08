@@ -88,11 +88,11 @@ class DiffusionModel(InferenceNetwork):
         self.noise_schedule.validate()
 
         if prediction_type not in ["noise", "velocity", "F"]:  # F is EDM
-            raise ValueError(f"Unknown prediction type: {prediction_type}")
+            raise TypeError(f"Unknown prediction type: {prediction_type}")
         self._prediction_type = prediction_type
         self._loss_type = kwargs.get("loss_type", "noise")
         if self._loss_type not in ["noise", "velocity", "F"]:
-            raise ValueError(f"Unknown loss type: {self._loss_type}")
+            raise TypeError(f"Unknown loss type: {self._loss_type}")
         if self._loss_type != "noise":
             logging.warning(
                 "the standard schedules have weighting functions defined for the noise prediction loss. "

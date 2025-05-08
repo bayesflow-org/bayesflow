@@ -386,7 +386,7 @@ def positive_diag(x: Tensor, method="default") -> Tensor:
     x_diag_positive = keras.ops.tril(keras.ops.triu(x_positive))
 
     # zero diagonal entries
-    x_offdiag = np.triu(x, k=1) + np.tril(x, k=-1)
+    x_offdiag = keras.ops.triu(x, k=1) + keras.ops.tril(x, k=-1)
 
     # sum to get full matrices with softplus applied only to diagonal entries
     x = x_diag_positive + x_offdiag

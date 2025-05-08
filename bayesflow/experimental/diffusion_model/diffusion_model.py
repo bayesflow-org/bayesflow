@@ -27,7 +27,8 @@ class DiffusionModel(InferenceNetwork):
     """Diffusion Model as described in this overview paper [1].
 
     [1] Variational Diffusion Models 2.0: Understanding Diffusion Model Objectives as the ELBO with Simple Data
-        Augmentation: Kingma et al. (2023)
+    Augmentation: Kingma et al. (2023)
+
     [2] Score-Based Generative Modeling through Stochastic Differential Equations: Song et al. (2021)
     """
 

@@ -24,7 +24,7 @@ class NoiseSchedule(ABC):
     the same for the forward and reverse process, but this is not necessary and can be changed via the training flag.
 
     [1] Variational Diffusion Models 2.0: Understanding Diffusion Model Objectives as the ELBO with Simple Data
-        Augmentation: Kingma et al. (2023)
+    Augmentation: Kingma et al. (2023)
     """
 
     def __init__(
@@ -72,9 +72,15 @@ class NoiseSchedule(ABC):
     def get_drift_diffusion(self, log_snr_t: Tensor, x: Tensor = None, training: bool = False) -> tuple[Tensor, Tensor]:
         r"""Compute the drift and optionally the squared diffusion term for the reverse SDE.
         It can be derived from the derivative of the schedule:
-            \beta(t) = d/dt log(1 + e^(-snr(t)))
+
+        .. math::
+            \beta(t) = d/dt \log(1 + e^{-snr(t)})
+
             f(z, t) = -0.5 * \beta(t) * z
+
             g(t)^2 = \beta(t)
+
+        The corresponding differential equations are::
 
             SDE: d(z) = [ f(z, t) - g(t)^2 * score(z, lambda) ] dt + g(t) dW
             ODE: dz = [ f(z, t) - 0.5 * g(t)^2 * score(z, lambda) ] dt
@@ -95,9 +101,11 @@ class NoiseSchedule(ABC):
     def get_alpha_sigma(self, log_snr_t: Tensor, training: bool) -> tuple[Tensor, Tensor]:
         """Get alpha and sigma for a given log signal-to-noise ratio (lambda).
 
-        Default is a variance preserving schedule:
+        Default is a variance preserving schedule::
+
             alpha(t) = sqrt(sigmoid(log_snr_t))
             sigma(t) = sqrt(sigmoid(-log_snr_t))
+
         For a variance exploding schedule, one should set alpha^2 = 1 and sigma^2 = exp(-lambda)
         """
         if self._variance_type == "preserving":

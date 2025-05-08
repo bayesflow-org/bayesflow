@@ -1,7 +1,7 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, fill_triangular_matrix
+from bayesflow.utils import layer_kwargs, fill_triangular_matrix, positive_diag
 from bayesflow.utils.serialization import serializable
 
 
@@ -11,16 +11,23 @@ class PositiveDefinite(keras.Layer):
 
     def __init__(self, **kwargs):
         super().__init__(**layer_kwargs(kwargs))
+
+        self.layer_norm = keras.layers.LayerNormalization()
+
         self.built = True
 
     def call(self, inputs: Tensor) -> Tensor:
-        # Build cholesky factor from inputs
-        L = fill_triangular_matrix(inputs, positive_diag=True)
+        # normalize the activation at initialization time mean = 0.0, std = 0.1
+        inputs = self.layer_norm(inputs) / 10
 
-        # calculate positive definite matrix from cholesky factors
+        # form a cholesky factor
+        L = fill_triangular_matrix(inputs)
+        L = positive_diag(L)
+
+        # calculate positive definite matrix from cholesky factors:
         psd = keras.ops.matmul(
             L,
-            keras.ops.moveaxis(L, -2, -1),  # L transposed
+            keras.ops.swapaxes(L, -2, -1),  # L transposed
         )
         return psd
 

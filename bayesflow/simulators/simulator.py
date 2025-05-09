@@ -50,11 +50,11 @@ class Simulator:
                 # we could cast, but this tends to hide mistakes in the predicate
                 raise RuntimeError(f"Predicate must return a boolean type array. Got dtype={accept.dtype}")
 
-            (accept,) = np.nonzero(accept)
-
             if not np.any(accept):
                 # no samples accepted, skip
                 continue
+
+            (accept,) = np.nonzero(accept)
 
             # apply acceptance mask
             samples = {key: np.take(value, accept, axis=axis) for key, value in samples.items()}

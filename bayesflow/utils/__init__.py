@@ -86,14 +86,15 @@ from .tensor_utils import (
     expand_right_as,
     expand_right_to,
     expand_tile,
+    fill_triangular_matrix,
     pad,
+    positive_diag,
     searchsorted,
     size_of,
     stack_valid,
     tile_axis,
     tree_concatenate,
     tree_stack,
-    fill_triangular_matrix,
     weighted_mean,
 )
 

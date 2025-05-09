@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Callable
 
 import numpy as np
 
@@ -23,8 +23,37 @@ class OfflineDataset(keras.utils.PyDataset):
         num_samples: int = None,
         *,
         stage: str = "training",
+        augmentations: Mapping[str, Callable] | Callable = None,
         **kwargs,
     ):
+        """
+        Initialize an OfflineDataset instance for offline training with optional data augmentations.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Pre-simulated data stored in a dictionary, where each key maps to a NumPy array.
+        batch_size : int
+            Number of samples per batch.
+        adapter : Adapter or None
+            Optional adapter to transform the batch.
+        num_samples : int, optional
+            Number of samples in the dataset. If None, it will be inferred from the data.
+        stage : str, default="training"
+            Current stage (e.g., "training", "validation", etc.) used by the adapter.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
+        **kwargs
+            Additional keyword arguments passed to the base `PyDataset`.
+        """
         super().__init__(**kwargs)
         self.batch_size = batch_size
         self.data = data
@@ -39,10 +68,29 @@ class OfflineDataset(keras.utils.PyDataset):
 
         self.indices = np.arange(self.num_samples, dtype="int64")
 
+        self.augmentations = augmentations
+
         self.shuffle()
 
     def __getitem__(self, item: int) -> dict[str, np.ndarray]:
-        """Get a batch of pre-simulated data"""
+        """
+        Load a batch of data from disk.
+
+        Parameters
+        ----------
+        item : int
+            Index of the batch to retrieve.
+
+        Returns
+        -------
+        dict of str to np.ndarray
+            A batch of loaded (and optionally augmented/adapted) data.
+
+        Raises
+        ------
+        IndexError
+            If the requested batch index is out of range.
+        """
         if not 0 <= item < self.num_batches:
             raise IndexError(f"Index {item} is out of bounds for dataset with {self.num_batches} batches.")
 
@@ -53,6 +101,16 @@ class OfflineDataset(keras.utils.PyDataset):
             key: np.take(value, item, axis=0) if isinstance(value, np.ndarray) else value
             for key, value in self.data.items()
         }
+
+        if self.augmentations is None:
+            pass
+        elif isinstance(self.augmentations, Mapping):
+            for key, fn in self.augmentations.items():
+                batch[key] = fn(batch[key])
+        elif isinstance(self.augmentations, Callable):
+            batch = self.augmentations(batch)
+        else:
+            raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
         if self.adapter is not None:
             batch = self.adapter(batch, stage=self.stage)

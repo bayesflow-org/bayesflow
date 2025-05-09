@@ -674,6 +674,7 @@ class BasicWorkflow(Workflow):
         batch_size: int = 32,
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int = None,
+        augmentations: Mapping[str, Callable] | Callable = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -698,6 +699,16 @@ class BasicWorkflow(Workflow):
             A dictionary containing validation data. If an integer is provided,
             that number of validation samples will be generated (if supported).
             By default, no validation data is used.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
         **kwargs : dict, optional
             Additional keyword arguments passed to the underlying `_fit` method.
 
@@ -709,7 +720,7 @@ class BasicWorkflow(Workflow):
             metric evolution over epochs.
         """
 
-        dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter)
+        dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter, augmentations=augmentations)
 
         return self._fit(
             dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
@@ -722,6 +733,7 @@ class BasicWorkflow(Workflow):
         batch_size: int = 32,
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int = None,
+        augmentations: Mapping[str, Callable] | Callable = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -743,6 +755,16 @@ class BasicWorkflow(Workflow):
             A dictionary containing validation data. If an integer is provided,
             that number of validation samples will be generated (if supported).
             By default, no validation data is used.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
         **kwargs : dict, optional
             Additional keyword arguments passed to the underlying `_fit` method.
 
@@ -755,7 +777,11 @@ class BasicWorkflow(Workflow):
         """
 
         dataset = OnlineDataset(
-            simulator=self.simulator, batch_size=batch_size, num_batches=num_batches_per_epoch, adapter=self.adapter
+            simulator=self.simulator,
+            batch_size=batch_size,
+            num_batches=num_batches_per_epoch,
+            adapter=self.adapter,
+            augmentations=augmentations,
         )
 
         return self._fit(
@@ -771,6 +797,7 @@ class BasicWorkflow(Workflow):
         epochs: int = 100,
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int = None,
+        augmentations: Mapping[str, Callable] | Callable = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -798,6 +825,16 @@ class BasicWorkflow(Workflow):
             A dictionary containing validation data. If an integer is provided,
             that number of validation samples will be generated (if supported).
             By default, no validation data is used.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
         **kwargs : dict, optional
             Additional keyword arguments passed to the underlying `_fit` method.
 
@@ -809,7 +846,14 @@ class BasicWorkflow(Workflow):
             metric evolution over epochs.
         """
 
-        dataset = DiskDataset(root=root, pattern=pattern, batch_size=batch_size, load_fn=load_fn, adapter=self.adapter)
+        dataset = DiskDataset(
+            root=root,
+            pattern=pattern,
+            batch_size=batch_size,
+            load_fn=load_fn,
+            adapter=self.adapter,
+            augmentations=augmentations,
+        )
 
         return self._fit(
             dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs

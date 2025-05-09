@@ -74,7 +74,7 @@ class DiffusionModel(InferenceNetwork):
         noise_schedule : Literal['edm', 'cosine'], dict or type, optional
             The noise schedule used for the diffusion process. Can be "cosine" or "edm" or a custom noise schedule.
             You can also pass a dictionary with the configuration for the noise schedule, e.g.,
-                {'type': cosine, 's_shift_cosine': 1.0}
+                {'name': cosine, 's_shift_cosine': 1.0}
             Default is "edm".
         prediction_type: Literal['velocity', 'noise', 'F'], optional
             The type of prediction used in the diffusion model. Can be "velocity", "noise" or "F" (EDM).

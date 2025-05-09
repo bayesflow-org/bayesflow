@@ -29,8 +29,8 @@ def _(name: str, *args, **kwargs):
 
 @find_noise_schedule.register
 def _(config: dict, *args, **kwargs):
-    name = config.get("type", "").lower()
-    params = {k: v for k, v in config.items() if k != "type"}
+    name = config.get("name", "").lower()
+    params = {k: v for k, v in config.items() if k != "name"}
     match name:
         case "cosine":
             from .noise_schedules import CosineNoiseSchedule
@@ -46,9 +46,6 @@ def _(config: dict, *args, **kwargs):
 
 @find_noise_schedule.register
 def _(cls: type, *args, **kwargs):
-    # Lazily import NoiseSchedule class and compare
-    from .noise_schedules import NoiseSchedule
-
     if issubclass(cls, NoiseSchedule):
         return cls(*args, **kwargs)
     raise TypeError(f"Expected subclass of NoiseSchedule, got {cls}")

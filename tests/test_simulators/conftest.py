@@ -168,6 +168,56 @@ def composite_gaussian():
 
 
 @pytest.fixture()
+def multimodel():
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+
+    def context(batch_size):
+        return dict(n=np.random.randint(10, 100))
+
+    def prior_0():
+        return dict(mu=0)
+
+    def prior_1():
+        return dict(mu=np.random.standard_normal())
+
+    def likelihood(n, mu):
+        return dict(y=np.random.normal(mu, 1, n))
+
+    simulator_0 = make_simulator([prior_0, likelihood])
+    simulator_1 = make_simulator([prior_1, likelihood])
+
+    simulator = ModelComparisonSimulator(simulators=[simulator_0, simulator_1], shared_simulator=context)
+
+    return simulator
+
+
+@pytest.fixture(params=["drop", "fill", "error"])
+def multimodel_key_conflicts(request):
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+
+    rng = np.random.default_rng()
+
+    def prior_1():
+        return dict(w=rng.uniform())
+
+    def prior_2():
+        return dict(c=rng.uniform())
+
+    def model_1(w):
+        return dict(x=w)
+
+    def model_2(c):
+        return dict(x=c)
+
+    simulator_1 = make_simulator([prior_1, model_1])
+    simulator_2 = make_simulator([prior_2, model_2])
+
+    simulator = ModelComparisonSimulator(simulators=[simulator_1, simulator_2], key_conflicts=request.param)
+
+    return simulator
+
+
+@pytest.fixture()
 def fixed_n():
     return 5
 

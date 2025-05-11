@@ -335,14 +335,14 @@ def fill_triangular_matrix(x: Tensor, upper: bool = False, positive_diag: bool =
 
         # Trick: Create triangular matrix by concatenating with a flipped version of itself, then reshape.
         if not upper:
-            x_list = [x, keras.ops.flip(x[..., n:], axis=-1)]
+            x_list = [x[..., n:], keras.ops.flip(x, axis=-1)]
 
             y = keras.ops.concatenate(x_list, axis=len(batch_shape))
             y = keras.ops.reshape(y, (-1, n, n))
             y = keras.ops.tril(y)
 
         else:
-            x_list = [x[..., n:], keras.ops.flip(x, axis=-1)]
+            x_list = [x, keras.ops.flip(x[..., n:], axis=-1)]
 
             y = keras.ops.concatenate(x_list, axis=len(batch_shape))
             y = keras.ops.reshape(y, (-1, n, n))

@@ -458,7 +458,7 @@ class ContinuousApproximator(Approximator):
         # change of variables formula
         log_det_jac = log_det_jac.get("inference_variables")
         if log_det_jac is not None:
-            log_prob = log_prob + log_det_jac
+            log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
 
         return log_prob
 

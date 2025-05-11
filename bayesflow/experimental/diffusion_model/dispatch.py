@@ -1,10 +1,10 @@
 from functools import singledispatch
-from .noise_schedules import NoiseSchedule
+from .noise_schedule import NoiseSchedule
 
 
 @singledispatch
 def find_noise_schedule(arg, *args, **kwargs):
-    raise TypeError(f"Unknown noise schedule: {arg!r}")
+    raise TypeError(f"Not a noise schedule: {arg!r}. Please pass an object of type 'NoiseSchedule'.")
 
 
 @find_noise_schedule.register
@@ -16,11 +16,11 @@ def _(noise_schedule: NoiseSchedule):
 def _(name: str, *args, **kwargs):
     match name.lower():
         case "cosine":
-            from .noise_schedules import CosineNoiseSchedule
+            from .cosine_noise_schedule import CosineNoiseSchedule
 
             return CosineNoiseSchedule()
         case "edm":
-            from .noise_schedules import EDMNoiseSchedule
+            from .edm_noise_schedule import EDMNoiseSchedule
 
             return EDMNoiseSchedule()
         case other:
@@ -33,11 +33,11 @@ def _(config: dict, *args, **kwargs):
     params = {k: v for k, v in config.items() if k != "name"}
     match name:
         case "cosine":
-            from .noise_schedules import CosineNoiseSchedule
+            from .cosine_noise_schedule import CosineNoiseSchedule
 
             return CosineNoiseSchedule(**params)
         case "edm":
-            from .noise_schedules import EDMNoiseSchedule
+            from .edm_noise_schedule import EDMNoiseSchedule
 
             return EDMNoiseSchedule(**params)
         case other:
@@ -49,8 +49,3 @@ def _(cls: type, *args, **kwargs):
     if issubclass(cls, NoiseSchedule):
         return cls(*args, **kwargs)
     raise TypeError(f"Expected subclass of NoiseSchedule, got {cls}")
-
-
-@find_noise_schedule.register
-def _(schedule: type, *args, **kwargs):
-    return schedule

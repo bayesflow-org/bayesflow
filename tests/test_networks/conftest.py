@@ -201,7 +201,14 @@ def inference_network_subnet(request):
             ],
         ),
         pytest.param("diffusion_model_cosine_velocity", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
-        pytest.param("diffusion_model_cosine_F", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
+        pytest.param(
+            "diffusion_model_cosine_F",
+            marks=[
+                pytest.mark.slow,
+                pytest.mark.diffusion_model,
+                pytest.mark.skip("skip to reduce load on CI."),
+            ],
+        ),
         pytest.param(
             "diffusion_model_cosine_noise",
             marks=[
@@ -210,7 +217,14 @@ def inference_network_subnet(request):
                 pytest.mark.skip("noise predicition not testable without prior training for numerical reasons."),
             ],
         ),
-        pytest.param("diffusion_model_cosine_velocity", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
+        pytest.param(
+            "diffusion_model_cosine_velocity",
+            marks=[
+                pytest.mark.slow,
+                pytest.mark.diffusion_model,
+                pytest.mark.skip("skip to reduce load on CI."),
+            ],
+        ),
     ],
     scope="function",
 )

@@ -41,6 +41,7 @@ class CosineNoiseSchedule(NoiseSchedule):
         """
         super().__init__(name="cosine_noise_schedule", variance_type="preserving", weighting=weighting)
         self._shift = shift
+        self._weighting = weighting
         self.log_snr_min = min_log_snr
         self.log_snr_max = max_log_snr
 
@@ -75,7 +76,9 @@ class CosineNoiseSchedule(NoiseSchedule):
         return -factor * dsnr_dt
 
     def get_config(self):
-        return dict(min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max, shift=self._shift)
+        return dict(
+            min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max, shift=self._shift, weighting=self._weighting
+        )
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

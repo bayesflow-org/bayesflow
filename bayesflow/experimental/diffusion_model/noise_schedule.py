@@ -138,7 +138,7 @@ class NoiseSchedule(ABC):
             raise TypeError(f"Unknown weighting type: {self._weighting}")
 
     def get_config(self):
-        return dict(name=self.name, variance_type=self._variance_type)
+        return dict(name=self.name, variance_type=self._variance_type, weighting=self._weighting)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

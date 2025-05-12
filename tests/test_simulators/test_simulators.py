@@ -67,5 +67,5 @@ def test_multimodel_key_conflicts_sample(multimodel_key_conflicts, batch_size):
         assert set(samples) == {"x", "model_indices", "c", "w"}
         assert np.sum(np.isnan(samples["c"])) + np.sum(np.isnan(samples["w"])) == batch_size
     elif multimodel_key_conflicts.key_conflicts == "error":
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             samples = multimodel_key_conflicts.sample(batch_size)

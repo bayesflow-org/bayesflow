@@ -83,7 +83,7 @@ class ModelComparisonSimulator(Simulator):
         self.use_mixed_batches = use_mixed_batches
         self.key_conflicts = key_conflicts
         self.fill_value = fill_value
-        self._keys = None
+        self._key_conflicts_warning = True
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
@@ -163,30 +163,28 @@ class ModelComparisonSimulator(Simulator):
             raise ValueError("Key conflicts are found in simulator outputs, cannot combine them into one batch.")
 
     def _determine_key_conflicts(self, sims):
-        # determine only once
-        if self._keys is not None:
-            return self._keys
-
         keys = [set(sim.keys()) for sim in sims]
         all_keys = set.union(*keys)
         common_keys = set.intersection(*keys)
         missing_keys = [all_keys - k for k in keys]
 
-        self._keys = keys, all_keys, common_keys, missing_keys
-
         if all_keys == common_keys:
-            return self._keys
+            return keys, all_keys, common_keys, missing_keys
 
-        if self.key_conflicts == "drop":
-            logging.info(
-                f"Incompatible simulator output. \
+        if self._key_conflicts_warning:
+            # issue warning only once
+            self._key_conflicts_warning = False
+
+            if self.key_conflicts == "drop":
+                logging.info(
+                    f"Incompatible simulator output. \
 The following keys will be dropped: {', '.join(sorted(all_keys - common_keys))}."
-            )
-        elif self.key_conflicts == "fill":
-            logging.info(
-                f"Incompatible simulator output. \
+                )
+            elif self.key_conflicts == "fill":
+                logging.info(
+                    f"Incompatible simulator output. \
 Attempting to replace keys: {', '.join(sorted(all_keys - common_keys))}, where missing, \
 with value {self.fill_value}."
-            )
+                )
 
-        return self._keys
+        return keys, all_keys, common_keys, missing_keys

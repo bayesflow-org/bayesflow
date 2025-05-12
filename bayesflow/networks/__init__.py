@@ -11,6 +11,7 @@ from .flow_matching import FlowMatching
 from .inference_network import InferenceNetwork
 from .point_inference_network import PointInferenceNetwork
 from .mlp import MLP
+from .multimodal_summary_network import MultimodalSummaryNetwork
 from .summary_network import SummaryNetwork
 from .time_series_network import TimeSeriesNetwork
 from .transformers import SetTransformer, TimeSeriesTransformer, FusionTransformer

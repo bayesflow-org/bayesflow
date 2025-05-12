@@ -36,6 +36,8 @@ def adapter():
         .rename("o1", "o2")
         .random_subsample("s3", sample_size=33, axis=0)
         .take("s3", indices=np.arange(0, 32), axis=0)
+        .group(["p1", "p2"], into="ps", prefix="p")
+        .ungroup("ps", prefix="p")
     )
 
 

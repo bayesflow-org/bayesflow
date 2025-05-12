@@ -14,6 +14,7 @@ from .transforms import (
     Drop,
     ExpandDims,
     FilterTransform,
+    Group,
     Keep,
     Log,
     MapTransform,
@@ -25,6 +26,7 @@ from .transforms import (
     Standardize,
     ToArray,
     Transform,
+    Ungroup,
     RandomSubsample,
     Take,
 )
@@ -597,6 +599,52 @@ class Adapter(MutableSequence[Transform]):
             keys = [keys]
 
         transform = MapTransform({key: ExpandDims(axis=axis) for key in keys})
+        self.transforms.append(transform)
+        return self
+
+    def group(self, keys: Sequence[str], into: str, *, prefix: str = ""):
+        """Append a :py:class:`~transforms.Group` transform to the adapter.
+
+        Groups the given variables as a dictionary in the key `into`. As most transforms do
+        not support nested structures, this should usually be the last transform in the adapter.
+
+        Parameters
+        ----------
+        keys : Sequence of str
+            The names of the variables to group together.
+        into : str
+            The name of the variable to store the grouped variables in.
+        prefix : str, optional
+            An optional common prefix of the variable names before grouping, which will be removed after grouping.
+
+        Raises
+        ------
+        ValueError
+            If a prefix is specified, but a provided key does not start with the prefix.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = Group(keys=keys, into=into, prefix=prefix)
+        self.transforms.append(transform)
+        return self
+
+    def ungroup(self, key: str, *, prefix: str = ""):
+        """Append an :py:class:`~transforms.Ungroup` transform to the adapter.
+
+        Ungroups the the variables in `key` from a dictionary into individual entries. Most transforms do
+        not support nested structures, so this can be used to flatten a nested structure.
+        The nesting can be re-established after the transforms using the :py:meth:`group` method.
+
+        Parameters
+        ----------
+        key : str
+            The name of the variable to ungroup. The corresponding variable has to be a dictionary.
+        prefix : str, optional
+            An optional common prefix that will be added to the ungrouped variable names. This can be necessary
+            to avoid duplicate names.
+        """
+        transform = Ungroup(key=key, prefix=prefix)
         self.transforms.append(transform)
         return self
 

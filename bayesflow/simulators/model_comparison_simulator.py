@@ -6,8 +6,10 @@ from bayesflow.utils import tree_concatenate
 from bayesflow.utils.decorators import allow_batch_size
 
 from bayesflow.utils import numpy_utils as npu
+from bayesflow.utils import logging
 
 from types import FunctionType
+from typing import Literal
 
 from .simulator import Simulator
 from .lambda_simulator import LambdaSimulator
@@ -22,6 +24,8 @@ class ModelComparisonSimulator(Simulator):
         p: Sequence[float] = None,
         logits: Sequence[float] = None,
         use_mixed_batches: bool = True,
+        key_conflicts: Literal["drop", "fill", "error"] = "drop",
+        fill_value: float = np.nan,
         shared_simulator: Simulator | Callable[[Sequence[int]], dict[str, any]] = None,
     ):
         """
@@ -38,11 +42,21 @@ class ModelComparisonSimulator(Simulator):
             A sequence of logits corresponding to model probabilities. Mutually exclusive with `p`.
             If neither `p` nor `logits` is provided, defaults to uniform logits.
         use_mixed_batches : bool, optional
-            If True, samples in a batch are drawn from different models. If False, the entire batch
-            is drawn from a single model chosen according to the model probabilities. Default is True.
+            Whether to draw samples in a batch from different models.
+
+            - If True (default), each sample in a batch may come from a different model.
+            - If False, the entire batch is drawn from a single model, selected according to model probabilities.
+        key_conflicts : str, optional
+            Policy for handling keys that are missing in the output of some models, when using mixed batches.
+
+            - "drop" (default): Drop conflicting keys from the batch output.
+            - "fill": Fill missing keys with the specified value.
+            - "error": An error is raised when key conflicts are detected.
+        fill_value : float, optional
+            If `key_conflicts=="fill"`, the missing keys will be filled with the value of this argument.
         shared_simulator : Simulator or Callable, optional
             A shared simulator whose outputs are passed to all model simulators. If a function is
-            provided, it is wrapped in a `LambdaSimulator` with batching enabled.
+            provided, it is wrapped in a :py:class:`~bayesflow.simulators.LambdaSimulator` with batching enabled.
         """
         self.simulators = simulators
 
@@ -68,6 +82,9 @@ class ModelComparisonSimulator(Simulator):
 
         self.logits = logits
         self.use_mixed_batches = use_mixed_batches
+        self.key_conflicts = key_conflicts
+        self.fill_value = fill_value
+        self._key_conflicts_warning = True
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
@@ -105,6 +122,7 @@ class ModelComparisonSimulator(Simulator):
             sims = [
                 simulator.sample(n, **(kwargs | data)) for simulator, n in zip(self.simulators, model_counts) if n > 0
             ]
+            sims = self._handle_key_conflicts(sims, model_counts)
             sims = tree_concatenate(sims, numpy=True)
             data |= sims
 
@@ -118,3 +136,58 @@ class ModelComparisonSimulator(Simulator):
             model_indices = npu.one_hot(np.full(batch_shape, model_index, dtype="int32"), num_models)
 
         return data | {"model_indices": model_indices}
+
+    def _handle_key_conflicts(self, sims, batch_sizes):
+        batch_sizes = [b for b in batch_sizes if b > 0]
+
+        keys, all_keys, common_keys, missing_keys = self._determine_key_conflicts(sims=sims)
+
+        # all sims have the same keys
+        if all_keys == common_keys:
+            return sims
+
+        if self.key_conflicts == "drop":
+            sims = [{k: v for k, v in sim.items() if k in common_keys} for sim in sims]
+            return sims
+        elif self.key_conflicts == "fill":
+            combined_sims = {}
+            for sim in sims:
+                combined_sims = combined_sims | sim
+            for i, sim in enumerate(sims):
+                for missing_key in missing_keys[i]:
+                    shape = combined_sims[missing_key].shape
+                    shape = list(shape)
+                    shape[0] = batch_sizes[i]
+                    sim[missing_key] = np.full(shape=shape, fill_value=self.fill_value)
+            return sims
+        elif self.key_conflicts == "error":
+            raise ValueError(
+                "Different simulators provide outputs with different keys, cannot combine them into one batch."
+            )
+
+    def _determine_key_conflicts(self, sims):
+        keys = [set(sim.keys()) for sim in sims]
+        all_keys = set.union(*keys)
+        common_keys = set.intersection(*keys)
+        missing_keys = [all_keys - k for k in keys]
+
+        if all_keys == common_keys:
+            return keys, all_keys, common_keys, missing_keys
+
+        if self._key_conflicts_warning:
+            # issue warning only once
+            self._key_conflicts_warning = False
+
+            if self.key_conflicts == "drop":
+                logging.info(
+                    f"Incompatible simulator output. \
+The following keys will be dropped: {', '.join(sorted(all_keys - common_keys))}."
+                )
+            elif self.key_conflicts == "fill":
+                logging.info(
+                    f"Incompatible simulator output. \
+Attempting to replace keys: {', '.join(sorted(all_keys - common_keys))}, where missing, \
+with value {self.fill_value}."
+                )
+
+        return keys, all_keys, common_keys, missing_keys

@@ -71,7 +71,7 @@ class MultimodalSummaryNetwork(SummaryNetwork):
             Whether the model is in training mode, affecting layers like dropout and
             batch normalization. Default is False.
         """
-        outputs = [self.summary_networks[k](inputs[k]) for k in self._ordered_keys]
+        outputs = [self.summary_networks[k](inputs[k], training=training) for k in self._ordered_keys]
         outputs = ops.concatenate(outputs, axis=-1)
         if self.fusion_network is None:
             return outputs

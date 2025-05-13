@@ -9,6 +9,7 @@ from bayesflow.utils import numpy_utils as npu
 from bayesflow.utils import logging
 
 from types import FunctionType
+from typing import Literal
 
 from .simulator import Simulator
 from .lambda_simulator import LambdaSimulator
@@ -23,7 +24,7 @@ class ModelComparisonSimulator(Simulator):
         p: Sequence[float] = None,
         logits: Sequence[float] = None,
         use_mixed_batches: bool = True,
-        key_conflicts: str = "drop",
+        key_conflicts: Literal["drop", "fill", "error"] = "drop",
         fill_value: float = np.nan,
         shared_simulator: Simulator | Callable[[Sequence[int]], dict[str, any]] = None,
     ):
@@ -160,7 +161,9 @@ class ModelComparisonSimulator(Simulator):
                     sim[missing_key] = np.full(shape=shape, fill_value=self.fill_value)
             return sims
         elif self.key_conflicts == "error":
-            raise ValueError("Key conflicts are found in simulator outputs, cannot combine them into one batch.")
+            raise ValueError(
+                "Different simulators provide outputs with different keys, cannot combine them into one batch."
+            )
 
     def _determine_key_conflicts(self, sims):
         keys = [set(sim.keys()) for sim in sims]

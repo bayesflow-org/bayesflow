@@ -20,8 +20,8 @@ class FusionNetwork(SummaryNetwork):
         by the correct summary network. This means the "summary_variables" entry to the approximator has to be
         a dictionary, which can be achieved using the :py:meth:`bayesflow.adapters.Adapter.group` method.
 
-        The output of the summary networks is either simply concatenated (late fusion), or further processed by another
-        neural network (`head`).
+        This network implements _late_ fusion. The output of the individual summary networks is concatenated, and
+        can be further processed by another neural network (`head`).
 
         Parameters
         ----------

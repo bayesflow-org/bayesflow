@@ -7,27 +7,27 @@ from keras import ops
 
 
 @serializable("bayesflow.networks")
-class MultimodalSummaryNetwork(SummaryNetwork):
+class FusionNetwork(SummaryNetwork):
     def __init__(
         self,
-        summary_networks: Mapping[str, keras.Layer],
-        fusion_network: keras.Layer | None = None,
+        backbones: Mapping[str, keras.Layer],
+        head: keras.Layer | None = None,
         **kwargs,
     ):
-        """(SN) Wraps multiple summary networks to learn summary statistics from multi-modal data.
+        """(SN) Wraps multiple summary networks (`backbones`) to learn summary statistics from multi-modal data.
 
         Networks and inputs are passed as dictionaries with corresponding keys, so that each input is processed
         by the correct summary network. This means the "summary_variables" entry to the approximator has to be
         a dictionary, which can be achieved using the :py:meth:`bayesflow.adapters.Adapter.group` method.
 
-        The output of the summary networks is either simply concatenated, or further processed by another
-        neural network.
+        The output of the summary networks is either simply concatenated (late fusion), or further processed by another
+        neural network (`head`).
 
         Parameters
         ----------
-        summary_networks : dict
+        backbones : dict
             A dictionary with names of inputs as keys and corresponding summary networks as values.
-        fusion_network : keras.Layer, optional
+        head : keras.Layer, optional
             A network to further process the concatenated outputs of the summary networks. By default,
             the concatenated outputs are returned without further processing.
         **kwargs
@@ -35,30 +35,30 @@ class MultimodalSummaryNetwork(SummaryNetwork):
             base class.
         """
         super().__init__(**kwargs)
-        self.summary_networks = summary_networks
-        self.fusion_network = fusion_network
-        self._ordered_keys = sorted(list(self.summary_networks.keys()))
+        self.backbones = backbones
+        self.head = head
+        self._ordered_keys = sorted(list(self.backbones.keys()))
 
     def build(self, inputs_shape: Mapping[str, Shape]):
         if self.built:
             return
         output_shapes = []
         for k, shape in inputs_shape.items():
-            if not self.summary_networks[k].built:
-                self.summary_networks[k].build(shape)
-            output_shapes.append(self.summary_networks[k].compute_output_shape(shape))
-        if self.fusion_network and not self.fusion_network.built:
+            if not self.backbones[k].built:
+                self.backbones[k].build(shape)
+            output_shapes.append(self.backbones[k].compute_output_shape(shape))
+        if self.head and not self.head.built:
             fusion_input_shape = (*output_shapes[0][:-1], sum(shape[-1] for shape in output_shapes))
-            self.fusion_network.build(fusion_input_shape)
+            self.head.build(fusion_input_shape)
         self.built = True
 
     def compute_output_shape(self, inputs_shape: Mapping[str, Shape]):
         output_shapes = []
         for k, shape in inputs_shape.items():
-            output_shapes.append(self.summary_networks[k].compute_output_shape(shape))
+            output_shapes.append(self.backbones[k].compute_output_shape(shape))
         output_shape = (*output_shapes[0][:-1], sum(shape[-1] for shape in output_shapes))
-        if self.fusion_network:
-            output_shape = self.fusion_network.compute_output_shape(output_shape)
+        if self.head:
+            output_shape = self.head.compute_output_shape(output_shape)
         return output_shape
 
     def call(self, inputs: Mapping[str, Tensor], training=False):
@@ -71,11 +71,11 @@ class MultimodalSummaryNetwork(SummaryNetwork):
             Whether the model is in training mode, affecting layers like dropout and
             batch normalization. Default is False.
         """
-        outputs = [self.summary_networks[k](inputs[k], training=training) for k in self._ordered_keys]
+        outputs = [self.backbones[k](inputs[k], training=training) for k in self._ordered_keys]
         outputs = ops.concatenate(outputs, axis=-1)
-        if self.fusion_network is None:
+        if self.head is None:
             return outputs
-        return self.fusion_network(outputs, training=training)
+        return self.head(outputs, training=training)
 
     def compute_metrics(self, inputs: Mapping[str, Tensor], stage: str = "training", **kwargs) -> dict[str, Tensor]:
         """
@@ -92,28 +92,28 @@ class MultimodalSummaryNetwork(SummaryNetwork):
         metrics = {"loss": [], "outputs": []}
 
         for k in self._ordered_keys:
-            if isinstance(self.summary_networks[k], SummaryNetwork):
-                metrics_k = self.summary_networks[k].compute_metrics(inputs[k], stage=stage, **kwargs)
+            if isinstance(self.backbones[k], SummaryNetwork):
+                metrics_k = self.backbones[k].compute_metrics(inputs[k], stage=stage, **kwargs)
                 metrics["outputs"].append(metrics_k["outputs"])
                 if "loss" in metrics_k:
                     metrics["loss"].append(metrics_k["loss"])
             else:
-                metrics["outputs"].append(self.summary_networks[k](inputs[k], training=stage == "training"))
+                metrics["outputs"].append(self.backbones[k](inputs[k], training=stage == "training"))
         if len(metrics["loss"]) == 0:
             del metrics["loss"]
         else:
             metrics["loss"] = ops.sum(metrics["loss"])
         metrics["outputs"] = ops.concatenate(metrics["outputs"], axis=-1)
-        if self.fusion_network is not None:
-            metrics["outputs"] = self.fusion_network(metrics["outputs"], training=stage == "training")
+        if self.head is not None:
+            metrics["outputs"] = self.head(metrics["outputs"], training=stage == "training")
 
         return metrics
 
     def get_config(self) -> dict:
         base_config = super().get_config()
         config = {
-            "summary_networks": self.summary_networks,
-            "fusion_network": self.fusion_network,
+            "backbones": self.backbones,
+            "head": self.head,
         }
         return base_config | serialize(config)
 

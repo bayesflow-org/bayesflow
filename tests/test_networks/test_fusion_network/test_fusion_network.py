@@ -6,34 +6,34 @@ from tests.utils import assert_layers_equal, allclose
 
 
 @pytest.mark.parametrize("automatic", [True, False])
-def test_build(automatic, multimodal_summary_network, multimodal_data):
-    if multimodal_summary_network is None:
+def test_build(automatic, fusion_network, multimodal_data):
+    if fusion_network is None:
         pytest.skip(reason="Nothing to do, because there is no summary network.")
 
-    assert multimodal_summary_network.built is False
+    assert fusion_network.built is False
 
     if automatic:
-        multimodal_summary_network(multimodal_data)
+        fusion_network(multimodal_data)
     else:
-        multimodal_summary_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
+        fusion_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
 
-    assert multimodal_summary_network.built is True
+    assert fusion_network.built is True
 
     # check the model has variables
-    assert multimodal_summary_network.variables, "Model has no variables."
+    assert fusion_network.variables, "Model has no variables."
 
 
 @pytest.mark.parametrize("automatic", [True, False])
-def test_build_functional_api(automatic, multimodal_summary_network, multimodal_data):
-    if multimodal_summary_network is None:
+def test_build_functional_api(automatic, fusion_network, multimodal_data):
+    if fusion_network is None:
         pytest.skip(reason="Nothing to do, because there is no summary network.")
 
-    assert multimodal_summary_network.built is False
+    assert fusion_network.built is False
 
     inputs = {}
     for k, v in multimodal_data.items():
         inputs[k] = keras.layers.Input(shape=keras.ops.shape(v)[1:], name=k)
-    outputs = multimodal_summary_network(inputs)
+    outputs = fusion_network(inputs)
     model = keras.Model(inputs=inputs, outputs=outputs)
 
     if automatic:
@@ -44,44 +44,44 @@ def test_build_functional_api(automatic, multimodal_summary_network, multimodal_
     assert model.built is True
 
     # check the model has variables
-    assert multimodal_summary_network.variables, "Model has no variables."
+    assert fusion_network.variables, "Model has no variables."
 
 
-def test_serialize_deserialize(multimodal_summary_network, multimodal_data):
-    if multimodal_summary_network is None:
+def test_serialize_deserialize(fusion_network, multimodal_data):
+    if fusion_network is None:
         pytest.skip(reason="Nothing to do, because there is no summary network.")
 
-    multimodal_summary_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
+    fusion_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
 
-    serialized = serialize(multimodal_summary_network)
+    serialized = serialize(fusion_network)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
 
-def test_save_and_load(tmp_path, multimodal_summary_network, multimodal_data):
-    if multimodal_summary_network is None:
+def test_save_and_load(tmp_path, fusion_network, multimodal_data):
+    if fusion_network is None:
         pytest.skip(reason="Nothing to do, because there is no summary network.")
 
-    multimodal_summary_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
+    fusion_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
 
-    keras.saving.save_model(multimodal_summary_network, tmp_path / "model.keras")
+    keras.saving.save_model(fusion_network, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
-    assert_layers_equal(multimodal_summary_network, loaded)
-    assert allclose(multimodal_summary_network(multimodal_data), loaded(multimodal_data))
+    assert_layers_equal(fusion_network, loaded)
+    assert allclose(fusion_network(multimodal_data), loaded(multimodal_data))
 
 
 @pytest.mark.parametrize("stage", ["training", "validation"])
-def test_compute_metrics(stage, multimodal_summary_network, multimodal_data):
-    if multimodal_summary_network is None:
+def test_compute_metrics(stage, fusion_network, multimodal_data):
+    if fusion_network is None:
         pytest.skip("Nothing to do, because there is no summary network.")
 
-    multimodal_summary_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
+    fusion_network.build(keras.tree.map_structure(keras.ops.shape, multimodal_data))
 
-    metrics = multimodal_summary_network.compute_metrics(multimodal_data, stage=stage)
-    outputs_via_call = multimodal_summary_network(multimodal_data, training=stage == "training")
+    metrics = fusion_network.compute_metrics(multimodal_data, stage=stage)
+    outputs_via_call = fusion_network(multimodal_data, training=stage == "training")
 
     assert "outputs" in metrics
 
@@ -99,6 +99,6 @@ def test_compute_metrics(stage, multimodal_summary_network, multimodal_data):
     assert keras.ops.shape(metrics["loss"]) == ()
 
     if stage != "training":
-        for metric in multimodal_summary_network.metrics:
+        for metric in fusion_network.metrics:
             assert metric.name in metrics
             assert keras.ops.shape(metrics[metric.name]) == ()

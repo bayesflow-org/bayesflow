@@ -305,7 +305,9 @@ def test_nnpe(random_data):
     from bayesflow.adapters import Adapter
 
     ad = Adapter().nnpe(["x1"], slab_scale=1.0, spike_scale=1.0, seed=42)
-    result = ad(random_data)
+    result_training = ad(random_data, stage="training")
+    result_validation = ad(random_data, stage="validation")
+    result_inference = ad(random_data, stage="inference")
     serialized = serialize(ad)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
@@ -313,11 +315,16 @@ def test_nnpe(random_data):
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
     # check that only x1 is changed
-    assert "x1" in result
-    assert not np.allclose(result["x1"], random_data["x1"])
+    assert "x1" in result_training
+    assert not np.allclose(result_training["x1"], random_data["x1"])
 
     # all other keys are untouched
     for k, v in random_data.items():
         if k == "x1":
             continue
-        assert np.allclose(result[k], v)
+        assert np.allclose(result_training[k], v)
+
+    # check that the validation and inference data is unchanged
+    for k, v in random_data.items():
+        assert np.allclose(result_validation[k], v)
+        assert np.allclose(result_inference[k], v)

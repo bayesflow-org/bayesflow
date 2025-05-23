@@ -47,7 +47,9 @@ class Nnpe(ElementwiseTransform):
         self.seed = seed
         self.rng = np.random.default_rng(seed)
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, data: np.ndarray, stage: str = "inference", **kwargs) -> np.ndarray:
+        if stage != "training":
+            return data
         mixture_mask = self.rng.binomial(n=1, p=0.5, size=data.shape).astype(bool)
         noise_slab = self.rng.standard_cauchy(size=data.shape) * self.slab_scale
         noise_spike = self.rng.standard_normal(size=data.shape) * self.spike_scale

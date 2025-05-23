@@ -296,3 +296,28 @@ def test_log_det_jac_exceptions(random_data):
 
     # inverse works when concatenation is used after transforms
     assert np.allclose(forward_log_det_jac["p"], -inverse_log_det_jac)
+
+
+def test_nnpe(random_data):
+    # NNPE cannot be integrated into the adapter fixture and its tests since it modifies the input data
+    # and therefore breaks existing allclose checks
+    import numpy as np
+    from bayesflow.adapters import Adapter
+
+    ad = Adapter().nnpe(["x1"], slab_scale=1.0, spike_scale=1.0, seed=42)
+    result = ad(random_data)
+    serialized = serialize(ad)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+
+    # check that only x1 is changed
+    assert "x1" in result
+    assert not np.allclose(result["x1"], random_data["x1"])
+
+    # all other keys are untouched
+    for k, v in random_data.items():
+        if k == "x1":
+            continue
+        assert np.allclose(result[k], v)

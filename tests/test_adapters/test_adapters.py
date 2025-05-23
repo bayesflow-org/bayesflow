@@ -304,7 +304,7 @@ def test_nnpe(random_data):
     import numpy as np
     from bayesflow.adapters import Adapter
 
-    ad = Adapter().nnpe(["x1"], slab_scale=1.0, spike_scale=1.0, seed=42)
+    ad = Adapter().nnpe("x1", slab_scale=1.0, spike_scale=1.0, seed=42)
     result_training = ad(random_data, stage="training")
     result_validation = ad(random_data, stage="validation")
     result_inference = ad(random_data, stage="inference")

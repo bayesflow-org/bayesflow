@@ -24,6 +24,7 @@ class OfflineDataset(keras.utils.PyDataset):
         *,
         stage: str = "training",
         augmentations: Mapping[str, Callable] | Callable = None,
+        shuffle_on_epoch_end: bool = True,
         **kwargs,
     ):
         """
@@ -40,8 +41,7 @@ class OfflineDataset(keras.utils.PyDataset):
         num_samples : int, optional
             Number of samples in the dataset. If None, it will be inferred from the data.
         stage : str, default="training"
-            Current stage (e.g., "training", "validation", etc.) used by the adapter and to disable shuffling during
-            validation.
+            Current stage (e.g., "training", "validation", etc.) used by the adapter.
         augmentations : dict of str to Callable or Callable, optional
             Dictionary of augmentation functions to apply to each corresponding key in the batch
             or a function to apply to the entire batch (possibly adding new keys).
@@ -52,6 +52,8 @@ class OfflineDataset(keras.utils.PyDataset):
 
             Note - augmentations are applied before the adapter is called and are generally
             transforms that you only want to apply during training.
+        shuffle_on_epoch_end : bool, default=True
+            Whether to shuffle the dataset at the end of each epoch (use for training but not for validation sets).
         **kwargs
             Additional keyword arguments passed to the base `PyDataset`.
         """
@@ -70,6 +72,7 @@ class OfflineDataset(keras.utils.PyDataset):
         self.indices = np.arange(self.num_samples, dtype="int64")
 
         self.augmentations = augmentations
+        self.shuffle_on_epoch_end = shuffle_on_epoch_end
 
         self.shuffle()
 
@@ -123,7 +126,7 @@ class OfflineDataset(keras.utils.PyDataset):
         return int(np.ceil(self.num_samples / self.batch_size))
 
     def on_epoch_end(self) -> None:
-        if self.stage != "validation":
+        if self.shuffle_on_epoch_end:
             self.shuffle()
 
     def shuffle(self) -> None:

@@ -924,7 +924,7 @@ class BasicWorkflow(Workflow):
                 raise ValueError(f"No simulator found for generating {validation_data} data sets.")
 
             validation_data = OfflineDataset(
-                data=validation_data, batch_size=dataset.batch_size, adapter=self.adapter, stage="validation"
+                data=validation_data, batch_size=dataset.batch_size, adapter=self.adapter, shuffle_on_epoch_end=False
             )
             monitor = "val_loss"
         else:

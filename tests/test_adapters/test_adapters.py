@@ -308,6 +308,7 @@ def test_nnpe(random_data):
     result_training = ad(random_data, stage="training")
     result_validation = ad(random_data, stage="validation")
     result_inference = ad(random_data, stage="inference")
+    result_inversed = ad(random_data, inverse=True)
     serialized = serialize(ad)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
@@ -324,7 +325,8 @@ def test_nnpe(random_data):
             continue
         assert np.allclose(result_training[k], v)
 
-    # check that the validation and inference data is unchanged
+    # check that the validation and inference data as well as inversed results are unchanged
     for k, v in random_data.items():
         assert np.allclose(result_validation[k], v)
         assert np.allclose(result_inference[k], v)
+        assert np.allclose(result_inversed[k], v)

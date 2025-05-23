@@ -57,7 +57,7 @@ class Nnpe(ElementwiseTransform):
         return data + noise
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return np.exp(data)
+        return data
 
     def get_config(self) -> dict:
         return serialize({"slab_scale": self.slab_scale, "spike_scale": self.spike_scale, "seed": self.seed})

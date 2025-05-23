@@ -18,6 +18,7 @@ from .transforms import (
     Keep,
     Log,
     MapTransform,
+    Nnpe,
     NumpyTransform,
     OneHot,
     Rename,
@@ -696,6 +697,34 @@ class Adapter(MutableSequence[Transform]):
             keys = [keys]
 
         transform = MapTransform({key: ConvertDType(to_dtype) for key in keys})
+        self.transforms.append(transform)
+        return self
+
+    def nnpe(
+        self,
+        keys: str | Sequence[str],
+        *,
+        slab_scale: float = 0.25,
+        spike_scale: float = 0.01,
+        seed: int | None = None,
+    ):
+        """Append an :py:class:`~transforms.Nnpe` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to transform.
+        slab_scale : float
+            The scale of the slab (Cauchy) distribution.
+        spike_scale : float
+            The scale of the spike spike (Normal) distribution.
+        seed : int or None
+            The seed for the random number generator. If None, a random seed is used.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: Nnpe(slab_scale=slab_scale, spike_scale=spike_scale, seed=seed) for key in keys})
         self.transforms.append(transform)
         return self
 

@@ -12,6 +12,7 @@ from .group import Group
 from .keep import Keep
 from .log import Log
 from .map_transform import MapTransform
+from .nnpe import Nnpe
 from .numpy_transform import NumpyTransform
 from .one_hot import OneHot
 from .rename import Rename

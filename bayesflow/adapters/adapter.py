@@ -22,6 +22,7 @@ from .transforms import (
     OneHot,
     Rename,
     SerializableCustomTransform,
+    Squeeze,
     Sqrt,
     Standardize,
     ToArray,
@@ -778,6 +779,24 @@ class Adapter(MutableSequence[Transform]):
 
         self.transforms.append(transform)
 
+        return self
+
+    def squeeze(self, keys: str | Sequence[str], *, axis: int | tuple):
+        """Append a :py:class:`~transforms.Squeeze` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to squeeze.
+        axis : int or tuple
+            The axis to squeeze. As the number of batch dimensions might change, we advise using negative
+            numbers (i.e., indexing from the end instead of the start).
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: Squeeze(axis=axis) for key in keys})
+        self.transforms.append(transform)
         return self
 
     def sqrt(self, keys: str | Sequence[str]):

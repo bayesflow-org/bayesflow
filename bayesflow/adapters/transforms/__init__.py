@@ -19,6 +19,7 @@ from .scale import Scale
 from .serializable_custom_transform import SerializableCustomTransform
 from .shift import Shift
 from .split import Split
+from .squeeze import Squeeze
 from .sqrt import Sqrt
 from .standardize import Standardize
 from .to_array import ToArray

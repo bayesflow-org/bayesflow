@@ -16,13 +16,14 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 description = "Amortizing Bayesian Inference With Neural Networks"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
 
-requires-python = ">= 3.10, < 3.12"
+requires-python = ">= 3.10, < 3.13"
 dependencies = [
     "keras >= 3.9",
     "matplotlib",

@@ -21,6 +21,7 @@ def adapter():
         .concatenate(["x1", "x2"], into="x")
         .concatenate(["y1", "y2"], into="y")
         .expand_dims(["z1"], axis=2)
+        .squeeze("z1", axis=2)
         .log("p1")
         .constrain("p2", lower=0)
         .apply(include="p2", forward="exp", inverse="log")

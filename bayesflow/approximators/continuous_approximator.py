@@ -126,15 +126,12 @@ class ContinuousApproximator(Approximator):
 
         if "inference_variables" in adapted_data and "inference_variables" in keys:
             self.inference_variables_norm = Standardization()
-            self.inference_variables_norm(adapted_data["inference_variables"], stage="training")
 
         if "summary_variables" in adapted_data and "summary_variables" in keys and self.summary_network:
             self.summary_variables_norm = Standardization()
-            self.summary_variables_norm(adapted_data["summary_variables"], stage="training")
 
         if "inference_conditions" in adapted_data and "inference_conditions" in keys:
             self.inference_conditions_norm = Standardization()
-            self.inference_conditions_norm(adapted_data["inference_conditions"], stage="training")
 
         # Call compute metrics once to build inner networks
         self.compute_metrics(**filter_kwargs(adapted_data, self.compute_metrics), stage="training")

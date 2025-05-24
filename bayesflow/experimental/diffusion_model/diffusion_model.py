@@ -323,7 +323,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = {
             **self.integrate_kwargs,
             "start_time": kwargs.pop("start_time", 0.0),
-            "stop_time": kwargs.pop("stop_top", 1),
+            "stop_time": kwargs.pop("stop_time", 1.0),
             **kwargs,
         }
 
@@ -373,9 +373,12 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
-        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
-        integrate_kwargs = integrate_kwargs | kwargs
+        integrate_kwargs = {
+            **self.integrate_kwargs,
+            "start_time": kwargs.pop("start_time", 1.0),
+            "stop_time": kwargs.pop("stop_time", 0.0),
+            **kwargs,
+        }
         if density:
             if integrate_kwargs["method"] == "euler_maruyama":
                 raise ValueError("Stochastic methods are not supported for density computation.")

@@ -159,19 +159,17 @@ class DiffusionModel(InferenceNetwork):
     ) -> Tensor:
         """Convert the prediction of the neural network to the x space."""
         if self._prediction_type == "velocity":
-            # convert v into x
             x = alpha_t * z - sigma_t * pred
         elif self._prediction_type == "noise":
-            # convert noise prediction into x
             x = (z - sigma_t * pred) / alpha_t
-        elif self._prediction_type == "F":  # EDM
+        elif self._prediction_type == "F":
             sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
             x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
             x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
             x = x1 * z + x2 * pred
         elif self._prediction_type == "x":
             x = pred
-        else:  # "score"
+        else:
             x = (z + sigma_t**2 * pred) / alpha_t
 
         return x
@@ -187,7 +185,8 @@ class DiffusionModel(InferenceNetwork):
         # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t, training=training)
+
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         if conditions is None:
             xtc = tensor_utils.concatenate_valid([xz, self._transform_log_snr(log_snr_t)], axis=-1)
@@ -259,11 +258,7 @@ class DiffusionModel(InferenceNetwork):
         """Transform the log_snr to the range [-1, 1] for the diffusion process."""
         log_snr_min = self.noise_schedule.log_snr_min
         log_snr_max = self.noise_schedule.log_snr_max
-
-        # Calculate normalized value within the range [0, 1]
         normalized_snr = (log_snr - log_snr_min) / (log_snr_max - log_snr_min)
-
-        # Scale to [-1, 1] range
         scaled_value = 2 * normalized_snr - 1
         return scaled_value
 
@@ -408,9 +403,8 @@ class DiffusionModel(InferenceNetwork):
 
         # calculate the noise level
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t, training=noise_schedule_training_stage), x)
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(
-            log_snr_t=log_snr_t, training=noise_schedule_training_stage
-        )
+
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
         weights_for_snr = self.noise_schedule.get_weights_for_snr(log_snr_t=log_snr_t)
 
         # generate noise vector
@@ -453,7 +447,6 @@ class DiffusionModel(InferenceNetwork):
         else:
             raise ValueError(f"Unknown loss type: {self._loss_type}")
 
-        # apply sample weight
         loss = weighted_mean(loss, sample_weight)
 
         base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)

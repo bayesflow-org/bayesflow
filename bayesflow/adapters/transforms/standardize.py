@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+import warnings
 
 import numpy as np
 
@@ -68,6 +69,14 @@ class Standardize(ElementwiseTransform):
         momentum: float | None = 0.99,
     ):
         super().__init__()
+
+        if mean is None or std is None:
+            warnings.warn(
+                "Dynamic standardization is deprecated and will be removed in later versions."
+                "Instead, use the standardize argument of the approximator / workflow instance or provide "
+                "fixed mean and std arguments. You may incur some redundant computations if you keep this transform.",
+                DeprecationWarning,
+            )
 
         self.mean = mean
         self.std = std

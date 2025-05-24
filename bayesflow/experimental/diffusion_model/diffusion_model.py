@@ -19,7 +19,7 @@ from bayesflow.utils import (
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
-from schedules.noise_schedule import NoiseSchedule
+from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
 
 

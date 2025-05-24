@@ -45,7 +45,7 @@ class DiffusionModel(InferenceNetwork):
 
     INTEGRATE_DEFAULT_CONFIG = {
         "method": "euler",
-        "steps": 250,
+        "steps": 100,
     }
 
     def __init__(
@@ -53,7 +53,7 @@ class DiffusionModel(InferenceNetwork):
         *,
         subnet: str | type = "mlp",
         noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
-        prediction_type: Literal["velocity", "noise", "F"] = "F",
+        prediction_type: Literal["velocity", "noise", "F", "x"] = "F",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
         subnet_kwargs: dict[str, any] = None,
         schedule_kwargs: dict[str, any] = None,
@@ -61,33 +61,36 @@ class DiffusionModel(InferenceNetwork):
         **kwargs,
     ):
         """
-        Initializes a diffusion model with configurable subnet architecture.
+        Initializes a diffusion model with configurable subnet architecture, noise schedule,
+        and prediction/loss types for amortized Bayesian inference.
 
-        This model learns a transformation from a Gaussian latent distribution to a target distribution using a
-        specified subnet type, which can be an MLP or a custom network.
-
-        The integration can be customized with additional parameters available in the integrate_kwargs
-        configuration dictionary. Different noise schedules and prediction types are available.
+        Note, that score-based diffusion is the most sluggish of all available samplers,
+        so expect slower inference times than flow matching and much slower than normalizing flows.
 
         Parameters
         ----------
         subnet : str or type, optional
-            The architecture used for the transformation network. Can be "mlp" or a custom
-            callable network. Default is "mlp".
+            Architecture for the transformation network. Can be "mlp" or a custom network class.
+            Default is "mlp".
+        noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
+            Noise schedule controlling the diffusion dynamics. Can be a string identifier,
+            a schedule class, or a pre-initialized schedule instance. Default is "edm".
+        prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
+            Output format of the model's prediction. Default is "F".
+        loss_type : {'velocity', 'noise', 'F'}, optional
+            Loss function used to train the model. Default is "noise".
+        subnet_kwargs : dict[str, any], optional
+            Additional keyword arguments passed to the subnet constructor. Default is None.
+        schedule_kwargs : dict[str, any], optional
+            Additional keyword arguments passed to the noise schedule constructor. Default is None.
         integrate_kwargs : dict[str, any], optional
-            Additional keyword arguments for the integration process. Default is None.
-        noise_schedule : Literal['edm', 'cosine'], dict or type, optional
-            The noise schedule used for the diffusion process. Default is "F"
-        loss_type: Literal['velocity', 'noise', 'F'], optional
-            The type los loss used in the diffusion model. Default is "noise".
-        prediction_type: Literal['velocity', 'noise', 'F'], optional
-            The type of prediction used in the diffusion model. Default is "F".
+            Configuration dictionary for integration during training or inference. Default is None.
         **kwargs
-            Additional keyword arguments passed to the subnet and other components.
+            Additional keyword arguments passed to the base class and internal components.
         """
         super().__init__(base_distribution="normal", **kwargs)
 
-        if prediction_type not in ["noise", "velocity", "F"]:
+        if prediction_type not in ["noise", "velocity", "F", "x"]:
             raise TypeError(f"Unknown prediction type: {prediction_type}")
 
         if loss_type not in ["noise", "velocity", "F"]:
@@ -157,22 +160,42 @@ class DiffusionModel(InferenceNetwork):
     def convert_prediction_to_x(
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
     ) -> Tensor:
-        """Convert the prediction of the neural network to the x space."""
+        """
+        Converts the neural network prediction into the denoised data `x`, depending on
+        the prediction type configured for the model.
+
+        Parameters
+        ----------
+        pred : Tensor
+            The output prediction from the neural network, typically representing noise,
+            velocity, or a transformation of the clean signal.
+        z : Tensor
+            The noisy latent variable `z` to be denoised.
+        alpha_t : Tensor
+            The noise schedule's scaling factor for the clean signal at time `t`.
+        sigma_t : Tensor
+            The standard deviation of the noise at time `t`.
+        log_snr_t : Tensor
+            The log signal-to-noise ratio at time `t`.
+
+        Returns
+        -------
+        Tensor
+            The reconstructed clean signal `x` from the model prediction.
+        """
         if self._prediction_type == "velocity":
-            x = alpha_t * z - sigma_t * pred
+            return alpha_t * z - sigma_t * pred
         elif self._prediction_type == "noise":
-            x = (z - sigma_t * pred) / alpha_t
+            return (z - sigma_t * pred) / alpha_t
         elif self._prediction_type == "F":
-            sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
+            sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
             x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
             x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
-            x = x1 * z + x2 * pred
+            return x1 * z + x2 * pred
         elif self._prediction_type == "x":
-            x = pred
+            return pred
         else:
-            x = (z + sigma_t**2 * pred) / alpha_t
-
-        return x
+            return (z + sigma_t**2 * pred) / alpha_t
 
     def velocity(
         self,
@@ -182,10 +205,37 @@ class DiffusionModel(InferenceNetwork):
         conditions: Tensor = None,
         training: bool = False,
     ) -> Tensor:
+        """
+        Computes the velocity (i.e., time derivative) of the target or latent variable `xz` for either
+        a stochastic differential equation (SDE) or ordinary differential equation (ODE).
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable `z`, typically of shape (..., D),
+            where D is the dimensionality of the latent space.
+        time : float or Tensor
+            Scalar or tensor representing the time (or noise level) at which the velocity
+            should be computed. Will be broadcasted to xz.
+        stochastic_solver : bool
+            If True, computes the velocity for the stochastic formulation (SDE).
+            If False, uses the deterministic formulation (ODE).
+        conditions : Tensor, optional
+            Optional conditional inputs to the network, such as conditioning variables
+            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
+        training : bool, optional
+            Whether the model is in training mode. Affects behavior of dropout, batch norm,
+            or other stochastic layers. Default is False.
+
+        Returns
+        -------
+        Tensor
+            The velocity tensor of the same shape as `xz`, representing the right-hand
+            side of the SDE or ODE at the given `time`.
+        """
         # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         if conditions is None:
@@ -196,11 +246,11 @@ class DiffusionModel(InferenceNetwork):
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
-        # convert x to score
+
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
         # compute velocity f, g of the SDE or ODE
-        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz)
+        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
 
         if stochastic_solver:
             # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
@@ -218,12 +268,12 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
     ) -> Tensor:
         """
-        Compute the diffusion term (standard deviation of the noise) for a given time.
+        Compute the diffusion term (standard deviation of the noise) at a given time.
 
         Parameters
         ----------
         xz : Tensor
-            Input tensor with shape [..., D], typically representing the latent state or concatenated variables.
+            Input tensor of shape (..., D), typically representing the target or latent variables at given time.
         time : float or Tensor
             The diffusion time step(s). Can be a scalar or a tensor broadcastable to the shape of `xz`.
         training : bool, optional

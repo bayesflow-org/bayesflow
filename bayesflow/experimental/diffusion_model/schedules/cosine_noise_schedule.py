@@ -83,15 +83,13 @@ class CosineNoiseSchedule(NoiseSchedule):
         return -factor * dsnr_dt
 
     def get_config(self):
-        base_config = super().get_config()
         config = {
             "min_log_snr": self.log_snr_min,
             "max_log_snr": self.log_snr_max,
             "shift": self._shift,
             "weighting": self._weighting,
         }
-
-        return base_config | config
+        return config
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

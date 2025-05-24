@@ -247,7 +247,7 @@ def test_find_summary_network_invalid_type():
 
 
 def test_find_noise_schedule_by_name():
-    from bayesflow.experimental.diffusion_model import CosineNoiseSchedule, EDMNoiseSchedule
+    from bayesflow.experimental.diffusion_model.schedules import CosineNoiseSchedule, EDMNoiseSchedule
 
     schedule = find_noise_schedule("cosine")
     assert isinstance(schedule, CosineNoiseSchedule)
@@ -262,7 +262,7 @@ def test_find_noise_schedule_unknown_name():
 
 
 def test_pass_noise_schedule():
-    from bayesflow.experimental.diffusion_model import NoiseSchedule
+    from bayesflow.experimental.diffusion_model.schedules.noise_schedule import NoiseSchedule
 
     class CustomNoiseSchedule(NoiseSchedule):
         def __init__(self):
@@ -282,27 +282,11 @@ def test_pass_noise_schedule():
 
 
 def test_pass_noise_schedule_type():
-    from bayesflow.experimental.diffusion_model import EDMNoiseSchedule
+    from bayesflow.experimental.diffusion_model.schedules import EDMNoiseSchedule
 
     schedule = find_noise_schedule(EDMNoiseSchedule, sigma_data=10.0)
     assert isinstance(schedule, EDMNoiseSchedule)
     assert schedule.sigma_data == 10.0
-
-
-def test_find_noise_schedule_by_dict():
-    from bayesflow.experimental.diffusion_model import CosineNoiseSchedule, EDMNoiseSchedule
-
-    schedule = find_noise_schedule({"name": "cosine"})
-    assert isinstance(schedule, CosineNoiseSchedule)
-
-    schedule = find_noise_schedule({"name": "edm", "sigma_data": 10})
-    assert isinstance(schedule, EDMNoiseSchedule)
-    assert schedule.sigma_data == 10
-
-
-def test_find_noise_schedule_unknown_name_in_dict():
-    with pytest.raises(ValueError):
-        find_noise_schedule({"name": "unknown_noise_schedule"})
 
 
 def test_find_noise_schedule_invalid_class():

@@ -67,11 +67,11 @@ class ContinuousApproximator(Approximator):
         Parameters
         ----------
         inference_variables : Sequence of str
-            Names of the inference variables in the data
+            Names of the inference variables (to be modeled) in the data dict.
         inference_conditions : Sequence of str, optional
-            Names of the inference conditions in the data
+            Names of the inference conditions (to be used as direct conditions) in the data dict.
         summary_variables : Sequence of str, optional
-            Names of the summary variables in the data
+            Names of the summary variables (to be passed to a summary network) in the data dict.
         sample_weight : str, optional
             Name of the sample weights
         """
@@ -151,36 +151,44 @@ class ContinuousApproximator(Approximator):
         sample_weight: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
-        # Optionally standardize optional inference conditions
-        if inference_conditions is not None and self.inference_conditions_norm:
-            inference_conditions = self.inference_conditions_norm(inference_conditions, stage=stage)
+        """
+        Computes loss and tracks metrics for the inference and summary networks.
 
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot compute summary metrics without a summary network.")
+        This method orchestrates the end-to-end computation of metrics and loss for a model
+        with both inference and optional summary network. It handles standardization of input
+        variables, combines summary outputs with inference conditions when necessary, and
+        aggregates loss and all tracked metrics into a unified dictionary. The returned dictionary
+        includes both the total loss and all individual metrics, with keys indicating their source.
 
-            summary_metrics = {}
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
+        Parameters
+        ----------
+        inference_variables : Tensor
+            Input tensor(s) for the inference network. These are typically latent variables to be modeled.
+        inference_conditions : Tensor, optional
+            Conditioning variables for the inference network (default is None).
+            May be combined with outputs from the summary network if present.
+        summary_variables : Tensor, optional
+            Input tensor(s) for the summary network (default is None). Required if
+            a summary network is present.
+        sample_weight : Tensor, optional
+            Weighting tensor for metric computation (default is None).
+        stage : str, optional
+            Current training stage (e.g., "training", "validation", "inference"). Controls
+            the behavior of standardization and some metric computations (default is "training").
 
-            if self.summary_variables_norm is not None:
-                summary_variables = self.summary_variables_norm(summary_variables, stage=stage)
+        Returns
+        -------
+        metrics : dict[str, Tensor]
+            Dictionary containing the total loss under the key "loss", as well as all tracked
+            metrics for the inference and summary networks. Each metric key is prefixed with
+            "inference_" or "summary_" to indicate its source.
+        """
 
-            summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
-            summary_outputs = summary_metrics.pop("outputs")
+        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
 
-            # append summary outputs to inference conditions
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
+        inference_conditions = self._combine_conditions(inference_conditions, summary_outputs, stage=stage)
 
-        # Force a conversion to Tensor
-        inference_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, inference_variables)
-
-        if self.inference_variables_norm is not None:
-            inference_variables = self.inference_variables_norm(inference_variables, stage=stage)
+        inference_variables = self._prepare_inference_variables(inference_variables, stage=stage)
 
         inference_metrics = self.inference_network.compute_metrics(
             inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
@@ -194,6 +202,45 @@ class ContinuousApproximator(Approximator):
         metrics = {"loss": loss} | inference_metrics | summary_metrics
 
         return metrics
+
+    def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:
+        """Helper function to compute summary metrics and outputs."""
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot compute summaries from summary_variables without a summary network.")
+            return {}, None
+
+        if summary_variables is None:
+            raise ValueError("Summary variables are required when a summary network is present.")
+
+        if self.summary_variables_norm is not None:
+            summary_variables = self.summary_variables_norm(summary_variables, stage=stage)
+
+        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
+        summary_outputs = summary_metrics.pop("outputs")
+        return summary_metrics, summary_outputs
+
+    def _prepare_inference_variables(self, inference_variables, stage):
+        """Helper function to convert inference variables to tensors and optionally standardize them."""
+        inference_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, inference_variables)
+        if self.inference_variables_norm is not None:
+            inference_variables = self.inference_variables_norm(inference_variables, stage=stage)
+        return inference_variables
+
+    def _combine_conditions(
+        self, inference_conditions: Tensor | None, summary_outputs: Tensor | None, stage: str
+    ) -> Tensor:
+        """Helper function to combine direct (inference) conditions and outputs of the summary network."""
+        if inference_conditions is None:
+            return summary_outputs
+
+        if self.inference_conditions_norm:
+            inference_conditions = self.inference_conditions_norm(inference_conditions, stage=stage)
+
+        if summary_outputs is None:
+            return inference_conditions
+
+        return keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
 
     def fit(self, *args, **kwargs):
         """

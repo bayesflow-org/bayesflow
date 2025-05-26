@@ -92,6 +92,8 @@ class MLP(keras.Sequential):
 
         for layer in self._layers:
             layer.build(input_shape)
+            if not layer.layers[0].built:
+                layer.layers[0].build(input_shape)
             input_shape = layer.compute_output_shape(input_shape)
 
     @classmethod

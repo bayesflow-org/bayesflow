@@ -924,7 +924,7 @@ class Adapter(MutableSequence[Transform]):
         self,
         keys: str | Sequence[str],
         default_value: float = 0.0,
-        encode_mask: bool = False,
+        return_mask: bool = False,
     ):
         """
         Append :py:class:`~bf.adapters.transforms.NanToNum` transform to the adapter.
@@ -935,12 +935,12 @@ class Adapter(MutableSequence[Transform]):
             The names of the variables to clean / mask.
         default_value : float
             Value to substitute wherever data is NaN.
-        encode_mask : bool
+        return_mask : bool
             If True, encode a binary missingness mask alongside the data.
         """
         if isinstance(keys, str):
             keys = [keys]
 
         for key in keys:
-            self.transforms.append(NanToNum(key=key, default_value=default_value, encode_mask=encode_mask))
+            self.transforms.append(NanToNum(key=key, default_value=default_value, return_mask=return_mask))
         return self

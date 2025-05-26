@@ -15,22 +15,22 @@ class NanToNum(Transform):
     ----------
     default_value : float
         Value to substitute wherever data is NaN.
-    encode_mask : bool, default=False
+    return_mask : bool, default=False
         If True, a mask array will be returned under a new key.
     """
 
-    def __init__(self, key: str, default_value: float = 0.0, encode_mask: bool = False):
+    def __init__(self, key: str, default_value: float = 0.0, return_mask: bool = False):
         super().__init__()
         self.key = key
         self.default_value = default_value
-        self.encode_mask = encode_mask
+        self.return_mask = return_mask
 
     def get_config(self) -> dict:
         return serialize(
             {
                 "key": self.key,
                 "default_value": self.default_value,
-                "encode_mask": self.encode_mask,
+                "return_mask": self.return_mask,
             }
         )
 
@@ -51,7 +51,7 @@ class NanToNum(Transform):
         mask = np.isnan(data[self.key])
         data[self.key] = np.nan_to_num(data[self.key], copy=False, nan=self.default_value)
 
-        if not self.encode_mask:
+        if not self.return_mask:
             return data
 
         # Prepare mask array (1 for valid, 0 for NaN)
@@ -70,7 +70,7 @@ class NanToNum(Transform):
         # Retrieve mask and values to reconstruct NaNs
         values = data[self.key]
 
-        if not self.encode_mask:
+        if not self.return_mask:
             values[values == self.default_value] = np.nan  # we assume default_value is not in data
         else:
             mask_array = data[self.mask_key].astype(bool)

@@ -11,8 +11,8 @@ from .backend_approximators import BackendApproximator
 
 
 class Approximator(BackendApproximator):
-    def build(self, data_shapes: any) -> None:
-        mock_data = keras.tree.map_structure(keras.ops.zeros, data_shapes)
+    def build(self, data_shapes: dict[str, tuple[int]]) -> None:
+        mock_data = {key: keras.ops.zeros(value) for key, value in data_shapes.items()}
         self.build_from_data(mock_data)
 
     @classmethod
@@ -60,6 +60,9 @@ class Approximator(BackendApproximator):
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,
         )
+
+    def call(self, *args, **kwargs):
+        return self.compute_metrics(*args, **kwargs)
 
     def fit(self, *, dataset: keras.utils.PyDataset = None, simulator: Simulator = None, **kwargs):
         """

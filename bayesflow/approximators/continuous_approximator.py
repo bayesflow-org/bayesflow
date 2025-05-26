@@ -49,17 +49,23 @@ class ContinuousApproximator(Approximator):
         self.inference_network = inference_network
         self.summary_network = summary_network
 
-        if standardize == "all":
-            standardize = ["inference_variables", "summary_variables", "inference_conditions"]
-        elif isinstance(standardize, str):
-            standardize = [standardize]
-        elif isinstance(standardize, Sequence):
-            standardize = standardize
-        else:
-            standardize = []
+        # if standardize == "all":
+        #     standardize = ["inference_variables", "summary_variables", "inference_conditions"]
+        # elif isinstance(standardize, str):
+        #     standardize = [standardize]
+        # elif isinstance(standardize, Sequence):
+        #     standardize = standardize
+        # else:
+        #     standardize = []
 
         self.standardize = standardize
-        self.standardize_layers = {s: Standardization() for s in standardize}
+
+        if standardize == "all":
+            # we have to lazily initialize these
+            self.standardize_layers = None
+        else:
+            print("eager init")
+            self.standardize_layers = {s: Standardization(trainable=False) for s in self.standardize}
 
     @classmethod
     def build_adapter(
@@ -121,7 +127,16 @@ class ContinuousApproximator(Approximator):
         return super().compile(*args, **kwargs)
 
     def build_from_data(self, adapted_data: dict[str, any]):
+        if self.standardize == "all":
+            self.standardize = list(adapted_data.keys())
+            self.standardize = ["inference_variables", "summary_variables", "inference_conditions"]
+            self.standardize = list(filter(lambda x: x in adapted_data, self.standardize))
+
+        if self.standardize_layers is None:
+            self.standardize_layers = {s: Standardization(trainable=False) for s in self.standardize}
+
         self.compute_metrics(**filter_kwargs(adapted_data, self.compute_metrics), stage="training")
+
         self.built = True
 
     def compile_from_config(self, config):
@@ -207,11 +222,11 @@ class ContinuousApproximator(Approximator):
         summary_outputs = summary_metrics.pop("outputs")
         return summary_metrics, summary_outputs
 
-    def _prepare_inference_variables(self, inference_variables, stage):
+    def _prepare_inference_variables(self, inference_variables: Tensor, stage: str) -> Tensor:
         """Helper function to convert inference variables to tensors and optionally standardize them."""
-        inference_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, inference_variables)
         if "inference_variables" in self.standardize:
             inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
+
         return inference_variables
 
     def _combine_conditions(

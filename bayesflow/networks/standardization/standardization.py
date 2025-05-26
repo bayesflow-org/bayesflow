@@ -4,12 +4,12 @@ import keras
 
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils.serialization import serialize, deserialize, serializable
-from bayesflow.utils import expand_left_as
+from bayesflow.utils import expand_left_as, layer_kwargs
 
 
 @serializable("bayesflow.networks")
 class Standardization(keras.Layer):
-    def __init__(self, momentum: float = 0.95, epsilon: float = 1e-6):
+    def __init__(self, momentum: float = 0.95, epsilon: float = 1e-6, **kwargs):
         """
         Initializes a Standardization layer that will keep track of the running mean and
         running standard deviation across a batch of tensors.
@@ -23,7 +23,7 @@ class Standardization(keras.Layer):
         epsilon: float, optional
             Stability parameter to avoid division by zero.
         """
-        super().__init__()
+        super().__init__(**layer_kwargs(kwargs))
 
         self.momentum = momentum
         self.epsilon = epsilon
@@ -31,6 +31,9 @@ class Standardization(keras.Layer):
         self.moving_std = None
 
     def build(self, input_shape: Shape):
+        if self.built:
+            return
+
         self.moving_mean = self.add_weight(shape=(input_shape[-1],), initializer="zeros", trainable=False)
         self.moving_std = self.add_weight(shape=(input_shape[-1],), initializer="ones", trainable=False)
 

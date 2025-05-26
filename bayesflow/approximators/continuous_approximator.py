@@ -33,7 +33,7 @@ class ContinuousApproximator(Approximator):
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
 
-    SAMPLE_KEYS = ["summary_variables", "inference_conditions"]
+    CONDITION_KEYS = ["summary_variables", "inference_conditions"]
 
     def __init__(
         self,
@@ -48,11 +48,18 @@ class ContinuousApproximator(Approximator):
         self.adapter = adapter
         self.inference_network = inference_network
         self.summary_network = summary_network
-        self.standardize = standardize
 
-        self.inference_variables_norm = None
-        self.summary_variables_norm = None
-        self.inference_conditions_norm = None
+        if standardize == "all":
+            standardize = ["inference_variables", "summary_variables", "inference_conditions"]
+        elif isinstance(standardize, str):
+            standardize = [standardize]
+        elif isinstance(standardize, Sequence):
+            standardize = standardize
+        else:
+            standardize = []
+
+        self.standardize = standardize
+        self.standardize_layers = {s: Standardization() for s in standardize}
 
     @classmethod
     def build_adapter(
@@ -114,26 +121,6 @@ class ContinuousApproximator(Approximator):
         return super().compile(*args, **kwargs)
 
     def build_from_data(self, adapted_data: dict[str, any]):
-        # Determine input standardization
-        if self.standardize == "all":
-            keys = ["inference_variables", "summary_variables", "inference_conditions"]
-        elif isinstance(self.standardize, str):
-            keys = [self.standardize]
-        elif isinstance(self.standardize, Sequence):
-            keys = self.standardize
-        else:
-            keys = []
-
-        if "inference_variables" in adapted_data and "inference_variables" in keys:
-            self.inference_variables_norm = Standardization()
-
-        if "summary_variables" in adapted_data and "summary_variables" in keys and self.summary_network:
-            self.summary_variables_norm = Standardization()
-
-        if "inference_conditions" in adapted_data and "inference_conditions" in keys:
-            self.inference_conditions_norm = Standardization()
-
-        # Call compute metrics once to build inner networks
         self.compute_metrics(**filter_kwargs(adapted_data, self.compute_metrics), stage="training")
         self.built = True
 
@@ -213,8 +200,8 @@ class ContinuousApproximator(Approximator):
         if summary_variables is None:
             raise ValueError("Summary variables are required when a summary network is present.")
 
-        if self.summary_variables_norm is not None:
-            summary_variables = self.summary_variables_norm(summary_variables, stage=stage)
+        if "summary_variables" in self.standardize:
+            summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
 
         summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
         summary_outputs = summary_metrics.pop("outputs")
@@ -223,8 +210,8 @@ class ContinuousApproximator(Approximator):
     def _prepare_inference_variables(self, inference_variables, stage):
         """Helper function to convert inference variables to tensors and optionally standardize them."""
         inference_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, inference_variables)
-        if self.inference_variables_norm is not None:
-            inference_variables = self.inference_variables_norm(inference_variables, stage=stage)
+        if "inference_variables" in self.standardize:
+            inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
         return inference_variables
 
     def _combine_conditions(
@@ -234,8 +221,8 @@ class ContinuousApproximator(Approximator):
         if inference_conditions is None:
             return summary_outputs
 
-        if self.inference_conditions_norm:
-            inference_conditions = self.inference_conditions_norm(inference_conditions, stage=stage)
+        if "inference_conditions" in self.standardize:
+            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
 
         if summary_outputs is None:
             return inference_conditions
@@ -431,22 +418,20 @@ class ContinuousApproximator(Approximator):
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
 
         # Ensure only keys relevant for sampling are present in the conditions dictionary
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.SAMPLE_KEYS}
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
 
         # Optionally standardize conditions
-        if "summary_variables" in conditions and self.summary_variables_norm:
-            conditions["summary_variables"] = self.summary_variables_norm(conditions["summary_variables"])
-
-        if "inference_conditions" in conditions and self.inference_conditions_norm:
-            conditions["inference_conditions"] = self.inference_conditions_norm(conditions["inference_conditions"])
+        for key in ContinuousApproximator.CONDITION_KEYS:
+            if key in conditions and key in self.standardize:
+                conditions[key] = self.standardize_layers[key](conditions[key])
 
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         # Sample and undo optional standardization
         samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
 
-        if self.inference_variables_norm:
-            samples = self.inference_variables_norm(samples, forward=False)
+        if "inference_variables" in self.standardize:
+            samples = self.standardize_layers["inference_variables"](samples, forward=False)
 
         samples = {"inference_variables": samples}
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
@@ -529,7 +514,7 @@ class ContinuousApproximator(Approximator):
 
         return summaries
 
-    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
+    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
         `adapter`. Log-probabilities are returned as NumPy arrays.
@@ -547,30 +532,24 @@ class ContinuousApproximator(Approximator):
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
         data, log_det_jac = self.adapter(data, strict=False, stage="inference", log_det_jac=True, **kwargs)
+        log_det_jac = log_det_jac.get("inference_variables", 0.0)
 
-        # Optionally standardize conditions and variables
-        if "summary_variables" in data and self.summary_variables_norm:
-            data["summary_variables"] = self.summary_variables_norm(data["summary_variables"])
+        # Optionally standardize conditions
+        for key in ContinuousApproximator.CONDITION_KEYS:
+            if key in data and key in self.standardize:
+                data[key] = self.standardize_layers[key](data[key])
 
-        if "inference_conditions" in data and self.inference_conditions_norm:
-            data["inference_conditions"] = self.inference_conditions_norm(data["inference_conditions"])
-
-        if self.inference_variables_norm:
-            data["inference_variables"], log_det_jac = self.summary_variables_norm(
+        # Optionally standardize inference variables
+        if "inference_variables" in self.standardize:
+            data["inference_variables"], log_det_std = self.standardize_layers["inference_variables"](
                 data["inference_variables"], log_det_jac=True
             )
-            log_det_jac = keras.ops.convert_to_numpy(log_det_jac)
-        else:
-            log_det_jac = 0.0
+            log_det_jac += keras.ops.convert_to_numpy(log_det_std)
 
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
         log_prob = self._log_prob(**data, **kwargs)
-        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
-
-        # change of variables formula
-        log_det_jac = log_det_jac.get("inference_variables")
-        if log_det_jac is not None:
-            log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
+        log_prob = keras.ops.convert_to_numpy(log_prob)
+        log_prob = log_prob + log_det_jac
 
         return log_prob
 
@@ -580,7 +559,7 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         **kwargs,
-    ) -> Tensor | dict[str, Tensor]:
+    ) -> Tensor:
         if self.summary_network is None:
             if summary_variables is not None:
                 raise ValueError("Cannot use summary variables without a summary network.")

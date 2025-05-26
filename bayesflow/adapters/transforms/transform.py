@@ -22,6 +22,7 @@ class Transform:
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None):
+        # noinspection PyArgumentList
         return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self) -> dict:

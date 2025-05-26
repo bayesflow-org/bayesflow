@@ -2,6 +2,9 @@ import numpy as np
 import keras
 
 from bayesflow.networks.standardization import Standardization
+from bayesflow.utils.serialization import serialize, deserialize
+
+from tests.utils import assert_layers_equal
 
 
 def test_forward_standardization_training():
@@ -49,3 +52,24 @@ def test_consistency_forward_inverse():
     recovered = keras.ops.convert_to_numpy(recovered)
 
     np.testing.assert_allclose(random_input, recovered, atol=1e-4)
+
+
+def test_serialize_deserialize():
+    layer = Standardization(momentum=0.0)
+    layer.build((32, 5))
+
+    serialized = serialize(layer)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+
+
+def test_save_and_load(tmp_path):
+    layer = Standardization(momentum=0.0)
+    layer.build((32, 5))
+
+    keras.saving.save_model(layer, tmp_path / "model.keras")
+    loaded = keras.saving.load_model(tmp_path / "model.keras")
+
+    assert_layers_equal(layer, loaded)

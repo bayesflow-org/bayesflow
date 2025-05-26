@@ -5,7 +5,7 @@ import numpy as np
 import keras
 
 from bayesflow.utils.exceptions import ShapeError
-from bayesflow.networks import MLP
+from bayesflow.networks import MLP, Sequential
 
 
 def classifier_two_sample_test(
@@ -96,7 +96,7 @@ def classifier_two_sample_test(
     labels = labels[shuffle_idx]
 
     # Create and train classifier with optional stopping
-    classifier = keras.Sequential(
+    classifier = Sequential(
         [MLP(widths=mlp_widths, **kwargs.get("mlp_kwargs", {})), keras.layers.Dense(1, activation="sigmoid")]
     )
 

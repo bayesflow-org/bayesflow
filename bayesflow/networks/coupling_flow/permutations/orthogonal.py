@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serializable
 from ..invertible_layer import InvertibleLayer
 
 
-@serializable
+@serializable("bayesflow.networks")
 class OrthogonalPermutation(InvertibleLayer):
     """Implements a learnable orthogonal transformation according to [1]. Can be
     used as an alternative to a fixed ``Permutation`` layer.

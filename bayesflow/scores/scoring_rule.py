@@ -7,7 +7,7 @@ from bayesflow.utils import find_network
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
-@serializable(package="bayesflow.scores")
+@serializable("bayesflow.scores")
 class ScoringRule:
     """Base class for scoring rules.
 

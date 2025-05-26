@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import serializable
 from .continuous_approximator import ContinuousApproximator
 
 
-@serializable
+@serializable("bayesflow.approximators")
 class PointApproximator(ContinuousApproximator):
     """
     A workflow for fast amortized point estimation of a conditional distribution.

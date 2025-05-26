@@ -3,7 +3,7 @@ import numpy as np
 from bayesflow.utils.serialization import serializable, deserialize
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Transform:
     """
     Base class on which other transforms are based

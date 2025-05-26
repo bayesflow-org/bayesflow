@@ -14,6 +14,7 @@ from .transforms import (
     Drop,
     ExpandDims,
     FilterTransform,
+    Group,
     Keep,
     Log,
     MapTransform,
@@ -21,16 +22,20 @@ from .transforms import (
     OneHot,
     Rename,
     SerializableCustomTransform,
+    Squeeze,
     Sqrt,
     Standardize,
     ToArray,
     Transform,
+    Ungroup,
+    RandomSubsample,
+    Take,
     NanToNum,
 )
 from .transforms.filter_transform import Predicate
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Adapter(MutableSequence[Transform]):
     """
     Defines an adapter to apply various transforms to data.
@@ -599,6 +604,52 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
+    def group(self, keys: Sequence[str], into: str, *, prefix: str = ""):
+        """Append a :py:class:`~transforms.Group` transform to the adapter.
+
+        Groups the given variables as a dictionary in the key `into`. As most transforms do
+        not support nested structures, this should usually be the last transform in the adapter.
+
+        Parameters
+        ----------
+        keys : Sequence of str
+            The names of the variables to group together.
+        into : str
+            The name of the variable to store the grouped variables in.
+        prefix : str, optional
+            An optional common prefix of the variable names before grouping, which will be removed after grouping.
+
+        Raises
+        ------
+        ValueError
+            If a prefix is specified, but a provided key does not start with the prefix.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = Group(keys=keys, into=into, prefix=prefix)
+        self.transforms.append(transform)
+        return self
+
+    def ungroup(self, key: str, *, prefix: str = ""):
+        """Append an :py:class:`~transforms.Ungroup` transform to the adapter.
+
+        Ungroups the the variables in `key` from a dictionary into individual entries. Most transforms do
+        not support nested structures, so this can be used to flatten a nested structure.
+        The nesting can be re-established after the transforms using the :py:meth:`group` method.
+
+        Parameters
+        ----------
+        key : str
+            The name of the variable to ungroup. The corresponding variable has to be a dictionary.
+        prefix : str, optional
+            An optional common prefix that will be added to the ungrouped variable names. This can be necessary
+            to avoid duplicate names.
+        """
+        transform = Ungroup(key=key, prefix=prefix)
+        self.transforms.append(transform)
+        return self
+
     def keep(self, keys: str | Sequence[str]):
         """Append a :py:class:`~transforms.Keep` transform to the adapter.
 
@@ -666,6 +717,28 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
+    def random_subsample(self, key: str, *, sample_size: int | float, axis: int = -1):
+        """
+        Append a :py:class:`~transforms.RandomSubsample` transform to the adapter.
+
+        Parameters
+        ----------
+        key : str or Sequence of str
+            The name of the variable to subsample.
+        sample_size : int or float
+            The number of samples to draw, or a fraction between 0 and 1 of the total number of samples to draw.
+        axis: int, optional
+            Which axis to draw samples over. The last axis is used by default.
+        """
+
+        if not isinstance(key, str):
+            raise TypeError("Can only subsample one batch entry at a time.")
+
+        transform = MapTransform({key: RandomSubsample(sample_size=sample_size, axis=axis)})
+
+        self.transforms.append(transform)
+        return self
+
     def rename(self, from_key: str, to_key: str):
         """Append a :py:class:`~transforms.Rename` transform to the adapter.
 
@@ -709,6 +782,24 @@ class Adapter(MutableSequence[Transform]):
 
         return self
 
+    def squeeze(self, keys: str | Sequence[str], *, axis: int | tuple):
+        """Append a :py:class:`~transforms.Squeeze` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to squeeze.
+        axis : int or tuple
+            The axis to squeeze. As the number of batch dimensions might change, we advise using negative
+            numbers (i.e., indexing from the end instead of the start).
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: Squeeze(axis=axis) for key in keys})
+        self.transforms.append(transform)
+        return self
+
     def sqrt(self, keys: str | Sequence[str]):
         """Append an :py:class:`~transforms.Sqrt` transform to the adapter.
 
@@ -742,7 +833,7 @@ class Adapter(MutableSequence[Transform]):
             Names of variables to include in the transform.
         exclude : str or Sequence of str, optional
             Names of variables to exclude from the transform.
-        **kwargs : dict
+        **kwargs :
             Additional keyword arguments passed to the transform.
         """
         transform = FilterTransform(
@@ -751,6 +842,42 @@ class Adapter(MutableSequence[Transform]):
             include=include,
             exclude=exclude,
             **kwargs,
+        )
+        self.transforms.append(transform)
+        return self
+
+    def take(
+        self,
+        include: str | Sequence[str] = None,
+        *,
+        indices: Sequence[int],
+        axis: int = -1,
+        predicate: Predicate = None,
+        exclude: str | Sequence[str] = None,
+    ):
+        """
+        Append a :py:class:`~transforms.Take` transform to the adapter.
+
+        Parameters
+        ----------
+        include : str or Sequence of str, optional
+            Names of variables to include in the transform.
+        indices : Sequence of int
+            Which indices to take from the data.
+        axis : int, optional
+            Which axis to take from. The last axis is used by default.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
+        exclude : str or Sequence of str, optional
+            Names of variables to exclude from the transform.
+        """
+        transform = FilterTransform(
+            transform_constructor=Take,
+            predicate=predicate,
+            include=include,
+            exclude=exclude,
+            indices=indices,
+            axis=axis,
         )
         self.transforms.append(transform)
         return self

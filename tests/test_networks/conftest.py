@@ -4,6 +4,78 @@ from bayesflow.networks import MLP
 
 
 @pytest.fixture()
+def diffusion_model_edm_F():
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
+        noise_schedule="edm",
+        prediction_type="F",
+    )
+
+
+@pytest.fixture()
+def diffusion_model_edm_velocity():
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
+        noise_schedule="edm",
+        prediction_type="velocity",
+    )
+
+
+@pytest.fixture()
+def diffusion_model_edm_noise():
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
+        noise_schedule="edm",
+        prediction_type="noise",
+    )
+
+
+@pytest.fixture()
+def diffusion_model_cosine_F():
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
+        noise_schedule="cosine",
+        prediction_type="F",
+    )
+
+
+@pytest.fixture()
+def diffusion_model_cosine_velocity():
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
+        noise_schedule="cosine",
+        prediction_type="velocity",
+    )
+
+
+@pytest.fixture()
+def diffusion_model_cosine_noise():
+    from bayesflow.experimental import DiffusionModel
+
+    return DiffusionModel(
+        subnet=MLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
+        noise_schedule="cosine",
+        prediction_type="noise",
+    )
+
+
+@pytest.fixture()
 def flow_matching():
     from bayesflow.networks import FlowMatching
 
@@ -86,6 +158,12 @@ def typical_point_inference_network_subnet():
         "flow_matching",
         "free_form_flow",
         "consistency_model",
+        pytest.param("diffusion_model_edm_F", marks=pytest.mark.diffusion_model),
+        pytest.param("diffusion_model_edm_noise", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
+        pytest.param("diffusion_model_cosine_velocity", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
+        pytest.param("diffusion_model_cosine_F", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
+        pytest.param("diffusion_model_cosine_noise", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
+        pytest.param("diffusion_model_cosine_velocity", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
     ],
     scope="function",
 )
@@ -107,7 +185,47 @@ def inference_network_subnet(request):
 
 
 @pytest.fixture(
-    params=["affine_coupling_flow", "spline_coupling_flow", "flow_matching", "free_form_flow", "consistency_model"],
+    params=[
+        "affine_coupling_flow",
+        "spline_coupling_flow",
+        "flow_matching",
+        "free_form_flow",
+        "consistency_model",
+        pytest.param("diffusion_model_edm_F", marks=pytest.mark.diffusion_model),
+        pytest.param(
+            "diffusion_model_edm_noise",
+            marks=[
+                pytest.mark.slow,
+                pytest.mark.diffusion_model,
+                pytest.mark.skip("noise predicition not testable without prior training for numerical reasons."),
+            ],
+        ),
+        pytest.param("diffusion_model_cosine_velocity", marks=[pytest.mark.slow, pytest.mark.diffusion_model]),
+        pytest.param(
+            "diffusion_model_cosine_F",
+            marks=[
+                pytest.mark.slow,
+                pytest.mark.diffusion_model,
+                pytest.mark.skip("skip to reduce load on CI."),
+            ],
+        ),
+        pytest.param(
+            "diffusion_model_cosine_noise",
+            marks=[
+                pytest.mark.slow,
+                pytest.mark.diffusion_model,
+                pytest.mark.skip("noise predicition not testable without prior training for numerical reasons."),
+            ],
+        ),
+        pytest.param(
+            "diffusion_model_cosine_velocity",
+            marks=[
+                pytest.mark.slow,
+                pytest.mark.diffusion_model,
+                pytest.mark.skip("skip to reduce load on CI."),
+            ],
+        ),
+    ],
     scope="function",
 )
 def generative_inference_network(request):

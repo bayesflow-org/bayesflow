@@ -1,27 +1,31 @@
 import keras
 
-from keras.saving import register_keras_serializable as serializable
-
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, fill_triangular_matrix
+from bayesflow.utils import layer_kwargs, fill_triangular_matrix, positive_diag
+from bayesflow.utils.serialization import serializable
 
 
-@serializable(package="bayesflow.links")
+@serializable("bayesflow.links")
 class PositiveDefinite(keras.Layer):
     """Activation function to link from flat elements of a lower triangular matrix to a positive definite matrix."""
 
     def __init__(self, **kwargs):
         super().__init__(**layer_kwargs(kwargs))
-        self.built = True
+
+        self.layer_norm = keras.layers.LayerNormalization()
 
     def call(self, inputs: Tensor) -> Tensor:
-        # Build cholesky factor from inputs
-        L = fill_triangular_matrix(inputs, positive_diag=True)
+        # normalize the activation at initialization time mean = 0.0, std = 0.1
+        inputs = self.layer_norm(inputs) / 10
 
-        # calculate positive definite matrix from cholesky factors
+        # form a cholesky factor
+        L = fill_triangular_matrix(inputs)
+        L = positive_diag(L)
+
+        # calculate positive definite matrix from cholesky factors:
         psd = keras.ops.matmul(
             L,
-            keras.ops.moveaxis(L, -2, -1),  # L transposed
+            keras.ops.swapaxes(L, -2, -1),  # L transposed
         )
         return psd
 
@@ -32,13 +36,14 @@ class PositiveDefinite(keras.Layer):
 
     def compute_input_shape(self, output_shape):
         """
-        Returns the shape of parameterization of a cholesky factor triangular matrix.
+        Returns the shape of parameterization of a Cholesky factor triangular matrix.
 
-        There are m nonzero elements of a lower triangular nxn matrix with m = n * (n + 1) / 2.
+        There are :math:`m` nonzero elements of a lower triangular :math:`n \\times n` matrix with
+        :math:`m = n (n + 1) / 2`, so for output shape (..., n, n) the returned shape is (..., m).
 
-        Example
-        -------
-        >>> PositiveDefinite().compute_output_shape((None, 3, 3))
+        Examples
+        --------
+        >>> PositiveDefinite().compute_input_shape((None, 3, 3))
         6
         """
         n = output_shape[-1]

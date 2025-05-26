@@ -310,8 +310,6 @@ def fill_triangular_matrix(x: Tensor, upper: bool = False, positive_diag: bool =
         Batch of flattened nonzero matrix elements for triangular matrix.
     upper : bool
         Return upper triangular matrix if True, else lower triangular matrix. Default is False.
-    positive_diag : bool
-        Whether to apply a softplus operation to diagonal elements. Default is False.
 
     Returns
     -------
@@ -327,47 +325,70 @@ def fill_triangular_matrix(x: Tensor, upper: bool = False, positive_diag: bool =
     batch_shape = x.shape[:-1]
     m = x.shape[-1]
 
-    if m == 1:
+    if m > 1:  # Matrix is larger than than 1x1
+        # Calculate matrix shape
+        n = (0.25 + 2 * m) ** 0.5 - 0.5
+        if not np.isclose(np.floor(n), n):
+            raise ValueError(f"Input right-most shape ({m}) does not correspond to a triangular matrix.")
+        else:
+            n = int(n)
+
+        # Trick: Create triangular matrix by concatenating with a flipped version of itself, then reshape.
+        if not upper:
+            x_list = [x[..., n:], keras.ops.flip(x, axis=-1)]
+
+            y = keras.ops.concatenate(x_list, axis=len(batch_shape))
+            y = keras.ops.reshape(y, (-1, n, n))
+            y = keras.ops.tril(y)
+
+        else:
+            x_list = [x, keras.ops.flip(x[..., n:], axis=-1)]
+
+            y = keras.ops.concatenate(x_list, axis=len(batch_shape))
+            y = keras.ops.reshape(y, (-1, n, n))
+            y = keras.ops.triu(
+                y,
+            )
+
+    else:  # Matrix is 1x1
         y = keras.ops.reshape(x, (-1, 1, 1))
-        if positive_diag:
-            y = keras.activations.softplus(y)
-        return y
-
-    # Calculate matrix shape
-    n = (0.25 + 2 * m) ** 0.5 - 0.5
-    if not np.isclose(np.floor(n), n):
-        raise ValueError(f"Input right-most shape ({m}) does not correspond to a triangular matrix.")
-    else:
-        n = int(n)
-
-    # Trick: Create triangular matrix by concatenating with a flipped version of its tail, then reshape.
-    x_tail = keras.ops.take(x, indices=list(range((m - (n**2 - m)), x.shape[-1])), axis=-1)
-    if not upper:
-        y = keras.ops.concatenate([x_tail, keras.ops.flip(x, axis=-1)], axis=len(batch_shape))
-        y = keras.ops.reshape(y, (-1, n, n))
-        y = keras.ops.tril(y)
-
-        if positive_diag:
-            y_offdiag = keras.ops.tril(y, k=-1)
-            # carve out diagonal, by setting upper and lower offdiagonals to zero
-            y_diag = keras.ops.tril(
-                keras.ops.triu(keras.activations.softplus(y)),  # apply softplus to enforce positivity
-            )
-            y = y_diag + y_offdiag
-
-    else:
-        y = keras.ops.concatenate([x, keras.ops.flip(x_tail, axis=-1)], axis=len(batch_shape))
-        y = keras.ops.reshape(y, (-1, n, n))
-        y = keras.ops.triu(
-            y,
-        )
-
-        if positive_diag:
-            y_offdiag = keras.ops.triu(y, k=1)
-            # carve out diagonal, by setting upper and lower offdiagonals to zero
-            y_diag = keras.ops.tril(
-                keras.ops.triu(keras.activations.softplus(y)),  # apply softplus to enforce positivity
-            )
-            y = y_diag + y_offdiag
 
     return y
+
+
+def positive_diag(x: Tensor, method="default") -> Tensor:
+    """
+    Ensures that matrix elements on diagonal are positive.
+
+    Parameters
+    ----------
+    x : Tensor of shape (batch_size, n, n)
+        Batch of matrices.
+    method : str, optional
+        Method by which to ensure positivity of diagonal entries. Choose from
+        - "shifted_softplus": softplus(x + 0.5413)
+        - "exp": exp(x)
+        Both methods map a matrix filled with zeros to the unit matrix.
+        Default is "shifted_softplus".
+
+    Returns
+    -------
+    Tensor of shape (batch_size, n, n)
+    """
+    # ensure positivity
+    match method:
+        case "default" | "shifted_softplus":
+            x_positive = keras.activations.softplus(x + 0.5413)
+        case "exp":
+            x_positive = keras.ops.exp(x)
+
+    # zero all offdiagonals
+    x_diag_positive = keras.ops.tril(keras.ops.triu(x_positive))
+
+    # zero diagonal entries
+    x_offdiag = keras.ops.triu(x, k=1) + keras.ops.tril(x, k=-1)
+
+    # sum to get full matrices with softplus applied only to diagonal entries
+    x = x_diag_positive + x_offdiag
+
+    return x

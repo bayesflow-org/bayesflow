@@ -9,10 +9,10 @@ from bayesflow.utils.serialization import serializable
 from .mamba_block import MambaBlock
 
 
-@serializable
+@serializable("bayesflow.wrappers")
 class Mamba(SummaryNetwork):
     """
-    Wraps a sequence of Mamba modules using the simple Mamba module from:
+    (SN) Wraps a sequence of Mamba modules using the simple Mamba module from:
     https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba_simple.py
 
     Copyright (c) 2023, Tri Dao, Albert Gu.

@@ -10,7 +10,7 @@ from bayesflow.utils.serialization import serializable
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable
+@serializable("bayesflow.networks")
 class PoolingByMultiHeadAttention(keras.Layer):
     """Implements the pooling with multi-head attention (PMA) block from [1] which represents
     a permutation-invariant encoder for set-based inputs.

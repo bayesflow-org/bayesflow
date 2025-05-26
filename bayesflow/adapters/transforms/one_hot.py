@@ -6,7 +6,7 @@ from bayesflow.utils.numpy_utils import one_hot
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class OneHot(ElementwiseTransform):
     """
     Changes data to be one-hot encoded.

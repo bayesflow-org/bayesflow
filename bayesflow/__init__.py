@@ -50,17 +50,11 @@ def setup():
             "in contexts where you need gradients (e.g. custom training loops)."
         )
 
+    # dynamically add __version__ attribute
+    from importlib.metadata import version
 
-# dynamically add version dunder variable
-try:
-    from importlib.metadata import version, PackageNotFoundError
+    globals()["__version__"] = version("bayesflow")
 
-    __version__ = version(__name__)
-except PackageNotFoundError:
-    __version__ = "2.0.0"
-finally:
-    del version
-    del PackageNotFoundError
 
 # call and clean up namespace
 setup()

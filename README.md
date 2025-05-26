@@ -15,6 +15,12 @@ It provides users and researchers with:
 BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
 fueled by continuous progress in generative AI and Bayesian inference.
 
+> [!IMPORTANT]
+> As the 2.0 version introduced many new features, we still have to make breaking changes from time to time.
+> This especially concerns **saving and loading** of models. We aim to stabilize this from the 2.1 release onwards.
+> Until then, consider pinning your BayesFlow 2.0 installation to an exact version, or re-training after an update
+> for less costly models.
+
 ## Important Note for Existing Users
 
 You are currently looking at BayesFlow 2.0+, which is a complete rewrite of the library.

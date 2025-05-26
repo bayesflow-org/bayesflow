@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Standardize(ElementwiseTransform):
     """
     Transform that when applied standardizes data using typical z-score standardization
@@ -123,7 +123,7 @@ class Standardize(ElementwiseTransform):
 
     def log_det_jac(self, data, inverse: bool = False, **kwargs) -> np.ndarray:
         std = np.broadcast_to(self.std, data.shape)
-        ldj = np.log(np.abs(std))
+        ldj = -np.log(np.abs(std))
         if inverse:
             ldj = -ldj
         return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))

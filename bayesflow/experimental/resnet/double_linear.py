@@ -5,7 +5,8 @@ from bayesflow.utils import model_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
-@serializable
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class DoubleLinear(keras.Sequential):
     def __init__(
         self,

@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class AsTimeSeries(ElementwiseTransform):
     """The `.as_time_series` transform can be used to indicate that variables shall be treated as time series.
 

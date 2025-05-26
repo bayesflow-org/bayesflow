@@ -14,7 +14,7 @@ class Predicate(Protocol):
         raise NotImplementedError
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class FilterTransform(Transform):
     """
     Implements a transform that applies a different transform on a subset of the data.

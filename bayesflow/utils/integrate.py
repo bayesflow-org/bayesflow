@@ -4,10 +4,11 @@ from functools import partial
 import keras
 
 import numpy as np
-from typing import Literal
+from typing import Literal, Union
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
+
 from . import logging
 
 ArrayLike = int | float | Tensor
@@ -293,3 +294,107 @@ def integrate(
         return integrate_scheduled(fn, state, steps, method, **kwargs)
     else:
         raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
+
+
+def euler_maruyama_step(
+    drift_fn: Callable,
+    diffusion_fn: Callable,
+    state: dict[str, ArrayLike],
+    time: ArrayLike,
+    step_size: ArrayLike,
+    noise: dict[str, ArrayLike],
+) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
+    """
+    Performs a single Euler-Maruyama step for stochastic differential equations.
+
+    Args:
+        drift_fn: Function computing the drift term f(t, **state).
+        diffusion_fn: Function computing the diffusion term g(t, **state).
+        state: Current state, mapping variable names to tensors.
+        time: Current time scalar tensor.
+        step_size: Time increment dt.
+        noise: Mapping of variable names to dW noise tensors.
+
+    Returns:
+        new_state: Updated state after one Euler-Maruyama step.
+        new_time: time + dt.
+    """
+    # Compute drift and diffusion
+    drift = drift_fn(time, **filter_kwargs(state, drift_fn))
+    diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))
+
+    # Check noise keys
+    if set(diffusion.keys()) != set(noise.keys()):
+        raise ValueError("Keys of diffusion terms and noise do not match.")
+
+    new_state = {}
+    for key, d in drift.items():
+        base = state[key] + step_size * d
+        if key in diffusion:  # stochastic update
+            base = base + diffusion[key] * noise[key]
+        new_state[key] = base
+
+    return new_state, time + step_size
+
+
+def integrate_stochastic(
+    drift_fn: Callable,
+    diffusion_fn: Callable,
+    state: dict[str, ArrayLike],
+    start_time: ArrayLike,
+    stop_time: ArrayLike,
+    steps: int,
+    seed: keras.random.SeedGenerator,
+    method: str = "euler_maruyama",
+    **kwargs,
+) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
+    """
+    Integrates a stochastic differential equation from start_time to stop_time.
+
+    Args:
+        drift_fn: Function that computes the drift term.
+        diffusion_fn: Function that computes the diffusion term.
+        state: Dictionary containing the initial state.
+        start_time: Starting time for integration.
+        stop_time: Ending time for integration.
+        steps: Number of integration steps.
+        seed: Random seed for noise generation.
+        method: Integration method to use, e.g., 'euler_maruyama'.
+        **kwargs: Additional arguments to pass to the step function.
+
+    Returns:
+        If return_noise is False, returns the final state dictionary.
+        If return_noise is True, returns a tuple of (final_state, noise_history).
+    """
+    if steps <= 0:
+        raise ValueError("Number of steps must be positive.")
+
+    # Select step function based on method
+    match method:
+        case "euler_maruyama":
+            step_fn = euler_maruyama_step
+        case other:
+            raise TypeError(f"Invalid integration method: {other!r}")
+
+    # Prepare step function with partial application
+    step_fn = partial(step_fn, drift_fn=drift_fn, diffusion_fn=diffusion_fn, **kwargs)
+
+    # Time step
+    step_size = (stop_time - start_time) / steps
+    sqrt_dt = keras.ops.sqrt(keras.ops.abs(step_size))
+
+    # Pre-generate noise history: shape = (steps, *state_shape)
+    noise_history = {}
+    for key, val in state.items():
+        noise_history[key] = (
+            keras.random.normal((steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed) * sqrt_dt
+        )
+
+    def body(_loop_var, _loop_state):
+        _current_state, _current_time = _loop_state
+        _noise_i = {k: noise_history[k][_loop_var] for k in _current_state.keys()}
+        new_state, new_time = step_fn(state=_current_state, time=_current_time, step_size=step_size, noise=_noise_i)
+        return new_state, new_time
+
+    final_state, final_time = keras.ops.fori_loop(0, steps, body, (state, start_time))
+    return final_state

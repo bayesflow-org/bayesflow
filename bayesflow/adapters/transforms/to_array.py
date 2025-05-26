@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class ToArray(ElementwiseTransform):
     """
     Checks provided data for any non-arrays and converts them to numpy arrays.

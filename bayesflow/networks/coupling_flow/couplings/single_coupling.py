@@ -8,7 +8,7 @@ from ..invertible_layer import InvertibleLayer
 from ..transforms import find_transform
 
 
-@serializable
+@serializable("bayesflow.networks")
 class SingleCoupling(InvertibleLayer):
     """
     Implements a single coupling layer as a composition of a subnet and a transform.

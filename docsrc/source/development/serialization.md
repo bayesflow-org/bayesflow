@@ -17,10 +17,19 @@ As we want/need to pass them in some places, we have to resort to some custom be
 BayesFlows serialization utilities can be found in the {py:mod}`~bayesflow.utils.serialization` module.
 We mainly provide three convenience functions:
 
-- The {py:func}`~bayesflow.utils.serialization.serializable` decorator wraps the `keras.saving.register_keras_serializable` function to provide automatic `package` and `name` arguments.
+- The {py:func}`~bayesflow.utils.serialization.serializable` decorator wraps the `keras.saving.register_keras_serializable` function to ensure consistent naming of the `package` argument within the library.
 - The {py:func}`~bayesflow.utils.serialization.serialize` function, which adds support for serializing classes.
 - Its counterpart {py:func}`~bayesflow.utils.serialization.deserialize`, adds support to deserialize classes.
 
 ## Usage
 
 To use the adapted serialization functions, you have to use them in the `get_config` and `from_config` method. Please refer to existing classes in the library for usage examples.
+
+### The `serializable` Decorator
+
+To make serialization as little confusing as possible, as well as providing stability even when moving classes around, we provide the `package` argument explicitly for each class.
+The naming should respect the following naming scheme: Take the module the class resides in (for example, `bayesflow.adapters.transforms.standardize`), and truncate the path to depth two (`bayesflow.adapters`).
+In cases where this convention cannot be followed, set `disable_module_check` to `True`, and describe why a different name was necessary.
+Changing `package` breaks backwards-compatibility for serialization, so it should be avoided whenever possible.
+If you move a class to a different module (without changing the class itself), keep the `package` and set `disable_module_check` to `True`.
+This may later be adapted in a release that breaks backward compatiblity anyways.

@@ -9,7 +9,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 from ..residual import Residual
 
 
-@serializable
+@serializable("bayesflow.networks")
 class MLP(keras.Sequential):
     """
     Implements a simple configurable MLP with optional residual connections and dropout.

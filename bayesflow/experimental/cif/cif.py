@@ -1,7 +1,7 @@
 import keras
-from keras.saving import register_keras_serializable as serializable
 
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils.serialization import serializable
 
 from bayesflow.networks.inference_network import InferenceNetwork
 from bayesflow.networks.coupling_flow import CouplingFlow
@@ -9,9 +9,10 @@ from bayesflow.networks.coupling_flow import CouplingFlow
 from .conditional_gaussian import ConditionalGaussian
 
 
-@serializable(package="bayesflow.networks")
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class CIF(InferenceNetwork):
-    """Implements a continuously indexed flow (CIF) with a `CouplingFlow`
+    """(IN) Implements a continuously indexed flow (CIF) with a `CouplingFlow`
     bijection and `ConditionalGaussian` distributions p and q. Improves on
     eliminating leaky sampling found topologically in normalizing flows.
     Built in reference to [1].

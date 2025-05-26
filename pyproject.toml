@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesflow"
-version = "2.0.2"
+version = "2.0.3"
 authors = [{ name = "The BayesFlow Team" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -16,13 +16,14 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 description = "Amortizing Bayesian Inference With Neural Networks"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
 
-requires-python = ">= 3.10, < 3.12"
+requires-python = ">= 3.10, < 3.13"
 dependencies = [
     "keras >= 3.9",
     "matplotlib",
@@ -44,13 +45,15 @@ all = [
     "ruff",
     "tox",
     # docs
-    "myst-nb",
-    "numpydoc",
-    "pydata-sphinx-theme",
-    "sphinx",
-    "sphinx-polyversion >= 1.1",
-    "sphinx_design",
-    "sphinxcontrib-bibtex",
+
+    "myst-nb ~= 1.2",
+    "numpydoc ~= 1.8",
+    "pydata-sphinx-theme ~= 0.16",
+    "sphinx ~= 8.2",
+    "sphinx-polyversion == 1.1",
+    "sphinx_design ~= 0.6",
+    "sphinxcontrib-bibtex ~= 2.6",
+    "snowballstemmer ~= 2.2.0",
     # test
     "pytest",
     "pytest-cov",
@@ -65,13 +68,14 @@ dev = [
     "tox",
 ]
 docs = [
-    "myst-nb",
-    "numpydoc",
-    "pydata-sphinx-theme",
-    "sphinx",
-    "sphinx-polyversion >= 1.1",
-    "sphinx_design",
-    "sphinxcontrib-bibtex",
+    "myst-nb ~= 1.2",
+    "numpydoc ~= 1.8",
+    "pydata-sphinx-theme ~= 0.16",
+    "sphinx ~= 8.2",
+    "sphinx-polyversion == 1.1",
+    "sphinx_design ~= 0.6",
+    "sphinxcontrib-bibtex ~= 2.6",
+    "snowballstemmer ~= 2.2.0",
 ]
 test = [
     "nbconvert",

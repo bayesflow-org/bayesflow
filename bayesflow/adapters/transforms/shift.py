@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Shift(ElementwiseTransform):
     def __init__(self, shift: np.typing.ArrayLike):
         self.shift = np.array(shift)

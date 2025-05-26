@@ -1,7 +1,67 @@
 import keras
 import pytest
 
-from bayesflow.utils import find_inference_network, find_distribution, find_summary_network
+from bayesflow.utils import find_inference_network, find_distribution, find_network, find_summary_network
+from bayesflow.experimental.diffusion_model import find_noise_schedule
+
+# --- Tests for find__network.py ---
+
+
+class DummyNetwork:
+    def __init__(self, *a, **kw):
+        self.args = a
+        self.kwargs = kw
+
+
+@pytest.mark.parametrize(
+    "name,expected_class_path",
+    [
+        ("mlp", "bayesflow.networks.MLP"),
+    ],
+)
+def test_find_network_by_name(monkeypatch, name, expected_class_path):
+    # patch the expected class in bayesflow.networks
+    components = expected_class_path.split(".")
+    module_path = ".".join(components[:-1])
+    class_name = components[-1]
+
+    dummy_cls = DummyNetwork
+    monkeypatch.setattr(f"{module_path}.{class_name}", dummy_cls)
+
+    net = find_network(name, 1, key="val")
+    assert isinstance(net, DummyNetwork)
+    assert net.args == (1,)
+    assert net.kwargs == {"key": "val"}
+
+
+def test_find_network_by_type():
+    # patch the expected class in bayesflow.networks
+    net = find_network(DummyNetwork, 1, key="val")
+    assert isinstance(net, DummyNetwork)
+    assert net.args == (1,)
+    assert net.kwargs == {"key": "val"}
+
+
+def test_find_network_by_keras_layer():
+    layer = keras.layers.Dense(10)
+    result = find_network(layer)
+    assert result is layer
+
+
+def test_find_network_by_keras_model():
+    model = keras.models.Sequential()
+    result = find_network(model)
+    assert result is model
+
+
+def test_find_network_unknown_name():
+    with pytest.raises(ValueError):
+        find_network("unknown_network_name")
+
+
+def test_find_network_invalid_type():
+    with pytest.raises(TypeError):
+        find_network(12345)
 
 
 # --- Tests for find_inference_network.py ---
@@ -31,6 +91,14 @@ def test_find_inference_network_by_name(monkeypatch, name, expected_class_path):
     monkeypatch.setattr(f"{module_path}.{class_name}", dummy_cls)
 
     net = find_inference_network(name, 1, key="val")
+    assert isinstance(net, DummyInferenceNetwork)
+    assert net.args == (1,)
+    assert net.kwargs == {"key": "val"}
+
+
+def test_find_inference_network_by_type():
+    # patch the expected class in bayesflow.networks
+    net = find_inference_network(DummyInferenceNetwork, 1, key="val")
     assert isinstance(net, DummyInferenceNetwork)
     assert net.args == (1,)
     assert net.kwargs == {"key": "val"}
@@ -148,6 +216,14 @@ def test_find_summary_network_by_name(monkeypatch, name, expected_class_path):
     assert net.kwargs == {"flag": True}
 
 
+def test_find_summary_network_by_type():
+    # patch the expected class in bayesflow.networks
+    net = find_summary_network(DummySummaryNetwork, 1, key="val")
+    assert isinstance(net, DummySummaryNetwork)
+    assert net.args == (1,)
+    assert net.kwargs == {"key": "val"}
+
+
 def test_find_summary_network_by_keras_layer():
     layer = keras.layers.Dense(1)
     out = find_summary_network(layer)
@@ -168,3 +244,72 @@ def test_find_summary_network_unknown_name():
 def test_find_summary_network_invalid_type():
     with pytest.raises(TypeError):
         find_summary_network(0.1234)
+
+
+def test_find_noise_schedule_by_name():
+    from bayesflow.experimental.diffusion_model import CosineNoiseSchedule, EDMNoiseSchedule
+
+    schedule = find_noise_schedule("cosine")
+    assert isinstance(schedule, CosineNoiseSchedule)
+
+    schedule = find_noise_schedule("edm")
+    assert isinstance(schedule, EDMNoiseSchedule)
+
+
+def test_find_noise_schedule_unknown_name():
+    with pytest.raises(ValueError):
+        find_noise_schedule("unknown_noise_schedule")
+
+
+def test_pass_noise_schedule():
+    from bayesflow.experimental.diffusion_model import NoiseSchedule
+
+    class CustomNoiseSchedule(NoiseSchedule):
+        def __init__(self):
+            pass
+
+        def get_log_snr(self, t, training):
+            pass
+
+        def get_t_from_log_snr(self, log_snr_t, training):
+            pass
+
+        def derivative_log_snr(self, log_snr_t, training):
+            pass
+
+    schedule = CustomNoiseSchedule()
+    assert schedule is find_noise_schedule(schedule)
+
+
+def test_pass_noise_schedule_type():
+    from bayesflow.experimental.diffusion_model import EDMNoiseSchedule
+
+    schedule = find_noise_schedule(EDMNoiseSchedule, sigma_data=10.0)
+    assert isinstance(schedule, EDMNoiseSchedule)
+    assert schedule.sigma_data == 10.0
+
+
+def test_find_noise_schedule_by_dict():
+    from bayesflow.experimental.diffusion_model import CosineNoiseSchedule, EDMNoiseSchedule
+
+    schedule = find_noise_schedule({"name": "cosine"})
+    assert isinstance(schedule, CosineNoiseSchedule)
+
+    schedule = find_noise_schedule({"name": "edm", "sigma_data": 10})
+    assert isinstance(schedule, EDMNoiseSchedule)
+    assert schedule.sigma_data == 10
+
+
+def test_find_noise_schedule_unknown_name_in_dict():
+    with pytest.raises(ValueError):
+        find_noise_schedule({"name": "unknown_noise_schedule"})
+
+
+def test_find_noise_schedule_invalid_class():
+    with pytest.raises(TypeError):
+        find_noise_schedule(int)
+
+
+def test_find_noise_schedule_invalid_object():
+    with pytest.raises(TypeError):
+        find_noise_schedule(1.0)

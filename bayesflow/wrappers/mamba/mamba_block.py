@@ -6,7 +6,7 @@ from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 
-@serializable
+@serializable("bayesflow.wrappers")
 class MambaBlock(keras.Layer):
     """
     Wraps the original Mamba module from, with added functionality for bidirectional processing:

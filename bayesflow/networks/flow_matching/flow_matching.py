@@ -19,9 +19,9 @@ from bayesflow.utils.serialization import serialize, deserialize, serializable
 from ..inference_network import InferenceNetwork
 
 
-@serializable
+@serializable("bayesflow.networks")
 class FlowMatching(InferenceNetwork):
-    """Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas incorporated
+    """(IN) Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas incorporated
     from [1-3].
 
     [1] Rectified Flow: arXiv:2209.03003

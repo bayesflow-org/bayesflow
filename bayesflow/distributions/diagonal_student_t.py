@@ -13,7 +13,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .distribution import Distribution
 
 
-@serializable
+@serializable("bayesflow.distributions")
 class DiagonalStudentT(Distribution):
     """Implements a backend-agnostic diagonal Student-t distribution."""
 

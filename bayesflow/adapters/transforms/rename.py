@@ -3,7 +3,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Rename(Transform):
     """
     Transform to rename keys in data dictionary. Useful to rename variables to match those required by

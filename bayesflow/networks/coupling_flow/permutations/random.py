@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serializable
 from .fixed_permutation import FixedPermutation
 
 
-@serializable
+@serializable("bayesflow.networks")
 class RandomPermutation(FixedPermutation):
     # noinspection PyMethodOverriding
     def build(self, xz_shape: Shape, **kwargs) -> None:

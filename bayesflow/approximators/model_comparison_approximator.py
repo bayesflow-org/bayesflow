@@ -14,7 +14,7 @@ from bayesflow.utils.serialization import serialize, deserialize, serializable
 from .approximator import Approximator
 
 
-@serializable
+@serializable("bayesflow.approximators")
 class ModelComparisonApproximator(Approximator):
     """
     Defines an approximator for model (simulator) comparison, where the (discrete) posterior model probabilities are

@@ -19,9 +19,10 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.networks import InferenceNetwork
 
 
-@serializable
+# disable module check, use potential module after moving from experimental
+@serializable("bayesflow.networks", disable_module_check=True)
 class FreeFormFlow(InferenceNetwork):
-    """Implements a dimensionality-preserving Free-form Flow.
+    """(IN) Implements a dimensionality-preserving Free-form Flow.
     Incorporates ideas from [1-2].
 
     [1] Draxler, F., Sorrenson, P., Zimmermann, L., Rousselot, A., & Köthe, U. (2024).F

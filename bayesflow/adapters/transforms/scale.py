@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .elementwise_transform import ElementwiseTransform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class Scale(ElementwiseTransform):
     def __init__(self, scale: np.typing.ArrayLike):
         self.scale = np.array(scale)

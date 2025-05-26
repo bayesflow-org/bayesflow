@@ -5,7 +5,7 @@ from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, deserialize
 
 
-@serializable
+@serializable("bayesflow.distributions")
 class Distribution(keras.Layer):
     def __init__(self, **kwargs):
         super().__init__(**layer_kwargs(kwargs))

@@ -10,9 +10,10 @@ from ..summary_network import SummaryNetwork
 from .mab import MultiHeadAttentionBlock
 
 
-@serializable
+@serializable("bayesflow.networks")
 class FusionTransformer(SummaryNetwork):
-    """Implements a more flexible version of the TimeSeriesTransformer that applies a series of self-attention layers
+    """
+    (SN) Implements a more flexible version of the TimeSeriesTransformer that applies a series of self-attention layers
     followed by cross-attention between the representation and a learnable template summarized via a recurrent net."""
 
     def __init__(

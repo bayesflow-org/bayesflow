@@ -33,6 +33,7 @@ from .dispatch import (
     find_summary_network,
     find_inference_network,
     find_distribution,
+    find_noise_schedule,
 )
 
 from .ecdf import simultaneous_ecdf_bands, ranks
@@ -46,10 +47,7 @@ from .git import (
 )
 
 from .hparam_utils import find_batch_size, find_memory_budget
-
-from .integrate import (
-    integrate,
-)
+from .integrate import integrate, integrate_stochastic
 
 from .io import (
     pickle_load,
@@ -88,14 +86,15 @@ from .tensor_utils import (
     expand_right_as,
     expand_right_to,
     expand_tile,
+    fill_triangular_matrix,
     pad,
+    positive_diag,
     searchsorted,
     size_of,
     stack_valid,
     tile_axis,
     tree_concatenate,
     tree_stack,
-    fill_triangular_matrix,
     weighted_mean,
 )
 

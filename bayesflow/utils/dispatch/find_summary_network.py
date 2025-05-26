@@ -40,6 +40,13 @@ def _(name: str, *args, **kwargs):
 
 
 @find_summary_network.register
+def _(cls: type, *args, **kwargs):
+    # Instantiate class with the given arguments
+    network = cls(*args, **kwargs)
+    return network
+
+
+@find_summary_network.register
 def _(layer: keras.Layer, *args, **kwargs):
     return layer
 

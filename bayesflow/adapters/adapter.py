@@ -798,10 +798,9 @@ class Adapter(MutableSequence[Transform]):
         keys: str | Sequence[str],
         default_value: float = 0.0,
         encode_mask: bool = False,
-        mask_axis: int | None = None,
     ):
         """
-        Append :py:class:`~bf.adapters.transforms.ReplaceNaN` transform to the adapter.
+        Append :py:class:`~bf.adapters.transforms.NanToNum` transform to the adapter.
 
         Parameters
         ----------
@@ -811,14 +810,10 @@ class Adapter(MutableSequence[Transform]):
             Value to substitute wherever data is NaN.
         encode_mask : bool
             If True, encode a binary missingness mask alongside the data.
-        mask_axis : int or tuple or None
-            Axis at which to expand for mask encoding (if enabled).
         """
         if isinstance(keys, str):
             keys = [keys]
 
-        transform = MapTransform(
-            {key: NanToNum(default_value=default_value, encode_mask=encode_mask, mask_axis=mask_axis) for key in keys}
-        )
-        self.transforms.append(transform)
+        for key in keys:
+            self.transforms.append(NanToNum(key=key, default_value=default_value, encode_mask=encode_mask))
         return self

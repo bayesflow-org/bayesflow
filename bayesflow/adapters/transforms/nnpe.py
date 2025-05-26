@@ -19,37 +19,41 @@ class NNPE(ElementwiseTransform):
 
     Parameters
     ----------
-    slab_scale : float
-        The scale of the slab (Cauchy) distribution.
-    spike_scale : float
-        The scale of the spike spike (Normal) distribution.
+    spike_scale : float or None
+        The scale of the spike (Normal) distribution. Automatically determined if None (see “Notes” section).
+    slab_scale : float or None
+        The scale of the slab (Cauchy) distribution. Automatically determined if None (see “Notes” section).
     seed : int or None
         The seed for the random number generator. If None, a random seed is used. Used instead of np.random.Generator
         here to enable easy serialization.
 
     Notes
     -----
-    The spike-and-slab distribution consists of a mixture of a Cauchy (slab) and a Normal distribution (spike), which
-    are applied based on a Bernoulli random variable with p=0.5.
+    The spike-and-slab distribution consists of a mixture of a Normal distribution (spike) and Cauchy distribution
+    (slab), which are applied based on a Bernoulli random variable with p=0.5.
 
-    The default scales follow [1] and expect standardized data (e.g., via the `Standardize` adapter). It is therefore
-    recommended to adapt the scales when using unstandardized training data.
+    The scales of the spike and slab distributions can be set manually, or they are automatically determined by scaling
+    the default scales of [1] (which expect standardized data) by the standard deviation of the input data.
 
     Examples
     --------
     >>> adapter = bf.Adapter().nnpe(["x"])
     """
 
-    def __init__(self, *, slab_scale: float = 0.25, spike_scale: float = 0.01, seed: int = None):
+    DEFAULT_SLAB = 0.25
+    DEFAULT_SPIKE = 0.01
+
+    def __init__(self, *, spike_scale: float | None = None, slab_scale: float | None = None, seed: int | None = None):
         super().__init__()
-        self.slab_scale = slab_scale
         self.spike_scale = spike_scale
+        self.slab_scale = slab_scale
         self.seed = seed
         self.rng = np.random.default_rng(seed)
 
     def forward(self, data: np.ndarray, stage: str = "inference", **kwargs) -> np.ndarray:
         """
-        Add spike‐and‐slab noise (see “Notes” section of the class docstring for details) to `data` during training.
+        Add spike‐and‐slab noise to `data` during training, using automatic scale determination if not provided (see
+        “Notes” section of the class docstring for details).
 
         Parameters
         ----------
@@ -67,9 +71,21 @@ class NNPE(ElementwiseTransform):
         """
         if stage != "training":
             return data
+
+        # Check data validity
+        if not np.all(np.isfinite(data)):
+            raise ValueError("NNPE.forward: `data` contains NaN or infinite values.")
+
+        # Automatically determine scales if not provided
+        if self.spike_scale is None or self.slab_scale is None:
+            data_std = np.std(data)
+        spike_scale = self.spike_scale if self.spike_scale is not None else self.DEFAULT_SPIKE * data_std
+        slab_scale = self.slab_scale if self.slab_scale is not None else self.DEFAULT_SLAB * data_std
+
+        # Apply spike-and-slab noise
         mixture_mask = self.rng.binomial(n=1, p=0.5, size=data.shape).astype(bool)
-        noise_slab = self.rng.standard_cauchy(size=data.shape) * self.slab_scale
-        noise_spike = self.rng.standard_normal(size=data.shape) * self.spike_scale
+        noise_spike = self.rng.standard_normal(size=data.shape) * spike_scale
+        noise_slab = self.rng.standard_cauchy(size=data.shape) * slab_scale
         noise = np.where(mixture_mask, noise_slab, noise_spike)
         return data + noise
 
@@ -78,4 +94,4 @@ class NNPE(ElementwiseTransform):
         return data
 
     def get_config(self) -> dict:
-        return serialize({"slab_scale": self.slab_scale, "spike_scale": self.spike_scale, "seed": self.seed})
+        return serialize({"spike_scale": self.spike_scale, "slab_scale": self.slab_scale, "seed": self.seed})

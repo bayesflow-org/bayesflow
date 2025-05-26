@@ -45,6 +45,8 @@ class NanToNum(Transform):
         """
         Forward transform: fill NaNs and optionally output mask under '_mask_<key>'.
         """
+        data = data.copy()
+
         # Identify NaNs and fill with default value
         mask = np.isnan(data[self.key])
         data[self.key] = np.nan_to_num(data[self.key], copy=False, nan=self.default_value)
@@ -63,6 +65,8 @@ class NanToNum(Transform):
         """
         Inverse transform: restore NaNs using the mask under '_mask_<key>'.
         """
+        data = data.copy()
+
         # Retrieve mask and values to reconstruct NaNs
         values = data[self.key]
 

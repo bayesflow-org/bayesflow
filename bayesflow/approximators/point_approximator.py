@@ -158,7 +158,7 @@ class PointApproximator(ContinuousApproximator):
         """Adapts and converts the conditions to tensors."""
 
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.SAMPLE_KEYS}
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
 
         return keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 

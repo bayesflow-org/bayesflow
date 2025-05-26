@@ -303,10 +303,10 @@ def test_nan_to_num():
     transform = bf.Adapter().nan_to_num(keys="test", default_value=0.0, encode_mask=True)
     out = transform.forward(arr)
     np.testing.assert_array_equal(out["test"], np.array([1.0, 0.0, 3.0]))
-    np.testing.assert_array_equal(out["_mask_test"], np.array([1.0, 0.0, 1.0]))
+    np.testing.assert_array_equal(out["mask_test"], np.array([1.0, 0.0, 1.0]))
 
     # test two-d array
     transform = bf.Adapter().nan_to_num(keys="test-2d", default_value=0.5, encode_mask=True)
     out = transform.forward(arr)
     np.testing.assert_array_equal(out["test-2d"], np.array([[1.0, 0.5], [0.5, 4.0]]))
-    np.testing.assert_array_equal(out["_mask_test-2d"], np.array([[1, 0], [0, 1]]))
+    np.testing.assert_array_equal(out["mask_test-2d"], np.array([[1, 0], [0, 1]]))

@@ -39,11 +39,11 @@ class NanToNum(Transform):
         """
         Key under which the mask will be stored in the output dictionary.
         """
-        return f"_mask_{self.key}" if self.key else "_mask"
+        return f"mask_{self.key}" if self.key else "mask"
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, any]:
         """
-        Forward transform: fill NaNs and optionally output mask under '_mask_<key>'.
+        Forward transform: fill NaNs and optionally output mask under 'mask_<key>'.
         """
         data = data.copy()
 
@@ -63,7 +63,7 @@ class NanToNum(Transform):
 
     def inverse(self, data: dict[str, any], **kwargs) -> dict[str, any]:
         """
-        Inverse transform: restore NaNs using the mask under '_mask_<key>'.
+        Inverse transform: restore NaNs using the mask under 'mask_<key>'.
         """
         data = data.copy()
 

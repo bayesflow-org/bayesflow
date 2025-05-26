@@ -18,7 +18,7 @@ from .transforms import (
     Keep,
     Log,
     MapTransform,
-    Nnpe,
+    NNPE,
     NumpyTransform,
     OneHot,
     Rename,
@@ -708,7 +708,7 @@ class Adapter(MutableSequence[Transform]):
         spike_scale: float = 0.01,
         seed: int | None = None,
     ):
-        """Append an :py:class:`~transforms.Nnpe` transform to the adapter.
+        """Append an :py:class:`~transforms.NNPE` transform to the adapter.
 
         Parameters
         ----------
@@ -724,7 +724,7 @@ class Adapter(MutableSequence[Transform]):
         if isinstance(keys, str):
             keys = [keys]
 
-        transform = MapTransform({key: Nnpe(slab_scale=slab_scale, spike_scale=spike_scale, seed=seed) for key in keys})
+        transform = MapTransform({key: NNPE(slab_scale=slab_scale, spike_scale=spike_scale, seed=seed) for key in keys})
         self.transforms.append(transform)
         return self
 

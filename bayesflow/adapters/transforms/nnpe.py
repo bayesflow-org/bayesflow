@@ -6,7 +6,7 @@ from .elementwise_transform import ElementwiseTransform
 
 
 @serializable("bayesflow.adapters")
-class Nnpe(ElementwiseTransform):
+class NNPE(ElementwiseTransform):
     """Implements noisy neural posterior estimation (NNPE) as described in [1], which adds noise following a
     spike-and-slab distribution to the training data as a mild form of data augmentation to robustify against noisy
     real-world data (see [1, 2] for benchmarks).
@@ -48,6 +48,23 @@ class Nnpe(ElementwiseTransform):
         self.rng = np.random.default_rng(seed)
 
     def forward(self, data: np.ndarray, stage: str = "inference", **kwargs) -> np.ndarray:
+        """
+        Add spike‐and‐slab noise (see “Notes” section of the class docstring for details) to `data` during training.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Input array to be perturbed.
+        stage : str, default='inference'
+            If 'training', noise is added; else data is returned unchanged.
+        **kwargs
+            Unused keyword arguments.
+
+        Returns
+        -------
+        np.ndarray
+            Noisy data when `stage` is 'training', otherwise the original input.
+        """
         if stage != "training":
             return data
         mixture_mask = self.rng.binomial(n=1, p=0.5, size=data.shape).astype(bool)
@@ -57,6 +74,7 @@ class Nnpe(ElementwiseTransform):
         return data + noise
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+        """Non-invertible transform."""
         return data
 
     def get_config(self) -> dict:

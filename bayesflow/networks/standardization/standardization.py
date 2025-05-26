@@ -31,9 +31,6 @@ class Standardization(keras.Layer):
         self.moving_std = None
 
     def build(self, input_shape: Shape):
-        if self.built:
-            return
-
         self.moving_mean = self.add_weight(shape=(input_shape[-1],), initializer="zeros", trainable=False)
         self.moving_std = self.add_weight(shape=(input_shape[-1],), initializer="ones", trainable=False)
 

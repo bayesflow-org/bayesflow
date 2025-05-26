@@ -49,23 +49,13 @@ class ContinuousApproximator(Approximator):
         self.inference_network = inference_network
         self.summary_network = summary_network
 
-        # if standardize == "all":
-        #     standardize = ["inference_variables", "summary_variables", "inference_conditions"]
-        # elif isinstance(standardize, str):
-        #     standardize = [standardize]
-        # elif isinstance(standardize, Sequence):
-        #     standardize = standardize
-        # else:
-        #     standardize = []
-
         self.standardize = standardize
 
         if standardize == "all":
             # we have to lazily initialize these
             self.standardize_layers = None
         else:
-            print("eager init")
-            self.standardize_layers = {s: Standardization(trainable=False) for s in self.standardize}
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
     @classmethod
     def build_adapter(
@@ -128,15 +118,15 @@ class ContinuousApproximator(Approximator):
 
     def build_from_data(self, adapted_data: dict[str, any]):
         if self.standardize == "all":
-            self.standardize = list(adapted_data.keys())
-            self.standardize = ["inference_variables", "summary_variables", "inference_conditions"]
-            self.standardize = list(filter(lambda x: x in adapted_data, self.standardize))
+            self.standardize = [
+                var
+                for var in ["inference_variables", "summary_variables", "inference_conditions"]
+                if var in adapted_data
+            ]
 
-        if self.standardize_layers is None:
-            self.standardize_layers = {s: Standardization(trainable=False) for s in self.standardize}
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
         self.compute_metrics(**filter_kwargs(adapted_data, self.compute_metrics), stage="training")
-
         self.built = True
 
     def compile_from_config(self, config):

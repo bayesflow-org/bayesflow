@@ -5,7 +5,7 @@ from .elementwise_transform import ElementwiseTransform
 
 
 @serializable
-class ReplaceNaN(ElementwiseTransform):
+class NanToNum(ElementwiseTransform):
     """
     Replace NaNs with a default value, and optionally encode a missing‐data mask.
 
@@ -44,19 +44,19 @@ class ReplaceNaN(ElementwiseTransform):
         *,
         default_value: float = 0.0,
         encode_mask: bool = False,
-        axis: int | None = None,
+        mask_axis: int | None = None,
     ):
         super().__init__()
         self.default_value = default_value
         self.encode_mask = encode_mask
-        self.axis = axis
+        self.mask_axis = mask_axis
 
     def get_config(self) -> dict:
         return serialize(
             {
                 "default_value": self.default_value,
                 "encode_mask": self.encode_mask,
-                "axis": self.axis,
+                "mask_axis": self.mask_axis,
             }
         )
 
@@ -64,13 +64,13 @@ class ReplaceNaN(ElementwiseTransform):
         # Create mask of where data is NaN
         mask = np.isnan(data)
         # Fill NaNs with the default value
-        filled = np.where(mask, self.default_value, data)
+        filled = np.nan_to_num(mask, copy=False, nan=self.default_value)
 
         if not self.encode_mask:
             return filled
 
         # Decide where to insert the new axis
-        ax = self.axis if self.axis is not None else data.ndim
+        ax = self.mask_axis if self.mask_axis is not None else -1
         # Expand dims for both filled data and mask
         filled_exp = np.expand_dims(filled, axis=ax)
         mask_exp = 1 - np.expand_dims(mask.astype(np.int8), axis=ax)
@@ -82,7 +82,7 @@ class ReplaceNaN(ElementwiseTransform):
             # No mask was encoded, so nothing to undo
             return data
 
-        ax = self.axis if self.axis is not None else data.ndim - 1
+        ax = self.mask_axis if self.mask_axis is not None else -1
         # Extract the two “channels”
         values = np.take(data, indices=0, axis=ax)
         mask = np.take(data, indices=1, axis=ax).astype(bool)

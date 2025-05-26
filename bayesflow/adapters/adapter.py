@@ -25,7 +25,7 @@ from .transforms import (
     Standardize,
     ToArray,
     Transform,
-    ReplaceNaN,
+    NanToNum,
 )
 from .transforms.filter_transform import Predicate
 
@@ -793,12 +793,12 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
-    def replace_nan(
+    def nan_to_num(
         self,
         keys: str | Sequence[str],
         default_value: float = 0.0,
         encode_mask: bool = False,
-        axis: int | None = None,
+        mask_axis: int | None = None,
     ):
         """
         Append :py:class:`~bf.adapters.transforms.ReplaceNaN` transform to the adapter.
@@ -811,14 +811,14 @@ class Adapter(MutableSequence[Transform]):
             Value to substitute wherever data is NaN.
         encode_mask : bool
             If True, encode a binary missingness mask alongside the data.
-        axis : int or tuple or None
+        mask_axis : int or tuple or None
             Axis at which to expand for mask encoding (if enabled).
         """
         if isinstance(keys, str):
             keys = [keys]
 
         transform = MapTransform(
-            {key: ReplaceNaN(default_value=default_value, encode_mask=encode_mask, axis=axis) for key in keys}
+            {key: NanToNum(default_value=default_value, encode_mask=encode_mask, mask_axis=mask_axis) for key in keys}
         )
         self.transforms.append(transform)
         return self

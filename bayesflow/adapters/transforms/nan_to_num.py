@@ -4,7 +4,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .transform import Transform
 
 
-@serializable
+@serializable("bayesflow.adapters")
 class NanToNum(Transform):
     """
     Replace NaNs with a default value, and optionally encode a missing-data mask as a separate output key.

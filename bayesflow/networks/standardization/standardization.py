@@ -35,8 +35,9 @@ class Standardization(keras.Layer):
         self.moving_std = self.add_weight(shape=(input_shape[-1],), initializer="ones", trainable=False)
 
     def get_config(self) -> dict:
+        base_config = super().get_config()
         config = {"momentum": self.momentum, "epsilon": self.epsilon}
-        return serialize(config)
+        return base_config | serialize(config)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

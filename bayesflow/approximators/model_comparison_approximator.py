@@ -7,7 +7,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
-from bayesflow.types import Shape, Tensor
+from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, logging
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -36,7 +36,7 @@ class ModelComparisonApproximator(Approximator):
         The input of the summary network is `summary_variables`.
     """
 
-    SAMPLE_KEYS = ["summary_variables", "classifier_conditions"]
+    CONDITION_KEYS = ["summary_variables", "classifier_conditions"]
 
     def __init__(
         self,
@@ -53,30 +53,24 @@ class ModelComparisonApproximator(Approximator):
         self.adapter = adapter
         self.summary_network = summary_network
         self.num_models = num_models
-        self.standardize = standardize
         self.logits_projector = keras.layers.Dense(num_models)
 
-        self.summary_variables_norm = None
-        self.classifier_conditions_norm = None
-
-    def build(self, data_shapes: Mapping[str, Shape]):
-        data = {key: keras.ops.zeros(value) for key, value in data_shapes.items()}
+        if isinstance(standardize, str) and standardize != "all":
+            self.standardize = [standardize]
+        else:
+            self.standardize = standardize
 
         if self.standardize == "all":
-            keys = ModelComparisonApproximator.SAMPLE_KEYS
-        elif isinstance(self.standardize, str):
-            keys = [self.standardize]
-        elif isinstance(self.standardize, Sequence):
-            keys = self.standardize
+            # we have to lazily initialize these
+            self.standardize_layers = None
         else:
-            keys = []
+            self.standardize_layers = {var: Standardization() for var in self.standardize}
 
-        if "summary_variables" in data_shapes and "summary_variables" in data and self.summary_network:
-            self.summary_variables_norm = Standardization()
-        if "classifier_conditions" in data_shapes and "classifier_conditions" in keys:
-            self.classifier_conditions_norm = Standardization()
-
-        self.compute_metrics(**data, stage="training")
+    def build_from_data(self, adapted_data: dict[str, any]):
+        if self.standardize == "all":
+            self.standardize = [var for var in ["summary_variables", "classifier_conditions"] if var in adapted_data]
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+        super().build_from_data(adapted_data)
 
     @classmethod
     def build_adapter(
@@ -100,7 +94,6 @@ class ModelComparisonApproximator(Approximator):
         adapter = (
             adapter.rename(model_index_name, "model_indices")
             .keep(["classifier_conditions", "summary_variables", "model_indices"])
-            .standardize(exclude="model_indices")
             .one_hot("model_indices", num_models)
         )
 
@@ -215,8 +208,8 @@ class ModelComparisonApproximator(Approximator):
         if summary_variables is None:
             raise ValueError("Summary variables are required when a summary network is present.")
 
-        if self.summary_variables_norm is not None:
-            summary_variables = self.summary_variables_norm(summary_variables, stage=stage)
+        if "summary_variables" in self.standardize:
+            summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
 
         summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
         summary_outputs = summary_metrics.pop("outputs")
@@ -229,11 +222,12 @@ class ModelComparisonApproximator(Approximator):
         if classifier_conditions is None:
             return summary_outputs
 
-        if self.classifier_conditions_norm:
-            classifier_conditions = self.classifier_conditions_norm(classifier_conditions, stage=stage)
+        if "classifier_conditions" in self.standardize:
+            classifier_conditions = self.standardize_layers["inference_conditions"](classifier_conditions, stage=stage)
 
         if summary_outputs is None:
             return classifier_conditions
+
         return keras.ops.concatenate([classifier_conditions, summary_outputs], axis=-1)
 
     def _compute_logits(self, classifier_conditions: Tensor) -> Tensor:
@@ -385,16 +379,13 @@ class ModelComparisonApproximator(Approximator):
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
 
         # Ensure only keys relevant for sampling are present in the conditions dictionary
-        conditions = {k: v for k, v in conditions.items() if k in ModelComparisonApproximator.SAMPLE_KEYS}
-
+        conditions = {k: v for k, v in conditions.items() if k in ModelComparisonApproximator.CONDITION_KEYS}
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         # Optionally standardize conditions
-        if "summary_variables" in conditions and self.summary_variables_norm:
-            conditions["summary_variables"] = self.summary_variables_norm(conditions["summary_variables"])
-
-        if "classifier_conditions" in conditions and self.classifier_conditions_norm:
-            conditions["classifier_conditions"] = self.classifier_conditions_norm(conditions["classifier_conditions"])
+        for key in ModelComparisonApproximator.CONDITION_KEYS:
+            if key in conditions and key in self.standardize:
+                conditions[key] = self.standardize_layers[key](conditions[key])
 
         output = self._predict(**conditions, **kwargs)
 
@@ -429,7 +420,7 @@ class ModelComparisonApproximator(Approximator):
 
     def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
-        Computes the learned summary statistics of given inputs.
+        Computes the learned summary statistics of given summary variables.
 
         The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
 
@@ -452,7 +443,7 @@ class ModelComparisonApproximator(Approximator):
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
             raise ValueError("Summary variables are required to compute summaries.")
 
-        summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
+        summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         summaries = keras.ops.convert_to_numpy(summaries)
 

@@ -150,9 +150,15 @@ class ContinuousApproximator(Approximator):
             inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
         )
 
-        loss = inference_metrics["loss"] + summary_metrics.get("loss", keras.ops.zeros(()))
+        if "loss" in summary_metrics:
+            loss = inference_metrics["loss"] + summary_metrics["loss"]
+        else:
+            loss = inference_metrics.pop("loss")
+        inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
+        summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
-        return {"loss": loss}
+        metrics = {"loss": loss} | inference_metrics | summary_metrics
+        return metrics
 
     def fit(self, *args, **kwargs):
         """

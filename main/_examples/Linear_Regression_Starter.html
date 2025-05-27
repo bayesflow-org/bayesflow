@@ -747,7 +747,7 @@ reliably without, for example, exploding or vanishing gradients during training.
 </div>
 </div>
 </div>
-<p>Now, we are ready to train our approximator to learn posterior distributions for linear regression models. To achieve this, we will all <code class="docutils literal notranslate"><span class="pre">approximator.fit</span></code> passing the <code class="docutils literal notranslate"><span class="pre">simulator</span></code> and a bunch of hyperparameters that control how long we want to train.</p>
+<p>Now, we are ready to train our approximator to learn posterior distributions for linear regression models. To achieve this, we will call <code class="docutils literal notranslate"><span class="pre">approximator.fit</span></code> passing the <code class="docutils literal notranslate"><span class="pre">simulator</span></code> and a bunch of hyperparameters that control how long we want to train.</p>
 <p><strong>Note</strong>: when using JAX and the shape of your data differs in every batch (e.g., when observations vary), you will observe some compilation overhead during the first few steps. The total training time for this example is around 2 minutes on a standard laptop.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -798,7 +798,7 @@ reliably without, for example, exploding or vanishing gradients during training.
 </div>
 </div>
 </div>
-<p>Initial sanity checks of the posterior samples look good. <code class="docutils literal notranslate"><span class="pre">post_draws[&quot;beta&quot;]</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(200,</span> <span class="pre">2000,</span> <span class="pre">2)</span></code> which makes sense since we asked for inference of a 200 data sets (first dimension is 200), for which we wanted to generated 1000 posterior samples (second dimension is 1000). The third dimension is 2, since the <code class="docutils literal notranslate"><span class="pre">beta</span></code> variable was defined as a vector of length 2 (intercept and slope).</p>
+<p>Initial sanity checks of the posterior samples look good. <code class="docutils literal notranslate"><span class="pre">post_draws[&quot;beta&quot;]</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(200,</span> <span class="pre">1000,</span> <span class="pre">2)</span></code> which makes sense since we asked for inference of a 200 data sets (first dimension is 200), for which we wanted to generated 1000 posterior samples (second dimension is 1000). The third dimension is 2, since the <code class="docutils literal notranslate"><span class="pre">beta</span></code> variable was defined as a vector of length 2 (intercept and slope).</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">post_draws</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>

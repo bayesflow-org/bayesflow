@@ -838,7 +838,7 @@ containing the information needed to re-instantiate it.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.add_weight">
-<span class="sig-name descname"><span class="pre">add_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.add_weight" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">add_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_with_gradient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.add_weight" title="Link to this definition">#</a></dt>
 <dd><p>Add a weight variable to the layer.</p>
 <dl>
 <dt>Args:</dt><dd><dl class="simple">
@@ -868,6 +868,9 @@ the type of multi-replica aggregation to be used for this
 variable when writing custom data parallel training loops.
 Defaults to <cite>“none”</cite>.</p>
 </dd>
+<dt>overwrite_with_gradient: Boolean, whether to overwrite the variable</dt><dd><p>with the computed gradient. This is useful for float8 training.
+Defaults to <cite>False</cite>.</p>
+</dd>
 </dl>
 <p>name: String name of the variable. Useful for debugging purposes.</p>
 </dd>
@@ -890,7 +893,7 @@ layer’s state, you should override this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.call" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.call" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1115,7 +1118,7 @@ Example: <cite>{‘loss’: 0.2, ‘accuracy’: 0.7}</cite>.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_output_spec">
-<span class="sig-name descname"><span class="pre">compute_output_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_output_spec" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">compute_output_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_output_spec" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1679,23 +1682,27 @@ the layer is loaded upon calling <cite>keras.models.load_model()</cite>.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.load_weights">
 <span class="sig-name descname"><span class="pre">load_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_mismatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.load_weights" title="Link to this definition">#</a></dt>
-<dd><p>Load weights from a file saved via <cite>save_weights()</cite>.</p>
-<p>Weights are loaded based on the network’s
-topology. This means the architecture should be the same as when the
-weights were saved. Note that layers that don’t have weights are not
-taken into account in the topological ordering, so adding or removing
-layers is fine as long as they don’t have weights.</p>
+<dd><p>Load the weights from a single file or sharded files.</p>
+<p>Weights are loaded based on the network’s topology. This means the
+architecture should be the same as when the weights were saved. Note
+that layers that don’t have weights are not taken into account in the
+topological ordering, so adding or removing layers is fine as long as
+they don’t have weights.</p>
 <p><strong>Partial weight loading</strong></p>
 <p>If you have modified your model, for instance by adding a new layer
-(with weights) or by changing the shape of the weights of a layer,
-you can choose to ignore errors and continue loading
-by setting <cite>skip_mismatch=True</cite>. In this case any layer with
-mismatching weights will be skipped. A warning will be displayed
-for each skipped layer.</p>
+(with weights) or by changing the shape of the weights of a layer, you
+can choose to ignore errors and continue loading by setting
+<cite>skip_mismatch=True</cite>. In this case any layer with mismatching weights
+will be skipped. A warning will be displayed for each skipped layer.</p>
+<p><strong>Sharding</strong></p>
+<p>When loading sharded weights, it is important to specify <cite>filepath</cite> that
+ends with <cite>*.weights.json</cite> which is used as the configuration file.
+Additionally, the sharded files <cite>*_xxxxx.weights.h5</cite> must be in the same
+directory as the configuration file.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>filepath: String, path to the weights file to load.</dt><dd><p>It can either be a <cite>.weights.h5</cite> file
-or a legacy <cite>.h5</cite> weights file.</p>
+<dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object. Path where the weights</dt><dd><p>will be saved.  When sharding, the filepath must end in
+<cite>.weights.json</cite>.</p>
 </dd>
 <dt>skip_mismatch: Boolean, whether to skip loading of layers where</dt><dd><p>there is a mismatch in the number of weights, or a mismatch in
 the shape of the weights.</p>
@@ -1703,6 +1710,14 @@ the shape of the weights.</p>
 </dl>
 </dd>
 </dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the weights in a single file.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
+
+<span class="c1"># Load the weights in sharded files.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py property">
@@ -1935,6 +1950,14 @@ will be skipped if the layer doesn’t implement the function.</p>
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zipped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.save" title="Link to this definition">#</a></dt>
 <dd><p>Saves a model as a <cite>.keras</cite> file.</p>
+<p>Note that <cite>model.save()</cite> is an alias for <cite>keras.saving.save_model()</cite>.</p>
+<p>The saved <cite>.keras</cite> file contains:</p>
+<ul class="simple">
+<li><p>The model’s configuration (architecture)</p></li>
+<li><p>The model’s weights</p></li>
+<li><p>The model’s optimizer’s state (if any)</p></li>
+</ul>
+<p>Thus models can be reinstantiated in the exact same state.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object.</dt><dd><p>The path where to save the model. Must end in <cite>.keras</cite>
@@ -1964,14 +1987,6 @@ Hugging Face Hub).</p>
 <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>Note that <cite>model.save()</cite> is an alias for <cite>keras.saving.save_model()</cite>.</p>
-<p>The saved <cite>.keras</cite> file contains:</p>
-<ul class="simple">
-<li><p>The model’s configuration (architecture)</p></li>
-<li><p>The model’s weights</p></li>
-<li><p>The model’s optimizer’s state (if any)</p></li>
-</ul>
-<p>Thus models can be reinstantiated in the exact same state.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1988,18 +2003,64 @@ the layer is saved upon calling <cite>model.save()</cite>.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.save_weights">
-<span class="sig-name descname"><span class="pre">save_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.save_weights" title="Link to this definition">#</a></dt>
-<dd><p>Saves all layer weights to a <cite>.weights.h5</cite> file.</p>
+<span class="sig-name descname"><span class="pre">save_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_shard_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.save_weights" title="Link to this definition">#</a></dt>
+<dd><p>Saves all weights to a single file or sharded files.</p>
+<p>By default, the weights will be saved in a single <cite>.weights.h5</cite> file.
+If sharding is enabled (<cite>max_shard_size</cite> is not <cite>None</cite>), the weights
+will be saved in multiple files, each with a size at most
+<cite>max_shard_size</cite> (in GB). Additionally, a configuration file
+<cite>.weights.json</cite> will contain the metadata for the sharded files.</p>
+<p>The saved sharded files contain:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>*.weights.json</cite>: The configuration file containing ‘metadata’ and</dt><dd><p>‘weight_map’.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>*_xxxxxx.weights.h5</cite>: The sharded files containing only the</dt><dd><p>weights.</p>
+</dd>
+</dl>
+</li>
+</ul>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object.</dt><dd><p>Path where to save the model. Must end in <cite>.weights.h5</cite>.</p>
+<dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object. Path where the weights</dt><dd><p>will be saved.  When sharding, the filepath must end in
+<cite>.weights.json</cite>. If <cite>.weights.h5</cite> is provided, it will be
+overridden.</p>
 </dd>
-<dt>overwrite: Whether we should overwrite any existing model</dt><dd><p>at the target location, or instead ask the user
-via an interactive prompt.</p>
+<dt>overwrite: Whether to overwrite any existing weights at the target</dt><dd><p>location or instead ask the user via an interactive prompt.</p>
+</dd>
+<dt>max_shard_size: <cite>int</cite> or <cite>float</cite>. Maximum size in GB for each</dt><dd><p>sharded file. If <cite>None</cite>, no sharding will be done. Defaults to
+<cite>None</cite>.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Instantiate a EfficientNetV2L model with about 454MB of weights.</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="c1"># Save the weights in a single file.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
+
+<span class="c1"># Save the weights in sharded files. Use `max_shard_size=0.25` means</span>
+<span class="c1"># each sharded file will be at most ~250MB.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">,</span> <span class="n">max_shard_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+
+<span class="c1"># Load the weights in a new model with the same architecture.</span>
+<span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+<span class="c1"># Load the sharded weights in a new model with the same architecture.</span>
+<span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">

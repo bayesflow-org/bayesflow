@@ -17,13 +17,16 @@ class NanToNum(Transform):
         Value to substitute wherever data is NaN.
     return_mask : bool, default=False
         If True, a mask array will be returned under a new key.
+    mask_prefix : str, default='mask_'
+        Prefix for the mask key in the output dictionary.
     """
 
-    def __init__(self, key: str, default_value: float = 0.0, return_mask: bool = False):
+    def __init__(self, key: str, default_value: float = 0.0, return_mask: bool = False, mask_prefix: str = "mask"):
         super().__init__()
         self.key = key
         self.default_value = default_value
         self.return_mask = return_mask
+        self.mask_prefix = mask_prefix
 
     def get_config(self) -> dict:
         return serialize(
@@ -31,6 +34,7 @@ class NanToNum(Transform):
                 "key": self.key,
                 "default_value": self.default_value,
                 "return_mask": self.return_mask,
+                "mask_prefix": self.mask_prefix,
             }
         )
 
@@ -39,13 +43,19 @@ class NanToNum(Transform):
         """
         Key under which the mask will be stored in the output dictionary.
         """
-        return f"mask_{self.key}" if self.key else "mask"
+        return f"{self.mask_prefix}_{self.key}"
 
     def forward(self, data: dict[str, any], **kwargs) -> dict[str, any]:
         """
         Forward transform: fill NaNs and optionally output mask under 'mask_<key>'.
         """
         data = data.copy()
+
+        # Check if the mask key already exists in the data
+        if self.mask_key in data.keys():
+            raise ValueError(
+                f"Mask key '{self.mask_key}' already exists in the data. Please choose a different mask_prefix."
+            )
 
         # Identify NaNs and fill with default value
         mask = np.isnan(data[self.key])

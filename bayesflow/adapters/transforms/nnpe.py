@@ -130,8 +130,10 @@ class NNPE(ElementwiseTransform):
             else:
                 try:
                     scalar = float(passed)
-                except Exception:
-                    raise TypeError(f"{name}: expected scalar float, got {type(passed).__name__}")
+                except TypeError:
+                    raise TypeError(f"{name}: expected a scalar convertible to float, got type {type(passed).__name__}")
+                except ValueError:
+                    raise ValueError(f"{name}: expected a scalar convertible to float, got value {passed!r}")
                 return scalar
 
     def forward(self, data: np.ndarray, stage: str = "inference", **kwargs) -> np.ndarray:

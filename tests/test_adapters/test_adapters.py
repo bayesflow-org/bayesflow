@@ -349,3 +349,30 @@ def test_nnpe(random_data):
     deserialized_auto = deserialize(serialized_auto)
     reserialized_auto = serialize(deserialized_auto)
     assert keras.tree.lists_to_tuples(serialized_auto) == keras.tree.lists_to_tuples(serialize(reserialized_auto))
+
+    # Test dimensionwise versus global noise application (per_dimension=True vs per_dimension=False)
+    # Create data with second dimension having higher variance
+    data_shape = (32, 16, 1)
+    rng = np.random.default_rng(42)
+    zero = np.ones(shape=data_shape)
+    high = rng.normal(0, 100.0, size=data_shape)
+    var_data = {"x": np.concatenate([zero, high], axis=-1)}
+
+    # Apply dimensionwise and global adapters with automatic slab_scale scale determination
+    ad_partial_global = Adapter().nnpe("x", spike_scale=0, slab_scale=None, per_dimension=False, seed=42)
+    ad_partial_dim = Adapter().nnpe("x", spike_scale=[0, 1], slab_scale=None, per_dimension=True, seed=42)
+    res_dim = ad_partial_dim(var_data, stage="training")
+    res_glob = ad_partial_global(var_data, stage="training")
+
+    # Compute standard deviations of noise per last axis dimension
+    noise_dim = res_dim["x"] - var_data["x"]
+    noise_glob = res_glob["x"] - var_data["x"]
+    std_dim = np.std(noise_dim, axis=(0, 1))
+    std_glob = np.std(noise_glob, axis=(0, 1))
+
+    # Dimensionwise should assign zero noise, global some noise to zero-variance dimension
+    assert std_dim[0] == 0
+    assert std_glob[0] > 0
+    # Both should assign noise to high-variance dimension
+    assert std_dim[1] > 0
+    assert std_glob[1] > 0

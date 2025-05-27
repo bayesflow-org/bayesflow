@@ -706,6 +706,7 @@ class Adapter(MutableSequence[Transform]):
         *,
         spike_scale: float | None = None,
         slab_scale: float | None = None,
+        per_dimension: bool = True,
         seed: int | None = None,
     ):
         """Append an :py:class:`~transforms.NNPE` transform to the adapter.
@@ -714,17 +715,25 @@ class Adapter(MutableSequence[Transform]):
         ----------
         keys : str or Sequence of str
             The names of the variables to transform.
-        spike_scale : float or None
+        spike_scale : float or np.ndarray or None, default=None
             The scale of the spike (Normal) distribution. Automatically determined if None.
-        slab_scale : float or None
+        slab_scale : float or np.ndarray or None, default=None
             The scale of the slab (Cauchy) distribution. Automatically determined if None.
+        per_dimension : bool, default=True
+            If true, noise is applied per dimension of the last axis of the input data.
+            If false, noise is applied globally.
         seed : int or None
             The seed for the random number generator. If None, a random seed is used.
         """
         if isinstance(keys, str):
             keys = [keys]
 
-        transform = MapTransform({key: NNPE(spike_scale=spike_scale, slab_scale=slab_scale, seed=seed) for key in keys})
+        transform = MapTransform(
+            {
+                key: NNPE(spike_scale=spike_scale, slab_scale=slab_scale, per_dimension=per_dimension, seed=seed)
+                for key in keys
+            }
+        )
         self.transforms.append(transform)
         return self
 

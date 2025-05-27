@@ -49,13 +49,16 @@ class ContinuousApproximator(Approximator):
         self.inference_network = inference_network
         self.summary_network = summary_network
 
-        self.standardize = standardize
+        if isinstance(standardize, str) and standardize != "all":
+            self.standardize = [standardize]
+        else:
+            self.standardize = standardize
 
-        if standardize == "all":
+        if self.standardize == "all":
             # we have to lazily initialize these
             self.standardize_layers = None
         else:
-            self.standardize_layers = {var: Standardization() for var in self.standardize}
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
     @classmethod
     def build_adapter(
@@ -423,13 +426,12 @@ class ContinuousApproximator(Approximator):
 
         # Ensure only keys relevant for sampling are present in the conditions dictionary
         conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
+        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         # Optionally standardize conditions
         for key in ContinuousApproximator.CONDITION_KEYS:
             if key in conditions and key in self.standardize:
                 conditions[key] = self.standardize_layers[key](conditions[key])
-
-        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         # Sample and undo optional standardization
         samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
@@ -489,7 +491,7 @@ class ContinuousApproximator(Approximator):
 
     def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
-        Computes the learned summary statistics of given inputs.
+        Computes the learned summary statistics of given summary variables.
 
         The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
 
@@ -512,7 +514,7 @@ class ContinuousApproximator(Approximator):
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
             raise ValueError("Summary variables are required to compute summaries.")
 
-        summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
+        summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         summaries = keras.ops.convert_to_numpy(summaries)
 

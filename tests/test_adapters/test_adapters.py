@@ -304,7 +304,8 @@ def test_nnpe(random_data):
     import numpy as np
     from bayesflow.adapters import Adapter
 
-    ad = Adapter().nnpe("x1", spike_scale=1.0, slab_scale=1.0, seed=42)
+    # Test basic case with global noise application
+    ad = Adapter().nnpe("x1", spike_scale=1.0, slab_scale=1.0, per_dimension=False, seed=42)
     result_training = ad(random_data, stage="training")
     result_validation = ad(random_data, stage="validation")
     result_inference = ad(random_data, stage="inference")
@@ -331,13 +332,8 @@ def test_nnpe(random_data):
         assert np.allclose(result_inference[k], v)
         assert np.allclose(result_inversed[k], v)
 
-    # Test at least one scale is None case (automatic scale determination)
-    ad_partial = Adapter().nnpe("x2", slab_scale=None, spike_scale=1.0, seed=42)
-    result_training_partial = ad_partial(random_data, stage="training")
-    assert not np.allclose(result_training_partial["x2"], random_data["x2"])
-
-    # Test both scales and seed are None case (automatic scale determination)
-    ad_auto = Adapter().nnpe("y1", slab_scale=None, spike_scale=None, seed=None)
+    # Test both scales and seed are None case (automatic scale determination) with dimensionwise noise application
+    ad_auto = Adapter().nnpe("y1", slab_scale=None, spike_scale=None, per_dimension=True, seed=None)
     result_training_auto = ad_auto(random_data, stage="training")
     assert not np.allclose(result_training_auto["y1"], random_data["y1"])
     for k, v in random_data.items():

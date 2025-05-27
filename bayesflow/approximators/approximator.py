@@ -135,6 +135,7 @@ class Approximator(BackendApproximator):
             logging.info("Building on a test batch.")
             mock_data = dataset[0]
             mock_data = keras.tree.map_structure(keras.ops.convert_to_tensor, mock_data)
-            self.build_from_data(mock_data)
+            mock_data_shapes = keras.tree.map_structure(keras.ops.shape, mock_data)
+            self.build(mock_data_shapes)
 
         return super().fit(dataset=dataset, **kwargs)

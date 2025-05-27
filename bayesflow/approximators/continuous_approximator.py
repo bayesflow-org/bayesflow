@@ -55,7 +55,7 @@ class ContinuousApproximator(Approximator):
             # we have to lazily initialize these
             self.standardize_layers = None
         else:
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+            self.standardize_layers = {var: Standardization() for var in self.standardize}
 
     @classmethod
     def build_adapter(
@@ -126,8 +126,7 @@ class ContinuousApproximator(Approximator):
 
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
-        self.compute_metrics(**filter_kwargs(adapted_data, self.compute_metrics), stage="training")
-        self.built = True
+        super().build_from_data(adapted_data)
 
     def compile_from_config(self, config):
         self.compile(**deserialize(config))

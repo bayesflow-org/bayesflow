@@ -13,7 +13,8 @@ def test_approximator_sample(point_approximator, simulator, batch_size, num_samp
     data = simulator.sample((batch_size,))
 
     batch = adapter(data)
-    point_approximator.build_from_data(batch)
+    batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
+    point_approximator.build(batch_shapes)
 
     samples = point_approximator.sample(num_samples=num_samples, conditions=data)
 

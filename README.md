@@ -49,39 +49,6 @@ neural networks for parameter estimation, model comparison, and model validation
 when working with intractable simulators whose behavior as a whole is too
 complex to be described analytically.
 
-## Getting Started
-
-Using the high-level interface is easy, as demonstrated by the minimal working example below:
-
-```python
-import bayesflow as bf
-
-workflow = bf.BasicWorkflow(
-    inference_network=bf.networks.CouplingFlow(),
-    summary_network=bf.networks.TimeSeriesNetwork(),
-    inference_variables=["parameters"],
-    summary_variables=["observables"],
-    simulator=bf.simulators.SIR()
-)
-
-history = workflow.fit_online(epochs=15, batch_size=32, num_batches_per_epoch=200)
-
-diagnostics = workflow.plot_default_diagnostics(test_data=300)
-```
-
-For an in-depth exposition, check out our walkthrough notebooks below.
-
-1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
-2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
-3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
-4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation_and_Expert_Stats.ipynb)
-5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
-6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
-8. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
-
-More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
-
 ## Install
 
 You can install the latest stable version from PyPI using:
@@ -132,9 +99,46 @@ export KERAS_BACKEND=jax
 
 This way, you also don't have to manually set the backend every time you are starting Python to use BayesFlow.
 
-**Caution:** Some development environments (e.g., VSCode or PyCharm) can silently overwrite environment variables. If you have set your backend as an environment variable and you still get keras-related import errors when loading BayesFlow, these IDE shenanigans might be the culprit. Try setting the keras backend in your Python script via `import os; os.environ["KERAS_BACKEND"] = "<YOUR-BACKEND>"`.
+## Getting Started
 
-### From Source
+Using the high-level interface is easy, as demonstrated by the minimal working example below:
+
+```python
+import bayesflow as bf
+
+workflow = bf.BasicWorkflow(
+    inference_network=bf.networks.CouplingFlow(),
+    summary_network=bf.networks.TimeSeriesNetwork(),
+    inference_variables=["parameters"],
+    summary_variables=["observables"],
+    simulator=bf.simulators.SIR()
+)
+
+history = workflow.fit_online(epochs=15, batch_size=32, num_batches_per_epoch=200)
+
+diagnostics = workflow.plot_default_diagnostics(test_data=300)
+```
+
+For an in-depth exposition, check out our expanding list of resources below.
+
+### Books
+
+Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bayesmodels.com/) by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
+
+### Tutorial notebooks
+
+1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
+2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
+3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
+4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation_and_Expert_Stats.ipynb)
+5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
+6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
+7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
+8. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
+
+More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
+
+## Contributing
 
 If you want to contribute to BayesFlow, we recommend installing it from source, see [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 

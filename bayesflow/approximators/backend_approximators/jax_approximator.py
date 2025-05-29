@@ -55,7 +55,7 @@ class JAXApproximator(keras.Model):
         )
         metrics, non_trainable_variables, metrics_variables = aux
 
-        metrics_variables = self._update_metrics(loss, metrics_variables)
+        metrics_variables = self._update_metrics(loss, metrics_variables, self._batch_size_from_data(data))
 
         state = trainable_variables, non_trainable_variables, metrics_variables
         return metrics, state
@@ -74,7 +74,7 @@ class JAXApproximator(keras.Model):
             optimizer_variables, grads, trainable_variables
         )
 
-        metrics_variables = self._update_metrics(loss, metrics_variables)
+        metrics_variables = self._update_metrics(loss, metrics_variables, self._batch_size_from_data(data))
 
         state = trainable_variables, non_trainable_variables, optimizer_variables, metrics_variables
         return metrics, state
@@ -85,11 +85,11 @@ class JAXApproximator(keras.Model):
     def train_step(self, *args, **kwargs):
         return self.stateless_train_step(*args, **kwargs)
 
-    def _update_metrics(self, loss: jax.Array, metrics_variables: any) -> any:
+    def _update_metrics(self, loss: jax.Array, metrics_variables: any, sample_weight: any = None) -> any:
         # update the loss progress bar, and possibly metrics variables along with it
         state_mapping = list(zip(self.metrics_variables, metrics_variables))
         with keras.StatelessScope(state_mapping) as scope:
-            self._loss_tracker.update_state(loss)
+            self._loss_tracker.update_state(loss, sample_weight=sample_weight)
 
         metrics_variables = [scope.get_current_value(v) for v in self.metrics_variables]
 

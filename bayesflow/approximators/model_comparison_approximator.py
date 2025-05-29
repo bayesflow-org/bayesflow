@@ -378,3 +378,6 @@ class ModelComparisonApproximator(Approximator):
         summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         return summaries
+
+    def _batch_size_from_data(self, data: Mapping[str, any]):
+        return keras.ops.shape(data["model_indices"])[0]

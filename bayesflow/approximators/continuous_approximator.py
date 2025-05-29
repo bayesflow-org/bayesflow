@@ -491,3 +491,6 @@ class ContinuousApproximator(Approximator):
             conditions=inference_conditions,
             **filter_kwargs(kwargs, self.inference_network.log_prob),
         )
+
+    def _batch_size_from_data(self, data: Mapping[str, any]):
+        return keras.ops.shape(data["inference_variables"])[0]

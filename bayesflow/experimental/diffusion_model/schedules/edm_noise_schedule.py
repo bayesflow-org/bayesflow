@@ -101,7 +101,7 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""
-        # for F-prediction: w = (ops.exp(-log_snr_t) + sigma_data^2) / (ops.exp(-log_snr_t)*sigma_data^2)
+        # for F-loss: w = (ops.exp(-log_snr_t) + sigma_data^2) / (ops.exp(-log_snr_t)*sigma_data^2)
         return 1 + ops.exp(-log_snr_t) / ops.square(self.sigma_data)
 
     def get_config(self):

@@ -105,8 +105,8 @@ class DiffusionModel(InferenceNetwork):
         self._prediction_type = prediction_type
         self._loss_type = loss_type
 
-        self.schedule_kwargs = schedule_kwargs or {}
-        self.noise_schedule = find_noise_schedule(noise_schedule, **self.schedule_kwargs)
+        schedule_kwargs = schedule_kwargs or {}
+        self.noise_schedule = find_noise_schedule(noise_schedule, **schedule_kwargs)
         self.noise_schedule.validate()
 
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
@@ -148,7 +148,6 @@ class DiffusionModel(InferenceNetwork):
             "noise_schedule": self.noise_schedule,
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
-            "schedule_kwargs": self.schedule_kwargs,
             "integrate_kwargs": self.integrate_kwargs,
         }
         return base_config | serialize(config)
@@ -194,8 +193,9 @@ class DiffusionModel(InferenceNetwork):
             return x1 * z + x2 * pred
         elif self._prediction_type == "x":
             return pred
-        else:
+        elif self._prediction_type == "score":
             return (z + sigma_t**2 * pred) / alpha_t
+        raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
     def velocity(
         self,
@@ -320,12 +320,9 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = {
-            **self.integrate_kwargs,
-            "start_time": kwargs.pop("start_time", 0.0),
-            "stop_time": kwargs.pop("stop_time", 1.0),
-            **kwargs,
-        }
+        integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
+        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
+        integrate_kwargs = integrate_kwargs | kwargs
 
         if integrate_kwargs["method"] == "euler_maruyama":
             raise ValueError("Stochastic methods are not supported for forward integration.")
@@ -373,12 +370,9 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = {
-            **self.integrate_kwargs,
-            "start_time": kwargs.pop("start_time", 1.0),
-            "stop_time": kwargs.pop("stop_time", 0.0),
-            **kwargs,
-        }
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
+        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
+        integrate_kwargs = integrate_kwargs | kwargs
         if density:
             if integrate_kwargs["method"] == "euler_maruyama":
                 raise ValueError("Stochastic methods are not supported for density computation.")

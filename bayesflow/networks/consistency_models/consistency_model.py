@@ -109,8 +109,6 @@ class ConsistencyModel(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        # base distribution is fixed and passed in constructor
-        base_config.pop("base_distribution")
 
         config = {
             "total_steps": self.total_steps,

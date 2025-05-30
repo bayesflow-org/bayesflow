@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from ..summary_network import SummaryNetwork
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.types import Tensor, Shape
 import keras
 from keras import ops
@@ -116,8 +116,3 @@ class FusionNetwork(SummaryNetwork):
             "head": self.head,
         }
         return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None):
-        config = deserialize(config, custom_objects=custom_objects)
-        return cls(**config)

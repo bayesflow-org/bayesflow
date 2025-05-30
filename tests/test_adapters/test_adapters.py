@@ -4,6 +4,7 @@ import numpy as np
 import keras
 
 from bayesflow.utils.serialization import deserialize, serialize
+from tests.utils import normalize_config
 
 import bayesflow as bf
 
@@ -29,7 +30,7 @@ def test_serialize_deserialize(adapter, random_data):
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+    assert normalize_config(serialized) == normalize_config(reserialized)
 
     random_data["foo"] = random_data["x1"]
     deserialized_processed = deserialized(random_data)
@@ -122,7 +123,6 @@ def test_simple_transforms(random_data):
 
 def test_custom_transform():
     # test that transform raises errors in all relevant cases
-    import keras
     from bayesflow.adapters.transforms import SerializableCustomTransform
     from copy import deepcopy
 
@@ -335,7 +335,7 @@ def test_nnpe(random_data):
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+    assert normalize_config(serialized) == normalize_config(reserialized)
 
     # check that only x1 is changed
     assert "x1" in result_training
@@ -365,7 +365,7 @@ def test_nnpe(random_data):
     serialized_auto = serialize(ad_auto)
     deserialized_auto = deserialize(serialized_auto)
     reserialized_auto = serialize(deserialized_auto)
-    assert keras.tree.lists_to_tuples(serialized_auto) == keras.tree.lists_to_tuples(serialize(reserialized_auto))
+    assert normalize_config(serialized_auto) == normalize_config(serialize(reserialized_auto))
 
     # Test dimensionwise versus global noise application (per_dimension=True vs per_dimension=False)
     # Create data with second dimension having higher variance

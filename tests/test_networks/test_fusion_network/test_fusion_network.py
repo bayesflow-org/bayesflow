@@ -2,7 +2,7 @@ from bayesflow.utils.serialization import deserialize, serialize
 import pytest
 import keras
 
-from tests.utils import assert_layers_equal, allclose
+from tests.utils import assert_layers_equal, allclose, normalize_config
 
 
 @pytest.mark.parametrize("automatic", [True, False])
@@ -57,7 +57,7 @@ def test_serialize_deserialize(fusion_network, multimodal_data):
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+    assert normalize_config(serialized) == normalize_config(reserialized)
 
 
 def test_save_and_load(tmp_path, fusion_network, multimodal_data):

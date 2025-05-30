@@ -4,7 +4,7 @@ import pytest
 
 from bayesflow.utils.serialization import serialize, deserialize
 
-from tests.utils import assert_allclose, assert_layers_equal
+from tests.utils import assert_allclose, assert_layers_equal, normalize_config
 
 
 def test_build(inference_network, random_samples, random_conditions):
@@ -137,7 +137,7 @@ def test_serialize_deserialize(inference_network, random_samples, random_conditi
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+    assert normalize_config(serialized) == normalize_config(reserialized)
 
 
 def test_save_and_load(tmp_path, inference_network, random_samples, random_conditions):

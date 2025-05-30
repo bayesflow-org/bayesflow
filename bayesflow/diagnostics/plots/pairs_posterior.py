@@ -21,6 +21,7 @@ def pairs_posterior(
     height: int = 3,
     post_color: str | tuple = "#132a70",
     prior_color: str | tuple = "gray",
+    target_color: str | tuple = "red",
     alpha: float = 0.9,
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
@@ -109,14 +110,40 @@ def pairs_posterior(
         # Create DataFrame with variable names as columns
         g.data = pd.DataFrame(targets, columns=targets.variable_names)
         g.data["_source"] = "True Parameter"
-        g.map_diag(plot_true_params)
+        g.map_diag(plot_true_params_as_lines, color=target_color)
+        g.map_offdiag(plot_true_params_as_points, color=target_color)
+
+        target_handle = plt.Line2D(
+            [0], [0],
+            color=target_color,
+            linestyle="--",
+            marker="x",
+            label="Targets"
+        )
+
+        diag_ax = g.axes[0, 0]
+        # Collect histogram legend handles
+        hist_handles = getattr(diag_ax, '_legend_handles', [])
+
+        # Collect labels and handles from regular plots (if any)
+        handles, labels = g.axes[0, 0].get_legend_handles_labels()
+
+        handles = hist_handles + [target_handle]
+        labels = [h.get_label() for h in handles]  # safer to refresh labels
+        g.fig.legend(handles=handles, labels=labels, loc="center right", frameon=False, fontsize=legend_fontsize)
 
     return g
 
 
-def plot_true_params(x, hue=None, **kwargs):
-    """Custom function to plot true parameters on the diagonal."""
+def plot_true_params_as_lines(x, hue=None, color=None, **kwargs):
+    """Custom function to plot true parameters on the diagonal as dashed lines."""
     # hue needs to be added to handle the case of plotting both posterior and prior
     param = x.iloc[0]  # Get the single true value for the diagonal
     # only plot on the diagonal a vertical line for the true parameter
-    plt.axvline(param, color="black", linestyle="--")
+    plt.axvline(param, color=color, linestyle="--", label="Target (Line)")
+
+
+def plot_true_params_as_points(x, y, color=None, marker='x', **kwargs):
+    """Custom function to plot true parameters on the off-diagonal as a single point."""
+    if len(x) > 0 and len(y) > 0:
+        plt.scatter(x.iloc[0], y.iloc[0], color=color, marker=marker, **kwargs)

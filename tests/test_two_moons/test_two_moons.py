@@ -13,13 +13,9 @@ def test_compile(approximator, random_samples, jit_compile):
 
 
 def test_fit(approximator, train_dataset, validation_dataset, batch_size):
-    from bayesflow.metrics import MaximumMeanDiscrepancy
     from bayesflow.networks import PointInferenceNetwork
 
-    inference_metrics = []
-    if not isinstance(approximator.inference_network, PointInferenceNetwork):
-        inference_metrics += [MaximumMeanDiscrepancy()]
-    approximator.compile(inference_metrics=inference_metrics)
+    approximator.compile()
 
     mock_data = train_dataset[0]
     mock_data = keras.tree.map_structure(keras.ops.convert_to_tensor, mock_data)

@@ -3,7 +3,6 @@ import keras
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     find_permutation,
-    layer_kwargs,
     weighted_mean,
 )
 from bayesflow.utils.serialization import deserialize, serializable, serialize
@@ -131,7 +130,6 @@ class CouplingFlow(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = layer_kwargs(base_config)
 
         config = {
             "subnet": self.subnet,

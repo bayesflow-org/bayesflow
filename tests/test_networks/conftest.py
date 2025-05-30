@@ -1,6 +1,7 @@
 import pytest
 
 from bayesflow.networks import MLP
+from bayesflow.metrics import RootMeanSquaredError
 
 
 @pytest.fixture()
@@ -12,6 +13,7 @@ def diffusion_model_edm_F():
         integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="edm",
         prediction_type="F",
+        metrics=[RootMeanSquaredError()],
     )
 
 
@@ -82,6 +84,7 @@ def flow_matching():
     return FlowMatching(
         subnet=MLP([8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 100},
+        metrics=[RootMeanSquaredError()],
     )
 
 
@@ -89,7 +92,11 @@ def flow_matching():
 def consistency_model():
     from bayesflow.networks import ConsistencyModel
 
-    return ConsistencyModel(total_steps=100, subnet=MLP([8, 8]))
+    return ConsistencyModel(
+        total_steps=100,
+        subnet=MLP([8, 8]),
+        metrics=[RootMeanSquaredError()],
+    )
 
 
 @pytest.fixture()
@@ -97,7 +104,12 @@ def affine_coupling_flow():
     from bayesflow.networks import CouplingFlow
 
     return CouplingFlow(
-        depth=2, subnet="mlp", subnet_kwargs=dict(widths=[8, 8]), transform="affine", transform_kwargs=dict(clamp=1.8)
+        depth=2,
+        subnet="mlp",
+        subnet_kwargs=dict(widths=[8, 8]),
+        transform="affine",
+        transform_kwargs=dict(clamp=1.8),
+        metrics=[RootMeanSquaredError()],
     )
 
 
@@ -106,7 +118,12 @@ def spline_coupling_flow():
     from bayesflow.networks import CouplingFlow
 
     return CouplingFlow(
-        depth=2, subnet="mlp", subnet_kwargs=dict(widths=[8, 8]), transform="spline", transform_kwargs=dict(bins=8)
+        depth=2,
+        subnet="mlp",
+        subnet_kwargs=dict(widths=[8, 8]),
+        transform="spline",
+        transform_kwargs=dict(bins=8),
+        metrics=[RootMeanSquaredError()],
     )
 
 
@@ -114,7 +131,11 @@ def spline_coupling_flow():
 def free_form_flow():
     from bayesflow.experimental import FreeFormFlow
 
-    return FreeFormFlow(encoder_subnet=MLP([16, 16]), decoder_subnet=MLP([16, 16]))
+    return FreeFormFlow(
+        encoder_subnet=MLP([16, 16]),
+        decoder_subnet=MLP([16, 16]),
+        metrics=[RootMeanSquaredError()],
+    )
 
 
 @pytest.fixture()
@@ -236,35 +257,35 @@ def generative_inference_network(request):
 def time_series_network(summary_dim):
     from bayesflow.networks import TimeSeriesNetwork
 
-    return TimeSeriesNetwork(summary_dim=summary_dim)
+    return TimeSeriesNetwork(summary_dim=summary_dim, metrics=[RootMeanSquaredError()])
 
 
 @pytest.fixture(scope="function")
 def time_series_transformer(summary_dim):
     from bayesflow.networks import TimeSeriesTransformer
 
-    return TimeSeriesTransformer(summary_dim=summary_dim)
+    return TimeSeriesTransformer(summary_dim=summary_dim, metrics=[RootMeanSquaredError()])
 
 
 @pytest.fixture(scope="function")
 def fusion_transformer(summary_dim):
     from bayesflow.networks import FusionTransformer
 
-    return FusionTransformer(summary_dim=summary_dim)
+    return FusionTransformer(summary_dim=summary_dim, metrics=[RootMeanSquaredError()])
 
 
 @pytest.fixture(scope="function")
 def set_transformer(summary_dim):
     from bayesflow.networks import SetTransformer
 
-    return SetTransformer(summary_dim=summary_dim)
+    return SetTransformer(summary_dim=summary_dim, metrics=[RootMeanSquaredError()])
 
 
 @pytest.fixture(scope="function")
 def deep_set(summary_dim):
     from bayesflow.networks import DeepSet
 
-    return DeepSet(summary_dim=summary_dim)
+    return DeepSet(summary_dim=summary_dim, metrics=[RootMeanSquaredError()])
 
 
 @pytest.fixture(

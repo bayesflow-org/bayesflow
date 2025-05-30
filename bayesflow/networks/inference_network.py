@@ -1,12 +1,16 @@
 import keras
+from collections.abc import Sequence
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
+@serializable("bayesflow.networks")
 class InferenceNetwork(keras.Layer):
-    def __init__(self, base_distribution: str = "normal", **kwargs):
+    def __init__(self, base_distribution: str = "normal", *, metrics: Sequence[keras.Metric] = None, **kwargs):
+        self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
@@ -72,3 +76,13 @@ class InferenceNetwork(keras.Layer):
                 metrics[metric.name] = metric(samples, x)
 
         return metrics
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = layer_kwargs(base_config)
+        config = {"metrics": self.custom_metrics, "base_distribution": self.base_distribution}
+        return base_config | serialize(config)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))

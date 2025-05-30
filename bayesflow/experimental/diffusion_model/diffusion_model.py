@@ -10,7 +10,6 @@ from bayesflow.utils import (
     expand_right_as,
     find_network,
     jacobian_trace,
-    layer_kwargs,
     weighted_mean,
     integrate,
     integrate_stochastic,
@@ -141,7 +140,8 @@ class DiffusionModel(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = layer_kwargs(base_config)
+        # base distribution is fixed and passed in constructor
+        base_config.pop("base_distribution")
 
         config = {
             "subnet": self.subnet,

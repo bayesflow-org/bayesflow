@@ -1,14 +1,17 @@
 import keras
+from collections.abc import Sequence
 
 from bayesflow.metrics.functional import maximum_mean_discrepancy
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import sanitize_input_shape
-from bayesflow.utils.serialization import deserialize
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
+@serializable("bayesflow.networks")
 class SummaryNetwork(keras.Layer):
-    def __init__(self, base_distribution: str = None, **kwargs):
+    def __init__(self, base_distribution: str = None, *, metrics: Sequence[keras.Metric] = None, **kwargs):
+        self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
@@ -17,7 +20,7 @@ class SummaryNetwork(keras.Layer):
         x = keras.ops.zeros(input_shape)
         z = self.call(x)
 
-        if self.base_distribution is not None:
+        if self.base_distribution is not None and not self.base_distribution.built:
             self.base_distribution.build(keras.ops.shape(z))
 
     @sanitize_input_shape
@@ -50,6 +53,12 @@ class SummaryNetwork(keras.Layer):
                     metrics[metric.name] = metric(outputs, samples)
 
         return metrics
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = layer_kwargs(base_config)
+        config = {"base_distribution": self.base_distribution, "metrics": self.custom_metrics}
+        return base_config | serialize(config)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

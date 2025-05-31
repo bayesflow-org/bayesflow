@@ -12,7 +12,7 @@ from .backend_approximators import BackendApproximator
 
 class Approximator(BackendApproximator):
     def build(self, data_shapes: dict[str, tuple[int]]) -> None:
-        mock_data = {key: keras.ops.zeros(value) for key, value in data_shapes.items()}
+        mock_data = keras.tree.map_shape_structure(keras.ops.zeros, data_shapes)
         self.build_from_data(mock_data)
 
     @classmethod

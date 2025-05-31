@@ -4,7 +4,7 @@ import keras
 
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils.serialization import serialize, deserialize, serializable
-from bayesflow.utils import expand_left_as, layer_kwargs
+from bayesflow.utils import expand_left_as, layer_kwargs, flatten_shape
 
 
 @serializable("bayesflow.networks")
@@ -31,8 +31,13 @@ class Standardization(keras.Layer):
         self.moving_std = None
 
     def build(self, input_shape: Shape):
-        self.moving_mean = self.add_weight(shape=(input_shape[-1],), initializer="zeros", trainable=False)
-        self.moving_std = self.add_weight(shape=(input_shape[-1],), initializer="ones", trainable=False)
+        flattened_shapes = flatten_shape(input_shape)
+        self.moving_mean = [
+            self.add_weight(shape=(shape[-1],), initializer="zeros", trainable=False) for shape in flattened_shapes
+        ]
+        self.moving_std = [
+            self.add_weight(shape=(shape[-1],), initializer="ones", trainable=False) for shape in flattened_shapes
+        ]
 
     def get_config(self) -> dict:
         base_config = super().get_config()
@@ -70,27 +75,40 @@ class Standardization(keras.Layer):
             If `log_det_jec` is True, returns a tuple: (transformed tensor, log-determinant) otherwise just
             transformed tensor.
         """
-        if stage == "training":
-            self._update_moments(x)
-
-        if forward:
-            x = (x - expand_left_as(self.moving_mean, x)) / expand_left_as(self.moving_std, x)
-        else:
-            x = expand_left_as(self.moving_mean, x) + expand_left_as(self.moving_std, x) * x
-
+        flattened = keras.tree.flatten(x)
+        standardized = []
         if log_det_jac:
-            ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(self.moving_std)), axis=-1)
-            ldj = keras.ops.broadcast_to(ldj, keras.ops.shape(x)[:-1])
+            ldjs = []
+        for i, val in enumerate(flattened):
+            if stage == "training":
+                self._update_moments(val, i)
+
             if forward:
-                ldj = -ldj
-            return x, ldj
+                standardized.append(
+                    (val - expand_left_as(self.moving_mean[i], val)) / expand_left_as(self.moving_std[i], val)
+                )
+            else:
+                standardized.append(
+                    (expand_left_as(self.moving_mean[i], val) + expand_left_as(self.moving_std[i], val) * val)
+                )
 
-        return x
+            if log_det_jac:
+                ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(self.moving_std[i])), axis=-1)
+                ldj = keras.ops.broadcast_to(ldj, keras.ops.shape(val)[:-1])
+                if forward:
+                    ldj = -ldj
+                ldjs.append(ldj)
 
-    def _update_moments(self, x: Tensor):
+        standardized = keras.tree.pack_sequence_as(x, standardized)
+        if log_det_jac:
+            ldjs = keras.tree.pack_sequence_as(x, ldjs)
+            return standardized, ldjs
+        return standardized
+
+    def _update_moments(self, x: Tensor, index: int):
         mean = keras.ops.mean(x, axis=tuple(range(keras.ops.ndim(x) - 1)))
         std = keras.ops.std(x, axis=tuple(range(keras.ops.ndim(x) - 1)))
         std = keras.ops.maximum(std, self.epsilon)
 
-        self.moving_mean.assign(self.momentum * self.moving_mean + (1.0 - self.momentum) * mean)
-        self.moving_std.assign(self.momentum * self.moving_std + (1.0 - self.momentum) * std)
+        self.moving_mean[index].assign(self.momentum * self.moving_mean[index] + (1.0 - self.momentum) * mean)
+        self.moving_std[index].assign(self.momentum * self.moving_std[index] + (1.0 - self.momentum) * std)

@@ -98,6 +98,8 @@ from .tensor_utils import (
     weighted_mean,
 )
 
+from .tree import flatten_shape
+
 from .classification import calibration_curve, confusion_matrix
 
 from .validators import check_lengths_same

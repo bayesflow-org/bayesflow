@@ -1,5 +1,3 @@
-from collections.abc import Mapping
-
 import multiprocessing as mp
 
 import keras
@@ -22,7 +20,7 @@ class Approximator(BackendApproximator):
         # implemented by each respective architecture
         raise NotImplementedError
 
-    def build_from_data(self, data: Mapping[str, any]) -> None:
+    def build_from_data(self, data: dict[str, any]) -> None:
         self.compute_metrics(**filter_kwargs(data, self.compute_metrics), stage="training")
         self.built = True
 
@@ -137,27 +135,3 @@ class Approximator(BackendApproximator):
             self.build_from_data(mock_data)
 
         return super().fit(dataset=dataset, **kwargs)
-
-    def _batch_size_from_data(self, data: any):
-        """Obtain the batch size from a batch of data.
-
-        To properly weight the metrics for batches of different sizes, the batch size of a given batch of data is
-        required. As the data structure differs between approximators, each concrete approximator has to specify
-        this method.
-
-        Parameters
-        ----------
-        data :
-            The data that are passed to `compute_metrics` as keyword arguments.
-
-        Returns
-        -------
-        batch_size : int
-            The batch size of the given data.
-        """
-        raise NotImplementedError(
-            "Correct calculation of the metrics requires obtaining the batch size from the supplied data "
-            "for proper weighting of metrics for batches with different sizes. Please implement the "
-            "_batch_size_from_data method for your approximator. For a given batch of data, it should "
-            "return the corresponding batch size."
-        )

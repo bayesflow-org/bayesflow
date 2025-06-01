@@ -27,3 +27,12 @@ class NumpyApproximator(keras.Model):
             except ValueError:
                 self._metrics.append(keras.metrics.Mean(name=name))
                 self._metrics[-1].update_state(value, sample_weight=sample_weight)
+
+    # noinspection PyMethodOverriding
+    def _batch_size_from_data(self, data: any) -> int:
+        raise NotImplementedError(
+            "Correct calculation of the metrics requires obtaining the batch size from the supplied data "
+            "for proper weighting of metrics for batches with different sizes. Please implement the "
+            "_batch_size_from_data method for your approximator. For a given batch of data, it should "
+            "return the corresponding batch size."
+        )

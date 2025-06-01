@@ -33,7 +33,7 @@ class TorchApproximator(keras.Model):
         ----------
         *args : tuple
             Positional arguments passed to the metric computation function.
-        **kwargs : dict
+        **kwargs
             Keyword arguments passed to the metric computation function.
 
         Returns
@@ -124,3 +124,28 @@ class TorchApproximator(keras.Model):
             except ValueError:
                 self._metrics.append(keras.metrics.Mean(name=name))
                 self._metrics[-1].update_state(value, sample_weight=sample_weight)
+
+    # noinspection PyMethodOverriding
+    def _batch_size_from_data(self, data: any) -> int:
+        """Obtain the batch size from a batch of data.
+
+        To properly weigh the metrics for batches of different sizes, the batch size of a given batch of data is
+        required. As the data structure differs between approximators, each concrete approximator has to specify
+        this method.
+
+        Parameters
+        ----------
+        data :
+            The data that are passed to `compute_metrics` as keyword arguments.
+
+        Returns
+        -------
+        batch_size : int
+            The batch size of the given data.
+        """
+        raise NotImplementedError(
+            "Correct calculation of the metrics requires obtaining the batch size from the supplied data "
+            "for proper weighting of metrics for batches with different sizes. Please implement the "
+            "_batch_size_from_data method for your approximator. For a given batch of data, it should "
+            "return the corresponding batch size."
+        )

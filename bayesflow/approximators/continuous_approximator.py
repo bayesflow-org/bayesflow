@@ -7,7 +7,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, logging, split_arrays, squeeze_inner_estimates_dict
+from bayesflow.utils import filter_kwargs, logging, split_arrays, squeeze_inner_estimates_dict, concatenate_valid
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
@@ -180,7 +180,9 @@ class ContinuousApproximator(Approximator):
 
         summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
 
-        inference_conditions = self._combine_conditions(inference_conditions, summary_outputs, stage=stage)
+        if "inference_conditions" in self.standardize:
+            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
+        inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 
         inference_variables = self._prepare_inference_variables(inference_variables, stage=stage)
 
@@ -192,6 +194,7 @@ class ContinuousApproximator(Approximator):
             loss = inference_metrics["loss"] + summary_metrics["loss"]
         else:
             loss = inference_metrics.pop("loss")
+
         inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
@@ -221,21 +224,6 @@ class ContinuousApproximator(Approximator):
             inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
 
         return inference_variables
-
-    def _combine_conditions(
-        self, inference_conditions: Tensor | None, summary_outputs: Tensor | None, stage: str
-    ) -> Tensor:
-        """Helper function to combine direct (inference) conditions and outputs of the summary network."""
-        if inference_conditions is None:
-            return summary_outputs
-
-        if "inference_conditions" in self.standardize:
-            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
-
-        if summary_outputs is None:
-            return inference_conditions
-
-        return keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
 
     def fit(self, *args, **kwargs):
         """
@@ -457,24 +445,17 @@ class ContinuousApproximator(Approximator):
         summary_variables: Tensor = None,
         **kwargs,
     ) -> Tensor:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
+        if (self.summary_network is None) != (summary_variables is None):
+            raise ValueError("Summary variables and summary network must be used together.")
 
+        if self.summary_network is not None:
             summary_outputs = self.summary_network(
                 summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
             )
-
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=1)
+            inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 
         if inference_conditions is not None:
-            # conditions must always have shape (batch_size, dims)
+            # conditions must always have shape (batch_size, ...)
             batch_size = keras.ops.shape(inference_conditions)[0]
             inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
             inference_conditions = keras.ops.broadcast_to(
@@ -485,9 +466,7 @@ class ContinuousApproximator(Approximator):
             batch_shape = (num_samples,)
 
         return self.inference_network.sample(
-            batch_shape,
-            conditions=inference_conditions,
-            **filter_kwargs(kwargs, self.inference_network.sample),
+            batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
         )
 
     def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
@@ -567,21 +546,14 @@ class ContinuousApproximator(Approximator):
         summary_variables: Tensor = None,
         **kwargs,
     ) -> Tensor:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
+        if (self.summary_network is None) != (summary_variables is None):
+            raise ValueError("Summary variables and summary network must be used together.")
 
+        if self.summary_network is not None:
             summary_outputs = self.summary_network(
                 summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
             )
-
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
+            inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 
         return self.inference_network.log_prob(
             inference_variables,

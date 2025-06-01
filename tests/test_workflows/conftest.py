@@ -81,13 +81,6 @@ def fusion_simulator():
 
             x = mean[:, None] + noise
 
-            return dict(mean=mean, a=x, b=x)
+            return dict(mean=mean, observables=dict(a=x, b=x))
 
     return FusionSimulator()
-
-
-@pytest.fixture
-def fusion_adapter():
-    from bayesflow import Adapter
-
-    return Adapter.create_default(["mean"]).group(["a", "b"], "summary_variables")

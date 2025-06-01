@@ -13,7 +13,9 @@ def adapter():
 
     return (
         Adapter()
+        .group(["p1", "p2"], into="ps", prefix="p")
         .to_array()
+        .ungroup("ps", prefix="p")
         .as_set(["s1", "s2"])
         .broadcast("t1", to="t2")
         .as_time_series(["t1", "t2"])
@@ -37,8 +39,6 @@ def adapter():
         .rename("o1", "o2")
         .random_subsample("s3", sample_size=33, axis=0)
         .take("s3", indices=np.arange(0, 32), axis=0)
-        .group(["p1", "p2"], into="ps", prefix="p")
-        .ungroup("ps", prefix="p")
     )
 
 

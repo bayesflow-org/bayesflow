@@ -34,14 +34,13 @@ def test_basic_workflow(tmp_path, inference_network, summary_network):
     assert samples["parameters"].shape == (5, 3, 2)
 
 
-def test_basic_workflow_fusion(
-    tmp_path, fusion_inference_network, fusion_summary_network, fusion_simulator, fusion_adapter
-):
+def test_basic_workflow_fusion(tmp_path, fusion_inference_network, fusion_summary_network, fusion_simulator):
     workflow = bf.BasicWorkflow(
-        adapter=fusion_adapter,
         inference_network=fusion_inference_network,
         summary_network=fusion_summary_network,
         simulator=fusion_simulator,
+        inference_variables=["mean"],
+        summary_variables=["observables"],
         checkpoint_filepath=str(tmp_path),
     )
 

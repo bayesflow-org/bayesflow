@@ -1,4 +1,5 @@
 import numpy as np
+from keras.tree import map_structure
 
 from bayesflow.utils.serialization import serializable, serialize
 
@@ -32,7 +33,7 @@ class ConvertDType(ElementwiseTransform):
         return serialize(config)
 
     def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data.astype(self.to_dtype, copy=False)
+        return map_structure(lambda d: d.astype(self.to_dtype, copy=False), data)
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data.astype(self.from_dtype, copy=False)
+        return map_structure(lambda d: d.astype(self.from_dtype, copy=False), data)

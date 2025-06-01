@@ -49,7 +49,7 @@ class Concatenate(Transform):
         return serialize(config)
 
     def forward(self, data: dict[str, any], *, strict: bool = True, **kwargs) -> dict[str, any]:
-        if not strict and self.indices is None:
+        if not strict and self.indices is None and len(self.keys) != 1:
             raise ValueError("Cannot call `forward` with `strict=False` before calling `forward` with `strict=True`.")
 
         # copy to avoid side effects
@@ -69,6 +69,10 @@ class Concatenate(Transform):
                 data.pop(key)
 
             return data
+        elif len(required_keys) == 1:
+            # only a rename
+            data[self.into] = data.pop(self.keys[0])
+            return data
 
         if self.indices is None:
             # remember the indices of the parts in the concatenated array
@@ -86,7 +90,7 @@ class Concatenate(Transform):
         return data
 
     def inverse(self, data: dict[str, any], *, strict: bool = False, **kwargs) -> dict[str, any]:
-        if self.indices is None:
+        if self.indices is None and len(self.keys) != 1:
             raise RuntimeError("Cannot call `inverse` before calling `forward` at least once.")
 
         # copy to avoid side effects
@@ -97,6 +101,9 @@ class Concatenate(Transform):
             raise KeyError(f"Missing key: {self.into!r}")
         elif self.into not in data:
             # nothing to do
+            return data
+        elif len(self.keys) == 1:
+            data[self.keys[0]] = data.pop(self.into)
             return data
 
         # split the concatenated array and remove the concatenated key
@@ -141,7 +148,7 @@ class Concatenate(Transform):
         available_keys = set(log_det_jac.keys())
         common_keys = available_keys & required_keys
 
-        if len(common_keys) == 0:
+        if len(common_keys) == 0 or len(self.keys) == 1:
             return log_det_jac
 
         parts = [log_det_jac.pop(key) for key in common_keys]

@@ -13,7 +13,7 @@ class Standardization(keras.Layer):
     def __init__(self, momentum: float = 0.95, epsilon: float = 1e-6, **kwargs):
         """
         Initializes a Standardization layer that will keep track of the running mean and
-        running standard deviation across a batch of tensors.
+        running standard deviation across a batch of potentially nested tensors.
 
         Parameters
         ----------
@@ -53,58 +53,54 @@ class Standardization(keras.Layer):
         self, x: Tensor, stage: str = "inference", forward: bool = True, log_det_jac: bool = False, **kwargs
     ) -> Tensor | Sequence[Tensor]:
         """
-        Apply standardization or its inverse to the input tensor, optionally compute the log det of the Jacobian.
+        Apply standardization or its inverse to the input tensor. Optionally compute the log determinant
+        of the Jacobian (useful for flows or density estimation).
 
         Parameters
         ----------
         x : Tensor
             Input tensor of shape (..., dim).
         stage : str, optional
-            Indicates the stage of computation. If "training", the running statistics
-            are updated. Default is "inference".
+            Indicates the stage of computation. If "training", running statistics are updated.
         forward : bool, optional
-            If True, apply standardization: (x - mean) / std.
-            If False, apply inverse transformation: x * std + mean and return the log-determinant
-            of the Jacobian. Default is True.
-        log_det_jac: bool, optional
-            Whether to return the log determinant of the transformation. Default is False.
+            If True, apply standardization: (x - mean) / std. Otherwise, inverse transform.
+        log_det_jac : bool, optional
+            Whether to return the log determinant of the Jacobian. Default is False.
 
         Returns
         -------
         Tensor or Sequence[Tensor]
-            If `forward` is True, returns the standardized tensor, otherwise un-standardizes.
-            If `log_det_jec` is True, returns a tuple: (transformed tensor, log-determinant) otherwise just
-            transformed tensor.
+            Transformed tensor, and optionally the log-determinant if `log_det_jac=True`.
         """
         flattened = keras.tree.flatten(x)
-        standardized = []
-        if log_det_jac:
-            ldjs = []
+        outputs, log_det_jacs = [], []
+
         for i, val in enumerate(flattened):
+            mean = expand_left_as(self.moving_mean[i], val)
+            std = expand_left_as(self.moving_std[i], val)
+
             if stage == "training":
                 self._update_moments(val, i)
 
             if forward:
-                standardized.append(
-                    (val - expand_left_as(self.moving_mean[i], val)) / expand_left_as(self.moving_std[i], val)
-                )
+                out = (val - mean) / std
             else:
-                standardized.append(
-                    (expand_left_as(self.moving_mean[i], val) + expand_left_as(self.moving_std[i], val) * val)
-                )
+                out = mean + std * val
+
+            outputs.append(out)
 
             if log_det_jac:
-                ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(self.moving_std[i])), axis=-1)
-                ldj = keras.ops.broadcast_to(ldj, keras.ops.shape(val)[:-1])
-                if forward:
-                    ldj = -ldj
-                ldjs.append(ldj)
+                ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(std)), axis=-1)
+                # For convenience, tile to batch shape of val
+                ldj = keras.ops.tile(ldj, keras.ops.shape(val)[:-1])
+                log_det_jacs.append(-ldj if forward else ldj)
 
-        standardized = keras.tree.pack_sequence_as(x, standardized)
+        outputs = keras.tree.pack_sequence_as(x, outputs)
         if log_det_jac:
-            ldjs = keras.tree.pack_sequence_as(x, ldjs)
-            return standardized, ldjs
-        return standardized
+            log_det_jacs = keras.tree.pack_sequence_as(x, log_det_jacs)
+            return outputs, log_det_jacs
+
+        return outputs
 
     def _update_moments(self, x: Tensor, index: int):
         mean = keras.ops.mean(x, axis=tuple(range(keras.ops.ndim(x) - 1)))

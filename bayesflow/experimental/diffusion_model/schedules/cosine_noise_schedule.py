@@ -1,5 +1,5 @@
 import math
-from typing import Union, Literal
+from typing import Literal
 
 from keras import ops
 
@@ -14,7 +14,14 @@ from .noise_schedule import NoiseSchedule
 class CosineNoiseSchedule(NoiseSchedule):
     """Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].
 
-    [1] Diffusion Models Beat GANs on Image Synthesis: Dhariwal and Nichol (2022)
+    A cosine schedule is a popular technique for controlling how the variance (noise level) or
+    learning rate evolves during the training of diffusion models. It was proposed as an improvement
+    over the original linear beta schedule in [2]
+
+    [1] Dhariwal, P., & Nichol, A. (2021). Diffusion models beat gans on image synthesis.
+    Advances in Neural Information Processing Systems, 34, 8780-8794.
+    [2] Ho, J., Jain, A., & Abbeel, P. (2020). Denoising diffusion probabilistic models.
+    Advances in Neural Information Processing Systems, 33, 6840-6851.
     """
 
     def __init__(
@@ -51,12 +58,12 @@ class CosineNoiseSchedule(NoiseSchedule):
     def _truncated_t(self, t: Tensor) -> Tensor:
         return self._t_min + (self._t_max - self._t_min) * t
 
-    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
+    def get_log_snr(self, t: Tensor | float, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         t_trunc = self._truncated_t(t)
         return -2 * ops.log(ops.tan(math.pi * t_trunc * 0.5)) + 2 * self._shift
 
-    def get_t_from_log_snr(self, log_snr_t: Union[Tensor, float], training: bool) -> Tensor:
+    def get_t_from_log_snr(self, log_snr_t: Tensor | float, training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         # SNR = -2 * log(tan(pi*t/2)) => t = 2/pi * arctan(exp(-snr/2))
         return 2 / math.pi * ops.arctan(ops.exp((2 * self._shift - log_snr_t) * 0.5))
@@ -76,9 +83,13 @@ class CosineNoiseSchedule(NoiseSchedule):
         return -factor * dsnr_dt
 
     def get_config(self):
-        return dict(
-            min_log_snr=self.log_snr_min, max_log_snr=self.log_snr_max, shift=self._shift, weighting=self._weighting
-        )
+        config = {
+            "min_log_snr": self.log_snr_min,
+            "max_log_snr": self.log_snr_max,
+            "shift": self._shift,
+            "weighting": self._weighting,
+        }
+        return config
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

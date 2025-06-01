@@ -296,3 +296,100 @@ def test_log_det_jac_exceptions(random_data):
 
     # inverse works when concatenation is used after transforms
     assert np.allclose(forward_log_det_jac["p"], -inverse_log_det_jac)
+
+
+def test_nan_to_num():
+    arr = {"test": np.array([1.0, np.nan, 3.0])}
+    # test without mask
+    transform = bf.Adapter().nan_to_num(keys="test", default_value=-1.0, return_mask=False)
+    out = transform.forward(arr)["test"]
+    np.testing.assert_array_equal(out, np.array([1.0, -1.0, 3.0]))
+
+    # test with mask
+    arr = {"test": np.array([1.0, np.nan, 3.0]), "test-2d": np.array([[1.0, np.nan], [np.nan, 4.0]])}
+    transform = bf.Adapter().nan_to_num(keys="test", default_value=0.0, return_mask=True)
+    out = transform.forward(arr)
+    np.testing.assert_array_equal(out["test"], np.array([1.0, 0.0, 3.0]))
+    np.testing.assert_array_equal(out["mask_test"], np.array([1.0, 0.0, 1.0]))
+
+    # test two-d array
+    transform = bf.Adapter().nan_to_num(keys="test-2d", default_value=0.5, return_mask=True, mask_prefix="new_mask")
+    out = transform.forward(arr)
+    np.testing.assert_array_equal(out["test-2d"], np.array([[1.0, 0.5], [0.5, 4.0]]))
+    np.testing.assert_array_equal(out["new_mask_test-2d"], np.array([[1, 0], [0, 1]]))
+
+
+def test_nnpe(random_data):
+    # NNPE cannot be integrated into the adapter fixture and its tests since it modifies the input data
+    # and therefore breaks existing allclose checks
+    import numpy as np
+    from bayesflow.adapters import Adapter
+
+    # Test basic case with global noise application
+    ad = Adapter().nnpe("x1", spike_scale=1.0, slab_scale=1.0, per_dimension=False, seed=42)
+    result_training = ad(random_data, stage="training")
+    result_validation = ad(random_data, stage="validation")
+    result_inference = ad(random_data, stage="inference")
+    result_inversed = ad(random_data, inverse=True)
+    serialized = serialize(ad)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+
+    # check that only x1 is changed
+    assert "x1" in result_training
+    assert not np.allclose(result_training["x1"], random_data["x1"])
+
+    # all other keys are untouched
+    for k, v in random_data.items():
+        if k == "x1":
+            continue
+        assert np.allclose(result_training[k], v)
+
+    # check that the validation and inference data as well as inversed results are unchanged
+    for k, v in random_data.items():
+        assert np.allclose(result_validation[k], v)
+        assert np.allclose(result_inference[k], v)
+        assert np.allclose(result_inversed[k], v)
+
+    # Test both scales and seed are None case (automatic scale determination) with dimensionwise noise application
+    ad_auto = Adapter().nnpe("y1", slab_scale=None, spike_scale=None, per_dimension=True, seed=None)
+    result_training_auto = ad_auto(random_data, stage="training")
+    assert not np.allclose(result_training_auto["y1"], random_data["y1"])
+    for k, v in random_data.items():
+        if k == "y1":
+            continue
+        assert np.allclose(result_training_auto[k], v)
+
+    serialized_auto = serialize(ad_auto)
+    deserialized_auto = deserialize(serialized_auto)
+    reserialized_auto = serialize(deserialized_auto)
+    assert keras.tree.lists_to_tuples(serialized_auto) == keras.tree.lists_to_tuples(serialize(reserialized_auto))
+
+    # Test dimensionwise versus global noise application (per_dimension=True vs per_dimension=False)
+    # Create data with second dimension having higher variance
+    data_shape = (32, 16, 1)
+    rng = np.random.default_rng(42)
+    zero = np.ones(shape=data_shape)
+    high = rng.normal(0, 100.0, size=data_shape)
+    var_data = {"x": np.concatenate([zero, high], axis=-1)}
+
+    # Apply dimensionwise and global adapters with automatic slab_scale scale determination
+    ad_partial_global = Adapter().nnpe("x", spike_scale=0, slab_scale=None, per_dimension=False, seed=42)
+    ad_partial_dim = Adapter().nnpe("x", spike_scale=[0, 1], slab_scale=None, per_dimension=True, seed=42)
+    res_dim = ad_partial_dim(var_data, stage="training")
+    res_glob = ad_partial_global(var_data, stage="training")
+
+    # Compute standard deviations of noise per last axis dimension
+    noise_dim = res_dim["x"] - var_data["x"]
+    noise_glob = res_glob["x"] - var_data["x"]
+    std_dim = np.std(noise_dim, axis=(0, 1))
+    std_glob = np.std(noise_glob, axis=(0, 1))
+
+    # Dimensionwise should assign zero noise, global some noise to zero-variance dimension
+    assert std_dim[0] == 0
+    assert std_glob[0] > 0
+    # Both should assign noise to high-variance dimension
+    assert std_dim[1] > 0
+    assert std_glob[1] > 0

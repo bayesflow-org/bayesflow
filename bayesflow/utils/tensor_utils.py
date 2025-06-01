@@ -378,9 +378,9 @@ def positive_diag(x: Tensor, method="default") -> Tensor:
     # ensure positivity
     match method:
         case "default" | "shifted_softplus":
-            x_positive = keras.activations.softplus(x + 0.5413)
+            x_positive = keras.activations.softplus(x + 0.5413) + 1e-5
         case "exp":
-            x_positive = keras.ops.exp(x)
+            x_positive = keras.ops.exp(x) + 1e-5
 
     # zero all offdiagonals
     x_diag_positive = keras.ops.tril(keras.ops.triu(x_positive))

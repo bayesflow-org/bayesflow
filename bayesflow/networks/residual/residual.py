@@ -6,9 +6,11 @@ from bayesflow.types import Tensor
 from bayesflow.utils import sequential_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
+from ..sequential import Sequential
+
 
 @serializable("bayesflow.networks")
-class Residual(keras.Sequential):
+class Residual(Sequential):
     def __init__(self, *layers: keras.Layer, **kwargs):
         if len(layers) == 1 and isinstance(layers[0], Sequence):
             layers = layers[0]

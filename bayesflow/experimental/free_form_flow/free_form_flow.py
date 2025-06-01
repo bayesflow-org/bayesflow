@@ -1,8 +1,6 @@
 import keras
 from keras import ops
 
-import warnings
-
 from bayesflow.distributions import Distribution
 from bayesflow.types import Tensor
 from bayesflow.utils import (
@@ -85,13 +83,6 @@ class FreeFormFlow(InferenceNetwork):
             Additional keyword arguments
         """
         super().__init__(base_distribution, **kwargs)
-
-        if encoder_subnet_kwargs or decoder_subnet_kwargs:
-            warnings.warn(
-                "Using `subnet_kwargs` is deprecated."
-                "Instead, instantiate the network yourself and pass the arguments directly.",
-                DeprecationWarning,
-            )
 
         encoder_subnet_kwargs = encoder_subnet_kwargs or {}
         decoder_subnet_kwargs = decoder_subnet_kwargs or {}

@@ -24,7 +24,7 @@ class OfflineDataset(keras.utils.PyDataset):
         *,
         stage: str = "training",
         augmentations: Mapping[str, Callable] | Callable = None,
-        shuffle_dataset: bool = True,
+        shuffle: bool = True,
         **kwargs,
     ):
         """
@@ -52,9 +52,8 @@ class OfflineDataset(keras.utils.PyDataset):
 
             Note - augmentations are applied before the adapter is called and are generally
             transforms that you only want to apply during training.
-        shuffle_dataset : bool, default=True
-            Whether to shuffle the dataset at initialization and at the end of each epoch. Should be set to `False`
-            for validation and test datasets to ensure consistent ordering of data.
+        shuffle : bool, optional
+            Whether to shuffle the dataset at initialization and at the end of each epoch. Default is True.
         **kwargs
             Additional keyword arguments passed to the base `PyDataset`.
         """
@@ -73,8 +72,8 @@ class OfflineDataset(keras.utils.PyDataset):
         self.indices = np.arange(self.num_samples, dtype="int64")
 
         self.augmentations = augmentations
-        self.shuffle_dataset = shuffle_dataset
-        if self.shuffle_dataset:
+        self._shuffle = shuffle
+        if self._shuffle:
             self.shuffle()
 
     def __getitem__(self, item: int) -> dict[str, np.ndarray]:
@@ -127,7 +126,7 @@ class OfflineDataset(keras.utils.PyDataset):
         return int(np.ceil(self.num_samples / self.batch_size))
 
     def on_epoch_end(self) -> None:
-        if self.shuffle_dataset:
+        if self._shuffle:
             self.shuffle()
 
     def shuffle(self) -> None:

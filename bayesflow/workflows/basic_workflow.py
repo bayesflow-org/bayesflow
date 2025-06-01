@@ -923,9 +923,7 @@ class BasicWorkflow(Workflow):
             elif isinstance(validation_data, int):
                 raise ValueError(f"No simulator found for generating {validation_data} data sets.")
 
-            validation_data = OfflineDataset(
-                data=validation_data, batch_size=dataset.batch_size, adapter=self.adapter, shuffle_dataset=False
-            )
+            validation_data = OfflineDataset(data=validation_data, batch_size=dataset.batch_size, adapter=self.adapter)
             monitor = "val_loss"
         else:
             monitor = "loss"
@@ -984,8 +982,6 @@ class BasicWorkflow(Workflow):
             else:
                 file_ext = self.checkpoint_name + ".keras"
 
-            logging.info(
-                f"""Training is now finished.
+            logging.info(f"""Training is now finished.
             You can find the trained approximator at '{self.checkpoint_filepath}/{self.checkpoint_name}.{file_ext}'.
-            To load it, use approximator = keras.saving.load_model(...)."""
-            )
+            To load it, use approximator = keras.saving.load_model(...).""")

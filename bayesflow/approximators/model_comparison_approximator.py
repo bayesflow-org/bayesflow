@@ -448,3 +448,10 @@ class ModelComparisonApproximator(Approximator):
         summaries = keras.ops.convert_to_numpy(summaries)
 
         return summaries
+
+    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
+        """
+        Fetches the current batch size from an input dictionary. Can only be used during training when
+        model indices as present.
+        """
+        return keras.ops.shape(data["model_indices"])[0]

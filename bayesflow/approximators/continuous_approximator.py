@@ -188,13 +188,14 @@ class ContinuousApproximator(Approximator):
             inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
         )
 
-        loss = inference_metrics.get("loss", keras.ops.zeros(())) + summary_metrics.get("loss", keras.ops.zeros(()))
-
+        if "loss" in summary_metrics:
+            loss = inference_metrics["loss"] + summary_metrics["loss"]
+        else:
+            loss = inference_metrics.pop("loss")
         inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
         metrics = {"loss": loss} | inference_metrics | summary_metrics
-
         return metrics
 
     def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:
@@ -587,3 +588,10 @@ class ContinuousApproximator(Approximator):
             conditions=inference_conditions,
             **filter_kwargs(kwargs, self.inference_network.log_prob),
         )
+
+    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
+        """
+        Fetches the current batch size from an input dictionary. Can only be used during training when
+        inference variables as present.
+        """
+        return keras.ops.shape(data["inference_variables"])[0]

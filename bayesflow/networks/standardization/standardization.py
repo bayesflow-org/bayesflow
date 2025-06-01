@@ -50,7 +50,12 @@ class Standardization(keras.Layer):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
     def call(
-        self, x: Tensor, stage: str = "inference", forward: bool = True, log_det_jac: bool = False, **kwargs
+        self,
+        x: Tensor | dict[str, Tensor],
+        stage: str = "inference",
+        forward: bool = True,
+        log_det_jac: bool = False,
+        **kwargs,
     ) -> Tensor | Sequence[Tensor]:
         """
         Apply standardization or its inverse to the input tensor. Optionally compute the log determinant

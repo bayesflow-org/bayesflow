@@ -4,7 +4,8 @@ import keras
 
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils.serialization import serialize, deserialize, serializable
-from bayesflow.utils import expand_left_as, layer_kwargs, flatten_shape
+from bayesflow.utils import expand_left_as, layer_kwargs
+from bayesflow.utils.tree import flatten_shape
 
 
 @serializable("bayesflow.networks")

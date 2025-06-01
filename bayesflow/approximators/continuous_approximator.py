@@ -492,5 +492,9 @@ class ContinuousApproximator(Approximator):
             **filter_kwargs(kwargs, self.inference_network.log_prob),
         )
 
-    def _batch_size_from_data(self, data: Mapping[str, any]):
+    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
+        """
+        Fetches the current batch size from an input dictionary. Can only be used during training when
+        inference variables as present.
+        """
         return keras.ops.shape(data["inference_variables"])[0]

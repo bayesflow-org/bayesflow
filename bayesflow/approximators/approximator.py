@@ -142,7 +142,8 @@ class Approximator(BackendApproximator):
         """Obtain the batch size from a batch of data.
 
         To properly weight the metrics for batches of different sizes, the batch size of a given batch of data is
-        required. As the data structure differs between approximators, each approximator has to specify this method.
+        required. As the data structure differs between approximators, each concrete approximator has to specify
+        this method.
 
         Parameters
         ----------

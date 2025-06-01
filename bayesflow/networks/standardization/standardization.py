@@ -81,11 +81,11 @@ class Standardization(keras.Layer):
         outputs, log_det_jacs = [], []
 
         for i, val in enumerate(flattened):
-            mean = expand_left_as(self.moving_mean[i], val)
-            std = expand_left_as(self.moving_std[i], val)
-
             if stage == "training":
                 self._update_moments(val, i)
+
+            mean = expand_left_as(self.moving_mean[i], val)
+            std = expand_left_as(self.moving_std[i], val)
 
             if forward:
                 out = (val - mean) / std

@@ -15,12 +15,11 @@ def test_forward_standardization_training():
 
     out = layer(random_input, stage="training")
 
-    moving_mean = keras.ops.convert_to_numpy(layer.moving_mean)
-    moving_std = keras.ops.convert_to_numpy(layer.moving_std)
+    moving_mean = keras.ops.convert_to_numpy(layer.moving_mean[0])
+    moving_std = keras.ops.convert_to_numpy(layer.moving_std[0])
     random_input = keras.ops.convert_to_numpy(random_input)
     out = keras.ops.convert_to_numpy(out)
 
-    # mean should now match the batch input
     np.testing.assert_allclose(moving_mean, np.mean(random_input, axis=0), atol=1e-5)
     np.testing.assert_allclose(moving_std, np.std(random_input, axis=0), atol=1e-5)
 
@@ -34,7 +33,7 @@ def test_inverse_standardization_ldj():
     layer = Standardization(momentum=0.0)
     layer.build(random_input.shape)
 
-    _ = layer(random_input, stage="training", forward=True)  # trigger moment update
+    _ = layer(random_input, stage="training", forward=True)
     inv_x, ldj = layer(random_input, stage="inference", forward=False, log_det_jac=True)
 
     assert inv_x.shape == random_input.shape
@@ -52,6 +51,23 @@ def test_consistency_forward_inverse():
     recovered = keras.ops.convert_to_numpy(recovered)
 
     np.testing.assert_allclose(random_input, recovered, atol=1e-4)
+
+
+def test_nested_consistency_forward_inverse():
+    random_input_a = keras.random.normal((2, 3, 5))
+    random_input_b = keras.random.normal((4, 3))
+    random_input = {"a": random_input_a, "b": random_input_b}
+
+    layer = Standardization(momentum=0.0)
+
+    standardized = layer(random_input, stage="training", forward=True)
+    recovered = layer(standardized, stage="inference", forward=False)
+
+    random_input = keras.tree.map_structure(keras.ops.convert_to_numpy, random_input)
+    recovered = keras.tree.map_structure(keras.ops.convert_to_numpy, recovered)
+
+    np.testing.assert_allclose(random_input["a"], recovered["a"], atol=1e-4)
+    np.testing.assert_allclose(random_input["b"], recovered["b"], atol=1e-4)
 
 
 def test_serialize_deserialize():

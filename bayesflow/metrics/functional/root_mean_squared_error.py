@@ -2,8 +2,10 @@ import keras
 from keras import ops
 
 from bayesflow.types import Tensor
+from bayesflow.utils.serialization import serializable
 
 
+@serializable("bayesflow.metrics")
 def root_mean_squared_error(x1: Tensor, x2: Tensor, normalize: bool = False, **kwargs) -> Tensor:
     """Computes the (normalized) root mean squared error between samples x1 and x2.
 

@@ -3,14 +3,15 @@ from typing import Literal, Callable
 
 import keras
 
-from bayesflow.utils import sequential_kwargs
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils import layer_kwargs
+from bayesflow.utils.serialization import serializable, serialize
 
+from ..sequential import Sequential
 from ..residual import Residual
 
 
 @serializable("bayesflow.networks")
-class MLP(keras.Sequential):
+class MLP(Sequential):
     """
     Implements a simple configurable MLP with optional residual connections and dropout.
 
@@ -67,40 +68,19 @@ class MLP(keras.Sequential):
         self.norm = norm
         self.spectral_normalization = spectral_normalization
 
-        layers = []
+        blocks = []
 
         for width in widths:
-            layer = self._make_layer(
+            block = self._make_block(
                 width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization
             )
-            layers.append(layer)
+            blocks.append(block)
 
-        super().__init__(layers, **sequential_kwargs(kwargs))
-
-    def build(self, input_shape=None):
-        if self.built:
-            # building when the network is already built can cause issues with serialization
-            # see https://github.com/keras-team/keras/issues/21147
-            return
-
-        # we only care about the last dimension, and using ... signifies to keras.Sequential
-        # that any number of batch dimensions is valid (which is what we want for all sublayers)
-        # we also have to avoid calling super().build() because this causes
-        # shape errors when building on non-sets but doing inference on sets
-        # this is a work-around for https://github.com/keras-team/keras/issues/21158
-        input_shape = (..., input_shape[-1])
-
-        for layer in self._layers:
-            layer.build(input_shape)
-            input_shape = layer.compute_output_shape(input_shape)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
+        super().__init__(*blocks, **kwargs)
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = sequential_kwargs(base_config)
+        base_config = layer_kwargs(base_config)
 
         config = {
             "widths": self.widths,
@@ -115,7 +95,7 @@ class MLP(keras.Sequential):
         return base_config | serialize(config)
 
     @staticmethod
-    def _make_layer(width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization):
+    def _make_block(width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization):
         layers = []
 
         dense = keras.layers.Dense(width, kernel_initializer=kernel_initializer)
@@ -148,4 +128,4 @@ class MLP(keras.Sequential):
         if residual:
             return Residual(*layers)
 
-        return keras.Sequential(layers)
+        return Sequential(layers)

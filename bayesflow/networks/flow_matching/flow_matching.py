@@ -2,8 +2,6 @@ from collections.abc import Sequence
 
 import keras
 
-import warnings
-
 from bayesflow.distributions import Distribution
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
@@ -105,13 +103,6 @@ class FlowMatching(InferenceNetwork):
         self.loss_fn = keras.losses.get(loss_fn)
 
         self.seed_generator = keras.random.SeedGenerator()
-
-        if subnet_kwargs:
-            warnings.warn(
-                "Using `subnet_kwargs` is deprecated."
-                "Instead, instantiate the network yourself and pass the arguments directly.",
-                DeprecationWarning,
-            )
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":

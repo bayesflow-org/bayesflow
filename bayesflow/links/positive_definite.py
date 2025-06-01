@@ -12,12 +12,7 @@ class PositiveDefinite(keras.Layer):
     def __init__(self, **kwargs):
         super().__init__(**layer_kwargs(kwargs))
 
-        self.layer_norm = keras.layers.LayerNormalization()
-
     def call(self, inputs: Tensor) -> Tensor:
-        # normalize the activation at initialization time mean = 0.0, std = 0.1
-        inputs = self.layer_norm(inputs) / 10
-
         # form a cholesky factor
         L = fill_triangular_matrix(inputs)
         L = positive_diag(L)

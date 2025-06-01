@@ -3,8 +3,6 @@ from keras import ops
 
 import numpy as np
 
-import warnings
-
 from bayesflow.types import Tensor
 from bayesflow.utils import find_network, layer_kwargs, weighted_mean
 from bayesflow.utils.serialization import deserialize, serializable, serialize
@@ -75,13 +73,6 @@ class ConsistencyModel(InferenceNetwork):
         super().__init__(base_distribution="normal", **kwargs)
 
         self.total_steps = float(total_steps)
-
-        if subnet_kwargs:
-            warnings.warn(
-                "Using `subnet_kwargs` is deprecated."
-                "Instead, instantiate the network yourself and pass the arguments directly.",
-                DeprecationWarning,
-            )
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":

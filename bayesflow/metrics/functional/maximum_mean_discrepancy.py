@@ -2,12 +2,20 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import issue_url
+from bayesflow.utils.serialization import serializable
+
+from typing import Literal
 
 from .kernels import gaussian, inverse_multiquadratic
 
 
+@serializable("bayesflow.metrics")
 def maximum_mean_discrepancy(
-    x: Tensor, y: Tensor, kernel: str = "inverse_multiquadratic", unbiased: bool = False, **kwargs
+    x: Tensor,
+    y: Tensor,
+    kernel: Literal["inverse_multiquadratic", "gaussian"] = "inverse_multiquadratic",
+    unbiased: bool = False,
+    **kwargs,
 ) -> Tensor:
     """Computes a mixture of Gaussian radial basis functions (RBFs) between the samples of x and y.
 

@@ -7,6 +7,7 @@ from . import (
     logging,
     numpy_utils,
     serialization,
+    tree,
 )
 
 from .callbacks import detailed_loss_callback
@@ -104,4 +105,4 @@ from .validators import check_lengths_same
 
 from ._docs import _add_imports_to_all
 
-_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization"])
+_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization", "tree"])

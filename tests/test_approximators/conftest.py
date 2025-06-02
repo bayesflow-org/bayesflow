@@ -65,7 +65,7 @@ def point_inference_network_with_multiple_parametric_scores():
 
 
 @pytest.fixture()
-def point_approximator(adapter, point_inference_network, summary_network):
+def point_approximator_with_single_parametric_score(adapter, point_inference_network, summary_network):
     from bayesflow import PointApproximator
 
     return PointApproximator(
@@ -89,7 +89,18 @@ def point_approximator_with_multiple_parametric_scores(
 
 
 @pytest.fixture(
-    params=["continuous_approximator", "point_approximator", "point_approximator_with_multiple_parametric_scores"],
+    params=["point_approximator_with_single_parametric_score", "point_approximator_with_multiple_parametric_scores"]
+)
+def point_approximator(request):
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture(
+    params=[
+        "continuous_approximator",
+        "point_approximator_with_single_parametric_score",
+        "point_approximator_with_multiple_parametric_scores",
+    ],
     scope="function",
 )
 def approximator(request):

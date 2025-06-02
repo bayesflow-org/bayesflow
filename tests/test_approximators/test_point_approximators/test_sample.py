@@ -1,3 +1,4 @@
+import keras
 import numpy as np
 from bayesflow.scores import ParametricDistributionScore
 from tests.utils import check_combination_simulator_adapter, check_approximator_multivariate_normal_score

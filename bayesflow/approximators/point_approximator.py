@@ -238,6 +238,7 @@ class PointApproximator(ContinuousApproximator):
     def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
         """Squeezes the dictionary to just the value if there is only one key-value pair."""
         if len(samples) == 1:
+            # Extract and return the only item's value
             return next(iter(samples.values()))
         return samples
 

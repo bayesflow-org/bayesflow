@@ -64,7 +64,7 @@ class ModelComparisonApproximator(Approximator):
             # we have to lazily initialize these
             self.standardize_layers = None
         else:
-            self.standardize_layers = {var: Standardization() for var in self.standardize}
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
     def build_from_data(self, adapted_data: dict[str, any]):
         if self.standardize == "all":
@@ -344,6 +344,15 @@ class ModelComparisonApproximator(Approximator):
         outputs: np.ndarray
             Predicted posterior model probabilities given `conditions`.
         """
+
+        # Take care of deprecated logits kwarg
+        logits = kwargs.pop("logits", None)
+        if logits is not None:
+            logging.warning(
+                "Using argument `logits` is deprecated and will be removed in future versions. "
+                "Please, use `probs` instead."
+            )
+            probs = not logits
 
         # Apply adapter transforms to raw simulated / real quantities
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)

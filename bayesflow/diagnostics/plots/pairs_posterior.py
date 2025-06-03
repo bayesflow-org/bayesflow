@@ -39,25 +39,27 @@ def pairs_posterior(
         Optional true parameter values that have generated the observed dataset.
     priors       : np.ndarray of shape (n_prior_draws, n_params) or None, optional (default: None)
         Optional prior samples obtained from the prior.
-    dataset_id: Optional ID of the dataset for whose posterior the pairs plot shall be generated.
-        Should only be specified if estimates contains posterior draws from multiple datasets.
+    dataset_id: Optional ID of the dataset for whose posterior the pair plots shall be generated.
+        Should only be specified if estimates contain posterior draws from multiple datasets.
     variable_keys       : list or None, optional, default: None
        Select keys from the dictionary provided in samples.
        By default, select all keys.
     variable_names       : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     height            : float, optional, default: 3
-        The height of the pairplot
+        The height of the pair plots
     label_fontsize    : int, optional, default: 14
         The font size of the x and y-label texts (parameter names)
     tick_fontsize     : int, optional, default: 12
-        The font size of the axis ticklabels
+        The font size of the axis tick labels
     legend_fontsize   : int, optional, default: 16
         The font size of the legend text
     post_color        : str, optional, default: '#132a70'
         The color for the posterior histograms and KDEs
     prior_color      : str, optional, default: gray
         The color for the optional prior histograms and KDEs
+    target_color      : str, optional, default: red
+        The color for the optional true parameter lines and points
     alpha             : float in [0, 1], optional, default: 0.9
         The opacity of the posterior plots
 
@@ -83,7 +85,7 @@ def pairs_posterior(
         variable_names=variable_names,
     )
 
-    # dicts_to_arrays will keep dataset axis even if it is of length 1
+    # dicts_to_arrays will keep the dataset axis even if it is of length 1
     # however, pairs plotting requires the dataset axis to be removed
     estimates_shape = plot_data["estimates"].shape
     if len(estimates_shape) == 3 and estimates_shape[0] == 1:

@@ -40,13 +40,18 @@ def pairs_samples(
     height      : float, optional, default: 2.5
         The height of the pair plot
     color       : str, optional, default : '#8f2727'
-        The color of the plot
+        The primary color of the plot
     alpha       : float in [0, 1], optional, default: 0.9
         The opacity of the plot
+    label       : str, optional, default: "Posterior"
+        Label for the dataset to plot
     label_fontsize    : int, optional, default: 14
         The font size of the x and y-label texts (parameter names)
     tick_fontsize     : int, optional, default: 12
-        The font size of the axis ticklabels
+        The font size of the axis tick labels
+    show_single_legend : bool, optional, default: False
+        Optional toggle for the user to choose whether a single dataset
+        should also display legend
     **kwargs    : dict, optional
         Additional keyword arguments passed to the sns.PairGrid constructor
     """
@@ -85,12 +90,20 @@ def _pairs_samples(
     show_single_legend: bool = False,
     **kwargs,
 ) -> sns.PairGrid:
-    # internal version of pairs_samples creating the seaborn plot
+    """
+    Internal version of pairs_samples creating the seaborn PairPlot
+    for both a single dataset and multiple datasets.
 
-    # Parameters
-    # ----------
-    # plot_data   : output of bayesflow.utils.dict_utils.dicts_to_arrays
-    # other arguments are documented in pairs_samples
+    Parameters
+    ----------
+    plot_data   : output of bayesflow.utils.dict_utils.dicts_to_arrays
+        Formatted data to plot from the sample dataset
+    color2      : str, optional, default: 'gray'
+        Secondary color for the pair plots.
+        This is the color used for the prior draws.
+
+    Other arguments are documented in pairs_samples
+    """
 
     estimates_shape = plot_data["estimates"].shape
     if len(estimates_shape) != 2:
@@ -144,7 +157,7 @@ def _pairs_samples(
         common_norm=False,
     )
 
-    # add scatterplots to the upper diagonal
+    # add scatter plots to the upper diagonal
     g.map_upper(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
 
     # add KDEs to the lower diagonal
@@ -168,7 +181,7 @@ def _pairs_samples(
             g.axes[i, j].tick_params(axis="both", which="major", labelsize=tick_fontsize)
             g.axes[i, j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
-        # adjust font size of labels
+        # adjust the font size of labels
         # the labels themselves remain the same as before, i.e., variable_names
         g.axes[i, 0].set_ylabel(variable_names[i], fontsize=label_fontsize)
         g.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
@@ -196,7 +209,7 @@ def _pairs_samples(
 
 def histplot_twinx(x, **kwargs):
     """
-    # create a histogram plot on a twin y axis
+    # create a histogram plot on a twin y-axis
     # this ensures that the y scaling of the diagonal plots
     # in independent of the y scaling of the off-diagonal plots
 

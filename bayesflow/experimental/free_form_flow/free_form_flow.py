@@ -218,10 +218,10 @@ class FreeFormFlow(InferenceNetwork):
             return self.decode(z, conditions, training=stage == "training")
 
         # VJP computation
-        z, vjp_fn = vjp(encode, x)
+        z, vjp_fn = vjp(encode, x, return_output=True)
         v1 = vjp_fn(v)[0]
         # JVP computation
-        x_pred, v2 = jvp(decode, (z,), (v,))
+        x_pred, v2 = jvp(decode, (z,), (v,), return_output=True)
 
         # equivalent: surrogate = ops.matmul(ops.stop_gradient(v2[:, None]), v1[:, :, None])[:, 0, 0]
         surrogate = ops.sum((ops.stop_gradient(v2) * v1), axis=-1)

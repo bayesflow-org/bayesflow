@@ -37,6 +37,7 @@ class DiskDataset(keras.utils.PyDataset):
         adapter: Adapter | None,
         stage: str = "training",
         augmentations: Mapping[str, Callable] | Callable = None,
+        shuffle: bool = True,
         **kwargs,
     ):
         """
@@ -67,6 +68,8 @@ class DiskDataset(keras.utils.PyDataset):
 
             Note - augmentations are applied before the adapter is called and are generally
             transforms that you only want to apply during training.
+        shuffle : bool, optional
+            Whether to shuffle the dataset at initialization and at the end of each epoch. Default is True.
         **kwargs
             Additional keyword arguments passed to the base `PyDataset`.
         """
@@ -79,8 +82,9 @@ class DiskDataset(keras.utils.PyDataset):
         self.stage = stage
 
         self.augmentations = augmentations
-
-        self.shuffle()
+        self._shuffle = shuffle
+        if self._shuffle:
+            self.shuffle()
 
     def __getitem__(self, item) -> dict[str, np.ndarray]:
         if not 0 <= item < self.num_batches:
@@ -108,7 +112,8 @@ class DiskDataset(keras.utils.PyDataset):
         return batch
 
     def on_epoch_end(self):
-        self.shuffle()
+        if self._shuffle:
+            self.shuffle()
 
     @property
     def num_batches(self):

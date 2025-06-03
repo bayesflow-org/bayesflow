@@ -409,18 +409,10 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-
-        # Apply adapter transforms to raw simulated / real quantities
-        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-
-        # Ensure only keys relevant for sampling are present in the conditions dictionary
+        # Adapt, optionally standardize and convert conditions to tensor.
+        conditions = self._prepare_data(conditions, **kwargs)
+        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
         conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
-        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-
-        # Optionally standardize conditions
-        for key in ContinuousApproximator.CONDITION_KEYS:
-            if key in conditions and key in self.standardize:
-                conditions[key] = self.standardize_layers[key](conditions[key])
 
         # Sample and undo optional standardization
         samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
@@ -437,6 +429,51 @@ class ContinuousApproximator(Approximator):
         if split:
             samples = split_arrays(samples, axis=-1)
         return samples
+
+    def _prepare_data(
+        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
+        """
+        Adapts, optionally standardizes, and converts the data to tensors to prepare it for the inference network.
+
+        Deals with data that represents only conditions, or only inference_variables or both.
+        """
+        # TODO:
+        # * [ ] better docstring
+
+        # Adapt, and optionally keep track of ldj of transformations to inference_variables.
+        adapted = self.adapter(data, strict=False, stage="inference", log_det_jac=log_det_jac, **kwargs)
+        if log_det_jac:
+            data, log_det_jac_adapter = adapted
+            log_det_jac_inference_variables = log_det_jac_adapter.get("inference_variables", 0.0)
+        else:
+            data = adapted
+
+        # Optionally standardize conditions, if they are part of data.
+        conditions = {k: v for k, v in data.items() if k in ContinuousApproximator.CONDITION_KEYS}
+        for key, value in conditions.items():
+            if key in self.standardize and key in data.keys():
+                data[key] = self.standardize_layers[key](value)
+
+        # Optionally standardize inference variables, if they are part of data.
+        if "inference_variables" in data.keys() and "inference_variables" in self.standardize:
+            standardized = self.standardize_layers["inference_variables"](
+                data["inference_variables"], log_det_jac=log_det_jac
+            )
+
+            # Optionally keep track of appropriate log_det_jac.
+            if log_det_jac:
+                data["inference_variables"], log_det_std = standardized
+                log_det_jac_inference_variables += keras.ops.convert_to_numpy(log_det_std)
+            else:
+                data["inference_variables"] = standardized
+
+        # Convert to tensor and return.
+        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+        if log_det_jac:
+            return data, log_det_jac
+        else:
+            return data
 
     def _sample(
         self,
@@ -517,24 +554,14 @@ class ContinuousApproximator(Approximator):
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
-        data, log_det_jac = self.adapter(data, strict=False, stage="inference", log_det_jac=True, **kwargs)
-        log_det_jac = log_det_jac.get("inference_variables", 0.0)
+        # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac.
+        data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
 
-        # Optionally standardize conditions
-        for key in ContinuousApproximator.CONDITION_KEYS:
-            if key in data and key in self.standardize:
-                data[key] = self.standardize_layers[key](data[key])
-
-        # Optionally standardize inference variables
-        if "inference_variables" in self.standardize:
-            data["inference_variables"], log_det_std = self.standardize_layers["inference_variables"](
-                data["inference_variables"], log_det_jac=True
-            )
-            log_det_jac += keras.ops.convert_to_numpy(log_det_std)
-
-        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+        # Pass data to networks and convert back to numpy array.
         log_prob = self._log_prob(**data, **kwargs)
         log_prob = keras.ops.convert_to_numpy(log_prob)
+
+        # Change of variables formula.
         log_prob = log_prob + log_det_jac
 
         return log_prob

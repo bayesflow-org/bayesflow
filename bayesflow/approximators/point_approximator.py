@@ -55,8 +55,10 @@ class PointApproximator(ContinuousApproximator):
             Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, point_estimate_size, variable_block_size).
         """
-
-        conditions = self._prepare_conditions(conditions, **kwargs)
+        # Adapt, optionally standardize and convert conditions to tensor.
+        conditions = self._prepare_data(conditions, **kwargs)
+        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
 
         estimates = self._estimate(**conditions, **kwargs)
         estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
@@ -110,9 +112,19 @@ class PointApproximator(ContinuousApproximator):
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, num_samples, variable_block_size).
         """
-        conditions = self._prepare_conditions(conditions, **kwargs)
+        # Adapt, optionally standardize and convert conditions to tensor.
+        conditions = self._prepare_data(conditions, **kwargs)
+        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
 
+        # Sample and undo optional standardization
         samples = self._sample(num_samples, **conditions, **kwargs)
+
+        if "inference_variables" in self.standardize:
+            for score_key in samples.keys():
+                samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
+
+        samples = {"inference_variables": samples}
         samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
 
         if split:
@@ -152,20 +164,20 @@ class PointApproximator(ContinuousApproximator):
 
             Log-probabilities have shape (num_datasets,).
         """
-        return super().log_prob(data=data, **kwargs)
+        # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac
+        data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
 
-    def _prepare_conditions(self, conditions: Mapping[str, np.ndarray], **kwargs) -> dict[str, Tensor]:
-        """Adapts, optionally standardizes, and converts the conditions to tensors."""
+        # Pass data to networks and convert back to numpy array
+        log_prob = self._log_prob(**data, **kwargs)
+        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
 
-        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
+        # Change of variables formula, respecting log_prob to be a dictionary
+        if log_det_jac is not None:
+            log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
 
-        # Optionally standardize conditions
-        for key, value in conditions.items():
-            if key in self.standardize:
-                conditions[key] = self.standardize_layers[key](value)
+        log_prob = PointApproximator._squeeze_parametric_score_major_dict(log_prob)
 
-        return keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
+        return log_prob
 
     def _apply_inverse_adapter_to_estimates(
         self, estimates: Mapping[str, Mapping[str, Tensor]], **kwargs

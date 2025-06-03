@@ -7,6 +7,7 @@ import pandas as pd
 import seaborn as sns
 
 from bayesflow.utils.dict_utils import dicts_to_arrays
+from bayesflow.utils.plot_utils import create_legends
 
 from .pairs_samples import _pairs_samples
 
@@ -113,24 +114,50 @@ def pairs_posterior(
         g.map_diag(plot_true_params_as_lines, color=target_color)
         g.map_offdiag(plot_true_params_as_points, color=target_color)
 
-        target_handle = plt.Line2D(
-            [0], [0],
-            color=target_color,
-            linestyle="--",
-            marker="x",
-            label="Targets"
+        create_legends(
+            g, plot_data, color=post_color, color2=prior_color, fontsize=legend_fontsize, show_single_legend=False
         )
 
-        diag_ax = g.axes[0, 0]
-        # Collect histogram legend handles
-        hist_handles = getattr(diag_ax, '_legend_handles', [])
-
-        # Collect labels and handles from regular plots (if any)
-        handles, labels = g.axes[0, 0].get_legend_handles_labels()
-
-        handles = hist_handles + [target_handle]
-        labels = [h.get_label() for h in handles]  # safer to refresh labels
-        g.fig.legend(handles=handles, labels=labels, loc="center right", frameon=False, fontsize=legend_fontsize)
+        # target_handle = plt.Line2D(
+        #     [0], [0],
+        #     color=target_color,
+        #     linestyle="--",
+        #     marker="x",
+        #     label="Targets",
+        # )
+        #
+        # for ax in g.axes.flat:
+        #     if getattr(ax, "legend_", None) is not None:
+        #         ax.legend_.remove()
+        #
+        # diag_ax = g.axes[0, 0]
+        # # Collect histogram legend handles
+        # # hist_handles = getattr(diag_ax, '_legend_handles', [])
+        #
+        # hist_handles, hist_labels = diag_ax.get_legend_handles_labels()
+        #
+        # handles = []
+        # labels = []
+        #
+        # for handle, label in zip(hist_handles, hist_labels):
+        #
+        #     if label != "Targets":
+        #         handles.append(handle)
+        #         labels.append(label)
+        #
+        # handles.append(target_handle)
+        # labels.append(target_handle.get_label())
+        #
+        # # handles = hist_handles + [target_handle]
+        # # labels = hist_labels + [target_handle.get_label()]  # safer to refresh labels
+        #
+        # g.figure.legend(
+        #     handles=handles,
+        #     labels=labels,
+        #     loc="center right",
+        #     frameon=False,
+        #     fontsize=legend_fontsize
+        # )
 
     return g
 
@@ -140,10 +167,10 @@ def plot_true_params_as_lines(x, hue=None, color=None, **kwargs):
     # hue needs to be added to handle the case of plotting both posterior and prior
     param = x.iloc[0]  # Get the single true value for the diagonal
     # only plot on the diagonal a vertical line for the true parameter
-    plt.axvline(param, color=color, linestyle="--", label="Target (Line)")
+    plt.axvline(param, color=color, linestyle="--")
 
 
-def plot_true_params_as_points(x, y, color=None, marker='x', **kwargs):
+def plot_true_params_as_points(x, y, color=None, marker="x", **kwargs):
     """Custom function to plot true parameters on the off-diagonal as a single point."""
     if len(x) > 0 and len(y) > 0:
         plt.scatter(x.iloc[0], y.iloc[0], color=color, marker=marker, **kwargs)

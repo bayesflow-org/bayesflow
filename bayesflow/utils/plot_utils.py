@@ -6,7 +6,7 @@ import seaborn as sns
 
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, Patch
 from matplotlib.legend_handler import HandlerPatch
 
 from .validators import check_estimates_prior_shapes
@@ -357,4 +357,38 @@ def add_gradient_plot(
             edgecolors="none",
             label=label,
             alpha=0.01,
+        )
+
+
+def create_legends(
+    g, plot_data, color, color2, label: str = "Posterior", show_single_legend: bool = False, fontsize: int = 14
+):
+    handles = []
+    labels = []
+
+    if plot_data.get("priors") is not None:
+        prior_handle = Patch(color=color2, label="Prior")
+        prior_label = "Prior"
+        handles.append(prior_handle)
+        labels.append(prior_label)
+
+    posterior_handle = Patch(color=color, label="Posterior")
+    posterior_label = label
+    handles.append(posterior_handle)
+    labels.append(posterior_label)
+
+    if plot_data.get("targets") is not None:
+        target_handle = plt.Line2D([0], [0], color="r", linestyle="--", marker="x", label="Targets")
+        target_label = "Targets"
+        handles.append(target_handle)
+        labels.append(target_label)
+
+    if len(handles) > 1 or show_single_legend:
+        g.figure.legend(
+            handles=handles,
+            labels=labels,
+            loc="center right",
+            bbox_to_anchor=(1.2, 0.5),
+            frameon=False,
+            fontsize=fontsize,
         )

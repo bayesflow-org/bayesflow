@@ -5,10 +5,10 @@ import pandas as pd
 import seaborn as sns
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
 
 from bayesflow.utils import logging
 from bayesflow.utils.dict_utils import dicts_to_arrays
+from bayesflow.utils.plot_utils import create_legends
 
 
 def pairs_samples(
@@ -18,8 +18,10 @@ def pairs_samples(
     height: float = 2.5,
     color: str | tuple = "#132a70",
     alpha: float = 0.9,
+    label: str = "Posterior",
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
+    show_single_legend: bool = False,
     **kwargs,
 ) -> sns.PairGrid:
     """
@@ -60,8 +62,11 @@ def pairs_samples(
         height=height,
         color=color,
         alpha=alpha,
+        label=label,
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
+        show_single_legend=show_single_legend,
+        **kwargs,
     )
 
     return g
@@ -73,9 +78,11 @@ def _pairs_samples(
     color: str | tuple = "#132a70",
     color2: str | tuple = "gray",
     alpha: float = 0.9,
+    label: str = "Posterior",
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
+    show_single_legend: bool = False,
     **kwargs,
 ) -> sns.PairGrid:
     # internal version of pairs_samples creating the seaborn plot
@@ -167,9 +174,19 @@ def _pairs_samples(
         g.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
 
     # need to add legend here such that colors are recognized
-    if plot_data["priors"] is not None:
-        g.add_legend(fontsize=legend_fontsize, loc="center right")
-        g._legend.set_title(None)
+    # if plot_data["priors"] is not None:
+    #     g.add_legend(fontsize=legend_fontsize, loc="center right")
+    #     g._legend.set_title(None)
+
+    create_legends(
+        g,
+        plot_data,
+        color=color,
+        color2=color2,
+        fontsize=legend_fontsize,
+        label=label,
+        show_single_legend=show_single_legend,
+    )
 
     # Return figure
     g.tight_layout()
@@ -190,14 +207,14 @@ def histplot_twinx(x, **kwargs):
     ax = plt.gca()
 
     # create a histogram on the twin axis
-    sns.histplot(x, **kwargs)
+    sns.histplot(x, legend=False, **kwargs)
 
-    if label is not None:
-        legend_artist = Patch(color=color, label=label)
-        # Store the artist for later
-        if not hasattr(ax, '_legend_handles'):
-            ax._legend_handles = []
-        ax._legend_handles.append(legend_artist)
+    # if label is not None:
+    #     legend_artist = Patch(color=color, label=label)
+    #     # Store the artist for later
+    #     if not hasattr(ax, '_legend_handles'):
+    #         ax._legend_handles = []
+    #     ax._legend_handles.append(legend_artist)
 
     # make the twin axis invisible
     plt.gca().spines["right"].set_visible(False)

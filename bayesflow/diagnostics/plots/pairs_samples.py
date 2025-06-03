@@ -196,7 +196,7 @@ def _pairs_samples(
         plot_data,
         color=color,
         color2=color2,
-        fontsize=legend_fontsize,
+        legend_fontsize=legend_fontsize,
         label=label,
         show_single_legend=show_single_legend,
     )

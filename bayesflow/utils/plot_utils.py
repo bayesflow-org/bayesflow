@@ -383,12 +383,13 @@ def create_legends(
         handles.append(target_handle)
         labels.append(target_label)
 
+    # If there are more than one dataset to plot,
     if len(handles) > 1 or show_single_legend:
         g.figure.legend(
             handles=handles,
             labels=labels,
-            loc="center right",
-            bbox_to_anchor=(1.2, 0.5),
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
             frameon=False,
             fontsize=fontsize,
         )

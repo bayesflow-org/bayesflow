@@ -194,33 +194,22 @@ def _pairs_samples(
     return g
 
 
-# create a histogram plot on a twin y axis
-# this ensures that the y scaling of the diagonal plots
-# in independent of the y scaling of the off-diagonal plots
 def histplot_twinx(x, **kwargs):
-    # Create a twin axis
-    # ax2 = plt.gca().twinx()
+    """
+    # create a histogram plot on a twin y axis
+    # this ensures that the y scaling of the diagonal plots
+    # in independent of the y scaling of the off-diagonal plots
 
-    label = kwargs.pop("labels", None)
-    color = kwargs.get("colors", None)
-
-    ax = plt.gca()
-
+    Parameters
+    ----------
+    x : np.ndarray
+        Data to be plotted.
+    """
     # create a histogram on the twin axis
     sns.histplot(x, legend=False, **kwargs)
-
-    # if label is not None:
-    #     legend_artist = Patch(color=color, label=label)
-    #     # Store the artist for later
-    #     if not hasattr(ax, '_legend_handles'):
-    #         ax._legend_handles = []
-    #     ax._legend_handles.append(legend_artist)
 
     # make the twin axis invisible
     plt.gca().spines["right"].set_visible(False)
     plt.gca().spines["top"].set_visible(False)
-    # ax2.set_ylabel("")
-    # ax2.set_yticks([])
-    # ax2.set_yticklabels([])
 
     return None

@@ -117,7 +117,12 @@ def pairs_posterior(
         g.map_offdiag(plot_true_params_as_points, color=target_color)
 
         create_legends(
-            g, plot_data, color=post_color, color2=prior_color, legend_fontsize=legend_fontsize, show_single_legend=False
+            g,
+            plot_data,
+            color=post_color,
+            color2=prior_color,
+            legend_fontsize=legend_fontsize,
+            show_single_legend=False,
         )
 
     return g

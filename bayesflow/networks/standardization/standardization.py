@@ -3,45 +3,44 @@ from collections.abc import Sequence
 import keras
 
 from bayesflow.types import Tensor, Shape
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils.serialization import serializable
 from bayesflow.utils import expand_left_as, layer_kwargs
 
 
 @serializable("bayesflow.networks")
 class Standardization(keras.Layer):
-    def __init__(self, momentum: float = 0.95, epsilon: float = 1e-6, **kwargs):
+    def __init__(self, **kwargs):
         """
-        Initializes a Standardization layer that will keep track of the running mean and
-        running standard deviation across a batch of tensors.
+        Initializes a Standardization layer that tracks the running mean and standard deviation per
+        feature for online normalization.
+
+        The layer computes and stores running estimates of the mean and variance using a numerically
+        stable online algorithm, allowing for consistent normalization during both training and inference,
+        regardless of batch composition.
 
         Parameters
         ----------
-        momentum : float, optional
-            Momentum for the exponential moving average used to update the mean and
-            standard deviation during training. Must be between 0 and 1.
-            Default is 0.95.
-        epsilon: float, optional
-            Stability parameter to avoid division by zero.
+        **kwargs
+            Additional keyword arguments passed to the base Keras Layer.
+
+        Notes
+        -----
         """
         super().__init__(**layer_kwargs(kwargs))
 
-        self.momentum = momentum
-        self.epsilon = epsilon
         self.moving_mean = None
-        self.moving_std = None
+        self.moving_M2 = None
+        self.count = None
+
+    @property
+    def moving_std(self):
+        return keras.ops.sqrt(self.moving_M2 / self.count)
 
     def build(self, input_shape: Shape):
-        self.moving_mean = self.add_weight(shape=(input_shape[-1],), initializer="zeros", trainable=False)
-        self.moving_std = self.add_weight(shape=(input_shape[-1],), initializer="ones", trainable=False)
-
-    def get_config(self) -> dict:
-        base_config = super().get_config()
-        config = {"momentum": self.momentum, "epsilon": self.epsilon}
-        return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
+        feature_dim = input_shape[-1]
+        self.moving_mean = self.add_weight(shape=(feature_dim,), initializer="zeros", trainable=False)
+        self.moving_M2 = self.add_weight(shape=(feature_dim,), initializer="ones", trainable=False)
+        self.count = self.add_weight(shape=(), initializer="zeros", trainable=False, dtype="int64")
 
     def call(
         self, x: Tensor, stage: str = "inference", forward: bool = True, log_det_jac: bool = False, **kwargs
@@ -88,9 +87,36 @@ class Standardization(keras.Layer):
         return x
 
     def _update_moments(self, x: Tensor):
-        mean = keras.ops.mean(x, axis=tuple(range(keras.ops.ndim(x) - 1)))
-        std = keras.ops.std(x, axis=tuple(range(keras.ops.ndim(x) - 1)))
-        std = keras.ops.maximum(std, self.epsilon)
+        """
+        Incrementally updates the running mean and variance (M2) per feature using a numerically
+        stable online algorithm.
 
-        self.moving_mean.assign(self.momentum * self.moving_mean + (1.0 - self.momentum) * mean)
-        self.moving_std.assign(self.momentum * self.moving_std + (1.0 - self.momentum) * std)
+        Parameters
+        ----------
+        x : Tensor
+            Input tensor of shape (..., features), where all axes except the last are treated as batch/sample axes.
+            The method computes batch-wise statistics by aggregating over all non-feature axes and updates the
+            running totals (mean, M2, and sample count) accordingly.
+        """
+
+        reduce_axes = tuple(range(x.ndim - 1))
+        batch_count = keras.ops.cast(keras.ops.shape(x)[0], self.count.dtype)
+
+        # Compute batch mean and M2 per feature
+        batch_mean = keras.ops.mean(x, axis=reduce_axes)
+        batch_M2 = keras.ops.sum((x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
+
+        # Read current totals
+        mean = self.moving_mean
+        M2 = self.moving_M2
+        count = self.count
+
+        total_count = count + batch_count
+        delta = batch_mean - mean
+
+        new_mean = mean + delta * (batch_count / total_count)
+        new_M2 = M2 + batch_M2 + (delta**2) * (count * batch_count / total_count)
+
+        self.moving_mean.assign(new_mean)
+        self.moving_M2.assign(new_M2)
+        self.count.assign(total_count)

@@ -50,3 +50,44 @@ def summary_network(request):
                 return self.inner(x, training=kwargs.get("stage") == "training")
 
         return Custom()
+
+
+@pytest.fixture
+def fusion_inference_network():
+    from bayesflow.networks import CouplingFlow
+
+    return CouplingFlow()
+
+
+@pytest.fixture
+def fusion_summary_network():
+    from bayesflow.networks import FusionNetwork, DeepSet
+
+    return FusionNetwork({"a": DeepSet(), "b": keras.layers.Flatten()}, head=keras.layers.Dense(2))
+
+
+@pytest.fixture
+def fusion_simulator():
+    from bayesflow.simulators import Simulator
+    from bayesflow.types import Shape, Tensor
+    from bayesflow.utils.decorators import allow_batch_size
+    import numpy as np
+
+    class FusionSimulator(Simulator):
+        @allow_batch_size
+        def sample(self, batch_shape: Shape, num_observations: int = 4) -> dict[str, Tensor]:
+            mean = np.random.normal(0.0, 0.1, size=batch_shape + (2,))
+            noise = np.random.standard_normal(batch_shape + (num_observations, 2))
+
+            x = mean[:, None] + noise
+
+            return dict(mean=mean, a=x, b=x)
+
+    return FusionSimulator()
+
+
+@pytest.fixture
+def fusion_adapter():
+    from bayesflow import Adapter
+
+    return Adapter.create_default(["mean"]).group(["a", "b"], "summary_variables")

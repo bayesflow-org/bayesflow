@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union, Literal
+from typing import Literal
 
 from keras import ops
 
@@ -33,7 +33,7 @@ class NoiseSchedule(ABC):
         weighting: Literal["sigmoid", "likelihood_weighting"] = None,
     ):
         """
-        Initialize the noise schedule.
+        Initialize the noise schedule with given variance and weighting strategy.
 
         Parameters
         ----------
@@ -54,21 +54,23 @@ class NoiseSchedule(ABC):
         self._weighting = weighting
 
     @abstractmethod
-    def get_log_snr(self, t: Union[float, Tensor], training: bool) -> Tensor:
+    def get_log_snr(self, t: float | Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         pass
 
     @abstractmethod
-    def get_t_from_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
+    def get_t_from_log_snr(self, log_snr_t: float | Tensor, training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         pass
 
     @abstractmethod
-    def derivative_log_snr(self, log_snr_t: Union[float, Tensor], training: bool) -> Tensor:
+    def derivative_log_snr(self, log_snr_t: float | Tensor, training: bool) -> Tensor:
         r"""Compute \beta(t) = d/dt log(1 + e^(-snr(t))). This is usually used for the reverse SDE."""
         pass
 
-    def get_drift_diffusion(self, log_snr_t: Tensor, x: Tensor = None, training: bool = False) -> tuple[Tensor, Tensor]:
+    def get_drift_diffusion(
+        self, log_snr_t: Tensor, x: Tensor = None, training: bool = False
+    ) -> Tensor | tuple[Tensor, Tensor]:
         r"""Compute the drift and optionally the squared diffusion term for the reverse SDE.
         It can be derived from the derivative of the schedule:
 
@@ -97,10 +99,10 @@ class NoiseSchedule(ABC):
             raise ValueError(f"Unknown variance type: {self._variance_type}")
         return f, beta
 
-    def get_alpha_sigma(self, log_snr_t: Tensor, training: bool) -> tuple[Tensor, Tensor]:
+    def get_alpha_sigma(self, log_snr_t: Tensor) -> tuple[Tensor, Tensor]:
         """Get alpha and sigma for a given log signal-to-noise ratio (lambda).
 
-        Default is a variance preserving schedule::
+        Default is a variance preserving schedule:
 
             alpha(t) = sqrt(sigmoid(log_snr_t))
             sigma(t) = sqrt(sigmoid(-log_snr_t))
@@ -120,9 +122,32 @@ class NoiseSchedule(ABC):
         return alpha_t, sigma_t
 
     def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
-        """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda).
-        Default weighting is None, which means only ones are returned.
-        Generally, weighting functions should be defined for a noise prediction loss.
+        """
+        Compute loss weights based on log signal-to-noise ratio (log-SNR).
+
+        This method returns a tensor of weights used for loss re-weighting in diffusion models,
+        depending on the selected strategy. If no weighting is specified, uniform weights (ones)
+        are returned.
+
+        Supported weighting strategies:
+        - "sigmoid": Based on Kingma et al. (2023), uses a sigmoid of shifted log-SNR.
+        - "likelihood_weighting": Based on Song et al. (2021), uses ratio of diffusion drift
+          to squared noise scale.
+
+        Parameters
+        ----------
+        log_snr_t : Tensor
+            A tensor containing the log signal-to-noise ratio values.
+
+        Returns
+        -------
+        Tensor
+            A tensor of weights corresponding to each log-SNR value.
+
+        Raises
+        ------
+        TypeError
+            If the weighting strategy specified in `self._weighting` is unknown.
         """
         if self._weighting is None:
             return ops.ones_like(log_snr_t)
@@ -131,14 +156,14 @@ class NoiseSchedule(ABC):
             return ops.sigmoid(-log_snr_t + 2)
         elif self._weighting == "likelihood_weighting":
             # likelihood weighting based on Song et al. (2021)
-            g_squared = self.get_drift_diffusion(log_snr_t=log_snr_t)
-            sigma_t = self.get_alpha_sigma(log_snr_t=log_snr_t, training=True)[1]
+            g_squared = self.get_drift_diffusion(log_snr_t)
+            _, sigma_t = self.get_alpha_sigma(log_snr_t)
             return g_squared / ops.square(sigma_t)
         else:
             raise TypeError(f"Unknown weighting type: {self._weighting}")
 
     def get_config(self):
-        return dict(name=self.name, variance_type=self._variance_type, weighting=self._weighting)
+        return {"name": self.name, "variance_type": self._variance_type, "weighting": self._weighting}
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -146,18 +171,22 @@ class NoiseSchedule(ABC):
 
     def validate(self):
         """Validate the noise schedule."""
+
         if self.log_snr_min >= self.log_snr_max:
             raise ValueError("min_log_snr must be less than max_log_snr.")
-        for training in [True, False]:
+
+        # Validate log SNR values and corresponding time mappings for both training and inference
+        for training in (True, False):
             if not ops.isfinite(self.get_log_snr(0.0, training=training)):
-                raise ValueError(f"log_snr(0) must be finite with training={training}.")
+                raise ValueError(f"log_snr(0.0) must be finite (training={training})")
             if not ops.isfinite(self.get_log_snr(1.0, training=training)):
-                raise ValueError(f"log_snr(1) must be finite with training={training}.")
+                raise ValueError(f"log_snr(1.0) must be finite (training={training})")
             if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_max, training=training)):
-                raise ValueError(f"t(0) must be finite with training={training}.")
+                raise ValueError(f"t(log_snr_max) must be finite (training={training})")
             if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_min, training=training)):
-                raise ValueError(f"t(1) must be finite with training={training}.")
-        if not ops.isfinite(self.derivative_log_snr(self.log_snr_max, training=False)):
-            raise ValueError("dt/t log_snr(0) must be finite.")
-        if not ops.isfinite(self.derivative_log_snr(self.log_snr_min, training=False)):
-            raise ValueError("dt/t log_snr(1) must be finite.")
+                raise ValueError(f"t(log_snr_min) must be finite (training={training})")
+
+        # Validate log SNR derivatives at the boundaries
+        for boundary, name in [(self.log_snr_max, "log_snr_max (t=0)"), (self.log_snr_min, "log_snr_min (t=1)")]:
+            if not ops.isfinite(self.derivative_log_snr(boundary, training=False)):
+                raise ValueError(f"derivative_log_snr at {name} must be finite.")

@@ -20,8 +20,6 @@ def test_approximator_sample(point_approximator, simulator, batch_size, num_samp
 
     assert isinstance(samples, dict)
 
-    print(keras.tree.map_structure(keras.ops.shape, samples))
-
     # Expect doubly nested sample dictionary if more than one samplable score is available.
     scores_for_sampling = [
         score

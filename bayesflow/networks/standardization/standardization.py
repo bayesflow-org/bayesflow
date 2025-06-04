@@ -5,14 +5,15 @@ import keras
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils.serialization import serializable
 from bayesflow.utils import expand_left_as, layer_kwargs
+from bayesflow.utils.tree import flatten_shape
 
 
 @serializable("bayesflow.networks")
 class Standardization(keras.Layer):
     def __init__(self, **kwargs):
         """
-        Initializes a Standardization layer that tracks the running mean and standard deviation per
-        feature for online normalization.
+        Initializes a Standardization layer that will keep track of the running mean and
+        running standard deviation across a batch of potentially nested tensors.
 
         The layer computes and stores running estimates of the mean and variance using a numerically
         stable online algorithm, allowing for consistent normalization during both training and inference,
@@ -29,64 +30,82 @@ class Standardization(keras.Layer):
         super().__init__(**layer_kwargs(kwargs))
 
         self.moving_mean = None
-        self.moving_M2 = None
+        self.moving_m2 = None
         self.count = None
 
-    @property
-    def moving_std(self):
-        return keras.ops.sqrt(self.moving_M2 / self.count)
+    def moving_std(self, index: int) -> Tensor:
+        return keras.ops.sqrt(self.moving_m2[index] / self.count)
 
     def build(self, input_shape: Shape):
-        feature_dim = input_shape[-1]
-        self.moving_mean = self.add_weight(shape=(feature_dim,), initializer="zeros", trainable=False)
-        self.moving_M2 = self.add_weight(shape=(feature_dim,), initializer="ones", trainable=False)
+        flattened_shapes = flatten_shape(input_shape)
+
+        self.moving_mean = [
+            self.add_weight(shape=(shape[-1],), initializer="zeros", trainable=False) for shape in flattened_shapes
+        ]
+        self.moving_m2 = [
+            self.add_weight(shape=(shape[-1],), initializer="ones", trainable=False) for shape in flattened_shapes
+        ]
         self.count = self.add_weight(shape=(), initializer="zeros", trainable=False, dtype="int64")
 
     def call(
-        self, x: Tensor, stage: str = "inference", forward: bool = True, log_det_jac: bool = False, **kwargs
+        self,
+        x: Tensor | dict[str, Tensor],
+        stage: str = "inference",
+        forward: bool = True,
+        log_det_jac: bool = False,
+        **kwargs,
     ) -> Tensor | Sequence[Tensor]:
         """
-        Apply standardization or its inverse to the input tensor, optionally compute the log det of the Jacobian.
+        Apply standardization or its inverse to the input tensor. Optionally compute the log determinant
+        of the Jacobian (useful for flows or density estimation).
 
         Parameters
         ----------
         x : Tensor
             Input tensor of shape (..., dim).
         stage : str, optional
-            Indicates the stage of computation. If "training", the running statistics
-            are updated. Default is "inference".
+            Indicates the stage of computation. If "training", running statistics are updated.
         forward : bool, optional
-            If True, apply standardization: (x - mean) / std.
-            If False, apply inverse transformation: x * std + mean and return the log-determinant
-            of the Jacobian. Default is True.
-        log_det_jac: bool, optional
-            Whether to return the log determinant of the transformation. Default is False.
+            If True, apply standardization: (x - mean) / std. Otherwise, inverse transform.
+        log_det_jac : bool, optional
+            Whether to return the log determinant of the Jacobian. Default is False.
 
         Returns
         -------
         Tensor or Sequence[Tensor]
-            If `forward` is True, returns the standardized tensor, otherwise un-standardizes.
-            If `log_det_jec` is True, returns a tuple: (transformed tensor, log-determinant) otherwise just
-            transformed tensor.
+            Transformed tensor, and optionally the log-determinant if `log_det_jac=True`.
         """
-        if stage == "training":
-            self._update_moments(x)
+        flattened = keras.tree.flatten(x)
+        outputs, log_det_jacs = [], []
 
-        if forward:
-            x = (x - expand_left_as(self.moving_mean, x)) / expand_left_as(self.moving_std, x)
-        else:
-            x = expand_left_as(self.moving_mean, x) + expand_left_as(self.moving_std, x) * x
+        for idx, val in enumerate(flattened):
+            if stage == "training":
+                self._update_moments(val, idx)
 
-        if log_det_jac:
-            ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(self.moving_std)), axis=-1)
-            ldj = keras.ops.broadcast_to(ldj, keras.ops.shape(x)[:-1])
+            mean = expand_left_as(self.moving_mean[idx], val)
+            std = expand_left_as(self.moving_std(idx), val)
+
             if forward:
-                ldj = -ldj
-            return x, ldj
+                out = (val - mean) / std
+            else:
+                out = mean + std * val
 
-        return x
+            outputs.append(out)
 
-    def _update_moments(self, x: Tensor):
+            if log_det_jac:
+                ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(std)), axis=-1)
+                # For convenience, tile to batch shape of val
+                ldj = keras.ops.tile(ldj, keras.ops.shape(val)[:-1])
+                log_det_jacs.append(-ldj if forward else ldj)
+
+        outputs = keras.tree.pack_sequence_as(x, outputs)
+        if log_det_jac:
+            log_det_jacs = keras.tree.pack_sequence_as(x, log_det_jacs)
+            return outputs, log_det_jacs
+
+        return outputs
+
+    def _update_moments(self, x: Tensor, index: int):
         """
         Incrementally updates the running mean and variance (M2) per feature using a numerically
         stable online algorithm.
@@ -97,6 +116,8 @@ class Standardization(keras.Layer):
             Input tensor of shape (..., features), where all axes except the last are treated as batch/sample axes.
             The method computes batch-wise statistics by aggregating over all non-feature axes and updates the
             running totals (mean, M2, and sample count) accordingly.
+        index : int
+            The index of the corresponding running statistics to be updated.
         """
 
         reduce_axes = tuple(range(x.ndim - 1))
@@ -104,19 +125,19 @@ class Standardization(keras.Layer):
 
         # Compute batch mean and M2 per feature
         batch_mean = keras.ops.mean(x, axis=reduce_axes)
-        batch_M2 = keras.ops.sum((x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
+        batch_m2 = keras.ops.sum((x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
 
         # Read current totals
-        mean = self.moving_mean
-        M2 = self.moving_M2
+        mean = self.moving_mean[index]
+        m2 = self.moving_m2[index]
         count = self.count
 
         total_count = count + batch_count
         delta = batch_mean - mean
 
         new_mean = mean + delta * (batch_count / total_count)
-        new_M2 = M2 + batch_M2 + (delta**2) * (count * batch_count / total_count)
+        new_m2 = m2 + batch_m2 + (delta**2) * (count * batch_count / total_count)
 
-        self.moving_mean.assign(new_mean)
-        self.moving_M2.assign(new_M2)
+        self.moving_mean[index].assign(new_mean)
+        self.moving_m2[index].assign(new_m2)
         self.count.assign(total_count)

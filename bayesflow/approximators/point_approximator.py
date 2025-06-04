@@ -5,7 +5,7 @@ import numpy as np
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict, logging
+from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict, logging, concatenate_valid
 from bayesflow.utils.serialization import serializable
 
 from .continuous_approximator import ContinuousApproximator
@@ -55,13 +55,18 @@ class PointApproximator(ContinuousApproximator):
             Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, point_estimate_size, variable_block_size).
         """
+        # Adapt, optionally standardize and convert conditions to tensor.
+        conditions = self._prepare_data(conditions, **kwargs)
+        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
 
-        conditions = self._prepare_conditions(conditions, **kwargs)
         estimates = self._estimate(**conditions, **kwargs)
         estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
+
         # Optionally split the arrays along the last axis.
         if split:
             estimates = split_arrays(estimates, axis=-1)
+
         # Reorder the nested dictionary so that original variable names are at the top.
         estimates = PointApproximator._reorder_estimates(estimates)
         # Remove unnecessary nesting.
@@ -107,10 +112,21 @@ class PointApproximator(ContinuousApproximator):
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, num_samples, variable_block_size).
         """
-        conditions = self._prepare_conditions(conditions, **kwargs)
+        # Adapt, optionally standardize and convert conditions to tensor.
+        conditions = self._prepare_data(conditions, **kwargs)
+        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
+        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
+
+        # Sample and undo optional standardization
         samples = self._sample(num_samples, **conditions, **kwargs)
+
+        if "inference_variables" in self.standardize:
+            for score_key in samples.keys():
+                samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
+
+        samples = {"inference_variables": samples}
         samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
-        # Optionally split the arrays along the last axis.
+
         if split:
             raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
 
@@ -148,19 +164,20 @@ class PointApproximator(ContinuousApproximator):
 
             Log-probabilities have shape (num_datasets,).
         """
-        log_prob = super().log_prob(data=data, **kwargs)
-        # Squeeze log probabilities dictionary if there's only one key-value pair.
+        # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac
+        data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
+
+        # Pass data to networks and convert back to numpy array
+        log_prob = self._log_prob(**data, **kwargs)
+        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
+
+        # Change of variables formula, respecting log_prob to be a dictionary
+        if log_det_jac is not None:
+            log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
+
         log_prob = PointApproximator._squeeze_parametric_score_major_dict(log_prob)
 
         return log_prob
-
-    def _prepare_conditions(self, conditions: Mapping[str, np.ndarray], **kwargs) -> dict[str, Tensor]:
-        """Adapts and converts the conditions to tensors."""
-
-        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
-
-        return keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
     def _apply_inverse_adapter_to_estimates(
         self, estimates: Mapping[str, Mapping[str, Tensor]], **kwargs
@@ -233,7 +250,7 @@ class PointApproximator(ContinuousApproximator):
     def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
         """Squeezes the dictionary to just the value if there is only one key-value pair."""
         if len(samples) == 1:
-            return next(iter(samples.values()))  # Extract and return the only item's value
+            return next(iter(samples.values()))
         return samples
 
     def _estimate(
@@ -242,21 +259,14 @@ class PointApproximator(ContinuousApproximator):
         summary_variables: Tensor = None,
         **kwargs,
     ) -> dict[str, dict[str, Tensor]]:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
+        if (self.summary_network is None) != (summary_variables is None):
+            raise ValueError("Summary variables and summary network must be used together.")
 
+        if self.summary_network is not None:
             summary_outputs = self.summary_network(
                 summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
             )
-
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=1)
+            inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 
         return self.inference_network(
             conditions=inference_conditions,

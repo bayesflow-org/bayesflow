@@ -89,6 +89,8 @@ class FusionNetwork(SummaryNetwork):
         **kwargs
             Additional keyword arguments.
         """
+        if not self.built:
+            self.build(keras.tree.map_structure(keras.ops.shape, inputs))
         metrics = {"loss": [], "outputs": []}
 
         for k in self._ordered_keys:

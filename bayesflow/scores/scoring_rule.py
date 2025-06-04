@@ -26,16 +26,42 @@ class ScoringRule:
     and covariance simultaneously.
     """
 
-    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = tuple()
+    NOT_TRANSFORMING_LIKE_VECTOR_WARNING: tuple[str] = tuple()
     """
-    This variable contains names of prediction heads that should lead to a warning when the adapter is applied
-    in inverse direction to them.
+    Names of prediction heads for which to warn if the adapter is called on their estimates in inverse direction.
 
     Prediction heads can output estimates in spaces other than the target distribution space.
     To such estimates the adapter cannot be straightforwardly applied in inverse direction,
     because the adapter is built to map vectors from the inference variable space. When subclassing
     :py:class:`ScoringRule`, add the names of such heads to the following list to warn users about difficulties
     with a type of estimate whenever the adapter is applied to them in inverse direction.
+    """
+
+    RANK: dict[str, int] = {}
+    """
+    Mapping of prediction head names to their tensor rank for inverse standardization.
+
+    The rank indicates the power to which the standard deviation is raised before being multiplied to some estimate
+    in standardized space.
+
+    x = x' * sigma ^ rank [ + mean ]
+
+    If a head is not present in this mapping, a default rank of 1 is assumed.
+
+    Typically, if :py:attr:`RANK` is modified for an estimate, it is also included in :py:attr:`NO_SHIFT`.
+    """
+
+    NO_SHIFT: tuple[str] = tuple()
+    """
+    Names of prediction heads whose estimates should not be shifted when applying inverse standardization.
+
+    During inverse standardization, point estimates are typically shifted by the stored mean vector. Any head
+    listed in this tuple will skip the shift step and only be scaled. By default, this tuple is empty,
+    meaning all heads will be shifted to undo standardization.
+
+    x = x' * sigma ^ rank + mean
+
+    See also :py:attr:`RANK`.
     """
 
     def __init__(

@@ -26,6 +26,17 @@ class MultivariateNormalScore(ParametricDistributionScore):
     For more information see :py:class:`ScoringRule`.
     """
 
+    RANK: dict[str, int] = {"covariance": 2}
+    """
+    The covariance matrix is a rank 2 tensor and as such the inverse of the standardization operation is
+
+    x = x' * sigma ^ 2
+
+    Accordingly, covariance is also included in :py:attr:`NO_SHIFT`.
+    """
+
+    NO_SHIFT: tuple[str] = ("covariance",)
+
     def __init__(self, dim: int = None, links: dict = None, **kwargs):
         super().__init__(links=links, **kwargs)
 

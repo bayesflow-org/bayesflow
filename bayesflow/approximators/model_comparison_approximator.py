@@ -8,7 +8,7 @@ from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, logging
+from bayesflow.utils import filter_kwargs, logging, concatenate_valid
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
@@ -180,7 +180,10 @@ class ModelComparisonApproximator(Approximator):
 
         summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
 
-        classifier_conditions = self._combine_conditions(classifier_conditions, summary_outputs, stage=stage)
+        if classifier_conditions is not None and "classifier_conditions" in self.standardize:
+            classifier_conditions = self.standardize_layers["classifier_conditions"](classifier_conditions, stage=stage)
+
+        classifier_conditions = concatenate_valid((classifier_conditions, summary_outputs), axis=-1)
 
         logits = self._compute_logits(classifier_conditions)
         cross_entropy = keras.ops.mean(keras.losses.categorical_crossentropy(model_indices, logits, from_logits=True))
@@ -193,48 +196,16 @@ class ModelComparisonApproximator(Approximator):
                 metric.name: metric(model_indices, predictions) for metric in self.classifier_network.metrics
             }
 
-        loss = classifier_metrics.get("loss") + summary_metrics.get("loss", keras.ops.zeros(()))
+        if "loss" in summary_metrics:
+            loss = classifier_metrics["loss"] + summary_metrics["loss"]
+        else:
+            loss = classifier_metrics.pop("loss")
 
         classifier_metrics = {f"{key}/classifier_{key}": value for key, value in classifier_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
         metrics = {"loss": loss} | classifier_metrics | summary_metrics
         return metrics
-
-    def _compute_summary_metrics(self, summary_variables: Tensor, stage: str) -> tuple[dict, Tensor | None]:
-        """Helper function to compute summary metrics and outputs."""
-        if self.summary_network is None:
-            return {}, None
-        if summary_variables is None:
-            raise ValueError("Summary variables are required when a summary network is present.")
-
-        if "summary_variables" in self.standardize:
-            summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
-
-        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
-        summary_outputs = summary_metrics.pop("outputs")
-        return summary_metrics, summary_outputs
-
-    def _combine_conditions(
-        self, classifier_conditions: Tensor | None, summary_outputs: Tensor | None, stage
-    ) -> Tensor:
-        """Helper to combine classifier conditions and summary outputs, if present."""
-        if classifier_conditions is None:
-            return summary_outputs
-
-        if "classifier_conditions" in self.standardize:
-            classifier_conditions = self.standardize_layers["inference_conditions"](classifier_conditions, stage=stage)
-
-        if summary_outputs is None:
-            return classifier_conditions
-
-        return keras.ops.concatenate([classifier_conditions, summary_outputs], axis=-1)
-
-    def _compute_logits(self, classifier_conditions: Tensor) -> Tensor:
-        """Helper to compute projected logits from the classifier network."""
-        logits = self.classifier_network(classifier_conditions)
-        logits = self.logits_projector(logits)
-        return logits
 
     def fit(
         self,
@@ -352,7 +323,7 @@ class ModelComparisonApproximator(Approximator):
         self,
         *,
         conditions: Mapping[str, np.ndarray],
-        logits: bool = False,
+        probs: bool = True,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -363,15 +334,14 @@ class ModelComparisonApproximator(Approximator):
         ----------
         conditions : Mapping[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
-        logits: bool, default=False
-            Should the posterior model probabilities be on the (unconstrained) logit space?
-            If `False`, the output is a unit simplex instead.
+        probs: bool, optional
+            A flag indicating whether model probabilities (True) or logits (False) are returned. Default is True.
         **kwargs : dict
-            Additional keyword arguments for the adapter and classification process.
+            Additional keyword arguments for the adapter and classifier.
 
         Returns
         -------
-        np.ndarray
+        outputs: np.ndarray
             Predicted posterior model probabilities given `conditions`.
         """
 
@@ -389,34 +359,7 @@ class ModelComparisonApproximator(Approximator):
 
         output = self._predict(**conditions, **kwargs)
 
-        if not logits:
-            output = keras.ops.softmax(output)
-
-        output = keras.ops.convert_to_numpy(output)
-
-        return output
-
-    def _predict(self, classifier_conditions: Tensor = None, summary_variables: Tensor = None, **kwargs) -> Tensor:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present")
-
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-
-            if classifier_conditions is None:
-                classifier_conditions = summary_outputs
-            else:
-                classifier_conditions = keras.ops.concatenate([classifier_conditions, summary_outputs], axis=1)
-
-        output = self.classifier_network(classifier_conditions)
-        output = self.logits_projector(output)
-
-        return output
+        return keras.ops.convert_to_numpy(keras.ops.softmax(output) if probs else output)
 
     def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
@@ -448,3 +391,44 @@ class ModelComparisonApproximator(Approximator):
         summaries = keras.ops.convert_to_numpy(summaries)
 
         return summaries
+
+    def _compute_logits(self, classifier_conditions: Tensor) -> Tensor:
+        """Helper to compute projected logits from the classifier network."""
+        logits = self.classifier_network(classifier_conditions)
+        logits = self.logits_projector(logits)
+        return logits
+
+    def _predict(self, classifier_conditions: Tensor = None, summary_variables: Tensor = None, **kwargs) -> Tensor:
+        """Helper method to obtain logits from the internal classifier based on conditions."""
+        if (self.summary_network is None) != (summary_variables is None):
+            raise ValueError("Summary variables and summary network must be used together.")
+
+        if self.summary_network is not None:
+            summary_outputs = self.summary_network(
+                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+            )
+            classifier_conditions = concatenate_valid((classifier_conditions, summary_outputs), axis=-1)
+
+        logits = self._compute_logits(classifier_conditions)
+        return logits
+
+    def _compute_summary_metrics(self, summary_variables: Tensor, stage: str) -> tuple[dict, Tensor | None]:
+        """Helper function to compute summary metrics and outputs."""
+        if self.summary_network is None:
+            return {}, None
+        if summary_variables is None:
+            raise ValueError("Summary variables are required when a summary network is present.")
+
+        if "summary_variables" in self.standardize:
+            summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
+
+        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
+        summary_outputs = summary_metrics.pop("outputs")
+        return summary_metrics, summary_outputs
+
+    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
+        """
+        Fetches the current batch size from an input dictionary. Can only be used during training when
+        model indices as present.
+        """
+        return keras.ops.shape(data["model_indices"])[0]

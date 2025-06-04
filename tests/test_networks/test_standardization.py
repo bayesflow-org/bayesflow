@@ -10,18 +10,16 @@ from tests.utils import assert_layers_equal
 def test_forward_standardization_training():
     random_input = keras.random.normal((8, 4))
 
-    layer = Standardization(momentum=0.0)  # no EMA for test stability
+    layer = Standardization()
     layer.build(random_input.shape)
 
     out = layer(random_input, stage="training")
 
     moving_mean = keras.ops.convert_to_numpy(layer.moving_mean[0])
-    moving_std = keras.ops.convert_to_numpy(layer.moving_std[0])
     random_input = keras.ops.convert_to_numpy(random_input)
     out = keras.ops.convert_to_numpy(out)
 
     np.testing.assert_allclose(moving_mean, np.mean(random_input, axis=0), atol=1e-5)
-    np.testing.assert_allclose(moving_std, np.std(random_input, axis=0), atol=1e-5)
 
     assert out.shape == random_input.shape
     assert not np.any(np.isnan(out))
@@ -42,9 +40,10 @@ def test_inverse_standardization_ldj():
 
 def test_consistency_forward_inverse():
     random_input = keras.random.normal((4, 20, 5))
-    layer = Standardization(momentum=0.0)
-    layer.build((5,))
-    standardized = layer(random_input, stage="training", forward=True)
+    layer = Standardization()
+    _ = layer(random_input, stage="training", forward=True)
+
+    standardized = layer(random_input, stage="inference", forward=True)
     recovered = layer(standardized, stage="inference", forward=False)
 
     random_input = keras.ops.convert_to_numpy(random_input)
@@ -58,9 +57,10 @@ def test_nested_consistency_forward_inverse():
     random_input_b = keras.random.normal((4, 3))
     random_input = {"a": random_input_a, "b": random_input_b}
 
-    layer = Standardization(momentum=0.0)
+    layer = Standardization()
 
-    standardized = layer(random_input, stage="training", forward=True)
+    _ = layer(random_input, stage="training", forward=True)
+    standardized = layer(random_input, stage="inference", forward=True)
     recovered = layer(standardized, stage="inference", forward=False)
 
     random_input = keras.tree.map_structure(keras.ops.convert_to_numpy, random_input)

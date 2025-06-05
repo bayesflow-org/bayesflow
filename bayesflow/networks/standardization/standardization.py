@@ -43,7 +43,7 @@ class Standardization(keras.Layer):
             self.add_weight(shape=(shape[-1],), initializer="zeros", trainable=False) for shape in flattened_shapes
         ]
         self.moving_m2 = [
-            self.add_weight(shape=(shape[-1],), initializer="ones", trainable=False) for shape in flattened_shapes
+            self.add_weight(shape=(shape[-1],), initializer="zeros", trainable=False) for shape in flattened_shapes
         ]
         self.count = self.add_weight(shape=(), initializer="zeros", trainable=False)
 
@@ -79,11 +79,17 @@ class Standardization(keras.Layer):
         outputs, log_det_jacs = [], []
 
         for idx, val in enumerate(flattened):
+            if stage == "training":
+                self._update_moments(val, idx)
+
             mean = expand_left_as(self.moving_mean[idx], val)
             std = expand_left_as(self.moving_std(idx), val)
 
             if forward:
                 out = (val - mean) / std
+                # if the std is zero, out will become nan. As val - mean(val) = 0 if std(val) = 0,
+                # we can just replace them with zeros.
+                out = keras.ops.nan_to_num(out, nan=0.0)
             else:
                 out = mean + std * val
 
@@ -93,9 +99,6 @@ class Standardization(keras.Layer):
                 ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(std)), axis=-1)
                 ldj = keras.ops.tile(ldj, keras.ops.shape(val)[:-1])
                 log_det_jacs.append(-ldj if forward else ldj)
-
-            if stage == "training":
-                self._update_moments(val, idx)
 
         outputs = keras.tree.pack_sequence_as(x, outputs)
         if log_det_jac:

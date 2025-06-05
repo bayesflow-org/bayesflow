@@ -23,6 +23,27 @@ def test_forward_standardization_training():
 
     assert out.shape == random_input.shape
     assert not np.any(np.isnan(out))
+    np.testing.assert_allclose(np.std(out, axis=0), 1.0)
+
+
+def test_forward_standardization_training_constant_batch():
+    constant_input = keras.ops.ones((8, 4))
+
+    layer = Standardization()
+    layer.build(constant_input.shape)
+
+    out = layer(constant_input, stage="training")
+
+    moving_mean = keras.ops.convert_to_numpy(layer.moving_mean[0])
+    constant_input = keras.ops.convert_to_numpy(constant_input)
+    out = keras.ops.convert_to_numpy(out)
+
+    np.testing.assert_allclose(moving_mean, np.mean(constant_input, axis=0), atol=1e-5)
+
+    assert out.shape == constant_input.shape
+    assert not np.any(np.isnan(out))
+    np.testing.assert_allclose(out, 0.0)
+    np.testing.assert_allclose(np.std(out, axis=0), 0.0)
 
 
 def test_inverse_standardization_ldj():

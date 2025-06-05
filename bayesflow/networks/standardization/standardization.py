@@ -3,51 +3,49 @@ from collections.abc import Sequence
 import keras
 
 from bayesflow.types import Tensor, Shape
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils.serialization import serializable
 from bayesflow.utils import expand_left_as, layer_kwargs
 from bayesflow.utils.tree import flatten_shape
 
 
 @serializable("bayesflow.networks")
 class Standardization(keras.Layer):
-    def __init__(self, momentum: float = 0.95, epsilon: float = 1e-6, **kwargs):
+    def __init__(self, **kwargs):
         """
         Initializes a Standardization layer that will keep track of the running mean and
         running standard deviation across a batch of potentially nested tensors.
 
+        The layer computes and stores running estimates of the mean and variance using a numerically
+        stable online algorithm, allowing for consistent normalization during both training and inference,
+        regardless of batch composition.
+
         Parameters
         ----------
-        momentum : float, optional
-            Momentum for the exponential moving average used to update the mean and
-            standard deviation during training. Must be between 0 and 1.
-            Default is 0.95.
-        epsilon: float, optional
-            Stability parameter to avoid division by zero.
+        **kwargs
+            Additional keyword arguments passed to the base Keras Layer.
+
+        Notes
+        -----
         """
         super().__init__(**layer_kwargs(kwargs))
 
-        self.momentum = momentum
-        self.epsilon = epsilon
         self.moving_mean = None
-        self.moving_std = None
+        self.moving_m2 = None
+        self.count = None
+
+    def moving_std(self, index: int) -> Tensor:
+        return keras.ops.sqrt(self.moving_m2[index] / self.count)
 
     def build(self, input_shape: Shape):
         flattened_shapes = flatten_shape(input_shape)
+
         self.moving_mean = [
             self.add_weight(shape=(shape[-1],), initializer="zeros", trainable=False) for shape in flattened_shapes
         ]
-        self.moving_std = [
-            self.add_weight(shape=(shape[-1],), initializer="ones", trainable=False) for shape in flattened_shapes
+        self.moving_m2 = [
+            self.add_weight(shape=(shape[-1],), initializer="zeros", trainable=False) for shape in flattened_shapes
         ]
-
-    def get_config(self) -> dict:
-        base_config = super().get_config()
-        config = {"momentum": self.momentum, "epsilon": self.epsilon}
-        return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
+        self.count = self.add_weight(shape=(), initializer="zeros", trainable=False)
 
     def call(
         self,
@@ -80,15 +78,18 @@ class Standardization(keras.Layer):
         flattened = keras.tree.flatten(x)
         outputs, log_det_jacs = [], []
 
-        for i, val in enumerate(flattened):
+        for idx, val in enumerate(flattened):
             if stage == "training":
-                self._update_moments(val, i)
+                self._update_moments(val, idx)
 
-            mean = expand_left_as(self.moving_mean[i], val)
-            std = expand_left_as(self.moving_std[i], val)
+            mean = expand_left_as(self.moving_mean[idx], val)
+            std = expand_left_as(self.moving_std(idx), val)
 
             if forward:
                 out = (val - mean) / std
+                # if the std is zero, out will become nan. As val - mean(val) = 0 if std(val) = 0,
+                # we can just replace them with zeros.
+                out = keras.ops.nan_to_num(out, nan=0.0)
             else:
                 out = mean + std * val
 
@@ -96,7 +97,6 @@ class Standardization(keras.Layer):
 
             if log_det_jac:
                 ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(std)), axis=-1)
-                # For convenience, tile to batch shape of val
                 ldj = keras.ops.tile(ldj, keras.ops.shape(val)[:-1])
                 log_det_jacs.append(-ldj if forward else ldj)
 
@@ -108,9 +108,38 @@ class Standardization(keras.Layer):
         return outputs
 
     def _update_moments(self, x: Tensor, index: int):
-        mean = keras.ops.mean(x, axis=tuple(range(keras.ops.ndim(x) - 1)))
-        std = keras.ops.std(x, axis=tuple(range(keras.ops.ndim(x) - 1)))
-        std = keras.ops.maximum(std, self.epsilon)
+        """
+        Incrementally updates the running mean and variance (M2) per feature using a numerically
+        stable online algorithm.
 
-        self.moving_mean[index].assign(self.momentum * self.moving_mean[index] + (1.0 - self.momentum) * mean)
-        self.moving_std[index].assign(self.momentum * self.moving_std[index] + (1.0 - self.momentum) * std)
+        Parameters
+        ----------
+        x : Tensor
+            Input tensor of shape (..., features), where all axes except the last are treated as batch/sample axes.
+            The method computes batch-wise statistics by aggregating over all non-feature axes and updates the
+            running totals (mean, M2, and sample count) accordingly.
+        index : int
+            The index of the corresponding running statistics to be updated.
+        """
+
+        reduce_axes = tuple(range(x.ndim - 1))
+        batch_count = keras.ops.cast(keras.ops.shape(x)[0], self.count.dtype)
+
+        # Compute batch mean and M2 per feature
+        batch_mean = keras.ops.mean(x, axis=reduce_axes)
+        batch_m2 = keras.ops.sum((x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
+
+        # Read current totals
+        mean = self.moving_mean[index]
+        m2 = self.moving_m2[index]
+        count = self.count
+
+        total_count = count + batch_count
+        delta = batch_mean - mean
+
+        new_mean = mean + delta * (batch_count / total_count)
+        new_m2 = m2 + batch_m2 + (delta**2) * (count * batch_count / total_count)
+
+        self.moving_mean[index].assign(new_mean)
+        self.moving_m2[index].assign(new_m2)
+        self.count.assign(total_count)

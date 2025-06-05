@@ -1,4 +1,4 @@
-"""
+r"""
 A collection of `keras.utils.PyDataset <https://keras.io/api/utils/python_utils/#pydataset-class>`__\ s, which
 wrap your data-generating process (i.e., your :py:class:`~bayesflow.simulators.Simulator`) and thus determine the
 effective training strategy (e.g., online or offline).

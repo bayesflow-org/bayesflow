@@ -64,7 +64,7 @@ class ModelComparisonApproximator(Approximator):
             # we have to lazily initialize these
             self.standardize_layers = None
         else:
-            self.standardize_layers = {var: Standardization() for var in self.standardize}
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
     def build_from_data(self, adapted_data: dict[str, any]):
         if self.standardize == "all":

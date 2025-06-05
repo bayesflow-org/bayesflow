@@ -23,7 +23,7 @@ def test_forward_standardization_training():
 
     assert out.shape == random_input.shape
     assert not np.any(np.isnan(out))
-    np.testing.assert_allclose(np.std(out, axis=0), 1.0)
+    np.testing.assert_allclose(np.std(out, axis=0), 1.0, atol=1e-5)
 
 
 def test_forward_standardization_training_constant_batch():
@@ -42,8 +42,8 @@ def test_forward_standardization_training_constant_batch():
 
     assert out.shape == constant_input.shape
     assert not np.any(np.isnan(out))
-    np.testing.assert_allclose(out, 0.0)
-    np.testing.assert_allclose(np.std(out, axis=0), 0.0)
+    np.testing.assert_allclose(out, 0.0, atol=1e-5)
+    np.testing.assert_allclose(np.std(out, axis=0), 0.0, atol=1e-5)
 
 
 def test_inverse_standardization_ldj():

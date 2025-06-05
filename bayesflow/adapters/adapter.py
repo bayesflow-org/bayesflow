@@ -482,6 +482,9 @@ class Adapter(MutableSequence[Transform]):
         axis : int, optional
             Along which axis to concatenate the keys. The last axis is used by default.
         """
+        if isinstance(keys, Sequence) and len(keys) == 1:
+            # unpack string if only one key is supplied, so that Rename is used below
+            keys = keys[0]
         if isinstance(keys, str):
             transform = Rename(keys, to_key=into)
         else:

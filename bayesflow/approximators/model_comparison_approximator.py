@@ -67,25 +67,34 @@ class ModelComparisonApproximator(Approximator):
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        # Build summary network and get output shape if present
         summary_outputs_shape = None
-        classifier_conditions_shape = data_shapes.get("classifier_conditions", None)
         if self.summary_network is not None:
             if not self.summary_network.built:
                 self.summary_network.build(data_shapes["summary_variables"])
             summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+
+        # Compute classifier_conditions_shape by combining original and summary outputs
         classifier_conditions_shape = concatenate_valid_shapes(
-            [classifier_conditions_shape, summary_outputs_shape], axis=-1
+            [data_shapes.get("classifier_conditions"), summary_outputs_shape], axis=-1
         )
+
+        # Build classifier network and logits projector if needed
         if not self.classifier_network.built:
             self.classifier_network.build(classifier_conditions_shape)
         if not self.logits_projector.built:
-            self.logits_projector.build(self.classifier_network.compute_output_shape(classifier_conditions_shape))
+            output_shape = self.classifier_network.compute_output_shape(classifier_conditions_shape)
+            self.logits_projector.build(output_shape)
+
+        # Set up standardization layers if requested
         if self.standardize == "all":
             self.standardize = [var for var in ["summary_variables", "classifier_conditions"] if var in data_shapes]
-
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-        for var, layer in self.standardize_layers.items():
+
+        # Build all standardization layers
+        for var, layer in getattr(self, "standardize_layers", {}).items():
             layer.build(data_shapes[var])
+
         self.built = True
 
     def build_from_data(self, adapted_data: dict[str, any]):

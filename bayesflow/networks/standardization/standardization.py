@@ -34,7 +34,12 @@ class Standardization(keras.Layer):
         self.count = None
 
     def moving_std(self, index: int) -> Tensor:
-        return keras.ops.sqrt(self.moving_m2[index] / self.count)
+        # return zeros if count is 0
+        return keras.ops.where(
+            self.count > 0,
+            keras.ops.sqrt(self.moving_m2[index] / self.count),
+            self.moving_m2[index] * 0.0,
+        )
 
     def build(self, input_shape: Shape):
         flattened_shapes = flatten_shape(input_shape)
@@ -93,13 +98,12 @@ class Standardization(keras.Layer):
 
             mean = expand_left_as(self.moving_mean[idx], val)
             std = expand_left_as(self.moving_std(idx), val)
-            std = keras.ops.where(self.count > 0, std, 1.0)
+            # If the std is zero, val - mean(val) = 0, so we can set it to an arbitrary value.
+            # Choosing 1 will leave input unmodified when no training has happened yet.
+            std = keras.ops.where(std == 0.0, 1.0, std)
 
             if forward:
                 out = (val - mean) / std
-                # if the std is zero, out will become nan or inf. As val - mean(val) = 0 if std(val) = 0,
-                # we can just replace them with zeros.
-                out = keras.ops.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
             else:
                 match transformation_type:
                     case "rank1+shift":

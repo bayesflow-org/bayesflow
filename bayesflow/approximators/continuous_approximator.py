@@ -68,27 +68,36 @@ class ContinuousApproximator(Approximator):
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        # Build summary network and get output shape if present
         summary_outputs_shape = None
-        inference_conditions_shape = data_shapes.get("inference_conditions", None)
         if self.summary_network is not None:
             if not self.summary_network.built:
                 self.summary_network.build(data_shapes["summary_variables"])
             summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+
+        # Compute inference_conditions_shape by combining original and summary outputs
         inference_conditions_shape = concatenate_valid_shapes(
-            [inference_conditions_shape, summary_outputs_shape], axis=-1
+            [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
         )
+
+        # Build inference network if needed
         if not self.inference_network.built:
             self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
+
+        # Set up standardization layers if requested
         if self.standardize == "all":
+            # Only include variables present in data_shapes
             self.standardize = [
                 var
                 for var in ["inference_variables", "summary_variables", "inference_conditions"]
                 if var in data_shapes
             ]
-
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-        for var, layer in self.standardize_layers.items():
+
+        # Build all standardization layers, if present
+        for var, layer in getattr(self, "standardize_layers", {}).items():
             layer.build(data_shapes[var])
+
         self.built = True
 
     @classmethod

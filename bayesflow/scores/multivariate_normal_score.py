@@ -26,16 +26,16 @@ class MultivariateNormalScore(ParametricDistributionScore):
     For more information see :py:class:`ScoringRule`.
     """
 
-    RANK: dict[str, int] = {"covariance": 2}
+    TRANSFORMATION_TYPE: dict[str, str] = {"covariance": "rank02"}
     """
-    The covariance matrix is a rank 2 tensor and as such the inverse of the standardization operation is
+    Marks covariance head to handle de-standardization as for covariant rank-(0,2) tensors.
 
-    x = x' * sigma ^ 2
+    The appropriate inverse of the standardization operation is
 
-    Accordingly, covariance is also included in :py:attr:`NO_SHIFT`.
+    x_ij = x_ij * sigma_i * sigma_j.
+
+    For the mean head the default ("rank1+shift") is not overridden.
     """
-
-    NO_SHIFT: tuple[str] = ("covariance",)
 
     def __init__(self, dim: int = None, links: dict = None, **kwargs):
         super().__init__(links=links, **kwargs)

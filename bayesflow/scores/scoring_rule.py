@@ -37,31 +37,15 @@ class ScoringRule:
     with a type of estimate whenever the adapter is applied to them in inverse direction.
     """
 
-    RANK: dict[str, int] = {}
+    TRANSFORMATION_TYPE: dict[str, str] = {"covariance": "rank02"}
     """
-    Mapping of prediction head names to their tensor rank for inverse standardization.
+    Defines nonstandard transformation behaviour for de-standardization.
 
-    The rank indicates the power to which the standard deviation is raised before being multiplied to some estimate
-    in standardized space.
+    The standard transformation
 
-    x = x' * sigma ^ rank [ + mean ]
+    x_i = x_i' * std + mean
 
-    If a head is not present in this mapping, a default rank of 1 is assumed.
-
-    Typically, if :py:attr:`RANK` is modified for an estimate, it is also included in :py:attr:`NO_SHIFT`.
-    """
-
-    NO_SHIFT: tuple[str] = tuple()
-    """
-    Names of prediction heads whose estimates should not be shifted when applying inverse standardization.
-
-    During inverse standardization, point estimates are typically shifted by the stored mean vector. Any head
-    listed in this tuple will skip the shift step and only be scaled. By default, this tuple is empty,
-    meaning all heads will be shifted to undo standardization.
-
-    x = x' * sigma ^ rank + mean
-
-    See also :py:attr:`RANK`.
+    is referred to as "rank1+shift". Keys not specified here will fallback to that default.
     """
 
     def __init__(

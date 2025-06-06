@@ -53,6 +53,7 @@ class Standardization(keras.Layer):
         stage: str = "inference",
         forward: bool = True,
         log_det_jac: bool = False,
+        transformation_type: str = "rank1+shift",
         **kwargs,
     ) -> Tensor | Sequence[Tensor]:
         """
@@ -75,6 +76,14 @@ class Standardization(keras.Layer):
         Tensor or Sequence[Tensor]
             Transformed tensor, and optionally the log-determinant if `log_det_jac=True`.
         """
+        msg = """
+        Non-default transformation (i.e. transformation_type != "rank1+shift")
+        is not supported for forward or log_det_jac.
+        """
+        if forward or log_det_jac:
+            if transformation_type != "rank1+shift":  # non default transformation
+                raise ValueError(msg)
+
         flattened = keras.tree.flatten(x)
         outputs, log_det_jacs = [], []
 
@@ -91,7 +100,13 @@ class Standardization(keras.Layer):
                 # we can just replace them with zeros.
                 out = keras.ops.nan_to_num(out, nan=0.0)
             else:
-                out = mean + std * val
+                match transformation_type:
+                    case "rank1+shift":
+                        # x_i = x_i' * std + mean
+                        out = val * std + mean
+                    case "rank02":
+                        # x_ij = x_ij * sigma_i * sigma_j
+                        out = val * std * keras.ops.moveaxis(std, -1, -2)
 
             outputs.append(out)
 

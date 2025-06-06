@@ -61,6 +61,15 @@ class PointApproximator(ContinuousApproximator):
         conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
 
         estimates = self._estimate(**conditions, **kwargs)
+
+        if "inference_variables" in self.standardize:
+            for score_key, score in self.inference_network.scores.items():
+                for head_key in estimates[score_key].keys():
+                    trafo_type = score.TRANSFORMATION_TYPE.get(head_key, "rank1+shift")
+                    estimates[score_key][head_key] = self.standardize_layers["inference_variables"](
+                        estimates[score_key][head_key], forward=False, transformation_type=trafo_type
+                    )
+
         estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
 
         # Optionally split the arrays along the last axis.

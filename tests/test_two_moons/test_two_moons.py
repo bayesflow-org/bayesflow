@@ -60,6 +60,9 @@ def test_serialize_deserialize(tmp_path, approximator, train_dataset):
     mock_data_shapes = keras.tree.map_structure(keras.ops.shape, mock_data)
     approximator.build(mock_data_shapes)
 
+    # run a single batch through the approximator
+    approximator.compute_metrics(**mock_data)
+
     keras.saving.save_model(approximator, tmp_path / "model.keras")
     loaded_approximator = keras.saving.load_model(tmp_path / "model.keras")
 

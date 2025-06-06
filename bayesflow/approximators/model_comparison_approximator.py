@@ -70,13 +70,16 @@ class ModelComparisonApproximator(Approximator):
         summary_outputs_shape = None
         classifier_conditions_shape = data_shapes.get("classifier_conditions", None)
         if self.summary_network is not None:
-            self.summary_network.build(data_shapes["summary_variables"])
+            if not self.summary_network.built:
+                self.summary_network.build(data_shapes["summary_variables"])
             summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
         classifier_conditions_shape = concatenate_valid_shapes(
             [classifier_conditions_shape, summary_outputs_shape], axis=-1
         )
-        self.classifier_network.build(classifier_conditions_shape)
-        self.logits_projector.build(self.classifier_network.compute_output_shape(classifier_conditions_shape))
+        if not self.classifier_network.built:
+            self.classifier_network.build(classifier_conditions_shape)
+        if not self.logits_projector.built:
+            self.logits_projector.build(self.classifier_network.compute_output_shape(classifier_conditions_shape))
         if self.standardize == "all":
             self.standardize = [var for var in ["summary_variables", "classifier_conditions"] if var in data_shapes]
 

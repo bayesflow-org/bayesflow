@@ -71,12 +71,14 @@ class ContinuousApproximator(Approximator):
         summary_outputs_shape = None
         inference_conditions_shape = data_shapes.get("inference_conditions", None)
         if self.summary_network is not None:
-            self.summary_network.build(data_shapes["summary_variables"])
+            if not self.summary_network.built:
+                self.summary_network.build(data_shapes["summary_variables"])
             summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
         inference_conditions_shape = concatenate_valid_shapes(
             [inference_conditions_shape, summary_outputs_shape], axis=-1
         )
-        self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
+        if not self.inference_network.built:
+            self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
         if self.standardize == "all":
             self.standardize = [
                 var

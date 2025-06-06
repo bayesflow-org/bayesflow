@@ -3,6 +3,7 @@ import os
 import keras
 
 import bayesflow as bf
+from tests.utils import assert_models_equal
 
 
 def test_basic_workflow(tmp_path, inference_network, summary_network):
@@ -28,6 +29,7 @@ def test_basic_workflow(tmp_path, inference_network, summary_network):
 
     # Ensure saving and loading from workflow works fine
     loaded_approximator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
+    assert_models_equal(workflow.approximator, loaded_approximator)
 
     # Get samples
     samples = loaded_approximator.sample(conditions=workflow.simulate(5), num_samples=3)
@@ -58,6 +60,7 @@ def test_basic_workflow_fusion(
 
     # Ensure saving and loading from workflow works fine
     loaded_approximator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
+    assert_models_equal(workflow.approximator, loaded_approximator)
 
     # Get samples
     samples = loaded_approximator.sample(conditions=workflow.simulate(5), num_samples=3)

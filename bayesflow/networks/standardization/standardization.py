@@ -75,19 +75,20 @@ class Standardization(keras.Layer):
             If True, apply standardization: (x - mean) / std. Otherwise, inverse transform.
         log_det_jac : bool, optional
             Whether to return the log determinant of the Jacobian. Default is False.
+        transformation_type: str, optional
+            The type of inverse transform to apply. Only relevant if used with arbitrary point estimates.
+            Default is "rank1+shift", i.e., undo standardization.
 
         Returns
         -------
         Tensor or Sequence[Tensor]
             Transformed tensor, and optionally the log-determinant if `log_det_jac=True`.
         """
-        msg = """
-        Non-default transformation (i.e. transformation_type != "rank1+shift")
-        is not supported for forward or log_det_jac.
-        """
-        if forward or log_det_jac:
-            if transformation_type != "rank1+shift":  # non default transformation
-                raise ValueError(msg)
+        if (forward or log_det_jac) and transformation_type != "rank1+shift":
+            raise ValueError(
+                'Non-default transformation (i.e. transformation_type != "rank1+shift") '
+                "is not supported for forward or log_det_jac."
+            )
 
         flattened = keras.tree.flatten(x)
         outputs, log_det_jacs = [], []
@@ -112,6 +113,8 @@ class Standardization(keras.Layer):
                     case "rank02":
                         # x_ij = x_ij * sigma_i * sigma_j
                         out = val * std * keras.ops.moveaxis(std, -1, -2)
+                    case _:
+                        out = val
 
             outputs.append(out)
 

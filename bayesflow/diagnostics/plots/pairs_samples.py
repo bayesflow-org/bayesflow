@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from bayesflow.utils import logging
 from bayesflow.utils.dict_utils import dicts_to_arrays
+from bayesflow.utils.plot_utils import create_legends
 
 
 def pairs_samples(
@@ -17,8 +18,10 @@ def pairs_samples(
     height: float = 2.5,
     color: str | tuple = "#132a70",
     alpha: float = 0.9,
+    label: str = "Posterior",
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
+    show_single_legend: bool = False,
     **kwargs,
 ) -> sns.PairGrid:
     """
@@ -37,13 +40,18 @@ def pairs_samples(
     height      : float, optional, default: 2.5
         The height of the pair plot
     color       : str, optional, default : '#8f2727'
-        The color of the plot
+        The primary color of the plot
     alpha       : float in [0, 1], optional, default: 0.9
         The opacity of the plot
+    label       : str, optional, default: "Posterior"
+        Label for the dataset to plot
     label_fontsize    : int, optional, default: 14
         The font size of the x and y-label texts (parameter names)
     tick_fontsize     : int, optional, default: 12
-        The font size of the axis ticklabels
+        The font size of the axis tick labels
+    show_single_legend : bool, optional, default: False
+        Optional toggle for the user to choose whether a single dataset
+        should also display legend
     **kwargs    : dict, optional
         Additional keyword arguments passed to the sns.PairGrid constructor
     """
@@ -59,8 +67,11 @@ def pairs_samples(
         height=height,
         color=color,
         alpha=alpha,
+        label=label,
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
+        show_single_legend=show_single_legend,
+        **kwargs,
     )
 
     return g
@@ -72,17 +83,27 @@ def _pairs_samples(
     color: str | tuple = "#132a70",
     color2: str | tuple = "gray",
     alpha: float = 0.9,
+    label: str = "Posterior",
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
+    show_single_legend: bool = False,
     **kwargs,
 ) -> sns.PairGrid:
-    # internal version of pairs_samples creating the seaborn plot
+    """
+    Internal version of pairs_samples creating the seaborn PairPlot
+    for both a single dataset and multiple datasets.
 
-    # Parameters
-    # ----------
-    # plot_data   : output of bayesflow.utils.dict_utils.dicts_to_arrays
-    # other arguments are documented in pairs_samples
+    Parameters
+    ----------
+    plot_data   : output of bayesflow.utils.dict_utils.dicts_to_arrays
+        Formatted data to plot from the sample dataset
+    color2      : str, optional, default: 'gray'
+        Secondary color for the pair plots.
+        This is the color used for the prior draws.
+
+    Other arguments are documented in pairs_samples
+    """
 
     estimates_shape = plot_data["estimates"].shape
     if len(estimates_shape) != 2:
@@ -136,7 +157,7 @@ def _pairs_samples(
         common_norm=False,
     )
 
-    # add scatterplots to the upper diagonal
+    # add scatter plots to the upper diagonal
     g.map_upper(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
 
     # add KDEs to the lower diagonal
@@ -145,11 +166,6 @@ def _pairs_samples(
     except Exception as e:
         logging.exception("KDE failed due to the following exception:\n" + repr(e) + "\nSubstituting scatter plot.")
         g.map_lower(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
-
-    # need to add legend here such that colors are recognized
-    if plot_data["priors"] is not None:
-        g.add_legend(fontsize=legend_fontsize, loc="center right")
-        g._legend.set_title(None)
 
     # Generate grids
     dim = g.axes.shape[0]
@@ -165,10 +181,25 @@ def _pairs_samples(
             g.axes[i, j].tick_params(axis="both", which="major", labelsize=tick_fontsize)
             g.axes[i, j].tick_params(axis="both", which="minor", labelsize=tick_fontsize)
 
-        # adjust font size of labels
+        # adjust the font size of labels
         # the labels themselves remain the same as before, i.e., variable_names
         g.axes[i, 0].set_ylabel(variable_names[i], fontsize=label_fontsize)
         g.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
+
+    # need to add legend here such that colors are recognized
+    # if plot_data["priors"] is not None:
+    #     g.add_legend(fontsize=legend_fontsize, loc="center right")
+    #     g._legend.set_title(None)
+
+    create_legends(
+        g,
+        plot_data,
+        color=color,
+        color2=color2,
+        legend_fontsize=legend_fontsize,
+        label=label,
+        show_single_legend=show_single_legend,
+    )
 
     # Return figure
     g.tight_layout()
@@ -176,21 +207,22 @@ def _pairs_samples(
     return g
 
 
-# create a histogram plot on a twin y axis
-# this ensures that the y scaling of the diagonal plots
-# in independent of the y scaling of the off-diagonal plots
 def histplot_twinx(x, **kwargs):
-    # Create a twin axis
-    ax2 = plt.gca().twinx()
+    """
+    # create a histogram plot on a twin y-axis
+    # this ensures that the y scaling of the diagonal plots
+    # in independent of the y scaling of the off-diagonal plots
 
+    Parameters
+    ----------
+    x : np.ndarray
+        Data to be plotted.
+    """
     # create a histogram on the twin axis
-    sns.histplot(x, **kwargs, ax=ax2)
+    sns.histplot(x, legend=False, **kwargs)
 
     # make the twin axis invisible
     plt.gca().spines["right"].set_visible(False)
     plt.gca().spines["top"].set_visible(False)
-    ax2.set_ylabel("")
-    ax2.set_yticks([])
-    ax2.set_yticklabels([])
 
     return None

@@ -6,7 +6,7 @@ import seaborn as sns
 
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, Patch
 from matplotlib.legend_handler import HandlerPatch
 
 from .validators import check_estimates_prior_shapes
@@ -67,7 +67,7 @@ def prepare_plot_data(
     )
     check_estimates_prior_shapes(plot_data["estimates"], plot_data["targets"])
 
-    # store variable information at top level for easy access
+    # store variable information at the top level for easy access
     variable_names = plot_data["estimates"].variable_names
     num_variables = len(variable_names)
     plot_data["variable_names"] = variable_names
@@ -249,7 +249,7 @@ def prettify_subplots(axes: np.ndarray, num_subplots: int, tick: bool = True, ti
 
 def make_quadratic(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray):
     """
-    Utility to make a subplots quadratic in order to avoid visual illusions
+    Utility to make subplots quadratic to avoid visual illusions
     in, e.g., recovery plots.
     """
 
@@ -269,7 +269,7 @@ def make_quadratic(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray):
 
 def gradient_line(x, y, c=None, cmap: str = "viridis", lw: float = 2.0, alpha: float = 1, ax=None):
     """
-    Plot a 1D line with color gradient determined by `c` (same shape as x and y).
+    Plot a 1D line with a color gradient determined by `c` (same shape as x and y).
     """
     if ax is None:
         ax = plt.gca()
@@ -304,7 +304,7 @@ def gradient_legend(ax, label, cmap, norm, loc="upper right"):
     - loc: legend location (default 'upper right')
     """
 
-    # Custom dummy handle to represent the gradient
+    # Custom placeholder handle to represent the gradient
     class _GradientSwatch(Rectangle):
         pass
 
@@ -357,4 +357,66 @@ def add_gradient_plot(
             edgecolors="none",
             label=label,
             alpha=0.01,
+        )
+
+
+def create_legends(
+    g,
+    plot_data: dict,
+    color: str | tuple = "#132a70",
+    color2: str | tuple = "gray",
+    label: str = "Posterior",
+    show_single_legend: bool = False,
+    legend_fontsize: int = 14,
+):
+    """
+    Helper function to create legends for pairplots.
+
+    Parameters
+    ----------
+    g : sns.PairGrid
+        Seaborn object for the pair plots
+    plot_data   : output of bayesflow.utils.dict_utils.dicts_to_arrays
+        Formatted data to plot from the sample dataset
+    color       : str, optional, default : '#8f2727'
+        The primary color of the plot
+    color2      : str, optional, default: 'gray'
+        The secondary color for the plot
+    label       : str, optional, default: "Posterior"
+        Label for the dataset to plot
+    show_single_legend : bool, optional, default: False
+        Optional toggle for the user to choose whether a single dataset
+        should also display legend
+    legend_fontsize    : int, optional, default: 14
+        fontsize for the legend
+    """
+    handles = []
+    labels = []
+
+    if plot_data.get("priors") is not None:
+        prior_handle = Patch(color=color2, label="Prior")
+        prior_label = "Prior"
+        handles.append(prior_handle)
+        labels.append(prior_label)
+
+    posterior_handle = Patch(color=color, label="Posterior")
+    posterior_label = label
+    handles.append(posterior_handle)
+    labels.append(posterior_label)
+
+    if plot_data.get("targets") is not None:
+        target_handle = plt.Line2D([0], [0], color="r", linestyle="--", marker="x", label="Targets")
+        target_label = "Targets"
+        handles.append(target_handle)
+        labels.append(target_label)
+
+    # If there are more than one dataset to plot,
+    if len(handles) > 1 or show_single_legend:
+        g.figure.legend(
+            handles=handles,
+            labels=labels,
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
+            frameon=False,
+            fontsize=legend_fontsize,
         )

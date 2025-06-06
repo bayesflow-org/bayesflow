@@ -165,7 +165,7 @@ class ScoringRule:
         return keras.Sequential([subnet, dense, reshape, link])
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor) -> Tensor:
-        """Scores a batch of probabilistic estimates of distributions based on samples
+        r"""Scores a batch of probabilistic estimates of distributions based on samples
         of the corresponding distributions.
 
         Parameters

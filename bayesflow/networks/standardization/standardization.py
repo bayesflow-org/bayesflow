@@ -93,6 +93,7 @@ class Standardization(keras.Layer):
 
             mean = expand_left_as(self.moving_mean[idx], val)
             std = expand_left_as(self.moving_std(idx), val)
+            std = keras.ops.where(self.count > 0, std, 1.0)
 
             if forward:
                 out = (val - mean) / std

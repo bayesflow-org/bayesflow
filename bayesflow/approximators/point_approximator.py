@@ -133,7 +133,6 @@ class PointApproximator(ContinuousApproximator):
             for score_key in samples.keys():
                 samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
 
-        samples = {"inference_variables": samples}
         samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
 
         if split:
@@ -218,9 +217,9 @@ class PointApproximator(ContinuousApproximator):
         """Applies the inverse adapter to a dictionary of samples."""
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         processed = {}
-        for score_key, samples in samples.items():
+        for score_key, score_value in samples.items():
             processed[score_key] = self.adapter(
-                {"inference_variables": samples},
+                {"inference_variables": score_value},
                 inverse=True,
                 strict=False,
                 **kwargs,

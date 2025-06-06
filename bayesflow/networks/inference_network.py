@@ -5,11 +5,10 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
 from bayesflow.utils.serialization import serializable
-from .base_layer import BaseLayer
 
 
 @serializable("bayesflow.networks")
-class InferenceNetwork(BaseLayer):
+class InferenceNetwork(keras.Layer):
     def __init__(self, base_distribution: str = "normal", *, metrics: Sequence[keras.Metric] = None, **kwargs):
         self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))

@@ -6,11 +6,10 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
-from .base_layer import BaseLayer
 
 
 @serializable("bayesflow.networks")
-class SummaryNetwork(BaseLayer):
+class SummaryNetwork(keras.Layer):
     def __init__(self, base_distribution: str = None, *, metrics: Sequence[keras.Metric] = None, **kwargs):
         self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))
@@ -18,7 +17,6 @@ class SummaryNetwork(BaseLayer):
 
     @sanitize_input_shape
     def build(self, input_shape):
-        print("SN build", self, input_shape)
         x = keras.ops.zeros(input_shape)
         z = self.call(x)
 

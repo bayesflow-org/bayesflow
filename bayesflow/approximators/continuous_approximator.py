@@ -7,7 +7,14 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, logging, split_arrays, squeeze_inner_estimates_dict, concatenate_valid
+from bayesflow.utils import (
+    filter_kwargs,
+    logging,
+    split_arrays,
+    squeeze_inner_estimates_dict,
+    concatenate_valid,
+    concatenate_valid_shapes,
+)
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
@@ -59,6 +66,28 @@ class ContinuousApproximator(Approximator):
             self.standardize_layers = None
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        summary_outputs_shape = None
+        inference_conditions_shape = data_shapes.get("inference_conditions", None)
+        if self.summary_network is not None:
+            self.summary_network.build(data_shapes["summary_variables"])
+            summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+        inference_conditions_shape = concatenate_valid_shapes(
+            [inference_conditions_shape, summary_outputs_shape], axis=-1
+        )
+        self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
+        if self.standardize == "all":
+            self.standardize = [
+                var
+                for var in ["inference_variables", "summary_variables", "inference_conditions"]
+                if var in data_shapes
+            ]
+
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+        for var, layer in self.standardize_layers.items():
+            layer.build(data_shapes[var])
+        self.built = True
 
     @classmethod
     def build_adapter(
@@ -120,16 +149,7 @@ class ContinuousApproximator(Approximator):
         return super().compile(*args, **kwargs)
 
     def build_from_data(self, adapted_data: dict[str, any]):
-        if self.standardize == "all":
-            self.standardize = [
-                var
-                for var in ["inference_variables", "summary_variables", "inference_conditions"]
-                if var in adapted_data
-            ]
-
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-
-        super().build_from_data(adapted_data)
+        self.build(keras.tree.map_structure(keras.ops.shape, adapted_data))
 
     def compile_from_config(self, config):
         self.compile(**deserialize(config))

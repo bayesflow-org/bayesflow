@@ -8,7 +8,7 @@ from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, logging, concatenate_valid
+from bayesflow.utils import filter_kwargs, logging, concatenate_valid, concatenate_valid_shapes
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
@@ -66,11 +66,27 @@ class ModelComparisonApproximator(Approximator):
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
-    def build_from_data(self, adapted_data: dict[str, any]):
+    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        summary_outputs_shape = None
+        classifier_conditions_shape = data_shapes.get("classifier_conditions", None)
+        if self.summary_network is not None:
+            self.summary_network.build(data_shapes["summary_variables"])
+            summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+        classifier_conditions_shape = concatenate_valid_shapes(
+            [classifier_conditions_shape, summary_outputs_shape], axis=-1
+        )
+        self.classifier_network.build(classifier_conditions_shape)
+        self.logits_projector.build(self.classifier_network.compute_output_shape(classifier_conditions_shape))
         if self.standardize == "all":
-            self.standardize = [var for var in ["summary_variables", "classifier_conditions"] if var in adapted_data]
+            self.standardize = [var for var in ["summary_variables", "classifier_conditions"] if var in data_shapes]
+
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-        super().build_from_data(adapted_data)
+        for var, layer in self.standardize_layers.items():
+            layer.build(data_shapes[var])
+        self.built = True
+
+    def build_from_data(self, adapted_data: dict[str, any]):
+        self.build(keras.tree.map_structure(keras.ops.shape(adapted_data)))
 
     @classmethod
     def build_adapter(

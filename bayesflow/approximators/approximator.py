@@ -12,8 +12,7 @@ from .backend_approximators import BackendApproximator
 
 class Approximator(BackendApproximator):
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        mock_data = keras.tree.map_shape_structure(keras.ops.zeros, data_shapes)
-        self.build_from_data(mock_data)
+        raise NotImplementedError
 
     @classmethod
     def build_adapter(cls, **kwargs) -> Adapter:
@@ -21,8 +20,7 @@ class Approximator(BackendApproximator):
         raise NotImplementedError
 
     def build_from_data(self, adapted_data: dict[str, any]) -> None:
-        self.compute_metrics(**filter_kwargs(adapted_data, self.compute_metrics), stage="training")
-        self.built = True
+        raise NotImplementedError
 
     @classmethod
     def build_dataset(

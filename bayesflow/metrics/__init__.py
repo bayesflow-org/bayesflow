@@ -1,4 +1,4 @@
-"""
+r"""
 A collection of `keras.Metric <https://keras.io/api/metrics/base_metric/#metric-class>`__\ s for evaluating the
 performance of models.
 """

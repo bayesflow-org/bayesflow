@@ -1,4 +1,4 @@
-"""
+r"""
 A collection of :py:class:`~bayesflow.distributions.Distribution`\ s,
 which represent the latent space for :py:class:`~bayesflow.networks.InferenceNetwork`\ s
 or the summary space of :py:class:`~bayesflow.networks.SummaryNetwork`\ s.

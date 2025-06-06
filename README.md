@@ -51,10 +51,10 @@ complex to be described analytically.
 
 ## Install
 
-You can install the latest stable version from PyPI using:
+We currently support Python 3.10 to 3.12. You can install the latest stable version from PyPI using:
 
 ```bash
-pip install bayesflow
+pip install "bayesflow>=2.0"
 ```
 
 If you want the latest features, you can install from source:
@@ -134,7 +134,8 @@ Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bay
 5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
 7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
-8. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
+8. [Likelihood estimation](examples/Likelihood_Estimation.ipynb)
+9. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

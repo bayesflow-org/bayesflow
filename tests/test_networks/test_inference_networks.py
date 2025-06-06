@@ -150,3 +150,12 @@ def test_save_and_load(tmp_path, inference_network, random_samples, random_condi
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
     assert_layers_equal(inference_network, loaded)
+
+
+def test_compute_metrics(inference_network, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    inference_network.build(xz_shape, conditions_shape)
+
+    metrics = inference_network.compute_metrics(random_samples, conditions=random_conditions)
+    assert "loss" in metrics

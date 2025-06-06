@@ -1,5 +1,3 @@
-from collections.abc import Mapping
-
 import multiprocessing as mp
 
 import keras
@@ -22,7 +20,7 @@ class Approximator(BackendApproximator):
         # implemented by each respective architecture
         raise NotImplementedError
 
-    def build_from_data(self, data: Mapping[str, any]) -> None:
+    def build_from_data(self, data: dict[str, any]) -> None:
         self.compute_metrics(**filter_kwargs(data, self.compute_metrics), stage="training")
         self.built = True
 

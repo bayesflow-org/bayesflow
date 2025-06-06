@@ -7,6 +7,7 @@ import pandas as pd
 import seaborn as sns
 
 from bayesflow.utils.dict_utils import dicts_to_arrays
+from bayesflow.utils.plot_utils import create_legends
 
 from .pairs_samples import _pairs_samples
 
@@ -21,6 +22,7 @@ def pairs_posterior(
     height: int = 3,
     post_color: str | tuple = "#132a70",
     prior_color: str | tuple = "gray",
+    target_color: str | tuple = "red",
     alpha: float = 0.9,
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
@@ -37,25 +39,27 @@ def pairs_posterior(
         Optional true parameter values that have generated the observed dataset.
     priors       : np.ndarray of shape (n_prior_draws, n_params) or None, optional (default: None)
         Optional prior samples obtained from the prior.
-    dataset_id: Optional ID of the dataset for whose posterior the pairs plot shall be generated.
-        Should only be specified if estimates contains posterior draws from multiple datasets.
+    dataset_id: Optional ID of the dataset for whose posterior the pair plots shall be generated.
+        Should only be specified if estimates contain posterior draws from multiple datasets.
     variable_keys       : list or None, optional, default: None
        Select keys from the dictionary provided in samples.
        By default, select all keys.
     variable_names       : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
     height            : float, optional, default: 3
-        The height of the pairplot
+        The height of the pair plots
     label_fontsize    : int, optional, default: 14
         The font size of the x and y-label texts (parameter names)
     tick_fontsize     : int, optional, default: 12
-        The font size of the axis ticklabels
+        The font size of the axis tick labels
     legend_fontsize   : int, optional, default: 16
         The font size of the legend text
     post_color        : str, optional, default: '#132a70'
         The color for the posterior histograms and KDEs
     prior_color      : str, optional, default: gray
         The color for the optional prior histograms and KDEs
+    target_color      : str, optional, default: red
+        The color for the optional true parameter lines and points
     alpha             : float in [0, 1], optional, default: 0.9
         The opacity of the posterior plots
 
@@ -81,7 +85,7 @@ def pairs_posterior(
         variable_names=variable_names,
     )
 
-    # dicts_to_arrays will keep dataset axis even if it is of length 1
+    # dicts_to_arrays will keep the dataset axis even if it is of length 1
     # however, pairs plotting requires the dataset axis to be removed
     estimates_shape = plot_data["estimates"].shape
     if len(estimates_shape) == 3 and estimates_shape[0] == 1:
@@ -109,14 +113,30 @@ def pairs_posterior(
         # Create DataFrame with variable names as columns
         g.data = pd.DataFrame(targets, columns=targets.variable_names)
         g.data["_source"] = "True Parameter"
-        g.map_diag(plot_true_params)
+        g.map_diag(plot_true_params_as_lines, color=target_color)
+        g.map_offdiag(plot_true_params_as_points, color=target_color)
+
+        create_legends(
+            g,
+            plot_data,
+            color=post_color,
+            color2=prior_color,
+            legend_fontsize=legend_fontsize,
+            show_single_legend=False,
+        )
 
     return g
 
 
-def plot_true_params(x, hue=None, **kwargs):
-    """Custom function to plot true parameters on the diagonal."""
+def plot_true_params_as_lines(x, hue=None, color=None, **kwargs):
+    """Custom function to plot true parameters on the diagonal as dashed lines."""
     # hue needs to be added to handle the case of plotting both posterior and prior
     param = x.iloc[0]  # Get the single true value for the diagonal
     # only plot on the diagonal a vertical line for the true parameter
-    plt.axvline(param, color="black", linestyle="--")
+    plt.axvline(param, color=color, linestyle="--")
+
+
+def plot_true_params_as_points(x, y, color=None, marker="x", **kwargs):
+    """Custom function to plot true parameters on the off-diagonal as a single point."""
+    if len(x) > 0 and len(y) > 0:
+        plt.scatter(x.iloc[0], y.iloc[0], color=color, marker=marker, **kwargs)

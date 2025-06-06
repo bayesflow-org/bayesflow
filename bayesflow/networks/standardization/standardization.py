@@ -96,9 +96,9 @@ class Standardization(keras.Layer):
 
             if forward:
                 out = (val - mean) / std
-                # if the std is zero, out will become nan. As val - mean(val) = 0 if std(val) = 0,
+                # if the std is zero, out will become nan or inf. As val - mean(val) = 0 if std(val) = 0,
                 # we can just replace them with zeros.
-                out = keras.ops.nan_to_num(out, nan=0.0)
+                out = keras.ops.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
             else:
                 match transformation_type:
                     case "rank1+shift":

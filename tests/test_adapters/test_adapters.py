@@ -393,3 +393,16 @@ def test_nnpe(random_data):
     # Both should assign noise to high-variance dimension
     assert std_dim[1] > 0
     assert std_glob[1] > 0
+
+
+def test_single_concatenate_to_rename():
+    # test that single-element concatenate is converted to rename
+    from bayesflow import Adapter
+    from bayesflow.adapters.transforms import Rename, Concatenate
+
+    ad = Adapter().concatenate("a", into="b")
+    assert isinstance(ad[0], Rename)
+    ad = Adapter().concatenate(["a"], into="b")
+    assert isinstance(ad[0], Rename)
+    ad = Adapter().concatenate(["a", "b"], into="c")
+    assert isinstance(ad[0], Concatenate)

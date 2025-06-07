@@ -109,7 +109,7 @@ class ModelComparisonApproximator(Approximator):
         model_index_name: str = "model_indices",
     ):
         if classifier_conditions is None and summary_variables is None:
-            raise ValueError("At least one of `classifier_variables` or `summary_variables` must be provided.")
+            raise ValueError("At least one of `classifier_conditions` or `summary_variables` must be provided.")
 
         adapter = Adapter().to_array().convert_dtype("float64", "float32")
 

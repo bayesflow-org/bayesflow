@@ -59,7 +59,7 @@ class ContinuousApproximator(Approximator):
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
         else:
-            self.standardize = standardize
+            self.standardize = standardize or []
 
         if self.standardize == "all":
             # we have to lazily initialize these

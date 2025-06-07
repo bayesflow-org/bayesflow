@@ -58,7 +58,7 @@ class ModelComparisonApproximator(Approximator):
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
         else:
-            self.standardize = standardize
+            self.standardize = standardize or []
 
         if self.standardize == "all":
             # we have to lazily initialize these
@@ -333,6 +333,7 @@ class ModelComparisonApproximator(Approximator):
             "adapter": self.adapter,
             "classifier_network": self.classifier_network,
             "summary_network": self.summary_network,
+            "standardize": self.standardize,
         }
 
         return base_config | serialize(config)

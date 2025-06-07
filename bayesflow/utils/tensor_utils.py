@@ -25,7 +25,7 @@ def concatenate_valid_shapes(tensor_shapes: Sequence[Shape | None], axis: int = 
     if not tensor_shapes:
         return None
 
-    output_shape = tensor_shapes[0]
+    output_shape = list(tensor_shapes[0])
     for s in tensor_shapes[1:]:
         output_shape[axis] += s[axis]
     return output_shape

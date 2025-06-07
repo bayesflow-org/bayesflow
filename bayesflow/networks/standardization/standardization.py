@@ -34,11 +34,14 @@ class Standardization(keras.Layer):
         self.count = None
 
     def moving_std(self, index: int) -> Tensor:
-        # return zeros if count is 0
+        """Calculates the standard deviation from the moving M^2 at the given index and the count.
+
+        Important: Where M^2=0, it will return a standard deviation of 1 instead of 0, even if count > 0.
+        """
         return keras.ops.where(
-            self.count > 0,
+            self.moving_m2[index] > 0,
             keras.ops.sqrt(self.moving_m2[index] / self.count),
-            self.moving_m2[index] * 0.0,
+            1.0,
         )
 
     def build(self, input_shape: Shape):
@@ -98,10 +101,8 @@ class Standardization(keras.Layer):
                 self._update_moments(val, idx)
 
             mean = expand_left_as(self.moving_mean[idx], val)
+            # moving_std will return 1 in the case of std=0, so no further checks are necessary here
             std = expand_left_as(self.moving_std(idx), val)
-            # If the std is zero, val - mean(val) = 0, so we can set it to an arbitrary value.
-            # Choosing 1 will leave input unmodified when no training has happened yet.
-            std = keras.ops.where(std == 0.0, 1.0, std)
 
             if forward:
                 out = (val - mean) / std

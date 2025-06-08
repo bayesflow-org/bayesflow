@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 
 import keras
 import numpy as np
+import warnings
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
@@ -110,13 +111,18 @@ class ModelComparisonApproximator(Approximator):
         **kwargs,
     ):
         if classifier_metrics:
-            self.classifier_network._metrics = classifier_metrics
+            warnings.warn(
+                "Supplying classifier metrics to the approximator is no longer supported. "
+                "Please pass the metrics directly to the network using the metrics parameter.",
+                DeprecationWarning,
+            )
 
         if summary_metrics:
-            if self.summary_network is None:
-                logging.warning("Ignoring summary metrics because there is no summary network.")
-            else:
-                self.summary_network._metrics = summary_metrics
+            warnings.warn(
+                "Supplying summary metrics to the approximator is no longer supported. "
+                "Please pass the metrics directly to the network using the metrics parameter.",
+                DeprecationWarning,
+            )
 
         return super().compile(*args, **kwargs)
 
@@ -266,16 +272,6 @@ class ModelComparisonApproximator(Approximator):
             "adapter": self.adapter,
             "classifier_network": self.classifier_network,
             "summary_network": self.summary_network,
-        }
-
-        return base_config | serialize(config)
-
-    def get_compile_config(self):
-        base_config = super().get_compile_config() or {}
-
-        config = {
-            "classifier_metrics": self.classifier_network._metrics,
-            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
         }
 
         return base_config | serialize(config)

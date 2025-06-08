@@ -29,6 +29,7 @@ class MLP(Sequential):
         dropout: Literal[0, None] | float = 0.05,
         norm: Literal["batch", "layer"] | keras.Layer = None,
         spectral_normalization: bool = False,
+        metrics: Sequence[keras.Metric] | None = None,
         **kwargs,
     ):
         """
@@ -60,6 +61,7 @@ class MLP(Sequential):
         **kwargs
             Additional keyword arguments passed to the Keras layer initialization.
         """
+        self.custom_metrics = metrics
         self.widths = list(widths)
         self.activation = activation
         self.kernel_initializer = kernel_initializer
@@ -90,6 +92,7 @@ class MLP(Sequential):
             "dropout": self.dropout,
             "norm": self.norm,
             "spectral_normalization": self.spectral_normalization,
+            "metrics": self.custom_metrics,
         }
 
         return base_config | serialize(config)

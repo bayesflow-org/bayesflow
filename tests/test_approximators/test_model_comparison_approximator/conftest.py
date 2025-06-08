@@ -51,15 +51,17 @@ def adapter():
 @pytest.fixture
 def summary_network():
     from bayesflow.networks import DeepSet
+    from bayesflow.metrics import RootMeanSquaredError
 
-    return DeepSet(summary_dim=2, depth=1)
+    return DeepSet(summary_dim=2, depth=1, base_distribution="normal", metrics=[RootMeanSquaredError(name="rmse")])
 
 
 @pytest.fixture
 def classifier_network():
     from bayesflow.networks import MLP
+    from keras.metrics import CategoricalAccuracy
 
-    return MLP(widths=[32, 32])
+    return MLP(widths=[32, 32], metrics=[CategoricalAccuracy(name="categorical_accuracy")])
 
 
 @pytest.fixture

@@ -20,8 +20,11 @@ def summary_network():
 @pytest.fixture()
 def inference_network():
     from bayesflow.networks import CouplingFlow
+    from bayesflow.metrics import RootMeanSquaredError
 
-    return CouplingFlow(subnet="mlp", depth=2, subnet_kwargs=dict(widths=(32, 32)))
+    return CouplingFlow(
+        subnet="mlp", depth=2, subnet_kwargs=dict(widths=(32, 32)), metrics=[RootMeanSquaredError(name="rmse")]
+    )
 
 
 @pytest.fixture()

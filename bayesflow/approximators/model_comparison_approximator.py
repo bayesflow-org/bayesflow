@@ -106,18 +106,16 @@ class ModelComparisonApproximator(Approximator):
     def compile(
         self,
         *args,
-        classifier_metrics: Sequence[keras.Metric] = None,
-        summary_metrics: Sequence[keras.Metric] = None,
         **kwargs,
     ):
-        if classifier_metrics:
+        if "classifier_metrics" in kwargs:
             warnings.warn(
                 "Supplying classifier metrics to the approximator is no longer supported. "
                 "Please pass the metrics directly to the network using the metrics parameter.",
                 DeprecationWarning,
             )
 
-        if summary_metrics:
+        if "summary_metrics" in kwargs:
             warnings.warn(
                 "Supplying summary metrics to the approximator is no longer supported. "
                 "Please pass the metrics directly to the network using the metrics parameter.",
@@ -166,8 +164,10 @@ class ModelComparisonApproximator(Approximator):
             classifier_metrics |= {
                 metric.name: metric(model_indices, predictions) for metric in self.classifier_network.metrics
             }
-
-        loss = classifier_metrics.get("loss", keras.ops.zeros(())) + summary_metrics.get("loss", keras.ops.zeros(()))
+        if "loss" in summary_metrics:
+            loss = classifier_metrics["loss"] + summary_metrics["loss"]
+        else:
+            loss = classifier_metrics.pop("loss")
 
         classifier_metrics = {f"{key}/classifier_{key}": value for key, value in classifier_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}

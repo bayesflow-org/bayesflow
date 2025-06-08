@@ -10,7 +10,7 @@ from bayesflow.utils.serialization import serializable
 
 @serializable("bayesflow.networks")
 class SummaryNetwork(keras.Layer):
-    def __init__(self, base_distribution: str = None, *, metrics: Sequence[keras.Metric] = None, **kwargs):
+    def __init__(self, base_distribution: str = None, *, metrics: Sequence[keras.Metric] | None = None, **kwargs):
         self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)

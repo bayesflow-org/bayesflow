@@ -160,9 +160,9 @@ class ModelComparisonApproximator(Approximator):
 
         if stage != "training" and any(self.classifier_network.metrics):
             # compute sample-based metrics
-            predictions = keras.ops.argmax(logits, axis=-1)
+            probs = keras.ops.softmax(logits)
             classifier_metrics |= {
-                metric.name: metric(model_indices, predictions) for metric in self.classifier_network.metrics
+                metric.name: metric(model_indices, probs) for metric in self.classifier_network.metrics
             }
         if "loss" in summary_metrics:
             loss = classifier_metrics["loss"] + summary_metrics["loss"]

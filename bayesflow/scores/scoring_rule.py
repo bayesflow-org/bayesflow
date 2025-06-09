@@ -37,15 +37,15 @@ class ScoringRule:
     with a type of estimate whenever the adapter is applied to them in inverse direction.
     """
 
-    TRANSFORMATION_TYPE: dict[str, str] = {"covariance": "rank02"}
+    TRANSFORMATION_TYPE: dict[str, str] = {}
     """
     Defines nonstandard transformation behaviour for de-standardization.
 
     The standard transformation
 
-    x_i = x_i' * std + mean
+    x_i = x_i' * sigma_i + mu_i
 
-    is referred to as "rank1+shift". Keys not specified here will fallback to that default.
+    is referred to as "location_scale". Keys not specified here will fallback to that default.
     """
 
     def __init__(

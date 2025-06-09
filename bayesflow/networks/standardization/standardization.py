@@ -61,7 +61,7 @@ class Standardization(keras.Layer):
         stage: str = "inference",
         forward: bool = True,
         log_det_jac: bool = False,
-        transformation_type: str = "rank1+shift",
+        transformation_type: str = "location_scale",
         **kwargs,
     ) -> Tensor | Sequence[Tensor]:
         """
@@ -80,16 +80,16 @@ class Standardization(keras.Layer):
             Whether to return the log determinant of the Jacobian. Default is False.
         transformation_type: str, optional
             The type of inverse transform to apply. Only relevant if used with arbitrary point estimates.
-            Default is "rank1+shift", i.e., undo standardization.
+            Default is "location_scale", i.e., undo standardization.
 
         Returns
         -------
         Tensor or Sequence[Tensor]
             Transformed tensor, and optionally the log-determinant if `log_det_jac=True`.
         """
-        if (forward or log_det_jac) and transformation_type != "rank1+shift":
+        if (forward or log_det_jac) and transformation_type != "location_scale":
             raise ValueError(
-                'Non-default transformation (i.e. transformation_type != "rank1+shift") '
+                'Non-default transformation (i.e. transformation_type != "location_scale") '
                 "is not supported for forward or log_det_jac."
             )
 
@@ -108,12 +108,15 @@ class Standardization(keras.Layer):
                 out = (val - mean) / std
             else:
                 match transformation_type:
-                    case "rank1+shift":
-                        # x_i = x_i' * std + mean
+                    case "location_scale":
+                        # x_i = x_i' * sigma_i + mu_i
                         out = val * std + mean
-                    case "rank02":
-                        # x_ij = x_ij * sigma_i * sigma_j
+                    case "both_sides_scale":
+                        # x_ij = sigma_i * x_ij' * sigma_j
                         out = val * std * keras.ops.moveaxis(std, -1, -2)
+                    case "left_side_scale":
+                        # x_ij = sigma_i * x_ij'
+                        out = val * keras.ops.moveaxis(std, -1, -2)
                     case _:
                         out = val
 

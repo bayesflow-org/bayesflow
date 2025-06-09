@@ -65,7 +65,7 @@ class PointApproximator(ContinuousApproximator):
         if "inference_variables" in self.standardize:
             for score_key, score in self.inference_network.scores.items():
                 for head_key in estimates[score_key].keys():
-                    trafo_type = score.TRANSFORMATION_TYPE.get(head_key, "rank1+shift")
+                    trafo_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
                     estimates[score_key][head_key] = self.standardize_layers["inference_variables"](
                         estimates[score_key][head_key], forward=False, transformation_type=trafo_type
                     )

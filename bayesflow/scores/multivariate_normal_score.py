@@ -26,15 +26,15 @@ class MultivariateNormalScore(ParametricDistributionScore):
     For more information see :py:class:`ScoringRule`.
     """
 
-    TRANSFORMATION_TYPE: dict[str, str] = {"covariance": "rank02"}
+    TRANSFORMATION_TYPE: dict[str, str] = {"covariance": "both_sides_scale"}
     """
     Marks covariance head to handle de-standardization as for covariant rank-(0,2) tensors.
 
     The appropriate inverse of the standardization operation is
 
-    x_ij = x_ij * sigma_i * sigma_j.
+    x_ij = x_ij' * sigma_i * sigma_j.
 
-    For the mean head the default ("rank1+shift") is not overridden.
+    For the mean head the default ("location_scale") is not overridden.
     """
 
     def __init__(self, dim: int = None, links: dict = None, **kwargs):

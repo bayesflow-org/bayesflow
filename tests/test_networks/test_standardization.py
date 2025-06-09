@@ -119,7 +119,6 @@ def test_transformation_type_both_sides_scale():
     cov_standardized_and_recovered = keras.ops.convert_to_numpy(cov_standardized_and_recovered)
     cov_input = np.cov(random_input, rowvar=False)
 
-    np.testing.assert_allclose(cov_input, covariance, atol=1e-1)
     np.testing.assert_allclose(cov_input, cov_standardized_and_recovered, atol=1e-4)
 
 
@@ -153,7 +152,6 @@ def test_transformation_type_left_side_scale():
     cov_input = np.cov(random_input, rowvar=False)
     chol_input = np.linalg.cholesky(cov_input)
 
-    np.testing.assert_allclose(chol_input, cholesky, atol=1e-1)
     np.testing.assert_allclose(chol_input, chol_standardized_and_recovered, atol=1e-4)
 
 

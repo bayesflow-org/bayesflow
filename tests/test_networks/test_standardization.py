@@ -93,14 +93,15 @@ def test_nested_consistency_forward_inverse():
 
 def test_transformation_type_both_sides_scale():
     # Fix a known covariance and mean in original (not standardized space)
-    covariance = np.array([[1, 0.5], [0.5, 2.0]])
-    mean = np.array([1, 10])
+    covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")
+    mean = np.array([1, 10], dtype="float32")
 
     # Generate samples
     cholesky = keras.ops.cholesky(covariance)  # (dim, dim)
     normals = keras.random.normal((128, 2))  # (batch_size, dim)
     scaled = keras.ops.einsum("ij,bj->bi", cholesky, normals)
-    random_input = mean[None, :] + scaled
+
+    random_input = keras.ops.convert_to_tensor(mean[None, :]) + scaled
 
     layer = Standardization()
     _ = layer(random_input, stage="training", forward=True)
@@ -124,14 +125,15 @@ def test_transformation_type_both_sides_scale():
 
 def test_transformation_type_left_side_scale():
     # Fix a known covariance and mean in original (not standardized space)
-    covariance = np.array([[1, 0.5], [0.5, 2.0]])
-    mean = np.array([1, 10])
+    covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")
+    mean = np.array([1, 10], dtype="float32")
 
     # Generate samples
     cholesky = keras.ops.cholesky(covariance)  # (dim, dim)
     normals = keras.random.normal((1024, 2))  # (batch_size, dim)
     scaled = keras.ops.einsum("ij,bj->bi", cholesky, normals)
-    random_input = mean[None, :] + scaled
+
+    random_input = keras.ops.convert_to_tensor(mean[None, :]) + scaled
 
     layer = Standardization()
     _ = layer(random_input, stage="training", forward=True)

@@ -91,6 +91,38 @@ def test_nested_consistency_forward_inverse():
     np.testing.assert_allclose(random_input["b"], recovered["b"], atol=1e-4)
 
 
+def test_transformation_type_both_sides_scale():
+    # Fix a known covariance and mean in original (not standardized space)
+    covariance = np.array([[1, 0.5], [0.5, 2.0]])
+    mean = np.array([1, 10])
+
+    # Generate samples
+    cholesky = keras.ops.cholesky(covariance)  # (dim, dim)
+    normals = keras.random.normal((128, 2))  # (batch_size, dim)
+    scaled = keras.ops.einsum("ij,bj->bi", cholesky, normals)
+    random_input = mean[None, :] + scaled
+
+    layer = Standardization()
+    _ = layer(random_input, stage="training", forward=True)
+
+    # Standardize samples
+    standardized = layer(random_input, stage="inference", forward=True)
+    # Compute covariance matrix in standardized space
+    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
+    cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
+    # Inverse standardization of covariance matrix in standardized space
+    cov_standardized_and_recovered = layer(
+        cov_standardized, stage="inference", forward=False, transformation_type="both_sides_scale"
+    )
+
+    random_input = keras.ops.convert_to_numpy(random_input)
+    cov_standardized_and_recovered = keras.ops.convert_to_numpy(cov_standardized_and_recovered)
+    cov_input = np.cov(random_input, rowvar=False)
+
+    np.testing.assert_allclose(cov_input, covariance, atol=1e-1)
+    np.testing.assert_allclose(cov_input, cov_standardized_and_recovered, atol=1e-4)
+
+
 def test_serialize_deserialize():
     layer = Standardization(momentum=0.0)
     layer.build((32, 5))

@@ -33,10 +33,10 @@ def ordered_quantiles():
 
 
 @pytest.fixture()
-def positive_definite():
-    from bayesflow.links import PositiveDefinite
+def cholesky_factor():
+    from bayesflow.links import CholeskyFactor
 
-    return PositiveDefinite()
+    return CholeskyFactor()
 
 
 @pytest.fixture()
@@ -44,7 +44,7 @@ def linear():
     return keras.layers.Activation("linear")
 
 
-@pytest.fixture(params=["ordered", "ordered_quantiles", "positive_definite", "linear"], scope="function")
+@pytest.fixture(params=["ordered", "ordered_quantiles", "cholesky_factor", "linear"], scope="function")
 def link(request):
     return request.getfixturevalue(request.param)
 

@@ -6,8 +6,8 @@ from bayesflow.utils.serialization import serializable
 
 
 @serializable("bayesflow.links")
-class PositiveDefinite(keras.Layer):
-    """Activation function to link from flat elements of a lower triangular matrix to a positive definite matrix."""
+class CholeskyFactor(keras.Layer):
+    """Activation function to link from a flat tensor to a lower triangular matrix with positive diagonal."""
 
     def __init__(self, **kwargs):
         super().__init__(**layer_kwargs(kwargs))
@@ -17,12 +17,7 @@ class PositiveDefinite(keras.Layer):
         L = fill_triangular_matrix(inputs)
         L = positive_diag(L)
 
-        # calculate positive definite matrix from cholesky factors:
-        psd = keras.ops.matmul(
-            L,
-            keras.ops.swapaxes(L, -2, -1),  # L transposed
-        )
-        return psd
+        return L
 
     def compute_output_shape(self, input_shape):
         m = input_shape[-1]

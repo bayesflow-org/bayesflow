@@ -2,7 +2,7 @@
 
 from .ordered import Ordered
 from .ordered_quantiles import OrderedQuantiles
-from .positive_definite import PositiveDefinite
+from .cholesky_factor import CholeskyFactor
 
 from ..utils._docs import _add_imports_to_all
 

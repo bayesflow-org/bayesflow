@@ -521,10 +521,7 @@ class ContinuousApproximator(Approximator):
                 summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
             )
 
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
+            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
 
         if inference_conditions is not None:
             # conditions must always have shape (batch_size, ..., dims)

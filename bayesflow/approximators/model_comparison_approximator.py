@@ -92,7 +92,7 @@ class ModelComparisonApproximator(Approximator):
 
         # Set up standardization layers if requested
         if self.standardize == "all":
-            self.standardize = [var for var in ["summary_variables", "classifier_conditions"] if var in data_shapes]
+            self.standardize = [var for var in ModelComparisonApproximator.CONDITION_KEYS if var in data_shapes]
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
         # Build all standardization layers

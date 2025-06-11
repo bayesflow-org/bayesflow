@@ -33,6 +33,9 @@ class ModelComparisonApproximator(Approximator):
     summary_network: bf.networks.SummaryNetwork, optional
         The summary network used for data summarization (default is None).
         The input of the summary network is `summary_variables`.
+    logits_projector: keras.layers.Layer, optional
+        A layer that projects the output of the classifier network to the logits space for each model.
+        If not provided, a dense layer with `num_models` units is used by default.
     """
 
     SAMPLE_KEYS = ["summary_variables", "classifier_conditions"]
@@ -44,6 +47,7 @@ class ModelComparisonApproximator(Approximator):
         classifier_network: keras.Layer,
         adapter: Adapter,
         summary_network: SummaryNetwork = None,
+        logits_projector: keras.layers.Layer = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -51,7 +55,7 @@ class ModelComparisonApproximator(Approximator):
         self.adapter = adapter
         self.summary_network = summary_network
         self.num_models = num_models
-        self.logits_projector = keras.layers.Dense(num_models)
+        self.logits_projector = logits_projector if logits_projector is not None else keras.layers.Dense(num_models)
 
     def build(self, data_shapes: Mapping[str, Shape]):
         data = {key: keras.ops.zeros(value) for key, value in data_shapes.items()}
@@ -266,6 +270,7 @@ class ModelComparisonApproximator(Approximator):
             "adapter": self.adapter,
             "classifier_network": self.classifier_network,
             "summary_network": self.summary_network,
+            "logits_projector": self.logits_projector,
         }
 
         return base_config | serialize(config)

@@ -34,6 +34,10 @@ class ModelComparisonApproximator(Approximator):
     summary_network: bf.networks.SummaryNetwork, optional
         The summary network used for data summarization (default is None).
         The input of the summary network is `summary_variables`.
+    standardize : str | Sequence[str] | None
+        The variables to standardize before passing to the networks. Can be either
+        "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].
+        (default is "all").
     """
 
     CONDITION_KEYS = ["summary_variables", "classifier_conditions"]

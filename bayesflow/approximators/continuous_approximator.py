@@ -36,6 +36,10 @@ class ContinuousApproximator(Approximator):
         The inference network used for posterior or likelihood approximation.
     summary_network : SummaryNetwork, optional
         The summary network used for data summarization (default is None).
+    standardize : str | Sequence[str] | None
+        The variables to standardize before passing to the networks. Can be either
+        "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].
+        (default is "all").
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
@@ -440,9 +444,10 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        # Adapt, optionally standardize and convert conditions to tensor.
+        # Adapt, optionally standardize and convert conditions to tensor
         conditions = self._prepare_data(conditions, **kwargs)
-        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
+
+        # Remove any superfluous keys, just retain actual conditions
         conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
 
         # Sample and undo optional standardization
@@ -465,46 +470,42 @@ class ContinuousApproximator(Approximator):
         self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """
-        Adapts, optionally standardizes, and converts the data to tensors to prepare it for the inference network.
+        Adapts, (optionally) standardizes, and converts data to tensors for inference.
 
-        Deals with data that represents only conditions, or only inference_variables or both.
+        Handles inputs containing only conditions, only inference_variables, or both.
+        Optionally tracks log-determinant Jacobian (ldj) of transformations.
         """
-        # TODO:
-        # * [ ] better docstring
-
-        # Adapt, and optionally keep track of ldj of transformations to inference_variables.
         adapted = self.adapter(data, strict=False, stage="inference", log_det_jac=log_det_jac, **kwargs)
+
         if log_det_jac:
-            data, log_det_jac_adapter = adapted
-            log_det_jac_inference_variables = log_det_jac_adapter.get("inference_variables", 0.0)
+            data, ldj = adapted
+            ldj_inference = ldj.get("inference_variables", 0.0)
         else:
             data = adapted
+            ldj_inference = None
 
-        # Optionally standardize conditions, if they are part of data.
-        conditions = {k: v for k, v in data.items() if k in ContinuousApproximator.CONDITION_KEYS}
-        for key, value in conditions.items():
-            if key in self.standardize and key in data.keys():
-                data[key] = self.standardize_layers[key](value)
+        # Standardize conditions
+        for key in ContinuousApproximator.CONDITION_KEYS:
+            if key in self.standardize and key in data:
+                data[key] = self.standardize_layers[key](data[key])
 
-        # Optionally standardize inference variables, if they are part of data.
-        if "inference_variables" in data.keys() and "inference_variables" in self.standardize:
-            standardized = self.standardize_layers["inference_variables"](
+        # Standardize inference variables
+        if "inference_variables" in data and "inference_variables" in self.standardize:
+            result = self.standardize_layers["inference_variables"](
                 data["inference_variables"], log_det_jac=log_det_jac
             )
-
-            # Optionally keep track of appropriate log_det_jac.
             if log_det_jac:
-                data["inference_variables"], log_det_std = standardized
-                log_det_jac_inference_variables += keras.ops.convert_to_numpy(log_det_std)
+                data["inference_variables"], ldj_std = result
+                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
             else:
-                data["inference_variables"] = standardized
+                data["inference_variables"] = result
 
-        # Convert to tensor and return.
+        # Convert all data to tensors
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+
         if log_det_jac:
-            return data, log_det_jac
-        else:
-            return data
+            return data, ldj_inference
+        return data
 
     def _sample(
         self,

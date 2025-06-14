@@ -3,7 +3,7 @@ import math
 import keras
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.links import PositiveDefinite
+from bayesflow.links import CholeskyFactor
 from bayesflow.utils.serialization import serializable
 
 from .parametric_distribution_score import ParametricDistributionScore
@@ -13,12 +13,13 @@ from .parametric_distribution_score import ParametricDistributionScore
 class MultivariateNormalScore(ParametricDistributionScore):
     r""":math:`S(\hat p_{\mu, \Sigma}, \theta; k) = -\log( \mathcal N (\theta; \mu, \Sigma))`
 
-    Scores a predicted mean and covariance matrix with the log-score of the probability of the materialized value.
+    Scores a predicted mean and (Cholesky factor of the) covariance matrix with the log-score of the probability
+    of the materialized value.
     """
 
-    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("covariance",)
+    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("cov_chol",)
     """
-    Marks head for covariance matrix as an exception for adapter transformations.
+    Marks head for covariance matrix Cholesky factor as an exception for adapter transformations.
 
     This variable contains names of prediction heads that should lead to a warning when the adapter is applied
     in inverse direction to them.
@@ -26,11 +27,22 @@ class MultivariateNormalScore(ParametricDistributionScore):
     For more information see :py:class:`ScoringRule`.
     """
 
+    TRANSFORMATION_TYPE: dict[str, str] = {"cov_chol": "left_side_scale"}
+    """
+    Marks covariance Cholesky factor head to handle de-standardization as for covariant rank-(0,2) tensors.
+
+    The appropriate inverse of the standardization operation is
+
+    x_ij = sigma_i * x_ij'.
+
+    For the mean head the default ("location_scale") is not overridden.
+    """
+
     def __init__(self, dim: int = None, links: dict = None, **kwargs):
         super().__init__(links=links, **kwargs)
 
         self.dim = dim
-        self.links = links or {"covariance": PositiveDefinite()}
+        self.links = links or {"cov_chol": CholeskyFactor()}
 
         self.config = {"dim": dim}
 
@@ -40,14 +52,14 @@ class MultivariateNormalScore(ParametricDistributionScore):
 
     def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
         self.dim = target_shape[-1]
-        return dict(mean=(self.dim,), covariance=(self.dim, self.dim))
+        return dict(mean=(self.dim,), cov_chol=(self.dim, self.dim))
 
-    def log_prob(self, x: Tensor, mean: Tensor, covariance: Tensor) -> Tensor:
+    def log_prob(self, x: Tensor, mean: Tensor, cov_chol: Tensor) -> Tensor:
         """
         Compute the log probability density of a multivariate Gaussian distribution.
 
         This function calculates the log probability density for each sample in `x` under a
-        multivariate Gaussian distribution with the given `mean` and `covariance`.
+        multivariate Gaussian distribution with the given `mean` and `cov_chol`.
 
         The computation includes the determinant of the covariance matrix, its inverse, and the quadratic
         form in the exponential term of the Gaussian density function.
@@ -69,6 +81,12 @@ class MultivariateNormalScore(ParametricDistributionScore):
             given Gaussian distribution.
         """
         diff = x - mean
+
+        # Calculate covariance from Cholesky factors
+        covariance = keras.ops.matmul(
+            cov_chol,
+            keras.ops.swapaxes(cov_chol, -2, -1),
+        )
         precision = keras.ops.inv(covariance)
         log_det_covariance = keras.ops.slogdet(covariance)[1]  # Only take the log of the determinant part
 
@@ -80,14 +98,12 @@ class MultivariateNormalScore(ParametricDistributionScore):
 
         return log_prob
 
-    def sample(self, batch_shape: Shape, mean: Tensor, covariance: Tensor) -> Tensor:
+    def sample(self, batch_shape: Shape, mean: Tensor, cov_chol: Tensor) -> Tensor:
         """
         Generate samples from a multivariate Gaussian distribution.
 
-        This function samples from a multivariate Gaussian distribution with the given `mean`
-        and `covariance` using the Cholesky decomposition method. Independent standard normal
-        samples are transformed using the Cholesky factor of the covariance matrix to generate
-        correlated samples.
+        Independent standard normal samples are transformed using the Cholesky factor of the covariance matrix
+        to generate correlated samples.
 
         Parameters
         ----------
@@ -96,8 +112,8 @@ class MultivariateNormalScore(ParametricDistributionScore):
         mean : Tensor
             A tensor representing the mean of the multivariate Gaussian distribution.
             Must have shape (batch_size, D), where D is the dimensionality of the distribution.
-        covariance : Tensor
-            A tensor representing the covariance matrix of the multivariate Gaussian distribution.
+        cov_chol : Tensor
+            A tensor representing a Cholesky factor of the covariance matrix of the multivariate Gaussian distribution.
             Must have shape (batch_size, D, D), where D is the dimensionality.
 
         Returns
@@ -112,16 +128,16 @@ class MultivariateNormalScore(ParametricDistributionScore):
         if keras.ops.shape(mean) != (batch_size, dim):
             raise ValueError(f"mean must have shape (batch_size, {dim}), but got {keras.ops.shape(mean)}")
 
-        if keras.ops.shape(covariance) != (batch_size, dim, dim):
+        if keras.ops.shape(cov_chol) != (batch_size, dim, dim):
             raise ValueError(
-                f"covariance must have shape (batch_size, {dim}, {dim}), but got {keras.ops.shape(covariance)}"
+                f"covariance Cholesky factor must have shape (batch_size, {dim}, {dim}),"
+                f"but got {keras.ops.shape(cov_chol)}"
             )
 
         # Use Cholesky decomposition to generate samples
-        cholesky_factor = keras.ops.cholesky(covariance)
         normal_samples = keras.random.normal((*batch_shape, dim))
 
-        scaled_normal = keras.ops.einsum("ijk,ilk->ilj", cholesky_factor, normal_samples)
+        scaled_normal = keras.ops.einsum("ijk,ilk->ilj", cov_chol, normal_samples)
         samples = mean[:, None, :] + scaled_normal
 
         return samples

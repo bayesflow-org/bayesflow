@@ -51,7 +51,7 @@ class FlowMatching(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "mlp",
         base_distribution: str | Distribution = "normal",
         use_optimal_transport: bool = False,
         loss_fn: str | keras.Loss = "mse",
@@ -74,8 +74,8 @@ class FlowMatching(InferenceNetwork):
         Parameters
         ----------
         subnet : str or keras.Layer, optional
-            The architecture used for the transformation network. Can be "mlp" or a custom
-            callable network. Default is "mlp".
+            Architecture for the transformation network. Can be "mlp", a custom network class, or
+            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
         base_distribution : str, optional
             The base probability distribution from which samples are drawn, such as "normal".
             Default is "normal".

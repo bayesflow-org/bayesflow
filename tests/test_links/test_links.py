@@ -52,21 +52,20 @@ def test_quantile_ordering(quantiles, unordered):
     check_ordering(output, axis)
 
 
-def test_positive_definite(positive_definite, batch_size, num_variables):
-    input_shape = positive_definite.compute_input_shape((batch_size, num_variables, num_variables))
+def test_cholesky_factor(cholesky_factor, batch_size, num_variables):
+    input_shape = cholesky_factor.compute_input_shape((batch_size, num_variables, num_variables))
 
-    # Too strongly negative values lead to numerical instabilities -> reduce scale
-    random_preactivation = keras.random.normal(input_shape) * 0.1
-    output = positive_definite(random_preactivation)
+    random_preactivation = keras.random.normal(input_shape)
+
+    output = cholesky_factor(random_preactivation)
     output = keras.ops.convert_to_numpy(output)
 
-    # Check if output is invertible
-    np.linalg.inv(output)
-
-    # Calculated eigenvalues to test for positive definiteness
-    eigenvalues = np.linalg.eig(output).eigenvalues
-
-    assert np.all(eigenvalues.real > 0) and np.all(np.isclose(eigenvalues.imag, 0)), (
-        f"output is not positive definite: min(real)={np.min(eigenvalues.real)}, "
-        f"max(abs(imag))={np.max(np.abs(eigenvalues.imag))}"
+    np.testing.assert_allclose(
+        np.triu(output, k=1),
+        np.zeros((batch_size, num_variables, num_variables)),
+        atol=1e-4,
+        err_msg=f"All elements above diagonal must be zero for lower triangular matrix: {output}",
     )
+
+    diag = np.diagonal(output, axis1=1, axis2=2)
+    assert np.all(diag > 0), f"diagonal is not strictly positive: {diag}"

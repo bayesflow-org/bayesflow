@@ -51,7 +51,7 @@ class DiffusionModel(InferenceNetwork):
     def __init__(
         self,
         *,
-        subnet: str | type = "mlp",
+        subnet: str | type | keras.Layer = "mlp",
         noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
         prediction_type: Literal["velocity", "noise", "F", "x"] = "F",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
@@ -69,9 +69,9 @@ class DiffusionModel(InferenceNetwork):
 
         Parameters
         ----------
-        subnet : str or type, optional
-            Architecture for the transformation network. Can be "mlp" or a custom network class.
-            Default is "mlp".
+        subnet : str, type or keras.Layer, optional
+            Architecture for the transformation network. Can be "mlp", a custom network class, or
+            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
             Noise schedule controlling the diffusion dynamics. Can be a string identifier,
             a schedule class, or a pre-initialized schedule instance. Default is "edm".

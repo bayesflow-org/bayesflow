@@ -77,6 +77,7 @@ from .serialization import serialize_value_or_type, deserialize_value_or_type
 
 from .tensor_utils import (
     concatenate_valid,
+    concatenate_valid_shapes,
     expand,
     expand_as,
     expand_to,

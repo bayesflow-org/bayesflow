@@ -22,7 +22,7 @@ def test_linear_regression_starter(examples_path):
 
 @pytest.mark.slow
 def test_lotka_volterra_point_estimation_and_expert_stats(examples_path):
-    run_notebook(examples_path / "Lotka_Volterra_Point_Estimation_and_Expert_Stats.ipynb")
+    run_notebook(examples_path / "Lotka_Volterra_Point_Estimation.ipynb")
 
 
 @pytest.mark.slow

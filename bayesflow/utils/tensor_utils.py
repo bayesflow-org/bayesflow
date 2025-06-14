@@ -4,7 +4,7 @@ from typing import TypeVar
 import keras
 import numpy as np
 
-from bayesflow.types import Tensor
+from bayesflow.types import Tensor, Shape
 from . import logging
 
 T = TypeVar("T")
@@ -18,6 +18,17 @@ def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor
         return None
 
     return keras.ops.concatenate(tensors, axis=axis)
+
+
+def concatenate_valid_shapes(tensor_shapes: Sequence[Shape | None], axis: int = 0) -> Shape | None:
+    tensor_shapes = [s for s in tensor_shapes if s is not None]
+    if not tensor_shapes:
+        return None
+
+    output_shape = list(tensor_shapes[0])
+    for s in tensor_shapes[1:]:
+        output_shape[axis] += s[axis]
+    return output_shape
 
 
 def expand(x: Tensor, n: int, side: str):
@@ -213,6 +224,8 @@ def size_of(x) -> int:
     :param x: A nested structure of tensors.
     :return: The total memory footprint of x, ignoring view semantics, in bytes.
     """
+    if isinstance(x, (int, float)):
+        x = np.asarray(x)
     if keras.ops.is_tensor(x) or isinstance(x, np.ndarray):
         return int(keras.ops.size(x)) * np.dtype(keras.ops.dtype(x)).itemsize
 

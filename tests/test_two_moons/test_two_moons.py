@@ -23,7 +23,8 @@ def test_fit(approximator, train_dataset, validation_dataset, batch_size):
 
     mock_data = train_dataset[0]
     mock_data = keras.tree.map_structure(keras.ops.convert_to_tensor, mock_data)
-    approximator.build_from_data(mock_data)
+    mock_data_shapes = keras.tree.map_structure(keras.ops.shape, mock_data)
+    approximator.build(mock_data_shapes)
 
     untrained_weights = copy.deepcopy(approximator.weights)
     untrained_metrics = approximator.evaluate(validation_dataset, return_dict=True)
@@ -56,7 +57,11 @@ def test_fit(approximator, train_dataset, validation_dataset, batch_size):
 def test_serialize_deserialize(tmp_path, approximator, train_dataset):
     mock_data = train_dataset[0]
     mock_data = keras.tree.map_structure(keras.ops.convert_to_tensor, mock_data)
-    approximator.build_from_data(mock_data)
+    mock_data_shapes = keras.tree.map_structure(keras.ops.shape, mock_data)
+    approximator.build(mock_data_shapes)
+
+    # run a single batch through the approximator
+    approximator.compute_metrics(**mock_data)
 
     keras.saving.save_model(approximator, tmp_path / "model.keras")
     loaded_approximator = keras.saving.load_model(tmp_path / "model.keras")

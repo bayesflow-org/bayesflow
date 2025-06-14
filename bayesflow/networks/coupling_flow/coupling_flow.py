@@ -40,7 +40,7 @@ class CouplingFlow(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type = "mlp",
         depth: int = 6,
         transform: str = "affine",
         permutation: str | None = "random",
@@ -68,7 +68,7 @@ class CouplingFlow(InferenceNetwork):
 
         Parameters
         ----------
-        subnet : str, type, or keras.Layer, optional
+        subnet : str or type optional
             Architecture for the transformation network. Can be "mlp", a custom network class, or
             a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
         depth : int, optional

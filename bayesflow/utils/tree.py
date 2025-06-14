@@ -1,4 +1,5 @@
 import optree
+from typing import Callable
 
 
 def flatten_shape(structure):
@@ -14,7 +15,7 @@ def flatten_shape(structure):
     return leaves
 
 
-def map_dict(func, dictionary):
+def map_dict(func: Callable, dictionary: dict) -> dict:
     """Applies a function to all leaves of a (possibly nested) dictionary.
 
     Parameters

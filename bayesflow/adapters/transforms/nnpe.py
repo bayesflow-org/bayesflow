@@ -87,7 +87,7 @@ class NNPE(ElementwiseTransform):
         """
         Determine spike/slab scale:
          - If `passed` is None: Automatic determination via default * std(data) (per‐dimension or global).
-         - Else: validate & cast `passed to the correct shape/type.
+         - Else: Validate & cast `passed` to the correct shape/type.
 
         Parameters
         ----------

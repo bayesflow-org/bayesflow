@@ -41,32 +41,32 @@ def pytest_make_parametrize_id(config, val, argname):
     return f"{argname}={repr(val)}"
 
 
-@pytest.fixture(params=[2], scope="session")
+@pytest.fixture(params=[2])
 def batch_size(request):
     return request.param
 
 
-@pytest.fixture(params=[None, 2, 3], scope="session")
+@pytest.fixture(params=[None, 2, 3])
 def conditions_size(request):
     return request.param
 
 
-@pytest.fixture(params=[1, 4], scope="session")
+@pytest.fixture(params=[1, 4])
 def summary_dim(request):
     return request.param
 
 
-@pytest.fixture(params=["two_moons"], scope="session")
+@pytest.fixture(params=["two_moons"])
 def dataset(request):
     return request.getfixturevalue(request.param)
 
 
-@pytest.fixture(params=[2, 3], scope="session")
+@pytest.fixture(params=[2, 3])
 def feature_size(request):
     return request.param
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def random_conditions(batch_size, conditions_size):
     if conditions_size is None:
         return None
@@ -74,7 +74,7 @@ def random_conditions(batch_size, conditions_size):
     return keras.random.normal((batch_size, conditions_size))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def random_samples(batch_size, feature_size):
     return keras.random.normal((batch_size, feature_size))
 
@@ -86,11 +86,11 @@ def random_seed():
     return seed
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def random_set(batch_size, set_size, feature_size):
     return keras.random.normal((batch_size, set_size, feature_size))
 
 
-@pytest.fixture(params=[2, 3], scope="session")
+@pytest.fixture(params=[2, 3])
 def set_size(request):
     return request.param

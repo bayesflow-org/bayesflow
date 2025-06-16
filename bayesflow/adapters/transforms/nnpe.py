@@ -173,7 +173,7 @@ class NNPE(ElementwiseTransform):
         return data + noise
 
     def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        """Non-invertible transform."""
+        # Non-invertible transform.
         return data
 
     def get_config(self) -> dict:

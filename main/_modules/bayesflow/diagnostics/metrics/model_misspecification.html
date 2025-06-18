@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -599,8 +623,8 @@
             <span class="s2">&quot;statistics, or want to compare raw data and not summary statistics, please use the &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;`bootstrap_comparison` function with `comparison_fn=</span><span class="si">{</span><span class="n">comparison_fn_name</span><span class="si">}</span><span class="s2">` on the respective arrays.&quot;</span>
         <span class="p">)</span>
-    <span class="n">observed_summaries</span> <span class="o">=</span> <span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">approximator</span><span class="o">.</span><span class="n">summaries</span><span class="p">(</span><span class="n">observed_data</span><span class="p">))</span>
-    <span class="n">reference_summaries</span> <span class="o">=</span> <span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">approximator</span><span class="o">.</span><span class="n">summaries</span><span class="p">(</span><span class="n">reference_data</span><span class="p">))</span>
+    <span class="n">observed_summaries</span> <span class="o">=</span> <span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">approximator</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">observed_data</span><span class="p">))</span>
+    <span class="n">reference_summaries</span> <span class="o">=</span> <span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">approximator</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">reference_data</span><span class="p">))</span>
 
     <span class="n">distance_observed</span><span class="p">,</span> <span class="n">distance_null</span> <span class="o">=</span> <span class="n">bootstrap_comparison</span><span class="p">(</span>
         <span class="n">observed_samples</span><span class="o">=</span><span class="n">observed_summaries</span><span class="p">,</span>

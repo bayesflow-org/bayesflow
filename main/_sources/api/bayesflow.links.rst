@@ -26,6 +26,7 @@ links
     :toctree:
     :template: base.rst
   
+    CholeskyFactor
     Ordered
     OrderedQuantiles
     PositiveDefinite

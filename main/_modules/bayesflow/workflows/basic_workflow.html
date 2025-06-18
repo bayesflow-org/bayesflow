@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -491,7 +515,7 @@
         <span class="n">inference_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">inference_conditions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">standardize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span>
+        <span class="n">standardize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -530,11 +554,13 @@
 <span class="sd">            Variables for inference as a sequence of strings or a single string (default is None).</span>
 <span class="sd">            Important for automating diagnostics!</span>
 <span class="sd">        inference_conditions : Sequence[str] or str, optional</span>
-<span class="sd">            Variables used as conditions for inference (default is None).</span>
+<span class="sd">            Variables used as direct conditions for inference (default is None).</span>
 <span class="sd">        summary_variables : Sequence[str] or str, optional</span>
-<span class="sd">            Variables for summarizing data, if any (default is None).</span>
+<span class="sd">            Variables to be summarized through the summary network before being used as conditions (default is None).</span>
 <span class="sd">        standardize : Sequence[str] or str, optional</span>
-<span class="sd">            Variables to standardize during preprocessing (default is &quot;inference_variables&quot;).</span>
+<span class="sd">            Variables to standardize during preprocessing (default is &quot;inference_variables&quot;). These will be</span>
+<span class="sd">            passed to the corresponding approximator constructor and can be either &quot;all&quot; or any subset of</span>
+<span class="sd">            [&quot;inference_variables&quot;, &quot;summary_variables&quot;, &quot;inference_conditions&quot;].</span>
 <span class="sd">        **kwargs : dict, optional</span>
 <span class="sd">            Additional arguments for configuring networks, adapters, optimizers, etc.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -548,9 +574,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span>
 
-        <span class="n">adapter</span> <span class="o">=</span> <span class="n">adapter</span> <span class="ow">or</span> <span class="n">BasicWorkflow</span><span class="o">.</span><span class="n">default_adapter</span><span class="p">(</span>
-            <span class="n">inference_variables</span><span class="p">,</span> <span class="n">inference_conditions</span><span class="p">,</span> <span class="n">summary_variables</span><span class="p">,</span> <span class="n">standardize</span>
-        <span class="p">)</span>
+        <span class="n">adapter</span> <span class="o">=</span> <span class="n">adapter</span> <span class="ow">or</span> <span class="n">BasicWorkflow</span><span class="o">.</span><span class="n">default_adapter</span><span class="p">(</span><span class="n">inference_variables</span><span class="p">,</span> <span class="n">inference_conditions</span><span class="p">,</span> <span class="n">summary_variables</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="p">,</span> <span class="n">PointInferenceNetwork</span><span class="p">):</span>
             <span class="n">constructor</span> <span class="o">=</span> <span class="n">PointApproximator</span>
@@ -558,7 +582,10 @@
             <span class="n">constructor</span> <span class="o">=</span> <span class="n">ContinuousApproximator</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span> <span class="o">=</span> <span class="n">constructor</span><span class="p">(</span>
-            <span class="n">inference_network</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="p">,</span> <span class="n">summary_network</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+            <span class="n">inference_network</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="p">,</span>
+            <span class="n">summary_network</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">,</span>
+            <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+            <span class="n">standardize</span><span class="o">=</span><span class="n">standardize</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_learning_rate</span> <span class="o">=</span> <span class="n">initial_learning_rate</span>
@@ -625,7 +652,6 @@
         <span class="n">inference_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">inference_conditions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">standardize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Adapter</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a default adapter for processing inference variables, conditions,</span>
@@ -641,8 +667,6 @@
 <span class="sd">            The variables used as conditions for inference.</span>
 <span class="sd">        summary_variables : Sequence[str] or str</span>
 <span class="sd">            The variables used for summarization.</span>
-<span class="sd">        standardize : Sequence[str] or str</span>
-<span class="sd">            The variables to be standardized.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -661,9 +685,6 @@
             <span class="n">adapter</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">inference_conditions</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">adapter</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">standardize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">adapter</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">standardize</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">standardize</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">adapter</span></div>
 
@@ -1169,6 +1190,7 @@
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
         <span class="n">keep_optimizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">validation_data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">augmentations</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">History</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1193,6 +1215,16 @@
 <span class="sd">            A dictionary containing validation data. If an integer is provided,</span>
 <span class="sd">            that number of validation samples will be generated (if supported).</span>
 <span class="sd">            By default, no validation data is used.</span>
+<span class="sd">        augmentations : dict of str to Callable or Callable, optional</span>
+<span class="sd">            Dictionary of augmentation functions to apply to each corresponding key in the batch</span>
+<span class="sd">            or a function to apply to the entire batch (possibly adding new keys).</span>
+
+<span class="sd">            If you provide a dictionary of functions, each function should accept one element</span>
+<span class="sd">            of your output batch and return the corresponding transformed element. Otherwise,</span>
+<span class="sd">            your function should accept the entire dictionary output and return a dictionary.</span>
+
+<span class="sd">            Note - augmentations are applied before the adapter is called and are generally</span>
+<span class="sd">            transforms that you only want to apply during training.</span>
 <span class="sd">        **kwargs : dict, optional</span>
 <span class="sd">            Additional keyword arguments passed to the underlying `_fit` method.</span>
 
@@ -1204,7 +1236,7 @@
 <span class="sd">            metric evolution over epochs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">dataset</span> <span class="o">=</span> <span class="n">OfflineDataset</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">)</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">OfflineDataset</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span> <span class="n">augmentations</span><span class="o">=</span><span class="n">augmentations</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
             <span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;online&quot;</span><span class="p">,</span> <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
@@ -1220,6 +1252,7 @@
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
         <span class="n">keep_optimizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">validation_data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">augmentations</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">History</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1241,6 +1274,16 @@
 <span class="sd">            A dictionary containing validation data. If an integer is provided,</span>
 <span class="sd">            that number of validation samples will be generated (if supported).</span>
 <span class="sd">            By default, no validation data is used.</span>
+<span class="sd">        augmentations : dict of str to Callable or Callable, optional</span>
+<span class="sd">            Dictionary of augmentation functions to apply to each corresponding key in the batch</span>
+<span class="sd">            or a function to apply to the entire batch (possibly adding new keys).</span>
+
+<span class="sd">            If you provide a dictionary of functions, each function should accept one element</span>
+<span class="sd">            of your output batch and return the corresponding transformed element. Otherwise,</span>
+<span class="sd">            your function should accept the entire dictionary output and return a dictionary.</span>
+
+<span class="sd">            Note - augmentations are applied before the adapter is called and are generally</span>
+<span class="sd">            transforms that you only want to apply during training.</span>
 <span class="sd">        **kwargs : dict, optional</span>
 <span class="sd">            Additional keyword arguments passed to the underlying `_fit` method.</span>
 
@@ -1253,7 +1296,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">OnlineDataset</span><span class="p">(</span>
-            <span class="n">simulator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="n">num_batches_per_epoch</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span>
+            <span class="n">simulator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">num_batches</span><span class="o">=</span><span class="n">num_batches_per_epoch</span><span class="p">,</span>
+            <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span>
+            <span class="n">augmentations</span><span class="o">=</span><span class="n">augmentations</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
@@ -1272,6 +1319,7 @@
         <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">keep_optimizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">validation_data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">augmentations</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">History</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1299,6 +1347,16 @@
 <span class="sd">            A dictionary containing validation data. If an integer is provided,</span>
 <span class="sd">            that number of validation samples will be generated (if supported).</span>
 <span class="sd">            By default, no validation data is used.</span>
+<span class="sd">        augmentations : dict of str to Callable or Callable, optional</span>
+<span class="sd">            Dictionary of augmentation functions to apply to each corresponding key in the batch</span>
+<span class="sd">            or a function to apply to the entire batch (possibly adding new keys).</span>
+
+<span class="sd">            If you provide a dictionary of functions, each function should accept one element</span>
+<span class="sd">            of your output batch and return the corresponding transformed element. Otherwise,</span>
+<span class="sd">            your function should accept the entire dictionary output and return a dictionary.</span>
+
+<span class="sd">            Note - augmentations are applied before the adapter is called and are generally</span>
+<span class="sd">            transforms that you only want to apply during training.</span>
 <span class="sd">        **kwargs : dict, optional</span>
 <span class="sd">            Additional keyword arguments passed to the underlying `_fit` method.</span>
 
@@ -1310,7 +1368,14 @@
 <span class="sd">            metric evolution over epochs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">dataset</span> <span class="o">=</span> <span class="n">DiskDataset</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">load_fn</span><span class="o">=</span><span class="n">load_fn</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">)</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">DiskDataset</span><span class="p">(</span>
+            <span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span>
+            <span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">load_fn</span><span class="o">=</span><span class="n">load_fn</span><span class="p">,</span>
+            <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span>
+            <span class="n">augmentations</span><span class="o">=</span><span class="n">augmentations</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
             <span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;online&quot;</span><span class="p">,</span> <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>

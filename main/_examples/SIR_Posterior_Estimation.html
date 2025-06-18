@@ -154,6 +154,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/bayesflow.html">
     API Reference
   </a>
@@ -173,13 +180,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -305,6 +322,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/bayesflow.html">
     API Reference
   </a>
@@ -414,7 +438,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">5. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">7. Simple Model Comparison - One Sample T-Test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation_and_Expert_Stats.html">8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">8. Likelihood Estimation</a></li>
 </ul>
 </div>
 </nav></div>
@@ -481,10 +505,10 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="c1"># Set to your favorite backend</span>
+
 <span class="k">if</span> <span class="s2">&quot;KERAS_BACKEND&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
     <span class="c1"># set this to &quot;torch&quot;, &quot;tensorflow&quot;, or &quot;jax&quot;</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
 </pre></div>
 </div>
 </div>
@@ -503,12 +527,17 @@
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;jax&#39;
+</pre></div>
+</div>
+</div>
 </div>
 <section id="introduction">
-<h2><span class="section-number">4.1. </span>Introduction <a class="anchor" id="introduction"></a><a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">4.1. </span>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
 <p>In this tutorial, we will illustrate how to perform posterior inference on simple, stationary SIR-like models (complex models will be tackled in a further notebook). SIR-like models comprise suitable illustrative examples, since they generate time-series and their outputs represent the results of solving a system of ordinary differential equations (ODEs).</p>
 <p>The details for tackling stochastic epidemiological models with neural networks are described in our corresponding paper, which you can consult for a more formal exposition and a more comprehensive treatment of neural architectures:</p>
-<p><strong>OutbreakFlow: Model-based Bayesian inference of disease outbreak dynamics with invertible neural networks and its application to the COVID-19 pandemics in Germany</strong> https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009472</p>
+<p>OutbreakFlow: Model-based Bayesian inference of disease outbreak dynamics with invertible neural networks and its application to the COVID-19 pandemics in Germany. https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009472</p>
 </section>
 <section id="defining-the-simulator">
 <h2><span class="section-number">4.2. </span>Defining the Simulator <a class="anchor" id="defining_the_generative"></a><a class="headerlink" href="#defining-the-simulator" title="Link to this heading">#</a></h2>
@@ -699,7 +728,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/f130302c0177d68661866efb7e7c2b15961a4e993b278b77ac96a3f3a2de284d.png" src="../_images/f130302c0177d68661866efb7e7c2b15961a4e993b278b77ac96a3f3a2de284d.png" />
+<img alt="../_images/7b3df9d0eae22e92c307dd37de45ea0a2a6a6f64b88a23825542e62ab7f0705e.png" src="../_images/7b3df9d0eae22e92c307dd37de45ea0a2a6a6f64b88a23825542e62ab7f0705e.png" />
 </div>
 </div>
 </section>
@@ -812,6 +841,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">inference_net</span><span class="p">,</span>
     <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_net</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="kc">None</span> <span class="c1"># no need to standardize due to log-transform</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -830,8 +860,8 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 9.87 ms, sys: 0 ns, total: 9.87 ms
-Wall time: 9.42 ms
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: total: 0 ns
+Wall time: 8.68 ms
 </pre></div>
 </div>
 </div>
@@ -850,7 +880,12 @@ Wall time: 9.42 ms
 <p>We are now ready to train. If not provided, the default settings use <span class="math notranslate nohighlight">\(100\)</span> epochs with a batch size of <span class="math notranslate nohighlight">\(64\)</span>. The training time for this network is below 1 minute.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span><span class="n">training_data</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span> 
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> 
+    <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -866,7 +901,7 @@ Wall time: 9.42 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/c28b3067e513e6c9f7d28f82dd231dfbf2978762fbc0814085683d4a0bdb2bd1.png" src="../_images/c28b3067e513e6c9f7d28f82dd231dfbf2978762fbc0814085683d4a0bdb2bd1.png" />
+<img alt="../_images/eda698e79d6116fdcf002a4f38ba52019c2925dac5e41fac53e7330043355c9b.png" src="../_images/eda698e79d6116fdcf002a4f38ba52019c2925dac5e41fac53e7330043355c9b.png" />
 </div>
 </div>
 <p>Great, it seems that our approximator has converged! Before we get too excited and throw our networks at real data, we need to make sure that they meet our expectations <em>in silico</em>, that is, given the small world of simulations the networks have seen during training.</p>
@@ -903,7 +938,7 @@ Wall time: 9.42 ms
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:The ratio of simulations / posterior draws should be &gt; 20 for reliable variance reduction, but your ratio is 0. Confidence intervals might be unreliable!
 </pre></div>
 </div>
-<img alt="../_images/583bb5f59b19d096cc21ce1dbc247b3c62b1f6cdaae8bc1873a4077114a0d9dd.png" src="../_images/583bb5f59b19d096cc21ce1dbc247b3c62b1f6cdaae8bc1873a4077114a0d9dd.png" />
+<img alt="../_images/f0b214b8c6317e3ec8820bc8b0655e11579c203e5479ef9ee84daa2c35dfc36d.png" src="../_images/f0b214b8c6317e3ec8820bc8b0655e11579c203e5479ef9ee84daa2c35dfc36d.png" />
 </div>
 </div>
 </section>
@@ -918,7 +953,7 @@ Wall time: 9.42 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/b4f9a2ccfa4f81742df606f53a3cf3b85a1082f77746ad2708e2a0ca560c408f.png" src="../_images/b4f9a2ccfa4f81742df606f53a3cf3b85a1082f77746ad2708e2a0ca560c408f.png" />
+<img alt="../_images/1a2f83dafd639e9ebccb7708be12cc1886666fbecaff83c956c8573670c08fb7.png" src="../_images/1a2f83dafd639e9ebccb7708be12cc1886666fbecaff83c956c8573670c08fb7.png" />
 </div>
 </div>
 </section>
@@ -932,7 +967,7 @@ Wall time: 9.42 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/404239789e35c429c02fc89bd35d448fc0059a0d47bbab3025e9d6210ecfef3e.png" src="../_images/404239789e35c429c02fc89bd35d448fc0059a0d47bbab3025e9d6210ecfef3e.png" />
+<img alt="../_images/f9539bef02426d38889f0a1e8307c0a1b887285ea0c5e8388544c7a9d806f2be.png" src="../_images/f9539bef02426d38889f0a1e8307c0a1b887285ea0c5e8388544c7a9d806f2be.png" />
 </div>
 </div>
 <p>Interestingly, it seems that the parameters <span class="math notranslate nohighlight">\(\theta_1 = \mu\)</span> and <span class="math notranslate nohighlight">\(\theta_2 = D\)</span> have not been learned properly as they are estimated roughly the same for every simulated datset used during testing. For some models, this might indicate that the the network training had partially failed; and we would have to train longer or adjust the network architecture. For this specific model, however, the reason is different: From the provided observables, these parameters are actually not identified so cannot be learned consistently, no matter the kind of approximator we would use.</p>
@@ -976,27 +1011,27 @@ Wall time: 9.42 ms
   <tbody>
     <tr>
       <th>NRMSE</th>
-      <td>0.075858</td>
-      <td>0.246363</td>
-      <td>0.228513</td>
-      <td>0.200860</td>
-      <td>0.168612</td>
+      <td>0.079257</td>
+      <td>0.246147</td>
+      <td>0.231538</td>
+      <td>0.199334</td>
+      <td>0.173794</td>
     </tr>
     <tr>
       <th>Posterior Contraction</th>
-      <td>0.948341</td>
-      <td>0.071858</td>
-      <td>0.080332</td>
-      <td>0.492937</td>
-      <td>0.783197</td>
+      <td>0.945971</td>
+      <td>0.078332</td>
+      <td>0.070332</td>
+      <td>0.546068</td>
+      <td>0.718773</td>
     </tr>
     <tr>
       <th>Calibration Error</th>
-      <td>0.010702</td>
-      <td>0.024737</td>
-      <td>0.016754</td>
-      <td>0.031316</td>
-      <td>0.016228</td>
+      <td>0.011930</td>
+      <td>0.025263</td>
+      <td>0.013246</td>
+      <td>0.040614</td>
+      <td>0.004737</td>
     </tr>
   </tbody>
 </table>
@@ -1016,10 +1051,10 @@ Wall time: 9.42 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/4be677acbd70b1d18d95107fc0a53f8c1791a18e835557882f266018d10a64f0.png" src="../_images/4be677acbd70b1d18d95107fc0a53f8c1791a18e835557882f266018d10a64f0.png" />
-<img alt="../_images/cc2fb54e130a96227271520429f35be6f529fd1dc13ad6befc1dbde8de6c55b7.png" src="../_images/cc2fb54e130a96227271520429f35be6f529fd1dc13ad6befc1dbde8de6c55b7.png" />
-<img alt="../_images/b83fc4d26ec6afdf5d2058aca962af1a66eec6dbfc62c85d371294dabca37e33.png" src="../_images/b83fc4d26ec6afdf5d2058aca962af1a66eec6dbfc62c85d371294dabca37e33.png" />
-<img alt="../_images/5eddb490d896a8a87ab74f6c63740a119123a1963681633be6602a3b49709fc6.png" src="../_images/5eddb490d896a8a87ab74f6c63740a119123a1963681633be6602a3b49709fc6.png" />
+<img alt="../_images/aef713428cfb70d89cc19fa74eca8202b1ad5fdbcf5dbe84f0cd6d09d7fff607.png" src="../_images/aef713428cfb70d89cc19fa74eca8202b1ad5fdbcf5dbe84f0cd6d09d7fff607.png" />
+<img alt="../_images/fd8d4137719177be41ba1fd4f9b8115b9caee6a8474f4f1bbb68b6b9d9c684fa.png" src="../_images/fd8d4137719177be41ba1fd4f9b8115b9caee6a8474f4f1bbb68b6b9d9c684fa.png" />
+<img alt="../_images/d4cfef844c1b02fc1b1e44e520e22a0048d0995c34857922335e590d8bac5968.png" src="../_images/d4cfef844c1b02fc1b1e44e520e22a0048d0995c34857922335e590d8bac5968.png" />
+<img alt="../_images/7f7aab897f41c5b10218900fbfaefcf4ed3fb729a3b0e926f7423caac97ab96c.png" src="../_images/7f7aab897f41c5b10218900fbfaefcf4ed3fb729a3b0e926f7423caac97ab96c.png" />
 </div>
 </div>
 </section>
@@ -1038,7 +1073,7 @@ Wall time: 9.42 ms
 <span class="c1"># Convert into a nice format 2D data frame</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">samples_to_data_frame</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
 
-<span class="n">samples</span>
+<span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -1071,100 +1106,51 @@ Wall time: 9.42 ms
   <tbody>
     <tr>
       <th>0</th>
-      <td>0.434417</td>
-      <td>0.160674</td>
-      <td>5.402665</td>
-      <td>35.972565</td>
-      <td>4.450630</td>
+      <td>0.403132</td>
+      <td>0.132537</td>
+      <td>8.742765</td>
+      <td>18.748758</td>
+      <td>8.087518</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>0.358769</td>
-      <td>0.099960</td>
-      <td>5.883794</td>
-      <td>45.883701</td>
-      <td>4.954585</td>
+      <td>0.386655</td>
+      <td>0.125630</td>
+      <td>7.554114</td>
+      <td>27.330902</td>
+      <td>17.882437</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>0.376506</td>
-      <td>0.117690</td>
-      <td>7.226392</td>
-      <td>32.381554</td>
-      <td>10.423300</td>
+      <td>0.390225</td>
+      <td>0.117071</td>
+      <td>14.507048</td>
+      <td>5.123773</td>
+      <td>8.285616</td>
     </tr>
     <tr>
       <th>3</th>
-      <td>0.398670</td>
-      <td>0.124358</td>
-      <td>5.657649</td>
-      <td>25.066423</td>
-      <td>5.026092</td>
+      <td>0.394396</td>
+      <td>0.114620</td>
+      <td>9.687984</td>
+      <td>14.718996</td>
+      <td>5.073137</td>
     </tr>
     <tr>
       <th>4</th>
-      <td>0.438066</td>
-      <td>0.097572</td>
-      <td>6.323298</td>
-      <td>15.036120</td>
-      <td>7.332851</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>995</th>
-      <td>0.418820</td>
-      <td>0.124456</td>
-      <td>7.350530</td>
-      <td>13.584131</td>
-      <td>4.891216</td>
-    </tr>
-    <tr>
-      <th>996</th>
-      <td>0.398152</td>
-      <td>0.128938</td>
-      <td>6.324271</td>
-      <td>31.084860</td>
-      <td>5.228939</td>
-    </tr>
-    <tr>
-      <th>997</th>
-      <td>0.385804</td>
-      <td>0.108478</td>
-      <td>9.865146</td>
-      <td>11.721503</td>
-      <td>5.852016</td>
-    </tr>
-    <tr>
-      <th>998</th>
-      <td>0.390272</td>
-      <td>0.146200</td>
-      <td>8.973157</td>
-      <td>27.344185</td>
-      <td>6.638846</td>
-    </tr>
-    <tr>
-      <th>999</th>
-      <td>0.356328</td>
-      <td>0.088772</td>
-      <td>10.544143</td>
-      <td>13.216706</td>
-      <td>3.712811</td>
+      <td>0.373933</td>
+      <td>0.119038</td>
+      <td>6.440099</td>
+      <td>33.536617</td>
+      <td>9.953448</td>
     </tr>
   </tbody>
 </table>
-<p>1000 rows × 5 columns</p>
 </div></div></div>
 </div>
 <section id="posterior-retrodictive-checks">
 <h3><span class="section-number">4.8.1. </span>Posterior Retrodictive Checks <a class="anchor" id="posterior_retrodictive_checks"></a><a class="headerlink" href="#posterior-retrodictive-checks" title="Link to this heading">#</a></h3>
-<p>These are also called <em>posterior predictive checks</em>, but here we want to explicitly highlight the fact that we are not predicting future data but testing the <strong>generative performance</strong> or <strong>re-simulation performance</strong> of the model. In other words, we want to test how well the simulator can reproduce the actually observed data given the parameter posterior <span class="math notranslate nohighlight">\(p(\theta \mid x_{1:T})\)</span>.</p>
+<p>These are also called <em>posterior predictive checks</em>, but here we want to explicitly highlight the fact that we are not predicting future data but testing the <strong>generative performance</strong> or <strong>re-simulation performance</strong> of the model. In other words, we want to test how well the simulator can reproduce the actually observed data given the parameter posterior <span class="math notranslate nohighlight">\(p(\theta \mid h(x_{1:T}))\)</span>.</p>
 <p>Here, we will create a custom function which plots the observed data and then overlays draws from the posterior predictive.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1222,7 +1208,7 @@ Wall time: 9.42 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/80723f856b3fb7a744e9cd83ea9df8a585d60fa225e2a77ee2c3f76b980226ec.png" src="../_images/80723f856b3fb7a744e9cd83ea9df8a585d60fa225e2a77ee2c3f76b980226ec.png" />
+<img alt="../_images/fcf20bfeccb5e64e9bc05a3321ee8c67cd7a27d7ad908eea3ca946432c84ace8.png" src="../_images/fcf20bfeccb5e64e9bc05a3321ee8c67cd7a27d7ad908eea3ca946432c84ace8.png" />
 </div>
 </div>
 <p>That’s it for this tutorial! You now know how to use the basic building blocks of <code class="docutils literal notranslate"><span class="pre">BayesFlow</span></code> to create amortized neural approximators. :)</p>
@@ -1277,7 +1263,7 @@ Wall time: 9.42 ms
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">4.1. Introduction <a class="anchor" id="introduction"></a></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">4.1. Introduction</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-the-simulator">4.2. Defining the Simulator <a class="anchor" id="defining_the_generative"></a></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prior">4.2.1. Prior <a class="anchor" id="prior"></a></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-model-implicit-likelihood-function">4.2.2. Observation Model (Implicit Likelihood Function) <a class="anchor" id="simulator__implicit_likelihood"></a></a></li>

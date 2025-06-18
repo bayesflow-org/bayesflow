@@ -153,6 +153,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -173,13 +180,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -304,6 +321,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -419,21 +443,28 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ElementwiseTransform.html">ElementwiseTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ExpandDims.html">ExpandDims</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.FilterTransform.html">FilterTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Group.html">Group</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.RandomSubsample.html">RandomSubsample</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Rename.html">Rename</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Scale.html">Scale</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.SerializableCustomTransform.html">SerializableCustomTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Shift.html">Shift</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Split.html">Split</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Sqrt.html">Sqrt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Squeeze.html">Squeeze</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html">Standardize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Take.html">Take</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToArray.html">ToArray</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToDict.html">ToDict</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Transform.html">Transform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Ungroup.html">Ungroup</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.adapters.Adapter.html">Adapter</a></li>
@@ -450,7 +481,6 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.DiskDataset.html">DiskDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OfflineDataset.html">OfflineDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OnlineDataset.html">OnlineDataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.RoundsDataset.html">RoundsDataset</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.diagnostics.html">diagnostics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -480,12 +510,22 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.links.html">links</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.links.CholeskyFactor.html">CholeskyFactor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.Ordered.html">Ordered</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.OrderedQuantiles.html">OrderedQuantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.PositiveDefinite.html">PositiveDefinite</a></li>
@@ -506,10 +546,12 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.InferenceNetwork.html">InferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.MLP.html">MLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
@@ -582,6 +624,10 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.serialization.serialize_value_or_type.html">serialize_value_or_type</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.tree.html">tree</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.tree.flatten_shape.html">flatten_shape</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_metric.html">add_metric</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_titles_and_labels.html">add_titles_and_labels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.batched_call.html">batched_call</a></li>
@@ -589,6 +635,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_args.html">convert_args</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_kwargs.html">convert_kwargs</a></li>
@@ -618,6 +665,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian_trace.html">jacobian_trace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jvp.html">jvp</a></li>
@@ -628,6 +676,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pad.html">pad</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.parse_bytes.html">parse_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pickle_load.html">pickle_load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.positive_diag.html">positive_diag</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html">prepare_plot_data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prettify_subplots.html">prettify_subplots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.searchsorted.html">searchsorted</a></li>
@@ -737,14 +786,22 @@
 <p>Scores a predicted mean with the squared error score.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING">
-<span class="sig-name descname"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></em><a class="headerlink" href="#bayesflow.scores.MeanScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING" title="Link to this definition">#</a></dt>
-<dd><p>This variable contains names of prediction heads that should lead to a warning when the adapter is applied
-in inverse direction to them.</p>
+<span class="sig-name descname"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></em><a class="headerlink" href="#bayesflow.scores.MeanScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING" title="Link to this definition">#</a></dt>
+<dd><p>Names of prediction heads for which to warn if the adapter is called on their estimates in inverse direction.</p>
 <p>Prediction heads can output estimates in spaces other than the target distribution space.
 To such estimates the adapter cannot be straightforwardly applied in inverse direction,
 because the adapter is built to map vectors from the inference variable space. When subclassing
 <a class="reference internal" href="bayesflow.scores.ScoringRule.html#bayesflow.scores.ScoringRule" title="bayesflow.scores.ScoringRule"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScoringRule</span></code></a>, add the names of such heads to the following list to warn users about difficulties
 with a type of estimate whenever the adapter is applied to them in inverse direction.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bayesflow.scores.MeanScore.TRANSFORMATION_TYPE">
+<span class="sig-name descname"><span class="pre">TRANSFORMATION_TYPE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#bayesflow.scores.MeanScore.TRANSFORMATION_TYPE" title="Link to this definition">#</a></dt>
+<dd><p>Defines nonstandard transformation behaviour for de-standardization.</p>
+<p>The standard transformation</p>
+<p>x_i = x_i’ * sigma_i + mu_i</p>
+<p>is referred to as “location_scale”. Keys not specified here will fallback to that default.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -931,6 +988,7 @@ of <cite>self.k</cite>, optionally weighted.</p>
 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MeanScore"><code class="docutils literal notranslate"><span class="pre">MeanScore</span></code></a><ul class="nav section-nav flex-column visible">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MeanScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING"><code class="docutils literal notranslate"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MeanScore.TRANSFORMATION_TYPE"><code class="docutils literal notranslate"><span class="pre">TRANSFORMATION_TYPE</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MeanScore.from_config"><code class="docutils literal notranslate"><span class="pre">from_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MeanScore.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MeanScore.get_head"><code class="docutils literal notranslate"><span class="pre">get_head()</span></code></a></li>

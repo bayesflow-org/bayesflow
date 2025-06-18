@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -480,16 +504,26 @@
 <span class="sd">    and covariance simultaneously.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
+    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This variable contains names of prediction heads that should lead to a warning when the adapter is applied</span>
-<span class="sd">    in inverse direction to them.</span>
+<span class="sd">    Names of prediction heads for which to warn if the adapter is called on their estimates in inverse direction.</span>
 
 <span class="sd">    Prediction heads can output estimates in spaces other than the target distribution space.</span>
 <span class="sd">    To such estimates the adapter cannot be straightforwardly applied in inverse direction,</span>
 <span class="sd">    because the adapter is built to map vectors from the inference variable space. When subclassing</span>
 <span class="sd">    :py:class:`ScoringRule`, add the names of such heads to the following list to warn users about difficulties</span>
 <span class="sd">    with a type of estimate whenever the adapter is applied to them in inverse direction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TRANSFORMATION_TYPE</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines nonstandard transformation behaviour for de-standardization.</span>
+
+<span class="sd">    The standard transformation</span>
+
+<span class="sd">    x_i = x_i&#39; * sigma_i + mu_i</span>
+
+<span class="sd">    is referred to as &quot;location_scale&quot;. Keys not specified here will fallback to that default.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -629,7 +663,7 @@
 <div class="viewcode-block" id="ScoringRule.score">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.ScoringRule.html#bayesflow.scores.ScoringRule.score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">targets</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scores a batch of probabilistic estimates of distributions based on samples</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Scores a batch of probabilistic estimates of distributions based on samples</span>
 <span class="sd">        of the corresponding distributions.</span>
 
 <span class="sd">        Parameters</span>

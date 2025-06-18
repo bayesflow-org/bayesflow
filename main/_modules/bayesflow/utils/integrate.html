@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -456,10 +480,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">filter_kwargs</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
 <span class="n">ArrayLike</span> <span class="o">=</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Tensor</span>
@@ -747,6 +772,113 @@
         <span class="k">return</span> <span class="n">integrate_scheduled</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Type or value of `steps` not understood (steps=</span><span class="si">{</span><span class="n">steps</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">euler_maruyama_step</span><span class="p">(</span>
+    <span class="n">drift_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">diffusion_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+    <span class="n">time</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">step_size</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">noise</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs a single Euler-Maruyama step for stochastic differential equations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        drift_fn: Function computing the drift term f(t, **state).</span>
+<span class="sd">        diffusion_fn: Function computing the diffusion term g(t, **state).</span>
+<span class="sd">        state: Current state, mapping variable names to tensors.</span>
+<span class="sd">        time: Current time scalar tensor.</span>
+<span class="sd">        step_size: Time increment dt.</span>
+<span class="sd">        noise: Mapping of variable names to dW noise tensors.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        new_state: Updated state after one Euler-Maruyama step.</span>
+<span class="sd">        new_time: time + dt.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute drift and diffusion</span>
+    <span class="n">drift</span> <span class="o">=</span> <span class="n">drift_fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">drift_fn</span><span class="p">))</span>
+    <span class="n">diffusion</span> <span class="o">=</span> <span class="n">diffusion_fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">diffusion_fn</span><span class="p">))</span>
+
+    <span class="c1"># Check noise keys</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">diffusion</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Keys of diffusion terms and noise do not match.&quot;</span><span class="p">)</span>
+
+    <span class="n">new_state</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">drift</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+</span> <span class="n">step_size</span> <span class="o">*</span> <span class="n">d</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">diffusion</span><span class="p">:</span>  <span class="c1"># stochastic update</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">base</span> <span class="o">+</span> <span class="n">diffusion</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">*</span> <span class="n">noise</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">new_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">base</span>
+
+    <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="n">time</span> <span class="o">+</span> <span class="n">step_size</span>
+
+
+<div class="viewcode-block" id="integrate_stochastic">
+<a class="viewcode-back" href="../../../api/bayesflow.utils.integrate_stochastic.html#bayesflow.utils.integrate_stochastic">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">integrate_stochastic</span><span class="p">(</span>
+    <span class="n">drift_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">diffusion_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+    <span class="n">start_time</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">stop_time</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;euler_maruyama&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">]]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Integrates a stochastic differential equation from start_time to stop_time.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        drift_fn: Function that computes the drift term.</span>
+<span class="sd">        diffusion_fn: Function that computes the diffusion term.</span>
+<span class="sd">        state: Dictionary containing the initial state.</span>
+<span class="sd">        start_time: Starting time for integration.</span>
+<span class="sd">        stop_time: Ending time for integration.</span>
+<span class="sd">        steps: Number of integration steps.</span>
+<span class="sd">        seed: Random seed for noise generation.</span>
+<span class="sd">        method: Integration method to use, e.g., &#39;euler_maruyama&#39;.</span>
+<span class="sd">        **kwargs: Additional arguments to pass to the step function.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        If return_noise is False, returns the final state dictionary.</span>
+<span class="sd">        If return_noise is True, returns a tuple of (final_state, noise_history).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">steps</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of steps must be positive.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Select step function based on method</span>
+    <span class="k">match</span> <span class="n">method</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">&quot;euler_maruyama&quot;</span><span class="p">:</span>
+            <span class="n">step_fn</span> <span class="o">=</span> <span class="n">euler_maruyama_step</span>
+        <span class="k">case</span> <span class="n">other</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Prepare step function with partial application</span>
+    <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">step_fn</span><span class="p">,</span> <span class="n">drift_fn</span><span class="o">=</span><span class="n">drift_fn</span><span class="p">,</span> <span class="n">diffusion_fn</span><span class="o">=</span><span class="n">diffusion_fn</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Time step</span>
+    <span class="n">step_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="n">steps</span>
+    <span class="n">sqrt_dt</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">step_size</span><span class="p">))</span>
+
+    <span class="c1"># Pre-generate noise history: shape = (steps, *state_shape)</span>
+    <span class="n">noise_history</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">noise_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="n">steps</span><span class="p">,</span> <span class="o">*</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">val</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span> <span class="o">*</span> <span class="n">sqrt_dt</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">_loop_var</span><span class="p">,</span> <span class="n">_loop_state</span><span class="p">):</span>
+        <span class="n">_current_state</span><span class="p">,</span> <span class="n">_current_time</span> <span class="o">=</span> <span class="n">_loop_state</span>
+        <span class="n">_noise_i</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">noise_history</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">_loop_var</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_current_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+        <span class="n">new_state</span><span class="p">,</span> <span class="n">new_time</span> <span class="o">=</span> <span class="n">step_fn</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">_current_state</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">_current_time</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="n">step_size</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">_noise_i</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="n">new_time</span>
+
+    <span class="n">final_state</span><span class="p">,</span> <span class="n">final_time</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">final_state</span></div>
 
 </pre></div>
 

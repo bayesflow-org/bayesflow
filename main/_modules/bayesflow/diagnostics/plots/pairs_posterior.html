@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -459,6 +483,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.dict_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">dicts_to_arrays</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.plot_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_legends</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.pairs_samples</span><span class="w"> </span><span class="kn">import</span> <span class="n">_pairs_samples</span>
 
@@ -475,6 +500,7 @@
     <span class="n">height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
     <span class="n">post_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
     <span class="n">prior_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+    <span class="n">target_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span>
     <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
     <span class="n">label_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
@@ -491,25 +517,27 @@
 <span class="sd">        Optional true parameter values that have generated the observed dataset.</span>
 <span class="sd">    priors       : np.ndarray of shape (n_prior_draws, n_params) or None, optional (default: None)</span>
 <span class="sd">        Optional prior samples obtained from the prior.</span>
-<span class="sd">    dataset_id: Optional ID of the dataset for whose posterior the pairs plot shall be generated.</span>
-<span class="sd">        Should only be specified if estimates contains posterior draws from multiple datasets.</span>
+<span class="sd">    dataset_id: Optional ID of the dataset for whose posterior the pair plots shall be generated.</span>
+<span class="sd">        Should only be specified if estimates contain posterior draws from multiple datasets.</span>
 <span class="sd">    variable_keys       : list or None, optional, default: None</span>
 <span class="sd">       Select keys from the dictionary provided in samples.</span>
 <span class="sd">       By default, select all keys.</span>
 <span class="sd">    variable_names       : list or None, optional, default: None</span>
 <span class="sd">        The parameter names for nice plot titles. Inferred if None</span>
 <span class="sd">    height            : float, optional, default: 3</span>
-<span class="sd">        The height of the pairplot</span>
+<span class="sd">        The height of the pair plots</span>
 <span class="sd">    label_fontsize    : int, optional, default: 14</span>
 <span class="sd">        The font size of the x and y-label texts (parameter names)</span>
 <span class="sd">    tick_fontsize     : int, optional, default: 12</span>
-<span class="sd">        The font size of the axis ticklabels</span>
+<span class="sd">        The font size of the axis tick labels</span>
 <span class="sd">    legend_fontsize   : int, optional, default: 16</span>
 <span class="sd">        The font size of the legend text</span>
 <span class="sd">    post_color        : str, optional, default: &#39;#132a70&#39;</span>
 <span class="sd">        The color for the posterior histograms and KDEs</span>
 <span class="sd">    prior_color      : str, optional, default: gray</span>
 <span class="sd">        The color for the optional prior histograms and KDEs</span>
+<span class="sd">    target_color      : str, optional, default: red</span>
+<span class="sd">        The color for the optional true parameter lines and points</span>
 <span class="sd">    alpha             : float in [0, 1], optional, default: 0.9</span>
 <span class="sd">        The opacity of the posterior plots</span>
 
@@ -535,7 +563,7 @@
         <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="c1"># dicts_to_arrays will keep dataset axis even if it is of length 1</span>
+    <span class="c1"># dicts_to_arrays will keep the dataset axis even if it is of length 1</span>
     <span class="c1"># however, pairs plotting requires the dataset axis to be removed</span>
     <span class="n">estimates_shape</span> <span class="o">=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimates_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">estimates_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -563,18 +591,34 @@
         <span class="c1"># Create DataFrame with variable names as columns</span>
         <span class="n">g</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">targets</span><span class="o">.</span><span class="n">variable_names</span><span class="p">)</span>
         <span class="n">g</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;_source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;True Parameter&quot;</span>
-        <span class="n">g</span><span class="o">.</span><span class="n">map_diag</span><span class="p">(</span><span class="n">plot_true_params</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">map_diag</span><span class="p">(</span><span class="n">plot_true_params_as_lines</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">target_color</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">map_offdiag</span><span class="p">(</span><span class="n">plot_true_params_as_points</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">target_color</span><span class="p">)</span>
+
+        <span class="n">create_legends</span><span class="p">(</span>
+            <span class="n">g</span><span class="p">,</span>
+            <span class="n">plot_data</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">post_color</span><span class="p">,</span>
+            <span class="n">color2</span><span class="o">=</span><span class="n">prior_color</span><span class="p">,</span>
+            <span class="n">legend_fontsize</span><span class="o">=</span><span class="n">legend_fontsize</span><span class="p">,</span>
+            <span class="n">show_single_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">g</span></div>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">plot_true_params</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom function to plot true parameters on the diagonal.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_true_params_as_lines</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom function to plot true parameters on the diagonal as dashed lines.&quot;&quot;&quot;</span>
     <span class="c1"># hue needs to be added to handle the case of plotting both posterior and prior</span>
     <span class="n">param</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Get the single true value for the diagonal</span>
     <span class="c1"># only plot on the diagonal a vertical line for the true parameter</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_true_params_as_points</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom function to plot true parameters on the off-diagonal as a single point.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 
                 </article>

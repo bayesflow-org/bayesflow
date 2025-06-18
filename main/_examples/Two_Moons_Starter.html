@@ -154,6 +154,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/bayesflow.html">
     API Reference
   </a>
@@ -173,13 +180,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -305,6 +322,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/bayesflow.html">
     API Reference
   </a>
@@ -414,7 +438,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">5. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">7. Simple Model Comparison - One Sample T-Test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation_and_Expert_Stats.html">8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">8. Likelihood Estimation</a></li>
 </ul>
 </div>
 </nav></div>
@@ -484,7 +508,7 @@
 <span class="c1"># Set to your favorite backend</span>
 <span class="k">if</span> <span class="s2">&quot;KERAS_BACKEND&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
     <span class="c1"># set this to &quot;torch&quot;, &quot;tensorflow&quot;, or &quot;jax&quot;</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;KERAS_BACKEND&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; backend&quot;</span><span class="p">)</span>
 </pre></div>
@@ -503,7 +527,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:2025-04-21 12:20:32,803:jax._src.xla_bridge:967: An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;jax&#39;
 </pre></div>
 </div>
 </div>
@@ -592,16 +616,10 @@ Shapes of sample_data values:
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
-    
     <span class="c1"># convert any non-arrays to numpy arrays</span>
     <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
-    
     <span class="c1"># convert from numpy&#39;s default float64 to deep learning friendly float32</span>
     <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    
-    <span class="c1"># standardize target variables to zero mean and unit variance </span>
-    <span class="o">.</span><span class="n">standardize</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="s2">&quot;theta&quot;</span><span class="p">)</span>
-    
     <span class="c1"># rename the variables to match the required approximator inputs</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
@@ -611,7 +629,7 @@ Shapes of sample_data values:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ToArray -&gt; 1: ConvertDType -&gt; 2: Standardize(exclude=[&#39;theta&#39;]) -&gt; 3: Rename(&#39;theta&#39; -&gt; &#39;inference_variables&#39;) -&gt; 4: Rename(&#39;x&#39; -&gt; &#39;inference_conditions&#39;)])
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ToArray -&gt; 1: ConvertDType -&gt; 2: Rename(&#39;theta&#39; -&gt; &#39;inference_variables&#39;) -&gt; 3: Rename(&#39;x&#39; -&gt; &#39;inference_conditions&#39;)])
 </pre></div>
 </div>
 </div>
@@ -651,7 +669,7 @@ Shapes of sample_data values:
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flow_matching</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(</span>
     <span class="n">subnet</span><span class="o">=</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> 
-    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">}</span> <span class="c1"># override default dropout = 0.05 and widths = (256,)*5</span>
+    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">}</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -679,7 +697,7 @@ Shapes of sample_data values:
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">flow_matching_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
-    <span class="n">training_data</span><span class="p">,</span> 
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span> 
     <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span> 
     <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> 
     <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
@@ -696,7 +714,6 @@ Shapes of sample_data values:
 <section id="consistency-models-background">
 <h3><span class="section-number">3.5.1. </span>Consistency Models: Background<a class="headerlink" href="#consistency-models-background" title="Link to this heading">#</a></h3>
 <p>Consistency Models (CM; [1]) leverage the nice properties of score-based diffusion to enable few-step sampling. Score-based diffusion initially relied on a stochastic differential equation (SDE) for sampling, but there is also a ordinary (non-stochastic) differential equation (ODE)that has the same <em>marginal</em> distribution at each time step <span class="math notranslate nohighlight">\(t\)</span> [2]. This means that even though SDE and ODE produce different paths from the noise distribution to the target distribution, the resulting distributions when looking at many paths at time <span class="math notranslate nohighlight">\(t\)</span> is the same. The ODE is also called Probability Flow ODE.</p>
-<p>CMs leverage the fact that there is no randomness in the ODE formulation. That means, if you start at a certain point in the latent space, you will always take the same path and end up at the same point in the target <span class="math notranslate nohighlight">\(\theta\)</span>-space. The same is true for every point on the path: if you integrate to get to time <span class="math notranslate nohighlight">\(t=0\)</span>, you will end up at the same point as well. In short: for each path, there is exactly one corresponding point in latent space (at <span class="math notranslate nohighlight">\(t=T\)</span>) and one corresponding point in data space (at <span class="math notranslate nohighlight">\(t=0\)</span>).</p>
 <p>The goal of CMs is the following: each point at a time point <span class="math notranslate nohighlight">\(t\)</span> belongs to exactly one path, and we want to predict where this path will end up at <span class="math notranslate nohighlight">\(t=0\)</span>. The function that does this is called the <em>consistency function</em> <span class="math notranslate nohighlight">\(f\)</span>. If we have the correct function for all <span class="math notranslate nohighlight">\(t\in(0,T]\)</span>, we can just sample from the latent distribution (<span class="math notranslate nohighlight">\(t=T\)</span>) and use <span class="math notranslate nohighlight">\(f\)</span> to directly map to the corresponding point at <span class="math notranslate nohighlight">\(t=0\)</span>, which is in the target distribution. So for sampling from the target distribution, we avoid any integration and only need one evaluation of the consistency function. In practice, the one-step sampling does not work very well. Instead, we leverage a multi-step sampling method where we call <span class="math notranslate nohighlight">\(f\)</span> multiple times. Please check out the [1] for more background on this sampling procedure.</p>
 <p>When reading the above, you might wonder why we also learn the mapping to <span class="math notranslate nohighlight">\(t=0\)</span> of all intermediate time steps <span class="math notranslate nohighlight">\(t\in[0, T]\)</span>, and not only for <span class="math notranslate nohighlight">\(t=T\)</span>. The main answer is that for efficient training, we do not want to actually compute the two associated points explicitly. Doing so would require to do a precise integration at training time, which is often not feasible as it is too computationally costly. Learning all time steps opens up the possibility for a different training approach where we can avoid this. The details of this become a bit more complicated, and we advise you to take a look at [1] if you are interested in a more thorough and mathematical discussion. Below, we will give a rough description of the underlying concepts.</p>
 <p><strong>Training</strong> First, we know that at <span class="math notranslate nohighlight">\(t=0\)</span>, it holds that <span class="math notranslate nohighlight">\(f(\theta,t=0)=\theta\)</span>, as <span class="math notranslate nohighlight">\(\theta\)</span> is part of the path that ends at <span class="math notranslate nohighlight">\(\theta\)</span>. This <em>boundary condition</em> serves as an “anchor” for our training, this is the information that the network knows at the start of the training procedure (we encode it with a time-dependent skip-connection, so the network is forced to be the identity function at <span class="math notranslate nohighlight">\(t=0\)</span>). For training, we now somehow have to propagate this information to the rest of the part. The basic idea for this is simple. We just take a point <span class="math notranslate nohighlight">\(\theta_1\)</span> closer to the data distribution (smaller time <span class="math notranslate nohighlight">\(t_1\)</span>) and integrate for a small time step <span class="math notranslate nohighlight">\(dt\)</span> to a point <span class="math notranslate nohighlight">\(\theta_2\)</span> on the same path that is closer to the latent distribution (larger time <span class="math notranslate nohighlight">\(t_2=t_1+dt\)</span>). As we know that for <span class="math notranslate nohighlight">\(t=0\)</span> our network provides the correct output for our path, we want to propagate the information from smaller times to larger times. Our training goal is to move the output of <span class="math notranslate nohighlight">\(f(\theta_2, t=t_2)\)</span> towards the output of <span class="math notranslate nohighlight">\(f(\theta_1, t=t_1)\)</span>. How to choose <span class="math notranslate nohighlight">\(\theta_1\)</span>, <span class="math notranslate nohighlight">\(t_1\)</span> and <span class="math notranslate nohighlight">\(dt\)</span> is an empirical question, see the [1] for some thoughts on what works well.</p>
@@ -724,7 +741,7 @@ Shapes of sample_data values:
     <span class="n">total_steps</span><span class="o">=</span><span class="n">num_training_batches</span><span class="o">*</span><span class="n">epochs</span><span class="p">,</span>
     <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">},</span>
     <span class="n">max_time</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="c1"># this probably needs to be tuned for a novel application</span>
-    <span class="n">sigma2</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># the data adapter standardizes our parameters, so set to 1.0</span>
+    <span class="n">sigma2</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># the approximator standardizes our parameters, so set to 1.0</span>
 <span class="p">)</span>
 
 <span class="c1"># Workflow for consistency model</span>
@@ -743,7 +760,7 @@ Shapes of sample_data values:
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">consistency_model_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
-    <span class="n">training_data</span><span class="p">,</span> 
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span> 
     <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span> 
     <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> 
     <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
@@ -759,8 +776,7 @@ Shapes of sample_data values:
 <p>Of course, BayesFlow also supports established coupling flow models with a variety of parameters, including the timeless <em>affine</em> and <em>spline</em> flows.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use a deeper affine coupling flow (default depth is 6)</span>
-<span class="n">affine_flow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">subnet</span><span class="o">=</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">)})</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">affine_flow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">subnet</span><span class="o">=</span><span class="s2">&quot;mlp&quot;</span><span class="p">)</span>
 
 <span class="n">affine_flow_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
@@ -791,7 +807,7 @@ Shapes of sample_data values:
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">affine_flow_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
-    <span class="n">training_data</span><span class="p">,</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span>
     <span class="n">epochs</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
     <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
@@ -804,7 +820,7 @@ Shapes of sample_data values:
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">spline_flow_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
-    <span class="n">training_data</span><span class="p">,</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span>
     <span class="n">epochs</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
     <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
@@ -863,7 +879,7 @@ Shapes of sample_data values:
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/3e60b0d195a5f036acca032df8146c40fcbc71764a88ddce7f742f50bd46bea6.png" src="../_images/3e60b0d195a5f036acca032df8146c40fcbc71764a88ddce7f742f50bd46bea6.png" />
+<img alt="../_images/2e906d19f27b68d99aa7771d48b281ecc3bd89bb5eee67bafcc2903dd3b96f37.png" src="../_images/2e906d19f27b68d99aa7771d48b281ecc3bd89bb5eee67bafcc2903dd3b96f37.png" />
 </div>
 </div>
 <p>The posterior looks as we have expected in this case. However, in general, we do not know how the posterior is supposed to look like for any specific dataset. As such, we need diagnostics that validate the correctness of the inferred posterior. One such diagnostic is simulation-based calibration(SBC), which we can apply for free due to amortization. For more details on SBC and diagnostic plots, see:</p>

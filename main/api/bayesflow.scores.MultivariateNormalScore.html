@@ -153,6 +153,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -173,13 +180,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -304,6 +321,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -419,21 +443,28 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ElementwiseTransform.html">ElementwiseTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ExpandDims.html">ExpandDims</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.FilterTransform.html">FilterTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Group.html">Group</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.RandomSubsample.html">RandomSubsample</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Rename.html">Rename</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Scale.html">Scale</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.SerializableCustomTransform.html">SerializableCustomTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Shift.html">Shift</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Split.html">Split</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Sqrt.html">Sqrt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Squeeze.html">Squeeze</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html">Standardize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Take.html">Take</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToArray.html">ToArray</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToDict.html">ToDict</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Transform.html">Transform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Ungroup.html">Ungroup</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.adapters.Adapter.html">Adapter</a></li>
@@ -450,7 +481,6 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.DiskDataset.html">DiskDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OfflineDataset.html">OfflineDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OnlineDataset.html">OnlineDataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.RoundsDataset.html">RoundsDataset</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.diagnostics.html">diagnostics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -480,12 +510,22 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.links.html">links</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.links.CholeskyFactor.html">CholeskyFactor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.Ordered.html">Ordered</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.OrderedQuantiles.html">OrderedQuantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.PositiveDefinite.html">PositiveDefinite</a></li>
@@ -506,10 +546,12 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.InferenceNetwork.html">InferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.MLP.html">MLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
@@ -582,6 +624,10 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.serialization.serialize_value_or_type.html">serialize_value_or_type</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.tree.html">tree</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.tree.flatten_shape.html">flatten_shape</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_metric.html">add_metric</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_titles_and_labels.html">add_titles_and_labels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.batched_call.html">batched_call</a></li>
@@ -589,6 +635,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_args.html">convert_args</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_kwargs.html">convert_kwargs</a></li>
@@ -618,6 +665,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian_trace.html">jacobian_trace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jvp.html">jvp</a></li>
@@ -628,6 +676,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pad.html">pad</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.parse_bytes.html">parse_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pickle_load.html">pickle_load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.positive_diag.html">positive_diag</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html">prepare_plot_data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prettify_subplots.html">prettify_subplots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.searchsorted.html">searchsorted</a></li>
@@ -734,14 +783,24 @@
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.scores.</span></span><span class="sig-name descname"><span class="pre">MultivariateNormalScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/scores/multivariate_normal_score.html#MultivariateNormalScore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="bayesflow.scores.ParametricDistributionScore.html#bayesflow.scores.ParametricDistributionScore" title="bayesflow.scores.parametric_distribution_score.ParametricDistributionScore"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParametricDistributionScore</span></code></a></p>
 <p><span class="math notranslate nohighlight">\(S(\hat p_{\mu, \Sigma}, \theta; k) = -\log( \mathcal N (\theta; \mu, \Sigma))\)</span></p>
-<p>Scores a predicted mean and covariance matrix with the log-score of the probability of the materialized value.</p>
+<p>Scores a predicted mean and (Cholesky factor of the) covariance matrix with the log-score of the probability
+of the materialized value.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="bayesflow.scores.MultivariateNormalScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING">
-<span class="sig-name descname"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('covariance',)</span></em><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING" title="Link to this definition">#</a></dt>
-<dd><p>Marks head for covariance matrix as an exception for adapter transformations.</p>
+<span class="sig-name descname"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('cov_chol',)</span></em><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING" title="Link to this definition">#</a></dt>
+<dd><p>Marks head for covariance matrix Cholesky factor as an exception for adapter transformations.</p>
 <p>This variable contains names of prediction heads that should lead to a warning when the adapter is applied
 in inverse direction to them.</p>
 <p>For more information see <a class="reference internal" href="bayesflow.scores.ScoringRule.html#bayesflow.scores.ScoringRule" title="bayesflow.scores.ScoringRule"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScoringRule</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bayesflow.scores.MultivariateNormalScore.TRANSFORMATION_TYPE">
+<span class="sig-name descname"><span class="pre">TRANSFORMATION_TYPE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'cov_chol':</span> <span class="pre">'left_side_scale'}</span></em><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.TRANSFORMATION_TYPE" title="Link to this definition">#</a></dt>
+<dd><p>Marks covariance Cholesky factor head to handle de-standardization as for covariant rank-(0,2) tensors.</p>
+<p>The appropriate inverse of the standardization operation is</p>
+<p>x_ij = sigma_i * x_ij’.</p>
+<p>For the mean head the default (“location_scale”) is not overridden.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -753,36 +812,6 @@ in inverse direction to them.</p>
 <dt class="sig sig-object py" id="bayesflow.scores.MultivariateNormalScore.get_head_shapes_from_target_shape">
 <span class="sig-name descname"><span class="pre">get_head_shapes_from_target_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/scores/multivariate_normal_score.html#MultivariateNormalScore.get_head_shapes_from_target_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.get_head_shapes_from_target_shape" title="Link to this definition">#</a></dt>
 <dd><p>Request a dictionary of names and output shapes of required heads from the score.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.scores.MultivariateNormalScore.log_prob">
-<span class="sig-name descname"><span class="pre">log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/scores/multivariate_normal_score.html#MultivariateNormalScore.log_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.log_prob" title="Link to this definition">#</a></dt>
-<dd><p>Compute the log probability density of a multivariate Gaussian distribution.</p>
-<p>This function calculates the log probability density for each sample in <cite>x</cite> under a
-multivariate Gaussian distribution with the given <cite>mean</cite> and <cite>covariance</cite>.</p>
-<p>The computation includes the determinant of the covariance matrix, its inverse, and the quadratic
-form in the exponential term of the Gaussian density function.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>x</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor of input samples for which the log probability density is computed.
-The shape should be compatible with broadcasting against <cite>mean</cite>.</p>
-</dd>
-<dt><strong>mean</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing the mean of the multivariate Gaussian distribution.</p>
-</dd>
-<dt><strong>covariance</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing the covariance matrix of the multivariate Gaussian distribution.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>Tensor</dt><dd><p>A tensor containing the log probability densities for each sample in <cite>x</cite> under the
-given Gaussian distribution.</p>
-</dd>
-</dl>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -868,29 +897,29 @@ return just an instance of keras.layers.Identity.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.scores.MultivariateNormalScore.sample">
-<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/scores/multivariate_normal_score.html#MultivariateNormalScore.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.sample" title="Link to this definition">#</a></dt>
-<dd><p>Generate samples from a multivariate Gaussian distribution.</p>
-<p>This function samples from a multivariate Gaussian distribution with the given <cite>mean</cite>
-and <cite>covariance</cite> using the Cholesky decomposition method. Independent standard normal
-samples are transformed using the Cholesky factor of the covariance matrix to generate
-correlated samples.</p>
+<dt class="sig sig-object py" id="bayesflow.scores.MultivariateNormalScore.log_prob">
+<span class="sig-name descname"><span class="pre">log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov_chol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/scores/multivariate_normal_score.html#MultivariateNormalScore.log_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.log_prob" title="Link to this definition">#</a></dt>
+<dd><p>Compute the log probability density of a multivariate Gaussian distribution.</p>
+<p>This function calculates the log probability density for each sample in <cite>x</cite> under a
+multivariate Gaussian distribution with the given <cite>mean</cite> and <cite>cov_chol</cite>.</p>
+<p>The computation includes the determinant of the covariance matrix, its inverse, and the quadratic
+form in the exponential term of the Gaussian density function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>batch_shape</strong><span class="classifier">Shape</span></dt><dd><p>A tuple specifying the batch size and the number of samples to generate.</p>
+<dt><strong>x</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor of input samples for which the log probability density is computed.
+The shape should be compatible with broadcasting against <cite>mean</cite>.</p>
 </dd>
-<dt><strong>mean</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing the mean of the multivariate Gaussian distribution.
-Must have shape (batch_size, D), where D is the dimensionality of the distribution.</p>
+<dt><strong>mean</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing the mean of the multivariate Gaussian distribution.</p>
 </dd>
-<dt><strong>covariance</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing the covariance matrix of the multivariate Gaussian distribution.
-Must have shape (batch_size, D, D), where D is the dimensionality.</p>
+<dt><strong>covariance</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing the covariance matrix of the multivariate Gaussian distribution.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>Tensor</dt><dd><p>A tensor of shape (batch_size, num_samples, D) containing the generated samples.</p>
+<dt>Tensor</dt><dd><p>A tensor containing the log probability densities for each sample in <cite>x</cite> under the
+given Gaussian distribution.</p>
 </dd>
 </dl>
 </dd>
@@ -902,6 +931,34 @@ Must have shape (batch_size, D, D), where D is the dimensionality.</p>
 <span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.score" title="Link to this definition">#</a></dt>
 <dd><p>Computes the log-score for a predicted parametric probability distribution given realized <strong>targets</strong>.</p>
 <p><span class="math notranslate nohighlight">\(S(\hat p_\phi, \theta; k) = -\log(\hat p_\phi(\theta))\)</span></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayesflow.scores.MultivariateNormalScore.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov_chol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/scores/multivariate_normal_score.html#MultivariateNormalScore.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MultivariateNormalScore.sample" title="Link to this definition">#</a></dt>
+<dd><p>Generate samples from a multivariate Gaussian distribution.</p>
+<p>Independent standard normal samples are transformed using the Cholesky factor of the covariance matrix
+to generate correlated samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>batch_shape</strong><span class="classifier">Shape</span></dt><dd><p>A tuple specifying the batch size and the number of samples to generate.</p>
+</dd>
+<dt><strong>mean</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing the mean of the multivariate Gaussian distribution.
+Must have shape (batch_size, D), where D is the dimensionality of the distribution.</p>
+</dd>
+<dt><strong>cov_chol</strong><span class="classifier">Tensor</span></dt><dd><p>A tensor representing a Cholesky factor of the covariance matrix of the multivariate Gaussian distribution.
+Must have shape (batch_size, D, D), where D is the dimensionality.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tensor</dt><dd><p>A tensor of shape (batch_size, num_samples, D) containing the generated samples.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -958,15 +1015,16 @@ Must have shape (batch_size, D, D), where D is the dimensionality.</p>
 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore"><code class="docutils literal notranslate"><span class="pre">MultivariateNormalScore</span></code></a><ul class="nav section-nav flex-column visible">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING"><code class="docutils literal notranslate"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.TRANSFORMATION_TYPE"><code class="docutils literal notranslate"><span class="pre">TRANSFORMATION_TYPE</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.get_head_shapes_from_target_shape"><code class="docutils literal notranslate"><span class="pre">get_head_shapes_from_target_shape()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.log_prob"><code class="docutils literal notranslate"><span class="pre">log_prob()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.from_config"><code class="docutils literal notranslate"><span class="pre">from_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.get_head"><code class="docutils literal notranslate"><span class="pre">get_head()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.get_link"><code class="docutils literal notranslate"><span class="pre">get_link()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.get_subnet"><code class="docutils literal notranslate"><span class="pre">get_subnet()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.sample"><code class="docutils literal notranslate"><span class="pre">sample()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.log_prob"><code class="docutils literal notranslate"><span class="pre">log_prob()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.score"><code class="docutils literal notranslate"><span class="pre">score()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.scores.MultivariateNormalScore.sample"><code class="docutils literal notranslate"><span class="pre">sample()</span></code></a></li>
 </ul>
 </li>
 </ul>

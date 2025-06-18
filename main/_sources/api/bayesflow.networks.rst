@@ -30,10 +30,12 @@ networks
     CouplingFlow
     DeepSet
     FlowMatching
+    FusionNetwork
     FusionTransformer
     InferenceNetwork
     MLP
     PointInferenceNetwork
+    Sequential
     SetTransformer
     SummaryNetwork
     TimeSeriesNetwork

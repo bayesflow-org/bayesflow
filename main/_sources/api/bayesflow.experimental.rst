@@ -8,6 +8,16 @@ experimental
 
   
   
+  .. rubric:: Modules
+
+  .. autosummary::
+    :toctree:
+    :template: custom-module-template.rst
+    :recursive:
+  
+    diffusion_model
+
+  
   
 
   
@@ -28,6 +38,7 @@ experimental
   
     CIF
     ContinuousTimeConsistencyModel
+    DiffusionModel
     FreeFormFlow
   
   

@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -454,16 +478,18 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.adapters</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adapter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">OnlineDataset</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.networks</span><span class="w"> </span><span class="kn">import</span> <span class="n">SummaryNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.simulators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelComparisonSimulator</span><span class="p">,</span> <span class="n">Simulator</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">filter_kwargs</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">filter_kwargs</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">concatenate_valid</span><span class="p">,</span> <span class="n">concatenate_valid_shapes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serialize</span><span class="p">,</span> <span class="n">deserialize</span><span class="p">,</span> <span class="n">serializable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.approximator</span><span class="w"> </span><span class="kn">import</span> <span class="n">Approximator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..networks.standardization</span><span class="w"> </span><span class="kn">import</span> <span class="n">Standardization</span>
 
 
 <div class="viewcode-block" id="ModelComparisonApproximator">
@@ -487,9 +513,13 @@
 <span class="sd">    summary_network: bf.networks.SummaryNetwork, optional</span>
 <span class="sd">        The summary network used for data summarization (default is None).</span>
 <span class="sd">        The input of the summary network is `summary_variables`.</span>
+<span class="sd">    standardize : str | Sequence[str] | None</span>
+<span class="sd">        The variables to standardize before passing to the networks. Can be either</span>
+<span class="sd">        &quot;all&quot; or any subset of [&quot;inference_variables&quot;, &quot;summary_variables&quot;, &quot;inference_conditions&quot;].</span>
+<span class="sd">        (default is &quot;all&quot;).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">SAMPLE_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">,</span> <span class="s2">&quot;classifier_conditions&quot;</span><span class="p">]</span>
+    <span class="n">CONDITION_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">,</span> <span class="s2">&quot;classifier_conditions&quot;</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -498,6 +528,7 @@
         <span class="n">classifier_network</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">,</span>
         <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span><span class="p">,</span>
         <span class="n">summary_network</span><span class="p">:</span> <span class="n">SummaryNetwork</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">standardize</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -507,11 +538,55 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_models</span> <span class="o">=</span> <span class="n">num_models</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logits_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">num_models</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">standardize</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">standardize</span> <span class="o">!=</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span> <span class="o">=</span> <span class="p">[</span><span class="n">standardize</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span> <span class="o">=</span> <span class="n">standardize</span> <span class="ow">or</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="c1"># we have to lazily initialize these</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">Standardization</span><span class="p">(</span><span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">}</span>
+
 <div class="viewcode-block" id="ModelComparisonApproximator.build">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.ModelComparisonApproximator.html#bayesflow.approximators.ModelComparisonApproximator.build">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_shapes</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Shape</span><span class="p">]):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data_shapes</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">)</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_shapes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Build summary network and get output shape if present</span>
+        <span class="n">summary_outputs_shape</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">])</span>
+            <span class="n">summary_outputs_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Compute classifier_conditions_shape by combining original and summary outputs</span>
+        <span class="n">classifier_conditions_shape</span> <span class="o">=</span> <span class="n">concatenate_valid_shapes</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">data_shapes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;classifier_conditions&quot;</span><span class="p">),</span> <span class="n">summary_outputs_shape</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Build classifier network and logits projector if needed</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">classifier_conditions_shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">logits_projector</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
+            <span class="n">output_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">(</span><span class="n">classifier_conditions_shape</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logits_projector</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">output_shape</span><span class="p">)</span>
+
+        <span class="c1"># Set up standardization layers if requested</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">data_shapes</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">Standardization</span><span class="p">(</span><span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">}</span>
+
+        <span class="c1"># Build all standardization layers</span>
+        <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">built</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="ModelComparisonApproximator.build_from_data">
+<a class="viewcode-back" href="../../../api/bayesflow.approximators.ModelComparisonApproximator.html#bayesflow.approximators.ModelComparisonApproximator.build_from_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adapted_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">adapted_data</span><span class="p">)))</span></div>
 
 
 <div class="viewcode-block" id="ModelComparisonApproximator.build_adapter">
@@ -525,7 +600,7 @@
         <span class="n">model_index_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;model_indices&quot;</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">classifier_conditions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one of `classifier_variables` or `summary_variables` must be provided.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one of `classifier_conditions` or `summary_variables` must be provided.&quot;</span><span class="p">)</span>
 
         <span class="n">adapter</span> <span class="o">=</span> <span class="n">Adapter</span><span class="p">()</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span><span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
 
@@ -538,7 +613,6 @@
         <span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">adapter</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">model_index_name</span><span class="p">,</span> <span class="s2">&quot;model_indices&quot;</span><span class="p">)</span>
             <span class="o">.</span><span class="n">keep</span><span class="p">([</span><span class="s2">&quot;classifier_conditions&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">,</span> <span class="s2">&quot;model_indices&quot;</span><span class="p">])</span>
-            <span class="o">.</span><span class="n">standardize</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="s2">&quot;model_indices&quot;</span><span class="p">)</span>
             <span class="o">.</span><span class="n">one_hot</span><span class="p">(</span><span class="s2">&quot;model_indices&quot;</span><span class="p">,</span> <span class="n">num_models</span><span class="p">)</span>
         <span class="p">)</span>
 
@@ -605,40 +679,63 @@
         <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">summary_metrics</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">summary_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
-            <span class="n">summary_outputs</span> <span class="o">=</span> <span class="n">summary_metrics</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes loss and tracks metrics for the classifier and summary networks.</span>
 
-            <span class="k">if</span> <span class="n">classifier_conditions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">classifier_conditions</span> <span class="o">=</span> <span class="n">summary_outputs</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">classifier_conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">classifier_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="sd">        This method coordinates summary metric computation (if present), combines summary outputs with</span>
+<span class="sd">        classifier conditions, computes classifier logits and cross-entropy loss, and aggregates all</span>
+<span class="sd">        tracked metrics into a single dictionary. Keys are prefixed with &quot;classifier_&quot; or &quot;summary_&quot;</span>
+<span class="sd">        to indicate their origin.</span>
 
-        <span class="c1"># we could move this into its own class</span>
-        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="p">(</span><span class="n">classifier_conditions</span><span class="p">)</span>
-        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logits_projector</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        classifier_conditions : Tensor, optional</span>
+<span class="sd">            Conditioning variables for the classifier network (default is None). May be</span>
+<span class="sd">            combined with summary network outputs if present.</span>
+<span class="sd">        model_indices : Tensor</span>
+<span class="sd">            Ground-truth indices or one-hot encoded labels for classification.</span>
+<span class="sd">        summary_variables : Tensor, optional</span>
+<span class="sd">            Input tensor(s) for the summary network (default is None). Required if a summary</span>
+<span class="sd">            network is present.</span>
+<span class="sd">        stage : str, optional</span>
+<span class="sd">            Current training stage (e.g., &quot;training&quot;, &quot;validation&quot;, &quot;inference&quot;). Controls</span>
+<span class="sd">            certain metric computations (default is &quot;training&quot;).</span>
 
-        <span class="n">cross_entropy</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">categorical_crossentropy</span><span class="p">(</span><span class="n">model_indices</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">from_logits</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">cross_entropy</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cross_entropy</span><span class="p">)</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metrics : dict[str, Tensor]</span>
+<span class="sd">            Dictionary containing the total loss under the key &quot;loss&quot;, as well as all tracked</span>
+<span class="sd">            metrics for the classifier and summary networks. Each metric key is prefixed to</span>
+<span class="sd">            indicate its source.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">summary_metrics</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_summary_metrics</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">classifier_conditions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;classifier_conditions&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+            <span class="n">classifier_conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;classifier_conditions&quot;</span><span class="p">](</span><span class="n">classifier_conditions</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
+
+        <span class="n">classifier_conditions</span> <span class="o">=</span> <span class="n">concatenate_valid</span><span class="p">((</span><span class="n">classifier_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_logits</span><span class="p">(</span><span class="n">classifier_conditions</span><span class="p">)</span>
+        <span class="n">cross_entropy</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">categorical_crossentropy</span><span class="p">(</span><span class="n">model_indices</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">from_logits</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
         <span class="n">classifier_metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">cross_entropy</span><span class="p">}</span>
 
         <span class="k">if</span> <span class="n">stage</span> <span class="o">!=</span> <span class="s2">&quot;training&quot;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="o">.</span><span class="n">metrics</span><span class="p">):</span>
-            <span class="c1"># compute sample-based metrics</span>
             <span class="n">predictions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">classifier_metrics</span> <span class="o">|=</span> <span class="p">{</span>
                 <span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">metric</span><span class="p">(</span><span class="n">model_indices</span><span class="p">,</span> <span class="n">predictions</span><span class="p">)</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="o">.</span><span class="n">metrics</span>
             <span class="p">}</span>
 
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">classifier_metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">zeros</span><span class="p">(()))</span> <span class="o">+</span> <span class="n">summary_metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">zeros</span><span class="p">(()))</span>
+        <span class="k">if</span> <span class="s2">&quot;loss&quot;</span> <span class="ow">in</span> <span class="n">summary_metrics</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">classifier_metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">summary_metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">classifier_metrics</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">)</span>
 
         <span class="n">classifier_metrics</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/classifier_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">classifier_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="n">summary_metrics</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/summary_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">summary_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span> <span class="o">|</span> <span class="n">classifier_metrics</span> <span class="o">|</span> <span class="n">summary_metrics</span>
-
         <span class="k">return</span> <span class="n">metrics</span></div>
 
 
@@ -656,11 +753,13 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Trains the approximator on the provided dataset or on-demand generated from the given (multi-model) simulator.</span>
 <span class="sd">        If `dataset` is not provided, a dataset is built from the `simulator`.</span>
-<span class="sd">        If `simulator` is not provided, it will be build from a list of `simulators`.</span>
+<span class="sd">        If `simulator` is not provided, it will be built from a list of `simulators`.</span>
 <span class="sd">        If the model has not been built, it will be built using a batch from the dataset.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        adapter : Adapter or &#39;auto&#39;, optional</span>
+<span class="sd">            The data adapter that will make the simulated / real outputs neural-network friendly.</span>
 <span class="sd">        dataset : keras.utils.PyDataset, optional</span>
 <span class="sd">            A dataset containing simulations for training. If provided, `simulator` must be None.</span>
 <span class="sd">        simulator : ModelComparisonSimulator, optional</span>
@@ -746,6 +845,7 @@
             <span class="s2">&quot;adapter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span>
             <span class="s2">&quot;classifier_network&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="p">,</span>
             <span class="s2">&quot;summary_network&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">,</span>
+            <span class="s2">&quot;standardize&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
@@ -770,7 +870,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">conditions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
-        <span class="n">logits</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">probs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -781,93 +881,132 @@
 <span class="sd">        ----------</span>
 <span class="sd">        conditions : Mapping[str, np.ndarray]</span>
 <span class="sd">            Dictionary of conditioning variables as NumPy arrays.</span>
-<span class="sd">        logits: bool, default=False</span>
-<span class="sd">            Should the posterior model probabilities be on the (unconstrained) logit space?</span>
-<span class="sd">            If `False`, the output is a unit simplex instead.</span>
+<span class="sd">        probs: bool, optional</span>
+<span class="sd">            A flag indicating whether model probabilities (True) or logits (False) are returned. Default is True.</span>
 <span class="sd">        **kwargs : dict</span>
-<span class="sd">            Additional keyword arguments for the adapter and classification process.</span>
+<span class="sd">            Additional keyword arguments for the adapter and classifier.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        np.ndarray</span>
+<span class="sd">        outputs: np.ndarray</span>
 <span class="sd">            Predicted posterior model probabilities given `conditions`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Take care of deprecated logits kwarg</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;logits&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">logits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Using argument `logits` is deprecated and will be removed in future versions. &quot;</span>
+                <span class="s2">&quot;Please, use `probs` instead.&quot;</span><span class="p">,</span>
+                <span class="ne">FutureWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">logits</span>
 
         <span class="c1"># Apply adapter transforms to raw simulated / real quantities</span>
         <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="c1"># Ensure only keys relevant for sampling are present in the conditions dictionary</span>
-        <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ModelComparisonApproximator</span><span class="o">.</span><span class="n">SAMPLE_KEYS</span><span class="p">}</span>
-
+        <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">}</span>
         <span class="n">conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">)</span>
+
+        <span class="c1"># Optionally standardize conditions</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">conditions</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+                <span class="n">conditions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="n">key</span><span class="p">](</span><span class="n">conditions</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
 
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="o">**</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">logits</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">probs</span><span class="p">:</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">output</span></div>
+        <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classifier_conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use summary variables without a summary network.&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables are required when a summary network is present&quot;</span><span class="p">)</span>
-
-            <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">(</span>
-                <span class="n">summary_variables</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">call</span><span class="p">)</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">classifier_conditions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">classifier_conditions</span> <span class="o">=</span> <span class="n">summary_outputs</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">classifier_conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">classifier_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="p">(</span><span class="n">classifier_conditions</span><span class="p">)</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logits_projector</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">output</span>
-
-<div class="viewcode-block" id="ModelComparisonApproximator.summaries">
-<a class="viewcode-back" href="../../../api/bayesflow.approximators.ModelComparisonApproximator.html#bayesflow.approximators.ModelComparisonApproximator.summaries">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">summaries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelComparisonApproximator.summarize">
+<a class="viewcode-back" href="../../../api/bayesflow.approximators.ModelComparisonApproximator.html#bayesflow.approximators.ModelComparisonApproximator.summarize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes the summaries of given data.</span>
+<span class="sd">        Computes the learned summary statistics of given summary variables.</span>
 
 <span class="sd">        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        data : Mapping[str, np.ndarray]</span>
-<span class="sd">            Dictionary of data as NumPy arrays.</span>
+<span class="sd">            Dictionary of simulated or real quantities as NumPy arrays.</span>
 <span class="sd">        **kwargs : dict</span>
 <span class="sd">            Additional keyword arguments for the adapter and the summary network.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        summaries : np.ndarray</span>
-<span class="sd">            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If the approximator does not have a summary network, or the adapter does not produce the output required</span>
-<span class="sd">            by the summary network.</span>
+<span class="sd">            The learned summary statistics.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A summary network is required to compute summaries.&quot;</span><span class="p">)</span>
+
         <span class="n">data_adapted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="s2">&quot;summary_variables&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_adapted</span> <span class="ow">or</span> <span class="n">data_adapted</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables are required to compute summaries.&quot;</span><span class="p">)</span>
-        <span class="n">summary_variables</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">data_adapted</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">])</span>
+
+        <span class="n">summary_variables</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">,</span> <span class="n">data_adapted</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">])</span>
         <span class="n">summaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">call</span><span class="p">))</span>
+        <span class="n">summaries</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">summaries</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">summaries</span></div>
-</div>
+
+
+<div class="viewcode-block" id="ModelComparisonApproximator.summaries">
+<a class="viewcode-back" href="../../../api/bayesflow.approximators.ModelComparisonApproximator.html#bayesflow.approximators.ModelComparisonApproximator.summaries">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summaries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. deprecated:: 2.0.4</span>
+<span class="sd">            `summaries` will be removed in version 2.0.5, it was renamed to `summarize` which should be used instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;`summaries` was renamed to `summarize` and will be removed in version 2.0.5.&quot;</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_logits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classifier_conditions</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper to compute projected logits from the classifier network.&quot;&quot;&quot;</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier_network</span><span class="p">(</span><span class="n">classifier_conditions</span><span class="p">)</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logits_projector</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logits</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classifier_conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method to obtain logits from the internal classifier based on conditions.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables and summary network must be used together.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">(</span>
+                <span class="n">summary_variables</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">call</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">classifier_conditions</span> <span class="o">=</span> <span class="n">concatenate_valid</span><span class="p">((</span><span class="n">classifier_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_logits</span><span class="p">(</span><span class="n">classifier_conditions</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logits</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_summary_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to compute summary metrics and outputs.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{},</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables are required when a summary network is present.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;summary_variables&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+            <span class="n">summary_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">](</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
+
+        <span class="n">summary_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
+        <span class="n">summary_outputs</span> <span class="o">=</span> <span class="n">summary_metrics</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">summary_metrics</span><span class="p">,</span> <span class="n">summary_outputs</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_batch_size_from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fetches the current batch size from an input dictionary. Can only be used during training when</span>
+<span class="sd">        model indices as present.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;model_indices&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span></div>
 
 </pre></div>
 

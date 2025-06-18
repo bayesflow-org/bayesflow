@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -509,11 +533,11 @@
                 <span class="c1"># we could cast, but this tends to hide mistakes in the predicate</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Predicate must return a boolean type array. Got dtype=</span><span class="si">{</span><span class="n">accept</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="p">(</span><span class="n">accept</span><span class="p">,)</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">accept</span><span class="p">)</span>
-
             <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">accept</span><span class="p">):</span>
                 <span class="c1"># no samples accepted, skip</span>
                 <span class="k">continue</span>
+
+            <span class="p">(</span><span class="n">accept</span><span class="p">,)</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">accept</span><span class="p">)</span>
 
             <span class="c1"># apply acceptance mask</span>
             <span class="n">samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">accept</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -525,6 +549,38 @@
                 <span class="n">result</span> <span class="o">=</span> <span class="n">tree_concatenate</span><span class="p">([</span><span class="n">result</span><span class="p">,</span> <span class="n">samples</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">numpy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="Simulator.sample_batched">
+<a class="viewcode-back" href="../../../api/bayesflow.simulators.Simulator.html#bayesflow.simulators.Simulator.sample_batched">[docs]</a>
+    <span class="nd">@allow_batch_size</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_batched</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">batch_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">sample_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample the desired number of simulations in smaller batches.</span>
+
+<span class="sd">        Limited resources, especially memory, can make it necessary to run simulations in smaller batches.</span>
+<span class="sd">        The number of samples per simulated batch is specified by `sample_size`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batch_shape : Shape</span>
+<span class="sd">            The desired output shape, as in :py:meth:`sample`. Will be rounded up to the next complete batch.</span>
+<span class="sd">        sample_size : int</span>
+<span class="sd">            The number of samples in each simulated batch.</span>
+<span class="sd">        kwargs</span>
+<span class="sd">            Additional keyword arguments passed to :py:meth:`sample`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">accept_all_predicate</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">sample_size</span><span class="p">,),</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rejection_sample</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="n">accept_all_predicate</span><span class="p">,</span> <span class="n">sample_size</span><span class="o">=</span><span class="n">sample_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

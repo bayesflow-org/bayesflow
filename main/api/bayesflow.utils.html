@@ -151,6 +151,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -171,13 +178,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -302,6 +319,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -417,21 +441,28 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ElementwiseTransform.html">ElementwiseTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ExpandDims.html">ExpandDims</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.FilterTransform.html">FilterTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Group.html">Group</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.RandomSubsample.html">RandomSubsample</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Rename.html">Rename</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Scale.html">Scale</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.SerializableCustomTransform.html">SerializableCustomTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Shift.html">Shift</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Split.html">Split</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Sqrt.html">Sqrt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Squeeze.html">Squeeze</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html">Standardize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Take.html">Take</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToArray.html">ToArray</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToDict.html">ToDict</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Transform.html">Transform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Ungroup.html">Ungroup</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.adapters.Adapter.html">Adapter</a></li>
@@ -448,7 +479,6 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.DiskDataset.html">DiskDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OfflineDataset.html">OfflineDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OnlineDataset.html">OnlineDataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.RoundsDataset.html">RoundsDataset</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.diagnostics.html">diagnostics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -478,12 +508,22 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.links.html">links</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.links.CholeskyFactor.html">CholeskyFactor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.Ordered.html">Ordered</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.OrderedQuantiles.html">OrderedQuantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.PositiveDefinite.html">PositiveDefinite</a></li>
@@ -504,10 +544,12 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.InferenceNetwork.html">InferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.MLP.html">MLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
@@ -580,6 +622,10 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.serialization.serialize_value_or_type.html">serialize_value_or_type</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.tree.html">tree</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.tree.flatten_shape.html">flatten_shape</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_metric.html">add_metric</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_titles_and_labels.html">add_titles_and_labels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.batched_call.html">batched_call</a></li>
@@ -587,6 +633,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_args.html">convert_args</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_kwargs.html">convert_kwargs</a></li>
@@ -616,6 +663,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian_trace.html">jacobian_trace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jvp.html">jvp</a></li>
@@ -626,6 +674,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pad.html">pad</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.parse_bytes.html">parse_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pickle_load.html">pickle_load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.positive_diag.html">positive_diag</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html">prepare_plot_data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prettify_subplots.html">prettify_subplots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.searchsorted.html">searchsorted</a></li>
@@ -740,6 +789,9 @@
 <tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.serialization.html#module-bayesflow.utils.serialization" title="bayesflow.utils.serialization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serialization</span></code></a></p></td>
 <td><p></p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.tree.html#module-bayesflow.utils.tree" title="bayesflow.utils.tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tree</span></code></a></p></td>
+<td><p></p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -767,92 +819,98 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.concatenate_valid.html#bayesflow.utils.concatenate_valid" title="bayesflow.utils.concatenate_valid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concatenate_valid</span></code></a>(tensors[, axis])</p></td>
 <td><p>Concatenate multiple tensors along axis, ignoring None values.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.confusion_matrix.html#bayesflow.utils.confusion_matrix" title="bayesflow.utils.confusion_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">confusion_matrix</span></code></a>(targets, estimates[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html#bayesflow.utils.concatenate_valid_shapes" title="bayesflow.utils.concatenate_valid_shapes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concatenate_valid_shapes</span></code></a>(tensor_shapes[, axis])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.confusion_matrix.html#bayesflow.utils.confusion_matrix" title="bayesflow.utils.confusion_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">confusion_matrix</span></code></a>(targets, estimates[, ...])</p></td>
 <td><p>Compute confusion matrix to evaluate the accuracy of a classification or model comparison setting.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.convert_args.html#bayesflow.utils.convert_args" title="bayesflow.utils.convert_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_args</span></code></a>(f, *args, **kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.convert_args.html#bayesflow.utils.convert_args" title="bayesflow.utils.convert_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_args</span></code></a>(f, *args, **kwargs)</p></td>
 <td><p>Convert positional and keyword arguments to just positional arguments for f</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.convert_kwargs.html#bayesflow.utils.convert_kwargs" title="bayesflow.utils.convert_kwargs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_kwargs</span></code></a>(f, *args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.convert_kwargs.html#bayesflow.utils.convert_kwargs" title="bayesflow.utils.convert_kwargs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_kwargs</span></code></a>(f, *args, **kwargs)</p></td>
 <td><p>Convert positional and keyword arguments qto just keyword arguments for f</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html#bayesflow.utils.deserialize_value_or_type" title="bayesflow.utils.deserialize_value_or_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deserialize_value_or_type</span></code></a>(config, name)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html#bayesflow.utils.deserialize_value_or_type" title="bayesflow.utils.deserialize_value_or_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deserialize_value_or_type</span></code></a>(config, name)</p></td>
 <td><p>This function is deprecated.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html#bayesflow.utils.detailed_loss_callback" title="bayesflow.utils.detailed_loss_callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detailed_loss_callback</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html#bayesflow.utils.detailed_loss_callback" title="bayesflow.utils.detailed_loss_callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detailed_loss_callback</span></code></a>()</p></td>
 <td><p>Provides detailed callback for loss trajectory for every training step.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.devices.html#bayesflow.utils.devices" title="bayesflow.utils.devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">devices</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.devices.html#bayesflow.utils.devices" title="bayesflow.utils.devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">devices</span></code></a>()</p></td>
 <td><p>Returns a list of available GPU devices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand.html#bayesflow.utils.expand" title="bayesflow.utils.expand"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand</span></code></a>(x, n, side)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand.html#bayesflow.utils.expand" title="bayesflow.utils.expand"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand</span></code></a>(x, n, side)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_as.html#bayesflow.utils.expand_as" title="bayesflow.utils.expand_as"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_as</span></code></a>(x, y, side)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_as.html#bayesflow.utils.expand_as" title="bayesflow.utils.expand_as"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_as</span></code></a>(x, y, side)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_left.html#bayesflow.utils.expand_left" title="bayesflow.utils.expand_left"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_left</span></code></a>(x, n)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_left.html#bayesflow.utils.expand_left" title="bayesflow.utils.expand_left"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_left</span></code></a>(x, n)</p></td>
 <td><p>Expand x to the left n times</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_left_as.html#bayesflow.utils.expand_left_as" title="bayesflow.utils.expand_left_as"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_left_as</span></code></a>(x, y)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_left_as.html#bayesflow.utils.expand_left_as" title="bayesflow.utils.expand_left_as"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_left_as</span></code></a>(x, y)</p></td>
 <td><p>Expand x to the left, matching the dimension of y</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_left_to.html#bayesflow.utils.expand_left_to" title="bayesflow.utils.expand_left_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_left_to</span></code></a>(x, dim)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_left_to.html#bayesflow.utils.expand_left_to" title="bayesflow.utils.expand_left_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_left_to</span></code></a>(x, dim)</p></td>
 <td><p>Expand x to the left, matching dim</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_right.html#bayesflow.utils.expand_right" title="bayesflow.utils.expand_right"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_right</span></code></a>(x, n)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_right.html#bayesflow.utils.expand_right" title="bayesflow.utils.expand_right"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_right</span></code></a>(x, n)</p></td>
 <td><p>Expand x to the right n times</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_right_as.html#bayesflow.utils.expand_right_as" title="bayesflow.utils.expand_right_as"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_right_as</span></code></a>(x, y)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_right_as.html#bayesflow.utils.expand_right_as" title="bayesflow.utils.expand_right_as"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_right_as</span></code></a>(x, y)</p></td>
 <td><p>Expand x to the right, matching the dimension of y</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_right_to.html#bayesflow.utils.expand_right_to" title="bayesflow.utils.expand_right_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_right_to</span></code></a>(x, dim)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_right_to.html#bayesflow.utils.expand_right_to" title="bayesflow.utils.expand_right_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_right_to</span></code></a>(x, dim)</p></td>
 <td><p>Expand x to the right, matching dim</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_tile.html#bayesflow.utils.expand_tile" title="bayesflow.utils.expand_tile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_tile</span></code></a>(x, n, axis)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_tile.html#bayesflow.utils.expand_tile" title="bayesflow.utils.expand_tile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_tile</span></code></a>(x, n, axis)</p></td>
 <td><p>Expand and tile x along the given axis n times</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.expand_to.html#bayesflow.utils.expand_to" title="bayesflow.utils.expand_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_to</span></code></a>(x, dim, side)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.expand_to.html#bayesflow.utils.expand_to" title="bayesflow.utils.expand_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_to</span></code></a>(x, dim, side)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.fill_triangular_matrix.html#bayesflow.utils.fill_triangular_matrix" title="bayesflow.utils.fill_triangular_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_triangular_matrix</span></code></a>(x[, upper, positive_diag])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.fill_triangular_matrix.html#bayesflow.utils.fill_triangular_matrix" title="bayesflow.utils.fill_triangular_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_triangular_matrix</span></code></a>(x[, upper, positive_diag])</p></td>
 <td><p>Reshapes a batch of matrix elements into a triangular matrix (either upper or lower).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.filter_kwargs.html#bayesflow.utils.filter_kwargs" title="bayesflow.utils.filter_kwargs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_kwargs</span></code></a>(kwargs, f)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.filter_kwargs.html#bayesflow.utils.filter_kwargs" title="bayesflow.utils.filter_kwargs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_kwargs</span></code></a>(kwargs, f)</p></td>
 <td><p>Filter keyword arguments for f</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_batch_size.html#bayesflow.utils.find_batch_size" title="bayesflow.utils.find_batch_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_batch_size</span></code></a>(sample[, memory_budget, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_batch_size.html#bayesflow.utils.find_batch_size" title="bayesflow.utils.find_batch_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_batch_size</span></code></a>(sample[, memory_budget, ...])</p></td>
 <td><p>Returns an estimation of an optimal batch size based on memory budget and sample memory footprint.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_distribution.html#bayesflow.utils.find_distribution" title="bayesflow.utils.find_distribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_distribution</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_distribution.html#bayesflow.utils.find_distribution" title="bayesflow.utils.find_distribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_distribution</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_inference_network.html#bayesflow.utils.find_inference_network" title="bayesflow.utils.find_inference_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_inference_network</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_inference_network.html#bayesflow.utils.find_inference_network" title="bayesflow.utils.find_inference_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_inference_network</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_memory_budget.html#bayesflow.utils.find_memory_budget" title="bayesflow.utils.find_memory_budget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_memory_budget</span></code></a>([device_type])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_memory_budget.html#bayesflow.utils.find_memory_budget" title="bayesflow.utils.find_memory_budget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_memory_budget</span></code></a>([device_type])</p></td>
 <td><p>Returns an estimation of available memory in bytes for the given device type.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_network.html#bayesflow.utils.find_network" title="bayesflow.utils.find_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_network</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_network.html#bayesflow.utils.find_network" title="bayesflow.utils.find_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_network</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_permutation.html#bayesflow.utils.find_permutation" title="bayesflow.utils.find_permutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_permutation</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_permutation.html#bayesflow.utils.find_permutation" title="bayesflow.utils.find_permutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_permutation</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_pooling.html#bayesflow.utils.find_pooling" title="bayesflow.utils.find_pooling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_pooling</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_pooling.html#bayesflow.utils.find_pooling" title="bayesflow.utils.find_pooling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_pooling</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html#bayesflow.utils.find_recurrent_net" title="bayesflow.utils.find_recurrent_net"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_recurrent_net</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html#bayesflow.utils.find_recurrent_net" title="bayesflow.utils.find_recurrent_net"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_recurrent_net</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.find_summary_network.html#bayesflow.utils.find_summary_network" title="bayesflow.utils.find_summary_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_summary_network</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.find_summary_network.html#bayesflow.utils.find_summary_network" title="bayesflow.utils.find_summary_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_summary_network</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.format_bytes.html#bayesflow.utils.format_bytes" title="bayesflow.utils.format_bytes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">format_bytes</span></code></a>(b[, precision, si])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.format_bytes.html#bayesflow.utils.format_bytes" title="bayesflow.utils.format_bytes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">format_bytes</span></code></a>(b[, precision, si])</p></td>
 <td><p>Format a number of bytes as a human-readable string in the format '{value} {prefix}{unit}'.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.integrate.html#bayesflow.utils.integrate" title="bayesflow.utils.integrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate</span></code></a>(fn, state[, start_time, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.integrate.html#bayesflow.utils.integrate" title="bayesflow.utils.integrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate</span></code></a>(fn, state[, start_time, ...])</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html#bayesflow.utils.integrate_stochastic" title="bayesflow.utils.integrate_stochastic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate_stochastic</span></code></a>(drift_fn, diffusion_fn, ...)</p></td>
+<td><p>Integrates a stochastic differential equation from start_time to stop_time.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.jacobian.html#bayesflow.utils.jacobian" title="bayesflow.utils.jacobian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jacobian</span></code></a>(f, x[, return_output])</p></td>
 <td><p>Compute the Jacobian matrix of f with respect to x.</p></td>
@@ -867,7 +925,7 @@
 <td><p>Filter keyword arguments for keras.Layer</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.make_quadratic.html#bayesflow.utils.make_quadratic" title="bayesflow.utils.make_quadratic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_quadratic</span></code></a>(ax, x_data, y_data)</p></td>
-<td><p>Utility to make a subplots quadratic in order to avoid visual illusions in, e.g., recovery plots.</p></td>
+<td><p>Utility to make subplots quadratic to avoid visual illusions in, e.g., recovery plots.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.model_kwargs.html#bayesflow.utils.model_kwargs" title="bayesflow.utils.model_kwargs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_kwargs</span></code></a>(kwargs)</p></td>
 <td><p>Filter keyword arguments for keras.Model</p></td>
@@ -884,52 +942,55 @@
 <tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.pickle_load.html#bayesflow.utils.pickle_load" title="bayesflow.utils.pickle_load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pickle_load</span></code></a>(filepath)</p></td>
 <td><p>Small utility to safely load a pickle object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html#bayesflow.utils.prepare_plot_data" title="bayesflow.utils.prepare_plot_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_plot_data</span></code></a>(estimates, targets[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.positive_diag.html#bayesflow.utils.positive_diag" title="bayesflow.utils.positive_diag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">positive_diag</span></code></a>(x[, method])</p></td>
+<td><p>Ensures that matrix elements on diagonal are positive.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html#bayesflow.utils.prepare_plot_data" title="bayesflow.utils.prepare_plot_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_plot_data</span></code></a>(estimates, targets[, ...])</p></td>
 <td><p>Procedural wrapper that encompasses all preprocessing steps, including shape-checking, parameter name generation, layout configuration, figure initialization, and collapsing of axes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.prettify_subplots.html#bayesflow.utils.prettify_subplots" title="bayesflow.utils.prettify_subplots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prettify_subplots</span></code></a>(axes, num_subplots[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.prettify_subplots.html#bayesflow.utils.prettify_subplots" title="bayesflow.utils.prettify_subplots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prettify_subplots</span></code></a>(axes, num_subplots[, ...])</p></td>
 <td><p>TODO: docstring</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.searchsorted.html#bayesflow.utils.searchsorted" title="bayesflow.utils.searchsorted"><code class="xref py py-obj docutils literal notranslate"><span class="pre">searchsorted</span></code></a>(sorted_sequence, values[, side])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.searchsorted.html#bayesflow.utils.searchsorted" title="bayesflow.utils.searchsorted"><code class="xref py py-obj docutils literal notranslate"><span class="pre">searchsorted</span></code></a>(sorted_sequence, values[, side])</p></td>
 <td><p>Find indices where elements should be inserted to maintain order.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.sequential_kwargs.html#bayesflow.utils.sequential_kwargs" title="bayesflow.utils.sequential_kwargs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sequential_kwargs</span></code></a>(kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.sequential_kwargs.html#bayesflow.utils.sequential_kwargs" title="bayesflow.utils.sequential_kwargs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sequential_kwargs</span></code></a>(kwargs)</p></td>
 <td><p>Filter keyword arguments for keras.Sequential</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html#bayesflow.utils.serialize_value_or_type" title="bayesflow.utils.serialize_value_or_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serialize_value_or_type</span></code></a>(config, name, obj)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html#bayesflow.utils.serialize_value_or_type" title="bayesflow.utils.serialize_value_or_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serialize_value_or_type</span></code></a>(config, name, obj)</p></td>
 <td><p>This function is deprecated.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html#bayesflow.utils.simultaneous_ecdf_bands" title="bayesflow.utils.simultaneous_ecdf_bands"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simultaneous_ecdf_bands</span></code></a>(num_estimates[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html#bayesflow.utils.simultaneous_ecdf_bands" title="bayesflow.utils.simultaneous_ecdf_bands"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simultaneous_ecdf_bands</span></code></a>(num_estimates[, ...])</p></td>
 <td><p>Computes the simultaneous ECDF bands through simulation according to the algorithm described in Section 2.2 of</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.size_of.html#bayesflow.utils.size_of" title="bayesflow.utils.size_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_of</span></code></a>(x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.size_of.html#bayesflow.utils.size_of" title="bayesflow.utils.size_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_of</span></code></a>(x)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.split_arrays.html#bayesflow.utils.split_arrays" title="bayesflow.utils.split_arrays"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_arrays</span></code></a>(data[, axis])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.split_arrays.html#bayesflow.utils.split_arrays" title="bayesflow.utils.split_arrays"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_arrays</span></code></a>(data[, axis])</p></td>
 <td><p>Split tensors in the dictionary along the given axis.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.split_tensors.html#bayesflow.utils.split_tensors" title="bayesflow.utils.split_tensors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_tensors</span></code></a>(data[, axis])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.split_tensors.html#bayesflow.utils.split_tensors" title="bayesflow.utils.split_tensors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_tensors</span></code></a>(data[, axis])</p></td>
 <td><p>Split tensors in the dictionary along the given axis.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html#bayesflow.utils.squeeze_inner_estimates_dict" title="bayesflow.utils.squeeze_inner_estimates_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">squeeze_inner_estimates_dict</span></code></a>(estimates)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html#bayesflow.utils.squeeze_inner_estimates_dict" title="bayesflow.utils.squeeze_inner_estimates_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">squeeze_inner_estimates_dict</span></code></a>(estimates)</p></td>
 <td><p>If a dictionary has only one key-value pair and the key is &quot;value&quot;, return only its value.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.stack_valid.html#bayesflow.utils.stack_valid" title="bayesflow.utils.stack_valid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stack_valid</span></code></a>(tensors[, axis])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.stack_valid.html#bayesflow.utils.stack_valid" title="bayesflow.utils.stack_valid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stack_valid</span></code></a>(tensors[, axis])</p></td>
 <td><p>Stack multiple tensors along axis, ignoring None values.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.tile_axis.html#bayesflow.utils.tile_axis" title="bayesflow.utils.tile_axis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tile_axis</span></code></a>(x, n, axis)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.tile_axis.html#bayesflow.utils.tile_axis" title="bayesflow.utils.tile_axis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tile_axis</span></code></a>(x, n, axis)</p></td>
 <td><p>Tile x along the given axis n times</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.tree_concatenate.html#bayesflow.utils.tree_concatenate" title="bayesflow.utils.tree_concatenate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tree_concatenate</span></code></a>(structures[, axis, numpy])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.tree_concatenate.html#bayesflow.utils.tree_concatenate" title="bayesflow.utils.tree_concatenate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tree_concatenate</span></code></a>(structures[, axis, numpy])</p></td>
 <td><p>Concatenate all tensors in the given sequence of nested structures.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.tree_stack.html#bayesflow.utils.tree_stack" title="bayesflow.utils.tree_stack"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tree_stack</span></code></a>(structures[, axis, numpy])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.tree_stack.html#bayesflow.utils.tree_stack" title="bayesflow.utils.tree_stack"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tree_stack</span></code></a>(structures[, axis, numpy])</p></td>
 <td><p>Like <a class="reference internal" href="bayesflow.utils.tree_concatenate.html#bayesflow.utils.tree_concatenate" title="bayesflow.utils.tree_concatenate"><code class="xref py py-func docutils literal notranslate"><span class="pre">tree_concatenate()</span></code></a>, except tensors are stacked instead of concatenated.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.vjp.html#bayesflow.utils.vjp" title="bayesflow.utils.vjp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vjp</span></code></a>(f, x[, return_output])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.vjp.html#bayesflow.utils.vjp" title="bayesflow.utils.vjp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vjp</span></code></a>(f, x[, return_output])</p></td>
 <td><p>Compute the vector-Jacobian product of f at x.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.utils.weighted_mean.html#bayesflow.utils.weighted_mean" title="bayesflow.utils.weighted_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">weighted_mean</span></code></a>(elements[, weights])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.utils.weighted_mean.html#bayesflow.utils.weighted_mean" title="bayesflow.utils.weighted_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">weighted_mean</span></code></a>(elements[, weights])</p></td>
 <td><p>Compute the (optionally) weighted mean of the input tensor.</p></td>
 </tr>
 </tbody>

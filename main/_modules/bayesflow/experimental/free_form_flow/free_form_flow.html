@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -453,8 +477,6 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">ops</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Distribution</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -476,7 +498,7 @@
 <a class="viewcode-back" href="../../../../api/bayesflow.experimental.FreeFormFlow.html#bayesflow.experimental.FreeFormFlow">[docs]</a>
 <span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FreeFormFlow</span><span class="p">(</span><span class="n">InferenceNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implements a dimensionality-preserving Free-form Flow.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(IN) Implements a dimensionality-preserving Free-form Flow.</span>
 <span class="sd">    Incorporates ideas from [1-2].</span>
 
 <span class="sd">    [1] Draxler, F., Sorrenson, P., Zimmermann, L., Rousselot, A., &amp; Köthe, U. (2024).F</span>
@@ -493,7 +515,7 @@
         <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
         <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
         <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="s2">&quot;spectral_normalization&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
@@ -502,7 +524,7 @@
         <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
         <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
         <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="s2">&quot;spectral_normalization&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
@@ -539,13 +561,6 @@
 <span class="sd">            Additional keyword arguments</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">base_distribution</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">encoder_subnet_kwargs</span> <span class="ow">or</span> <span class="n">decoder_subnet_kwargs</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Using `subnet_kwargs` is deprecated.&quot;</span>
-                <span class="s2">&quot;Instead, instantiate the network yourself and pass the arguments directly.&quot;</span><span class="p">,</span>
-                <span class="ne">DeprecationWarning</span><span class="p">,</span>
-            <span class="p">)</span>
 
         <span class="n">encoder_subnet_kwargs</span> <span class="o">=</span> <span class="n">encoder_subnet_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="n">decoder_subnet_kwargs</span> <span class="o">=</span> <span class="n">decoder_subnet_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
@@ -692,10 +707,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
 
         <span class="c1"># VJP computation</span>
-        <span class="n">z</span><span class="p">,</span> <span class="n">vjp_fn</span> <span class="o">=</span> <span class="n">vjp</span><span class="p">(</span><span class="n">encode</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-        <span class="n">v1</span> <span class="o">=</span> <span class="n">vjp_fn</span><span class="p">(</span><span class="n">v</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">z</span><span class="p">,</span> <span class="n">vjp_fn</span> <span class="o">=</span> <span class="n">vjp</span><span class="p">(</span><span class="n">encode</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">return_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">v1</span> <span class="o">=</span> <span class="n">vjp_fn</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="c1"># JVP computation</span>
-        <span class="n">x_pred</span><span class="p">,</span> <span class="n">v2</span> <span class="o">=</span> <span class="n">jvp</span><span class="p">(</span><span class="n">decode</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,),</span> <span class="p">(</span><span class="n">v</span><span class="p">,))</span>
+        <span class="n">x_pred</span><span class="p">,</span> <span class="n">v2</span> <span class="o">=</span> <span class="n">jvp</span><span class="p">(</span><span class="n">decode</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,),</span> <span class="p">(</span><span class="n">v</span><span class="p">,),</span> <span class="n">return_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># equivalent: surrogate = ops.matmul(ops.stop_gradient(v2[:, None]), v1[:, :, None])[:, 0, 0]</span>
         <span class="n">surrogate</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">ops</span><span class="o">.</span><span class="n">stop_gradient</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span> <span class="o">*</span> <span class="n">v1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>

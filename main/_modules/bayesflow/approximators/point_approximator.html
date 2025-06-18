@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -457,7 +481,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">filter_kwargs</span><span class="p">,</span> <span class="n">split_arrays</span><span class="p">,</span> <span class="n">squeeze_inner_estimates_dict</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">filter_kwargs</span><span class="p">,</span> <span class="n">split_arrays</span><span class="p">,</span> <span class="n">squeeze_inner_estimates_dict</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">concatenate_valid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.continuous_approximator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContinuousApproximator</span>
@@ -511,17 +535,31 @@
 <span class="sd">            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array</span>
 <span class="sd">            of shape (num_datasets, point_estimate_size, variable_block_size).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Adapt, optionally standardize and convert conditions to tensor.</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">}</span>
 
-        <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_conditions</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimate</span><span class="p">(</span><span class="o">**</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">score_key</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">head_key</span> <span class="ow">in</span> <span class="n">estimates</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">transformation_type</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">TRANSFORMATION_TYPE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">head_key</span><span class="p">,</span> <span class="s2">&quot;location_scale&quot;</span><span class="p">)</span>
+                    <span class="n">estimates</span><span class="p">[</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">](</span>
+                        <span class="n">estimates</span><span class="p">[</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">],</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transformation_type</span><span class="o">=</span><span class="n">transformation_type</span>
+                    <span class="p">)</span>
+
         <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_inverse_adapter_to_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
         <span class="c1"># Optionally split the arrays along the last axis.</span>
         <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
             <span class="n">estimates</span> <span class="o">=</span> <span class="n">split_arrays</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
         <span class="c1"># Reorder the nested dictionary so that original variable names are at the top.</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">PointApproximator</span><span class="o">.</span><span class="n">_reorder_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
         <span class="c1"># Remove unnecessary nesting.</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">PointApproximator</span><span class="o">.</span><span class="n">_squeeze_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_squeeze_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">estimates</span></div>
 
@@ -566,10 +604,20 @@
 <span class="sd">            Each output (i.e., dictionary value that is not itself a dictionary) is an array</span>
 <span class="sd">            of shape (num_datasets, num_samples, variable_block_size).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_conditions</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Adapt, optionally standardize and convert conditions to tensor.</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">}</span>
+
+        <span class="c1"># Sample and undo optional standardization</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">(</span><span class="n">num_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">score_key</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">](</span><span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">],</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_inverse_adapter_to_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="c1"># Optionally split the arrays along the last axis.</span>
+
         <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;split=True is currently not supported for `PointApproximator`.&quot;</span><span class="p">)</span>
 
@@ -610,20 +658,21 @@
 
 <span class="sd">            Log-probabilities have shape (num_datasets,).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log_prob</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="c1"># Squeeze log probabilities dictionary if there&#39;s only one key-value pair.</span>
-        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">PointApproximator</span><span class="o">.</span><span class="n">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">log_prob</span><span class="p">)</span>
+        <span class="c1"># Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">log_det_jac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">log_det_jac</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Pass data to networks and convert back to numpy array</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_prob</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">,</span> <span class="n">log_prob</span><span class="p">)</span>
+
+        <span class="c1"># Change of variables formula, respecting log_prob to be a dictionary</span>
+        <span class="k">if</span> <span class="n">log_det_jac</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_prob</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">log_det_jac</span><span class="p">,</span> <span class="n">log_prob</span><span class="p">)</span>
+
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">log_prob</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">log_prob</span></div>
 
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adapts and converts the conditions to tensors.&quot;&quot;&quot;</span>
-
-        <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ContinuousApproximator</span><span class="o">.</span><span class="n">SAMPLE_KEYS</span><span class="p">}</span>
-
-        <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_inverse_adapter_to_estimates</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span>
@@ -655,9 +704,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the inverse adapter to a dictionary of samples.&quot;&quot;&quot;</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
         <span class="n">processed</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">score_key</span><span class="p">,</span> <span class="n">samples</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">score_key</span><span class="p">,</span> <span class="n">score_value</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">processed</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span>
-                <span class="p">{</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">:</span> <span class="n">samples</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">:</span> <span class="n">score_value</span><span class="p">},</span>
                 <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -696,7 +745,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">samples</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Squeezes the dictionary to just the value if there is only one key-value pair.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>  <span class="c1"># Extract and return the only item&#39;s value</span>
+            <span class="c1"># Extract and return the only item&#39;s value</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
         <span class="k">return</span> <span class="n">samples</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_estimate</span><span class="p">(</span>
@@ -705,21 +755,14 @@
         <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use summary variables without a summary network.&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables are required when a summary network is present.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables and summary network must be used together.&quot;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">(</span>
                 <span class="n">summary_variables</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">call</span><span class="p">)</span>
             <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">inference_conditions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">inference_conditions</span> <span class="o">=</span> <span class="n">summary_outputs</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">inference_conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">inference_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">inference_conditions</span> <span class="o">=</span> <span class="n">concatenate_valid</span><span class="p">((</span><span class="n">inference_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="p">(</span>
             <span class="n">conditions</span><span class="o">=</span><span class="n">inference_conditions</span><span class="p">,</span>

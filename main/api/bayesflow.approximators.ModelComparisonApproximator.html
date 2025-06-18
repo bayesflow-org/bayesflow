@@ -151,6 +151,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -171,13 +178,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -302,6 +319,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -417,21 +441,28 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ElementwiseTransform.html">ElementwiseTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ExpandDims.html">ExpandDims</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.FilterTransform.html">FilterTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Group.html">Group</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.RandomSubsample.html">RandomSubsample</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Rename.html">Rename</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Scale.html">Scale</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.SerializableCustomTransform.html">SerializableCustomTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Shift.html">Shift</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Split.html">Split</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Sqrt.html">Sqrt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Squeeze.html">Squeeze</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html">Standardize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Take.html">Take</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToArray.html">ToArray</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToDict.html">ToDict</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Transform.html">Transform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Ungroup.html">Ungroup</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.adapters.Adapter.html">Adapter</a></li>
@@ -448,7 +479,6 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.DiskDataset.html">DiskDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OfflineDataset.html">OfflineDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OnlineDataset.html">OnlineDataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.RoundsDataset.html">RoundsDataset</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.diagnostics.html">diagnostics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -478,12 +508,22 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.links.html">links</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.links.CholeskyFactor.html">CholeskyFactor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.Ordered.html">Ordered</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.OrderedQuantiles.html">OrderedQuantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.PositiveDefinite.html">PositiveDefinite</a></li>
@@ -504,10 +544,12 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.InferenceNetwork.html">InferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.MLP.html">MLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
@@ -580,6 +622,10 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.serialization.serialize_value_or_type.html">serialize_value_or_type</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.tree.html">tree</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.tree.flatten_shape.html">flatten_shape</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_metric.html">add_metric</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_titles_and_labels.html">add_titles_and_labels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.batched_call.html">batched_call</a></li>
@@ -587,6 +633,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_args.html">convert_args</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_kwargs.html">convert_kwargs</a></li>
@@ -616,6 +663,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian_trace.html">jacobian_trace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jvp.html">jvp</a></li>
@@ -626,6 +674,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pad.html">pad</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.parse_bytes.html">parse_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pickle_load.html">pickle_load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.positive_diag.html">positive_diag</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html">prepare_plot_data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prettify_subplots.html">prettify_subplots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.searchsorted.html">searchsorted</a></li>
@@ -747,17 +796,26 @@ and (optional) output of the summary_network.</p>
 <dt><strong>summary_network: bf.networks.SummaryNetwork, optional</strong></dt><dd><p>The summary network used for data summarization (default is None).
 The input of the summary network is <cite>summary_variables</cite>.</p>
 </dd>
+<dt><strong>standardize</strong><span class="classifier">str | Sequence[str] | None</span></dt><dd><p>The variables to standardize before passing to the networks. Can be either
+“all” or any subset of [“inference_variables”, “summary_variables”, “inference_conditions”].
+(default is “all”).</p>
+</dd>
 </dl>
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.SAMPLE_KEYS">
-<span class="sig-name descname"><span class="pre">SAMPLE_KEYS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['summary_variables',</span> <span class="pre">'classifier_conditions']</span></em><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.SAMPLE_KEYS" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.CONDITION_KEYS">
+<span class="sig-name descname"><span class="pre">CONDITION_KEYS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['summary_variables',</span> <span class="pre">'classifier_conditions']</span></em><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.CONDITION_KEYS" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.build">
-<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_shapes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.build" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_shapes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.build" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.build_from_data">
+<span class="sig-name descname"><span class="pre">build_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adapted_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.build_from_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.build_from_data" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -880,40 +938,34 @@ metrics, etc.) to compile the model.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.compute_metrics">
 <span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">classifier_conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_indices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summary_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'training'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.compute_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.compute_metrics" title="Link to this definition">#</a></dt>
-<dd><p>Update metric states and collect all metrics to be returned.</p>
-<p>Subclasses can optionally override this method to provide custom metric
-updating and collection logic. Custom metrics are not passed in
-<cite>compile()</cite>, they can be created in <cite>__init__</cite> or <cite>build</cite>. They are
-automatically tracked and returned by <cite>self.metrics</cite>.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">Sequential</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span> <span class="o">=</span> <span class="n">MyMetric</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;custom_metric&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">):</span>
-        <span class="c1"># This super call updates metrics from `compile` and returns</span>
-        <span class="c1"># results for all metrics listed in `self.metrics`.</span>
-        <span class="n">metric_results</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span>
-            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
-
-        <span class="c1"># `metric_results` contains the previous result for</span>
-        <span class="c1"># `custom_metric`, this is where we update it.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span><span class="o">.</span><span class="n">update_state</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
-        <span class="n">metric_results</span><span class="p">[</span><span class="s1">&#39;custom_metric&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">metric_results</span>
-</pre></div>
-</div>
-<dl class="simple">
-<dt>Args:</dt><dd><p>x: Input data.
-y: Target data.
-y_pred: Predictions returned by the model output of <cite>model.call(x)</cite>.
-sample_weight: Sample weights for weighting the loss function.</p>
+<dd><p>Computes loss and tracks metrics for the classifier and summary networks.</p>
+<p>This method coordinates summary metric computation (if present), combines summary outputs with
+classifier conditions, computes classifier logits and cross-entropy loss, and aggregates all
+tracked metrics into a single dictionary. Keys are prefixed with “<a href="#id13"><span class="problematic" id="id14">classifier_</span></a>” or “<a href="#id15"><span class="problematic" id="id16">summary_</span></a>”
+to indicate their origin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>classifier_conditions</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Conditioning variables for the classifier network (default is None). May be
+combined with summary network outputs if present.</p>
 </dd>
-<dt>Returns:</dt><dd><p>A <cite>dict</cite> containing values that will be passed to
-<cite>keras.callbacks.CallbackList.on_train_batch_end()</cite>. Typically,
-the values of the metrics listed in <cite>self.metrics</cite> are returned.
-Example: <cite>{‘loss’: 0.2, ‘accuracy’: 0.7}</cite>.</p>
+<dt><strong>model_indices</strong><span class="classifier">Tensor</span></dt><dd><p>Ground-truth indices or one-hot encoded labels for classification.</p>
+</dd>
+<dt><strong>summary_variables</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Input tensor(s) for the summary network (default is None). Required if a summary
+network is present.</p>
+</dd>
+<dt><strong>stage</strong><span class="classifier">str, optional</span></dt><dd><p>Current training stage (e.g., “training”, “validation”, “inference”). Controls
+certain metric computations (default is “training”).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>metrics</strong><span class="classifier">dict[str, Tensor]</span></dt><dd><p>Dictionary containing the total loss under the key “loss”, as well as all tracked
+metrics for the classifier and summary networks. Each metric key is prefixed to
+indicate its source.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -923,11 +975,13 @@ Example: <cite>{‘loss’: 0.2, ‘accuracy’: 0.7}</cite>.</p>
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">adapter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter" title="bayesflow.adapters.adapter.Adapter"><span class="pre">Adapter</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyDataset</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="bayesflow.simulators.ModelComparisonSimulator.html#bayesflow.simulators.ModelComparisonSimulator" title="bayesflow.simulators.model_comparison_simulator.ModelComparisonSimulator"><span class="pre">ModelComparisonSimulator</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="bayesflow.simulators.Simulator.html#bayesflow.simulators.Simulator" title="bayesflow.simulators.simulator.Simulator"><span class="pre">Simulator</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.fit" title="Link to this definition">#</a></dt>
 <dd><p>Trains the approximator on the provided dataset or on-demand generated from the given (multi-model) simulator.
 If <cite>dataset</cite> is not provided, a dataset is built from the <cite>simulator</cite>.
-If <cite>simulator</cite> is not provided, it will be build from a list of <cite>simulators</cite>.
+If <cite>simulator</cite> is not provided, it will be built from a list of <cite>simulators</cite>.
 If the model has not been built, it will be built using a batch from the dataset.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>
+<dt><strong>adapter</strong><span class="classifier">Adapter or ‘auto’, optional</span></dt><dd><p>The data adapter that will make the simulated / real outputs neural-network friendly.</p>
+</dd>
 <dt><strong>dataset</strong><span class="classifier">keras.utils.PyDataset, optional</span></dt><dd><p>A dataset containing simulations for training. If provided, <cite>simulator</cite> must be None.</p>
 </dd>
 <dt><strong>simulator</strong><span class="classifier">ModelComparisonSimulator, optional</span></dt><dd><p>A simulator used to generate a dataset. If provided, <cite>dataset</cite> must be None.</p>
@@ -1023,7 +1077,7 @@ containing the information needed to re-instantiate it.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.predict" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.predict" title="Link to this definition">#</a></dt>
 <dd><p>Predicts posterior model probabilities given input conditions. The <cite>conditions</cite> dictionary is preprocessed
 using the <cite>adapter</cite>. The output is converted to NumPy array after inference.</p>
 <dl class="field-list simple">
@@ -1031,16 +1085,38 @@ using the <cite>adapter</cite>. The output is converted to NumPy array after inf
 <dd class="field-odd"><dl class="simple">
 <dt><strong>conditions</strong><span class="classifier">Mapping[str, np.ndarray]</span></dt><dd><p>Dictionary of conditioning variables as NumPy arrays.</p>
 </dd>
-<dt><strong>logits: bool, default=False</strong></dt><dd><p>Should the posterior model probabilities be on the (unconstrained) logit space?
-If <cite>False</cite>, the output is a unit simplex instead.</p>
+<dt><strong>probs: bool, optional</strong></dt><dd><p>A flag indicating whether model probabilities (True) or logits (False) are returned. Default is True.</p>
 </dd>
-<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Additional keyword arguments for the adapter and classification process.</p>
+<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Additional keyword arguments for the adapter and classifier.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>np.ndarray</dt><dd><p>Predicted posterior model probabilities given <cite>conditions</cite>.</p>
+<dt>outputs: np.ndarray</dt><dd><p>Predicted posterior model probabilities given <cite>conditions</cite>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.summarize">
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.summarize" title="Link to this definition">#</a></dt>
+<dd><p>Computes the learned summary statistics of given summary variables.</p>
+<p>The <cite>data</cite> dictionary is preprocessed using the <cite>adapter</cite> and passed through the summary network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">Mapping[str, np.ndarray]</span></dt><dd><p>Dictionary of simulated or real quantities as NumPy arrays.</p>
+</dd>
+<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Additional keyword arguments for the adapter and the summary network.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>summaries</strong><span class="classifier">np.ndarray</span></dt><dd><p>The learned summary statistics.</p>
 </dd>
 </dl>
 </dd>
@@ -1049,32 +1125,10 @@ If <cite>False</cite>, the output is a unit simplex instead.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.summaries">
-<span class="sig-name descname"><span class="pre">summaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.summaries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.summaries" title="Link to this definition">#</a></dt>
-<dd><p>Computes the summaries of given data.</p>
-<p>The <cite>data</cite> dictionary is preprocessed using the <cite>adapter</cite> and passed through the summary network.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>data</strong><span class="classifier">Mapping[str, np.ndarray]</span></dt><dd><p>Dictionary of data as NumPy arrays.</p>
-</dd>
-<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Additional keyword arguments for the adapter and the summary network.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt><strong>summaries</strong><span class="classifier">np.ndarray</span></dt><dd><p>Log-probabilities of the distribution <cite>p(inference_variables | inference_conditions, h(summary_conditions))</cite></p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt>ValueError</dt><dd><p>If the approximator does not have a summary network, or the adapter does not produce the output required
-by the summary network.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">summaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/model_comparison_approximator.html#ModelComparisonApproximator.summaries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.summaries" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 2.0.4: </span><cite>summaries</cite> will be removed in version 2.0.5, it was renamed to <cite>summarize</cite> which should be used instead.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -1163,11 +1217,6 @@ layer’s state, you should override this method.</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.build_from_data">
-<span class="sig-name descname"><span class="pre">build_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.build_from_data" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.call">
@@ -1986,33 +2035,110 @@ These are all elements of state of the layer.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.stateless_compute_metrics">
 <span class="sig-name descname"><span class="pre">stateless_compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">trainable_variables:</span> <span class="pre">any,</span> <span class="pre">non_trainable_variables:</span> <span class="pre">any,</span> <span class="pre">metrics_variables:</span> <span class="pre">any,</span> <span class="pre">data:</span> <span class="pre">dict[str,</span> <span class="pre">any],</span> <span class="pre">stage:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'training')</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'jax.Array'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'tuple'&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.stateless_compute_metrics" title="Link to this definition">#</a></dt>
-<dd><p>Things we do for jax:
-1. Accept trainable variables as the first argument</p>
-<blockquote>
-<div><dl class="simple">
+<dd><p>Stateless computation of metrics required for JAX autograd.</p>
+<p>This method performs a stateless forward pass using the given model
+variables and returns both the loss and auxiliary information for
+further updates.</p>
+<p>Things we do for specifically jax:</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt>Accept trainable variables as the first argument</dt><dd><dl class="simple">
 <dt>(can be at any position as indicated by the argnum parameter</dt><dd><p>in autograd, but needs to be an explicit arg)</p>
 </dd>
 </dl>
-</div></blockquote>
-<ol class="arabic simple" start="2">
+</dd>
+</dl>
+</li>
 <li><p>Accept, potentially modify, and return other state variables</p></li>
 <li><p>Return just the loss tensor as the first value</p></li>
 <li><p>Return all other values in a tuple as the second value</p></li>
 </ol>
-<p>This ensures:
-1. The function is stateless
-2. The function can be differentiated with jax autograd</p>
+<p>This ensures:</p>
+<ol class="arabic simple">
+<li><p>The function is stateless</p></li>
+<li><p>The function can be differentiated with jax autograd</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>trainable_variables</strong><span class="classifier">Any</span></dt><dd><p>Current values of the trainable weights.</p>
+</dd>
+<dt><strong>non_trainable_variables</strong><span class="classifier">Any</span></dt><dd><p>Current values of non-trainable variables (e.g., batch norm statistics).</p>
+</dd>
+<dt><strong>metrics_variables</strong><span class="classifier">Any</span></dt><dd><p>Current values of metric tracking variables.</p>
+</dd>
+<dt><strong>data</strong><span class="classifier">dict of str to any</span></dt><dd><p>Input data dictionary passed to <cite>compute_metrics</cite>.</p>
+</dd>
+<dt><strong>stage</strong><span class="classifier">str, default=”training”</span></dt><dd><p>Whether the computation is for “training” or “validation”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>loss</strong><span class="classifier">jax.Array</span></dt><dd><p>Scalar loss tensor for gradient computation.</p>
+</dd>
+<dt><strong>aux</strong><span class="classifier">tuple</span></dt><dd><dl class="simple">
+<dt>Tuple containing:</dt><dd><ul class="simple">
+<li><p>metrics (dict of str to jax.Array)</p></li>
+<li><p>updated non-trainable variables</p></li>
+<li><p>updated metrics variables</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.stateless_test_step">
 <span class="sig-name descname"><span class="pre">stateless_test_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">state:</span> <span class="pre">tuple,</span> <span class="pre">data:</span> <span class="pre">dict[str,</span> <span class="pre">any])</span> <span class="pre">-&gt;</span> <span class="pre">(dict[str,</span> <span class="pre">jax.Array],</span> <span class="pre">&lt;class</span> <span class="pre">'tuple'&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.stateless_test_step" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Stateless validation step compatible with JAX.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>state</strong><span class="classifier">tuple</span></dt><dd><p>Tuple of (trainable_variables, non_trainable_variables, metrics_variables).</p>
+</dd>
+<dt><strong>data</strong><span class="classifier">dict of str to any</span></dt><dd><p>Input data for validation.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>metrics</strong><span class="classifier">dict of str to jax.Array</span></dt><dd><p>Dictionary of computed evaluation metrics.</p>
+</dd>
+<dt><strong>state</strong><span class="classifier">tuple</span></dt><dd><p>Updated state tuple after evaluation.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.stateless_train_step">
 <span class="sig-name descname"><span class="pre">stateless_train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">state:</span> <span class="pre">tuple,</span> <span class="pre">data:</span> <span class="pre">dict[str,</span> <span class="pre">any])</span> <span class="pre">-&gt;</span> <span class="pre">(dict[str,</span> <span class="pre">jax.Array],</span> <span class="pre">&lt;class</span> <span class="pre">'tuple'&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.stateless_train_step" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Stateless training step compatible with JAX autograd and stateless optimization.</p>
+<p>Computes gradients and applies optimizer updates in a purely functional style.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>state</strong><span class="classifier">tuple</span></dt><dd><p>Tuple of (trainable_variables, non_trainable_variables, optimizer_variables, metrics_variables).</p>
+</dd>
+<dt><strong>data</strong><span class="classifier">dict of str to any</span></dt><dd><p>Input data for training.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>metrics</strong><span class="classifier">dict of str to jax.Array</span></dt><dd><p>Dictionary of computed training metrics.</p>
+</dd>
+<dt><strong>state</strong><span class="classifier">tuple</span></dt><dd><p>Updated state tuple after training.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.summary">
@@ -2093,7 +2219,21 @@ metric and loss values (if <cite>return_dict=True</cite>).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.test_step">
 <span class="sig-name descname"><span class="pre">test_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.test_step" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Alias to <cite>stateless_test_step</cite> for compatibility with <cite>keras.Model</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>*args, **kwargs</strong><span class="classifier">Any</span></dt><dd><p>Passed through to <cite>stateless_test_step</cite>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>See <cite>stateless_test_step</cite>.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.to_json">
@@ -2151,7 +2291,21 @@ metric and loss values (if <cite>return_dict=True</cite>).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.train_step">
 <span class="sig-name descname"><span class="pre">train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.approximators.ModelComparisonApproximator.train_step" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Alias to <cite>stateless_train_step</cite> for compatibility with <cite>keras.Model</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>*args, **kwargs</strong><span class="classifier">Any</span></dt><dd><p>Passed through to <cite>stateless_train_step</cite>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>See <cite>stateless_train_step</cite>.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.approximators.ModelComparisonApproximator.trainable">
@@ -2249,8 +2403,9 @@ including <a href="#id11"><span class="problematic" id="id12">`</span></a>SeedGe
     
 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator"><code class="docutils literal notranslate"><span class="pre">ModelComparisonApproximator</span></code></a><ul class="nav section-nav flex-column visible">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.SAMPLE_KEYS"><code class="docutils literal notranslate"><span class="pre">SAMPLE_KEYS</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.CONDITION_KEYS"><code class="docutils literal notranslate"><span class="pre">CONDITION_KEYS</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.build"><code class="docutils literal notranslate"><span class="pre">build()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.build_from_data"><code class="docutils literal notranslate"><span class="pre">build_from_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.build_adapter"><code class="docutils literal notranslate"><span class="pre">build_adapter()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.build_dataset"><code class="docutils literal notranslate"><span class="pre">build_dataset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.compile"><code class="docutils literal notranslate"><span class="pre">compile()</span></code></a></li>
@@ -2261,6 +2416,7 @@ including <a href="#id11"><span class="problematic" id="id12">`</span></a>SeedGe
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.get_compile_config"><code class="docutils literal notranslate"><span class="pre">get_compile_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.predict"><code class="docutils literal notranslate"><span class="pre">predict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.summarize"><code class="docutils literal notranslate"><span class="pre">summarize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.summaries"><code class="docutils literal notranslate"><span class="pre">summaries()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.__call__"><code class="docutils literal notranslate"><span class="pre">__call__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.add_loss"><code class="docutils literal notranslate"><span class="pre">add_loss()</span></code></a></li>
@@ -2268,7 +2424,6 @@ including <a href="#id11"><span class="problematic" id="id12">`</span></a>SeedGe
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.add_variable"><code class="docutils literal notranslate"><span class="pre">add_variable()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.add_weight"><code class="docutils literal notranslate"><span class="pre">add_weight()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.build_from_config"><code class="docutils literal notranslate"><span class="pre">build_from_config()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.build_from_data"><code class="docutils literal notranslate"><span class="pre">build_from_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.call"><code class="docutils literal notranslate"><span class="pre">call()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.compute_dtype"><code class="docutils literal notranslate"><span class="pre">compute_dtype</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.approximators.ModelComparisonApproximator.compute_loss"><code class="docutils literal notranslate"><span class="pre">compute_loss()</span></code></a></li>

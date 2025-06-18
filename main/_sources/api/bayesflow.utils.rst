@@ -19,6 +19,7 @@ utils
     logging
     numpy_utils
     serialization
+    tree
 
   
   
@@ -42,6 +43,7 @@ utils
     check_estimates_prior_shapes
     check_lengths_same
     concatenate_valid
+    concatenate_valid_shapes
     confusion_matrix
     convert_args
     convert_kwargs
@@ -71,6 +73,7 @@ utils
     find_summary_network
     format_bytes
     integrate
+    integrate_stochastic
     jacobian
     jacobian_trace
     jvp
@@ -81,6 +84,7 @@ utils
     pad
     parse_bytes
     pickle_load
+    positive_diag
     prepare_plot_data
     prettify_subplots
     searchsorted

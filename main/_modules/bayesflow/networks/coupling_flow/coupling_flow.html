@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -469,7 +493,7 @@
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.CouplingFlow.html#bayesflow.networks.CouplingFlow">[docs]</a>
 <span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CouplingFlow</span><span class="p">(</span><span class="n">InferenceNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implements a coupling flow as a sequence of dual couplings with permutations and activation</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(IN) Implements a coupling flow as a sequence of dual couplings with permutations and activation</span>
 <span class="sd">    normalization. Incorporates ideas from [1-5].</span>
 
 <span class="sd">    [1] Kingma, D. P., &amp; Dhariwal, P. (2018).</span>
@@ -522,9 +546,9 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        subnet : str or type, optional</span>
-<span class="sd">            The architecture type used within the coupling layers. Can be a string</span>
-<span class="sd">            identifier like &quot;mlp&quot; or a callable type. Default is &quot;mlp&quot;.</span>
+<span class="sd">        subnet : str or type optional</span>
+<span class="sd">            Architecture for the transformation network. Can be &quot;mlp&quot;, a custom network class, or</span>
+<span class="sd">            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is &quot;mlp&quot;.</span>
 <span class="sd">        depth : int, optional</span>
 <span class="sd">            The number of invertible layers in the model. Default is 6.</span>
 <span class="sd">        transform : str, optional</span>

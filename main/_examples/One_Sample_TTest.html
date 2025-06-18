@@ -60,7 +60,7 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics" href="Lotka_Volterra_Point_Estimation_and_Expert_Stats.html" />
+    <link rel="next" title="8. Likelihood Estimation" href="Likelihood_Estimation.html" />
     <link rel="prev" title="6. From ABC to BayesFlow" href="From_ABC_to_BayesFlow.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -154,6 +154,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/bayesflow.html">
     API Reference
   </a>
@@ -173,13 +180,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -305,6 +322,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/bayesflow.html">
     API Reference
   </a>
@@ -414,7 +438,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">5. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">7. Simple Model Comparison - One Sample T-Test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation_and_Expert_Stats.html">8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">8. Likelihood Estimation</a></li>
 </ul>
 </div>
 </nav></div>
@@ -483,27 +507,26 @@
 <p>The method is particularly useful in scenarios where model evaluation needs to be performed repeatedly, as the inference cost is front-loaded into the training phase, enabling rapid comparisons at test time.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="k">if</span> <span class="s2">&quot;KERAS_BACKEND&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
     <span class="c1"># set this to &quot;torch&quot;, &quot;tensorflow&quot;, or &quot;jax&quot;</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;torch&#39;
-WARNING:bayesflow:
-When using torch backend, we need to disable autograd by default to avoid excessive memory usage. Use
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;tensorflow&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
-with torch.enable_grad():
-    ...
-
-in contexts where you need gradients (e.g. custom training loops).
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
 </pre></div>
 </div>
 </div>
@@ -540,9 +563,16 @@ x_i &amp; \sim \text{Normal}(\mu, 1) \text{ for } i \in \{1, \dots, n \} \\
 <span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator_null</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_null</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
 
-<span class="n">simulator_null</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_null</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
 <span class="n">simulator_alternative</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_alternative</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
+
 <span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">ModelComparisonSimulator</span><span class="p">(</span>
     <span class="n">simulators</span><span class="o">=</span><span class="p">[</span><span class="n">simulator_null</span><span class="p">,</span> <span class="n">simulator_alternative</span><span class="p">],</span> 
     <span class="n">use_mixed_batches</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
@@ -587,9 +617,8 @@ model_indices shape: (100, 2)
     <span class="o">.</span><span class="n">as_set</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="s2">&quot;classifier_conditions&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;mu&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="p">)</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -600,19 +629,19 @@ model_indices shape: (100, 2)
 <li><p><code class="docutils literal notranslate"><span class="pre">.as_set(&quot;n&quot;)</span></code> indicates that <code class="docutils literal notranslate"><span class="pre">x</span></code> is treated as a set. Their values will be treated as <em>exchangeable</em>, meaning that the inference will be the same regardless of their order.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">.rename(&quot;n&quot;,</span> <span class="pre">&quot;classifier_conditions&quot;)</span></code> to make an inference for model comparison, we need to know the sample size. Here, we make sure that <code class="docutils literal notranslate"><span class="pre">n</span></code> is passed directly into the classification network as its condition.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">.rename(&quot;x&quot;,</span> <span class="pre">&quot;summary_variables&quot;)</span></code> the data <code class="docutils literal notranslate"><span class="pre">x</span></code> will be passed through a summary network. The output of the summary network will be automatically concatenated with <code class="docutils literal notranslate"><span class="pre">classifier_conditions</span></code> before passing them together into the classification network.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">.drop(&quot;mu&quot;)</span></code> drops the parameter values <code class="docutils literal notranslate"><span class="pre">mu</span></code> which are not used during model comparison.</p></li>
 </ul>
 <p>We can now apply the adapter to simulated data to see the results</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">processed_data</span><span class="o">=</span><span class="n">adapter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">processed_data</span> <span class="o">=</span> <span class="n">adapter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">processed_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s2">&quot; shape:&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>model_indices shape: (100, 2)
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>mu shape: (100, 1)
+model_indices shape: (100, 2)
 classifier_conditions shape: (100, 1)
 summary_variables shape: (100, 20, 1)
 </pre></div>
@@ -644,6 +673,7 @@ summary_variables shape: (100, 20, 1)
     <span class="n">classifier_network</span><span class="o">=</span><span class="n">classifier_network</span><span class="p">,</span>
     <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_network</span><span class="p">,</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;summary_variables&quot;</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -656,9 +686,9 @@ summary_variables shape: (100, 20, 1)
 <p>To achieve this, we will define a bunch of parameters that indicate how long and on how much data we want the train the models.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_batches_per_epoch</span> <span class="o">=</span> <span class="mi">64</span>
-<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">512</span>
-<span class="n">epochs</span> <span class="o">=</span> <span class="mi">32</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_batches_per_epoch</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">128</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">10</span>
 </pre></div>
 </div>
 </div>
@@ -666,7 +696,10 @@ summary_variables shape: (100, 20, 1)
 <p>Then, we define our optimizer, and specify a schedule for its learning rate. In here, we use a <code class="docutils literal notranslate"><span class="pre">CosineDecay</span></code> schedule for <code class="docutils literal notranslate"><span class="pre">Adam</span></code> optimizer.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">learning_rate</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">CosineDecay</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">decay_steps</span><span class="o">=</span><span class="n">epochs</span> <span class="o">*</span> <span class="n">num_batches_per_epoch</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">learning_rate</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">CosineDecay</span><span class="p">(</span>
+    <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> 
+    <span class="n">decay_steps</span><span class="o">=</span><span class="n">epochs</span> <span class="o">*</span> <span class="n">num_batches_per_epoch</span>
+<span class="p">)</span>
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
 <span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
 </pre></div>
@@ -687,7 +720,7 @@ summary_variables shape: (100, 20, 1)
 </div>
 </div>
 </div>
-<p>Once training is done, we can visualise the losses.</p>
+<p>Once training has finished, we can visualize the losses.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="o">=</span><span class="n">history</span><span class="p">)</span>
@@ -695,14 +728,13 @@ summary_variables shape: (100, 20, 1)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/286616453aae485882994e55141d1ff25dacf518da3fc4d40e095f954fed7ddf.png" src="../_images/286616453aae485882994e55141d1ff25dacf518da3fc4d40e095f954fed7ddf.png" />
+<img alt="../_images/478eed0db1e9190c8ecc2a57a2fdb0c493dfcbc7e585a9b91aa66c8b31529fd6.png" src="../_images/478eed0db1e9190c8ecc2a57a2fdb0c493dfcbc7e585a9b91aa66c8b31529fd6.png" />
 </div>
 </div>
 </section>
 <section id="validation">
 <h2><span class="section-number">7.4. </span>Validation<a class="headerlink" href="#validation" title="Link to this heading">#</a></h2>
-<p>Once we trained the model, we can inspect whether the classification does what we expect it to do.</p>
-<p>Here, we will generate a validation dataset which has been fixed to generate data of <em>sample size</em> <span class="math notranslate nohighlight">\(n=10\)</span>.</p>
+<p>Once we have trained the model, we can inspect whether the classifier does what we expect it to do. Here, we will generate a validation dataset which has been fixed to generate data of <em>sample size</em> <span class="math notranslate nohighlight">\(n=10\)</span>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
@@ -713,7 +745,7 @@ summary_variables shape: (100, 20, 1)
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>df[&#39;n&#39;]=10
-df[&#39;x&#39;].shape=(30000, 10)
+df[&#39;x&#39;].shape=(5000, 10)
 </pre></div>
 </div>
 </div>
@@ -721,15 +753,15 @@ df[&#39;x&#39;].shape=(30000, 10)
 <p>To apply our approximator on this dataset, we simply use the <code class="docutils literal notranslate"><span class="pre">.predict</span></code> method to obtain the predicted posterior model probabilities, given the data and the approximator.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_models</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_models</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">probs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
-<p>We inspect the model comparison calibration now.</p>
+<p>We can inspect the  calibration of posterior model probabilities.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">mc_calibration</span><span class="p">(</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">mc_calibration</span><span class="p">(</span>
     <span class="n">pred_models</span><span class="o">=</span><span class="n">pred_models</span><span class="p">,</span>
     <span class="n">true_models</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;model_indices&quot;</span><span class="p">],</span>
     <span class="n">model_names</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_0$&quot;</span><span class="p">,</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_1$&quot;</span><span class="p">],</span>
@@ -744,16 +776,16 @@ INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
 INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
 </pre></div>
 </div>
-<img alt="../_images/66db14218d7a7079067b117801acccf0925b4e4d4b235ba252c18e7cd3c24eaa.png" src="../_images/66db14218d7a7079067b117801acccf0925b4e4d4b235ba252c18e7cd3c24eaa.png" />
+<img alt="../_images/e50a6c77e1115d3630ab66d6a0d16bedb31564ee82e86730c8d9a4e2e8185249.png" src="../_images/e50a6c77e1115d3630ab66d6a0d16bedb31564ee82e86730c8d9a4e2e8185249.png" />
 </div>
 </div>
 <p>And the confusion matrix to inspect how often we would make an accurate decision based on picking the model with the highest posterior probability.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">mc_confusion_matrix</span><span class="p">(</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">mc_confusion_matrix</span><span class="p">(</span>
     <span class="n">pred_models</span><span class="o">=</span><span class="n">pred_models</span><span class="p">,</span>
     <span class="n">true_models</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;model_indices&quot;</span><span class="p">],</span>
-    <span class="n">model_names</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_0$&quot;</span><span class="p">,</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_1$&quot;</span><span class="p">],</span>
+    <span class="n">model_names</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_0$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_1$&quot;</span><span class="p">],</span>
     <span class="n">normalize</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
@@ -766,7 +798,63 @@ INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
 INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
 </pre></div>
 </div>
-<img alt="../_images/c4dc759067255adda56aaf93a77fa0c1c4c8a39b30cdd38a0aeadfa9222bbb43.png" src="../_images/c4dc759067255adda56aaf93a77fa0c1c4c8a39b30cdd38a0aeadfa9222bbb43.png" />
+<img alt="../_images/4432997ffe18a2ce338c9730ed9258e2457004a9ee4d940033c8935d9a84b9c1.png" src="../_images/4432997ffe18a2ce338c9730ed9258e2457004a9ee4d940033c8935d9a84b9c1.png" />
+</div>
+</div>
+</section>
+<section id="saving-and-loading">
+<h2><span class="section-number">7.5. </span>Saving and Loading<a class="headerlink" href="#saving-and-loading" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Recommended - full serialization (checkpoints folder must exist)</span>
+<span class="n">filepath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;checkpoints&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ttest_classifier.keras&quot;</span>
+<span class="n">filepath</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load approximator</span>
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>All the usual methods continue to work on the loaded approximator. For example:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_models</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">probs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">mc_calibration</span><span class="p">(</span>
+    <span class="n">pred_models</span><span class="o">=</span><span class="n">pred_models</span><span class="p">,</span>
+    <span class="n">true_models</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;model_indices&quot;</span><span class="p">],</span>
+    <span class="n">model_names</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_0$&quot;</span><span class="p">,</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">_1$&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
+INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
+INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
+INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
+</pre></div>
+</div>
+<img alt="../_images/e50a6c77e1115d3630ab66d6a0d16bedb31564ee82e86730c8d9a4e2e8185249.png" src="../_images/e50a6c77e1115d3630ab66d6a0d16bedb31564ee82e86730c8d9a4e2e8185249.png" />
 </div>
 </div>
 </section>
@@ -792,11 +880,11 @@ INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
       </div>
     </a>
     <a class="right-next"
-       href="Lotka_Volterra_Point_Estimation_and_Expert_Stats.html"
+       href="Likelihood_Estimation.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title"><span class="section-number">8. </span>Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</p>
+        <p class="prev-next-title"><span class="section-number">8. </span>Likelihood Estimation</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -823,6 +911,7 @@ INFO:matplotlib.mathtext:Substituting symbol M from STIXNonUnicode
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-the-neural-networks">7.2. Defining the neural networks</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training">7.3. Training</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation">7.4. Validation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-loading">7.5. Saving and Loading</a></li>
 </ul>
   </nav></div>
 

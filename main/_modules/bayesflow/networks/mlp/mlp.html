@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -455,16 +479,17 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">sequential_kwargs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">deserialize</span><span class="p">,</span> <span class="n">serializable</span><span class="p">,</span> <span class="n">serialize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">layer_kwargs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializable</span><span class="p">,</span> <span class="n">serialize</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">..sequential</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequential</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..residual</span><span class="w"> </span><span class="kn">import</span> <span class="n">Residual</span>
 
 
 <div class="viewcode-block" id="MLP">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.MLP.html#bayesflow.networks.MLP">[docs]</a>
 <span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">MLP</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MLP</span><span class="p">(</span><span class="n">Sequential</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements a simple configurable MLP with optional residual connections and dropout.</span>
 
@@ -521,48 +546,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">norm</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spectral_normalization</span> <span class="o">=</span> <span class="n">spectral_normalization</span>
 
-        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">width</span> <span class="ow">in</span> <span class="n">widths</span><span class="p">:</span>
-            <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_layer</span><span class="p">(</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_block</span><span class="p">(</span>
                 <span class="n">width</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="p">,</span> <span class="n">residual</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">norm</span><span class="p">,</span> <span class="n">spectral_normalization</span>
             <span class="p">)</span>
-            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+            <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="o">**</span><span class="n">sequential_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
-
-<div class="viewcode-block" id="MLP.build">
-<a class="viewcode-back" href="../../../../api/bayesflow.networks.MLP.html#bayesflow.networks.MLP.build">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
-            <span class="c1"># building when the network is already built can cause issues with serialization</span>
-            <span class="c1"># see https://github.com/keras-team/keras/issues/21147</span>
-            <span class="k">return</span>
-
-        <span class="c1"># we only care about the last dimension, and using ... signifies to keras.Sequential</span>
-        <span class="c1"># that any number of batch dimensions is valid (which is what we want for all sublayers)</span>
-        <span class="c1"># we also have to avoid calling super().build() because this causes</span>
-        <span class="c1"># shape errors when building on non-sets but doing inference on sets</span>
-        <span class="c1"># this is a work-around for https://github.com/keras-team/keras/issues/21158</span>
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-
-        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layers</span><span class="p">:</span>
-            <span class="n">layer</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
-            <span class="n">input_shape</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MLP.from_config">
-<a class="viewcode-back" href="../../../../api/bayesflow.networks.MLP.html#bayesflow.networks.MLP.from_config">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="n">custom_objects</span><span class="p">))</span></div>
-
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">blocks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MLP.get_config">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.MLP.html#bayesflow.networks.MLP.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">base_config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
-        <span class="n">base_config</span> <span class="o">=</span> <span class="n">sequential_kwargs</span><span class="p">(</span><span class="n">base_config</span><span class="p">)</span>
+        <span class="n">base_config</span> <span class="o">=</span> <span class="n">layer_kwargs</span><span class="p">(</span><span class="n">base_config</span><span class="p">)</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
@@ -578,7 +576,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_make_layer</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="p">,</span> <span class="n">residual</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">norm</span><span class="p">,</span> <span class="n">spectral_normalization</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_block</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="p">,</span> <span class="n">residual</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">norm</span><span class="p">,</span> <span class="n">spectral_normalization</span><span class="p">):</span>
         <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="n">dense</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="n">kernel_initializer</span><span class="p">)</span>
@@ -611,7 +609,7 @@
         <span class="k">if</span> <span class="n">residual</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Residual</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Sequential</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></div>
 
 </pre></div>
 

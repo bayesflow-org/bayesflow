@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -458,21 +482,28 @@
 <li><a href="bayesflow/adapters/transforms/elementwise_transform.html">bayesflow.adapters.transforms.elementwise_transform</a></li>
 <li><a href="bayesflow/adapters/transforms/expand_dims.html">bayesflow.adapters.transforms.expand_dims</a></li>
 <li><a href="bayesflow/adapters/transforms/filter_transform.html">bayesflow.adapters.transforms.filter_transform</a></li>
+<li><a href="bayesflow/adapters/transforms/group.html">bayesflow.adapters.transforms.group</a></li>
 <li><a href="bayesflow/adapters/transforms/keep.html">bayesflow.adapters.transforms.keep</a></li>
 <li><a href="bayesflow/adapters/transforms/log.html">bayesflow.adapters.transforms.log</a></li>
 <li><a href="bayesflow/adapters/transforms/map_transform.html">bayesflow.adapters.transforms.map_transform</a></li>
+<li><a href="bayesflow/adapters/transforms/nan_to_num.html">bayesflow.adapters.transforms.nan_to_num</a></li>
+<li><a href="bayesflow/adapters/transforms/nnpe.html">bayesflow.adapters.transforms.nnpe</a></li>
 <li><a href="bayesflow/adapters/transforms/numpy_transform.html">bayesflow.adapters.transforms.numpy_transform</a></li>
 <li><a href="bayesflow/adapters/transforms/one_hot.html">bayesflow.adapters.transforms.one_hot</a></li>
+<li><a href="bayesflow/adapters/transforms/random_subsample.html">bayesflow.adapters.transforms.random_subsample</a></li>
 <li><a href="bayesflow/adapters/transforms/rename.html">bayesflow.adapters.transforms.rename</a></li>
 <li><a href="bayesflow/adapters/transforms/scale.html">bayesflow.adapters.transforms.scale</a></li>
 <li><a href="bayesflow/adapters/transforms/serializable_custom_transform.html">bayesflow.adapters.transforms.serializable_custom_transform</a></li>
 <li><a href="bayesflow/adapters/transforms/shift.html">bayesflow.adapters.transforms.shift</a></li>
 <li><a href="bayesflow/adapters/transforms/split.html">bayesflow.adapters.transforms.split</a></li>
 <li><a href="bayesflow/adapters/transforms/sqrt.html">bayesflow.adapters.transforms.sqrt</a></li>
+<li><a href="bayesflow/adapters/transforms/squeeze.html">bayesflow.adapters.transforms.squeeze</a></li>
 <li><a href="bayesflow/adapters/transforms/standardize.html">bayesflow.adapters.transforms.standardize</a></li>
+<li><a href="bayesflow/adapters/transforms/take.html">bayesflow.adapters.transforms.take</a></li>
 <li><a href="bayesflow/adapters/transforms/to_array.html">bayesflow.adapters.transforms.to_array</a></li>
 <li><a href="bayesflow/adapters/transforms/to_dict.html">bayesflow.adapters.transforms.to_dict</a></li>
 <li><a href="bayesflow/adapters/transforms/transform.html">bayesflow.adapters.transforms.transform</a></li>
+<li><a href="bayesflow/adapters/transforms/ungroup.html">bayesflow.adapters.transforms.ungroup</a></li>
 <li><a href="bayesflow/approximators/approximator.html">bayesflow.approximators.approximator</a></li>
 <li><a href="bayesflow/approximators/continuous_approximator.html">bayesflow.approximators.continuous_approximator</a></li>
 <li><a href="bayesflow/approximators/model_comparison_approximator.html">bayesflow.approximators.model_comparison_approximator</a></li>
@@ -480,7 +511,6 @@
 <li><a href="bayesflow/datasets/disk_dataset.html">bayesflow.datasets.disk_dataset</a></li>
 <li><a href="bayesflow/datasets/offline_dataset.html">bayesflow.datasets.offline_dataset</a></li>
 <li><a href="bayesflow/datasets/online_dataset.html">bayesflow.datasets.online_dataset</a></li>
-<li><a href="bayesflow/datasets/rounds_dataset.html">bayesflow.datasets.rounds_dataset</a></li>
 <li><a href="bayesflow/diagnostics/metrics/calibration_error.html">bayesflow.diagnostics.metrics.calibration_error</a></li>
 <li><a href="bayesflow/diagnostics/metrics/model_misspecification.html">bayesflow.diagnostics.metrics.model_misspecification</a></li>
 <li><a href="bayesflow/diagnostics/metrics/posterior_contraction.html">bayesflow.diagnostics.metrics.posterior_contraction</a></li>
@@ -502,7 +532,13 @@
 <li><a href="bayesflow/distributions/mixture.html">bayesflow.distributions.mixture</a></li>
 <li><a href="bayesflow/experimental/cif/cif.html">bayesflow.experimental.cif.cif</a></li>
 <li><a href="bayesflow/experimental/continuous_time_consistency_model.html">bayesflow.experimental.continuous_time_consistency_model</a></li>
+<li><a href="bayesflow/experimental/diffusion_model/diffusion_model.html">bayesflow.experimental.diffusion_model.diffusion_model</a></li>
+<li><a href="bayesflow/experimental/diffusion_model/dispatch.html">bayesflow.experimental.diffusion_model.dispatch</a></li>
+<li><a href="bayesflow/experimental/diffusion_model/schedules/cosine_noise_schedule.html">bayesflow.experimental.diffusion_model.schedules.cosine_noise_schedule</a></li>
+<li><a href="bayesflow/experimental/diffusion_model/schedules/edm_noise_schedule.html">bayesflow.experimental.diffusion_model.schedules.edm_noise_schedule</a></li>
+<li><a href="bayesflow/experimental/diffusion_model/schedules/noise_schedule.html">bayesflow.experimental.diffusion_model.schedules.noise_schedule</a></li>
 <li><a href="bayesflow/experimental/free_form_flow/free_form_flow.html">bayesflow.experimental.free_form_flow.free_form_flow</a></li>
+<li><a href="bayesflow/links/cholesky_factor.html">bayesflow.links.cholesky_factor</a></li>
 <li><a href="bayesflow/links/ordered.html">bayesflow.links.ordered</a></li>
 <li><a href="bayesflow/links/ordered_quantiles.html">bayesflow.links.ordered_quantiles</a></li>
 <li><a href="bayesflow/links/positive_definite.html">bayesflow.links.positive_definite</a></li>
@@ -514,9 +550,11 @@
 <li><a href="bayesflow/networks/coupling_flow/coupling_flow.html">bayesflow.networks.coupling_flow.coupling_flow</a></li>
 <li><a href="bayesflow/networks/deep_set/deep_set.html">bayesflow.networks.deep_set.deep_set</a></li>
 <li><a href="bayesflow/networks/flow_matching/flow_matching.html">bayesflow.networks.flow_matching.flow_matching</a></li>
+<li><a href="bayesflow/networks/fusion_network/fusion_network.html">bayesflow.networks.fusion_network.fusion_network</a></li>
 <li><a href="bayesflow/networks/inference_network.html">bayesflow.networks.inference_network</a></li>
 <li><a href="bayesflow/networks/mlp/mlp.html">bayesflow.networks.mlp.mlp</a></li>
 <li><a href="bayesflow/networks/point_inference_network.html">bayesflow.networks.point_inference_network</a></li>
+<li><a href="bayesflow/networks/sequential/sequential.html">bayesflow.networks.sequential.sequential</a></li>
 <li><a href="bayesflow/networks/summary_network.html">bayesflow.networks.summary_network</a></li>
 <li><a href="bayesflow/networks/time_series_network/time_series_network.html">bayesflow.networks.time_series_network.time_series_network</a></li>
 <li><a href="bayesflow/networks/transformers/fusion_transformer.html">bayesflow.networks.transformers.fusion_transformer</a></li>
@@ -574,6 +612,7 @@
 <li><a href="bayesflow/utils/plot_utils.html">bayesflow.utils.plot_utils</a></li>
 <li><a href="bayesflow/utils/serialization.html">bayesflow.utils.serialization</a></li>
 <li><a href="bayesflow/utils/tensor_utils.html">bayesflow.utils.tensor_utils</a></li>
+<li><a href="bayesflow/utils/tree.html">bayesflow.utils.tree</a></li>
 <li><a href="bayesflow/utils/validators.html">bayesflow.utils.validators</a></li>
 <li><a href="bayesflow/workflows/basic_workflow.html">bayesflow.workflows.basic_workflow</a></li>
 <li><a href="bayesflow/wrappers/mamba/mamba.html">bayesflow.wrappers.mamba.mamba</a></li>

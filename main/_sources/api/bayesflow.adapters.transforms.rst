@@ -36,21 +36,28 @@ transforms
     ElementwiseTransform
     ExpandDims
     FilterTransform
+    Group
     Keep
     Log
     MapTransform
+    NNPE
+    NanToNum
     NumpyTransform
     OneHot
+    RandomSubsample
     Rename
     Scale
     SerializableCustomTransform
     Shift
     Split
     Sqrt
+    Squeeze
     Standardize
+    Take
     ToArray
     ToDict
     Transform
+    Ungroup
   
   
 

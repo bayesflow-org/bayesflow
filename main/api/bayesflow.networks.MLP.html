@@ -151,6 +151,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -171,13 +178,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -302,6 +319,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -417,21 +441,28 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ElementwiseTransform.html">ElementwiseTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ExpandDims.html">ExpandDims</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.FilterTransform.html">FilterTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Group.html">Group</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.RandomSubsample.html">RandomSubsample</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Rename.html">Rename</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Scale.html">Scale</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.SerializableCustomTransform.html">SerializableCustomTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Shift.html">Shift</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Split.html">Split</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Sqrt.html">Sqrt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Squeeze.html">Squeeze</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html">Standardize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Take.html">Take</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToArray.html">ToArray</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToDict.html">ToDict</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Transform.html">Transform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Ungroup.html">Ungroup</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.adapters.Adapter.html">Adapter</a></li>
@@ -448,7 +479,6 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.DiskDataset.html">DiskDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OfflineDataset.html">OfflineDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OnlineDataset.html">OnlineDataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.RoundsDataset.html">RoundsDataset</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.diagnostics.html">diagnostics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -478,12 +508,22 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.links.html">links</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.links.CholeskyFactor.html">CholeskyFactor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.Ordered.html">Ordered</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.OrderedQuantiles.html">OrderedQuantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.PositiveDefinite.html">PositiveDefinite</a></li>
@@ -504,10 +544,12 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.InferenceNetwork.html">InferenceNetwork</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">MLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
@@ -580,6 +622,10 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.serialization.serialize_value_or_type.html">serialize_value_or_type</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.tree.html">tree</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.tree.flatten_shape.html">flatten_shape</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_metric.html">add_metric</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_titles_and_labels.html">add_titles_and_labels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.batched_call.html">batched_call</a></li>
@@ -587,6 +633,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_args.html">convert_args</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_kwargs.html">convert_kwargs</a></li>
@@ -616,6 +663,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian_trace.html">jacobian_trace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jvp.html">jvp</a></li>
@@ -626,6 +674,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pad.html">pad</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.parse_bytes.html">parse_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pickle_load.html">pickle_load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.positive_diag.html">positive_diag</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html">prepare_plot_data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prettify_subplots.html">prettify_subplots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.searchsorted.html">searchsorted</a></li>
@@ -730,7 +779,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.networks.</span></span><span class="sig-name descname"><span class="pre">MLP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/mlp/mlp.html#MLP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.MLP" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequential</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="bayesflow.networks.Sequential.html#bayesflow.networks.Sequential" title="bayesflow.networks.sequential.sequential.Sequential"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequential</span></code></a></p>
 <p>Implements a simple configurable MLP with optional residual connections and dropout.</p>
 <p>If used in conjunction with a coupling net, a diffusion model, or a flow matching model, it assumes
 that the input and conditions are already concatenated (i.e., this is a single-input model).</p>
@@ -762,31 +811,6 @@ supports dropout for regularization and spectral normalization for stability in 
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.build">
-<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/mlp/mlp.html#MLP.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.MLP.build" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.from_config">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/mlp/mlp.html#MLP.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.MLP.from_config" title="Link to this definition">#</a></dt>
-<dd><p>Creates an operation from its config.</p>
-<p>This method is the reverse of <cite>get_config</cite>, capable of instantiating the
-same operation from the config dictionary.</p>
-<p>Note: If you override this method, you might receive a serialized dtype
-config, which is a <cite>dict</cite>. You can deserialize it as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="s2">&quot;dtype&quot;</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-    <span class="n">policy</span> <span class="o">=</span> <span class="n">dtype_policies</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">])</span>
-</pre></div>
-</div>
-<dl class="simple">
-<dt>Args:</dt><dd><p>config: A Python dictionary, typically the output of <cite>get_config</cite>.</p>
-</dd>
-<dt>Returns:</dt><dd><p>An operation instance.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.get_config">
 <span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/mlp/mlp.html#MLP.get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.MLP.get_config" title="Link to this definition">#</a></dt>
 <dd><p>Returns the config of the object.</p>
@@ -798,16 +822,6 @@ containing the information needed to re-instantiate it.</p>
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.__call__">
 <span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.__call__" title="Link to this definition">#</a></dt>
 <dd><p>Call self as a function.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.add">
-<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rebuild</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.add" title="Link to this definition">#</a></dt>
-<dd><p>Adds a layer instance on top of the layer stack.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>layer: layer instance.</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -878,6 +892,11 @@ Defaults to <cite>False</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="bayesflow.networks.MLP.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.build" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.build_from_config">
 <span class="sig-name descname"><span class="pre">build_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.build_from_config" title="Link to this definition">#</a></dt>
 <dd><p>Builds the layer’s states with the supplied config dict.</p>
@@ -893,115 +912,8 @@ layer’s state, you should override this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.call" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.call" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.compile">
-<span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rmsprop'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted_metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_eagerly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_per_execution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jit_compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_scale_loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compile" title="Link to this definition">#</a></dt>
-<dd><p>Configures the model for training.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-    <span class="n">optimizer</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">),</span>
-    <span class="n">loss</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">BinaryCrossentropy</span><span class="p">(),</span>
-    <span class="n">metrics</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">keras</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">BinaryAccuracy</span><span class="p">(),</span>
-        <span class="n">keras</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">FalseNegatives</span><span class="p">(),</span>
-    <span class="p">],</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>optimizer: String (name of optimizer) or optimizer instance. See</dt><dd><p><cite>keras.optimizers</cite>.</p>
-</dd>
-<dt>loss: Loss function. May be a string (name of loss function), or</dt><dd><p>a <cite>keras.losses.Loss</cite> instance. See <cite>keras.losses</cite>. A
-loss function is any callable with the signature
-<cite>loss = fn(y_true, y_pred)</cite>, where <cite>y_true</cite> are the ground truth
-values, and <cite>y_pred</cite> are the model’s predictions.
-<cite>y_true</cite> should have shape <cite>(batch_size, d0, .. dN)</cite>
-(except in the case of sparse loss functions such as
-sparse categorical crossentropy which expects integer arrays of
-shape <cite>(batch_size, d0, .. dN-1)</cite>).
-<cite>y_pred</cite> should have shape <cite>(batch_size, d0, .. dN)</cite>.
-The loss function should return a float tensor.</p>
-</dd>
-<dt>loss_weights: Optional list or dictionary specifying scalar</dt><dd><p>coefficients (Python floats) to weight the loss contributions of
-different model outputs. The loss value that will be minimized
-by the model will then be the <em>weighted sum</em> of all individual
-losses, weighted by the <cite>loss_weights</cite> coefficients.  If a list,
-it is expected to have a 1:1 mapping to the model’s outputs. If
-a dict, it is expected to map output names (strings) to scalar
-coefficients.</p>
-</dd>
-<dt>metrics: List of metrics to be evaluated by the model during</dt><dd><p>training and testing. Each of this can be a string (name of a
-built-in function), function or a <cite>keras.metrics.Metric</cite>
-instance. See <cite>keras.metrics</cite>. Typically you will use
-<cite>metrics=[‘accuracy’]</cite>. A function is any callable with the
-signature <cite>result = fn(y_true, _pred)</cite>. To specify different
-metrics for different outputs of a multi-output model, you could
-also pass a dictionary, such as
-<cite>metrics={‘a’:’accuracy’, ‘b’:[‘accuracy’, ‘mse’]}</cite>.
-You can also pass a list to specify a metric or a list of
-metrics for each output, such as
-<cite>metrics=[[‘accuracy’], [‘accuracy’, ‘mse’]]</cite>
-or <cite>metrics=[‘accuracy’, [‘accuracy’, ‘mse’]]</cite>. When you pass
-the strings ‘accuracy’ or ‘acc’, we convert this to one of
-<cite>keras.metrics.BinaryAccuracy</cite>,
-<cite>keras.metrics.CategoricalAccuracy</cite>,
-<cite>keras.metrics.SparseCategoricalAccuracy</cite> based on the
-shapes of the targets and of the model output. A similar
-conversion is done for the strings <cite>“crossentropy”</cite>
-and <cite>“ce”</cite> as well.
-The metrics passed here are evaluated without sample weighting;
-if you would like sample weighting to apply, you can specify
-your metrics via the <cite>weighted_metrics</cite> argument instead.</p>
-</dd>
-<dt>weighted_metrics: List of metrics to be evaluated and weighted by</dt><dd><p><cite>sample_weight</cite> or <cite>class_weight</cite> during training and testing.</p>
-</dd>
-<dt>run_eagerly: Bool. If <cite>True</cite>, this model’s forward pass</dt><dd><p>will never be compiled. It is recommended to leave this
-as <cite>False</cite> when training (for best performance),
-and to set it to <cite>True</cite> when debugging.</p>
-</dd>
-<dt>steps_per_execution: Int. The number of batches to run</dt><dd><p>during each a single compiled function call. Running multiple
-batches inside a single compiled function call can
-greatly improve performance on TPUs or small models with a large
-Python overhead. At most, one full epoch will be run each
-execution. If a number larger than the size of the epoch is
-passed, the execution will be truncated to the size of the
-epoch. Note that if <cite>steps_per_execution</cite> is set to <cite>N</cite>,
-<cite>Callback.on_batch_begin</cite> and <cite>Callback.on_batch_end</cite> methods
-will only be called every <cite>N</cite> batches (i.e. before/after
-each compiled function execution).
-Not supported with the PyTorch backend.</p>
-</dd>
-<dt>jit_compile: Bool or <cite>“auto”</cite>. Whether to use XLA compilation when</dt><dd><p>compiling a model. For <cite>jax</cite> and <cite>tensorflow</cite> backends,
-<cite>jit_compile=”auto”</cite> enables XLA compilation if the model
-supports it, and disabled otherwise.
-For <cite>torch</cite> backend, <cite>“auto”</cite> will default to eager
-execution and <cite>jit_compile=True</cite> will run with <cite>torch.compile</cite>
-with the <cite>“inductor”</cite> backend.</p>
-</dd>
-<dt>auto_scale_loss: Bool. If <cite>True</cite> and the model dtype policy is</dt><dd><p><cite>“mixed_float16”</cite>, the passed optimizer will be automatically
-wrapped in a <cite>LossScaleOptimizer</cite>, which will dynamically
-scale the loss to prevent underflow.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.compile_from_config">
-<span class="sig-name descname"><span class="pre">compile_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compile_from_config" title="Link to this definition">#</a></dt>
-<dd><p>Compiles the model with the information given in config.</p>
-<p>This method uses the information in the config (optimizer, loss,
-metrics, etc.) to compile the model.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>config: Dict containing information for compiling the model.</p>
-</dd>
-</dl>
-</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_dtype">
@@ -1010,106 +922,9 @@ metrics, etc.) to compile the model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_loss">
-<span class="sig-name descname"><span class="pre">compute_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_loss" title="Link to this definition">#</a></dt>
-<dd><p>Compute the total loss, validate it, and return it.</p>
-<p>Subclasses can optionally override this method to provide custom loss
-computation logic.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">Mean</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">y_pred</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">loss</span> <span class="o">+=</span> <span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span><span class="o">.</span><span class="n">update_state</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">loss</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">reset_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span><span class="o">.</span><span class="n">reset_state</span><span class="p">()</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span><span class="p">]</span>
-
-<span class="n">inputs</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;my_input&#39;</span><span class="p">)</span>
-<span class="n">outputs</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">10</span><span class="p">)(</span><span class="n">inputs</span><span class="p">)</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_loss</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">outputs</span><span class="p">))</span>
-
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">SGD</span><span class="p">()</span>
-<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="n">steps_per_execution</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="o">...</span>
-<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom loss: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">loss_tracker</span><span class="o">.</span><span class="n">result</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="simple">
-<dt>Args:</dt><dd><p>x: Input data.
-y: Target data.
-y_pred: Predictions returned by the model (output of <cite>model(x)</cite>)
-sample_weight: Sample weights for weighting the loss function.
-training: Whether we are training or evaluating the model.</p>
-</dd>
-<dt>Returns:</dt><dd><p>The total loss as a scalar tensor, or <cite>None</cite> if no loss results
-(which is the case when called by <cite>Model.test_step</cite>).</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_loss_and_updates">
-<span class="sig-name descname"><span class="pre">compute_loss_and_updates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainable_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_trainable_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_loss_and_updates" title="Link to this definition">#</a></dt>
-<dd><p>This method is stateless and is intended for use with jax.grad.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_mask">
 <span class="sig-name descname"><span class="pre">compute_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_mask" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_metrics">
-<span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_metrics" title="Link to this definition">#</a></dt>
-<dd><p>Update metric states and collect all metrics to be returned.</p>
-<p>Subclasses can optionally override this method to provide custom metric
-updating and collection logic. Custom metrics are not passed in
-<cite>compile()</cite>, they can be created in <cite>__init__</cite> or <cite>build</cite>. They are
-automatically tracked and returned by <cite>self.metrics</cite>.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">Sequential</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span> <span class="o">=</span> <span class="n">MyMetric</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;custom_metric&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">):</span>
-        <span class="c1"># This super call updates metrics from `compile` and returns</span>
-        <span class="c1"># results for all metrics listed in `self.metrics`.</span>
-        <span class="n">metric_results</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span>
-            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
-
-        <span class="c1"># `metric_results` contains the previous result for</span>
-        <span class="c1"># `custom_metric`, this is where we update it.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span><span class="o">.</span><span class="n">update_state</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
-        <span class="n">metric_results</span><span class="p">[</span><span class="s1">&#39;custom_metric&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">metric_results</span>
-</pre></div>
-</div>
-<dl class="simple">
-<dt>Args:</dt><dd><p>x: Input data.
-y: Target data.
-y_pred: Predictions returned by the model output of <cite>model.call(x)</cite>.
-sample_weight: Sample weights for weighting the loss function.</p>
-</dd>
-<dt>Returns:</dt><dd><p>A <cite>dict</cite> containing values that will be passed to
-<cite>keras.callbacks.CallbackList.on_train_batch_end()</cite>. Typically,
-the values of the metrics listed in <cite>self.metrics</cite> are returned.
-Example: <cite>{‘loss’: 0.2, ‘accuracy’: 0.7}</cite>.</p>
-</dd>
-</dl>
-</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_output_shape">
@@ -1118,7 +933,7 @@ Example: <cite>{‘loss’: 0.2, ‘accuracy’: 0.7}</cite>.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.compute_output_spec">
-<span class="sig-name descname"><span class="pre">compute_output_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_output_spec" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">compute_output_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.compute_output_spec" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1143,346 +958,21 @@ Example: <cite>{‘loss’: 0.2, ‘accuracy’: 0.7}</cite>.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.evaluate">
-<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.evaluate" title="Link to this definition">#</a></dt>
-<dd><p>Returns the loss value &amp; metrics values for the model in test mode.</p>
-<p>Computation is done in batches (see the <cite>batch_size</cite> arg.)</p>
-<dl>
-<dt>Args:</dt><dd><dl>
-<dt>x: Input data. It can be:</dt><dd><ul class="simple">
-<li><p>A NumPy array (or array-like), or a list of arrays</p></li>
-</ul>
-<p>(in case the model has multiple inputs).
-- A backend-native tensor, or a list of tensors
-(in case the model has multiple inputs).
-- A dict mapping input names to the corresponding array/tensors,
-if the model has named inputs.
-- A <cite>keras.utils.PyDataset</cite> returning <cite>(inputs, targets)</cite> or
-<cite>(inputs, targets, sample_weights)</cite>.
-- A <cite>tf.data.Dataset</cite> yielding <cite>(inputs, targets)</cite> or
-<cite>(inputs, targets, sample_weights)</cite>.
-- A <cite>torch.utils.data.DataLoader</cite> yielding <cite>(inputs, targets)</cite>
-or <cite>(inputs, targets, sample_weights)</cite>.
-- A Python generator function yielding <cite>(inputs, targets)</cite> or
-<cite>(inputs, targets, sample_weights)</cite>.</p>
-</dd>
-<dt>y: Target data. Like the input data <cite>x</cite>, it can be either NumPy</dt><dd><p>array(s) or backend-native tensor(s). If <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or a Python generator function,
-<cite>y</cite> should not be specified since targets will be obtained from
-<cite>x</cite>.</p>
-</dd>
-<dt>batch_size: Integer or <cite>None</cite>.</dt><dd><p>Number of samples per batch of computation.
-If unspecified, <cite>batch_size</cite> will default to 32.
-Do not specify the <cite>batch_size</cite> if your input data <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function
-since they generate batches.</p>
-</dd>
-<dt>verbose: <cite>“auto”</cite>, 0, 1, or 2. Verbosity mode.</dt><dd><p>0 = silent, 1 = progress bar, 2 = single line.
-<cite>“auto”</cite> becomes 1 for most cases.
-Note that the progress bar is not
-particularly useful when logged to a file, so <cite>verbose=2</cite> is
-recommended when not running interactively
-(e.g. in a production environment). Defaults to <cite>“auto”</cite>.</p>
-</dd>
-<dt>sample_weight: Optional NumPy array or tensor of weights for</dt><dd><p>the training samples, used for weighting the loss function
-(during training only). You can either pass a flat (1D)
-NumPy array or tensor with the same length as the input samples
-(1:1 mapping between weights and samples), or in the case of
-temporal data, you can pass a 2D NumPy array or tensor with
-shape <cite>(samples, sequence_length)</cite> to apply a different weight
-to every timestep of every sample.
-This argument is not supported when <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function.
-Instead, provide <cite>sample_weights</cite> as the third element of <cite>x</cite>.
-Note that sample weighting does not apply to metrics specified
-via the <cite>metrics</cite> argument in <cite>compile()</cite>. To apply sample
-weighting to your metrics, you can specify them via the
-<cite>weighted_metrics</cite> in <cite>compile()</cite> instead.</p>
-</dd>
-<dt>steps: Integer or <cite>None</cite>.</dt><dd><p>Total number of steps (batches of samples) to draw before
-declaring the evaluation round finished. If <cite>steps</cite> is <cite>None</cite>,
-it will run until <cite>x</cite> is exhausted. In the case of an infinitely
-repeating dataset, it will run indefinitely.</p>
-</dd>
-<dt>callbacks: List of <cite>keras.callbacks.Callback</cite> instances.</dt><dd><p>List of callbacks to apply during evaluation.</p>
-</dd>
-<dt>return_dict: If <cite>True</cite>, loss and metric results are returned as a</dt><dd><p>dict, with each key being the name of the metric.
-If <cite>False</cite>, they are returned as a list.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>Scalar test loss (if the model has a single output and no metrics)
-or list of scalars (if the model has multiple outputs
-and/or metrics). The attribute <cite>model.metrics_names</cite> will give you
-the display labels for the scalar outputs.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.export">
-<span class="sig-name descname"><span class="pre">export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tf_saved_model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_signature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.export" title="Link to this definition">#</a></dt>
-<dd><p>Export the model as an artifact for inference.</p>
-<dl>
-<dt>Args:</dt><dd><dl>
-<dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object. The path to save the</dt><dd><p>artifact.</p>
-</dd>
-<dt>format: <cite>str</cite>. The export format. Supported values:</dt><dd><p><cite>“tf_saved_model”</cite> and <cite>“onnx”</cite>.  Defaults to
-<cite>“tf_saved_model”</cite>.</p>
-</dd>
-<dt>verbose: <cite>bool</cite>. Whether to print a message during export. Defaults</dt><dd><p>to <cite>None</cite>, which uses the default value set by different
-backends and formats.</p>
-</dd>
-<dt>input_signature: Optional. Specifies the shape and dtype of the</dt><dd><p>model inputs. Can be a structure of <cite>keras.InputSpec</cite>,
-<cite>tf.TensorSpec</cite>, <cite>backend.KerasTensor</cite>, or backend tensor. If
-not provided, it will be automatically computed. Defaults to
-<cite>None</cite>.</p>
-</dd>
-<dt><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs: Additional keyword arguments:</dt><dd><ul>
-<li><dl>
-<dt>Specific to the JAX backend and <cite>format=”tf_saved_model”</cite>:</dt><dd><ul>
-<li><dl class="simple">
-<dt><cite>is_static</cite>: Optional <cite>bool</cite>. Indicates whether <cite>fn</cite> is</dt><dd><p>static. Set to <cite>False</cite> if <cite>fn</cite> involves state updates
-(e.g., RNG seeds and counters).</p>
-</dd>
-</dl>
-</li>
-<li><dl>
-<dt><cite>jax2tf_kwargs</cite>: Optional <cite>dict</cite>. Arguments for</dt><dd><p><cite>jax2tf.convert</cite>. See the documentation for
-[<cite>jax2tf.convert</cite>](</p>
-<blockquote>
-<div><p><a class="github reference external" href="https://github.com/google/jax/blob/main/jax/experimental/jax2tf/README.md">google/jax</a>).</p>
-</div></blockquote>
-<p>If <cite>native_serialization</cite> and <cite>polymorphic_shapes</cite> are
-not provided, they will be automatically computed.</p>
-</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
-<p><strong>Note:</strong> This feature is currently supported only with TensorFlow, JAX
-and Torch backends.</p>
-<p><strong>Note:</strong> Be aware that the exported artifact may contain information
-from the local file system when using <cite>format=”onnx”</cite>, <cite>verbose=True</cite>
-and Torch backend.</p>
-<p>Examples:</p>
-<p>Here’s how to export a TensorFlow SavedModel for inference.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export the model as a TensorFlow SavedModel artifact</span>
-<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;tf_saved_model&quot;</span><span class="p">)</span>
-
-<span class="c1"># Load the artifact in a different process/environment</span>
-<span class="n">reloaded_artifact</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">saved_model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">)</span>
-<span class="n">predictions</span> <span class="o">=</span> <span class="n">reloaded_artifact</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+<dt class="sig sig-object py" id="bayesflow.networks.MLP.from_config">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.from_config" title="Link to this definition">#</a></dt>
+<dd><p>Creates an operation from its config.</p>
+<p>This method is the reverse of <cite>get_config</cite>, capable of instantiating the
+same operation from the config dictionary.</p>
+<p>Note: If you override this method, you might receive a serialized dtype
+config, which is a <cite>dict</cite>. You can deserialize it as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="s2">&quot;dtype&quot;</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="n">policy</span> <span class="o">=</span> <span class="n">dtype_policies</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>Here’s how to export an ONNX for inference.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export the model as a ONNX artifact</span>
-<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;onnx&quot;</span><span class="p">)</span>
-
-<span class="c1"># Load the artifact in a different process/environment</span>
-<span class="n">ort_session</span> <span class="o">=</span> <span class="n">onnxruntime</span><span class="o">.</span><span class="n">InferenceSession</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">)</span>
-<span class="n">ort_inputs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">k</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ort_session</span><span class="o">.</span><span class="n">get_inputs</span><span class="p">(),</span> <span class="n">input_data</span><span class="p">)</span>
-<span class="p">}</span>
-<span class="n">predictions</span> <span class="o">=</span> <span class="n">ort_session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">ort_inputs</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_per_epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.fit" title="Link to this definition">#</a></dt>
-<dd><p>Trains the model for a fixed number of epochs (dataset iterations).</p>
-<dl>
-<dt>Args:</dt><dd><dl>
-<dt>x: Input data. It can be:</dt><dd><ul class="simple">
-<li><p>A NumPy array (or array-like), or a list of arrays</p></li>
-</ul>
-<p>(in case the model has multiple inputs).
-- A backend-native tensor, or a list of tensors
-(in case the model has multiple inputs).
-- A dict mapping input names to the corresponding array/tensors,
-if the model has named inputs.
-- A <cite>keras.utils.PyDataset</cite> returning <cite>(inputs, targets)</cite> or
-<cite>(inputs, targets, sample_weights)</cite>.
-- A <cite>tf.data.Dataset</cite> yielding <cite>(inputs, targets)</cite> or
-<cite>(inputs, targets, sample_weights)</cite>.
-- A <cite>torch.utils.data.DataLoader</cite> yielding <cite>(inputs, targets)</cite>
-or <cite>(inputs, targets, sample_weights)</cite>.
-- A Python generator function yielding <cite>(inputs, targets)</cite> or
-<cite>(inputs, targets, sample_weights)</cite>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>config: A Python dictionary, typically the output of <cite>get_config</cite>.</p>
 </dd>
-<dt>y: Target data. Like the input data <cite>x</cite>, it can be either NumPy</dt><dd><p>array(s) or backend-native tensor(s). If <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or a Python generator function,
-<cite>y</cite> should not be specified since targets will be obtained from
-<cite>x</cite>.</p>
-</dd>
-<dt>batch_size: Integer or <cite>None</cite>.</dt><dd><p>Number of samples per gradient update.
-If unspecified, <cite>batch_size</cite> will default to 32.
-Do not specify the <cite>batch_size</cite> if your input data <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function
-since they generate batches.</p>
-</dd>
-<dt>epochs: Integer. Number of epochs to train the model.</dt><dd><p>An epoch is an iteration over the entire <cite>x</cite> and <cite>y</cite>
-data provided
-(unless the <cite>steps_per_epoch</cite> flag is set to
-something other than None).
-Note that in conjunction with <cite>initial_epoch</cite>,
-<cite>epochs</cite> is to be understood as “final epoch”.
-The model is not trained for a number of iterations
-given by <cite>epochs</cite>, but merely until the epoch
-of index <cite>epochs</cite> is reached.</p>
-</dd>
-<dt>verbose: <cite>“auto”</cite>, 0, 1, or 2. Verbosity mode.</dt><dd><p>0 = silent, 1 = progress bar, 2 = one line per epoch.
-“auto” becomes 1 for most cases.
-Note that the progress bar is not
-particularly useful when logged to a file,
-so <cite>verbose=2</cite> is recommended when not running interactively
-(e.g., in a production environment). Defaults to <cite>“auto”</cite>.</p>
-</dd>
-<dt>callbacks: List of <cite>keras.callbacks.Callback</cite> instances.</dt><dd><p>List of callbacks to apply during training.
-See <cite>keras.callbacks</cite>. Note
-<cite>keras.callbacks.ProgbarLogger</cite> and
-<cite>keras.callbacks.History</cite> callbacks are created
-automatically and need not be passed to <cite>model.fit()</cite>.
-<cite>keras.callbacks.ProgbarLogger</cite> is created
-or not based on the <cite>verbose</cite> argument in <cite>model.fit()</cite>.</p>
-</dd>
-<dt>validation_split: Float between 0 and 1.</dt><dd><p>Fraction of the training data to be used as validation data.
-The model will set apart this fraction of the training data,
-will not train on it, and will evaluate the loss and any model
-metrics on this data at the end of each epoch. The validation
-data is selected from the last samples in the <cite>x</cite> and <cite>y</cite> data
-provided, before shuffling.
-This argument is only supported when <cite>x</cite> and <cite>y</cite> are made of
-NumPy arrays or tensors.
-If both <cite>validation_data</cite> and <cite>validation_split</cite> are provided,
-<cite>validation_data</cite> will override <cite>validation_split</cite>.</p>
-</dd>
-<dt>validation_data: Data on which to evaluate</dt><dd><p>the loss and any model metrics at the end of each epoch.
-The model will not be trained on this data. Thus, note the fact
-that the validation loss of data provided using
-<cite>validation_split</cite> or <cite>validation_data</cite> is not affected by
-regularization layers like noise and dropout.
-<cite>validation_data</cite> will override <cite>validation_split</cite>.
-It can be:
-- A tuple <cite>(x_val, y_val)</cite> of NumPy arrays or tensors.
-- A tuple <cite>(x_val, y_val, val_sample_weights)</cite> of NumPy
-arrays.
-- A <cite>keras.utils.PyDataset</cite>, a <cite>tf.data.Dataset</cite>, a
-<cite>torch.utils.data.DataLoader</cite> yielding <cite>(inputs, targets)</cite> or a
-Python generator function yielding <cite>(x_val, y_val)</cite> or
-<cite>(inputs, targets, sample_weights)</cite>.</p>
-</dd>
-<dt>shuffle: Boolean, whether to shuffle the training data before each</dt><dd><p>epoch. This argument is ignored when <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function.</p>
-</dd>
-<dt>class_weight: Optional dictionary mapping class indices (integers)</dt><dd><p>to a weight (float) value, used for weighting the loss function
-(during training only).
-This can be useful to tell the model to
-“pay more attention” to samples from
-an under-represented class. When <cite>class_weight</cite> is specified
-and targets have a rank of 2 or greater, either <cite>y</cite> must be
-one-hot encoded, or an explicit final dimension of <cite>1</cite> must
-be included for sparse class labels.</p>
-</dd>
-<dt>sample_weight: Optional NumPy array or tensor of weights for</dt><dd><p>the training samples, used for weighting the loss function
-(during training only). You can either pass a flat (1D)
-NumPy array or tensor with the same length as the input samples
-(1:1 mapping between weights and samples), or in the case of
-temporal data, you can pass a 2D NumPy array or tensor with
-shape <cite>(samples, sequence_length)</cite> to apply a different weight
-to every timestep of every sample.
-This argument is not supported when <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function.
-Instead, provide <cite>sample_weights</cite> as the third element of <cite>x</cite>.
-Note that sample weighting does not apply to metrics specified
-via the <cite>metrics</cite> argument in <cite>compile()</cite>. To apply sample
-weighting to your metrics, you can specify them via the
-<cite>weighted_metrics</cite> in <cite>compile()</cite> instead.</p>
-</dd>
-<dt>initial_epoch: Integer.</dt><dd><p>Epoch at which to start training
-(useful for resuming a previous training run).</p>
-</dd>
-<dt>steps_per_epoch: Integer or <cite>None</cite>.</dt><dd><p>Total number of steps (batches of samples) before declaring one
-epoch finished and starting the next epoch. When training with
-input tensors or NumPy arrays, the default <cite>None</cite> means that the
-value used is the number of samples in your dataset divided by
-the batch size, or 1 if that cannot be determined.
-If <cite>x</cite> is a <cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function, the
-epoch will run until the input dataset is exhausted. When
-passing an infinitely repeating dataset, you must specify the
-<cite>steps_per_epoch</cite> argument, otherwise the training will run
-indefinitely.</p>
-</dd>
-<dt>validation_steps: Integer or <cite>None</cite>.</dt><dd><p>Only relevant if <cite>validation_data</cite> is provided.
-Total number of steps (batches of samples) to draw before
-stopping when performing validation at the end of every epoch.
-If <cite>validation_steps</cite> is <cite>None</cite>, validation will run until the
-<cite>validation_data</cite> dataset is exhausted. In the case of an
-infinitely repeating dataset, it will run indefinitely. If
-<cite>validation_steps</cite> is specified and only part of the dataset
-is consumed, the evaluation will start from the beginning of the
-dataset at each epoch. This ensures that the same validation
-samples are used every time.</p>
-</dd>
-<dt>validation_batch_size: Integer or <cite>None</cite>.</dt><dd><p>Number of samples per validation batch.
-If unspecified, will default to <cite>batch_size</cite>.
-Do not specify the <cite>validation_batch_size</cite> if your data is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function
-since they generate batches.</p>
-</dd>
-<dt>validation_freq: Only relevant if validation data is provided.</dt><dd><p>Specifies how many training epochs to run
-before a new validation run is performed,
-e.g. <cite>validation_freq=2</cite> runs validation every 2 epochs.</p>
-</dd>
-</dl>
-</dd>
-<dt>Unpacking behavior for iterator-like inputs:</dt><dd><p>A common pattern is to pass an iterator like object such as a
-<cite>tf.data.Dataset</cite> or a <cite>keras.utils.PyDataset</cite> to <cite>fit()</cite>,
-which will in fact yield not only features (<cite>x</cite>)
-but optionally targets (<cite>y</cite>) and sample weights (<cite>sample_weight</cite>).
-Keras requires that the output of such iterator-likes be
-unambiguous. The iterator should return a tuple
-of length 1, 2, or 3, where the optional second and third elements
-will be used for <cite>y</cite> and <cite>sample_weight</cite> respectively.
-Any other type provided will be wrapped in
-a length-one tuple, effectively treating everything as <cite>x</cite>. When
-yielding dicts, they should still adhere to the top-level tuple
-structure,
-e.g. <cite>({“x0”: x0, “x1”: x1}, y)</cite>. Keras will not attempt to separate
-features, targets, and weights from the keys of a single dict.
-A notable unsupported data type is the <cite>namedtuple</cite>. The reason is
-that it behaves like both an ordered datatype (tuple) and a mapping
-datatype (dict). So given a namedtuple of the form:
-<cite>namedtuple(“example_tuple”, [“y”, “x”])</cite>
-it is ambiguous whether to reverse the order of the elements when
-interpreting the value. Even worse is a tuple of the form:
-<cite>namedtuple(“other_tuple”, [“x”, “y”, “z”])</cite>
-where it is unclear if the tuple was intended to be unpacked
-into <cite>x</cite>, <cite>y</cite>, and <cite>sample_weight</cite> or passed through
-as a single element to <cite>x</cite>.</p>
-</dd>
-<dt>Returns:</dt><dd><p>A <cite>History</cite> object. Its <cite>History.history</cite> attribute is
-a record of training loss values and metrics values
-at successive epochs, as well as validation loss values
-and validation metrics values (if applicable).</p>
+<dt>Returns:</dt><dd><p>An operation instance.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1503,114 +993,6 @@ loading.</p>
 <dt>Returns:</dt><dd><p>A dict containing the input shape associated with the layer.</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.get_compile_config">
-<span class="sig-name descname"><span class="pre">get_compile_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.get_compile_config" title="Link to this definition">#</a></dt>
-<dd><p>Returns a serialized config with information for compiling the model.</p>
-<p>This method returns a config dictionary containing all the information
-(optimizer, loss, metrics, etc.) with which the model was compiled.</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>A dict containing information for compiling the model.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.get_layer">
-<span class="sig-name descname"><span class="pre">get_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.get_layer" title="Link to this definition">#</a></dt>
-<dd><p>Retrieves a layer based on either its name (unique) or index.</p>
-<p>If <cite>name</cite> and <cite>index</cite> are both provided, <cite>index</cite> will take precedence.
-Indices are based on order of horizontal graph traversal (bottom-up).</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>name: String, name of layer.
-index: Integer, index of layer.</p>
-</dd>
-<dt>Returns:</dt><dd><p>A layer instance.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.get_metrics_result">
-<span class="sig-name descname"><span class="pre">get_metrics_result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.get_metrics_result" title="Link to this definition">#</a></dt>
-<dd><p>Returns the model’s metrics values as a dict.</p>
-<p>If any of the metric result is a dict (containing multiple metrics),
-each of them gets added to the top level returned dict of this method.</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>A <cite>dict</cite> containing values of the metrics listed in <cite>self.metrics</cite>.
-Example: <cite>{‘loss’: 0.2, ‘accuracy’: 0.7}</cite>.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.get_state_tree">
-<span class="sig-name descname"><span class="pre">get_state_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'backend_tensor'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.get_state_tree" title="Link to this definition">#</a></dt>
-<dd><p>Retrieves tree-like structure of model variables.</p>
-<p>This method allows retrieval of different model variables (trainable,
-non-trainable, optimizer, and metrics). The variables are returned in a
-nested dictionary format, where the keys correspond to the variable
-names and the values are the nested representations of the variables.</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>dict: A dictionary containing the nested representations of the</dt><dd><p>requested variables. The keys are the variable names, and the
-values are the corresponding nested dictionaries.</p>
-</dd>
-<dt>value_format: One of <cite>“backend_tensor”</cite>, <cite>“numpy_array”</cite>.</dt><dd><dl class="simple">
-<dt>The kind of array to return as the leaves of the nested</dt><dd><p>state tree.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
-    <span class="n">keras</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_input&quot;</span><span class="p">),</span>
-    <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;sigmoid&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_dense&quot;</span><span class="p">),</span>
-<span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_sequential&quot;</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;mse&quot;</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">])</span>
-<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]]))</span>
-<span class="n">state_tree</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_state_tree</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>The <cite>state_tree</cite> dictionary returned looks like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s1">&#39;metrics_variables&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="s1">&#39;mean_absolute_error&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">},</span>
-    <span class="s1">&#39;trainable_variables&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;my_sequential&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;my_dense&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;bias&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;kernel&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">},</span>
-    <span class="s1">&#39;non_trainable_variables&#39;</span><span class="p">:</span> <span class="p">{},</span>
-    <span class="s1">&#39;optimizer_variables&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;adam&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;iteration&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_bias_momentum&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_bias_velocity&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_kernel_momentum&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_kernel_velocity&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py method">
@@ -1638,28 +1020,8 @@ the operation was called.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.input_shape">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_shape</span></span><a class="headerlink" href="#bayesflow.networks.MLP.input_shape" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.input_spec">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_spec</span></span><a class="headerlink" href="#bayesflow.networks.MLP.input_spec" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.inputs">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inputs</span></span><a class="headerlink" href="#bayesflow.networks.MLP.inputs" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.jax_state_sync">
-<span class="sig-name descname"><span class="pre">jax_state_sync</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.jax_state_sync" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.jit_compile">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">jit_compile</span></span><a class="headerlink" href="#bayesflow.networks.MLP.jit_compile" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -1679,78 +1041,17 @@ the layer is loaded upon calling <cite>keras.models.load_model()</cite>.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.load_weights">
-<span class="sig-name descname"><span class="pre">load_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_mismatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.load_weights" title="Link to this definition">#</a></dt>
-<dd><p>Load the weights from a single file or sharded files.</p>
-<p>Weights are loaded based on the network’s topology. This means the
-architecture should be the same as when the weights were saved. Note
-that layers that don’t have weights are not taken into account in the
-topological ordering, so adding or removing layers is fine as long as
-they don’t have weights.</p>
-<p><strong>Partial weight loading</strong></p>
-<p>If you have modified your model, for instance by adding a new layer
-(with weights) or by changing the shape of the weights of a layer, you
-can choose to ignore errors and continue loading by setting
-<cite>skip_mismatch=True</cite>. In this case any layer with mismatching weights
-will be skipped. A warning will be displayed for each skipped layer.</p>
-<p><strong>Sharding</strong></p>
-<p>When loading sharded weights, it is important to specify <cite>filepath</cite> that
-ends with <cite>*.weights.json</cite> which is used as the configuration file.
-Additionally, the sharded files <cite>*_xxxxx.weights.h5</cite> must be in the same
-directory as the configuration file.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object. Path where the weights</dt><dd><p>will be saved.  When sharding, the filepath must end in
-<cite>.weights.json</cite>.</p>
-</dd>
-<dt>skip_mismatch: Boolean, whether to skip loading of layers where</dt><dd><p>there is a mismatch in the number of weights, or a mismatch in
-the shape of the weights.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the weights in a single file.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
-
-<span class="c1"># Load the weights in sharded files.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.losses">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">losses</span></span><a class="headerlink" href="#bayesflow.networks.MLP.losses" title="Link to this definition">#</a></dt>
 <dd><p>List of scalar losses from <cite>add_loss</cite>, regularizers and sublayers.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.make_predict_function">
-<span class="sig-name descname"><span class="pre">make_predict_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.make_predict_function" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.make_test_function">
-<span class="sig-name descname"><span class="pre">make_test_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.make_test_function" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.make_train_function">
-<span class="sig-name descname"><span class="pre">make_train_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.make_train_function" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.metrics">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#bayesflow.networks.MLP.metrics" title="Link to this definition">#</a></dt>
 <dd><p>List of all metrics.</p>
 </dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.metrics_names">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics_names</span></span><a class="headerlink" href="#bayesflow.networks.MLP.metrics_names" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.metrics_variables">
@@ -1763,7 +1064,7 @@ the shape of the weights.</p>
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">non_trainable_variables</span></span><a class="headerlink" href="#bayesflow.networks.MLP.non_trainable_variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all non-trainable layer state.</p>
 <p>This extends <cite>layer.non_trainable_weights</cite> to include all state used by
-the layer including state for metrics and <a href="#id3"><span class="problematic" id="id4">`</span></a>SeedGenerator`s.</p>
+the layer including state for metrics and <a href="#id1"><span class="problematic" id="id2">`</span></a>SeedGenerator`s.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -1788,109 +1089,11 @@ the operation was called.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.output_shape">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_shape</span></span><a class="headerlink" href="#bayesflow.networks.MLP.output_shape" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.outputs">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">outputs</span></span><a class="headerlink" href="#bayesflow.networks.MLP.outputs" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.path">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#bayesflow.networks.MLP.path" title="Link to this definition">#</a></dt>
 <dd><p>The path of the layer.</p>
 <p>If the layer has not been built yet, it will be <cite>None</cite>.</p>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.pop">
-<span class="sig-name descname"><span class="pre">pop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rebuild</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.pop" title="Link to this definition">#</a></dt>
-<dd><p>Removes the last layer in the model.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>rebuild: <cite>bool</cite>. Whether to rebuild the model after removing
-the layer. Defaults to <cite>True</cite>.</p>
-</dd>
-<dt>Returns:</dt><dd><p>layer: layer instance.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.predict" title="Link to this definition">#</a></dt>
-<dd><p>Generates output predictions for the input samples.</p>
-<p>Computation is done in batches. This method is designed for batch
-processing of large numbers of inputs. It is not intended for use inside
-of loops that iterate over your data and process small numbers of inputs
-at a time.</p>
-<p>For small numbers of inputs that fit in one batch,
-directly use <cite>__call__()</cite> for faster execution, e.g.,
-<cite>model(x)</cite>, or <cite>model(x, training=False)</cite> if you have layers such as
-<cite>BatchNormalization</cite> that behave differently during
-inference.</p>
-<p>Note: See [this FAQ entry](
-<a class="reference external" href="https://keras.io/getting_started/faq/#whats-the-difference-between-model-methods-predict-and-call">https://keras.io/getting_started/faq/#whats-the-difference-between-model-methods-predict-and-call</a>)
-for more details about the difference between <cite>Model</cite> methods
-<cite>predict()</cite> and <cite>__call__()</cite>.</p>
-<dl>
-<dt>Args:</dt><dd><dl>
-<dt>x: Input data. It can be:</dt><dd><ul class="simple">
-<li><p>A NumPy array (or array-like), or a list of arrays</p></li>
-</ul>
-<p>(in case the model has multiple inputs).
-- A backend-native tensor, or a list of tensors
-(in case the model has multiple inputs).
-- A dict mapping input names to the corresponding array/tensors,
-if the model has named inputs.
-- A <cite>keras.utils.PyDataset</cite>.
-- A <cite>tf.data.Dataset</cite>.
-- A <cite>torch.utils.data.DataLoader</cite>.
-- A Python generator function.</p>
-</dd>
-<dt>batch_size: Integer or <cite>None</cite>.</dt><dd><p>Number of samples per batch of computation.
-If unspecified, <cite>batch_size</cite> will default to 32.
-Do not specify the <cite>batch_size</cite> if your input data <cite>x</cite> is a
-<cite>keras.utils.PyDataset</cite>, <cite>tf.data.Dataset</cite>,
-<cite>torch.utils.data.DataLoader</cite> or Python generator function
-since they generate batches.</p>
-</dd>
-<dt>verbose: <cite>“auto”</cite>, 0, 1, or 2. Verbosity mode.</dt><dd><p>0 = silent, 1 = progress bar, 2 = single line.
-<cite>“auto”</cite> becomes 1 for most cases. Note that the progress bar
-is not particularly useful when logged to a file,
-so <cite>verbose=2</cite> is recommended when not running interactively
-(e.g. in a production environment). Defaults to <cite>“auto”</cite>.</p>
-</dd>
-<dt>steps: Total number of steps (batches of samples) to draw before</dt><dd><p>declaring the prediction round finished. If <cite>steps</cite> is <cite>None</cite>,
-it will run until <cite>x</cite> is exhausted. In the case of an infinitely
-repeating dataset, it will run indefinitely.</p>
-</dd>
-<dt>callbacks: List of <cite>keras.callbacks.Callback</cite> instances.</dt><dd><p>List of callbacks to apply during prediction.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>NumPy array(s) of predictions.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.predict_on_batch">
-<span class="sig-name descname"><span class="pre">predict_on_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.predict_on_batch" title="Link to this definition">#</a></dt>
-<dd><p>Returns predictions for a single batch of samples.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>x: Input data. It must be array-like.</p>
-</dd>
-<dt>Returns:</dt><dd><p>NumPy array(s) of predictions.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.predict_step">
-<span class="sig-name descname"><span class="pre">predict_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.predict_step" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.quantization_mode">
@@ -1900,19 +1103,8 @@ repeating dataset, it will run indefinitely.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.quantize">
-<span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.quantize" title="Link to this definition">#</a></dt>
-<dd><p>Quantize the weights of the model.</p>
-<p>Note that the model must be built first before calling this method.
-<cite>quantize</cite> will recursively call <cite>quantize(mode)</cite> in all layers and
-will be skipped if the layer doesn’t implement the function.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>mode: The mode of the quantization. Only ‘int8’ is supported at this</dt><dd><p>time.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.quantize" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.quantized_build">
@@ -1937,59 +1129,6 @@ will be skipped if the layer doesn’t implement the function.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.reset_metrics">
-<span class="sig-name descname"><span class="pre">reset_metrics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.reset_metrics" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.run_eagerly">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run_eagerly</span></span><a class="headerlink" href="#bayesflow.networks.MLP.run_eagerly" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zipped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.save" title="Link to this definition">#</a></dt>
-<dd><p>Saves a model as a <cite>.keras</cite> file.</p>
-<p>Note that <cite>model.save()</cite> is an alias for <cite>keras.saving.save_model()</cite>.</p>
-<p>The saved <cite>.keras</cite> file contains:</p>
-<ul class="simple">
-<li><p>The model’s configuration (architecture)</p></li>
-<li><p>The model’s weights</p></li>
-<li><p>The model’s optimizer’s state (if any)</p></li>
-</ul>
-<p>Thus models can be reinstantiated in the exact same state.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object.</dt><dd><p>The path where to save the model. Must end in <cite>.keras</cite>
-(unless saving the model as an unzipped directory
-via <cite>zipped=False</cite>).</p>
-</dd>
-<dt>overwrite: Whether we should overwrite any existing model at</dt><dd><p>the target location, or instead ask the user via
-an interactive prompt.</p>
-</dd>
-<dt>zipped: Whether to save the model as a zipped <cite>.keras</cite></dt><dd><p>archive (default when saving locally), or as an
-unzipped directory (default when saving on the
-Hugging Face Hub).</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-    <span class="p">[</span>
-        <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,)),</span>
-        <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(),</span>
-    <span class="p">],</span>
-<span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;model.keras&quot;</span><span class="p">)</span>
-<span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;model.keras&quot;</span><span class="p">)</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.save_own_variables">
 <span class="sig-name descname"><span class="pre">save_own_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.save_own_variables" title="Link to this definition">#</a></dt>
 <dd><p>Saves the state of the layer.</p>
@@ -1997,88 +1136,6 @@ Hugging Face Hub).</p>
 the layer is saved upon calling <cite>model.save()</cite>.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>store: Dict where the state of the model will be saved.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.save_weights">
-<span class="sig-name descname"><span class="pre">save_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_shard_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.save_weights" title="Link to this definition">#</a></dt>
-<dd><p>Saves all weights to a single file or sharded files.</p>
-<p>By default, the weights will be saved in a single <cite>.weights.h5</cite> file.
-If sharding is enabled (<cite>max_shard_size</cite> is not <cite>None</cite>), the weights
-will be saved in multiple files, each with a size at most
-<cite>max_shard_size</cite> (in GB). Additionally, a configuration file
-<cite>.weights.json</cite> will contain the metadata for the sharded files.</p>
-<p>The saved sharded files contain:</p>
-<ul class="simple">
-<li><dl class="simple">
-<dt><cite>*.weights.json</cite>: The configuration file containing ‘metadata’ and</dt><dd><p>‘weight_map’.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><cite>*_xxxxxx.weights.h5</cite>: The sharded files containing only the</dt><dd><p>weights.</p>
-</dd>
-</dl>
-</li>
-</ul>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object. Path where the weights</dt><dd><p>will be saved.  When sharding, the filepath must end in
-<cite>.weights.json</cite>. If <cite>.weights.h5</cite> is provided, it will be
-overridden.</p>
-</dd>
-<dt>overwrite: Whether to overwrite any existing weights at the target</dt><dd><p>location or instead ask the user via an interactive prompt.</p>
-</dd>
-<dt>max_shard_size: <cite>int</cite> or <cite>float</cite>. Maximum size in GB for each</dt><dd><p>sharded file. If <cite>None</cite>, no sharding will be done. Defaults to
-<cite>None</cite>.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Instantiate a EfficientNetV2L model with about 454MB of weights.</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-<span class="c1"># Save the weights in a single file.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
-
-<span class="c1"># Save the weights in sharded files. Use `max_shard_size=0.25` means</span>
-<span class="c1"># each sharded file will be at most ~250MB.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">,</span> <span class="n">max_shard_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
-
-<span class="c1"># Load the weights in a new model with the same architecture.</span>
-<span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-
-<span class="c1"># Load the sharded weights in a new model with the same architecture.</span>
-<span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">)</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.set_state_tree">
-<span class="sig-name descname"><span class="pre">set_state_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_tree</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.set_state_tree" title="Link to this definition">#</a></dt>
-<dd><p>Assigns values to variables of the model.</p>
-<p>This method takes a dictionary of nested variable values, which
-represents the state tree of the model, and assigns them to the
-corresponding variables of the model. The dictionary keys represent the
-variable names (e.g., <cite>‘trainable_variables’</cite>, <cite>‘optimizer_variables’</cite>),
-and the values are nested dictionaries containing the variable
-paths and their corresponding values.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>state_tree: A dictionary representing the state tree of the model.</dt><dd><p>The keys are the variable names, and the values are nested
-dictionaries representing the variable paths and their values.</p>
-</dd>
-</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -2099,12 +1156,12 @@ non_trainable_variables: List of non-trainable variables of the</p>
 <blockquote>
 <div><p>model.</p>
 </div></blockquote>
-<p><a href="#id5"><span class="problematic" id="id6">*</span></a>args: Positional arguments to be passed to <cite>call()</cite>.
+<p><a href="#id3"><span class="problematic" id="id4">*</span></a>args: Positional arguments to be passed to <cite>call()</cite>.
 return_losses: If <cite>True</cite>, <cite>stateless_call()</cite> will return the list of</p>
 <blockquote>
 <div><p>losses created during <cite>call()</cite> as part of its return values.</p>
 </div></blockquote>
-<p><a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs: Keyword arguments to be passed to <cite>call()</cite>.</p>
+<p><a href="#id5"><span class="problematic" id="id6">**</span></a>kwargs: Keyword arguments to be passed to <cite>call()</cite>.</p>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
 <dt>A tuple. By default, returns <cite>(outputs, non_trainable_variables)</cite>.</dt><dd><p>If <cite>return_losses = True</cite>, then returns
@@ -2139,48 +1196,6 @@ These are all elements of state of the layer.</p>
 </div>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.stateless_compute_loss">
-<span class="sig-name descname"><span class="pre">stateless_compute_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainable_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_trainable_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.stateless_compute_loss" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.summary">
-<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expand_nested</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.summary" title="Link to this definition">#</a></dt>
-<dd><p>Prints a string summary of the network.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>line_length: Total length of printed lines</dt><dd><p>(e.g. set this to adapt the display to different
-terminal window sizes).</p>
-</dd>
-<dt>positions: Relative or absolute positions of log elements</dt><dd><p>in each line. If not provided, becomes
-<cite>[0.3, 0.6, 0.70, 1.]</cite>. Defaults to <cite>None</cite>.</p>
-</dd>
-<dt>print_fn: Print function to use. By default, prints to <cite>stdout</cite>.</dt><dd><p>If <cite>stdout</cite> doesn’t work in your environment, change to <cite>print</cite>.
-It will be called on each line of the summary.
-You can set it to a custom function
-in order to capture the string summary.</p>
-</dd>
-<dt>expand_nested: Whether to expand the nested models.</dt><dd><p>Defaults to <cite>False</cite>.</p>
-</dd>
-<dt>show_trainable: Whether to show if a layer is trainable.</dt><dd><p>Defaults to <cite>False</cite>.</p>
-</dd>
-<dt>layer_range: a list or tuple of 2 strings,</dt><dd><p>which is the starting layer name and ending layer name
-(both inclusive) indicating the range of layers to be printed
-in summary. It also accepts regex patterns instead of exact
-names. In this case, the start predicate will be
-the first element that matches <cite>layer_range[0]</cite>
-and the end predicate will be the last element
-that matches <cite>layer_range[1]</cite>.
-By default <cite>None</cite> considers all layers of the model.</p>
-</dd>
-</dl>
-</dd>
-<dt>Raises:</dt><dd><p>ValueError: if <cite>summary()</cite> is called before the model is built.</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.supports_masking">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supports_masking</span></span><a class="headerlink" href="#bayesflow.networks.MLP.supports_masking" title="Link to this definition">#</a></dt>
@@ -2190,97 +1205,6 @@ By default <cite>None</cite> considers all layers of the model.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.MLP.symbolic_call">
 <span class="sig-name descname"><span class="pre">symbolic_call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.symbolic_call" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.test_on_batch">
-<span class="sig-name descname"><span class="pre">test_on_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.test_on_batch" title="Link to this definition">#</a></dt>
-<dd><p>Test the model on a single batch of samples.</p>
-<dl>
-<dt>Args:</dt><dd><p>x: Input data. Must be array-like.
-y: Target data. Must be array-like.
-sample_weight: Optional array of the same length as x, containing</p>
-<blockquote>
-<div><p>weights to apply to the model’s loss for each sample.
-In the case of temporal data, you can pass a 2D array
-with shape <cite>(samples, sequence_length)</cite>, to apply a different
-weight to every timestep of every sample.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>return_dict: If <cite>True</cite>, loss and metric results are returned as a</dt><dd><p>dict, with each key being the name of the metric. If <cite>False</cite>,
-they are returned as a list.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>A scalar loss value (when no metrics and <cite>return_dict=False</cite>),
-a list of loss and metric values
-(if there are metrics and <cite>return_dict=False</cite>), or a dict of
-metric and loss values (if <cite>return_dict=True</cite>).</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.test_step">
-<span class="sig-name descname"><span class="pre">test_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.test_step" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.to_json">
-<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.to_json" title="Link to this definition">#</a></dt>
-<dd><p>Returns a JSON string containing the network configuration.</p>
-<p>To load a network from a JSON save file, use
-<cite>keras.models.model_from_json(json_string, custom_objects={…})</cite>.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt><a href="#id9"><span class="problematic" id="id10">**</span></a>kwargs: Additional keyword arguments to be passed to</dt><dd><p><cite>json.dumps()</cite>.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>A JSON string.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.train_on_batch">
-<span class="sig-name descname"><span class="pre">train_on_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.train_on_batch" title="Link to this definition">#</a></dt>
-<dd><p>Runs a single gradient update on a single batch of data.</p>
-<dl>
-<dt>Args:</dt><dd><p>x: Input data. Must be array-like.
-y: Target data. Must be array-like.
-sample_weight: Optional array of the same length as x, containing</p>
-<blockquote>
-<div><p>weights to apply to the model’s loss for each sample.
-In the case of temporal data, you can pass a 2D array
-with shape <cite>(samples, sequence_length)</cite>, to apply a different
-weight to every timestep of every sample.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>class_weight: Optional dictionary mapping class indices (integers)</dt><dd><p>to a weight (float) to apply to the model’s loss for the samples
-from this class during training. This can be useful to tell the
-model to “pay more attention” to samples from an
-under-represented class. When <cite>class_weight</cite> is specified
-and targets have a rank of 2 or greater, either <cite>y</cite> must
-be one-hot encoded, or an explicit final dimension of 1
-must be included for sparse class labels.</p>
-</dd>
-<dt>return_dict: If <cite>True</cite>, loss and metric results are returned as a</dt><dd><p>dict, with each key being the name of the metric. If <cite>False</cite>,
-they are returned as a list.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>A scalar loss value (when no metrics and <cite>return_dict=False</cite>),
-a list of loss and metric values
-(if there are metrics and <cite>return_dict=False</cite>), or a dict of
-metric and loss values (if <cite>return_dict=True</cite>).</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.networks.MLP.train_step">
-<span class="sig-name descname"><span class="pre">train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.MLP.train_step" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -2314,7 +1238,7 @@ metric and loss values (if <cite>return_dict=True</cite>).</p>
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variables</span></span><a class="headerlink" href="#bayesflow.networks.MLP.variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all layer state, including random seeds.</p>
 <p>This extends <cite>layer.weights</cite> to include all state used by the layer
-including <a href="#id11"><span class="problematic" id="id12">`</span></a>SeedGenerator`s.</p>
+including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGenerator`s.</p>
 <p>Note that metrics variables are not included here, use
 <cite>metrics_variables</cite> to visit all the metric variables.</p>
 </dd></dl>
@@ -2379,87 +1303,47 @@ including <a href="#id11"><span class="problematic" id="id12">`</span></a>SeedGe
     
 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP"><code class="docutils literal notranslate"><span class="pre">MLP</span></code></a><ul class="nav section-nav flex-column visible">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.build"><code class="docutils literal notranslate"><span class="pre">build()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.from_config"><code class="docutils literal notranslate"><span class="pre">from_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.__call__"><code class="docutils literal notranslate"><span class="pre">__call__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.add"><code class="docutils literal notranslate"><span class="pre">add()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.add_loss"><code class="docutils literal notranslate"><span class="pre">add_loss()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.add_metric"><code class="docutils literal notranslate"><span class="pre">add_metric()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.add_variable"><code class="docutils literal notranslate"><span class="pre">add_variable()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.add_weight"><code class="docutils literal notranslate"><span class="pre">add_weight()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.build"><code class="docutils literal notranslate"><span class="pre">build()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.build_from_config"><code class="docutils literal notranslate"><span class="pre">build_from_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.call"><code class="docutils literal notranslate"><span class="pre">call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compile"><code class="docutils literal notranslate"><span class="pre">compile()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compile_from_config"><code class="docutils literal notranslate"><span class="pre">compile_from_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compute_dtype"><code class="docutils literal notranslate"><span class="pre">compute_dtype</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compute_loss"><code class="docutils literal notranslate"><span class="pre">compute_loss()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compute_loss_and_updates"><code class="docutils literal notranslate"><span class="pre">compute_loss_and_updates()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compute_mask"><code class="docutils literal notranslate"><span class="pre">compute_mask()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compute_metrics"><code class="docutils literal notranslate"><span class="pre">compute_metrics()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compute_output_shape"><code class="docutils literal notranslate"><span class="pre">compute_output_shape()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.compute_output_spec"><code class="docutils literal notranslate"><span class="pre">compute_output_spec()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.count_params"><code class="docutils literal notranslate"><span class="pre">count_params()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.dtype"><code class="docutils literal notranslate"><span class="pre">dtype</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.dtype_policy"><code class="docutils literal notranslate"><span class="pre">dtype_policy</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.evaluate"><code class="docutils literal notranslate"><span class="pre">evaluate()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.export"><code class="docutils literal notranslate"><span class="pre">export()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.fit"><code class="docutils literal notranslate"><span class="pre">fit()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.from_config"><code class="docutils literal notranslate"><span class="pre">from_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.get_build_config"><code class="docutils literal notranslate"><span class="pre">get_build_config()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.get_compile_config"><code class="docutils literal notranslate"><span class="pre">get_compile_config()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.get_layer"><code class="docutils literal notranslate"><span class="pre">get_layer()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.get_metrics_result"><code class="docutils literal notranslate"><span class="pre">get_metrics_result()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.get_state_tree"><code class="docutils literal notranslate"><span class="pre">get_state_tree()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.get_weights"><code class="docutils literal notranslate"><span class="pre">get_weights()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.input"><code class="docutils literal notranslate"><span class="pre">input</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.input_dtype"><code class="docutils literal notranslate"><span class="pre">input_dtype</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.input_shape"><code class="docutils literal notranslate"><span class="pre">input_shape</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.input_spec"><code class="docutils literal notranslate"><span class="pre">input_spec</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.inputs"><code class="docutils literal notranslate"><span class="pre">inputs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.jax_state_sync"><code class="docutils literal notranslate"><span class="pre">jax_state_sync()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.jit_compile"><code class="docutils literal notranslate"><span class="pre">jit_compile</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.layers"><code class="docutils literal notranslate"><span class="pre">layers</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.load_own_variables"><code class="docutils literal notranslate"><span class="pre">load_own_variables()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.load_weights"><code class="docutils literal notranslate"><span class="pre">load_weights()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.losses"><code class="docutils literal notranslate"><span class="pre">losses</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.make_predict_function"><code class="docutils literal notranslate"><span class="pre">make_predict_function()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.make_test_function"><code class="docutils literal notranslate"><span class="pre">make_test_function()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.make_train_function"><code class="docutils literal notranslate"><span class="pre">make_train_function()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.metrics"><code class="docutils literal notranslate"><span class="pre">metrics</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.metrics_names"><code class="docutils literal notranslate"><span class="pre">metrics_names</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.metrics_variables"><code class="docutils literal notranslate"><span class="pre">metrics_variables</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.non_trainable_variables"><code class="docutils literal notranslate"><span class="pre">non_trainable_variables</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.non_trainable_weights"><code class="docutils literal notranslate"><span class="pre">non_trainable_weights</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.output"><code class="docutils literal notranslate"><span class="pre">output</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.output_shape"><code class="docutils literal notranslate"><span class="pre">output_shape</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.outputs"><code class="docutils literal notranslate"><span class="pre">outputs</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.path"><code class="docutils literal notranslate"><span class="pre">path</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.pop"><code class="docutils literal notranslate"><span class="pre">pop()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.predict"><code class="docutils literal notranslate"><span class="pre">predict()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.predict_on_batch"><code class="docutils literal notranslate"><span class="pre">predict_on_batch()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.predict_step"><code class="docutils literal notranslate"><span class="pre">predict_step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.quantization_mode"><code class="docutils literal notranslate"><span class="pre">quantization_mode</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.quantize"><code class="docutils literal notranslate"><span class="pre">quantize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.quantized_build"><code class="docutils literal notranslate"><span class="pre">quantized_build()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.quantized_call"><code class="docutils literal notranslate"><span class="pre">quantized_call()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.rematerialized_call"><code class="docutils literal notranslate"><span class="pre">rematerialized_call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.reset_metrics"><code class="docutils literal notranslate"><span class="pre">reset_metrics()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.run_eagerly"><code class="docutils literal notranslate"><span class="pre">run_eagerly</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.save"><code class="docutils literal notranslate"><span class="pre">save()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.save_own_variables"><code class="docutils literal notranslate"><span class="pre">save_own_variables()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.save_weights"><code class="docutils literal notranslate"><span class="pre">save_weights()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.set_state_tree"><code class="docutils literal notranslate"><span class="pre">set_state_tree()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.set_weights"><code class="docutils literal notranslate"><span class="pre">set_weights()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.stateless_call"><code class="docutils literal notranslate"><span class="pre">stateless_call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.stateless_compute_loss"><code class="docutils literal notranslate"><span class="pre">stateless_compute_loss()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.summary"><code class="docutils literal notranslate"><span class="pre">summary()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.supports_masking"><code class="docutils literal notranslate"><span class="pre">supports_masking</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.symbolic_call"><code class="docutils literal notranslate"><span class="pre">symbolic_call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.test_on_batch"><code class="docutils literal notranslate"><span class="pre">test_on_batch()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.test_step"><code class="docutils literal notranslate"><span class="pre">test_step()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.to_json"><code class="docutils literal notranslate"><span class="pre">to_json()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.train_on_batch"><code class="docutils literal notranslate"><span class="pre">train_on_batch()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.train_step"><code class="docutils literal notranslate"><span class="pre">train_step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.trainable"><code class="docutils literal notranslate"><span class="pre">trainable</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.trainable_variables"><code class="docutils literal notranslate"><span class="pre">trainable_variables</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.MLP.trainable_weights"><code class="docutils literal notranslate"><span class="pre">trainable_weights</span></code></a></li>

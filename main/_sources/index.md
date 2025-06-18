@@ -252,6 +252,7 @@ Indices
 :hidden:
 
 examples
+user_guide/index
 api/bayesflow
 about
 Contributing <contributing>

@@ -151,6 +151,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -171,13 +178,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -302,6 +319,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="bayesflow.html">
     API Reference
@@ -417,21 +441,28 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ElementwiseTransform.html">ElementwiseTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ExpandDims.html">ExpandDims</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.FilterTransform.html">FilterTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Group.html">Group</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.RandomSubsample.html">RandomSubsample</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Rename.html">Rename</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Scale.html">Scale</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.SerializableCustomTransform.html">SerializableCustomTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Shift.html">Shift</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Split.html">Split</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Sqrt.html">Sqrt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Squeeze.html">Squeeze</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html">Standardize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Take.html">Take</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToArray.html">ToArray</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.ToDict.html">ToDict</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Transform.html">Transform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Ungroup.html">Ungroup</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.adapters.Adapter.html">Adapter</a></li>
@@ -448,7 +479,6 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.DiskDataset.html">DiskDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OfflineDataset.html">OfflineDataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.OnlineDataset.html">OnlineDataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.datasets.RoundsDataset.html">RoundsDataset</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.diagnostics.html">diagnostics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -478,12 +508,22 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.links.html">links</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.links.CholeskyFactor.html">CholeskyFactor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.Ordered.html">Ordered</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.OrderedQuantiles.html">OrderedQuantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.links.PositiveDefinite.html">PositiveDefinite</a></li>
@@ -504,10 +544,12 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.InferenceNetwork.html">InferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.MLP.html">MLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
@@ -580,6 +622,10 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.serialization.serialize_value_or_type.html">serialize_value_or_type</a></li>
 </ul>
 </details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.tree.html">tree</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.tree.flatten_shape.html">flatten_shape</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_metric.html">add_metric</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.add_titles_and_labels.html">add_titles_and_labels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.batched_call.html">batched_call</a></li>
@@ -587,6 +633,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_args.html">convert_args</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.convert_kwargs.html">convert_kwargs</a></li>
@@ -616,6 +663,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian_trace.html">jacobian_trace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jvp.html">jvp</a></li>
@@ -626,6 +674,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pad.html">pad</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.parse_bytes.html">parse_bytes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.pickle_load.html">pickle_load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.positive_diag.html">positive_diag</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prepare_plot_data.html">prepare_plot_data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.prettify_subplots.html">prettify_subplots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.searchsorted.html">searchsorted</a></li>
@@ -760,20 +809,32 @@
 <tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.FilterTransform.html#bayesflow.adapters.transforms.FilterTransform" title="bayesflow.adapters.transforms.FilterTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FilterTransform</span></code></a>([include, predicate, ...])</p></td>
 <td><p>Implements a transform that applies a different transform on a subset of the data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html#bayesflow.adapters.transforms.Keep" title="bayesflow.adapters.transforms.Keep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keep</span></code></a>(keys)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Group.html#bayesflow.adapters.transforms.Group" title="bayesflow.adapters.transforms.Group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Group</span></code></a>(keys, into[, prefix])</p></td>
+<td><p>Groups the given variables as a dictionary in the key <cite>into</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html#bayesflow.adapters.transforms.Keep" title="bayesflow.adapters.transforms.Keep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keep</span></code></a>(keys)</p></td>
 <td><p>Name the data parameters that should be kept for futher calculation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Log.html#bayesflow.adapters.transforms.Log" title="bayesflow.adapters.transforms.Log"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Log</span></code></a>(*[, p1])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Log.html#bayesflow.adapters.transforms.Log" title="bayesflow.adapters.transforms.Log"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Log</span></code></a>(*[, p1])</p></td>
 <td><p>Log transforms a variable.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html#bayesflow.adapters.transforms.MapTransform" title="bayesflow.adapters.transforms.MapTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MapTransform</span></code></a>(transform_map)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html#bayesflow.adapters.transforms.MapTransform" title="bayesflow.adapters.transforms.MapTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MapTransform</span></code></a>(transform_map)</p></td>
 <td><p>Implements a transform that applies a set of elementwise transforms to a subset of the data as given by a mapping.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html#bayesflow.adapters.transforms.NumpyTransform" title="bayesflow.adapters.transforms.NumpyTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NumpyTransform</span></code></a>(forward[, inverse])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html#bayesflow.adapters.transforms.NNPE" title="bayesflow.adapters.transforms.NNPE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NNPE</span></code></a>(*[, spike_scale, slab_scale, ...])</p></td>
+<td><p>Implements noisy neural posterior estimation (NNPE) as described in [1], which adds noise following a spike-and-slab distribution to the training data as a mild form of data augmentation to robustify against noisy real-world data (see [1, 2] for benchmarks).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html#bayesflow.adapters.transforms.NanToNum" title="bayesflow.adapters.transforms.NanToNum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NanToNum</span></code></a>(key[, default_value, return_mask, ...])</p></td>
+<td><p>Replace NaNs with a default value, and optionally encode a missing-data mask as a separate output key.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html#bayesflow.adapters.transforms.NumpyTransform" title="bayesflow.adapters.transforms.NumpyTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NumpyTransform</span></code></a>(forward[, inverse])</p></td>
 <td><p>A class to apply element-wise transformations using plain NumPy functions.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html#bayesflow.adapters.transforms.OneHot" title="bayesflow.adapters.transforms.OneHot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OneHot</span></code></a>(num_classes)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html#bayesflow.adapters.transforms.OneHot" title="bayesflow.adapters.transforms.OneHot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OneHot</span></code></a>(num_classes)</p></td>
 <td><p>Changes data to be one-hot encoded.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.RandomSubsample.html#bayesflow.adapters.transforms.RandomSubsample" title="bayesflow.adapters.transforms.RandomSubsample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomSubsample</span></code></a>(sample_size[, axis])</p></td>
+<td><p>A transform that takes a random subsample of the data within an axis.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Rename.html#bayesflow.adapters.transforms.Rename" title="bayesflow.adapters.transforms.Rename"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rename</span></code></a>(from_key, to_key)</p></td>
 <td><p>Transform to rename keys in data dictionary.</p></td>
@@ -793,8 +854,14 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Sqrt.html#bayesflow.adapters.transforms.Sqrt" title="bayesflow.adapters.transforms.Sqrt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sqrt</span></code></a>()</p></td>
 <td><p>Square-root transform a variable.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html#bayesflow.adapters.transforms.Standardize" title="bayesflow.adapters.transforms.Standardize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Standardize</span></code></a>([mean, std, axis, momentum])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Squeeze.html#bayesflow.adapters.transforms.Squeeze" title="bayesflow.adapters.transforms.Squeeze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squeeze</span></code></a>(*, axis)</p></td>
+<td><p>Squeeze dimensions of an array.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Standardize.html#bayesflow.adapters.transforms.Standardize" title="bayesflow.adapters.transforms.Standardize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Standardize</span></code></a>([mean, std, axis, momentum])</p></td>
 <td><p>Transform that when applied standardizes data using typical z-score standardization i.e. for some unstandardized data x the standardized version z would be.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Take.html#bayesflow.adapters.transforms.Take" title="bayesflow.adapters.transforms.Take"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Take</span></code></a>(indices[, axis])</p></td>
+<td><p>A transform to reduce the dimensionality of arrays output by the summary network Example: adapter.take(&quot;x&quot;, np.arange(0,3), axis=-1)</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.ToArray.html#bayesflow.adapters.transforms.ToArray" title="bayesflow.adapters.transforms.ToArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToArray</span></code></a>([original_type])</p></td>
 <td><p>Checks provided data for any non-arrays and converts them to numpy arrays.</p></td>
@@ -804,6 +871,9 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Transform.html#bayesflow.adapters.transforms.Transform" title="bayesflow.adapters.transforms.Transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform</span></code></a>()</p></td>
 <td><p>Base class on which other transforms are based</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.adapters.transforms.Ungroup.html#bayesflow.adapters.transforms.Ungroup" title="bayesflow.adapters.transforms.Ungroup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ungroup</span></code></a>(key[, prefix])</p></td>
+<td><p>Ungroups the the variables in <cite>key</cite> from a dictionary into individual entries.</p></td>
 </tr>
 </tbody>
 </table>

@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -480,22 +504,22 @@
 <span class="sd">    &gt;&gt;&gt; b = np.array([[1, 2, 3], [4, 5, 6]])</span>
 <span class="sd">    &gt;&gt;&gt; dat = dict(a=a, b=b)</span>
 
-<span class="sd">    &gt;&gt;&gt; ed = bf.adapters.transforms.ExpandDims(&quot;a&quot;, axis=0)</span>
+<span class="sd">    &gt;&gt;&gt; ed = bf.Adapter().expand_dims(&quot;a&quot;, axis=0)</span>
 <span class="sd">    &gt;&gt;&gt; new_dat = ed.forward(dat)</span>
 <span class="sd">    &gt;&gt;&gt; new_dat[&quot;a&quot;].shape</span>
 <span class="sd">    (1, 3)</span>
 
-<span class="sd">    &gt;&gt;&gt; ed = bf.adapters.transforms.ExpandDims(&quot;a&quot;, axis=1)</span>
+<span class="sd">    &gt;&gt;&gt; ed = bf.Adapter().expand_dims(&quot;a&quot;, axis=1)</span>
 <span class="sd">    &gt;&gt;&gt; new_dat = ed.forward(dat)</span>
 <span class="sd">    &gt;&gt;&gt; new_dat[&quot;a&quot;].shape</span>
 <span class="sd">    (3, 1)</span>
 
-<span class="sd">    &gt;&gt;&gt; ed = bf.adapters.transforms.ExpandDims(&quot;b&quot;, axis=1)</span>
+<span class="sd">    &gt;&gt;&gt; ed = bf.Adapter().expand_dims(&quot;b&quot;, axis=1)</span>
 <span class="sd">    &gt;&gt;&gt; new_dat = ed.forward(dat)</span>
 <span class="sd">    &gt;&gt;&gt; new_dat[&quot;b&quot;].shape</span>
 <span class="sd">    (2, 1, 3)</span>
 
-<span class="sd">    It is recommended to precede this transform with a :class:`bayesflow.adapters.transforms.ToArray` transform.</span>
+<span class="sd">    It is recommended to precede this transform with a :class:`~bayesflow.adapters.transforms.ToArray` transform.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">):</span>

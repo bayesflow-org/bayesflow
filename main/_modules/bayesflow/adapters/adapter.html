@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -466,17 +490,24 @@
     <span class="n">Drop</span><span class="p">,</span>
     <span class="n">ExpandDims</span><span class="p">,</span>
     <span class="n">FilterTransform</span><span class="p">,</span>
+    <span class="n">Group</span><span class="p">,</span>
     <span class="n">Keep</span><span class="p">,</span>
     <span class="n">Log</span><span class="p">,</span>
     <span class="n">MapTransform</span><span class="p">,</span>
+    <span class="n">NNPE</span><span class="p">,</span>
     <span class="n">NumpyTransform</span><span class="p">,</span>
     <span class="n">OneHot</span><span class="p">,</span>
     <span class="n">Rename</span><span class="p">,</span>
     <span class="n">SerializableCustomTransform</span><span class="p">,</span>
+    <span class="n">Squeeze</span><span class="p">,</span>
     <span class="n">Sqrt</span><span class="p">,</span>
     <span class="n">Standardize</span><span class="p">,</span>
     <span class="n">ToArray</span><span class="p">,</span>
     <span class="n">Transform</span><span class="p">,</span>
+    <span class="n">Ungroup</span><span class="p">,</span>
+    <span class="n">RandomSubsample</span><span class="p">,</span>
+    <span class="n">Take</span><span class="p">,</span>
+    <span class="n">NanToNum</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.transforms.filter_transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predicate</span>
 
@@ -1112,6 +1143,58 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
+<div class="viewcode-block" id="Adapter.group">
+<a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.group">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">into</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Append a :py:class:`~transforms.Group` transform to the adapter.</span>
+
+<span class="sd">        Groups the given variables as a dictionary in the key `into`. As most transforms do</span>
+<span class="sd">        not support nested structures, this should usually be the last transform in the adapter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keys : Sequence of str</span>
+<span class="sd">            The names of the variables to group together.</span>
+<span class="sd">        into : str</span>
+<span class="sd">            The name of the variable to store the grouped variables in.</span>
+<span class="sd">        prefix : str, optional</span>
+<span class="sd">            An optional common prefix of the variable names before grouping, which will be removed after grouping.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a prefix is specified, but a provided key does not start with the prefix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">keys</span><span class="p">]</span>
+
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="n">into</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="Adapter.ungroup">
+<a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.ungroup">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ungroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Append an :py:class:`~transforms.Ungroup` transform to the adapter.</span>
+
+<span class="sd">        Ungroups the the variables in `key` from a dictionary into individual entries. Most transforms do</span>
+<span class="sd">        not support nested structures, so this can be used to flatten a nested structure.</span>
+<span class="sd">        The nesting can be re-established after the transforms using the :py:meth:`group` method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            The name of the variable to ungroup. The corresponding variable has to be a dictionary.</span>
+<span class="sd">        prefix : str, optional</span>
+<span class="sd">            An optional common prefix that will be added to the ungrouped variable names. This can be necessary</span>
+<span class="sd">            to avoid duplicate names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">Ungroup</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
 <div class="viewcode-block" id="Adapter.keep">
 <a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.keep">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">keep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
@@ -1171,6 +1254,46 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
+<div class="viewcode-block" id="Adapter.nnpe">
+<a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.nnpe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nnpe</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">keys</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">spike_scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">slab_scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">per_dimension</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Append an :py:class:`~transforms.NNPE` transform to the adapter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keys : str or Sequence of str</span>
+<span class="sd">            The names of the variables to transform.</span>
+<span class="sd">        spike_scale : float or np.ndarray or None, default=None</span>
+<span class="sd">            The scale of the spike (Normal) distribution. Automatically determined if None.</span>
+<span class="sd">        slab_scale : float or np.ndarray or None, default=None</span>
+<span class="sd">            The scale of the slab (Cauchy) distribution. Automatically determined if None.</span>
+<span class="sd">        per_dimension : bool, default=True</span>
+<span class="sd">            If true, noise is applied per dimension of the last axis of the input data.</span>
+<span class="sd">            If false, noise is applied globally.</span>
+<span class="sd">        seed : int or None</span>
+<span class="sd">            The seed for the random number generator. If None, a random seed is used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">keys</span><span class="p">]</span>
+
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">MapTransform</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">key</span><span class="p">:</span> <span class="n">NNPE</span><span class="p">(</span><span class="n">spike_scale</span><span class="o">=</span><span class="n">spike_scale</span><span class="p">,</span> <span class="n">slab_scale</span><span class="o">=</span><span class="n">slab_scale</span><span class="p">,</span> <span class="n">per_dimension</span><span class="o">=</span><span class="n">per_dimension</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
 <div class="viewcode-block" id="Adapter.one_hot">
 <a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.one_hot">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">one_hot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
@@ -1187,6 +1310,31 @@
             <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">keys</span><span class="p">]</span>
 
         <span class="n">transform</span> <span class="o">=</span> <span class="n">MapTransform</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">OneHot</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="Adapter.random_subsample">
+<a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.random_subsample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">random_subsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Append a :py:class:`~transforms.RandomSubsample` transform to the adapter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str or Sequence of str</span>
+<span class="sd">            The name of the variable to subsample.</span>
+<span class="sd">        sample_size : int or float</span>
+<span class="sd">            The number of samples to draw, or a fraction between 0 and 1 of the total number of samples to draw.</span>
+<span class="sd">        axis: int, optional</span>
+<span class="sd">            Which axis to draw samples over. The last axis is used by default.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Can only subsample one batch entry at a time.&quot;</span><span class="p">)</span>
+
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">MapTransform</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">RandomSubsample</span><span class="p">(</span><span class="n">sample_size</span><span class="o">=</span><span class="n">sample_size</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)})</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
@@ -1246,6 +1394,27 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
+<div class="viewcode-block" id="Adapter.squeeze">
+<a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.squeeze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Append a :py:class:`~transforms.Squeeze` transform to the adapter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keys : str or Sequence of str</span>
+<span class="sd">            The names of the variables to squeeze.</span>
+<span class="sd">        axis : int or tuple</span>
+<span class="sd">            The axis to squeeze. As the number of batch dimensions might change, we advise using negative</span>
+<span class="sd">            numbers (i.e., indexing from the end instead of the start).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">keys</span><span class="p">]</span>
+
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">MapTransform</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">Squeeze</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
 <div class="viewcode-block" id="Adapter.sqrt">
 <a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.sqrt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
@@ -1284,7 +1453,7 @@
 <span class="sd">            Names of variables to include in the transform.</span>
 <span class="sd">        exclude : str or Sequence of str, optional</span>
 <span class="sd">            Names of variables to exclude from the transform.</span>
-<span class="sd">        **kwargs : dict</span>
+<span class="sd">        **kwargs :</span>
 <span class="sd">            Additional keyword arguments passed to the transform.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">transform</span> <span class="o">=</span> <span class="n">FilterTransform</span><span class="p">(</span>
@@ -1293,6 +1462,45 @@
             <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span>
             <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="Adapter.take">
+<a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.take">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">take</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">include</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">indices</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">predicate</span><span class="p">:</span> <span class="n">Predicate</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Append a :py:class:`~transforms.Take` transform to the adapter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        include : str or Sequence of str, optional</span>
+<span class="sd">            Names of variables to include in the transform.</span>
+<span class="sd">        indices : Sequence of int</span>
+<span class="sd">            Which indices to take from the data.</span>
+<span class="sd">        axis : int, optional</span>
+<span class="sd">            Which axis to take from. The last axis is used by default.</span>
+<span class="sd">        predicate : Predicate, optional</span>
+<span class="sd">            Function that indicates which variables should be transformed.</span>
+<span class="sd">        exclude : str or Sequence of str, optional</span>
+<span class="sd">            Names of variables to exclude from the transform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">FilterTransform</span><span class="p">(</span>
+            <span class="n">transform_constructor</span><span class="o">=</span><span class="n">Take</span><span class="p">,</span>
+            <span class="n">predicate</span><span class="o">=</span><span class="n">predicate</span><span class="p">,</span>
+            <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span>
+            <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span>
+            <span class="n">indices</span><span class="o">=</span><span class="n">indices</span><span class="p">,</span>
+            <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -1339,6 +1547,40 @@
 
         <span class="n">transform</span> <span class="o">=</span> <span class="n">ToDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="Adapter.nan_to_num">
+<a class="viewcode-back" href="../../../api/bayesflow.adapters.Adapter.html#bayesflow.adapters.Adapter.nan_to_num">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nan_to_num</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">keys</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">default_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">return_mask</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">mask_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mask&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Append :py:class:`~bf.adapters.transforms.NanToNum` transform to the adapter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keys : str or sequence of str</span>
+<span class="sd">            The names of the variables to clean / mask.</span>
+<span class="sd">        default_value : float</span>
+<span class="sd">            Value to substitute wherever data is NaN. Defaults to 0.0.</span>
+<span class="sd">        return_mask : bool</span>
+<span class="sd">            If True, encode a binary missingness mask alongside the data. Defaults to False.</span>
+<span class="sd">        mask_prefix : str</span>
+<span class="sd">            Prefix for the mask key in the output dictionary. Defaults to &#39;mask_&#39;. If the mask key already exists,</span>
+<span class="sd">            a ValueError is raised to avoid overwriting existing masks.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">keys</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">NanToNum</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">default_value</span><span class="o">=</span><span class="n">default_value</span><span class="p">,</span> <span class="n">return_mask</span><span class="o">=</span><span class="n">return_mask</span><span class="p">,</span> <span class="n">mask_prefix</span><span class="o">=</span><span class="n">mask_prefix</span><span class="p">)</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 </div>
 

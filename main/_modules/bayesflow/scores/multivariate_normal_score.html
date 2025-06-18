@@ -149,6 +149,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../api/bayesflow.html">
     API Reference
   </a>
@@ -168,13 +175,23 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../development/index.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
     Developer Docs
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -293,6 +310,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples.html">
     Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
   </a>
 </li>
 
@@ -455,7 +479,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.links</span><span class="w"> </span><span class="kn">import</span> <span class="n">PositiveDefinite</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.links</span><span class="w"> </span><span class="kn">import</span> <span class="n">CholeskyFactor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.parametric_distribution_score</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParametricDistributionScore</span>
@@ -467,12 +491,13 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">MultivariateNormalScore</span><span class="p">(</span><span class="n">ParametricDistributionScore</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:math:`S(\hat p_{\mu, \Sigma}, \theta; k) = -\log( \mathcal N (\theta; \mu, \Sigma))`</span>
 
-<span class="sd">    Scores a predicted mean and covariance matrix with the log-score of the probability of the materialized value.</span>
+<span class="sd">    Scores a predicted mean and (Cholesky factor of the) covariance matrix with the log-score of the probability</span>
+<span class="sd">    of the materialized value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;covariance&quot;</span><span class="p">,)</span>
+    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;cov_chol&quot;</span><span class="p">,)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Marks head for covariance matrix as an exception for adapter transformations.</span>
+<span class="sd">    Marks head for covariance matrix Cholesky factor as an exception for adapter transformations.</span>
 
 <span class="sd">    This variable contains names of prediction heads that should lead to a warning when the adapter is applied</span>
 <span class="sd">    in inverse direction to them.</span>
@@ -480,11 +505,22 @@
 <span class="sd">    For more information see :py:class:`ScoringRule`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="n">TRANSFORMATION_TYPE</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cov_chol&quot;</span><span class="p">:</span> <span class="s2">&quot;left_side_scale&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Marks covariance Cholesky factor head to handle de-standardization as for covariant rank-(0,2) tensors.</span>
+
+<span class="sd">    The appropriate inverse of the standardization operation is</span>
+
+<span class="sd">    x_ij = sigma_i * x_ij&#39;.</span>
+
+<span class="sd">    For the mean head the default (&quot;location_scale&quot;) is not overridden.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">links</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">links</span><span class="o">=</span><span class="n">links</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;covariance&quot;</span><span class="p">:</span> <span class="n">PositiveDefinite</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;cov_chol&quot;</span><span class="p">:</span> <span class="n">CholeskyFactor</span><span class="p">()}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;dim&quot;</span><span class="p">:</span> <span class="n">dim</span><span class="p">}</span>
 
@@ -499,17 +535,17 @@
 <a class="viewcode-back" href="../../../api/bayesflow.scores.MultivariateNormalScore.html#bayesflow.scores.MultivariateNormalScore.get_head_shapes_from_target_shape">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_head_shapes_from_target_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Shape</span><span class="p">]:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">target_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,),</span> <span class="n">covariance</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,),</span> <span class="n">cov_chol</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="MultivariateNormalScore.log_prob">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.MultivariateNormalScore.html#bayesflow.scores.MultivariateNormalScore.log_prob">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">covariance</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cov_chol</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the log probability density of a multivariate Gaussian distribution.</span>
 
 <span class="sd">        This function calculates the log probability density for each sample in `x` under a</span>
-<span class="sd">        multivariate Gaussian distribution with the given `mean` and `covariance`.</span>
+<span class="sd">        multivariate Gaussian distribution with the given `mean` and `cov_chol`.</span>
 
 <span class="sd">        The computation includes the determinant of the covariance matrix, its inverse, and the quadratic</span>
 <span class="sd">        form in the exponential term of the Gaussian density function.</span>
@@ -531,6 +567,12 @@
 <span class="sd">            given Gaussian distribution.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mean</span>
+
+        <span class="c1"># Calculate covariance from Cholesky factors</span>
+        <span class="n">covariance</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">cov_chol</span><span class="p">,</span>
+            <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">cov_chol</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
         <span class="n">precision</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span>
         <span class="n">log_det_covariance</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">slogdet</span><span class="p">(</span><span class="n">covariance</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Only take the log of the determinant part</span>
 
@@ -545,14 +587,12 @@
 
 <div class="viewcode-block" id="MultivariateNormalScore.sample">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.MultivariateNormalScore.html#bayesflow.scores.MultivariateNormalScore.sample">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">covariance</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cov_chol</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generate samples from a multivariate Gaussian distribution.</span>
 
-<span class="sd">        This function samples from a multivariate Gaussian distribution with the given `mean`</span>
-<span class="sd">        and `covariance` using the Cholesky decomposition method. Independent standard normal</span>
-<span class="sd">        samples are transformed using the Cholesky factor of the covariance matrix to generate</span>
-<span class="sd">        correlated samples.</span>
+<span class="sd">        Independent standard normal samples are transformed using the Cholesky factor of the covariance matrix</span>
+<span class="sd">        to generate correlated samples.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -561,8 +601,8 @@
 <span class="sd">        mean : Tensor</span>
 <span class="sd">            A tensor representing the mean of the multivariate Gaussian distribution.</span>
 <span class="sd">            Must have shape (batch_size, D), where D is the dimensionality of the distribution.</span>
-<span class="sd">        covariance : Tensor</span>
-<span class="sd">            A tensor representing the covariance matrix of the multivariate Gaussian distribution.</span>
+<span class="sd">        cov_chol : Tensor</span>
+<span class="sd">            A tensor representing a Cholesky factor of the covariance matrix of the multivariate Gaussian distribution.</span>
 <span class="sd">            Must have shape (batch_size, D, D), where D is the dimensionality.</span>
 
 <span class="sd">        Returns</span>
@@ -577,16 +617,16 @@
         <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mean must have shape (batch_size, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">), but got </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">cov_chol</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;covariance must have shape (batch_size, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">), but got </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;covariance Cholesky factor must have shape (batch_size, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">),&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">cov_chol</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="c1"># Use Cholesky decomposition to generate samples</span>
-        <span class="n">cholesky_factor</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span>
         <span class="n">normal_samples</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="o">*</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
 
-        <span class="n">scaled_normal</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ijk,ilk-&gt;ilj&quot;</span><span class="p">,</span> <span class="n">cholesky_factor</span><span class="p">,</span> <span class="n">normal_samples</span><span class="p">)</span>
+        <span class="n">scaled_normal</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ijk,ilk-&gt;ilj&quot;</span><span class="p">,</span> <span class="n">cov_chol</span><span class="p">,</span> <span class="n">normal_samples</span><span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">mean</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">scaled_normal</span>
 
         <span class="k">return</span> <span class="n">samples</span></div>

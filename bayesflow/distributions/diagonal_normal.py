@@ -58,7 +58,6 @@ class DiagonalNormal(Distribution):
         self.seed_generator = seed_generator or keras.random.SeedGenerator()
 
         self.dim = None
-        self.log_normalization_constant = None
         self._mean = None
         self._std = None
 
@@ -71,17 +70,18 @@ class DiagonalNormal(Distribution):
         self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), "float32")
         self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), "float32")
 
-        self.log_normalization_constant = -0.5 * self.dim * math.log(2.0 * math.pi) - ops.sum(ops.log(self.std))
-
         if self.trainable_parameters:
             self._mean = self.add_weight(
                 shape=ops.shape(self.mean),
-                initializer=keras.initializers.get(self.mean),
+                initializer=keras.initializers.get(keras.ops.copy(self.mean)),
                 dtype="float32",
                 trainable=True,
             )
             self._std = self.add_weight(
-                shape=ops.shape(self.std), initializer=keras.initializers.get(self.std), dtype="float32", trainable=True
+                shape=ops.shape(self.std),
+                initializer=keras.initializers.get(keras.ops.copy(self.std)),
+                dtype="float32",
+                trainable=True,
             )
         else:
             self._mean = self.mean
@@ -91,7 +91,8 @@ class DiagonalNormal(Distribution):
         result = -0.5 * ops.sum((samples - self._mean) ** 2 / self._std**2, axis=-1)
 
         if normalize:
-            result += self.log_normalization_constant
+            log_normalization_constant = -0.5 * self.dim * math.log(2.0 * math.pi) - ops.sum(ops.log(self._std))
+            result += log_normalization_constant
 
         return result
 

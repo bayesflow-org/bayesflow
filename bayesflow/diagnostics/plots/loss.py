@@ -14,7 +14,6 @@ def loss(
     history: keras.callbacks.History,
     train_key: str = "loss",
     val_key: str = "val_loss",
-    per_training_step: bool = False,
     smoothing_factor: float = 0.8,
     figsize: Sequence[float] = None,
     train_color: str = "#132a70",
@@ -40,8 +39,6 @@ def loss(
         The training loss key to look for in the history
     val_key     : str, optional, default: "val_loss"
         The validation loss key to look for in the history
-    per_training_step : bool, optional, default: False
-        A flag for making loss trajectory detailed (to training steps) rather than per epoch.
     smoothing_factor : float, optional, default: 0.8
         If greater than zero, smooth the loss curves by applying an exponential moving average.
     figsize            : tuple or None, optional, default: None
@@ -170,7 +167,7 @@ def loss(
         num_row=num_row,
         num_col=1,
         title=["Loss Trajectory"],
-        xlabel="Training step #" if per_training_step else "Training epoch #",
+        xlabel="Training epoch #",
         ylabel="Value",
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,

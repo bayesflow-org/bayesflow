@@ -1,5 +1,6 @@
 import numpy as np
 
+from collections.abc import Sequence
 from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
@@ -29,8 +30,10 @@ class Squeeze(ElementwiseTransform):
     It is recommended to precede this transform with a :class:`~bayesflow.adapters.transforms.ToArray` transform.
     """
 
-    def __init__(self, *, axis: int | tuple):
+    def __init__(self, *, axis: int | Sequence[int]):
         super().__init__()
+        if isinstance(axis, Sequence):
+            axis = tuple(axis)
         self.axis = axis
 
     def get_config(self) -> dict:

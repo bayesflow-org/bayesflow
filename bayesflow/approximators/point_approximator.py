@@ -58,16 +58,16 @@ class PointApproximator(ContinuousApproximator):
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
         # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
+        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
         estimates = self._estimate(**conditions, **kwargs)
 
         if "inference_variables" in self.standardize:
             for score_key, score in self.inference_network.scores.items():
                 for head_key in estimates[score_key].keys():
-                    trafo_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
+                    transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
                     estimates[score_key][head_key] = self.standardize_layers["inference_variables"](
-                        estimates[score_key][head_key], forward=False, transformation_type=trafo_type
+                        estimates[score_key][head_key], forward=False, transformation_type=transformation_type
                     )
 
         estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
@@ -77,9 +77,9 @@ class PointApproximator(ContinuousApproximator):
             estimates = split_arrays(estimates, axis=-1)
 
         # Reorder the nested dictionary so that original variable names are at the top.
-        estimates = PointApproximator._reorder_estimates(estimates)
+        estimates = self._reorder_estimates(estimates)
         # Remove unnecessary nesting.
-        estimates = PointApproximator._squeeze_estimates(estimates)
+        estimates = self._squeeze_estimates(estimates)
 
         return estimates
 
@@ -124,7 +124,7 @@ class PointApproximator(ContinuousApproximator):
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
         # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
+        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
         # Sample and undo optional standardization
         samples = self._sample(num_samples, **conditions, **kwargs)
@@ -183,7 +183,7 @@ class PointApproximator(ContinuousApproximator):
         if log_det_jac is not None:
             log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
 
-        log_prob = PointApproximator._squeeze_parametric_score_major_dict(log_prob)
+        log_prob = self._squeeze_parametric_score_major_dict(log_prob)
 
         return log_prob
 

@@ -91,10 +91,10 @@ class DiffusionModel(InferenceNetwork):
         super().__init__(base_distribution="normal", **kwargs)
 
         if prediction_type not in ["noise", "velocity", "F", "x"]:
-            raise TypeError(f"Unknown prediction type: {prediction_type}")
+            raise ValueError(f"Unknown prediction type: {prediction_type}")
 
         if loss_type not in ["noise", "velocity", "F"]:
-            raise TypeError(f"Unknown loss type: {loss_type}")
+            raise ValueError(f"Unknown loss type: {loss_type}")
 
         if loss_type != "noise":
             logging.warning(

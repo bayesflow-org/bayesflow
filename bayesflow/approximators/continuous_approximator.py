@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence, Callable
 import numpy as np
 
 import keras
+import warnings
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
@@ -98,8 +99,8 @@ class ContinuousApproximator(Approximator):
             ]
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
-        # Build all standardization layers, if present
-        for var, layer in getattr(self, "standardize_layers", {}).items():
+        # Build all standardization layers
+        for var, layer in self.standardize_layers.items():
             layer.build(data_shapes[var])
 
         self.built = True
@@ -448,7 +449,7 @@ class ContinuousApproximator(Approximator):
         conditions = self._prepare_data(conditions, **kwargs)
 
         # Remove any superfluous keys, just retain actual conditions
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.CONDITION_KEYS}
+        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
         # Sample and undo optional standardization
         samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
@@ -485,7 +486,7 @@ class ContinuousApproximator(Approximator):
             ldj_inference = None
 
         # Standardize conditions
-        for key in ContinuousApproximator.CONDITION_KEYS:
+        for key in self.CONDITION_KEYS:
             if key in self.standardize and key in data:
                 data[key] = self.standardize_layers[key](data[key])
 
@@ -514,8 +515,12 @@ class ContinuousApproximator(Approximator):
         summary_variables: Tensor = None,
         **kwargs,
     ) -> Tensor:
-        if (self.summary_network is None) != (summary_variables is None):
-            raise ValueError("Summary variables and summary network must be used together.")
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot use summary variables without a summary network.")
+        else:
+            if summary_variables is None:
+                raise ValueError("Summary variables are required when a summary network is present.")
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(
@@ -539,7 +544,7 @@ class ContinuousApproximator(Approximator):
             batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
         )
 
-    def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+    def summarize(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
         Computes the learned summary statistics of given summary variables.
 
@@ -569,6 +574,14 @@ class ContinuousApproximator(Approximator):
         summaries = keras.ops.convert_to_numpy(summaries)
 
         return summaries
+
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+        """
+        .. deprecated:: 2.0.4
+            `summaries` will be removed in version 2.0.5, it was renamed to `summarize` which should be used instead.
+        """
+        warnings.warn("`summaries` was renamed to `summarize` and will be removed in version 2.0.5.", FutureWarning)
+        return self.summarize(data=data, **kwargs)
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
@@ -606,8 +619,12 @@ class ContinuousApproximator(Approximator):
         summary_variables: Tensor = None,
         **kwargs,
     ) -> Tensor:
-        if (self.summary_network is None) != (summary_variables is None):
-            raise ValueError("Summary variables and summary network must be used together.")
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot use summary variables without a summary network.")
+        else:
+            if summary_variables is None:
+                raise ValueError("Summary variables are required when a summary network is present.")
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(

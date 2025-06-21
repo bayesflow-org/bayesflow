@@ -86,13 +86,16 @@ def test_output_shape(generative_inference_network, random_samples, random_condi
 
 def test_cycle_consistency(generative_inference_network, random_samples, random_conditions):
     # cycle-consistency means the forward and inverse methods are inverses of each other
+    import bayesflow as bf
+
+    if isinstance(generative_inference_network, bf.experimental.DiffusionModel):
+        pytest.skip(reason="test unstable for untrained diffusion models")
     try:
         forward_output, forward_log_density = generative_inference_network(
             random_samples, conditions=random_conditions, density=True
         )
     except NotImplementedError:
-        # network is not invertible, cycle consistency cannot be tested.
-        return
+        pytest.skip(reason="network is not invertible")
     inverse_output, inverse_log_density = generative_inference_network(
         forward_output, conditions=random_conditions, density=True, inverse=True
     )

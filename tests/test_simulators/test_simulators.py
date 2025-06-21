@@ -41,6 +41,26 @@ def test_sample(simulator, batch_size):
         assert not np.allclose(value, value[0])
 
 
+def test_sample_batched(simulator, batch_size):
+    sample_size = 2
+    samples = simulator.sample_batched((batch_size,), sample_size=sample_size)
+
+    # test output structure
+    assert isinstance(samples, dict)
+
+    for key, value in samples.items():
+        print(f"{key}.shape = {keras.ops.shape(value)}")
+
+        # test type
+        assert isinstance(value, np.ndarray)
+
+        # test shape (sample_batched rounds up to complete batches)
+        assert value.shape[0] == int(np.ceil(batch_size / sample_size)) * sample_size
+
+        # test batch randomness
+        assert not np.allclose(value, value[0])
+
+
 def test_fixed_sample(composite_gaussian, batch_size, fixed_n, fixed_mu):
     samples = composite_gaussian.sample((batch_size,), n=fixed_n, mu=fixed_mu)
 

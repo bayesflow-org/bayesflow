@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Callable
+from collections.abc import Callable, Mapping, Sequence
 
 import os
 import pathlib as pl
@@ -36,7 +36,7 @@ class DiskDataset(keras.utils.PyDataset):
         load_fn: Callable = None,
         adapter: Adapter | None,
         stage: str = "training",
-        augmentations: Mapping[str, Callable] | Callable = None,
+        augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         shuffle: bool = True,
         **kwargs,
     ):
@@ -58,13 +58,14 @@ class DiskDataset(keras.utils.PyDataset):
             Optional adapter to transform the loaded batch.
         stage : str, default="training"
             Current stage (e.g., "training", "validation", etc.) used by the adapter.
-        augmentations : dict of str to Callable or Callable, optional
-            Dictionary of augmentation functions to apply to each corresponding key in the batch
-            or a function to apply to the entire batch (possibly adding new keys).
+        augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
+            A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
+            to apply to the batch.
 
             If you provide a dictionary of functions, each function should accept one element
-            of your output batch and return the corresponding transformed element. Otherwise,
-            your function should accept the entire dictionary output and return a dictionary.
+            of your output batch and return the corresponding transformed element.
+
+            Otherwise, your function should accept the entire dictionary output and return a dictionary.
 
             Note - augmentations are applied before the adapter is called and are generally
             transforms that you only want to apply during training.
@@ -81,7 +82,7 @@ class DiskDataset(keras.utils.PyDataset):
         self.files = list(map(str, self.root.glob(pattern)))
         self.stage = stage
 
-        self.augmentations = augmentations
+        self.augmentations = augmentations or []
         self._shuffle = shuffle
         if self._shuffle:
             self.shuffle()
@@ -101,6 +102,9 @@ class DiskDataset(keras.utils.PyDataset):
         elif isinstance(self.augmentations, Mapping):
             for key, fn in self.augmentations.items():
                 batch[key] = fn(batch[key])
+        elif isinstance(self.augmentations, Sequence):
+            for fn in self.augmentations:
+                batch = fn(batch)
         elif isinstance(self.augmentations, Callable):
             batch = self.augmentations(batch)
         else:

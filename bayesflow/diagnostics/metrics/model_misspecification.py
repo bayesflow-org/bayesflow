@@ -142,8 +142,8 @@ def summary_space_comparison(
             "statistics, or want to compare raw data and not summary statistics, please use the "
             f"`bootstrap_comparison` function with `comparison_fn={comparison_fn_name}` on the respective arrays."
         )
-    observed_summaries = convert_to_numpy(approximator.summaries(observed_data))
-    reference_summaries = convert_to_numpy(approximator.summaries(reference_data))
+    observed_summaries = convert_to_numpy(approximator.summarize(observed_data))
+    reference_summaries = convert_to_numpy(approximator.summarize(reference_data))
 
     distance_observed, distance_null = bootstrap_comparison(
         observed_samples=observed_summaries,

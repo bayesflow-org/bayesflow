@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 
 import keras
 import numpy as np
+import warnings
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
@@ -92,11 +93,11 @@ class ModelComparisonApproximator(Approximator):
 
         # Set up standardization layers if requested
         if self.standardize == "all":
-            self.standardize = [var for var in ModelComparisonApproximator.CONDITION_KEYS if var in data_shapes]
+            self.standardize = [var for var in self.CONDITION_KEYS if var in data_shapes]
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
         # Build all standardization layers
-        for var, layer in getattr(self, "standardize_layers", {}).items():
+        for var, layer in self.standardize_layers.items():
             layer.build(data_shapes[var])
 
         self.built = True
@@ -242,7 +243,7 @@ class ModelComparisonApproximator(Approximator):
     def fit(
         self,
         *,
-        adapter: Adapter | str = "auto",
+        adapter: Adapter = "auto",
         dataset: keras.utils.PyDataset = None,
         simulator: ModelComparisonSimulator = None,
         simulators: Sequence[Simulator] = None,
@@ -256,7 +257,7 @@ class ModelComparisonApproximator(Approximator):
 
         Parameters
         ----------
-        adapter : Adapter or str, optional
+        adapter : Adapter or 'auto', optional
             The data adapter that will make the simulated / real outputs neural-network friendly.
         dataset : keras.utils.PyDataset, optional
             A dataset containing simulations for training. If provided, `simulator` must be None.
@@ -392,19 +393,22 @@ class ModelComparisonApproximator(Approximator):
         conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
 
         # Ensure only keys relevant for sampling are present in the conditions dictionary
-        conditions = {k: v for k, v in conditions.items() if k in ModelComparisonApproximator.CONDITION_KEYS}
+        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         # Optionally standardize conditions
-        for key in ModelComparisonApproximator.CONDITION_KEYS:
+        for key in self.CONDITION_KEYS:
             if key in conditions and key in self.standardize:
                 conditions[key] = self.standardize_layers[key](conditions[key])
 
         output = self._predict(**conditions, **kwargs)
 
-        return keras.ops.convert_to_numpy(keras.ops.softmax(output) if probs else output)
+        if probs:
+            output = keras.ops.softmax(output)
 
-    def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+        return keras.ops.convert_to_numpy(output)
+
+    def summarize(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
         Computes the learned summary statistics of given summary variables.
 
@@ -434,6 +438,14 @@ class ModelComparisonApproximator(Approximator):
         summaries = keras.ops.convert_to_numpy(summaries)
 
         return summaries
+
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+        """
+        .. deprecated:: 2.0.4
+            `summaries` will be removed in version 2.0.5, it was renamed to `summarize` which should be used instead.
+        """
+        warnings.warn("`summaries` was renamed to `summarize` and will be removed in version 2.0.5.", FutureWarning)
+        return self.summarize(data=data, **kwargs)
 
     def _compute_logits(self, classifier_conditions: Tensor) -> Tensor:
         """Helper to compute projected logits from the classifier network."""

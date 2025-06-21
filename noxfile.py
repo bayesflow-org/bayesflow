@@ -29,11 +29,11 @@ def save_and_load(session: nox.Session):
     subparsers = parser.add_subparsers(help="subcommand help", dest="mode")
     # save command
     parser_save = subparsers.add_parser("save")
-    parser_save.add_argument("--install", type=str, default=".", required=True, dest="commit")
+    parser_save.add_argument("commit", type=str)
     # load command, additional "from" argument
     parser_load = subparsers.add_parser("load")
     parser_load.add_argument("--from", type=str, required=True, dest="from_commit")
-    parser_load.add_argument("--install", type=str, required=True, dest="commit")
+    parser_load.add_argument("commit", type=str)
 
     # keep unknown arguments, they will be forwarded to pytest below
     args, unknownargs = parser.parse_known_args(session.posargs)

@@ -4,7 +4,15 @@ import numpy as np
 import keras
 
 
-class TestModelComparisonApproximator(SaveLoadTest):
+@pytest.mark.parametrize(
+    "summary_network,simulator,adapter,standardize",
+    [
+        ["deep_set", "sir", "summary", "all"],  # use deep_set for speed
+        [None, "two_moons", "direct", None],
+    ],
+    indirect=True,
+)
+class TestPointApproximator(SaveLoadTest):
     filenames = {
         "approximator": "approximator.keras",
         "input": "input.pickle",
@@ -12,12 +20,12 @@ class TestModelComparisonApproximator(SaveLoadTest):
     }
 
     @pytest.fixture()
-    def setup(self, filepaths, mode, simulator, approximator):
+    def setup(
+        self, filepaths, mode, approximator, adapter, point_inference_network, summary_network, standardize, simulator
+    ):
         if mode == "save":
-            approximator.compile("adamw")
-            approximator.fit(
-                adapter=approximator.adapter, simulator=simulator, epochs=1, batch_size=8, num_batches=2, verbose=0
-            )
+            approximator.compile("adamw", run_eagerly=False)
+            approximator.fit(simulator=simulator, epochs=1, batch_size=8, num_batches=2, verbose=0)
             keras.saving.save_model(approximator, filepaths["approximator"])
 
             input = simulator.sample(4)
@@ -32,9 +40,13 @@ class TestModelComparisonApproximator(SaveLoadTest):
         return approximator, input, output
 
     def evaluate(self, approximator, data):
-        return approximator.predict(conditions=data)
+        return approximator.estimate(data)
 
     def test_output(self, setup):
         approximator, input, reference = setup
         output = self.evaluate(approximator, input)
-        np.testing.assert_allclose(reference, output)
+
+        from keras.tree import flatten
+
+        for ref, out in zip(flatten(reference), flatten(output)):
+            np.testing.assert_allclose(ref, out)

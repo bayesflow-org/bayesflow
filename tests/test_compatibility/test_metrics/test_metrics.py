@@ -4,6 +4,16 @@ import numpy as np
 import keras
 
 
+@pytest.mark.parametrize(
+    "metric",
+    [
+        ["root_mean_squared_error", dict(normalize=True, dtype="float32")],
+        ["root_mean_squared_error", dict(normalize=False)],
+        ["maximum_mean_discrepancy", dict(kernel="gaussian", unbiased=True, dtype="float32")],
+        ["maximum_mean_discrepancy", dict(kernel="inverse_multiquadratic", unbiased=False)],
+    ],
+    indirect=True,
+)
 class TestMetric(SaveLoadTest):
     filenames = {
         "model": "model.pickle",

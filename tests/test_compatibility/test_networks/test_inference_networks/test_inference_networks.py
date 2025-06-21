@@ -4,6 +4,61 @@ import numpy as np
 import keras
 
 
+@pytest.mark.parametrize(
+    "inference_network",
+    [
+        [
+            "coupling_flow",
+            dict(
+                depth=2,
+                subnet="mlp",
+                subnet_kwargs=dict(widths=[8, 8]),
+                transform="affine",
+                transform_kwargs=dict(clamp=1.8),
+            ),
+        ],
+        [
+            "coupling_flow",
+            dict(
+                depth=2,
+                subnet="mlp",
+                subnet_kwargs=dict(widths=[8, 8]),
+                transform="spline",
+                transform_kwargs=dict(bins=8),
+            ),
+        ],
+        ["flow_matching", dict(integrate_kwargs={"method": "rk45", "steps": 10})],
+        ["consistency_model", dict(total_steps=10)],
+        [
+            "diffusion_model",
+            dict(noise_schedule="edm", prediction_type="F", integrate_kwargs={"method": "rk45", "steps": 10}),
+        ],
+        [
+            "diffusion_model",
+            dict(noise_schedule="edm", prediction_type="velocity", integrate_kwargs={"method": "euler", "steps": 10}),
+        ],
+        [
+            "diffusion_model",
+            dict(noise_schedule="edm", prediction_type="noise", integrate_kwargs={"method": "euler", "steps": 10}),
+        ],
+        [
+            "diffusion_model",
+            dict(noise_schedule="cosine", prediction_type="F", integrate_kwargs={"method": "euler", "steps": 10}),
+        ],
+        [
+            "diffusion_model",
+            dict(
+                noise_schedule="cosine", prediction_type="velocity", integrate_kwargs={"method": "euler", "steps": 10}
+            ),
+        ],
+        [
+            "free_form_flow",
+            dict(encoder_subnet_kwargs={"widths": [16, 16]}, decoder_subnet_kwargs={"widths": [16, 16]}),
+        ],
+        ["point_inference_network", dict(subnet_kwargs={"widths": [8, 8]})],
+    ],
+    indirect=True,
+)
 class TestInferenceNetwork(SaveLoadTest):
     filenames = {
         "model": "model.keras",

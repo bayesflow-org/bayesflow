@@ -4,6 +4,17 @@ import numpy as np
 import keras
 
 
+@pytest.mark.parametrize(
+    "summary_network",
+    [
+        ["time_series_network", dict()],
+        ["time_series_transformer", dict()],
+        ["fusion_transformer", dict()],
+        ["set_transformer", dict()],
+        ["deep_set", dict()],
+    ],
+    indirect=True,
+)
 class TestInferenceNetwork(SaveLoadTest):
     filenames = {
         "model": "model.keras",
@@ -11,7 +22,7 @@ class TestInferenceNetwork(SaveLoadTest):
     }
 
     @pytest.fixture()
-    def setup(self, filepaths, mode, summary_network, random_set):
+    def setup(self, filepaths, mode, summary_network, summary_dim, random_set):
         if mode == "save":
             shape = keras.ops.shape(random_set)
             summary_network.build(shape)

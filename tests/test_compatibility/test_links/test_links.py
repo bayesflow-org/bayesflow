@@ -4,6 +4,16 @@ from utils import SaveLoadTest
 import numpy as np
 
 
+@pytest.mark.parametrize(
+    "link",
+    [
+        ["ordered", dict(axis=1, anchor_index=2)],
+        ["ordered_quantiles", dict()],
+        ["cholesky_factor", dict()],
+        ["linear", dict()],
+    ],
+    indirect=True,
+)
 class TestLink(SaveLoadTest):
     filenames = {
         "model": "model.pickle",

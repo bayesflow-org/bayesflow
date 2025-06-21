@@ -4,6 +4,17 @@ import numpy as np
 import keras
 
 
+@pytest.mark.parametrize(
+    "scoring_rule",
+    [
+        ["median_score", {}],
+        ["mean_score", {}],
+        ["normed_diff_score", dict(k=3)],
+        ["quantile_score", {}],
+        ["multivariate_normal_score", {}],
+    ],
+    indirect=True,
+)
 class TestScore(SaveLoadTest):
     filenames = {
         "model": "model.pickle",

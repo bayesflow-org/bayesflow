@@ -49,13 +49,6 @@ def adapter():
 
 
 @pytest.fixture
-def summary_network():
-    from bayesflow.networks import DeepSet
-
-    return DeepSet(summary_dim=2, depth=1)
-
-
-@pytest.fixture
 def classifier_network():
     from bayesflow.networks import MLP
 
@@ -71,7 +64,7 @@ def approximator(adapter, classifier_network, summary_network, simulator, standa
         classifier_network=classifier_network,
         adapter=adapter,
         summary_network=summary_network,
-        # standardize=standardize,
+        standardize=standardize,
     )
 
 

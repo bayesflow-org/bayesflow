@@ -4,17 +4,8 @@ import numpy as np
 import keras
 
 
-@pytest.mark.parametrize("inference_network", ["coupling_flow"], indirect=True)
-@pytest.mark.parametrize(
-    "summary_network,simulator,adapter,standardize",
-    [
-        ["deep_set", "sir", "summary", ["summary_variables", "inference_variables"]],  # use deep_set for speed
-        [None, "two_moons", "direct", "all"],
-        [None, "two_moons", "direct", None],
-    ],
-    indirect=True,
-)
-class TestContinuousApproximator(SaveLoadTest):
+@pytest.mark.parametrize("summary_network", ["deep_set"], indirect=True)
+class TestModelComparisonApproximator(SaveLoadTest):
     filenames = {
         "approximator": "approximator.keras",
         "input": "input.pickle",
@@ -22,10 +13,12 @@ class TestContinuousApproximator(SaveLoadTest):
     }
 
     @pytest.fixture()
-    def setup(self, filepaths, mode, approximator, adapter, inference_network, summary_network, standardize, simulator):
+    def setup(self, filepaths, mode, simulator, approximator, classifier_network, summary_network):
         if mode == "save":
-            approximator.compile("adamw", run_eagerly=False)
-            approximator.fit(simulator=simulator, epochs=1, batch_size=8, num_batches=2, verbose=0)
+            approximator.compile("adamw")
+            approximator.fit(
+                adapter=approximator.adapter, simulator=simulator, epochs=1, batch_size=8, num_batches=2, verbose=0
+            )
             keras.saving.save_model(approximator, filepaths["approximator"])
 
             input = simulator.sample(4)
@@ -40,7 +33,7 @@ class TestContinuousApproximator(SaveLoadTest):
         return approximator, input, output
 
     def evaluate(self, approximator, data):
-        return approximator.log_prob(data)
+        return approximator.predict(conditions=data)
 
     def test_output(self, setup):
         approximator, input, reference = setup

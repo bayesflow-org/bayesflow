@@ -47,4 +47,16 @@ def deep_set(summary_dim):
     scope="function",
 )
 def summary_network(request, summary_dim):
-    return request.getfixturevalue(request.param)
+    from bayesflow.utils.dispatch import find_summary_network
+
+    name, kwargs = request.param
+    print(name)
+    try:
+        return find_summary_network(name, summary_dim=summary_dim, **kwargs)
+    except ValueError:
+        # network not in dispatch
+        pass
+
+    match name:
+        case _:
+            raise ValueError(f"Invalid request parameter for summary_network: {name}")

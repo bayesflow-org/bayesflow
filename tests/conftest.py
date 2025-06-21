@@ -6,6 +6,12 @@ import pytest
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
 
 
+def pytest_addoption(parser):
+    parser.addoption("--mode", choices=["save", "load"])
+    parser.addoption("--commit", type=str)
+    parser.addoption("--from", type=str, required=False, dest="from_")
+
+
 def pytest_runtest_setup(item):
     """Skips backends by test markers. Unmarked tests are treated as backend-agnostic"""
     backend = keras.backend.backend()

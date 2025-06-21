@@ -15,7 +15,7 @@ import keras
     ],
     indirect=True,
 )
-class TestInferenceNetwork(SaveLoadTest):
+class TestSummaryNetwork(SaveLoadTest):
     filenames = {
         "model": "model.keras",
         "output": "output.pickle",

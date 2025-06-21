@@ -8,8 +8,7 @@ BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
 
 def pytest_addoption(parser):
     parser.addoption("--mode", choices=["save", "load"])
-    parser.addoption("--commit", type=str)
-    parser.addoption("--from", type=str, required=False, dest="from_")
+    parser.addoption("--data-path", type=str)
 
 
 def pytest_runtest_setup(item):
@@ -73,16 +72,16 @@ def feature_size(request):
 
 
 @pytest.fixture()
-def random_conditions(batch_size, conditions_size):
+def random_conditions(random_seed, batch_size, conditions_size):
     if conditions_size is None:
         return None
 
-    return keras.random.normal((batch_size, conditions_size))
+    return keras.random.normal((batch_size, conditions_size), seed=10)
 
 
 @pytest.fixture()
-def random_samples(batch_size, feature_size):
-    return keras.random.normal((batch_size, feature_size))
+def random_samples(random_seed, batch_size, feature_size):
+    return keras.random.normal((batch_size, feature_size), seed=20)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -93,8 +92,8 @@ def random_seed():
 
 
 @pytest.fixture()
-def random_set(batch_size, set_size, feature_size):
-    return keras.random.normal((batch_size, set_size, feature_size))
+def random_set(random_seed, batch_size, set_size, feature_size):
+    return keras.random.normal((batch_size, set_size, feature_size), seed=30)
 
 
 @pytest.fixture(params=[2, 3])

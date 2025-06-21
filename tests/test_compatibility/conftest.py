@@ -10,30 +10,21 @@ def mode(request):
     return mode
 
 
-@pytest.fixture(scope="session")
-def commit(request):
-    return request.config.getoption("--commit")
-
-
-@pytest.fixture(scope="session")
-def from_commit(request):
-    return request.config.getoption("--from")
-
-
 @pytest.fixture(autouse=True, scope="session")
-def data_dir(request, commit, from_commit, tmp_path_factory):
+def data_dir(request, tmp_path_factory):
     # read config option to detect "unset" scenario
     mode = request.config.getoption("--mode")
-    if mode == "save":
-        path = Path(".").absolute() / "_compatibility_data" / commit
-        return path
+    path = request.config.getoption("--data-path")
+    if not mode:
+        # if mode is unset, save and load from a temporary directory
+        return Path(tmp_path_factory.mktemp("_compatibility_data"))
+    elif not path:
+        pytest.exit(reason="Please provide the --data-path argument for model saving/loading.")
     elif mode == "load":
-        path = Path(".").absolute() / "_compatibility_data" / from_commit
+        path = Path(path)
         if not path.exists():
             pytest.exit(reason=f"Load path '{path}' does not exist. Please specify a valid load path", returncode=1)
-        return path
-    # if mode is unset, save and load from a temporary directory
-    return Path(tmp_path_factory.mktemp("_compatibility_data"))
+    return path
 
 
 # reduce number of test configurations

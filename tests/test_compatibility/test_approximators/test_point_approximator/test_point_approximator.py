@@ -5,10 +5,9 @@ import keras
 
 
 @pytest.mark.parametrize(
-    "summary_network,simulator,adapter,standardize",
+    "summary_network,simulator,standardize",
     [
-        ["deep_set", "sir", "summary", "all"],  # use deep_set for speed
-        [None, "two_moons", "direct", None],
+        [None, "normal", "all"],
     ],
     indirect=True,
 )

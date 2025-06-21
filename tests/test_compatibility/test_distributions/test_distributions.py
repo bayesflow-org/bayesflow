@@ -48,12 +48,20 @@ class TestDistribution(SaveLoadTest):
 
             model = DummyModel(distribution)
             model.compile(loss=keras.losses.MeanSquaredError())
-            model.fit(
-                random_samples,
-                keras.ops.ones(keras.ops.shape(random_samples)[:-1]),
+            fit_kwargs = dict(
+                x=random_samples,
+                y=keras.ops.ones(keras.ops.shape(random_samples)[:-1]),
                 batch_size=keras.ops.shape(random_samples)[0],
                 epochs=1,
             )
+            if keras.backend.backend() == "torch":
+                import torch
+
+                with torch.enable_grad():
+                    model.fit(**fit_kwargs)
+            else:
+                model.fit(**fit_kwargs)
+
             model.save(filepaths["model"])
 
             output = self.evaluate(model.distribution, random_samples)

@@ -6,11 +6,6 @@ def batch_size():
     return 8
 
 
-@pytest.fixture()
-def num_samples():
-    return 100
-
-
 @pytest.fixture(params=["single_parametric", "multiple_parametric"])
 def point_inference_network(request):
     match request.param:
@@ -51,4 +46,14 @@ def approximator(adapter, point_inference_network, summary_network, standardize)
         inference_network=point_inference_network,
         summary_network=summary_network,
         standardize=standardize,
+    )
+
+
+@pytest.fixture()
+def adapter():
+    from bayesflow import ContinuousApproximator
+
+    return ContinuousApproximator.build_adapter(
+        inference_variables=["mean", "std"],
+        inference_conditions=["x"],
     )

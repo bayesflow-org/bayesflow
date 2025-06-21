@@ -1,5 +1,5 @@
 import pytest
-import numpy as np
+import keras
 
 
 @pytest.fixture()
@@ -20,11 +20,9 @@ def metric(request):
 
 @pytest.fixture
 def samples_1():
-    rng = np.random.default_rng(seed=1)
-    return rng.normal(size=(2, 3)).astype(np.float32)
+    return keras.random.normal((2, 3), seed=1)
 
 
 @pytest.fixture
 def samples_2():
-    rng = np.random.default_rng(seed=2)
-    return rng.normal(size=(2, 3)).astype(np.float32)
+    return keras.random.normal((2, 3), seed=2)

@@ -63,7 +63,6 @@ class DiagonalStudentT(Distribution):
 
         self.seed_generator = seed_generator or keras.random.SeedGenerator()
 
-        self.log_normalization_constant = None
         self.dim = None
         self._loc = None
         self._scale = None
@@ -78,21 +77,16 @@ class DiagonalStudentT(Distribution):
         self.loc = ops.cast(ops.broadcast_to(self.loc, (self.dim,)), "float32")
         self.scale = ops.cast(ops.broadcast_to(self.scale, (self.dim,)), "float32")
 
-        self.log_normalization_constant = (
-            -0.5 * self.dim * math.log(self.df)
-            - 0.5 * self.dim * math.log(math.pi)
-            - math.lgamma(0.5 * self.df)
-            + math.lgamma(0.5 * (self.df + self.dim))
-            - ops.sum(keras.ops.log(self.scale))
-        )
-
         if self.trainable_parameters:
             self._loc = self.add_weight(
-                shape=ops.shape(self.loc), initializer=keras.initializers.get(self.loc), dtype="float32", trainable=True
+                shape=ops.shape(self.loc),
+                initializer=keras.initializers.get(keras.ops.copy(self.loc)),
+                dtype="float32",
+                trainable=True,
             )
             self._scale = self.add_weight(
                 shape=ops.shape(self.scale),
-                initializer=keras.initializers.get(self.scale),
+                initializer=keras.initializers.get(keras.ops.copy(self.scale)),
                 dtype="float32",
                 trainable=True,
             )
@@ -105,7 +99,14 @@ class DiagonalStudentT(Distribution):
         result = -0.5 * (self.df + self.dim) * ops.log1p(mahalanobis_term / self.df)
 
         if normalize:
-            result += self.log_normalization_constant
+            log_normalization_constant = (
+                -0.5 * self.dim * math.log(self.df)
+                - 0.5 * self.dim * math.log(math.pi)
+                - math.lgamma(0.5 * self.df)
+                + math.lgamma(0.5 * (self.df + self.dim))
+                - ops.sum(keras.ops.log(self._scale))
+            )
+            result += log_normalization_constant
 
         return result
 

@@ -58,7 +58,7 @@ def adapter(request):
         case "summary":
             return bf.Adapter.create_default("parameters").rename("observables", "summary_variables")
         case "direct":
-            return bf.Adapter.create_default("parameters").rename("observables", "direct_conditions")
+            return bf.Adapter.create_default("parameters").rename("observables", "inference_conditions")
         case "default":
             return bf.Adapter.create_default("parameters")
         case "empty":

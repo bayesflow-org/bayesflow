@@ -47,13 +47,3 @@ def approximator(adapter, point_inference_network, summary_network, standardize)
         summary_network=summary_network,
         standardize=standardize,
     )
-
-
-@pytest.fixture()
-def adapter():
-    from bayesflow import ContinuousApproximator
-
-    return ContinuousApproximator.build_adapter(
-        inference_variables=["mean", "std"],
-        inference_conditions=["x"],
-    )

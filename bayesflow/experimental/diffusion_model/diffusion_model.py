@@ -116,7 +116,7 @@ class DiffusionModel(InferenceNetwork):
         if subnet == "mlp":
             subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self._concatenate_subnet_input = subnet_kwargs.get("concatenate_subnet_input", True)
+        self._subnet_concatenated_input = subnet_kwargs.get("concatenated_input", True)
 
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", name="output_projector")
 
@@ -150,7 +150,7 @@ class DiffusionModel(InferenceNetwork):
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
-            "_concatenate_subnet_input": self._concatenate_subnet_input,
+            "subnet_concatenated_input": self._subnet_concatenated_input,
         }
         return base_config | serialize(config)
 
@@ -218,7 +218,7 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
         """
-        if self._concatenate_subnet_input:
+        if self._subnet_concatenated_input:
             if conditions is None:
                 return tensor_utils.concatenate_valid([xz, log_snr], axis=-1)
             else:

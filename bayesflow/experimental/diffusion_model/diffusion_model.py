@@ -199,7 +199,9 @@ class DiffusionModel(InferenceNetwork):
             return (z + sigma_t**2 * pred) / alpha_t
         raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
-    def prepare_subnet_input(self, xz: Tensor, log_snr: Tensor, conditions: Tensor = None) -> Tensor:
+    def prepare_subnet_input(
+        self, xz: Tensor, log_snr: Tensor, conditions: Tensor = None
+    ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
         Prepares the input for the subnet either by concatenating the latent variable `xz`,
         the log signal-to-noise ratio `log_snr`, and optional conditions or by returning them separately.

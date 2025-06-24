@@ -270,7 +270,11 @@ class DiffusionModel(InferenceNetwork):
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         xtc = self.prepare_subnet_input(xz, self._transform_log_snr(log_snr_t), conditions=conditions)
-        pred = self.output_projector(self.subnet(xtc, training=training), training=training)
+        if not self._subnet_concatenated_input:
+            subnet_out = self.subnet(*xtc, training=training)
+        else:
+            subnet_out = self.subnet(xtc, training=training)
+        pred = self.output_projector(subnet_out, training=training)
 
         x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
 
@@ -489,7 +493,11 @@ class DiffusionModel(InferenceNetwork):
 
         # calculate output of the network
         xtc = self.prepare_subnet_input(diffused_x, self._transform_log_snr(log_snr_t), conditions=conditions)
-        pred = self.output_projector(self.subnet(xtc, training=training), training=training)
+        if not self._subnet_concatenated_input:
+            subnet_out = self.subnet(*xtc, training=training)
+        else:
+            subnet_out = self.subnet(xtc, training=training)
+        pred = self.output_projector(subnet_out, training=training)
 
         x_pred = self.convert_prediction_to_x(
             pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t

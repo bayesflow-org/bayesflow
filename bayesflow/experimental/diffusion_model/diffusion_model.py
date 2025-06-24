@@ -116,6 +116,7 @@ class DiffusionModel(InferenceNetwork):
         if subnet == "mlp":
             subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
+        self._concatenate_subnet_input = subnet_kwargs.get("concatenate_subnet_input", True)
 
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", name="output_projector")
 
@@ -149,6 +150,7 @@ class DiffusionModel(InferenceNetwork):
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
+            "_concatenate_subnet_input": self._concatenate_subnet_input,
         }
         return base_config | serialize(config)
 
@@ -197,6 +199,33 @@ class DiffusionModel(InferenceNetwork):
             return (z + sigma_t**2 * pred) / alpha_t
         raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
+    def prepare_subnet_input(self, xz: Tensor, log_snr: Tensor, conditions: Tensor = None) -> Tensor:
+        """
+        Prepares the input for the subnet either by concatenating the latent variable `xz`,
+        the log signal-to-noise ratio `log_snr`, and optional conditions or by returning them separately.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The noisy input tensor for the diffusion model, typically of shape (..., D), but can vary.
+        log_snr : Tensor
+            The log signal-to-noise ratio tensor, typically of shape (..., 1).
+        conditions : Tensor, optional
+            The optional conditioning tensor (e.g. parameters).
+
+        Returns
+        -------
+        Tensor
+            The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
+        """
+        if self._concatenate_subnet_input:
+            if conditions is None:
+                return tensor_utils.concatenate_valid([xz, log_snr], axis=-1)
+            else:
+                return tensor_utils.concatenate_valid([xz, log_snr, conditions], axis=-1)
+        else:
+            return xz, log_snr, conditions
+
     def velocity(
         self,
         xz: Tensor,
@@ -221,7 +250,7 @@ class DiffusionModel(InferenceNetwork):
             If True, computes the velocity for the stochastic formulation (SDE).
             If False, uses the deterministic formulation (ODE).
         conditions : Tensor, optional
-            Optional conditional inputs to the network, such as conditioning variables
+            Conditional inputs to the network, such as conditioning variables
             or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
         training : bool, optional
             Whether the model is in training mode. Affects behavior of dropout, batch norm,
@@ -238,11 +267,7 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-        if conditions is None:
-            xtc = tensor_utils.concatenate_valid([xz, self._transform_log_snr(log_snr_t)], axis=-1)
-        else:
-            xtc = tensor_utils.concatenate_valid([xz, self._transform_log_snr(log_snr_t), conditions], axis=-1)
-
+        xtc = self.prepare_subnet_input(xz, self._transform_log_snr(log_snr_t), conditions=conditions)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
@@ -461,10 +486,7 @@ class DiffusionModel(InferenceNetwork):
         diffused_x = alpha_t * x + sigma_t * eps_t
 
         # calculate output of the network
-        if conditions is None:
-            xtc = tensor_utils.concatenate_valid([diffused_x, self._transform_log_snr(log_snr_t)], axis=-1)
-        else:
-            xtc = tensor_utils.concatenate_valid([diffused_x, self._transform_log_snr(log_snr_t), conditions], axis=-1)
+        xtc = self.prepare_subnet_input(diffused_x, self._transform_log_snr(log_snr_t), conditions=conditions)
         pred = self.output_projector(self.subnet(xtc, training=training), training=training)
 
         x_pred = self.convert_prediction_to_x(

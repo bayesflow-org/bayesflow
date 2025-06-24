@@ -77,6 +77,7 @@ class ConsistencyModel(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+        self._subnet_concatenated_input = subnet_kwargs.get("concatenated_input", True)
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(
@@ -119,6 +120,7 @@ class ConsistencyModel(InferenceNetwork):
             "eps": self.eps,
             "s0": self.s0,
             "s1": self.s1,
+            "subnet_concatenated_input": self._subnet_concatenated_input,
             # we do not need to store subnet_kwargs
         }
 
@@ -256,6 +258,38 @@ class ConsistencyModel(InferenceNetwork):
             x = self.consistency_function(x_n, t, conditions=conditions, training=training)
         return x
 
+    def subnet_input(
+        self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
+    ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
+        """
+        Prepares the input for the subnet either by concatenating the latent variable `x`,
+        the time `t`, and optional conditions or by returning them separately.
+
+        Parameters
+        ----------
+        x : Tensor
+            The input tensor for the diffusion model, typically of shape (..., D), but can vary.
+        t : Tensor
+            The time tensor, typically of shape (..., 1).
+        conditions : Tensor, optional
+            The optional conditioning tensor (e.g. parameters).
+        training : bool, optional
+            The training mode flag, which can be used to control behavior during training.
+
+        Returns
+        -------
+        Tensor
+            The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
+        """
+        if self._subnet_concatenated_input:
+            if conditions is None:
+                xtc = keras.ops.concatenate([x, t], axis=-1)
+            else:
+                xtc = keras.ops.concatenate([x, t, conditions], axis=-1)
+            return self.subnet(xtc, training=training)
+        else:
+            return self.subnet(x, t, conditions, training=training)
+
     def consistency_function(self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         """Compute consistency function.
 
@@ -271,12 +305,8 @@ class ConsistencyModel(InferenceNetwork):
             Whether internal layers (e.g., dropout) should behave in train or inference mode.
         """
 
-        if conditions is not None:
-            xtc = ops.concatenate([x, t, conditions], axis=-1)
-        else:
-            xtc = ops.concatenate([x, t], axis=-1)
-
-        f = self.output_projector(self.subnet(xtc, training=training))
+        subnet_out = self.subnet_input(x, t, conditions, training=training)
+        f = self.output_projector(subnet_out)
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)
         # Thus, we can do a cross product with the time vector which is (batch_size, 1) for

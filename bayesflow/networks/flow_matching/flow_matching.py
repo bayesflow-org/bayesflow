@@ -179,15 +179,17 @@ class FlowMatching(InferenceNetwork):
             The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
         """
         if self._concatenate_subnet_input:
+            t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
             xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
             return self.subnet(xtc, training=training)
         else:
+            if training is False:
+                t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
             return self.subnet(x, t, conditions, training=training)
 
     def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
         time = expand_right_as(time, xz)
-        time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
 
         subnet_out = self._subnet_input(xz, time, conditions, training=training)
         return self.output_projector(subnet_out, training=training)

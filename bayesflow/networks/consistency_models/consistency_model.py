@@ -4,7 +4,7 @@ from keras import ops
 import numpy as np
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, layer_kwargs, weighted_mean, tensor_utils
+from bayesflow.utils import find_network, layer_kwargs, weighted_mean, tensor_utils, expand_right_as
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -343,8 +343,8 @@ class ConsistencyModel(InferenceNetwork):
 
         log_p = ops.log(p)
         times = keras.random.categorical(ops.expand_dims(log_p, 0), ops.shape(x)[0], seed=self.seed_generator)[0]
-        t1 = ops.take(discretized_time, times)[..., None]
-        t2 = ops.take(discretized_time, times + 1)[..., None]
+        t1 = expand_right_as(ops.take(discretized_time, times), x)
+        t2 = expand_right_as(ops.take(discretized_time, times + 1), x)
 
         # generate noise vector
         noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)

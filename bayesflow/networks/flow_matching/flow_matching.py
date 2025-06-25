@@ -12,6 +12,7 @@ from bayesflow.utils import (
     layer_kwargs,
     optimal_transport,
     weighted_mean,
+    tensor_utils,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 from ..inference_network import InferenceNetwork
@@ -107,7 +108,7 @@ class FlowMatching(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
-        self._subnet_concatenated_input = subnet_kwargs.get("concatenated_input", True)
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", name="output_projector")
@@ -148,13 +149,13 @@ class FlowMatching(InferenceNetwork):
             "loss_fn": self.loss_fn,
             "integrate_kwargs": self.integrate_kwargs,
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
+            "concatenate_subnet_input": self._concatenate_subnet_input,
             # we do not need to store subnet_kwargs
-            "subnet_concatenated_input": self._subnet_concatenated_input,
         }
 
         return base_config | serialize(config)
 
-    def subnet_input(
+    def _subnet_input(
         self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
     ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
@@ -177,11 +178,8 @@ class FlowMatching(InferenceNetwork):
         Tensor
             The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
         """
-        if self._subnet_concatenated_input:
-            if conditions is None:
-                xtc = keras.ops.concatenate([x, t], axis=-1)
-            else:
-                xtc = keras.ops.concatenate([x, t, conditions], axis=-1)
+        if self._concatenate_subnet_input:
+            xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
             return self.subnet(xtc, training=training)
         else:
             return self.subnet(x, t, conditions, training=training)
@@ -191,7 +189,7 @@ class FlowMatching(InferenceNetwork):
         time = expand_right_as(time, xz)
         time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
 
-        subnet_out = self.subnet_input(xz, time, conditions, training=training)
+        subnet_out = self._subnet_input(xz, time, conditions, training=training)
         return self.output_projector(subnet_out, training=training)
 
     def _velocity_trace(

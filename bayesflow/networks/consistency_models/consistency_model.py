@@ -4,7 +4,7 @@ from keras import ops
 import numpy as np
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, layer_kwargs, weighted_mean
+from bayesflow.utils import find_network, layer_kwargs, weighted_mean, tensor_utils
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -77,7 +77,7 @@ class ConsistencyModel(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
-        self._subnet_concatenated_input = subnet_kwargs.get("concatenated_input", True)
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(
@@ -120,7 +120,7 @@ class ConsistencyModel(InferenceNetwork):
             "eps": self.eps,
             "s0": self.s0,
             "s1": self.s1,
-            "subnet_concatenated_input": self._subnet_concatenated_input,
+            "concatenate_subnet_input": self._concatenate_subnet_input,
             # we do not need to store subnet_kwargs
         }
 
@@ -258,7 +258,7 @@ class ConsistencyModel(InferenceNetwork):
             x = self.consistency_function(x_n, t, conditions=conditions, training=training)
         return x
 
-    def subnet_input(
+    def _subnet_input(
         self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
     ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
@@ -281,11 +281,8 @@ class ConsistencyModel(InferenceNetwork):
         Tensor
             The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
         """
-        if self._subnet_concatenated_input:
-            if conditions is None:
-                xtc = keras.ops.concatenate([x, t], axis=-1)
-            else:
-                xtc = keras.ops.concatenate([x, t, conditions], axis=-1)
+        if self._concatenate_subnet_input:
+            xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
             return self.subnet(xtc, training=training)
         else:
             return self.subnet(x, t, conditions, training=training)
@@ -305,7 +302,7 @@ class ConsistencyModel(InferenceNetwork):
             Whether internal layers (e.g., dropout) should behave in train or inference mode.
         """
 
-        subnet_out = self.subnet_input(x, t, conditions, training=training)
+        subnet_out = self._subnet_input(x, t, conditions, training=training)
         f = self.output_projector(subnet_out)
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)

@@ -422,6 +422,7 @@ class ContinuousApproximator(Approximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
+        keep_conditions: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -437,6 +438,8 @@ class ContinuousApproximator(Approximator):
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one column vector per target variable
             samples.
+        keep_conditions : bool, default=False
+            Whether the output should contain a repeated version of the conditions corresponding to generated samples.
         **kwargs : dict
             Additional keyword arguments for the adapter and sampling process.
 
@@ -465,6 +468,13 @@ class ContinuousApproximator(Approximator):
 
         if split:
             samples = split_arrays(samples, axis=-1)
+
+        if keep_conditions:
+            repeated_conditions = keras.tree.map_structure(
+                lambda tensor: np.repeat(np.expand_dims(tensor, axis=1), num_samples, axis=1), conditions
+            )
+            samples = repeated_conditions | samples
+
         return samples
 
     def _prepare_data(

@@ -470,6 +470,7 @@ class ContinuousApproximator(Approximator):
             samples = split_arrays(samples, axis=-1)
 
         if keep_conditions:
+            conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
             repeated_conditions = keras.tree.map_structure(
                 lambda tensor: np.repeat(np.expand_dims(tensor, axis=1), num_samples, axis=1), conditions
             )

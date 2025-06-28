@@ -89,6 +89,7 @@ class PointApproximator(ContinuousApproximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
+        keep_conditions: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
         """
@@ -107,6 +108,14 @@ class PointApproximator(ContinuousApproximator):
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
             Currently not supported for :py:class:`PointApproximator` .
+        keep_conditions : bool, default=False
+            If True, the returned dict will include each of the original
+            conditioning variables, **repeated** along the sample axis so that
+            they align 1:1 with the generated samples. Each condition array
+            will have shape ``(num_datasets, num_samples, *condition_variable_shape)``.
+
+            By default conditions are not included in the returned dict.
+
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
@@ -115,11 +124,11 @@ class PointApproximator(ContinuousApproximator):
         samples : dict[str, np.ndarray or dict[str, np.ndarray]]
             Samples for all inference variables and all parametric scoring rules in a nested dictionary.
 
-            1. Each first-level key is the name of an inference variable.
+            1. Each first-level key is the name of an inference variable or condition.
             2. (If there are multiple parametric scores, each second-level key is the name of such a score.)
 
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
-            of shape (num_datasets, num_samples, variable_block_size).
+            of shape ``(num_datasets, num_samples, *variable_shape)``.
         """
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
@@ -140,6 +149,14 @@ class PointApproximator(ContinuousApproximator):
 
         # Squeeze sample dictionary if there's only one key-value pair.
         samples = self._squeeze_parametric_score_major_dict(samples)
+
+        if keep_conditions:
+            conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
+            conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
+            repeated_conditions = keras.tree.map_structure(
+                lambda value: np.repeat(np.expand_dims(value, axis=1), num_samples, axis=1), conditions
+            )
+            samples = repeated_conditions | samples
 
         return samples
 

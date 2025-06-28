@@ -439,14 +439,21 @@ class ContinuousApproximator(Approximator):
             Whether to split the output arrays along the last axis and return one column vector per target variable
             samples.
         keep_conditions : bool, default=False
-            Whether the output should contain a repeated version of the conditions corresponding to generated samples.
+            If True, the returned dict will include each of the original
+            conditioning variables, **repeated** along the sample axis so that
+            they align 1:1 with the generated samples. Each condition array
+            will have shape ``(num_datasets, num_samples, *condition_variable_shape)``.
+
+            By default conditions are not included in the returned dict.
         **kwargs : dict
             Additional keyword arguments for the adapter and sampling process.
 
         Returns
         -------
         dict[str, np.ndarray]
-            Dictionary containing generated samples with the same keys as `conditions`.
+            Dictionary containing generated samples and optionally the corresponding conditions.
+
+            Dictionary values are arrays of shape ``(num_datasets, num_samples, *variable_shape)``.
         """
         # Adapt, optionally standardize and convert conditions to tensor
         conditions = self._prepare_data(conditions, **kwargs)
@@ -473,7 +480,7 @@ class ContinuousApproximator(Approximator):
             conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
             conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
             repeated_conditions = keras.tree.map_structure(
-                lambda tensor: np.repeat(np.expand_dims(tensor, axis=1), num_samples, axis=1), conditions
+                lambda value: np.repeat(np.expand_dims(value, axis=1), num_samples, axis=1), conditions
             )
             samples = repeated_conditions | samples
 

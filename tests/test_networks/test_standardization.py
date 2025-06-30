@@ -91,6 +91,39 @@ def test_nested_consistency_forward_inverse():
     np.testing.assert_allclose(random_input["b"], recovered["b"], atol=1e-4)
 
 
+def test_nested_accuracy_forward():
+    from bayesflow.utils import tree_concatenate
+
+    # create inputs for two training passes
+    random_input_a_1 = keras.random.normal((2, 3, 5))
+    random_input_b_1 = keras.random.normal((4, 3))
+    random_input_1 = {"a": random_input_a_1, "b": random_input_b_1}
+
+    random_input_a_2 = keras.random.normal((3, 3, 5))
+    random_input_b_2 = keras.random.normal((3, 3))
+    random_input_2 = {"a": random_input_a_2, "b": random_input_b_2}
+
+    # complete data for testing mean and std are 0 and 1
+    random_input = tree_concatenate([random_input_1, random_input_2], axis=0)
+
+    layer = Standardization()
+
+    _ = layer(random_input_1, stage="training", forward=True)
+    _ = layer(random_input_2, stage="training", forward=True)
+
+    standardized = layer(random_input, stage="inference", forward=True)
+    standardized = keras.tree.map_structure(keras.ops.convert_to_numpy, standardized)
+
+    np.testing.assert_allclose(
+        np.mean(standardized["a"], axis=tuple(range(standardized["a"].ndim - 1))), 0.0, atol=1e-4
+    )
+    np.testing.assert_allclose(
+        np.mean(standardized["b"], axis=tuple(range(standardized["b"].ndim - 1))), 0.0, atol=1e-4
+    )
+    np.testing.assert_allclose(np.std(standardized["a"], axis=tuple(range(standardized["a"].ndim - 1))), 1.0, atol=1e-4)
+    np.testing.assert_allclose(np.std(standardized["b"], axis=tuple(range(standardized["b"].ndim - 1))), 1.0, atol=1e-4)
+
+
 def test_transformation_type_both_sides_scale():
     # Fix a known covariance and mean in original (not standardized space)
     covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")

@@ -130,7 +130,7 @@ Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bay
 1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
 2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
 3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
-4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation_and_Expert_Stats.ipynb)
+4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation.ipynb)
 5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
 7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)

@@ -37,7 +37,7 @@ class BasicWorkflow(Workflow):
         inference_variables: Sequence[str] | str = None,
         inference_conditions: Sequence[str] | str = None,
         summary_variables: Sequence[str] | str = None,
-        standardize: Sequence[str] | str = "inference_variables",
+        standardize: Sequence[str] | str | None = "inference_variables",
         **kwargs,
     ):
         """
@@ -76,11 +76,13 @@ class BasicWorkflow(Workflow):
             Variables for inference as a sequence of strings or a single string (default is None).
             Important for automating diagnostics!
         inference_conditions : Sequence[str] or str, optional
-            Variables used as conditions for inference (default is None).
+            Variables used as direct conditions for inference (default is None).
         summary_variables : Sequence[str] or str, optional
-            Variables for summarizing data, if any (default is None).
+            Variables to be summarized through the summary network before being used as conditions (default is None).
         standardize : Sequence[str] or str, optional
-            Variables to standardize during preprocessing (default is "inference_variables").
+            Variables to standardize during preprocessing (default is "inference_variables"). These will be
+            passed to the corresponding approximator constructor and can be either "all" or any subset of
+            ["inference_variables", "summary_variables", "inference_conditions"].
         **kwargs : dict, optional
             Additional arguments for configuring networks, adapters, optimizers, etc.
         """
@@ -94,9 +96,7 @@ class BasicWorkflow(Workflow):
 
         self.simulator = simulator
 
-        adapter = adapter or BasicWorkflow.default_adapter(
-            inference_variables, inference_conditions, summary_variables, standardize
-        )
+        adapter = adapter or BasicWorkflow.default_adapter(inference_variables, inference_conditions, summary_variables)
 
         if isinstance(self.inference_network, PointInferenceNetwork):
             constructor = PointApproximator
@@ -104,7 +104,10 @@ class BasicWorkflow(Workflow):
             constructor = ContinuousApproximator
 
         self.approximator = constructor(
-            inference_network=self.inference_network, summary_network=self.summary_network, adapter=adapter
+            inference_network=self.inference_network,
+            summary_network=self.summary_network,
+            adapter=adapter,
+            standardize=standardize,
         )
 
         self.initial_learning_rate = initial_learning_rate
@@ -166,7 +169,6 @@ class BasicWorkflow(Workflow):
         inference_variables: Sequence[str] | str,
         inference_conditions: Sequence[str] | str,
         summary_variables: Sequence[str] | str,
-        standardize: Sequence[str] | str,
     ) -> Adapter:
         """
         Create a default adapter for processing inference variables, conditions,
@@ -182,8 +184,6 @@ class BasicWorkflow(Workflow):
             The variables used as conditions for inference.
         summary_variables : Sequence[str] or str
             The variables used for summarization.
-        standardize : Sequence[str] or str
-            The variables to be standardized.
 
         Returns
         -------
@@ -202,9 +202,6 @@ class BasicWorkflow(Workflow):
             adapter = adapter.concatenate(inference_conditions, into="inference_conditions")
         if summary_variables is not None:
             adapter = adapter.concatenate(summary_variables, into="summary_variables")
-
-        if standardize is not None:
-            adapter = adapter.standardize(include=standardize)
 
         return adapter
 

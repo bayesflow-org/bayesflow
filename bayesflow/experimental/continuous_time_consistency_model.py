@@ -3,8 +3,6 @@ from keras import ops
 
 import numpy as np
 
-import warnings
-
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
 from bayesflow.utils import (
@@ -59,13 +57,6 @@ class ContinuousTimeConsistencyModel(InferenceNetwork):
             Additional keyword arguments to the layer.
         """
         super().__init__(base_distribution="normal", **kwargs)
-
-        if subnet_kwargs:
-            warnings.warn(
-                "Using `subnet_kwargs` is deprecated."
-                "Instead, instantiate the network yourself and pass the arguments directly.",
-                DeprecationWarning,
-            )
 
         subnet_kwargs = subnet_kwargs or {}
 

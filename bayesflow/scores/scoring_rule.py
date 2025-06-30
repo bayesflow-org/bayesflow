@@ -26,16 +26,26 @@ class ScoringRule:
     and covariance simultaneously.
     """
 
-    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = tuple()
+    NOT_TRANSFORMING_LIKE_VECTOR_WARNING: tuple[str] = tuple()
     """
-    This variable contains names of prediction heads that should lead to a warning when the adapter is applied
-    in inverse direction to them.
+    Names of prediction heads for which to warn if the adapter is called on their estimates in inverse direction.
 
     Prediction heads can output estimates in spaces other than the target distribution space.
     To such estimates the adapter cannot be straightforwardly applied in inverse direction,
     because the adapter is built to map vectors from the inference variable space. When subclassing
     :py:class:`ScoringRule`, add the names of such heads to the following list to warn users about difficulties
     with a type of estimate whenever the adapter is applied to them in inverse direction.
+    """
+
+    TRANSFORMATION_TYPE: dict[str, str] = {}
+    """
+    Defines nonstandard transformation behaviour for de-standardization.
+
+    The standard transformation
+
+    x_i = x_i' * sigma_i + mu_i
+
+    is referred to as "location_scale". Keys not specified here will fallback to that default.
     """
 
     def __init__(

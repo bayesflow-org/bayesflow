@@ -820,7 +820,7 @@ class Adapter(MutableSequence[Transform]):
 
         return self
 
-    def squeeze(self, keys: str | Sequence[str], *, axis: int | tuple):
+    def squeeze(self, keys: str | Sequence[str], *, axis: int | Sequence[int]):
         """Append a :py:class:`~transforms.Squeeze` transform to the adapter.
 
         Parameters

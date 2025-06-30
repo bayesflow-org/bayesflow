@@ -13,12 +13,14 @@ class NanToNum(Transform):
 
     Parameters
     ----------
-    default_value : float
-        Value to substitute wherever data is NaN.
-    return_mask : bool, default=False
-        If True, a mask array will be returned under a new key.
-    mask_prefix : str, default='mask_'
-        Prefix for the mask key in the output dictionary.
+    key : str
+        The variable key to look for in the simulation data dict.
+    default_value : float, optional
+        Value to substitute wherever data is NaN. Default is 0.0.
+    return_mask : bool, optional
+        If True, a mask array will be returned under a new key. Default is False.
+    mask_prefix : str, optional
+        Prefix for the mask key in the output dictionary. Default is 'mask_'.
     """
 
     def __init__(self, key: str, default_value: float = 0.0, return_mask: bool = False, mask_prefix: str = "mask"):
@@ -81,10 +83,10 @@ class NanToNum(Transform):
         values = data[self.key]
 
         if not self.return_mask:
-            values[values == self.default_value] = np.nan  # we assume default_value is not in data
+            # assumes default_value is not in nan
+            values[values == self.default_value] = np.nan
         else:
             mask_array = data[self.mask_key].astype(bool)
-            # Put NaNs where mask is 0
             values[~mask_array] = np.nan
 
         data[self.key] = values

@@ -7,6 +7,7 @@ from . import (
     logging,
     numpy_utils,
     serialization,
+    tree,
 )
 
 from .callbacks import detailed_loss_callback
@@ -33,7 +34,6 @@ from .dispatch import (
     find_summary_network,
     find_inference_network,
     find_distribution,
-    find_noise_schedule,
 )
 
 from .ecdf import simultaneous_ecdf_bands, ranks
@@ -76,6 +76,7 @@ from .serialization import serialize_value_or_type, deserialize_value_or_type
 
 from .tensor_utils import (
     concatenate_valid,
+    concatenate_valid_shapes,
     expand,
     expand_as,
     expand_to,
@@ -104,4 +105,4 @@ from .validators import check_lengths_same
 
 from ._docs import _add_imports_to_all
 
-_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization"])
+_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization", "tree"])

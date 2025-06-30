@@ -56,6 +56,20 @@ class JAXApproximator(keras.Model):
         variables and returns both the loss and auxiliary information for
         further updates.
 
+        Things we do for specifically jax:
+
+        1. Accept trainable variables as the first argument
+            (can be at any position as indicated by the argnum parameter
+             in autograd, but needs to be an explicit arg)
+        2. Accept, potentially modify, and return other state variables
+        3. Return just the loss tensor as the first value
+        4. Return all other values in a tuple as the second value
+
+        This ensures:
+
+        1. The function is stateless
+        2. The function can be differentiated with jax autograd
+
         Parameters
         ----------
         trainable_variables : Any

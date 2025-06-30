@@ -65,7 +65,7 @@ def classifier_network():
 
 
 @pytest.fixture
-def approximator(adapter, classifier_network, summary_network, simulator):
+def approximator(adapter, classifier_network, summary_network, simulator, standardize):
     from bayesflow.approximators import ModelComparisonApproximator
 
     return ModelComparisonApproximator(
@@ -73,4 +73,12 @@ def approximator(adapter, classifier_network, summary_network, simulator):
         classifier_network=classifier_network,
         adapter=adapter,
         summary_network=summary_network,
+        standardize=standardize,
     )
+
+
+@pytest.fixture(
+    params=["all", None, "classifier_conditions", "summary_variables", ("classifier_conditions", "summary_variables")]
+)
+def standardize(request):
+    return request.param

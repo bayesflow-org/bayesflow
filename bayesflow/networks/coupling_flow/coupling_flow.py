@@ -67,9 +67,9 @@ class CouplingFlow(InferenceNetwork):
 
         Parameters
         ----------
-        subnet : str or type, optional
-            The architecture type used within the coupling layers. Can be a string
-            identifier like "mlp" or a callable type. Default is "mlp".
+        subnet : str or type optional
+            Architecture for the transformation network. Can be "mlp", a custom network class, or
+            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
         depth : int, optional
             The number of invertible layers in the model. Default is 6.
         transform : str, optional

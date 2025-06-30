@@ -8,10 +8,17 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict
+from bayesflow.utils import (
+    filter_kwargs,
+    split_arrays,
+    squeeze_inner_estimates_dict,
+    concatenate_valid,
+    concatenate_valid_shapes,
+)
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
+from ..networks.standardization import Standardization
 
 
 @serializable("bayesflow.approximators")
@@ -29,11 +36,15 @@ class ContinuousApproximator(Approximator):
         The inference network used for posterior or likelihood approximation.
     summary_network : SummaryNetwork, optional
         The summary network used for data summarization (default is None).
+    standardize : str | Sequence[str] | None
+        The variables to standardize before passing to the networks. Can be either
+        "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].
+        (default is "all").
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
 
-    SAMPLE_KEYS = ["summary_variables", "inference_conditions"]
+    CONDITION_KEYS = ["summary_variables", "inference_conditions"]
 
     def __init__(
         self,
@@ -41,6 +52,7 @@ class ContinuousApproximator(Approximator):
         adapter: Adapter,
         inference_network: InferenceNetwork,
         summary_network: SummaryNetwork = None,
+        standardize: str | Sequence[str] | None = "all",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -48,13 +60,56 @@ class ContinuousApproximator(Approximator):
         self.inference_network = inference_network
         self.summary_network = summary_network
 
+        if isinstance(standardize, str) and standardize != "all":
+            self.standardize = [standardize]
+        else:
+            self.standardize = standardize or []
+
+        if self.standardize == "all":
+            # we have to lazily initialize these
+            self.standardize_layers = None
+        else:
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        # Build summary network and get output shape if present
+        summary_outputs_shape = None
+        if self.summary_network is not None:
+            if not self.summary_network.built:
+                self.summary_network.build(data_shapes["summary_variables"])
+            summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+
+        # Compute inference_conditions_shape by combining original and summary outputs
+        inference_conditions_shape = concatenate_valid_shapes(
+            [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
+        )
+
+        # Build inference network if needed
+        if not self.inference_network.built:
+            self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
+
+        # Set up standardization layers if requested
+        if self.standardize == "all":
+            # Only include variables present in data_shapes
+            self.standardize = [
+                var
+                for var in ["inference_variables", "summary_variables", "inference_conditions"]
+                if var in data_shapes
+            ]
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+        # Build all standardization layers
+        for var, layer in self.standardize_layers.items():
+            layer.build(data_shapes[var])
+
+        self.built = True
+
     @classmethod
     def build_adapter(
         cls,
         inference_variables: Sequence[str],
         inference_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
-        standardize: bool = True,
         sample_weight: str = None,
     ) -> Adapter:
         """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator.
@@ -62,13 +117,11 @@ class ContinuousApproximator(Approximator):
         Parameters
         ----------
         inference_variables : Sequence of str
-            Names of the inference variables in the data
+            Names of the inference variables (to be modeled) in the data dict.
         inference_conditions : Sequence of str, optional
-            Names of the inference conditions in the data
+            Names of the inference conditions (to be used as direct conditions) in the data dict.
         summary_variables : Sequence of str, optional
-            Names of the summary variables in the data
-        standardize : bool, optional
-            Decide whether to standardize all variables, default is True
+            Names of the summary variables (to be passed to a summary network) in the data dict.
         sample_weight : str, optional
             Name of the sample weights
         """
@@ -89,9 +142,6 @@ class ContinuousApproximator(Approximator):
             adapter = adapter.rename(sample_weight, "sample_weight")
 
         adapter.keep(["inference_variables", "inference_conditions", "summary_variables", "sample_weight"])
-
-        if standardize:
-            adapter.standardize(exclude="sample_weight")
 
         return adapter
 
@@ -116,6 +166,9 @@ class ContinuousApproximator(Approximator):
 
         return super().compile(*args, **kwargs)
 
+    def build_from_data(self, adapted_data: dict[str, any]):
+        self.build(keras.tree.map_structure(keras.ops.shape, adapted_data))
+
     def compile_from_config(self, config):
         self.compile(**deserialize(config))
         if hasattr(self, "optimizer") and self.built:
@@ -130,26 +183,47 @@ class ContinuousApproximator(Approximator):
         sample_weight: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot compute summary metrics without a summary network.")
+        """
+        Computes loss and tracks metrics for the inference and summary networks.
 
-            summary_metrics = {}
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
+        This method orchestrates the end-to-end computation of metrics and loss for a model
+        with both inference and optional summary network. It handles standardization of input
+        variables, combines summary outputs with inference conditions when necessary, and
+        aggregates loss and all tracked metrics into a unified dictionary. The returned dictionary
+        includes both the total loss and all individual metrics, with keys indicating their source.
 
-            summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
-            summary_outputs = summary_metrics.pop("outputs")
+        Parameters
+        ----------
+        inference_variables : Tensor
+            Input tensor(s) for the inference network. These are typically latent variables to be modeled.
+        inference_conditions : Tensor, optional
+            Conditioning variables for the inference network (default is None).
+            May be combined with outputs from the summary network if present.
+        summary_variables : Tensor, optional
+            Input tensor(s) for the summary network (default is None). Required if
+            a summary network is present.
+        sample_weight : Tensor, optional
+            Weighting tensor for metric computation (default is None).
+        stage : str, optional
+            Current training stage (e.g., "training", "validation", "inference"). Controls
+            the behavior of standardization and some metric computations (default is "training").
 
-            # append summary outputs to inference conditions
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
+        Returns
+        -------
+        metrics : dict[str, Tensor]
+            Dictionary containing the total loss under the key "loss", as well as all tracked
+            metrics for the inference and summary networks. Each metric key is prefixed with
+            "inference_" or "summary_" to indicate its source.
+        """
 
-        # Force a conversion to Tensor
-        inference_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, inference_variables)
+        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
+
+        if "inference_conditions" in self.standardize:
+            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
+        inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
+
+        inference_variables = self._prepare_inference_variables(inference_variables, stage=stage)
+
         inference_metrics = self.inference_network.compute_metrics(
             inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
         )
@@ -158,11 +232,36 @@ class ContinuousApproximator(Approximator):
             loss = inference_metrics["loss"] + summary_metrics["loss"]
         else:
             loss = inference_metrics.pop("loss")
+
         inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
         metrics = {"loss": loss} | inference_metrics | summary_metrics
         return metrics
+
+    def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:
+        """Helper function to compute summary metrics and outputs."""
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot compute summaries from summary_variables without a summary network.")
+            return {}, None
+
+        if summary_variables is None:
+            raise ValueError("Summary variables are required when a summary network is present.")
+
+        if "summary_variables" in self.standardize:
+            summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
+
+        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
+        summary_outputs = summary_metrics.pop("outputs")
+        return summary_metrics, summary_outputs
+
+    def _prepare_inference_variables(self, inference_variables: Tensor, stage: str) -> Tensor:
+        """Helper function to convert inference variables to tensors and optionally standardize them."""
+        if "inference_variables" in self.standardize:
+            inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
+
+        return inference_variables
 
     def fit(self, *args, **kwargs):
         """
@@ -228,6 +327,7 @@ class ContinuousApproximator(Approximator):
             "adapter": self.adapter,
             "inference_network": self.inference_network,
             "summary_network": self.summary_network,
+            "standardize": self.standardize,
         }
 
         return base_config | serialize(config)
@@ -337,23 +437,68 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
+        # Adapt, optionally standardize and convert conditions to tensor
+        conditions = self._prepare_data(conditions, **kwargs)
 
-        # Apply adapter transforms to raw simulated / real quantities
-        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
+        # Remove any superfluous keys, just retain actual conditions
+        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
-        # Ensure only keys relevant for sampling are present in the conditions dictionary
-        conditions = {k: v for k, v in conditions.items() if k in ContinuousApproximator.SAMPLE_KEYS}
+        # Sample and undo optional standardization
+        samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
 
-        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-        conditions = {"inference_variables": self._sample(num_samples=num_samples, **conditions, **kwargs)}
-        conditions = keras.tree.map_structure(keras.ops.convert_to_numpy, conditions)
+        if "inference_variables" in self.standardize:
+            samples = self.standardize_layers["inference_variables"](samples, forward=False)
+
+        samples = {"inference_variables": samples}
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         # Back-transform quantities and samples
-        conditions = self.adapter(conditions, inverse=True, strict=False, **kwargs)
+        samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
 
         if split:
-            conditions = split_arrays(conditions, axis=-1)
-        return conditions
+            samples = split_arrays(samples, axis=-1)
+        return samples
+
+    def _prepare_data(
+        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
+        """
+        Adapts, (optionally) standardizes, and converts data to tensors for inference.
+
+        Handles inputs containing only conditions, only inference_variables, or both.
+        Optionally tracks log-determinant Jacobian (ldj) of transformations.
+        """
+        adapted = self.adapter(data, strict=False, stage="inference", log_det_jac=log_det_jac, **kwargs)
+
+        if log_det_jac:
+            data, ldj = adapted
+            ldj_inference = ldj.get("inference_variables", 0.0)
+        else:
+            data = adapted
+            ldj_inference = None
+
+        # Standardize conditions
+        for key in self.CONDITION_KEYS:
+            if key in self.standardize and key in data:
+                data[key] = self.standardize_layers[key](data[key])
+
+        # Standardize inference variables
+        if "inference_variables" in data and "inference_variables" in self.standardize:
+            result = self.standardize_layers["inference_variables"](
+                data["inference_variables"], log_det_jac=log_det_jac
+            )
+            if log_det_jac:
+                data["inference_variables"], ldj_std = result
+                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
+            else:
+                data["inference_variables"] = result
+
+        # Convert all data to tensors
+        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+
+        if log_det_jac:
+            return data, ldj_inference
+        return data
 
     def _sample(
         self,
@@ -369,66 +514,68 @@ class ContinuousApproximator(Approximator):
             if summary_variables is None:
                 raise ValueError("Summary variables are required when a summary network is present.")
 
+        if self.summary_network is not None:
             summary_outputs = self.summary_network(
                 summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
             )
 
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=1)
+            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
 
         if inference_conditions is not None:
-            # conditions must always have shape (batch_size, dims)
+            # conditions must always have shape (batch_size, ..., dims)
             batch_size = keras.ops.shape(inference_conditions)[0]
             inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
             inference_conditions = keras.ops.broadcast_to(
                 inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
-            batch_shape = (batch_size, num_samples)
+            batch_shape = keras.ops.shape(inference_conditions)[:-1]
         else:
-            batch_shape = (num_samples,)
+            batch_shape = keras.ops.shape(inference_conditions)[1:-1]
 
         return self.inference_network.sample(
-            batch_shape,
-            conditions=inference_conditions,
-            **filter_kwargs(kwargs, self.inference_network.sample),
+            batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
         )
 
-    def summaries(self, data: Mapping[str, np.ndarray], **kwargs):
+    def summarize(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
-        Computes the summaries of given data.
+        Computes the learned summary statistics of given summary variables.
 
         The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
 
         Parameters
         ----------
         data : Mapping[str, np.ndarray]
-            Dictionary of data as NumPy arrays.
+            Dictionary of simulated or real quantities as NumPy arrays.
         **kwargs : dict
             Additional keyword arguments for the adapter and the summary network.
 
         Returns
         -------
         summaries : np.ndarray
-            Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
-
-        Raises
-        ------
-        ValueError
-            If the approximator does not have a summary network, or the adapter does not produce the output required
-            by the summary network.
+            The learned summary statistics.
         """
         if self.summary_network is None:
-            raise ValueError("A summary network is required to compute summeries.")
+            raise ValueError("A summary network is required to compute summaries.")
+
         data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
             raise ValueError("Summary variables are required to compute summaries.")
-        summary_variables = keras.ops.convert_to_tensor(data_adapted["summary_variables"])
+
+        summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
+        summaries = keras.ops.convert_to_numpy(summaries)
+
         return summaries
 
-    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
+    def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+        """
+        .. deprecated:: 2.0.4
+            `summaries` will be removed in version 2.0.5, it was renamed to `summarize` which should be used instead.
+        """
+        warnings.warn("`summaries` was renamed to `summarize` and will be removed in version 2.0.5.", FutureWarning)
+        return self.summarize(data=data, **kwargs)
+
+    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
         `adapter`. Log-probabilities are returned as NumPy arrays.
@@ -445,15 +592,15 @@ class ContinuousApproximator(Approximator):
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
-        data, log_det_jac = self.adapter(data, strict=False, stage="inference", log_det_jac=True, **kwargs)
-        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
-        log_prob = self._log_prob(**data, **kwargs)
-        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
+        # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac.
+        data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
 
-        # change of variables formula
-        log_det_jac = log_det_jac.get("inference_variables")
-        if log_det_jac is not None:
-            log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
+        # Pass data to networks and convert back to numpy array.
+        log_prob = self._log_prob(**data, **kwargs)
+        log_prob = keras.ops.convert_to_numpy(log_prob)
+
+        # Change of variables formula.
+        log_prob = log_prob + log_det_jac
 
         return log_prob
 
@@ -463,7 +610,7 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         **kwargs,
-    ) -> Tensor | dict[str, Tensor]:
+    ) -> Tensor:
         if self.summary_network is None:
             if summary_variables is not None:
                 raise ValueError("Cannot use summary variables without a summary network.")
@@ -471,14 +618,11 @@ class ContinuousApproximator(Approximator):
             if summary_variables is None:
                 raise ValueError("Summary variables are required when a summary network is present.")
 
+        if self.summary_network is not None:
             summary_outputs = self.summary_network(
                 summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
             )
-
-            if inference_conditions is None:
-                inference_conditions = summary_outputs
-            else:
-                inference_conditions = keras.ops.concatenate([inference_conditions, summary_outputs], axis=-1)
+            inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 
         return self.inference_network.log_prob(
             inference_variables,

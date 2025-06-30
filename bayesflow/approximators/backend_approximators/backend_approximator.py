@@ -6,8 +6,6 @@ from bayesflow.utils import filter_kwargs
 match keras.backend.backend():
     case "jax":
         from .jax_approximator import JAXApproximator as BaseBackendApproximator
-    case "numpy":
-        from .numpy_approximator import NumpyApproximator as BaseBackendApproximator
     case "tensorflow":
         from .tensorflow_approximator import TensorFlowApproximator as BaseBackendApproximator
     case "torch":

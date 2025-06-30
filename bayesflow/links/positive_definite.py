@@ -1,8 +1,10 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, fill_triangular_matrix, positive_diag
+from bayesflow.utils import layer_kwargs, fill_triangular_matrix
 from bayesflow.utils.serialization import serializable
+
+from warnings import warn
 
 
 @serializable("bayesflow.links")
@@ -11,16 +13,22 @@ class PositiveDefinite(keras.Layer):
 
     def __init__(self, **kwargs):
         super().__init__(**layer_kwargs(kwargs))
+        self.built = True
+
+        warn(
+            "This class is deprecated. It was replaced by bayesflow.links.CholeskyFactor.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     def call(self, inputs: Tensor) -> Tensor:
-        # form a cholesky factor
-        L = fill_triangular_matrix(inputs)
-        L = positive_diag(L)
+        # Build cholesky factor from inputs
+        L = fill_triangular_matrix(inputs, positive_diag=True)
 
-        # calculate positive definite matrix from cholesky factors:
+        # calculate positive definite matrix from cholesky factors
         psd = keras.ops.matmul(
             L,
-            keras.ops.swapaxes(L, -2, -1),  # L transposed
+            keras.ops.moveaxis(L, -2, -1),  # L transposed
         )
         return psd
 
@@ -31,14 +39,13 @@ class PositiveDefinite(keras.Layer):
 
     def compute_input_shape(self, output_shape):
         """
-        Returns the shape of parameterization of a Cholesky factor triangular matrix.
+        Returns the shape of parameterization of a cholesky factor triangular matrix.
 
-        There are :math:`m` nonzero elements of a lower triangular :math:`n \\times n` matrix with
-        :math:`m = n (n + 1) / 2`, so for output shape (..., n, n) the returned shape is (..., m).
+        There are m nonzero elements of a lower triangular nxn matrix with m = n * (n + 1) / 2.
 
-        Examples
-        --------
-        >>> PositiveDefinite().compute_input_shape((None, 3, 3))
+        Example
+        -------
+        >>> PositiveDefinite().compute_output_shape((None, 3, 3))
         6
         """
         n = output_shape[-1]

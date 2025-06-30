@@ -11,18 +11,16 @@ from .backend_approximators import BackendApproximator
 
 
 class Approximator(BackendApproximator):
-    def build(self, data_shapes: any) -> None:
-        mock_data = keras.tree.map_structure(keras.ops.zeros, data_shapes)
-        self.build_from_data(mock_data)
+    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        raise NotImplementedError
 
     @classmethod
     def build_adapter(cls, **kwargs) -> Adapter:
         # implemented by each respective architecture
         raise NotImplementedError
 
-    def build_from_data(self, data: dict[str, any]) -> None:
-        self.compute_metrics(**filter_kwargs(data, self.compute_metrics), stage="training")
-        self.built = True
+    def build_from_data(self, adapted_data: dict[str, any]) -> None:
+        raise NotImplementedError
 
     @classmethod
     def build_dataset(
@@ -60,6 +58,9 @@ class Approximator(BackendApproximator):
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,
         )
+
+    def call(self, *args, **kwargs):
+        return self.compute_metrics(*args, **kwargs)
 
     def fit(self, *, dataset: keras.utils.PyDataset = None, simulator: Simulator = None, **kwargs):
         """
@@ -132,6 +133,7 @@ class Approximator(BackendApproximator):
             logging.info("Building on a test batch.")
             mock_data = dataset[0]
             mock_data = keras.tree.map_structure(keras.ops.convert_to_tensor, mock_data)
-            self.build_from_data(mock_data)
+            mock_data_shapes = keras.tree.map_structure(keras.ops.shape, mock_data)
+            self.build(mock_data_shapes)
 
         return super().fit(dataset=dataset, **kwargs)

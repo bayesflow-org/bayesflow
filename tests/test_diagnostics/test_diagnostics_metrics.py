@@ -1,6 +1,7 @@
-import numpy as np
 import keras
+import numpy as np
 import pytest
+from scipy.stats import binom
 
 import bayesflow as bf
 
@@ -82,6 +83,58 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
 
     with pytest.raises(Exception):
         out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models.transpose)
+
+
+def test_log_gamma(random_estimates, random_targets):
+    out = bf.diagnostics.metrics.log_gamma(random_estimates, random_targets)
+    assert list(out.keys()) == ["values", "metric_name", "variable_names"]
+    assert out["values"].shape == (num_variables(random_estimates),)
+    assert out["metric_name"] == "Log Gamma"
+    assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
+
+
+def test_log_gamma_end_to_end():
+    # This is a function test for simulation-based calibration.
+    # First, we sample from a known generative process and then run SBC.
+    # If the log gamma statistic is correctly implemented, a 95% interval should exclude
+    # the true value 5% of the time.
+
+    N = 30  # number of samples
+    S = 1000  # number of posterior draws
+    D = 1000  # number of datasets
+
+    def run_sbc(N=N, S=S, D=D, bias=0):
+        rng = np.random.default_rng()
+        prior_draws = rng.beta(2, 2, size=D)
+        successes = rng.binomial(N, prior_draws)
+
+        # Analytical posterior:
+        # if theta ~ Beta(2, 2), then p(theta|successes) is Beta(2 + successes | 2 + N - successes).
+        posterior_draws = rng.beta(2 + successes + bias, 2 + N - successes + bias, size=(S, D))
+
+        # these ranks are uniform if bias=0
+        ranks = np.sum(posterior_draws < prior_draws, axis=0)
+
+        # this is the distribution of gamma under uniform ranks
+        gamma_null = bf.diagnostics.metrics.sbc.gamma_null_distribution(D, S, num_null_draws=100)
+        lower, upper = np.quantile(gamma_null, (0.05, 0.995))
+
+        # this is the empirical gamma
+        observed_gamma = bf.diagnostics.metrics.sbc.gamma_discrepancy(ranks, num_post_draws=S)
+
+        in_interval = lower <= observed_gamma < upper
+
+        return in_interval
+
+    sbc_calibration = [run_sbc(N=N, S=S, D=D) for _ in range(100)]
+    lower_expected, upper_expected = binom.ppf((0.0005, 0.9995), 100, 0.95)
+
+    # this test should fail with a probability of 0.1%
+    assert lower_expected <= np.sum(sbc_calibration) <= upper_expected
+
+    # sbc should almost always fial for slightly biased posterior draws
+    sbc_calibration = [run_sbc(N=N, S=S, D=D, bias=1) for _ in range(100)]
+    assert not lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
 
 def test_bootstrap_comparison_shapes():

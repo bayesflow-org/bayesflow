@@ -82,13 +82,15 @@ class MultivariateNormalScore(ParametricDistributionScore):
         """
         diff = x - mean
 
-        # Calculate covariance from Cholesky factors
-        covariance = keras.ops.matmul(
-            cov_chol,
-            keras.ops.swapaxes(cov_chol, -2, -1),
+        # Calculate precision from Cholesky factors of covariance matrix
+        cov_chol_inv = keras.ops.inv(cov_chol)
+        precision = keras.ops.matmul(
+            keras.ops.swapaxes(cov_chol_inv, -2, -1),
+            cov_chol_inv,
         )
-        precision = keras.ops.inv(covariance)
-        log_det_covariance = keras.ops.slogdet(covariance)[1]  # Only take the log of the determinant part
+
+        # Compute log determinant, exploiting Cholesky factors
+        log_det_covariance = keras.ops.log(keras.ops.prod(keras.ops.diagonal(cov_chol, axis1=1, axis2=2), axis=1)) * 2
 
         # Compute the quadratic term in the exponential of the multivariate Gaussian
         quadratic_term = keras.ops.einsum("...i,...ij,...j->...", diff, precision, diff)

@@ -1,6 +1,5 @@
 import keras
 from tests.utils import assert_models_equal
-import numpy as np
 
 
 def test_save_and_load(tmp_path, approximator, train_dataset, validation_dataset):
@@ -9,7 +8,8 @@ def test_save_and_load(tmp_path, approximator, train_dataset, validation_dataset
     approximator.build(data_shapes)
     for layer in approximator.standardize_layers.values():
         assert layer.built
-        np.testing.assert_allclose([c.value.numpy() for c in layer.count], 0.0)
+        for count in layer.count:
+            assert count == 0.0
     approximator.compute_metrics(**train_dataset[0])
 
     keras.saving.save_model(approximator, tmp_path / "model.keras")

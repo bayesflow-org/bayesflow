@@ -85,15 +85,15 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
         out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models.transpose)
 
 
-def test_log_gamma(random_estimates, random_targets):
-    out = bf.diagnostics.metrics.log_gamma(random_estimates, random_targets)
+def test_calibration_log_gamma(random_estimates, random_targets):
+    out = bf.diagnostics.metrics.calibration_log_gamma(random_estimates, random_targets)
     assert list(out.keys()) == ["values", "metric_name", "variable_names"]
     assert out["values"].shape == (num_variables(random_estimates),)
     assert out["metric_name"] == "Log Gamma"
     assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
 
 
-def test_log_gamma_end_to_end():
+def test_calibration_log_gamma_end_to_end():
     # This is a function test for simulation-based calibration.
     # First, we sample from a known generative process and then run SBC.
     # If the log gamma statistic is correctly implemented, a 95% interval should exclude
@@ -116,11 +116,11 @@ def test_log_gamma_end_to_end():
         ranks = np.sum(posterior_draws < prior_draws, axis=0)
 
         # this is the distribution of gamma under uniform ranks
-        gamma_null = bf.diagnostics.metrics.sbc.gamma_null_distribution(D, S, num_null_draws=100)
+        gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=100)
         lower, upper = np.quantile(gamma_null, (0.05, 0.995))
 
         # this is the empirical gamma
-        observed_gamma = bf.diagnostics.metrics.sbc.gamma_discrepancy(ranks, num_post_draws=S)
+        observed_gamma = bf.diagnostics.metrics.gamma_discrepancy(ranks, num_post_draws=S)
 
         in_interval = lower <= observed_gamma < upper
 

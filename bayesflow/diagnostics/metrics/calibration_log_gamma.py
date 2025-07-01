@@ -6,7 +6,7 @@ from scipy.stats import binom
 from ...utils.dict_utils import dicts_to_arrays
 
 
-def log_gamma(
+def calibration_log_gamma(
     estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
@@ -15,7 +15,8 @@ def log_gamma(
     quantile: float = 0.05,
 ):
     """
-    Compute the log gamma discrepancy statistic, see [1] for additional information.
+    Compute the log gamma discrepancy statistic to test posterior calibration,
+    see [1] for additional information.
     Log gamma is log(gamma/gamma_null), where gamma_null is the 5th percentile of the
     null distribution under uniformity of ranks.
     That is, if adopting a hypothesis testing framework,then log_gamma < 0 implies

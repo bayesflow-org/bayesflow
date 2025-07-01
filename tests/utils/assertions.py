@@ -1,4 +1,5 @@
 import keras
+from .normalize import normalize_config
 
 
 def assert_models_equal(model1: keras.Model, model2: keras.Model):
@@ -50,3 +51,7 @@ def assert_layers_equal(layer1: keras.Layer, layer2: keras.Layer):
     for metric1, metric2 in zip(layer1.metrics, layer2.metrics):
         assert type(metric1) is type(metric2)
         assert metric1.name == metric2.name
+
+
+def assert_configs_equal(config1: dict, config2: dict):
+    assert normalize_config(config1) == normalize_config(config2)

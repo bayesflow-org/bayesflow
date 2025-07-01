@@ -4,7 +4,7 @@ import numpy as np
 import keras
 
 from bayesflow.utils.serialization import deserialize, serialize
-from tests.utils import normalize_config
+from tests.utils import assert_configs_equal
 
 import bayesflow as bf
 
@@ -30,7 +30,7 @@ def test_serialize_deserialize(adapter, random_data):
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert normalize_config(serialized) == normalize_config(reserialized)
+    assert_configs_equal(serialized, reserialized)
 
     random_data["foo"] = random_data["x1"]
     deserialized_processed = deserialized(random_data)
@@ -335,7 +335,7 @@ def test_nnpe(random_data):
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
-    assert normalize_config(serialized) == normalize_config(reserialized)
+    assert_configs_equal(serialized, reserialized)
 
     # check that only x1 is changed
     assert "x1" in result_training
@@ -365,7 +365,7 @@ def test_nnpe(random_data):
     serialized_auto = serialize(ad_auto)
     deserialized_auto = deserialize(serialized_auto)
     reserialized_auto = serialize(deserialized_auto)
-    assert normalize_config(serialized_auto) == normalize_config(serialize(reserialized_auto))
+    assert_configs_equal(serialized_auto, serialize(reserialized_auto))
 
     # Test dimensionwise versus global noise application (per_dimension=True vs per_dimension=False)
     # Create data with second dimension having higher variance

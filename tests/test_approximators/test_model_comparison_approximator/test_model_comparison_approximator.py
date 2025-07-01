@@ -55,7 +55,10 @@ def test_fit(approximator, train_dataset, validation_dataset):
 
         output = stream.getvalue()
     # check that the loss is shown
-    assert "loss" in output
+    assert "loss/summary_loss" in output
+    assert "loss/classifier_loss" in output
+    assert "val_categorical_accuracy/classifier_categorical_accuracy" in output
+    assert "val_rmse/summary_rmse" in output
 
 
 def test_save_and_load(tmp_path, approximator, train_dataset, validation_dataset):

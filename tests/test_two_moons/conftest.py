@@ -4,8 +4,9 @@ import pytest
 @pytest.fixture()
 def inference_network():
     from bayesflow.networks import CouplingFlow
+    from bayesflow.metrics import MaximumMeanDiscrepancy
 
-    return CouplingFlow(depth=2, subnet="mlp", subnet_kwargs=dict(widths=(32, 32)))
+    return CouplingFlow(depth=2, subnet="mlp", subnet_kwargs=dict(widths=(32, 32)), metrics=[MaximumMeanDiscrepancy()])
 
 
 @pytest.fixture()

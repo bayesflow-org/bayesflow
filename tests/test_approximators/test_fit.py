@@ -49,3 +49,7 @@ def test_loss_progress(approximator, train_dataset, validation_dataset):
     # check that the shown loss is not nan or zero
     assert re.search(r"\bnan\b", output) is None, "found nan in output"
     assert re.search(r"\bloss: 0\.0000e\+00\b", output) is None, "found zero loss in output"
+
+    # check that additional metric is present
+    assert "val_rmse/inference_rmse" in output, "custom metric (RMSE) not shown"
+    assert re.search(r"\bval_rmse/inference_rmse: \d+\.\d+", output) is not None, "custom metric not correctly shown"

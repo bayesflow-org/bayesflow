@@ -11,6 +11,29 @@ from bayesflow.utils.serialization import serializable
 @serializable("bayesflow.networks")
 class SummaryNetwork(keras.Layer):
     def __init__(self, base_distribution: str = None, *, metrics: Sequence[keras.Metric] | None = None, **kwargs):
+        """
+        Builds a summary network with an optional base distribution and custom metrics. Use this class
+        as an interface for custom summary networks.
+
+        Important: If a base distribution is passed, the summary outputs will be optimized to follow
+        said distribution, as described in [1].
+
+        [1] Schmitt, M., Bürkner, P. C., Köthe, U., & Radev, S. T. (2023).
+        Detecting model misspecification in amortized Bayesian inference with neural networks.
+        In DAGM German Conference on Pattern Recognition (pp. 541-557). Cham: Springer Nature Switzerland.
+
+        Parameters
+        ----------
+        base_distribution : str or None, default None
+            Name of the base distribution to use. If `None`, a default distribution
+            is chosen. Passed to `find_distribution` to obtain the corresponding
+            distribution object.
+        metrics : Sequence[keras.Metric] or None, optional
+            Sequence of custom Keras Metric instances to compute during training
+            and evaluation. If `None`, no custom metrics are used.
+        **kwargs
+            Additional keyword arguments forwarded to the `keras.Layer` constructor.
+        """
         self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)

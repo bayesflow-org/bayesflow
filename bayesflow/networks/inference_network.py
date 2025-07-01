@@ -1,5 +1,7 @@
-import keras
+from typing import Literal
 from collections.abc import Sequence
+
+import keras
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
@@ -9,7 +11,28 @@ from bayesflow.utils.serialization import serializable
 
 @serializable("bayesflow.networks")
 class InferenceNetwork(keras.Layer):
-    def __init__(self, base_distribution: str = "normal", *, metrics: Sequence[keras.Metric] | None = None, **kwargs):
+    def __init__(
+        self,
+        base_distribution: Literal["normal", "student", "mixture"] | keras.Layer = "normal",
+        *,
+        metrics: Sequence[keras.Metric] | None = None,
+        **kwargs,
+    ):
+        """
+        Constructs an inference network using a specified base distribution and optional custom metrics.
+        Use this interface for custom inference networks.
+
+        Parameters
+        ----------
+        base_distribution : Literal["normal", "student", "mixture"] or keras.Layer
+            Name or the actual base distribution to use. Passed to `find_distribution` to
+            obtain the corresponding distribution object.
+        metrics : Sequence[keras.Metric] or None, optional
+            Sequence of custom Keras Metric instances to compute during training
+            and evaluation. If `None`, no custom metrics are used.
+        **kwargs
+            Additional keyword arguments forwarded to the `keras.Layer` constructor.
+        """
         self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
@@ -70,7 +93,7 @@ class InferenceNetwork(keras.Layer):
 
         if stage != "training" and any(self.metrics):
             # compute sample-based metrics
-            samples = self.sample((keras.ops.shape(x)[0],), conditions=conditions)
+            samples = self.sample(batch_shape=(keras.ops.shape(x)[0],), conditions=conditions)
 
             for metric in self.metrics:
                 metrics[metric.name] = metric(samples, x)

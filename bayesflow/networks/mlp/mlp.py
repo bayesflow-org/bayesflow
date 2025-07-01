@@ -55,9 +55,11 @@ class MLP(Sequential):
         dropout : float or None, optional
             Dropout rate applied within the MLP layers for regularization. Default is 0.05.
         norm: str, optional
-
+            Type of learnable normalization to be used (e.g., "batch" or "layer"). Default is None.
         spectral_normalization : bool, optional
             Whether to apply spectral normalization to stabilize training. Default is False.
+        metrics: Sequence[keras.Metric], optional
+            A sequence of callable metrics following keras' `Metric` signature. Default is None.
         **kwargs
             Additional keyword arguments passed to the Keras layer initialization.
         """

@@ -10,17 +10,27 @@ from bayesflow.utils.serialization import serializable
 
 @serializable("bayesflow.networks")
 class SummaryNetwork(keras.Layer):
+    """
+    Builds a summary network with an optional base distribution and custom metrics. Use this class
+    as an interface for custom summary networks.
+
+    Important
+    ---------
+    If a base distribution is passed, the summary outputs will be optimized to follow
+    that distribution, as described in [1].
+
+    References
+    ----------
+    [1] Schmitt, M., Bürkner, P. C., Köthe, U., & Radev, S. T. (2023).
+        Detecting model misspecification in amortized Bayesian inference with neural networks.
+        In DAGM German Conference on Pattern Recognition (pp. 541-557).
+        Cham: Springer Nature Switzerland.
+    """
+
     def __init__(self, base_distribution: str = None, *, metrics: Sequence[keras.Metric] | None = None, **kwargs):
         """
-        Builds a summary network with an optional base distribution and custom metrics. Use this class
-        as an interface for custom summary networks.
-
-        Important: If a base distribution is passed, the summary outputs will be optimized to follow
-        said distribution, as described in [1].
-
-        [1] Schmitt, M., Bürkner, P. C., Köthe, U., & Radev, S. T. (2023).
-        Detecting model misspecification in amortized Bayesian inference with neural networks.
-        In DAGM German Conference on Pattern Recognition (pp. 541-557). Cham: Springer Nature Switzerland.
+        Creates the network with provided arguments. Optional user-supplied metrics will be stored
+        in a `custom_metrics` attribute. A special `metrics` attribute will be created internally by `keras.Layer`.
 
         Parameters
         ----------

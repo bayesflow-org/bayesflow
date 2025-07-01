@@ -33,14 +33,17 @@ class MLP(Sequential):
         **kwargs,
     ):
         """
-        Implements a flexible multi-layer perceptron (MLP) with optional residual connections, dropout, and
-        spectral normalization.
+        Creates a flexible multi-layer perceptron (MLP) with optional residual connections, dropout,
+        spectral normalization, and metrics.
 
         This MLP can be used as a general-purpose feature extractor or function approximator, supporting configurable
         depth, width, activation functions, and weight initializations.
 
         If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
         supports dropout for regularization and spectral normalization for stability in learning smooth functions.
+
+        Optional user-supplied metrics will be stored in a `custom_metrics` attribute. A special `metrics` attribute
+        will be created internally by `keras.Layer`.
 
         Parameters
         ----------

@@ -11,6 +11,11 @@ from bayesflow.utils.serialization import serializable
 
 @serializable("bayesflow.networks")
 class InferenceNetwork(keras.Layer):
+    """
+    Constructs an inference network using a specified base distribution and optional custom metrics.
+    Use this interface for custom inference networks.
+    """
+
     def __init__(
         self,
         base_distribution: Literal["normal", "student", "mixture"] | keras.Layer = "normal",
@@ -19,8 +24,8 @@ class InferenceNetwork(keras.Layer):
         **kwargs,
     ):
         """
-        Constructs an inference network using a specified base distribution and optional custom metrics.
-        Use this interface for custom inference networks.
+        Creates the network with provided arguments. Optional user-supplied metrics will be stored
+        in a `custom_metrics` attribute. A special `metrics` attribute will be created internally by `keras.Layer`.
 
         Parameters
         ----------

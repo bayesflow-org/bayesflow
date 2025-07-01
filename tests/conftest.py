@@ -6,6 +6,11 @@ import pytest
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
 
 
+def pytest_addoption(parser):
+    parser.addoption("--mode", choices=["save", "load"])
+    parser.addoption("--data-path", type=str)
+
+
 def pytest_runtest_setup(item):
     """Skips backends by test markers. Unmarked tests are treated as backend-agnostic"""
     backend = keras.backend.backend()
@@ -41,42 +46,42 @@ def pytest_make_parametrize_id(config, val, argname):
     return f"{argname}={repr(val)}"
 
 
-@pytest.fixture(params=[2], scope="session")
+@pytest.fixture(params=[2])
 def batch_size(request):
     return request.param
 
 
-@pytest.fixture(params=[None, 2, 3], scope="session")
+@pytest.fixture(params=[None, 2, 3])
 def conditions_size(request):
     return request.param
 
 
-@pytest.fixture(params=[1, 4], scope="session")
+@pytest.fixture(params=[1, 4])
 def summary_dim(request):
     return request.param
 
 
-@pytest.fixture(params=["two_moons"], scope="session")
+@pytest.fixture(params=["two_moons"])
 def dataset(request):
     return request.getfixturevalue(request.param)
 
 
-@pytest.fixture(params=[2, 3], scope="session")
+@pytest.fixture(params=[2, 3])
 def feature_size(request):
     return request.param
 
 
-@pytest.fixture(scope="session")
-def random_conditions(batch_size, conditions_size):
+@pytest.fixture()
+def random_conditions(random_seed, batch_size, conditions_size):
     if conditions_size is None:
         return None
 
-    return keras.random.normal((batch_size, conditions_size))
+    return keras.random.normal((batch_size, conditions_size), seed=10)
 
 
-@pytest.fixture(scope="session")
-def random_samples(batch_size, feature_size):
-    return keras.random.normal((batch_size, feature_size))
+@pytest.fixture()
+def random_samples(random_seed, batch_size, feature_size):
+    return keras.random.normal((batch_size, feature_size), seed=20)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -86,11 +91,11 @@ def random_seed():
     return seed
 
 
-@pytest.fixture(scope="session")
-def random_set(batch_size, set_size, feature_size):
-    return keras.random.normal((batch_size, set_size, feature_size))
+@pytest.fixture()
+def random_set(random_seed, batch_size, set_size, feature_size):
+    return keras.random.normal((batch_size, set_size, feature_size), seed=30)
 
 
-@pytest.fixture(params=[2, 3], scope="session")
+@pytest.fixture(params=[2, 3])
 def set_size(request):
     return request.param

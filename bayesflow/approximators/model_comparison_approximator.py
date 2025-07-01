@@ -442,9 +442,9 @@ class ModelComparisonApproximator(Approximator):
     def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
         .. deprecated:: 2.0.4
-            `summaries` will be removed in version 2.0.5, it was renamed to `summarize` which should be used instead.
+            `summaries` will be removed in version 2.0.6, it was renamed to `summarize` which should be used instead.
         """
-        warnings.warn("`summaries` was renamed to `summarize` and will be removed in version 2.0.5.", FutureWarning)
+        warnings.warn("`summaries` was renamed to `summarize` and will be removed in version 2.0.6.", FutureWarning)
         return self.summarize(data=data, **kwargs)
 
     def _compute_logits(self, classifier_conditions: Tensor) -> Tensor:

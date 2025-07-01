@@ -90,7 +90,7 @@ class CouplingFlow(InferenceNetwork):
             Keyword arguments forwarded to the affine or spline transforms
             (e.g., bins for splines)
         **kwargs
-            Additional keyword arguments passed to `InvertibleLayer`.
+            Additional keyword arguments passed to `InferenceNetwork`.
 
         """
         super().__init__(base_distribution=base_distribution, **kwargs)

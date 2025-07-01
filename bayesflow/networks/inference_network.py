@@ -2,11 +2,12 @@ from typing import Literal
 from collections.abc import Sequence
 
 import keras
+from keras.src.utils import python_utils
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, serialize
 
 
 @serializable("bayesflow.networks")
@@ -38,8 +39,8 @@ class InferenceNetwork(keras.Layer):
         **kwargs
             Additional keyword arguments forwarded to the `keras.Layer` constructor.
         """
-        self.custom_metrics = metrics
         super().__init__(**layer_kwargs(kwargs))
+        self.custom_metrics = metrics
         self.base_distribution = find_distribution(base_distribution)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
@@ -104,3 +105,10 @@ class InferenceNetwork(keras.Layer):
                 metrics[metric.name] = metric(samples, x)
 
         return metrics
+
+    @python_utils.default
+    def get_config(self):
+        base_config = super().get_config()
+
+        config = {"metrics": self.custom_metrics, "base_distribution": self.base_distribution}
+        return base_config | serialize(config)

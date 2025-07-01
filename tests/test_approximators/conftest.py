@@ -40,6 +40,7 @@ def continuous_approximator(adapter, inference_network, summary_network):
 
 @pytest.fixture()
 def point_inference_network():
+    from bayesflow.metrics import RootMeanSquaredError
     from bayesflow.networks import PointInferenceNetwork
     from bayesflow.scores import NormedDifferenceScore, QuantileScore, MultivariateNormalScore
 
@@ -51,11 +52,13 @@ def point_inference_network():
         ),
         subnet="mlp",
         subnet_kwargs=dict(widths=(32, 32)),
+        metrics=[RootMeanSquaredError(name="rmse")],
     )
 
 
 @pytest.fixture()
 def point_inference_network_with_multiple_parametric_scores():
+    from bayesflow.metrics import RootMeanSquaredError
     from bayesflow.networks import PointInferenceNetwork
     from bayesflow.scores import MultivariateNormalScore
 
@@ -64,6 +67,7 @@ def point_inference_network_with_multiple_parametric_scores():
             mvn1=MultivariateNormalScore(),
             mvn2=MultivariateNormalScore(),
         ),
+        metrics=[RootMeanSquaredError(name="rmse")],
     )
 
 
@@ -181,9 +185,10 @@ def validation_dataset(batch_size, adapter, simulator):
 
 @pytest.fixture()
 def mean_std_summary_network():
+    from bayesflow.metrics import MaximumMeanDiscrepancy
     from tests.utils import MeanStdSummaryNetwork
 
-    return MeanStdSummaryNetwork()
+    return MeanStdSummaryNetwork(metrics=[MaximumMeanDiscrepancy("mmd")])
 
 
 @pytest.fixture(params=["continuous_approximator", "point_approximator", "model_comparison_approximator"])

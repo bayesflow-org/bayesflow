@@ -146,11 +146,11 @@ def calibration_ecdf(
             test_quantities_targets[key] = np.expand_dims(tq_targets, axis=1)
 
             # We assume test_quantity_func can only handle a 1D batch_size, so estimates
-            # which have shape (num_conditions, num_post_samples, ...) must be flattend first.
-            num_conditions, num_post_samples = next(iter(estimates.values())).shape[:2]
+            # which have shape (num_conditions, num_samples, ...) must be flattend first.
+            num_conditions, num_samples = next(iter(estimates.values())).shape[:2]
             flattened_estimates = keras.tree.map_structure(lambda t: np.reshape(t, (-1, *t.shape[2:])), estimates)
             flat_tq_estimates = test_quantity_func(data=flattened_estimates)
-            test_quantities_estimates[key] = np.reshape(flat_tq_estimates, (num_conditions, num_post_samples, 1))
+            test_quantities_estimates[key] = np.reshape(flat_tq_estimates, (num_conditions, num_samples, 1))
 
         # Add custom test quantities to variable keys and names for plotting
         variable_keys = list(test_quantities.keys()) + variable_keys

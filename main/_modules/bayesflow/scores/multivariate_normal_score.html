@@ -568,13 +568,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mean</span>
 
-        <span class="c1"># Calculate covariance from Cholesky factors</span>
-        <span class="n">covariance</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
-            <span class="n">cov_chol</span><span class="p">,</span>
-            <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">cov_chol</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="c1"># Calculate precision from Cholesky factors of covariance matrix</span>
+        <span class="n">cov_chol_inv</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">cov_chol</span><span class="p">)</span>
+        <span class="n">precision</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">cov_chol_inv</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">cov_chol_inv</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">precision</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span>
-        <span class="n">log_det_covariance</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">slogdet</span><span class="p">(</span><span class="n">covariance</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Only take the log of the determinant part</span>
+
+        <span class="c1"># Compute log determinant, exploiting Cholesky factors</span>
+        <span class="n">log_det_covariance</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">cov_chol</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="mi">2</span>
 
         <span class="c1"># Compute the quadratic term in the exponential of the multivariate Gaussian</span>
         <span class="n">quadratic_term</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i,...ij,...j-&gt;...&quot;</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>

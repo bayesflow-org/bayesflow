@@ -117,7 +117,7 @@ class Broadcast(Transform):
                 data[k] = np.expand_dims(data[k], axis=tuple(np.arange(0, len_diff)))
             elif self.expand == "right":
                 data[k] = np.expand_dims(data[k], axis=tuple(-np.arange(1, len_diff + 1)))
-            elif isinstance(self.expand, tuple):
+            elif isinstance(self.expand, tuple) or isinstance(self.expand, list):
                 if len(self.expand) is not len_diff:
                     raise ValueError("Length of `expand` must match the length difference of the involed arrays.")
                 data[k] = np.expand_dims(data[k], axis=self.expand)

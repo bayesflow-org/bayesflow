@@ -153,8 +153,21 @@ def calibration_ecdf(
             test_quantities_estimates[key] = np.reshape(flat_tq_estimates, (num_conditions, num_samples, 1))
 
         # Add custom test quantities to variable keys and names for plotting
-        variable_keys = list(test_quantities.keys()) + variable_keys
-        variable_names = list(test_quantities.keys()) + variable_names
+        # keys and names are set to the test_quantities dict keys
+        test_quantities_names = list(test_quantities.keys())
+
+        # By default all keys in estimates are selected
+        if variable_keys is None:
+            variable_keys = list(estimates.keys())
+
+        # If variable_names are present, concatenate them to the test_quantities_names
+        if isinstance(variable_names, list):
+            variable_names = test_quantities_names + variable_names
+        # If variable_names are None, they will stay None here and are subsequently inferred.
+
+        # After the defaults are handled, we simply concatenate the keys
+        # for test quantities and regular variables.
+        variable_keys = test_quantities_names + variable_keys
 
         # Prepend test quantities to draws
         estimates = test_quantities_estimates | estimates

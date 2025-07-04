@@ -2,6 +2,7 @@ from numbers import Number
 
 import numpy as np
 
+from bayesflow.utils.tree import map_dict
 from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
@@ -34,12 +35,20 @@ class ToArray(ElementwiseTransform):
         return serialize({"original_type": self.original_type})
 
     def forward(self, data: any, **kwargs) -> np.ndarray:
+        if isinstance(data, dict):
+            # no invertiblity for dict, do not store original type
+            return map_dict(np.asarray, data)
+
         if self.original_type is None:
             self.original_type = type(data)
 
         return np.asarray(data)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> any:
+    def inverse(self, data: np.ndarray | dict, **kwargs) -> any:
+        if isinstance(data, dict):
+            # no invertibility for dict to keep complexity low
+            return data
+
         if self.original_type is None:
             raise RuntimeError("Cannot call `inverse` before calling `forward` at least once.")
 

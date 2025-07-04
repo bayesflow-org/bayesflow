@@ -484,6 +484,8 @@ class Adapter(MutableSequence[Transform]):
         """
         if isinstance(keys, str):
             transform = Rename(keys, to_key=into)
+        elif len(keys) == 1:
+            transform = Rename(keys[0], to_key=into)
         else:
             transform = Concatenate(keys, into=into, axis=axis)
         self.transforms.append(transform)

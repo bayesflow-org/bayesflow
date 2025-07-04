@@ -42,7 +42,7 @@ def sinkhorn_plan(
     x1: Tensor,
     x2: Tensor,
     regularization: float = 1.0,
-    max_steps: int = 10_000,
+    max_steps: int = None,
     rtol: float = 1e-5,
     atol: float = 1e-8,
 ) -> Tensor:
@@ -59,7 +59,7 @@ def sinkhorn_plan(
         Controls the standard deviation of the Gaussian kernel.
 
     :param max_steps: Maximum number of iterations, or None to run until convergence.
-        Default: 10_000
+        Default: None
 
     :param rtol: Relative tolerance for convergence.
         Default: 1e-5.
@@ -73,7 +73,11 @@ def sinkhorn_plan(
     cost = euclidean(x1, x2)
 
     # initialize the transport plan from a gaussian kernel
-    plan = keras.ops.exp(cost / -(regularization * keras.ops.mean(cost) + 1e-16))
+    logits = cost / -(regularization * keras.ops.mean(cost) + 1e-16)
+    # numerical stability: we can subtract the maximum without changing the result
+    logits = logits - keras.ops.max(logits)
+    # exponentiate to get the initial transport plan
+    plan = keras.ops.exp(logits)
 
     def contains_nans(plan):
         return keras.ops.any(keras.ops.isnan(plan))
@@ -90,8 +94,8 @@ def sinkhorn_plan(
 
     def body(steps, plan):
         # Sinkhorn-Knopp: repeatedly normalize the transport plan along each dimension
-        plan = keras.ops.softmax(plan, axis=0)
-        plan = keras.ops.softmax(plan, axis=1)
+        plan = plan / keras.ops.sum(plan, axis=0, keepdims=True)
+        plan = plan / keras.ops.sum(plan, axis=1, keepdims=True)
 
         return steps + 1, plan
 

@@ -20,7 +20,7 @@ def log_sinkhorn(x1, x2, seed: int = None, **kwargs):
 def log_sinkhorn_plan(x1, x2, regularization: float = 1.0, rtol=1e-5, atol=1e-8, max_steps=None):
     """
     Log-stabilized version of :py:func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn_plan`.
-    Significantly slower than the unstabilized version, so use only when you need numerical stability.
+    Slightly slower than the unstabilized version, so use primarily when you need numerical stability.
     """
     cost = euclidean(x1, x2)
 
@@ -31,8 +31,10 @@ def log_sinkhorn_plan(x1, x2, regularization: float = 1.0, rtol=1e-5, atol=1e-8,
 
     def is_converged(plan):
         # for convergence, the plan should be doubly stochastic
-        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=0), 0.0, rtol=rtol, atol=atol))
-        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=1), 0.0, rtol=rtol, atol=atol))
+        # NOTE: for small atol and rtol, using rtol_log=0.0 and atol_log=atol + rtol
+        # is equivalent to the convergence check in the unstabilized version
+        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=0), 0.0, rtol=0.0, atol=atol + rtol))
+        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=1), 0.0, rtol=0.0, atol=atol + rtol))
         return conv0 & conv1
 
     def cond(_, plan):

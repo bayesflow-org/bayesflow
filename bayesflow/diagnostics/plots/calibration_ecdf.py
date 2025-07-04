@@ -136,40 +136,31 @@ def calibration_ecdf(
 
     # Optionally, compute and prepend test quantities from draws
     if test_quantities is not None:
-        # Prepare empty mapping to hold test quantity values
         test_quantities_estimates = {}
         test_quantities_targets = {}
 
-        for key, test_quantity_func in test_quantities.items():
-            # Apply test_quantity_func to draws
-            tq_targets = test_quantity_func(data=targets)
+        for key, test_quantity_fn in test_quantities.items():
+            # Apply test_quantity_func to ground-truths
+            tq_targets = test_quantity_fn(data=targets)
             test_quantities_targets[key] = np.expand_dims(tq_targets, axis=1)
 
-            # We assume test_quantity_func can only handle a 1D batch_size, so estimates
-            # which have shape (num_conditions, num_samples, ...) must be flattend first.
+            # # Flatten estimates for batch processing in test_quantity_fn, apply function, and restore shape
             num_conditions, num_samples = next(iter(estimates.values())).shape[:2]
             flattened_estimates = keras.tree.map_structure(lambda t: np.reshape(t, (-1, *t.shape[2:])), estimates)
-            flat_tq_estimates = test_quantity_func(data=flattened_estimates)
+            flat_tq_estimates = test_quantity_fn(data=flattened_estimates)
             test_quantities_estimates[key] = np.reshape(flat_tq_estimates, (num_conditions, num_samples, 1))
 
         # Add custom test quantities to variable keys and names for plotting
         # keys and names are set to the test_quantities dict keys
         test_quantities_names = list(test_quantities.keys())
 
-        # By default all keys in estimates are selected
         if variable_keys is None:
             variable_keys = list(estimates.keys())
 
-        # If variable_names are present, concatenate them to the test_quantities_names
         if isinstance(variable_names, list):
             variable_names = test_quantities_names + variable_names
-        # If variable_names are None, they will stay None here and are subsequently inferred.
 
-        # After the defaults are handled, we simply concatenate the keys
-        # for test quantities and regular variables.
         variable_keys = test_quantities_names + variable_keys
-
-        # Prepend test quantities to draws
         estimates = test_quantities_estimates | estimates
         targets = test_quantities_targets | targets
 

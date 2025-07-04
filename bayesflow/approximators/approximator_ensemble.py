@@ -19,6 +19,9 @@ class ApproximatorEnsemble(Approximator):
         self.num_approximators = len(self.approximators)
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        # Remove the ensemble dimension from data_shapes. This expects data_shapes are the shapes of a
+        # batch of training data, where the second axis corresponds to different approximators.
+        data_shapes = {k: v[:1] + v[2:] for k, v in data_shapes.items()}
         for approximator in self.approximators.values():
             approximator.build(data_shapes)
 
@@ -30,19 +33,32 @@ class ApproximatorEnsemble(Approximator):
         sample_weight: Tensor = None,
         stage: str = "training",
     ) -> dict[str, dict[str, Tensor]]:
+        # Prepare empty dict for metrics
         metrics = {}
-        for approx_name, approximator in self.approximators.items():
-            # TODO: actually do the slicing
-            inference_variables_slice = inference_variables
-            inference_conditions_slice = inference_conditions
-            summary_variables_slice = summary_variables
-            sample_weight_slice = sample_weight
+
+        # Define the variable slices as None (default) or respective input
+        _inference_variables = inference_variables
+        _inference_conditions = inference_conditions
+        _summary_variables = summary_variables
+        _sample_weight = sample_weight
+
+        for i, (approx_name, approximator) in enumerate(self.approximators.items()):
+            # During training each approximator receives its own separate slice
+            if stage == "training":
+                # Pick out the correct slice for each ensemble member
+                _inference_variables = inference_variables[:, i]
+                if inference_conditions is not None:
+                    _inference_conditions = inference_conditions[:, i]
+                if summary_variables is not None:
+                    _summary_variables = summary_variables[:, i]
+                if sample_weight is not None:
+                    _sample_weight = sample_weight[:, i]
 
             metrics[approx_name] = approximator.compute_metrics(
-                inference_variables=inference_variables_slice,
-                inference_conditions=inference_conditions_slice,
-                summary_variables=summary_variables_slice,
-                sample_weight=sample_weight_slice,
+                inference_variables=_inference_variables,
+                inference_conditions=_inference_conditions,
+                summary_variables=_summary_variables,
+                sample_weight=_sample_weight,
                 stage=stage,
             )
 
@@ -51,7 +67,6 @@ class ApproximatorEnsemble(Approximator):
         for approx_name in metrics.keys():
             for metric_key, value in metrics[approx_name].items():
                 joint_metrics[f"{approx_name}/{metric_key}"] = value
-
         metrics = joint_metrics
 
         # Sum over losses

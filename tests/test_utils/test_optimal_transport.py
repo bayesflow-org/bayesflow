@@ -27,13 +27,14 @@ def test_shapes(method):
     assert keras.ops.shape(oy) == keras.ops.shape(y)
 
 
-def test_transport_cost_improves():
+@pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
+def test_transport_cost_improves(method):
     x = keras.random.normal((128, 2), seed=0)
     y = keras.random.normal((128, 2), seed=1)
 
     before_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
 
-    x, y = optimal_transport(x, y, regularization=0.1, seed=0, max_steps=1000)
+    x, y = optimal_transport(x, y, regularization=0.1, seed=0, max_steps=1000, method=method)
 
     after_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
 
@@ -41,14 +42,17 @@ def test_transport_cost_improves():
 
 
 @pytest.mark.skip(reason="too unreliable")
-def test_assignment_is_optimal():
+@pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
+def test_assignment_is_optimal(method):
     x = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(x)[0]), seed=0)
     optimal_assignments = keras.ops.argsort(p)
 
     y = x[p]
 
-    x, y, assignments = optimal_transport(x, y, regularization=0.1, seed=0, max_steps=10_000, return_assignments=True)
+    x, y, assignments = optimal_transport(
+        x, y, regularization=0.1, seed=0, max_steps=10_000, method=method, return_assignments=True
+    )
 
     assert_allclose(assignments, optimal_assignments)
 

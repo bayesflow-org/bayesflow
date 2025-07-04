@@ -23,7 +23,7 @@ def prepare_plot_data(
     figsize: tuple = None,
     stacked: bool = False,
     default_name: str = "v",
-) -> Mapping[str, Any]:
+) -> dict[str, Any]:
     """
     Procedural wrapper that encompasses all preprocessing steps, including shape-checking, parameter name
     generation, layout configuration, figure initialization, and collapsing of axes.
@@ -56,6 +56,12 @@ def prepare_plot_data(
         Whether the plots are stacked horizontally
     default_name      : str, optional (default = "v")
         The default name to use for estimates if None provided
+
+    Returns
+    -------
+    plot_data : dict[str, Any]
+        A dictionary containing all preprocessed data and plotting objects required for visualization,
+        including estimates, targets, variable names, figure, axes, and layout configuration.
     """
 
     plot_data = dicts_to_arrays(

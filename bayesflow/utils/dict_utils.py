@@ -282,6 +282,10 @@ def dicts_to_arrays(
         Ground-truth values corresponding to the estimates. Must match the structure and dimensionality
         of `estimates` in terms of first and last axis.
 
+    priors : dict[str, ndarray] or ndarray, optional (default = None)
+        Prior draws. Must match the structure and dimensionality
+        of `estimates` in terms of first and last axis.
+
     dataset_ids : Sequence of integers indexing the datasets to select (default = None).
         By default, use all datasets.
 

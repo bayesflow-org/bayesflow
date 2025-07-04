@@ -20,7 +20,7 @@ def log_sinkhorn(x1, x2, seed: int = None, **kwargs):
 def log_sinkhorn_plan(x1, x2, regularization: float = 1.0, rtol=1e-5, atol=1e-8, max_steps=None):
     """
     Log-stabilized version of :py:func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn_plan`.
-    Significantly slower than the unstabilized version, so use only when you need numerical stability.
+    Slightly slower than the unstabilized version, so use primarily when you need numerical stability.
     """
     cost = euclidean(x1, x2)
 

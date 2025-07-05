@@ -71,21 +71,20 @@ def sinkhorn_plan(
         The transport probabilities.
     """
     cost = euclidean(x1, x2)
+    cost_scaled = -cost / regularization
 
-    # initialize the transport plan from a gaussian kernel
-    logits = cost / -(regularization * keras.ops.mean(cost) + 1e-16)
-    # numerical stability: we can subtract the maximum without changing the result
-    logits = logits - keras.ops.max(logits)
-    # exponentiate to get the initial transport plan
-    plan = keras.ops.exp(logits)
+    # initialize transport plan from a gaussian kernel
+    # (more numerically stable version of keras.ops.exp(-cost/regularization))
+    plan = keras.ops.exp(cost_scaled - keras.ops.max(cost_scaled))
+    n, m = keras.ops.shape(cost)
 
     def contains_nans(plan):
         return keras.ops.any(keras.ops.isnan(plan))
 
     def is_converged(plan):
-        # for convergence, the plan should be doubly stochastic
-        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), 1.0, rtol=rtol, atol=atol))
-        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), 1.0, rtol=rtol, atol=atol))
+        # for convergence, the target marginals must match
+        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), 1.0 / m, rtol=rtol, atol=atol))
+        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), 1.0 / n, rtol=rtol, atol=atol))
         return conv0 & conv1
 
     def cond(_, plan):
@@ -94,8 +93,8 @@ def sinkhorn_plan(
 
     def body(steps, plan):
         # Sinkhorn-Knopp: repeatedly normalize the transport plan along each dimension
-        plan = plan / keras.ops.sum(plan, axis=0, keepdims=True)
-        plan = plan / keras.ops.sum(plan, axis=1, keepdims=True)
+        plan = plan / keras.ops.sum(plan, axis=0, keepdims=True) * (1.0 / m)
+        plan = plan / keras.ops.sum(plan, axis=1, keepdims=True) * (1.0 / n)
 
         return steps + 1, plan
 

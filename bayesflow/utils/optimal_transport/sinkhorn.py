@@ -11,7 +11,7 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, **kwargs) -> (Tensor, Ten
     """
     Matches elements from x2 onto x1 using the Sinkhorn-Knopp algorithm.
 
-    Sinkhorn-Knopp is an iterative algorithm that repeatedly normalizes the cost matrix into a doubly stochastic
+    Sinkhorn-Knopp is an iterative algorithm that repeatedly normalizes the cost matrix into a
     transport plan, containing assignment probabilities.
     The permutation is then sampled randomly according to the transport plan.
 
@@ -31,8 +31,10 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, **kwargs) -> (Tensor, Ten
         Assignment indices for x2.
 
     """
-    plan = sinkhorn_plan(x1, x2, **kwargs)
-    assignments = keras.random.categorical(plan, num_samples=1, seed=seed)
+    plan = sinkhorn_plan(x1, x2, **kwargs)  # shape: (n, m)
+
+    # we sample from plan.T to receive assignments of length m, with elements up to n
+    assignments = keras.random.categorical(keras.ops.log(plan.T), num_samples=1, seed=seed)
     assignments = keras.ops.squeeze(assignments, axis=1)
 
     return assignments

@@ -46,7 +46,7 @@ def test_assignment_is_optimal(method):
     y = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(y)[0]), seed=0)
 
-    x = y[p]
+    x = keras.ops.take(y, p, axis=0)
 
     _, _, assignments = optimal_transport(
         x, y, regularization=0.1, seed=0, max_steps=10_000, method=method, return_assignments=True

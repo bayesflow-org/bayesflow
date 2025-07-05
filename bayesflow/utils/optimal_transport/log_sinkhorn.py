@@ -8,10 +8,10 @@ from .euclidean import euclidean
 def log_sinkhorn(x1, x2, seed: int = None, **kwargs):
     """
     Log-stabilized version of :py:func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn`.
-    Significantly slower than the unstabilized version, so use only when you need numerical stability.
+    About 50% slower than the unstabilized version, so use only when you need numerical stability.
     """
     log_plan = log_sinkhorn_plan(x1, x2, **kwargs)
-    assignments = keras.random.categorical(keras.ops.exp(log_plan), num_samples=1, seed=seed)
+    assignments = keras.random.categorical(log_plan, num_samples=1, seed=seed)
     assignments = keras.ops.squeeze(assignments, axis=1)
 
     return assignments
@@ -20,21 +20,25 @@ def log_sinkhorn(x1, x2, seed: int = None, **kwargs):
 def log_sinkhorn_plan(x1, x2, regularization: float = 1.0, rtol=1e-5, atol=1e-8, max_steps=None):
     """
     Log-stabilized version of :py:func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn_plan`.
-    Slightly slower than the unstabilized version, so use primarily when you need numerical stability.
+    About 50% slower than the unstabilized version, so use primarily when you need numerical stability.
     """
     cost = euclidean(x1, x2)
+    cost_scaled = -cost / regularization
 
-    log_plan = cost / -(regularization * keras.ops.mean(cost) + 1e-16)
+    # initialize transport plan from a gaussian kernel
+    log_plan = cost_scaled - keras.ops.max(cost_scaled)
+    n, m = keras.ops.shape(log_plan)
+
+    log_a = -keras.ops.log(n)
+    log_b = -keras.ops.log(m)
 
     def contains_nans(plan):
         return keras.ops.any(keras.ops.isnan(plan))
 
     def is_converged(plan):
-        # for convergence, the plan should be doubly stochastic
-        # NOTE: for small atol and rtol, using rtol_log=0.0 and atol_log=atol + rtol
-        # is equivalent to the convergence check in the unstabilized version
-        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=0), 0.0, rtol=0.0, atol=atol + rtol))
-        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=1), 0.0, rtol=0.0, atol=atol + rtol))
+        # for convergence, the target marginals must match
+        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=0), log_b, rtol=0.0, atol=rtol + atol))
+        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(plan, axis=1), log_a, rtol=0.0, atol=rtol + atol))
         return conv0 & conv1
 
     def cond(_, plan):
@@ -43,8 +47,8 @@ def log_sinkhorn_plan(x1, x2, regularization: float = 1.0, rtol=1e-5, atol=1e-8,
 
     def body(steps, plan):
         # Sinkhorn-Knopp: repeatedly normalize the transport plan along each dimension
-        plan = keras.ops.log_softmax(plan, axis=0)
-        plan = keras.ops.log_softmax(plan, axis=1)
+        plan = plan - keras.ops.logsumexp(plan, axis=0, keepdims=True) + log_b
+        plan = plan - keras.ops.logsumexp(plan, axis=1, keepdims=True) + log_a
 
         return steps + 1, plan
 

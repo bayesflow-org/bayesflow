@@ -11,7 +11,7 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, **kwargs) -> (Tensor, Ten
     """
     Matches elements from x2 onto x1 using the Sinkhorn-Knopp algorithm.
 
-    Sinkhorn-Knopp is an iterative algorithm that repeatedly normalizes the cost matrix into a doubly stochastic
+    Sinkhorn-Knopp is an iterative algorithm that repeatedly normalizes the cost matrix into a
     transport plan, containing assignment probabilities.
     The permutation is then sampled randomly according to the transport plan.
 
@@ -27,12 +27,15 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, **kwargs) -> (Tensor, Ten
     :param seed: Random seed to use for sampling indices.
         Default: None, which means the seed will be auto-determined for non-compiled contexts.
 
-    :return: Tensor of shape (m,)
+    :return: Tensor of shape (n,)
         Assignment indices for x2.
 
     """
     plan = sinkhorn_plan(x1, x2, **kwargs)
-    assignments = keras.random.categorical(plan, num_samples=1, seed=seed)
+
+    # we sample from log(plan) to receive assignments of length n, corresponding to indices of x2
+    # such that x2[assignments] matches x1
+    assignments = keras.random.categorical(keras.ops.log(plan), num_samples=1, seed=seed)
     assignments = keras.ops.squeeze(assignments, axis=1)
 
     return assignments
@@ -42,7 +45,7 @@ def sinkhorn_plan(
     x1: Tensor,
     x2: Tensor,
     regularization: float = 1.0,
-    max_steps: int = 10_000,
+    max_steps: int = None,
     rtol: float = 1e-5,
     atol: float = 1e-8,
 ) -> Tensor:
@@ -59,7 +62,7 @@ def sinkhorn_plan(
         Controls the standard deviation of the Gaussian kernel.
 
     :param max_steps: Maximum number of iterations, or None to run until convergence.
-        Default: 10_000
+        Default: None
 
     :param rtol: Relative tolerance for convergence.
         Default: 1e-5.
@@ -71,17 +74,20 @@ def sinkhorn_plan(
         The transport probabilities.
     """
     cost = euclidean(x1, x2)
+    cost_scaled = -cost / regularization
 
-    # initialize the transport plan from a gaussian kernel
-    plan = keras.ops.exp(cost / -(regularization * keras.ops.mean(cost) + 1e-16))
+    # initialize transport plan from a gaussian kernel
+    # (more numerically stable version of keras.ops.exp(-cost/regularization))
+    plan = keras.ops.exp(cost_scaled - keras.ops.max(cost_scaled))
+    n, m = keras.ops.shape(cost)
 
     def contains_nans(plan):
         return keras.ops.any(keras.ops.isnan(plan))
 
     def is_converged(plan):
-        # for convergence, the plan should be doubly stochastic
-        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), 1.0, rtol=rtol, atol=atol))
-        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), 1.0, rtol=rtol, atol=atol))
+        # for convergence, the target marginals must match
+        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), 1.0 / m, rtol=rtol, atol=atol))
+        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), 1.0 / n, rtol=rtol, atol=atol))
         return conv0 & conv1
 
     def cond(_, plan):
@@ -90,8 +96,8 @@ def sinkhorn_plan(
 
     def body(steps, plan):
         # Sinkhorn-Knopp: repeatedly normalize the transport plan along each dimension
-        plan = keras.ops.softmax(plan, axis=0)
-        plan = keras.ops.softmax(plan, axis=1)
+        plan = plan / keras.ops.sum(plan, axis=0, keepdims=True) * (1.0 / m)
+        plan = plan / keras.ops.sum(plan, axis=1, keepdims=True) * (1.0 / n)
 
         return steps + 1, plan
 

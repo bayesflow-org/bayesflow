@@ -27,14 +27,15 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, **kwargs) -> (Tensor, Ten
     :param seed: Random seed to use for sampling indices.
         Default: None, which means the seed will be auto-determined for non-compiled contexts.
 
-    :return: Tensor of shape (m,)
+    :return: Tensor of shape (n,)
         Assignment indices for x2.
 
     """
-    plan = sinkhorn_plan(x1, x2, **kwargs)  # shape: (n, m)
+    plan = sinkhorn_plan(x1, x2, **kwargs)
 
-    # we sample from plan.T to receive assignments of length m, with elements up to n
-    assignments = keras.random.categorical(keras.ops.log(plan.T), num_samples=1, seed=seed)
+    # we sample from log(plan) to receive assignments of length n, corresponding to indices of x2
+    # such that x2[assignments] matches x1
+    assignments = keras.random.categorical(keras.ops.log(plan), num_samples=1, seed=seed)
     assignments = keras.ops.squeeze(assignments, axis=1)
 
     return assignments

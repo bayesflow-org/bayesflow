@@ -41,20 +41,20 @@ def test_transport_cost_improves(method):
     assert after_cost < before_cost
 
 
-@pytest.mark.skip(reason="too unreliable")
-@pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
+# @pytest.mark.skip(reason="too unreliable")
+@pytest.mark.parametrize("method", ["sinkhorn"])
 def test_assignment_is_optimal(method):
-    x = keras.random.normal((16, 2), seed=0)
-    p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(x)[0]), seed=0)
-    optimal_assignments = keras.ops.argsort(p)
+    y = keras.random.normal((16, 2), seed=0)
+    p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(y)[0]), seed=0)
 
-    y = x[p]
+    x = y[p]
 
-    x, y, assignments = optimal_transport(
+    _, _, assignments = optimal_transport(
         x, y, regularization=0.1, seed=0, max_steps=10_000, method=method, return_assignments=True
     )
 
-    assert_allclose(assignments, optimal_assignments)
+    # transport is stochastic, so it is expected that a small fraction of assignments do not match
+    assert keras.ops.sum(assignments == p) > 14
 
 
 def test_assignment_aligns_with_pot():
@@ -109,6 +109,7 @@ def test_sinkhorn_plan_aligns_with_pot():
 
     pot_result = sinkhorn(a, b, M, 0.1)
     our_result = sinkhorn_plan(x1, x2, regularization=0.1, atol=1e-8, rtol=1e-8)
+
     assert_allclose(pot_result, our_result)
 
 

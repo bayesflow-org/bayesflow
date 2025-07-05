@@ -79,3 +79,51 @@ def test_assignment_aligns_with_pot():
     _, _, assignments = optimal_transport(x, y, regularization=1e-3, seed=0, max_steps=10_000, return_assignments=True)
 
     assert_allclose(pot_assignments, assignments)
+
+
+def test_sinkhorn_plan_correct_marginals():
+    from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
+
+    x1 = keras.random.normal((10, 2), seed=0)
+    x2 = keras.random.normal((20, 2), seed=1)
+
+    assert keras.ops.all(keras.ops.isclose(keras.ops.sum(sinkhorn_plan(x1, x2), axis=0), 0.05, atol=1e-6))
+    assert keras.ops.all(keras.ops.isclose(keras.ops.sum(sinkhorn_plan(x1, x2), axis=1), 0.1, atol=1e-6))
+
+
+def test_sinkhorn_plan_aligns_with_pot():
+    try:
+        from ot.bregman import sinkhorn
+    except (ImportError, ModuleNotFoundError):
+        pytest.skip("Need to install POT to run this test.")
+
+    from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
+    from bayesflow.utils.optimal_transport.euclidean import euclidean
+
+    x1 = keras.random.normal((10, 3), seed=0)
+    x2 = keras.random.normal((20, 3), seed=1)
+
+    a = keras.ops.ones(10) / 10
+    b = keras.ops.ones(20) / 20
+    M = euclidean(x1, x2)
+
+    pot_result = sinkhorn(a, b, M, 0.1)
+    our_result = sinkhorn_plan(x1, x2, regularization=0.1, atol=1e-8, rtol=1e-8)
+    assert_allclose(pot_result, our_result)
+
+
+def test_sinkhorn_plan_matches_analytical_result():
+    from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
+
+    x1 = keras.ops.ones(16)
+    x2 = keras.ops.ones(64)
+
+    marginal_x1 = keras.ops.ones(16) / 16
+    marginal_x2 = keras.ops.ones(64) / 64
+
+    result = sinkhorn_plan(x1, x2, regularization=0.1)
+
+    # If x1 and x2 are identical, the optimal plan is simply the outer product of the marginals
+    expected = keras.ops.outer(marginal_x1, marginal_x2)
+
+    assert_allclose(result, expected)

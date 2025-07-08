@@ -61,6 +61,7 @@ def test_assignment_aligns_with_pot():
         from ot.bregman import sinkhorn_log
     except (ImportError, ModuleNotFoundError):
         pytest.skip("Need to install POT to run this test.")
+        return
 
     x = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(x)[0]), seed=0)
@@ -71,7 +72,7 @@ def test_assignment_aligns_with_pot():
     M = x[:, None] - y[None, :]
     M = keras.ops.norm(M, axis=-1)
 
-    pot_plan = sinkhorn_log(a, b, M, reg=1e-3, stopThr=1e-7)
+    pot_plan = sinkhorn_log(a, b, M, numItermax=10_000, reg=1e-3, stopThr=1e-7)
     pot_assignments = keras.random.categorical(keras.ops.log(pot_plan), num_samples=1, seed=0)
     pot_assignments = keras.ops.squeeze(pot_assignments, axis=-1)
 

@@ -18,10 +18,15 @@ class ApproximatorEnsemble(Approximator):
 
         self.num_approximators = len(self.approximators)
 
+    def build_from_data(self, adapted_data: dict[str, any]):
+        data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
+        if len(data_shapes["inference_variables"]) > 2:
+            # Remove the ensemble dimension from data_shapes. This expects data_shapes are the shapes of a
+            # batch of training data, where the second axis corresponds to different approximators.
+            data_shapes = {k: v[:1] + v[2:] for k, v in data_shapes.items()}
+        self.build(data_shapes)
+
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        # Remove the ensemble dimension from data_shapes. This expects data_shapes are the shapes of a
-        # batch of training data, where the second axis corresponds to different approximators.
-        data_shapes = {k: v[:1] + v[2:] for k, v in data_shapes.items()}
         for approximator in self.approximators.values():
             approximator.build(data_shapes)
 
@@ -82,7 +87,7 @@ class ApproximatorEnsemble(Approximator):
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, dict[str, np.ndarray]]:
         samples = {}
         for approx_name, approximator in self.approximators.items():
             if self._has_obj_method(approximator, "sample"):
@@ -90,6 +95,25 @@ class ApproximatorEnsemble(Approximator):
                     num_samples=num_samples, conditions=conditions, split=split, **kwargs
                 )
         return samples
+
+    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+        log_prob = {}
+        for approx_name, approximator in self.approximators.items():
+            if self._has_obj_method(approximator, "log_prob"):
+                log_prob[approx_name] = approximator.log_prob(data=data, **kwargs)
+        return log_prob
+
+    def estimate(
+        self,
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
+        estimates = {}
+        for approx_name, approximator in self.approximators.items():
+            if self._has_obj_method(approximator, "estimate"):
+                estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
+        return estimates
 
     def _has_obj_method(self, obj, name):
         method = getattr(obj, name, None)

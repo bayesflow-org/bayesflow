@@ -91,6 +91,11 @@ class FlowMatching(InferenceNetwork):
             Additional keyword arguments for configuring optimal transport. Default is None.
         subnet_kwargs: dict[str, any], optional, deprecated
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
+        concatenate_subnet_input: bool, optional
+            Flag for advanced users to control whether all inputs to the subnet should be concatenated
+            into a single vector or passed as separate arguments. If set to False, the subnet
+            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
+            and optional 'conditions'. Default is True.
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
@@ -165,7 +170,7 @@ class FlowMatching(InferenceNetwork):
         Parameters
         ----------
         x : Tensor
-            The input tensor for the diffusion model, typically of shape (..., D), but can vary.
+            The parameter tensor, typically of shape (..., D), but can vary.
         t : Tensor
             The time tensor, typically of shape (..., 1).
         conditions : Tensor, optional
@@ -185,7 +190,7 @@ class FlowMatching(InferenceNetwork):
         else:
             if training is False:
                 t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
-            return self.subnet(x, t, conditions, training=training)
+            return self.subnet(x=x, t=t, conditions=conditions, training=training)
 
     def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))

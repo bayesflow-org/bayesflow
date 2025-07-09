@@ -67,6 +67,11 @@ class ConsistencyModel(InferenceNetwork):
             Final number of discretization steps
         subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
+        concatenate_subnet_input: bool, optional
+            Flag for advanced users to control whether all inputs to the subnet should be concatenated
+            into a single vector or passed as separate arguments. If set to False, the subnet
+            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
+            and optional 'conditions'. Default is True.
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
@@ -268,7 +273,7 @@ class ConsistencyModel(InferenceNetwork):
         Parameters
         ----------
         x : Tensor
-            The input tensor for the diffusion model, typically of shape (..., D), but can vary.
+            The parameter tensor, typically of shape (..., D), but can vary.
         t : Tensor
             The time tensor, typically of shape (..., 1).
         conditions : Tensor, optional
@@ -285,7 +290,7 @@ class ConsistencyModel(InferenceNetwork):
             xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
             return self.subnet(xtc, training=training)
         else:
-            return self.subnet(x, t, conditions, training=training)
+            return self.subnet(x=x, t=t, conditions=conditions, training=training)
 
     def consistency_function(self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         """Compute consistency function.

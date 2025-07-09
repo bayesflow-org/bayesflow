@@ -85,6 +85,12 @@ class DiffusionModel(InferenceNetwork):
             Additional keyword arguments passed to the noise schedule constructor. Default is None.
         integrate_kwargs : dict[str, any], optional
             Configuration dictionary for integration during training or inference. Default is None.
+        concatenate_subnet_input: bool, optional
+            Flag for advanced users to control whether all inputs to the subnet should be concatenated
+            into a single vector or passed as separate arguments. If set to False, the subnet
+            must accept three separate inputs: 'x' (noisy parameters), 't' (log signal-to-noise ratio),
+            and optional 'conditions'. Default is True.
+
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
         """
@@ -227,7 +233,7 @@ class DiffusionModel(InferenceNetwork):
             xtc = tensor_utils.concatenate_valid([xz, log_snr, conditions], axis=-1)
             return self.subnet(xtc, training=training)
         else:
-            return self.subnet(xz, log_snr, conditions, training=training)
+            return self.subnet(x=xz, t=log_snr, conditions=conditions, training=training)
 
     def velocity(
         self,

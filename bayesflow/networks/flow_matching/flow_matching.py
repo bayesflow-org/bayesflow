@@ -155,7 +155,7 @@ class FlowMatching(InferenceNetwork):
 
         return base_config | serialize(config)
 
-    def _subnet_input(
+    def _apply_subnet(
         self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
     ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
@@ -191,7 +191,7 @@ class FlowMatching(InferenceNetwork):
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
         time = expand_right_as(time, xz)
 
-        subnet_out = self._subnet_input(xz, time, conditions, training=training)
+        subnet_out = self._apply_subnet(xz, time, conditions, training=training)
         return self.output_projector(subnet_out, training=training)
 
     def _velocity_trace(

@@ -258,7 +258,7 @@ class ConsistencyModel(InferenceNetwork):
             x = self.consistency_function(x_n, t, conditions=conditions, training=training)
         return x
 
-    def _subnet_input(
+    def _apply_subnet(
         self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
     ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
@@ -302,7 +302,7 @@ class ConsistencyModel(InferenceNetwork):
             Whether internal layers (e.g., dropout) should behave in train or inference mode.
         """
 
-        subnet_out = self._subnet_input(x, t, conditions, training=training)
+        subnet_out = self._apply_subnet(x, t, conditions, training=training)
         f = self.output_projector(subnet_out)
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)

@@ -200,7 +200,7 @@ class DiffusionModel(InferenceNetwork):
             return (z + sigma_t**2 * pred) / alpha_t
         raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
-    def _subnet_input(
+    def _apply_subnet(
         self, xz: Tensor, log_snr: Tensor, conditions: Tensor = None, training: bool = False
     ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
@@ -270,7 +270,7 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-        subnet_out = self._subnet_input(
+        subnet_out = self._apply_subnet(
             xz, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
         )
         pred = self.output_projector(subnet_out, training=training)
@@ -491,7 +491,7 @@ class DiffusionModel(InferenceNetwork):
         diffused_x = alpha_t * x + sigma_t * eps_t
 
         # calculate output of the network
-        subnet_out = self._subnet_input(
+        subnet_out = self._apply_subnet(
             diffused_x, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
         )
         pred = self.output_projector(subnet_out, training=training)

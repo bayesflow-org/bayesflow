@@ -204,7 +204,7 @@ class DiffusionModel(InferenceNetwork):
         self, xz: Tensor, log_snr: Tensor, conditions: Tensor = None, training: bool = False
     ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
-        Prepares the input for the subnet either by concatenating the latent variable `xz`,
+        Prepares and passes the input to the subnet either by concatenating the latent variable `xz`,
         the signal-to-noise ratio `log_snr`, and optional conditions or by returning them separately.
 
         Parameters
@@ -221,7 +221,7 @@ class DiffusionModel(InferenceNetwork):
         Returns
         -------
         Tensor
-            The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
+            The output tensor from the subnet.
         """
         if self._concatenate_subnet_input:
             xtc = tensor_utils.concatenate_valid([xz, log_snr, conditions], axis=-1)

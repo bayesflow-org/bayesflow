@@ -159,7 +159,7 @@ class FlowMatching(InferenceNetwork):
         self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
     ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
         """
-        Prepares the input for the subnet either by concatenating the latent variable `x`,
+        Prepares and passes the input to the subnet either by concatenating the latent variable `x`,
         the time `t`, and optional conditions or by returning them separately.
 
         Parameters
@@ -176,7 +176,7 @@ class FlowMatching(InferenceNetwork):
         Returns
         -------
         Tensor
-            The concatenated input tensor for the subnet or a tuple of tensors if concatenation is disabled.
+            The output tensor from the subnet.
         """
         if self._concatenate_subnet_input:
             t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))

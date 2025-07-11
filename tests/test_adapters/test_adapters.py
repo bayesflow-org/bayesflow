@@ -327,9 +327,7 @@ def test_nnpe(random_data):
 
     # Test basic case with global noise application
     ad = Adapter().nnpe("x1", spike_scale=1.0, slab_scale=1.0, per_dimension=False, seed=42)
-    result_training = ad(random_data, stage="training")
-    result_validation = ad(random_data, stage="validation")
-    result_inference = ad(random_data, stage="inference")
+    result_training = ad(random_data)
     result_inversed = ad(random_data, inverse=True)
     serialized = serialize(ad)
     deserialized = deserialize(serialized)
@@ -349,13 +347,11 @@ def test_nnpe(random_data):
 
     # check that the validation and inference data as well as inversed results are unchanged
     for k, v in random_data.items():
-        assert np.allclose(result_validation[k], v)
-        assert np.allclose(result_inference[k], v)
         assert np.allclose(result_inversed[k], v)
 
     # Test both scales and seed are None case (automatic scale determination) with dimensionwise noise application
     ad_auto = Adapter().nnpe("y1", slab_scale=None, spike_scale=None, per_dimension=True, seed=None)
-    result_training_auto = ad_auto(random_data, stage="training")
+    result_training_auto = ad_auto(random_data)
     assert not np.allclose(result_training_auto["y1"], random_data["y1"])
     for k, v in random_data.items():
         if k == "y1":
@@ -378,8 +374,8 @@ def test_nnpe(random_data):
     # Apply dimensionwise and global adapters with automatic slab_scale scale determination
     ad_partial_global = Adapter().nnpe("x", spike_scale=0, slab_scale=None, per_dimension=False, seed=42)
     ad_partial_dim = Adapter().nnpe("x", spike_scale=[0, 1], slab_scale=None, per_dimension=True, seed=42)
-    res_dim = ad_partial_dim(var_data, stage="training")
-    res_glob = ad_partial_global(var_data, stage="training")
+    res_dim = ad_partial_dim(var_data)
+    res_glob = ad_partial_global(var_data)
 
     # Compute standard deviations of noise per last axis dimension
     noise_dim = res_dim["x"] - var_data["x"]

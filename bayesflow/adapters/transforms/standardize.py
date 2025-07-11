@@ -13,7 +13,7 @@ class Standardize(ElementwiseTransform):
 
     >>> z = (x - mean(x)) / std(x)
 
-    Important: Ensure dynamic standarization (employed by BayesFlow approximators) has been
+    Important: Ensure dynamic standardization (employed by BayesFlow approximators) has been
     turned off when using this transform.
 
     Parameters

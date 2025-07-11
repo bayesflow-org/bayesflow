@@ -127,7 +127,7 @@ def test_calibration_log_gamma_end_to_end():
         return in_interval
 
     sbc_calibration = [run_sbc(N=N, S=S, D=D) for _ in range(100)]
-    lower_expected, upper_expected = binom.ppf((0.0001, 0.9999), 100, 0.95)
+    lower_expected, upper_expected = binom.ppf((0.0005, 0.9995), 100, 0.95)
 
     # this test should fail with a probability of 0.1%
     assert lower_expected <= np.sum(sbc_calibration) <= upper_expected

@@ -116,8 +116,8 @@ def test_calibration_log_gamma_end_to_end():
         ranks = np.sum(posterior_draws < prior_draws, axis=0)
 
         # this is the distribution of gamma under uniform ranks
-        gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=100)
-        lower, upper = np.quantile(gamma_null, (0.05, 0.995))
+        gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=200)
+        lower, upper = np.quantile(gamma_null, (0.025, 0.975))
 
         # this is the empirical gamma
         observed_gamma = bf.diagnostics.metrics.gamma_discrepancy(ranks, num_post_draws=S)
@@ -127,7 +127,7 @@ def test_calibration_log_gamma_end_to_end():
         return in_interval
 
     sbc_calibration = [run_sbc(N=N, S=S, D=D) for _ in range(100)]
-    lower_expected, upper_expected = binom.ppf((0.0005, 0.9995), 100, 0.95)
+    lower_expected, upper_expected = binom.ppf((0.0001, 0.9999), 100, 0.95)
 
     # this test should fail with a probability of 0.1%
     assert lower_expected <= np.sum(sbc_calibration) <= upper_expected

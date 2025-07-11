@@ -37,23 +37,6 @@ class NNPE(ElementwiseTransform):
         The seed for the random number generator. If None, a random seed is used. Used instead of np.random.Generator
         here to enable easy serialization.
 
-    Notes
-    -----
-    The spike-and-slab distribution consists of a mixture of a Normal distribution (spike) and Cauchy distribution
-    (slab), which are applied based on a Bernoulli random variable with p=0.5.
-
-    The scales of the spike and slab distributions can be set manually, or they are automatically determined by scaling
-    the default scales of [1] (which expect standardized data) by the standard deviation of the input data.
-    For automatic determination, the standard deviation is determined either globally (if `per_dimension=False`) or per
-    dimension of the last axis of the input data (if `per_dimension=True`). Note that automatic scale determination is
-    applied batch-wise in the forward method, which means that determined scales can vary between batches due to varying
-    standard deviations in the batch input data.
-
-    The original implementation in [1] can be recovered by applying the following settings on standardized data:
-    - `spike_scale=0.01`
-    - `slab_scale=0.25`
-    - `per_dimension=False`
-
     Examples
     --------
     >>> adapter = bf.Adapter().nnpe(["x"])
@@ -136,27 +119,18 @@ class NNPE(ElementwiseTransform):
                     raise ValueError(f"{name}: expected scalar, got array of shape {arr.shape}")
                 return arr
 
-    def forward(self, data: np.ndarray, stage: str = "inference", **kwargs) -> np.ndarray:
+    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Add spike‐and‐slab noise to `data` during training, using automatic scale determination if not provided (see
-        “Notes” section of the class docstring for details).
+        Add spike‐and‐slab noise to `data` using automatic scale determination if not provided.
+        See “Notes” section of the class docstring for details).
 
         Parameters
         ----------
         data : np.ndarray
             Input array to be perturbed.
-        stage : str, default='inference'
-            If 'training', noise is added; else data is returned unchanged.
         **kwargs
             Unused keyword arguments.
-
-        Returns
-        -------
-        np.ndarray
-            Noisy data when `stage` is 'training', otherwise the original input.
         """
-        if stage != "training":
-            return data
 
         # Check data validity
         if not np.all(np.isfinite(data)):

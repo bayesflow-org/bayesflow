@@ -390,7 +390,7 @@ class ModelComparisonApproximator(Approximator):
             probs = not logits
 
         # Apply adapter transforms to raw simulated / real quantities
-        conditions = self.adapter(conditions, strict=False, stage="inference", **kwargs)
+        conditions = self.adapter(conditions, strict=False, **kwargs)
 
         # Ensure only keys relevant for sampling are present in the conditions dictionary
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
@@ -429,7 +429,7 @@ class ModelComparisonApproximator(Approximator):
         if self.summary_network is None:
             raise ValueError("A summary network is required to compute summaries.")
 
-        data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
+        data_adapted = self.adapter(data, strict=False, **kwargs)
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
             raise ValueError("Summary variables are required to compute summaries.")
 

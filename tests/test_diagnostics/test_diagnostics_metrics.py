@@ -132,7 +132,7 @@ def test_calibration_log_gamma_end_to_end():
     # this test should fail with a probability of 0.1%
     assert lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
-    # sbc should almost always fial for slightly biased posterior draws
+    # sbc should almost always fail for slightly biased posterior draws
     sbc_calibration = [run_sbc(N=N, S=S, D=D, bias=1) for _ in range(100)]
     assert not lower_expected <= np.sum(sbc_calibration) <= upper_expected
 

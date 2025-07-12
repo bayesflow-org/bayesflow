@@ -1,12 +1,7 @@
 import numpy as np
 
-from bayesflow.utils.serialization import serializable, serialize
 
-from .elementwise_transform import ElementwiseTransform
-
-
-@serializable("bayesflow.adapters")
-class NNPE(ElementwiseTransform):
+class NNPE:
     """Implements noisy neural posterior estimation (NNPE) as described in [1], which adds noise following a
     spike-and-slab distribution to the training data as a mild form of data augmentation to robustify against noisy
     real-world data (see [1, 2] for benchmarks). Adds the options of automatic noise scale determination and
@@ -34,12 +29,18 @@ class NNPE(ElementwiseTransform):
         automatic scale determination occurs globally. The original implementation in [1] uses global application
         (i.e., per_dimension=False), whereas dimensionwise is recommended if the data dimensions are heterogeneous.
     seed : int or None
-        The seed for the random number generator. If None, a random seed is used. Used instead of np.random.Generator
-        here to enable easy serialization.
+        The seed for the random number generator. If None, a random seed is used.
 
     Examples
     --------
-    >>> adapter = bf.Adapter().nnpe(["x"])
+    >>> nnpe_aug = bf.augmentations.NNPE(spike_scale=0.01, slab_scale=0.2, per_dimension=True, seed=42)
+    >>> dataset = bf.datasets.OnlineDataset(
+    ...     simulator=my_sim,
+    ...     batch_size=64,
+    ...     num_batches=100,
+    ...     adapter=None,
+    ...     augmentations={"data": nnpe_aug},
+    ... )
     """
 
     DEFAULT_SPIKE = 0.01
@@ -54,11 +55,39 @@ class NNPE(ElementwiseTransform):
         seed: int | None = None,
     ):
         super().__init__()
+
         self.spike_scale = spike_scale
         self.slab_scale = slab_scale
         self.per_dimension = per_dimension
         self.seed = seed
         self.rng = np.random.default_rng(seed)
+
+    def __call__(self, data: np.ndarray, **kwargs) -> np.ndarray:
+        """
+        Add spike‐and‐slab noise to `data` using automatic scale determination if not provided.
+        See “Notes” section of the class docstring for details).
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Input array to be perturbed.
+        **kwargs
+            Unused keyword arguments.
+        """
+
+        # Check data validity
+        if not np.all(np.isfinite(data)):
+            raise ValueError("NNPE.forward: `data` contains NaN or infinite values.")
+
+        spike_scale = self._resolve_scale("spike_scale", self.spike_scale, self.DEFAULT_SPIKE, data)
+        slab_scale = self._resolve_scale("slab_scale", self.slab_scale, self.DEFAULT_SLAB, data)
+
+        # Apply spike-and-slab noise
+        mixture_mask = self.rng.binomial(n=1, p=0.5, size=data.shape).astype(bool)
+        noise_spike = self.rng.standard_normal(size=data.shape) * spike_scale
+        noise_slab = self.rng.standard_cauchy(size=data.shape) * slab_scale
+        noise = np.where(mixture_mask, noise_slab, noise_spike)
+        return data + noise
 
     def _resolve_scale(
         self,
@@ -118,44 +147,3 @@ class NNPE(ElementwiseTransform):
                 if arr.ndim != 0:
                     raise ValueError(f"{name}: expected scalar, got array of shape {arr.shape}")
                 return arr
-
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Add spike‐and‐slab noise to `data` using automatic scale determination if not provided.
-        See “Notes” section of the class docstring for details).
-
-        Parameters
-        ----------
-        data : np.ndarray
-            Input array to be perturbed.
-        **kwargs
-            Unused keyword arguments.
-        """
-
-        # Check data validity
-        if not np.all(np.isfinite(data)):
-            raise ValueError("NNPE.forward: `data` contains NaN or infinite values.")
-
-        spike_scale = self._resolve_scale("spike_scale", self.spike_scale, self.DEFAULT_SPIKE, data)
-        slab_scale = self._resolve_scale("slab_scale", self.slab_scale, self.DEFAULT_SLAB, data)
-
-        # Apply spike-and-slab noise
-        mixture_mask = self.rng.binomial(n=1, p=0.5, size=data.shape).astype(bool)
-        noise_spike = self.rng.standard_normal(size=data.shape) * spike_scale
-        noise_slab = self.rng.standard_cauchy(size=data.shape) * slab_scale
-        noise = np.where(mixture_mask, noise_slab, noise_spike)
-        return data + noise
-
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        # Non-invertible transform
-        return data
-
-    def get_config(self) -> dict:
-        return serialize(
-            {
-                "spike_scale": self.spike_scale,
-                "slab_scale": self.slab_scale,
-                "per_dimension": self.per_dimension,
-                "seed": self.seed,
-            }
-        )

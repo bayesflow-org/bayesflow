@@ -8,6 +8,21 @@ class NNPE:
     dimensionwise noise application to the original implementation in [1] to provide more flexibility in dealing with
     unstandardized and heterogeneous data.
 
+    The spike-and-slab distribution consists of a mixture of a Normal distribution (spike) and Cauchy distribution
+    (slab), which are applied based on a Bernoulli random variable with p=0.5.
+
+    The scales of the spike and slab distributions can be set manually, or they are automatically determined by scaling
+    the default scales of [1] (which expect standardized data) by the standard deviation of the input data. For
+    automatic determination, the standard deviation is determined either globally (if `per_dimension=False`) or per
+    dimension of the last axis of the input data (if `per_dimension=True`). Note that automatic scale determination is
+    applied batch-wise in the forward method, which means that determined scales can vary between batches due to varying
+    standard deviations in the batch input data.
+
+    The original implementation in [1] can be recovered by applying the following settings on standardized data:
+    - `spike_scale=0.01`
+    - `slab_scale=0.25`
+    - `per_dimension=False`
+
     [1] Ward, D., Cannon, P., Beaumont, M., Fasiolo, M., & Schmon, S. (2022). Robust neural posterior estimation and
     statistical model criticism. Advances in Neural Information Processing Systems, 35, 33845-33859.
     [2] Elsemüller, L., Pratz, V., von Krause, M., Voss, A., Bürkner, P. C., & Radev, S. T. (2025). Does Unsupervised
@@ -17,10 +32,10 @@ class NNPE:
     Parameters
     ----------
     spike_scale : float or np.ndarray or None, default=None
-        The scale of the spike (Normal) distribution. Automatically determined if None (see “Notes” section).
+        The scale of the spike (Normal) distribution. Automatically determined if None.
         Expects a float if `per_dimension=False` or a 1D array of length `data.shape[-1]` if `per_dimension=True`.
     slab_scale : float or np.ndarray or None, default=None
-        The scale of the slab (Cauchy) distribution. Automatically determined if None (see “Notes” section).
+        The scale of the slab (Cauchy) distribution. Automatically determined if None.
         Expects a float if `per_dimension=False` or a 1D array of length `data.shape[-1]` if `per_dimension=True`.
     per_dimension : bool, default=True
         If true, noise is applied per dimension of the last axis of the input data. If false, noise is applied globally.

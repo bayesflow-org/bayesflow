@@ -63,7 +63,6 @@ class NNPE:
 
     def __init__(
         self,
-        *,
         spike_scale: np.typing.ArrayLike | None = None,
         slab_scale: np.typing.ArrayLike | None = None,
         per_dimension: bool = True,

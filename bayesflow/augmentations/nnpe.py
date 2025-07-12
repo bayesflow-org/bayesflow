@@ -68,8 +68,6 @@ class NNPE:
         per_dimension: bool = True,
         seed: int | None = None,
     ):
-        super().__init__()
-
         self.spike_scale = spike_scale
         self.slab_scale = slab_scale
         self.per_dimension = per_dimension

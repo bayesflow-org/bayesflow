@@ -147,7 +147,7 @@ class NNPE:
         # If a scale is passed, check if the passed shape matches the expected shape
         else:
             try:
-                arr = np.asarray(passed, dtype=float)
+                arr = np.asarray(passed, dtype=data.dtype)
             except Exception as e:
                 raise TypeError(f"{name}: expected values convertible to float, got {type(passed).__name__}") from e
 

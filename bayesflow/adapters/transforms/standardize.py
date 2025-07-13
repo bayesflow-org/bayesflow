@@ -25,8 +25,7 @@ class Standardize(ElementwiseTransform):
 
     Examples
     --------
-    >>> adapter = (
-            bf.adapters.Adapter().standardize(include="beta", mean=5, std=10)
+    >>> adapter = bf.Adapter().standardize(include="beta", mean=5, std=10)
     """
 
     def __init__(

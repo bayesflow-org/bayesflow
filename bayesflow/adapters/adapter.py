@@ -813,6 +813,8 @@ class Adapter(MutableSequence[Transform]):
         self,
         include: str | Sequence[str] = None,
         *,
+        mean: int | float | np.ndarray,
+        std: int | float | np.ndarray,
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
@@ -821,10 +823,14 @@ class Adapter(MutableSequence[Transform]):
 
         Parameters
         ----------
-        predicate : Predicate, optional
-            Function that indicates which variables should be transformed.
         include : str or Sequence of str, optional
             Names of variables to include in the transform.
+        mean : int or float
+            Specifies the mean (location) of the transform.
+        std : int or float
+            Specifies the standard deviation (scale) of the transform.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
         exclude : str or Sequence of str, optional
             Names of variables to exclude from the transform.
         **kwargs :

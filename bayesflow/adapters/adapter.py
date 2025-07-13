@@ -841,6 +841,8 @@ class Adapter(MutableSequence[Transform]):
             predicate=predicate,
             include=include,
             exclude=exclude,
+            mean=mean,
+            std=std,
             **kwargs,
         )
         self.transforms.append(transform)

@@ -14,4 +14,5 @@ def test_build(approximator, simulator, batch_size, adapter):
     approximator.build(batch_shapes)
     for layer in approximator.standardize_layers.values():
         assert layer.built
-        assert layer.count == 0
+        for count in layer.count:
+            assert count == 0.0

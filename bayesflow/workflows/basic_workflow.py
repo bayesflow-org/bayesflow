@@ -720,7 +720,12 @@ class BasicWorkflow(Workflow):
         dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter, augmentations=augmentations)
 
         return self._fit(
-            dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
+            dataset,
+            epochs,
+            strategy="offline",
+            keep_optimizer=keep_optimizer,
+            validation_data=validation_data,
+            **kwargs,
         )
 
     def fit_online(
@@ -853,7 +858,12 @@ class BasicWorkflow(Workflow):
         )
 
         return self._fit(
-            dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
+            dataset,
+            epochs,
+            strategy="offline",
+            keep_optimizer=keep_optimizer,
+            validation_data=validation_data,
+            **kwargs,
         )
 
     def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
@@ -979,6 +989,8 @@ class BasicWorkflow(Workflow):
             else:
                 file_ext = self.checkpoint_name + ".keras"
 
-            logging.info(f"""Training is now finished.
+            logging.info(
+                f"""Training is now finished.
             You can find the trained approximator at '{self.checkpoint_filepath}/{self.checkpoint_name}.{file_ext}'.
-            To load it, use approximator = keras.saving.load_model(...).""")
+            To load it, use approximator = keras.saving.load_model(...)."""
+            )

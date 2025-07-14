@@ -35,8 +35,6 @@ class OnlineDataset(keras.utils.PyDataset):
             Total number of batches in the dataset.
         adapter : Adapter or None
             Optional adapter to transform the simulated batch.
-        stage : str, default="training"
-            Current stage (e.g., "training", "validation", etc.) used by the adapter.
         augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
             A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
             to apply to the batch.

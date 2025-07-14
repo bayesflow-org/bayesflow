@@ -6,7 +6,7 @@ class NNPE:
     spike-and-slab distribution to the training data as a mild form of data augmentation to robustify against noisy
     real-world data (see [1, 2] for benchmarks). Adds the options of automatic noise scale determination and
     dimensionwise noise application to the original implementation in [1] to provide more flexibility in dealing with
-    unstandardized and heterogeneous data.
+    unstandardized and heterogeneous data, respectively.
 
     The spike-and-slab distribution consists of a mixture of a Normal distribution (spike) and Cauchy distribution
     (slab), which are applied based on a Bernoulli random variable with p=0.5.
@@ -77,7 +77,6 @@ class NNPE:
     def __call__(self, data: np.ndarray, **kwargs) -> np.ndarray:
         """
         Add spike‐and‐slab noise to `data` using automatic scale determination if not provided.
-        See “Notes” section of the class docstring for details).
 
         Parameters
         ----------

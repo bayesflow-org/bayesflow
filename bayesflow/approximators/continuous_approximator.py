@@ -3,7 +3,6 @@ from collections.abc import Mapping, Sequence, Callable
 import numpy as np
 
 import keras
-import warnings
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
@@ -476,7 +475,7 @@ class ContinuousApproximator(Approximator):
         Handles inputs containing only conditions, only inference_variables, or both.
         Optionally tracks log-determinant Jacobian (ldj) of transformations.
         """
-        adapted = self.adapter(data, strict=False, stage="inference", log_det_jac=log_det_jac, **kwargs)
+        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
 
         if log_det_jac:
             data, ldj = adapted
@@ -565,7 +564,7 @@ class ContinuousApproximator(Approximator):
         if self.summary_network is None:
             raise ValueError("A summary network is required to compute summaries.")
 
-        data_adapted = self.adapter(data, strict=False, stage="inference", **kwargs)
+        data_adapted = self.adapter(data, strict=False, **kwargs)
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
             raise ValueError("Summary variables are required to compute summaries.")
 
@@ -574,14 +573,6 @@ class ContinuousApproximator(Approximator):
         summaries = keras.ops.convert_to_numpy(summaries)
 
         return summaries
-
-    def summaries(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
-        """
-        .. deprecated:: 2.0.4
-            `summaries` will be removed in version 2.0.6, it was renamed to `summarize` which should be used instead.
-        """
-        warnings.warn("`summaries` was renamed to `summarize` and will be removed in version 2.0.6.", FutureWarning)
-        return self.summarize(data=data, **kwargs)
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """

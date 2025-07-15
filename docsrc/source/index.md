@@ -61,7 +61,7 @@ More tutorials are always welcome! Please consider making a pull request if you 
 
         .. code-block:: bash
 
-            pip install bayesflow
+            pip install "bayesflow>=2.0"
 
     .. tab-item:: source
 

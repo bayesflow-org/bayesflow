@@ -8,6 +8,7 @@ from bayesflow.types import Tensor
 
 
 from .approximator import Approximator
+from .model_comparison_approximator import ModelComparisonApproximator
 
 
 class ApproximatorEnsemble(Approximator):
@@ -114,6 +115,19 @@ class ApproximatorEnsemble(Approximator):
             if self._has_obj_method(approximator, "estimate"):
                 estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
         return estimates
+
+    def predict(
+        self,
+        *,
+        conditions: Mapping[str, np.ndarray],
+        probs: bool = True,
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        predictions = {}
+        for approx_name, approximator in self.approximators.items():
+            if isinstance(approximator, ModelComparisonApproximator):
+                predictions[approx_name] = approximator.predict(conditions=conditions, probs=probs, **kwargs)
+        return predictions
 
     def _has_obj_method(self, obj, name):
         method = getattr(obj, name, None)

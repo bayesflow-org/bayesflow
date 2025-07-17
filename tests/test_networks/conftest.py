@@ -1,8 +1,8 @@
 import pytest
 
-from bayesflow.networks.sequential import Sequential
 from bayesflow.networks import MLP
 from bayesflow.utils.tensor_utils import concatenate_valid
+import keras
 
 
 @pytest.fixture()
@@ -17,9 +17,10 @@ def diffusion_model_edm_F():
     )
 
 
-class ConcatenateMLP(Sequential):
+class ConcatenateMLP(keras.Layer):
     def __init__(self, widths):
         super().__init__()
+        self.widths = widths
         self.mlp = MLP(widths)
 
     def call(self, x, t, conditions=None, training=False):
@@ -227,6 +228,7 @@ def inference_network_subnet(request):
 
 @pytest.fixture(
     params=[
+        pytest.param("diffusion_model_edm_F_subnet_concatenate"),
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",

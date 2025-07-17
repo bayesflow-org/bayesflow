@@ -13,7 +13,7 @@ def num_batches():
     return 4
 
 
-@pytest.fixture(params=["online_dataset", "offline_dataset"])
+@pytest.fixture(params=["online_dataset", "offline_dataset", "offline_ensemble_dataset"])
 def dataset(request, online_dataset, offline_dataset):
     return request.getfixturevalue(request.param)
 
@@ -43,6 +43,25 @@ def offline_dataset(simulator, batch_size, num_batches, workers, use_multiproces
     data = simulator.sample((batch_size * num_batches,))
     return OfflineDataset(
         data, batch_size=batch_size, workers=workers, use_multiprocessing=use_multiprocessing, adapter=None
+    )
+
+
+@pytest.fixture()
+def offline_ensemble_dataset(simulator, batch_size, num_batches, workers, use_multiprocessing):
+    from bayesflow import OfflineEnsembleDataset
+
+    # TODO: there is a bug in keras where if len(dataset) == 1 batch
+    #  fit will error because no logs are generated
+    #  the single batch is then skipped entirely
+    num_ensemble = 3
+    data = simulator.sample((batch_size * num_batches * num_ensemble,))
+    return OfflineEnsembleDataset(
+        data=data,
+        num_ensemble=num_ensemble,
+        batch_size=batch_size,
+        workers=workers,
+        use_multiprocessing=use_multiprocessing,
+        adapter=None,
     )
 
 

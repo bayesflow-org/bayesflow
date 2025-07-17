@@ -1,6 +1,8 @@
 import pytest
 
+from bayesflow.networks.sequential import Sequential
 from bayesflow.networks import MLP
+from bayesflow.utils.tensor_utils import concatenate_valid
 
 
 @pytest.fixture()
@@ -12,6 +14,29 @@ def diffusion_model_edm_F():
         integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="edm",
         prediction_type="F",
+    )
+
+
+class ConcatenateMLP(Sequential):
+    def __init__(self, widths):
+        super().__init__()
+        self.mlp = MLP(widths)
+
+    def call(self, x, t, conditions=None, training=False):
+        con = concatenate_valid([x, t, conditions], axis=-1)
+        return self.mlp(con)
+
+
+@pytest.fixture()
+def diffusion_model_edm_F_subnet_concatenate():
+    from bayesflow.networks import DiffusionModel
+
+    return DiffusionModel(
+        subnet=ConcatenateMLP([8, 8]),
+        integrate_kwargs={"method": "rk45", "steps": 250},
+        noise_schedule="edm",
+        prediction_type="F",
+        concatenate_subnet_input=False,
     )
 
 
@@ -86,10 +111,26 @@ def flow_matching():
 
 
 @pytest.fixture()
+def flow_matching_subnet_concatenate():
+    from bayesflow.networks import FlowMatching
+
+    return FlowMatching(
+        subnet=ConcatenateMLP([8, 8]), integrate_kwargs={"method": "rk45", "steps": 100}, concatenate_subnet_input=False
+    )
+
+
+@pytest.fixture()
 def consistency_model():
     from bayesflow.networks import ConsistencyModel
 
     return ConsistencyModel(total_steps=100, subnet=MLP([8, 8]))
+
+
+@pytest.fixture()
+def consistency_model_subnet_concatenate():
+    from bayesflow.networks import ConsistencyModel
+
+    return ConsistencyModel(total_steps=100, subnet=ConcatenateMLP([8, 8]), concatenate_subnet_input=False)
 
 
 @pytest.fixture()
@@ -189,14 +230,17 @@ def inference_network_subnet(request):
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
+        pytest.param("flow_matching_subnet_concatenate"),
         "free_form_flow",
         "consistency_model",
+        pytest.param("consistency_model_subnet_concatenate"),
         pytest.param("diffusion_model_edm_F"),
+        pytest.param("diffusion_model_edm_F_subnet_concatenate"),
         pytest.param(
             "diffusion_model_edm_noise",
             marks=[
                 pytest.mark.slow,
-                pytest.mark.skip("noise predicition not testable without prior training for numerical reasons."),
+                pytest.mark.skip("noise prediction not testable without prior training for numerical reasons."),
             ],
         ),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
@@ -211,7 +255,7 @@ def inference_network_subnet(request):
             "diffusion_model_cosine_noise",
             marks=[
                 pytest.mark.slow,
-                pytest.mark.skip("noise predicition not testable without prior training for numerical reasons."),
+                pytest.mark.skip("noise prediction not testable without prior training for numerical reasons."),
             ],
         ),
         pytest.param(

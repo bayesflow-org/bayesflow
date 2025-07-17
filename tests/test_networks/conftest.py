@@ -5,7 +5,7 @@ from bayesflow.networks import MLP
 
 @pytest.fixture()
 def diffusion_model_edm_F():
-    from bayesflow.experimental import DiffusionModel
+    from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet=MLP([8, 8]),
@@ -17,7 +17,7 @@ def diffusion_model_edm_F():
 
 @pytest.fixture()
 def diffusion_model_edm_velocity():
-    from bayesflow.experimental import DiffusionModel
+    from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet=MLP([8, 8]),
@@ -29,7 +29,7 @@ def diffusion_model_edm_velocity():
 
 @pytest.fixture()
 def diffusion_model_edm_noise():
-    from bayesflow.experimental import DiffusionModel
+    from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet=MLP([8, 8]),
@@ -41,7 +41,7 @@ def diffusion_model_edm_noise():
 
 @pytest.fixture()
 def diffusion_model_cosine_F():
-    from bayesflow.experimental import DiffusionModel
+    from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet=MLP([8, 8]),
@@ -53,7 +53,7 @@ def diffusion_model_cosine_F():
 
 @pytest.fixture()
 def diffusion_model_cosine_velocity():
-    from bayesflow.experimental import DiffusionModel
+    from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet=MLP([8, 8]),
@@ -65,7 +65,7 @@ def diffusion_model_cosine_velocity():
 
 @pytest.fixture()
 def diffusion_model_cosine_noise():
-    from bayesflow.experimental import DiffusionModel
+    from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet=MLP([8, 8]),

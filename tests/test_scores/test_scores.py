@@ -17,7 +17,6 @@ def test_score_output(scoring_rule, random_conditions):
 
     # Using random random_conditions also as targets for the purpose of this test.
     head_shapes = scoring_rule.get_head_shapes_from_target_shape(random_conditions.shape)
-    print(scoring_rule.get_config())
     estimates = {}
     for key, output_shape in head_shapes.items():
         link = scoring_rule.get_link(key)

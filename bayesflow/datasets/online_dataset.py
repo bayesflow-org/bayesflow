@@ -19,7 +19,6 @@ class OnlineDataset(keras.utils.PyDataset):
         num_batches: int,
         adapter: Adapter | None,
         *,
-        stage: str = "training",
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         **kwargs,
     ):
@@ -36,8 +35,6 @@ class OnlineDataset(keras.utils.PyDataset):
             Total number of batches in the dataset.
         adapter : Adapter or None
             Optional adapter to transform the simulated batch.
-        stage : str, default="training"
-            Current stage (e.g., "training", "validation", etc.) used by the adapter.
         augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
             A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
             to apply to the batch.
@@ -58,7 +55,6 @@ class OnlineDataset(keras.utils.PyDataset):
         self._num_batches = num_batches
         self.adapter = adapter
         self.simulator = simulator
-        self.stage = stage
         self.augmentations = augmentations or []
 
     def __getitem__(self, item: int) -> dict[str, np.ndarray]:
@@ -91,7 +87,7 @@ class OnlineDataset(keras.utils.PyDataset):
             raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
         if self.adapter is not None:
-            batch = self.adapter(batch, stage=self.stage)
+            batch = self.adapter(batch)
 
         return batch
 

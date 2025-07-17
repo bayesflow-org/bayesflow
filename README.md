@@ -135,7 +135,8 @@ Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bay
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
 7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
 8. [Likelihood estimation](examples/Likelihood_Estimation.ipynb)
-9. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
+9. [Multimodal data](examples/Multimodal_Data.ipynb)
+10. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

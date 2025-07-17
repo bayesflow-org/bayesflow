@@ -4,7 +4,7 @@ from typing import Literal
 import keras
 from keras import ops
 
-from bayesflow.networks import InferenceNetwork
+from ..inference_network import InferenceNetwork
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,

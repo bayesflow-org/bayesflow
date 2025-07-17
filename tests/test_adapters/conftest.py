@@ -30,7 +30,7 @@ def adapter():
         .scale("x", by=[-1, 2])
         .shift("x", by=2)
         .split("key_to_split", into=["split_1", "split_2"])
-        .standardize(exclude=["t1", "t2", "o1"])
+        .standardize(exclude=["t1", "t2", "o1"], mean=0.0, std=1.0)
         .drop("d1")
         .one_hot("o1", 10)
         .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "s3", "t1", "t2", "o1", "split_1", "split_2"])

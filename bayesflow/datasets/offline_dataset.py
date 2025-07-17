@@ -22,7 +22,6 @@ class OfflineDataset(keras.utils.PyDataset):
         adapter: Adapter | None,
         num_samples: int = None,
         *,
-        stage: str = "training",
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         shuffle: bool = True,
         **kwargs,
@@ -40,8 +39,6 @@ class OfflineDataset(keras.utils.PyDataset):
             Optional adapter to transform the batch.
         num_samples : int, optional
             Number of samples in the dataset. If None, it will be inferred from the data.
-        stage : str, default="training"
-            Current stage (e.g., "training", "validation", etc.) used by the adapter.
         augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
             A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
             to apply to the batch.
@@ -62,7 +59,6 @@ class OfflineDataset(keras.utils.PyDataset):
         self.batch_size = batch_size
         self.data = data
         self.adapter = adapter
-        self.stage = stage
 
         if num_samples is None:
             self.num_samples = self._get_num_samples_from_data(data)
@@ -121,7 +117,7 @@ class OfflineDataset(keras.utils.PyDataset):
             raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
         if self.adapter is not None:
-            batch = self.adapter(batch, stage=self.stage)
+            batch = self.adapter(batch)
 
         return batch
 

@@ -2,7 +2,7 @@ import keras
 import pytest
 
 from bayesflow.utils import find_inference_network, find_distribution, find_network, find_summary_network
-from bayesflow.experimental.diffusion_model import find_noise_schedule
+from bayesflow.networks.diffusion_model import find_noise_schedule
 
 # --- Tests for find__network.py ---
 
@@ -247,7 +247,7 @@ def test_find_summary_network_invalid_type():
 
 
 def test_find_noise_schedule_by_name():
-    from bayesflow.experimental.diffusion_model.schedules import CosineNoiseSchedule, EDMNoiseSchedule
+    from bayesflow.networks.diffusion_model.schedules import CosineNoiseSchedule, EDMNoiseSchedule
 
     schedule = find_noise_schedule("cosine")
     assert isinstance(schedule, CosineNoiseSchedule)
@@ -262,7 +262,7 @@ def test_find_noise_schedule_unknown_name():
 
 
 def test_pass_noise_schedule():
-    from bayesflow.experimental.diffusion_model.schedules.noise_schedule import NoiseSchedule
+    from bayesflow.networks.diffusion_model.schedules.noise_schedule import NoiseSchedule
 
     class CustomNoiseSchedule(NoiseSchedule):
         def __init__(self):
@@ -282,7 +282,7 @@ def test_pass_noise_schedule():
 
 
 def test_pass_noise_schedule_type():
-    from bayesflow.experimental.diffusion_model.schedules import EDMNoiseSchedule
+    from bayesflow.networks.diffusion_model.schedules import EDMNoiseSchedule
 
     schedule = find_noise_schedule(EDMNoiseSchedule, sigma_data=10.0)
     assert isinstance(schedule, EDMNoiseSchedule)

@@ -30,7 +30,7 @@
 <link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
   
@@ -511,7 +511,9 @@
 <span class="sd">            The number of initially recovered individuals.</span>
 <span class="sd">        subsample: int or None, optional, default: 10</span>
 <span class="sd">            The number of evenly spaced time points to return. If `None`,</span>
-<span class="sd">            no subsampling will be performed and all `T` timepoints will be returned.</span>
+<span class="sd">            no subsampling will be performed, all `T` timepoints will be returned</span>
+<span class="sd">            and a trailing dimension will be added. If an integer is provided,</span>
+<span class="sd">            subsampling is performed and no trailing dimension will be added.</span>
 <span class="sd">        total_count: int, optional, default: 1000</span>
 <span class="sd">            The `N` parameter of the binomial noise distribution. Used just</span>
 <span class="sd">            for scaling the data and magnifying the effect of noise, such that</span>

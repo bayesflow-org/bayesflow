@@ -30,7 +30,7 @@
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8fec244e" />
   
@@ -1239,7 +1239,12 @@
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">OfflineDataset</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span> <span class="n">augmentations</span><span class="o">=</span><span class="n">augmentations</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
-            <span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;online&quot;</span><span class="p">,</span> <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">dataset</span><span class="p">,</span>
+            <span class="n">epochs</span><span class="p">,</span>
+            <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;offline&quot;</span><span class="p">,</span>
+            <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span>
+            <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -1378,7 +1383,12 @@
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
-            <span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;online&quot;</span><span class="p">,</span> <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">dataset</span><span class="p">,</span>
+            <span class="n">epochs</span><span class="p">,</span>
+            <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;offline&quot;</span><span class="p">,</span>
+            <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span>
+            <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -1508,9 +1518,11 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">file_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_name</span> <span class="o">+</span> <span class="s2">&quot;.keras&quot;</span>
 
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;Training is now finished.</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Training is now finished.</span>
 <span class="s2">            You can find the trained approximator at &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_filepath</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">file_ext</span><span class="si">}</span><span class="s2">&#39;.</span>
-<span class="s2">            To load it, use approximator = keras.saving.load_model(...).&quot;&quot;&quot;</span><span class="p">)</span></div>
+<span class="s2">            To load it, use approximator = keras.saving.load_model(...).&quot;&quot;&quot;</span>
+            <span class="p">)</span></div>
 
 </pre></div>
 

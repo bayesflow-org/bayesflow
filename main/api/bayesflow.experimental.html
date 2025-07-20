@@ -31,7 +31,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
   
@@ -58,7 +58,7 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="diffusion_model" href="bayesflow.experimental.diffusion_model.html" />
+    <link rel="next" title="DiffusionModel" href="bayesflow.experimental.DiffusionModel.html" />
     <link rel="prev" title="Mixture" href="bayesflow.distributions.Mixture.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -445,7 +445,6 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
@@ -473,6 +472,13 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.approximators.ContinuousApproximator.html">ContinuousApproximator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.approximators.ModelComparisonApproximator.html">ModelComparisonApproximator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.approximators.PointApproximator.html">PointApproximator</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.augmentations.html">augmentations</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.augmentations.nnpe.html">nnpe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.augmentations.nnpe.NNPE.html">NNPE</a></li>
+</ul>
+</details></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.datasets.html">datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -508,17 +514,9 @@
 </ul>
 </details></li>
 <li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">experimental</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
-</ul>
-</details></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -540,9 +538,18 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.networks.html">networks</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.networks.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.ConsistencyModel.html">ConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
@@ -774,10 +781,10 @@
   <section id="module-bayesflow.experimental">
 <span id="experimental"></span><h1>experimental<a class="headerlink" href="#module-bayesflow.experimental" title="Link to this heading">#</a></h1>
 <p>Unstable or largely untested networks, proceed with caution.</p>
-<p class="rubric">Modules</p>
+<p class="rubric">Functions</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.experimental.diffusion_model.html#module-bayesflow.experimental.diffusion_model" title="bayesflow.experimental.diffusion_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">diffusion_model</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html#bayesflow.experimental.DiffusionModel" title="bayesflow.experimental.DiffusionModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiffusionModel</span></code></a>(*args, **kwargs)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -792,10 +799,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html#bayesflow.experimental.ContinuousTimeConsistencyModel" title="bayesflow.experimental.ContinuousTimeConsistencyModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContinuousTimeConsistencyModel</span></code></a>(*args, **kwargs)</p></td>
 <td><p>(IN) Implements an sCM (simple, stable, and scalable Consistency Model) with continous-time Consistency Training (CT) as described in [1].</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html#bayesflow.experimental.DiffusionModel" title="bayesflow.experimental.DiffusionModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiffusionModel</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Diffusion Model as described in this overview paper [1].</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html#bayesflow.experimental.FreeFormFlow" title="bayesflow.experimental.FreeFormFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeFormFlow</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html#bayesflow.experimental.FreeFormFlow" title="bayesflow.experimental.FreeFormFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeFormFlow</span></code></a>(*args, **kwargs)</p></td>
 <td><p>(IN) Implements a dimensionality-preserving Free-form Flow.</p></td>
 </tr>
 </tbody>
@@ -823,11 +827,11 @@
       </div>
     </a>
     <a class="right-next"
-       href="bayesflow.experimental.diffusion_model.html"
+       href="bayesflow.experimental.DiffusionModel.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">diffusion_model</p>
+        <p class="prev-next-title">DiffusionModel</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

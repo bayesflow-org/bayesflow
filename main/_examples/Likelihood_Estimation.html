@@ -31,7 +31,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
   
@@ -60,7 +60,7 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="User Guide" href="../user_guide/index.html" />
+    <link rel="next" title="9. Posterior Estimation With Multimodal Data" href="Multimodal_Data.html" />
     <link rel="prev" title="7. Simple Model Comparison - One Sample T-Test" href="One_Sample_TTest.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -439,6 +439,7 @@
 <li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">7. Simple Model Comparison - One Sample T-Test</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">8. Likelihood Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">9. Posterior Estimation With Multimodal Data</a></li>
 </ul>
 </div>
 </nav></div>
@@ -619,7 +620,7 @@ If you have an idea for a more interesting case study, please make a pull reques
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
-    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">DiffusionModel</span><span class="p">(),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">DiffusionModel</span><span class="p">(),</span>
     <span class="n">inference_variables</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
     <span class="n">inference_conditions</span><span class="o">=</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span>
     <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
@@ -762,11 +763,11 @@ To improve performance, you can experiment with hyperparameters (learning rate, 
       </div>
     </a>
     <a class="right-next"
-       href="../user_guide/index.html"
+       href="Multimodal_Data.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">User Guide</p>
+        <p class="prev-next-title"><span class="section-number">9. </span>Posterior Estimation With Multimodal Data</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

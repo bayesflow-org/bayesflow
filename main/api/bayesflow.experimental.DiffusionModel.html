@@ -31,7 +31,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
   
@@ -58,8 +58,8 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="FreeFormFlow" href="bayesflow.experimental.FreeFormFlow.html" />
-    <link rel="prev" title="ContinuousTimeConsistencyModel" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html" />
+    <link rel="next" title="CIF" href="bayesflow.experimental.CIF.html" />
+    <link rel="prev" title="experimental" href="bayesflow.experimental.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -445,7 +445,6 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Keep.html">Keep</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.Log.html">Log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.MapTransform.html">MapTransform</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NNPE.html">NNPE</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NanToNum.html">NanToNum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.NumpyTransform.html">NumpyTransform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.adapters.transforms.OneHot.html">OneHot</a></li>
@@ -473,6 +472,13 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.approximators.ContinuousApproximator.html">ContinuousApproximator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.approximators.ModelComparisonApproximator.html">ModelComparisonApproximator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.approximators.PointApproximator.html">PointApproximator</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.augmentations.html">augmentations</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.augmentations.nnpe.html">nnpe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.augmentations.nnpe.NNPE.html">NNPE</a></li>
+</ul>
+</details></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.datasets.html">datasets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -508,17 +514,9 @@
 </ul>
 </details></li>
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.experimental.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
-<li class="toctree-l3"><a class="reference internal" href="bayesflow.experimental.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
-</ul>
-</details></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -540,9 +538,18 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.networks.html">networks</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.networks.diffusion_model.html">diffusion_model</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.find_noise_schedule.html">find_noise_schedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.CosineNoiseSchedule.html">CosineNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.DiffusionModel.html">DiffusionModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.EDMNoiseSchedule.html">EDMNoiseSchedule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.networks.diffusion_model.NoiseSchedule.html">NoiseSchedule</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.ConsistencyModel.html">ConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.CouplingFlow.html">CouplingFlow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DeepSet.html">DeepSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.DiffusionModel.html">DiffusionModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FlowMatching.html">FlowMatching</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionNetwork.html">FusionNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.FusionTransformer.html">FusionTransformer</a></li>
@@ -776,592 +783,10 @@
                   
   <section id="diffusionmodel">
 <h1>DiffusionModel<a class="headerlink" href="#diffusionmodel" title="Link to this heading">#</a></h1>
-<dl class="py class">
+<dl class="py function">
 <dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.experimental.</span></span><span class="sig-name descname"><span class="pre">DiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="bayesflow.networks.InferenceNetwork.html#bayesflow.networks.InferenceNetwork" title="bayesflow.networks.inference_network.InferenceNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InferenceNetwork</span></code></a></p>
-<p>Diffusion Model as described in this overview paper [1].</p>
-<p>[1] Variational Diffusion Models 2.0: Understanding Diffusion Model Objectives as the ELBO with Simple Data
-Augmentation: Kingma et al. (2023)</p>
-<p>[2] Score-Based Generative Modeling through Stochastic Differential Equations: Song et al. (2021)</p>
-<p>Initializes a diffusion model with configurable subnet architecture, noise schedule,
-and prediction/loss types for amortized Bayesian inference.</p>
-<p>Note, that score-based diffusion is the most sluggish of all available samplers,
-so expect slower inference times than flow matching and much slower than normalizing flows.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>subnet</strong><span class="classifier">str, type or keras.Layer, optional</span></dt><dd><p>Architecture for the transformation network. Can be “mlp”, a custom network class, or
-a Layer object, e.g., <cite>bayesflow.networks.MLP(widths=[32, 32])</cite>. Default is “mlp”.</p>
-</dd>
-<dt><strong>noise_schedule</strong><span class="classifier">{‘edm’, ‘cosine’} or NoiseSchedule or type, optional</span></dt><dd><p>Noise schedule controlling the diffusion dynamics. Can be a string identifier,
-a schedule class, or a pre-initialized schedule instance. Default is “edm”.</p>
-</dd>
-<dt><strong>prediction_type</strong><span class="classifier">{‘velocity’, ‘noise’, ‘F’, ‘x’}, optional</span></dt><dd><p>Output format of the model’s prediction. Default is “F”.</p>
-</dd>
-<dt><strong>loss_type</strong><span class="classifier">{‘velocity’, ‘noise’, ‘F’}, optional</span></dt><dd><p>Loss function used to train the model. Default is “noise”.</p>
-</dd>
-<dt><strong>subnet_kwargs</strong><span class="classifier">dict[str, any], optional</span></dt><dd><p>Additional keyword arguments passed to the subnet constructor. Default is None.</p>
-</dd>
-<dt><strong>schedule_kwargs</strong><span class="classifier">dict[str, any], optional</span></dt><dd><p>Additional keyword arguments passed to the noise schedule constructor. Default is None.</p>
-</dd>
-<dt><strong>integrate_kwargs</strong><span class="classifier">dict[str, any], optional</span></dt><dd><p>Configuration dictionary for integration during training or inference. Default is None.</p>
-</dd>
-<dt><strong>**kwargs</strong></dt><dd><p>Additional keyword arguments passed to the base class and internal components.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.MLP_DEFAULT_CONFIG">
-<span class="sig-name descname"><span class="pre">MLP_DEFAULT_CONFIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'activation':</span> <span class="pre">'mish',</span> <span class="pre">'dropout':</span> <span class="pre">0.0,</span> <span class="pre">'kernel_initializer':</span> <span class="pre">'he_normal',</span> <span class="pre">'residual':</span> <span class="pre">True,</span> <span class="pre">'spectral_normalization':</span> <span class="pre">False,</span> <span class="pre">'widths':</span> <span class="pre">(256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256)}</span></em><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.MLP_DEFAULT_CONFIG" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">bayesflow.experimental.</span></span><span class="sig-name descname"><span class="pre">DiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model.html#DiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.INTEGRATE_DEFAULT_CONFIG">
-<span class="sig-name descname"><span class="pre">INTEGRATE_DEFAULT_CONFIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'method':</span> <span class="pre">'euler',</span> <span class="pre">'steps':</span> <span class="pre">100}</span></em><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.INTEGRATE_DEFAULT_CONFIG" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.build">
-<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.build" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.get_config">
-<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel.get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.get_config" title="Link to this definition">#</a></dt>
-<dd><p>Returns the config of the object.</p>
-<p>An object config is a Python dictionary (serializable)
-containing the information needed to re-instantiate it.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.from_config">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.from_config" title="Link to this definition">#</a></dt>
-<dd><p>Creates an operation from its config.</p>
-<p>This method is the reverse of <cite>get_config</cite>, capable of instantiating the
-same operation from the config dictionary.</p>
-<p>Note: If you override this method, you might receive a serialized dtype
-config, which is a <cite>dict</cite>. You can deserialize it as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="s2">&quot;dtype&quot;</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-    <span class="n">policy</span> <span class="o">=</span> <span class="n">dtype_policies</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">])</span>
-</pre></div>
-</div>
-<dl class="simple">
-<dt>Args:</dt><dd><p>config: A Python dictionary, typically the output of <cite>get_config</cite>.</p>
-</dd>
-<dt>Returns:</dt><dd><p>An operation instance.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.convert_prediction_to_x">
-<span class="sig-name descname"><span class="pre">convert_prediction_to_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_snr_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel.convert_prediction_to_x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.convert_prediction_to_x" title="Link to this definition">#</a></dt>
-<dd><p>Converts the neural network prediction into the denoised data <cite>x</cite>, depending on
-the prediction type configured for the model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>pred</strong><span class="classifier">Tensor</span></dt><dd><p>The output prediction from the neural network, typically representing noise,
-velocity, or a transformation of the clean signal.</p>
-</dd>
-<dt><strong>z</strong><span class="classifier">Tensor</span></dt><dd><p>The noisy latent variable <cite>z</cite> to be denoised.</p>
-</dd>
-<dt><strong>alpha_t</strong><span class="classifier">Tensor</span></dt><dd><p>The noise schedule’s scaling factor for the clean signal at time <cite>t</cite>.</p>
-</dd>
-<dt><strong>sigma_t</strong><span class="classifier">Tensor</span></dt><dd><p>The standard deviation of the noise at time <cite>t</cite>.</p>
-</dd>
-<dt><strong>log_snr_t</strong><span class="classifier">Tensor</span></dt><dd><p>The log signal-to-noise ratio at time <cite>t</cite>.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>Tensor</dt><dd><p>The reconstructed clean signal <cite>x</cite> from the model prediction.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.velocity">
-<span class="sig-name descname"><span class="pre">velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stochastic_solver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel.velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.velocity" title="Link to this definition">#</a></dt>
-<dd><p>Computes the velocity (i.e., time derivative) of the target or latent variable <cite>xz</cite> for either
-a stochastic differential equation (SDE) or ordinary differential equation (ODE).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>xz</strong><span class="classifier">Tensor</span></dt><dd><p>The current state of the latent variable <cite>z</cite>, typically of shape (…, D),
-where D is the dimensionality of the latent space.</p>
-</dd>
-<dt><strong>time</strong><span class="classifier">float or Tensor</span></dt><dd><p>Scalar or tensor representing the time (or noise level) at which the velocity
-should be computed. Will be broadcasted to xz.</p>
-</dd>
-<dt><strong>stochastic_solver</strong><span class="classifier">bool</span></dt><dd><p>If True, computes the velocity for the stochastic formulation (SDE).
-If False, uses the deterministic formulation (ODE).</p>
-</dd>
-<dt><strong>conditions</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Optional conditional inputs to the network, such as conditioning variables
-or encoder outputs. Shape must be broadcastable with <cite>xz</cite>. Default is None.</p>
-</dd>
-<dt><strong>training</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether the model is in training mode. Affects behavior of dropout, batch norm,
-or other stochastic layers. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>Tensor</dt><dd><p>The velocity tensor of the same shape as <cite>xz</cite>, representing the right-hand
-side of the SDE or ODE at the given <cite>time</cite>.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.diffusion_term">
-<span class="sig-name descname"><span class="pre">diffusion_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel.diffusion_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.diffusion_term" title="Link to this definition">#</a></dt>
-<dd><p>Compute the diffusion term (standard deviation of the noise) at a given time.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>xz</strong><span class="classifier">Tensor</span></dt><dd><p>Input tensor of shape (…, D), typically representing the target or latent variables at given time.</p>
-</dd>
-<dt><strong>time</strong><span class="classifier">float or Tensor</span></dt><dd><p>The diffusion time step(s). Can be a scalar or a tensor broadcastable to the shape of <cite>xz</cite>.</p>
-</dd>
-<dt><strong>training</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to use the training noise schedule (default is False).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>Tensor</dt><dd><p>The diffusion term tensor with shape matching <cite>xz</cite> except for the last dimension, which is set to 1.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.compute_metrics">
-<span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'training'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/experimental/diffusion_model/diffusion_model.html#DiffusionModel.compute_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.compute_metrics" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.__call__">
-<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.__call__" title="Link to this definition">#</a></dt>
-<dd><p>Call self as a function.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.add_loss">
-<span class="sig-name descname"><span class="pre">add_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.add_loss" title="Link to this definition">#</a></dt>
-<dd><p>Can be called inside of the <cite>call()</cite> method to add a scalar loss.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyLayer</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
-    <span class="o">...</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_loss</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">x</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.add_metric">
-<span class="sig-name descname"><span class="pre">add_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.add_metric" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.add_variable">
-<span class="sig-name descname"><span class="pre">add_variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.add_variable" title="Link to this definition">#</a></dt>
-<dd><p>Add a weight variable to the layer.</p>
-<p>Alias of <cite>add_weight()</cite>.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.add_weight">
-<span class="sig-name descname"><span class="pre">add_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_with_gradient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.add_weight" title="Link to this definition">#</a></dt>
-<dd><p>Add a weight variable to the layer.</p>
-<dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>shape: Shape tuple for the variable. Must be fully-defined</dt><dd><p>(no <cite>None</cite> entries). Defaults to <cite>()</cite> (scalar) if unspecified.</p>
-</dd>
-<dt>initializer: Initializer object to use to populate the initial</dt><dd><p>variable value, or string name of a built-in initializer
-(e.g. <cite>“random_normal”</cite>). If unspecified, defaults to
-<cite>“glorot_uniform”</cite> for floating-point variables and to <cite>“zeros”</cite>
-for all other types (e.g. int, bool).</p>
-</dd>
-<dt>dtype: Dtype of the variable to create, e.g. <cite>“float32”</cite>. If</dt><dd><p>unspecified, defaults to the layer’s variable dtype
-(which itself defaults to <cite>“float32”</cite> if unspecified).</p>
-</dd>
-<dt>trainable: Boolean, whether the variable should be trainable via</dt><dd><p>backprop or whether its updates are managed manually. Defaults
-to <cite>True</cite>.</p>
-</dd>
-<dt>autocast: Boolean, whether to autocast layers variables when</dt><dd><p>accessing them. Defaults to <cite>True</cite>.</p>
-</dd>
-<dt>regularizer: Regularizer object to call to apply penalty on the</dt><dd><p>weight. These penalties are summed into the loss function
-during optimization. Defaults to <cite>None</cite>.</p>
-</dd>
-<dt>constraint: Contrainst object to call on the variable after any</dt><dd><p>optimizer update, or string name of a built-in constraint.
-Defaults to <cite>None</cite>.</p>
-</dd>
-<dt>aggregation: Optional string, one of <cite>None</cite>, <cite>“none”</cite>, <cite>“mean”</cite>,</dt><dd><p><cite>“sum”</cite> or <cite>“only_first_replica”</cite>. Annotates the variable with
-the type of multi-replica aggregation to be used for this
-variable when writing custom data parallel training loops.
-Defaults to <cite>“none”</cite>.</p>
-</dd>
-<dt>overwrite_with_gradient: Boolean, whether to overwrite the variable</dt><dd><p>with the computed gradient. This is useful for float8 training.
-Defaults to <cite>False</cite>.</p>
-</dd>
-</dl>
-<p>name: String name of the variable. Useful for debugging purposes.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.build_from_config">
-<span class="sig-name descname"><span class="pre">build_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.build_from_config" title="Link to this definition">#</a></dt>
-<dd><p>Builds the layer’s states with the supplied config dict.</p>
-<p>By default, this method calls the <cite>build(config[“input_shape”])</cite> method,
-which creates weights based on the layer’s input shape in the supplied
-config. If your config contains other information needed to load the
-layer’s state, you should override this method.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>config: Dict containing the input shape associated with this layer.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.call" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.compute_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_dtype</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.compute_dtype" title="Link to this definition">#</a></dt>
-<dd><p>The dtype of the computations performed by the layer.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.compute_mask">
-<span class="sig-name descname"><span class="pre">compute_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.compute_mask" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.compute_output_shape">
-<span class="sig-name descname"><span class="pre">compute_output_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.compute_output_shape" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.compute_output_spec">
-<span class="sig-name descname"><span class="pre">compute_output_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.compute_output_spec" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.count_params">
-<span class="sig-name descname"><span class="pre">count_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.count_params" title="Link to this definition">#</a></dt>
-<dd><p>Count the total number of scalars composing the weights.</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>An integer count.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.dtype" title="Link to this definition">#</a></dt>
-<dd><p>Alias of <cite>layer.variable_dtype</cite>.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.dtype_policy">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype_policy</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.dtype_policy" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.get_build_config">
-<span class="sig-name descname"><span class="pre">get_build_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.get_build_config" title="Link to this definition">#</a></dt>
-<dd><p>Returns a dictionary with the layer’s input shape.</p>
-<p>This method returns a config dict that can be used by
-<cite>build_from_config(config)</cite> to create all states (e.g. Variables and
-Lookup tables) needed by the layer.</p>
-<p>By default, the config only contains the input shape that the layer
-was built with. If you’re writing a custom layer that creates state in
-an unusual way, you should override this method to make sure this state
-is already created when Keras attempts to load its value upon model
-loading.</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>A dict containing the input shape associated with the layer.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.get_weights">
-<span class="sig-name descname"><span class="pre">get_weights</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.get_weights" title="Link to this definition">#</a></dt>
-<dd><p>Return the values of <cite>layer.weights</cite> as a list of NumPy arrays.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.input">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.input" title="Link to this definition">#</a></dt>
-<dd><p>Retrieves the input tensor(s) of a symbolic operation.</p>
-<p>Only returns the tensor(s) corresponding to the <em>first time</em>
-the operation was called.</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>Input tensor or list of input tensors.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.input_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_dtype</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.input_dtype" title="Link to this definition">#</a></dt>
-<dd><p>The dtype layer inputs should be converted to.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.input_spec">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_spec</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.input_spec" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.load_own_variables">
-<span class="sig-name descname"><span class="pre">load_own_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.load_own_variables" title="Link to this definition">#</a></dt>
-<dd><p>Loads the state of the layer.</p>
-<p>You can override this method to take full control of how the state of
-the layer is loaded upon calling <cite>keras.models.load_model()</cite>.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>store: Dict from which the state of the model will be loaded.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.log_prob">
-<span class="sig-name descname"><span class="pre">log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.log_prob" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.losses">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">losses</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.losses" title="Link to this definition">#</a></dt>
-<dd><p>List of scalar losses from <cite>add_loss</cite>, regularizers and sublayers.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.metrics">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.metrics" title="Link to this definition">#</a></dt>
-<dd><p>List of all metrics.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.metrics_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics_variables</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.metrics_variables" title="Link to this definition">#</a></dt>
-<dd><p>List of all metric variables.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.non_trainable_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">non_trainable_variables</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.non_trainable_variables" title="Link to this definition">#</a></dt>
-<dd><p>List of all non-trainable layer state.</p>
-<p>This extends <cite>layer.non_trainable_weights</cite> to include all state used by
-the layer including state for metrics and <a href="#id1"><span class="problematic" id="id2">`</span></a>SeedGenerator`s.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.non_trainable_weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">non_trainable_weights</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.non_trainable_weights" title="Link to this definition">#</a></dt>
-<dd><p>List of all non-trainable weight variables of the layer.</p>
-<p>These are the weights that should not be updated by the optimizer during
-training. Unlike, <cite>layer.non_trainable_variables</cite> this excludes metric
-state and random seeds.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.output">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.output" title="Link to this definition">#</a></dt>
-<dd><p>Retrieves the output tensor(s) of a layer.</p>
-<p>Only returns the tensor(s) corresponding to the <em>first time</em>
-the operation was called.</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>Output tensor or list of output tensors.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.path">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.path" title="Link to this definition">#</a></dt>
-<dd><p>The path of the layer.</p>
-<p>If the layer has not been built yet, it will be <cite>None</cite>.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.quantization_mode">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantization_mode</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.quantization_mode" title="Link to this definition">#</a></dt>
-<dd><p>The quantization mode of this layer, <cite>None</cite> if not quantized.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.quantize">
-<span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.quantize" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.quantized_build">
-<span class="sig-name descname"><span class="pre">quantized_build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.quantized_build" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.quantized_call">
-<span class="sig-name descname"><span class="pre">quantized_call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.quantized_call" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.rematerialized_call">
-<span class="sig-name descname"><span class="pre">rematerialized_call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_call</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.rematerialized_call" title="Link to this definition">#</a></dt>
-<dd><p>Enable rematerialization dynamically for layer’s call method.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>layer_call: The original <cite>call</cite> method of a layer.</p>
-</dd>
-<dt>Returns:</dt><dd><p>Rematerialized layer’s <cite>call</cite> method.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.sample">
-<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.sample" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.save_own_variables">
-<span class="sig-name descname"><span class="pre">save_own_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.save_own_variables" title="Link to this definition">#</a></dt>
-<dd><p>Saves the state of the layer.</p>
-<p>You can override this method to take full control of how the state of
-the layer is saved upon calling <cite>model.save()</cite>.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>store: Dict where the state of the model will be saved.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.set_weights">
-<span class="sig-name descname"><span class="pre">set_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.set_weights" title="Link to this definition">#</a></dt>
-<dd><p>Sets the values of <cite>layer.weights</cite> from a list of NumPy arrays.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.stateless_call">
-<span class="sig-name descname"><span class="pre">stateless_call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainable_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_trainable_variables</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_losses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.stateless_call" title="Link to this definition">#</a></dt>
-<dd><p>Call the layer without any side effects.</p>
-<dl>
-<dt>Args:</dt><dd><p>trainable_variables: List of trainable variables of the model.
-non_trainable_variables: List of non-trainable variables of the</p>
-<blockquote>
-<div><p>model.</p>
-</div></blockquote>
-<p><a href="#id3"><span class="problematic" id="id4">*</span></a>args: Positional arguments to be passed to <cite>call()</cite>.
-return_losses: If <cite>True</cite>, <cite>stateless_call()</cite> will return the list of</p>
-<blockquote>
-<div><p>losses created during <cite>call()</cite> as part of its return values.</p>
-</div></blockquote>
-<p><a href="#id5"><span class="problematic" id="id6">**</span></a>kwargs: Keyword arguments to be passed to <cite>call()</cite>.</p>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>A tuple. By default, returns <cite>(outputs, non_trainable_variables)</cite>.</dt><dd><p>If <cite>return_losses = True</cite>, then returns
-<cite>(outputs, non_trainable_variables, losses)</cite>.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>Note: <cite>non_trainable_variables</cite> include not only non-trainable weights
-such as <cite>BatchNormalization</cite> statistics, but also RNG seed state
-(if there are any random operations part of the layer, such as dropout),
-and <cite>Metric</cite> state (if there are any metrics attached to the layer).
-These are all elements of state of the layer.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="o">...</span>
-<span class="n">data</span> <span class="o">=</span> <span class="o">...</span>
-<span class="n">trainable_variables</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span>
-<span class="n">non_trainable_variables</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">non_trainable_variables</span>
-<span class="c1"># Call the model with zero side effects</span>
-<span class="n">outputs</span><span class="p">,</span> <span class="n">non_trainable_variables</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">stateless_call</span><span class="p">(</span>
-    <span class="n">trainable_variables</span><span class="p">,</span>
-    <span class="n">non_trainable_variables</span><span class="p">,</span>
-    <span class="n">data</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="c1"># Attach the updated state to the model</span>
-<span class="c1"># (until you do this, the model is still in its pre-call state).</span>
-<span class="k">for</span> <span class="n">ref_var</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">non_trainable_variables</span><span class="p">,</span> <span class="n">non_trainable_variables</span>
-<span class="p">):</span>
-    <span class="n">ref_var</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.supports_masking">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supports_masking</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.supports_masking" title="Link to this definition">#</a></dt>
-<dd><p>Whether this layer supports computing a mask using <cite>compute_mask</cite>.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.symbolic_call">
-<span class="sig-name descname"><span class="pre">symbolic_call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.symbolic_call" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.trainable">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.trainable" title="Link to this definition">#</a></dt>
-<dd><p>Settable boolean, whether this layer should be trainable or not.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.trainable_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable_variables</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.trainable_variables" title="Link to this definition">#</a></dt>
-<dd><p>List of all trainable layer state.</p>
-<p>This is equivalent to <cite>layer.trainable_weights</cite>.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.trainable_weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable_weights</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.trainable_weights" title="Link to this definition">#</a></dt>
-<dd><p>List of all trainable weight variables of the layer.</p>
-<p>These are the weights that get updated by the optimizer during training.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.variable_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variable_dtype</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.variable_dtype" title="Link to this definition">#</a></dt>
-<dd><p>The dtype of the state (weights) of the layer.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variables</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.variables" title="Link to this definition">#</a></dt>
-<dd><p>List of all layer state, including random seeds.</p>
-<p>This extends <cite>layer.weights</cite> to include all state used by the layer
-including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGenerator`s.</p>
-<p>Note that metrics variables are not included here, use
-<cite>metrics_variables</cite> to visit all the metric variables.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="bayesflow.experimental.DiffusionModel.weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#bayesflow.experimental.DiffusionModel.weights" title="Link to this definition">#</a></dt>
-<dd><p>List of all weight variables of the layer.</p>
-<p>Unlike, <cite>layer.variables</cite> this excludes metric state and random seeds.</p>
-</dd></dl>
-
-</dd></dl>
 
 </section>
 
@@ -1376,20 +801,20 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="bayesflow.experimental.ContinuousTimeConsistencyModel.html"
+       href="bayesflow.experimental.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">ContinuousTimeConsistencyModel</p>
+        <p class="prev-next-title">experimental</p>
       </div>
     </a>
     <a class="right-next"
-       href="bayesflow.experimental.FreeFormFlow.html"
+       href="bayesflow.experimental.CIF.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">FreeFormFlow</p>
+        <p class="prev-next-title">CIF</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1413,63 +838,7 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     
 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel"><code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code></a><ul class="nav section-nav flex-column visible">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.MLP_DEFAULT_CONFIG"><code class="docutils literal notranslate"><span class="pre">MLP_DEFAULT_CONFIG</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.INTEGRATE_DEFAULT_CONFIG"><code class="docutils literal notranslate"><span class="pre">INTEGRATE_DEFAULT_CONFIG</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.build"><code class="docutils literal notranslate"><span class="pre">build()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.from_config"><code class="docutils literal notranslate"><span class="pre">from_config()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.convert_prediction_to_x"><code class="docutils literal notranslate"><span class="pre">convert_prediction_to_x()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.velocity"><code class="docutils literal notranslate"><span class="pre">velocity()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.diffusion_term"><code class="docutils literal notranslate"><span class="pre">diffusion_term()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.compute_metrics"><code class="docutils literal notranslate"><span class="pre">compute_metrics()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.__call__"><code class="docutils literal notranslate"><span class="pre">__call__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.add_loss"><code class="docutils literal notranslate"><span class="pre">add_loss()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.add_metric"><code class="docutils literal notranslate"><span class="pre">add_metric()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.add_variable"><code class="docutils literal notranslate"><span class="pre">add_variable()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.add_weight"><code class="docutils literal notranslate"><span class="pre">add_weight()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.build_from_config"><code class="docutils literal notranslate"><span class="pre">build_from_config()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.call"><code class="docutils literal notranslate"><span class="pre">call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.compute_dtype"><code class="docutils literal notranslate"><span class="pre">compute_dtype</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.compute_mask"><code class="docutils literal notranslate"><span class="pre">compute_mask()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.compute_output_shape"><code class="docutils literal notranslate"><span class="pre">compute_output_shape()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.compute_output_spec"><code class="docutils literal notranslate"><span class="pre">compute_output_spec()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.count_params"><code class="docutils literal notranslate"><span class="pre">count_params()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.dtype"><code class="docutils literal notranslate"><span class="pre">dtype</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.dtype_policy"><code class="docutils literal notranslate"><span class="pre">dtype_policy</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.get_build_config"><code class="docutils literal notranslate"><span class="pre">get_build_config()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.get_weights"><code class="docutils literal notranslate"><span class="pre">get_weights()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.input"><code class="docutils literal notranslate"><span class="pre">input</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.input_dtype"><code class="docutils literal notranslate"><span class="pre">input_dtype</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.input_spec"><code class="docutils literal notranslate"><span class="pre">input_spec</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.load_own_variables"><code class="docutils literal notranslate"><span class="pre">load_own_variables()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.log_prob"><code class="docutils literal notranslate"><span class="pre">log_prob()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.losses"><code class="docutils literal notranslate"><span class="pre">losses</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.metrics"><code class="docutils literal notranslate"><span class="pre">metrics</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.metrics_variables"><code class="docutils literal notranslate"><span class="pre">metrics_variables</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.non_trainable_variables"><code class="docutils literal notranslate"><span class="pre">non_trainable_variables</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.non_trainable_weights"><code class="docutils literal notranslate"><span class="pre">non_trainable_weights</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.output"><code class="docutils literal notranslate"><span class="pre">output</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.path"><code class="docutils literal notranslate"><span class="pre">path</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.quantization_mode"><code class="docutils literal notranslate"><span class="pre">quantization_mode</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.quantize"><code class="docutils literal notranslate"><span class="pre">quantize()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.quantized_build"><code class="docutils literal notranslate"><span class="pre">quantized_build()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.quantized_call"><code class="docutils literal notranslate"><span class="pre">quantized_call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.rematerialized_call"><code class="docutils literal notranslate"><span class="pre">rematerialized_call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.sample"><code class="docutils literal notranslate"><span class="pre">sample()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.save_own_variables"><code class="docutils literal notranslate"><span class="pre">save_own_variables()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.set_weights"><code class="docutils literal notranslate"><span class="pre">set_weights()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.stateless_call"><code class="docutils literal notranslate"><span class="pre">stateless_call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.supports_masking"><code class="docutils literal notranslate"><span class="pre">supports_masking</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.symbolic_call"><code class="docutils literal notranslate"><span class="pre">symbolic_call()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.trainable"><code class="docutils literal notranslate"><span class="pre">trainable</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.trainable_variables"><code class="docutils literal notranslate"><span class="pre">trainable_variables</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.trainable_weights"><code class="docutils literal notranslate"><span class="pre">trainable_weights</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.variable_dtype"><code class="docutils literal notranslate"><span class="pre">variable_dtype</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.variables"><code class="docutils literal notranslate"><span class="pre">variables</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel.weights"><code class="docutils literal notranslate"><span class="pre">weights</span></code></a></li>
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.experimental.DiffusionModel"><code class="docutils literal notranslate"><span class="pre">DiffusionModel()</span></code></a></li>
 </ul>
 
 

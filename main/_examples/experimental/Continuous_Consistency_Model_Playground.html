@@ -31,7 +31,7 @@
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=8fec244e" />
   
@@ -559,8 +559,6 @@ Shapes of sample_data values:
     <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
     <span class="c1"># convert from numpy&#39;s default float64 to deep learning friendly float32</span>
     <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="c1"># standardize all variables to zero mean and unit variance</span>
-    <span class="o">.</span><span class="n">standardize</span><span class="p">(</span><span class="n">momentum</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="c1"># rename the variables to match the required approximator inputs</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
 <span class="p">)</span>
@@ -641,6 +639,7 @@ Shapes of sample_data values:
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cm_approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">inference_network</span><span class="p">,</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>

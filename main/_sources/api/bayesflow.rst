@@ -21,6 +21,7 @@ please refer to the :doc:`Examples <../examples>` section.
   
     adapters
     approximators
+    augmentations
     datasets
     diagnostics
     distributions

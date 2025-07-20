@@ -30,7 +30,7 @@
 <link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
   
@@ -474,9 +474,10 @@
                 <article class="bd-article">
                   
   <h1>Source code for bayesflow.diagnostics.plots.calibration_ecdf</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">...utils.plot_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_plot_data</span><span class="p">,</span> <span class="n">add_titles_and_labels</span><span class="p">,</span> <span class="n">prettify_subplots</span>
@@ -491,6 +492,7 @@
     <span class="n">targets</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">test_quantities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">difference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">stacked</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">rank_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="s2">&quot;fractional&quot;</span><span class="p">,</span>
@@ -556,6 +558,18 @@
 <span class="sd">    variable_names    : list or None, optional, default: None</span>
 <span class="sd">        The parameter names for nice plot titles.</span>
 <span class="sd">        Inferred if None. Only relevant if `stacked=False`.</span>
+<span class="sd">    test_quantities   : dict or None, optional, default: None</span>
+<span class="sd">        A dict that maps plot titles to functions that compute</span>
+<span class="sd">        test quantities based on estimate/target draws.</span>
+
+<span class="sd">        The dict keys are automatically added to ``variable_keys``</span>
+<span class="sd">        and ``variable_names``.</span>
+<span class="sd">        Test quantity functions are expected to accept a dict of draws with</span>
+<span class="sd">        shape ``(batch_size, ...)`` as the first (typically only)</span>
+<span class="sd">        positional argument and return an NumPy array of shape</span>
+<span class="sd">        ``(batch_size,)``.</span>
+<span class="sd">        The functions do not have to deal with an additional</span>
+<span class="sd">        sample dimension, as appropriate reshaping is done internally.</span>
 <span class="sd">    figsize           : tuple or None, optional, default: None</span>
 <span class="sd">        The figure size passed to the matplotlib constructor.</span>
 <span class="sd">        Inferred if None.</span>
@@ -597,6 +611,36 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If an unknown `rank_type` is passed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Optionally, compute and prepend test quantities from draws</span>
+    <span class="k">if</span> <span class="n">test_quantities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">test_quantities_estimates</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">test_quantities_targets</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">test_quantity_fn</span> <span class="ow">in</span> <span class="n">test_quantities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Apply test_quantity_func to ground-truths</span>
+            <span class="n">tq_targets</span> <span class="o">=</span> <span class="n">test_quantity_fn</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">targets</span><span class="p">)</span>
+            <span class="n">test_quantities_targets</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">tq_targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># # Flatten estimates for batch processing in test_quantity_fn, apply function, and restore shape</span>
+            <span class="n">num_conditions</span><span class="p">,</span> <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">flattened_estimates</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])),</span> <span class="n">estimates</span><span class="p">)</span>
+            <span class="n">flat_tq_estimates</span> <span class="o">=</span> <span class="n">test_quantity_fn</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">flattened_estimates</span><span class="p">)</span>
+            <span class="n">test_quantities_estimates</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_tq_estimates</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Add custom test quantities to variable keys and names for plotting</span>
+        <span class="c1"># keys and names are set to the test_quantities dict keys</span>
+        <span class="n">test_quantities_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">test_quantities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">variable_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">variable_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">variable_names</span> <span class="o">=</span> <span class="n">test_quantities_names</span> <span class="o">+</span> <span class="n">variable_names</span>
+
+        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">test_quantities_names</span> <span class="o">+</span> <span class="n">variable_keys</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">test_quantities_estimates</span> <span class="o">|</span> <span class="n">estimates</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">test_quantities_targets</span> <span class="o">|</span> <span class="n">targets</span>
 
     <span class="n">plot_data</span> <span class="o">=</span> <span class="n">prepare_plot_data</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>

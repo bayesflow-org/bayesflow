@@ -31,7 +31,7 @@
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=8fec244e" />
   
@@ -490,6 +490,18 @@
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2025-07-13 08:48:36.068449: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1752396516.082697   41558 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1752396516.086595   41558 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2025-07-13 08:48:36.102574: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-07-13 08:48:38.472251: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+INFO:bayesflow:Using backend &#39;tensorflow&#39;
+</pre></div>
+</div>
+</div>
 </div>
 <section id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h1>
@@ -636,7 +648,8 @@ Output data has a shape of (2, 120, 3)
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Training hyperparameters</span>
 <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
-<span class="n">epochs</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="c1"># Increase the number of epochs for better performance (e.g. to 100)</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">20</span>
 
 <span class="c1"># The set transformer will compress data from N trials of shape (N, 3) into a vector of shape (16,)</span>
 <span class="n">summary_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SetTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
@@ -675,7 +688,7 @@ Output data has a shape of (2, 120, 3)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ConvertDType -&gt; 1: Concatenate([&#39;drift&#39;, &#39;boundary&#39;, &#39;beta&#39;, &#39;mu_tau_e&#39;, &#39;tau_m&#39;, &#39;sigma&#39;, &#39;varsigma&#39;] -&gt; &#39;inference_variables&#39;) -&gt; 2: Concatenate([&#39;data&#39;] -&gt; &#39;summary_variables&#39;) -&gt; 3: Standardize(include=[&#39;inference_variables&#39;])])
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ConvertDType -&gt; 1: Concatenate([&#39;drift&#39;, &#39;boundary&#39;, &#39;beta&#39;, &#39;mu_tau_e&#39;, &#39;tau_m&#39;, &#39;sigma&#39;, &#39;varsigma&#39;] -&gt; &#39;inference_variables&#39;) -&gt; 2: Concatenate([&#39;data&#39;] -&gt; &#39;summary_variables&#39;)])
 </pre></div>
 </div>
 </div>
@@ -683,7 +696,61 @@ Output data has a shape of (2, 120, 3)
 <p>Training then proceeds as follows. Without a GPU, training should take around 10 minutes; using a GPU, you can get down to less than a minute.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span><span class="n">offline_sims</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_sims</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">offline_sims</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_sims</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OfflineDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/20
+188/188 - 53s - 281ms/step - loss: 7.8519 - val_loss: 5.8041
+Epoch 2/20
+188/188 - 30s - 158ms/step - loss: 4.5390 - val_loss: 2.5351
+Epoch 3/20
+188/188 - 30s - 159ms/step - loss: 2.6700 - val_loss: 2.0294
+Epoch 4/20
+188/188 - 31s - 164ms/step - loss: 2.0685 - val_loss: 1.8672
+Epoch 5/20
+188/188 - 29s - 152ms/step - loss: 1.8300 - val_loss: 1.5873
+Epoch 6/20
+188/188 - 30s - 158ms/step - loss: 1.5136 - val_loss: 1.1278
+Epoch 7/20
+188/188 - 28s - 151ms/step - loss: 1.3078 - val_loss: 1.0039
+Epoch 8/20
+188/188 - 28s - 151ms/step - loss: 1.1343 - val_loss: 1.4365
+Epoch 9/20
+188/188 - 29s - 157ms/step - loss: 0.9476 - val_loss: 0.8202
+Epoch 10/20
+188/188 - 29s - 153ms/step - loss: 0.8167 - val_loss: 0.6834
+Epoch 11/20
+188/188 - 29s - 154ms/step - loss: 0.5641 - val_loss: 0.2522
+Epoch 12/20
+188/188 - 29s - 153ms/step - loss: 0.4931 - val_loss: 0.4941
+Epoch 13/20
+188/188 - 28s - 151ms/step - loss: 0.3016 - val_loss: 0.3768
+Epoch 14/20
+188/188 - 28s - 149ms/step - loss: 0.1262 - val_loss: -2.4049e-02
+Epoch 15/20
+188/188 - 28s - 149ms/step - loss: 0.0243 - val_loss: -1.2274e-01
+Epoch 16/20
+188/188 - 28s - 151ms/step - loss: -1.1780e-01 - val_loss: -2.4249e-01
+Epoch 17/20
+188/188 - 29s - 156ms/step - loss: -2.1120e-01 - val_loss: -2.7038e-01
+Epoch 18/20
+188/188 - 29s - 155ms/step - loss: -3.2692e-01 - val_loss: -4.1780e-01
+Epoch 19/20
+188/188 - 29s - 152ms/step - loss: -3.6546e-01 - val_loss: -4.1805e-01
+Epoch 20/20
+188/188 - 30s - 161ms/step - loss: -4.0681e-01 - val_loss: -4.3770e-01
 </pre></div>
 </div>
 </div>
@@ -696,6 +763,9 @@ Output data has a shape of (2, 120, 3)
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/cf09c2259b708ab42bba42d1c5380834c6963124a6e77fb0863c6bab474744e7.png" src="../../_images/cf09c2259b708ab42bba42d1c5380834c6963124a6e77fb0863c6bab474744e7.png" />
 </div>
 </div>
 <section id="visual-diagnostics">
@@ -715,6 +785,18 @@ Output data has a shape of (2, 120, 3)
 <span class="n">fig</span>
 </pre></div>
 </div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;losses&#39;: &lt;Figure size 1500x300 with 1 Axes&gt;,
+ &#39;recovery&#39;: &lt;Figure size 1500x600 with 7 Axes&gt;,
+ &#39;calibration_ecdf&#39;: &lt;Figure size 1500x600 with 7 Axes&gt;,
+ &#39;z_score_contraction&#39;: &lt;Figure size 1500x600 with 7 Axes&gt;}
+</pre></div>
+</div>
+<img alt="../../_images/15ba8c4767d38209287b89ffc72f0963993c4576a340a2508e1dae553a97c730.png" src="../../_images/15ba8c4767d38209287b89ffc72f0963993c4576a340a2508e1dae553a97c730.png" />
+<img alt="../../_images/e5072b8efff2ac481a7000b5e71aa72bfba6969abd563077e927effe82fa4387.png" src="../../_images/e5072b8efff2ac481a7000b5e71aa72bfba6969abd563077e927effe82fa4387.png" />
+<img alt="../../_images/edadef3d5b2e05dcfbc5a55947ae3d4795a97e1da367423b71fb0fae77954011.png" src="../../_images/edadef3d5b2e05dcfbc5a55947ae3d4795a97e1da367423b71fb0fae77954011.png" />
+<img alt="../../_images/4bfba48f205695b2a42cc63f515d6ae927723a21f88bf1f7a15b1a2865a25278.png" src="../../_images/4bfba48f205695b2a42cc63f515d6ae927723a21f88bf1f7a15b1a2865a25278.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -755,33 +837,33 @@ Output data has a shape of (2, 120, 3)
   <tbody>
     <tr>
       <th>NRMSE</th>
-      <td>0.071242</td>
-      <td>0.103692</td>
-      <td>0.094913</td>
-      <td>0.048024</td>
-      <td>0.060045</td>
-      <td>0.321079</td>
-      <td>0.178052</td>
+      <td>0.075900</td>
+      <td>0.111066</td>
+      <td>0.101675</td>
+      <td>0.058362</td>
+      <td>0.068680</td>
+      <td>0.406021</td>
+      <td>0.391235</td>
     </tr>
     <tr>
       <th>Posterior Contraction</th>
-      <td>0.978946</td>
-      <td>0.967126</td>
-      <td>0.969568</td>
-      <td>0.991798</td>
-      <td>0.986764</td>
-      <td>0.376899</td>
-      <td>0.861550</td>
+      <td>0.967824</td>
+      <td>0.946947</td>
+      <td>0.951313</td>
+      <td>0.980855</td>
+      <td>0.973531</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>Calibration Error</th>
-      <td>0.035526</td>
-      <td>0.080395</td>
-      <td>0.068158</td>
-      <td>0.045789</td>
-      <td>0.081447</td>
-      <td>0.033421</td>
-      <td>0.039737</td>
+      <td>0.018289</td>
+      <td>0.021579</td>
+      <td>0.020395</td>
+      <td>0.022895</td>
+      <td>0.017763</td>
+      <td>0.045526</td>
+      <td>0.035263</td>
     </tr>
   </tbody>
 </table>
@@ -791,6 +873,8 @@ Output data has a shape of (2, 120, 3)
 </section>
 <section id="variable-number-of-trials">
 <h1>Variable Number of Trials<a class="headerlink" href="#variable-number-of-trials" title="Link to this heading">#</a></h1>
+<p>We now allow for a variable number of trials.</p>
+<p><em>Note: the JAX backend has to re-run its optimizations for each number of trials, making training quite slow. TensorFlow can handle the varying number of trials and is therefore the recommended backend for this setting.</em></p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">random_num_trials</span><span class="p">():</span>
@@ -816,7 +900,7 @@ Output data has a shape of (2, 120, 3)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of trials: 169
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of trials: 194
 Output drift has a shape of (2, 1)
 Output boundary has a shape of (2, 1)
 Output beta has a shape of (2, 1)
@@ -824,7 +908,7 @@ Output mu_tau_e has a shape of (2, 1)
 Output tau_m has a shape of (2, 1)
 Output sigma has a shape of (2, 1)
 Output varsigma has a shape of (2, 1)
-Output data has a shape of (2, 169, 3)
+Output data has a shape of (2, 194, 3)
 </pre></div>
 </div>
 </div>
@@ -846,7 +930,6 @@ Output data has a shape of (2, 169, 3)
     <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">&quot;drift&quot;</span><span class="p">,</span> <span class="s2">&quot;boundary&quot;</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;mu_tau_e&quot;</span><span class="p">,</span> <span class="s2">&quot;tau_m&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="s2">&quot;varsigma&quot;</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;num_trials&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">standardize</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -857,7 +940,8 @@ Output data has a shape of (2, 169, 3)
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Training hyperparameters</span>
 <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
-<span class="n">epochs</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="c1"># Increase the number of epochs for better performance (e.g., to 200)</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">20</span>
 
 <span class="c1"># The set transformer will compress data from N trials of shape (N, 3) into a vector of shape (16,)</span>
 <span class="n">summary_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SetTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">embed_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span> <span class="n">num_seeds</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
@@ -878,7 +962,7 @@ Output data has a shape of (2, 169, 3)
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
     <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;drift&quot;</span><span class="p">,</span> <span class="s2">&quot;boundary&quot;</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;mu_tau_e&quot;</span><span class="p">,</span> <span class="s2">&quot;tau_m&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="s2">&quot;varsigma&quot;</span><span class="p">],</span>
     <span class="n">inference_conditions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -890,6 +974,64 @@ Output data has a shape of (2, 169, 3)
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history2</span> <span class="o">=</span> <span class="n">var_trials_workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span> <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OnlineDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">27s</span> 244ms/step - loss: 9.8274 
+Epoch 2/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 257ms/step - loss: 8.9477 
+Epoch 3/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">7s</span> 212ms/step - loss: 8.0725
+Epoch 4/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 293ms/step - loss: 7.3130 
+Epoch 5/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 265ms/step - loss: 6.8796 
+Epoch 6/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">8s</span> 258ms/step - loss: 6.4235 
+Epoch 7/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">8s</span> 223ms/step - loss: 6.4090 
+Epoch 8/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 260ms/step - loss: 6.3657 
+Epoch 9/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">8s</span> 234ms/step - loss: 6.2210 
+Epoch 10/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">8s</span> 251ms/step - loss: 5.9977 
+Epoch 11/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 296ms/step - loss: 5.9510 
+Epoch 12/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">8s</span> 244ms/step - loss: 5.6591 
+Epoch 13/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">8s</span> 255ms/step - loss: 5.5640
+Epoch 14/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 266ms/step - loss: 5.1299 
+Epoch 15/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">10s</span> 305ms/step - loss: 4.9768
+Epoch 16/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 267ms/step - loss: 4.8671 
+Epoch 17/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 264ms/step - loss: 4.8898 
+Epoch 18/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">10s</span> 326ms/step - loss: 4.6101
+Epoch 19/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">9s</span> 254ms/step - loss: 4.7988 
+Epoch 20/20
+<span class=" -Color -Color-Bold">32/32</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">8s</span> 248ms/step - loss: 4.7206 
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/40e5e0a7cd7ffdcaacc985757b71ed632749007ff110da4040debf2d7a9df82f.png" src="../../_images/40e5e0a7cd7ffdcaacc985757b71ed632749007ff110da4040debf2d7a9df82f.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -914,7 +1056,20 @@ Output data has a shape of (2, 169, 3)
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;losses&#39;: &lt;Figure size 1500x300 with 1 Axes&gt;,
+ &#39;recovery&#39;: &lt;Figure size 1500x600 with 7 Axes&gt;,
+ &#39;calibration_ecdf&#39;: &lt;Figure size 1500x600 with 7 Axes&gt;,
+ &#39;z_score_contraction&#39;: &lt;Figure size 1500x600 with 7 Axes&gt;}
+</pre></div>
 </div>
+<img alt="../../_images/1c959e73a90d59cfc5b3879600c6c9e99800a3916859504f9da0c94ac7fc9a81.png" src="../../_images/1c959e73a90d59cfc5b3879600c6c9e99800a3916859504f9da0c94ac7fc9a81.png" />
+<img alt="../../_images/efba1675a21dd279f511abc5072c323676c0f6068f5c709a195ecee81d87fb3e.png" src="../../_images/efba1675a21dd279f511abc5072c323676c0f6068f5c709a195ecee81d87fb3e.png" />
+<img alt="../../_images/cd24191a5cd940930f7bae33883a3d61e8233ff501836ec12bdf0e9b473e547b.png" src="../../_images/cd24191a5cd940930f7bae33883a3d61e8233ff501836ec12bdf0e9b473e547b.png" />
+<img alt="../../_images/739cdc10c2d40d6179d4dc09ef6897c75d2aad81be85f890d59ea5f9703490b0.png" src="../../_images/739cdc10c2d40d6179d4dc09ef6897c75d2aad81be85f890d59ea5f9703490b0.png" />
+</div>
+</div>
+<p>In both settings, we can see that we are able to learn something about the first five parameters. The performance is limited by the number of epochs used in the notebook. To test the limits, increase the number of epochs and the number of training datasets. The transformer architecture used in the summary networks is quite computationally heavy, but can be efficiently parallelized by a GPU, so using a GPU will significantly speed up training.</p>
 </section>
 </section>
 

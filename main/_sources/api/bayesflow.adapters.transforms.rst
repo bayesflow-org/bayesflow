@@ -40,7 +40,6 @@ transforms
     Keep
     Log
     MapTransform
-    NNPE
     NanToNum
     NumpyTransform
     OneHot

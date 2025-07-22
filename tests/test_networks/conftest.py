@@ -2,6 +2,7 @@ import pytest
 
 from bayesflow.networks import MLP
 from bayesflow.utils.tensor_utils import concatenate_valid
+from bayesflow.utils.serialization import serializable
 import keras
 
 
@@ -17,6 +18,7 @@ def diffusion_model_edm_F():
     )
 
 
+@serializable("bayesflow.networks")
 class ConcatenateMLP(keras.Layer):
     def __init__(self, widths):
         super().__init__()

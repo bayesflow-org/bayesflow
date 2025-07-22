@@ -35,7 +35,6 @@ class DiskDataset(keras.utils.PyDataset):
         batch_size: int,
         load_fn: Callable = None,
         adapter: Adapter | None,
-        stage: str = "training",
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         shuffle: bool = True,
         **kwargs,
@@ -56,8 +55,6 @@ class DiskDataset(keras.utils.PyDataset):
             Function to load a single file into a sample. Defaults to `pickle_load`.
         adapter : Adapter or None
             Optional adapter to transform the loaded batch.
-        stage : str, default="training"
-            Current stage (e.g., "training", "validation", etc.) used by the adapter.
         augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
             A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
             to apply to the batch.
@@ -80,7 +77,6 @@ class DiskDataset(keras.utils.PyDataset):
         self.load_fn = load_fn or pickle_load
         self.adapter = adapter
         self.files = list(map(str, self.root.glob(pattern)))
-        self.stage = stage
 
         self.augmentations = augmentations or []
         self._shuffle = shuffle
@@ -111,7 +107,7 @@ class DiskDataset(keras.utils.PyDataset):
             raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
         if self.adapter is not None:
-            batch = self.adapter(batch, stage=self.stage)
+            batch = self.adapter(batch)
 
         return batch
 

@@ -12,10 +12,14 @@ from .double_conv import DoubleConv
 @serializable("bayesflow.networks", disable_module_check=True)
 class ResNet(keras.Sequential):
     """
-    Implements the ResNet architecture.
+    Implements the ResNet architecture, from [1].
 
     Note that we still apply dropout and activation to the output and do not flatten it,
     so you will need to flatten it yourself and apply at least one linear layer after this network.
+
+    [1] He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition.
+    In Proceedings of the IEEE conference on computer vision and pattern recognition (pp. 770-778).
+    arXiv:1512.03385
     """
 
     def __init__(

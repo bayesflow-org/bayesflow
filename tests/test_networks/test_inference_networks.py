@@ -88,7 +88,7 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
     # cycle-consistency means the forward and inverse methods are inverses of each other
     import bayesflow as bf
 
-    if isinstance(generative_inference_network, bf.experimental.DiffusionModel):
+    if isinstance(generative_inference_network, bf.networks.DiffusionModel):
         pytest.skip(reason="test unstable for untrained diffusion models")
     try:
         forward_output, forward_log_density = generative_inference_network(

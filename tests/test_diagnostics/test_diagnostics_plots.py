@@ -1,4 +1,5 @@
 import bayesflow as bf
+import numpy as np
 import pytest
 
 
@@ -16,6 +17,8 @@ def test_backend():
 
 
 def test_calibration_ecdf(random_estimates, random_targets, var_names):
+    print(random_estimates, random_targets, var_names)
+
     # basic functionality: automatic variable names
     out = bf.diagnostics.plots.calibration_ecdf(random_estimates, random_targets)
     assert len(out.axes) == num_variables(random_estimates)
@@ -45,6 +48,22 @@ def test_calibration_ecdf(random_estimates, random_targets, var_names):
     assert len(out.axes) == random_estimates["beta"].shape[-1]
     # cannot infer the variable names from an array so default names are used
     assert out.axes[1].title._text == "v_1"
+
+    # test quantities plots are shown
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.plots.calibration_ecdf(random_estimates, random_targets, test_quantities=test_quantities)
+    assert len(out.axes) == len(test_quantities) + num_variables(random_estimates)
+    assert out.axes[1].title._text == r"$\beta_1 \cdot \beta_2$"
+    assert out.axes[-1].title._text == r"sigma"
+
+    # test plot titles changed to variable_names in case test quantities exist
+    out = bf.diagnostics.plots.calibration_ecdf(
+        random_estimates, random_targets, test_quantities=test_quantities, variable_names=var_names
+    )
+    assert out.axes[-1].title._text == r"$\sigma$"
 
 
 def test_calibration_histogram(random_estimates, random_targets):

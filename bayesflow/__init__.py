@@ -1,6 +1,7 @@
 from . import (
     approximators,
     adapters,
+    augmentations,
     datasets,
     diagnostics,
     distributions,

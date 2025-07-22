@@ -169,18 +169,28 @@ class ConsistencyModel(InferenceNetwork):
         input_shape = list(xz_shape)
 
         if self._concatenate_subnet_input:
-            # time vector
+            # construct time vector
             input_shape[-1] += 1
-
             if conditions_shape is not None:
                 input_shape[-1] += conditions_shape[-1]
+            input_shape = tuple(input_shape)
 
-        input_shape = tuple(input_shape)
+            self.subnet.build(input_shape)
+            out_shape = self.subnet.compute_output_shape(input_shape)
+        else:
+            # Multiple separate inputs
+            main_input_shape = xz_shape
+            time_shape = xz_shape[:-1] + (1,)  # same batch/sequence dims, 1 feature
 
-        self.subnet.build(input_shape)
+            # Build subnet with multiple input shapes
+            input_shape = [main_input_shape, time_shape]
+            if conditions_shape is not None:
+                input_shape.append(conditions_shape)
 
-        input_shape = self.subnet.compute_output_shape(input_shape)
-        self.output_projector.build(input_shape)
+            self.subnet.build(input_shape)  # Pass list of shapes
+            out_shape = self.subnet.compute_output_shape(input_shape)
+
+        self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3
         self.c_huber = 0.00054 * ops.sqrt(xz_shape[-1])

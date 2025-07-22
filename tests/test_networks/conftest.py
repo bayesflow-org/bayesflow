@@ -27,6 +27,13 @@ class ConcatenateMLP(keras.Layer):
         con = concatenate_valid([x, t, conditions], axis=-1)
         return self.mlp(con)
 
+    def compute_output_shape(self, input_shape):
+        concatenate_input_shapes = tuple(
+            (input_shape[0][0], sum([shape[-1] for shape in input_shape if shape is not None]))
+        )
+        out = self.mlp.compute_output_shape(concatenate_input_shapes)
+        return out
+
 
 @pytest.fixture()
 def diffusion_model_edm_F_subnet_concatenate():
@@ -198,9 +205,12 @@ def typical_point_inference_network_subnet():
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
+        pytest.param("flow_matching_subnet_concatenate"),
         "free_form_flow",
         "consistency_model",
+        pytest.param("consistency_model_subnet_concatenate"),
         pytest.param("diffusion_model_edm_F"),
+        pytest.param("diffusion_model_edm_F_subnet_concatenate"),
         pytest.param("diffusion_model_edm_noise", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_F", marks=pytest.mark.slow),

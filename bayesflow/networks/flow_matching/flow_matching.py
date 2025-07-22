@@ -130,15 +130,28 @@ class FlowMatching(InferenceNetwork):
 
         input_shape = list(xz_shape)
         if self._concatenate_subnet_input:
-            # account for concatenating the time and conditions
+            # construct time vector
             input_shape[-1] += 1
             if conditions_shape is not None:
                 input_shape[-1] += conditions_shape[-1]
-        input_shape = tuple(input_shape)
+            input_shape = tuple(input_shape)
 
-        self.subnet.build(input_shape)
-        input_shape = self.subnet.compute_output_shape(input_shape)
-        self.output_projector.build(input_shape)
+            self.subnet.build(input_shape)
+            out_shape = self.subnet.compute_output_shape(input_shape)
+        else:
+            # Multiple separate inputs
+            main_input_shape = xz_shape
+            time_shape = xz_shape[:-1] + (1,)  # same batch/sequence dims, 1 feature
+
+            # Build subnet with multiple input shapes
+            input_shape = [main_input_shape, time_shape]
+            if conditions_shape is not None:
+                input_shape.append(conditions_shape)
+
+            self.subnet.build(input_shape)  # Pass list of shapes
+            out_shape = self.subnet.compute_output_shape(input_shape)
+
+        self.output_projector.build(out_shape)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

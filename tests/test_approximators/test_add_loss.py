@@ -23,9 +23,9 @@ def approximator_using_add_loss(adapter):
 
 
 def test_layer_loss_reported(approximator_using_add_loss, train_dataset, validation_dataset):
-    from bayesflow.approximators.backend_approximators.jax_approximator import JAXApproximator
+    import os
 
-    if isinstance(approximator_using_add_loss, JAXApproximator):
+    if os.environ["KERAS_BACKEND"] == "jax":
         pytest.skip(reason="With JAX backend, the compute_metrics method currently fails to consider self.losses.")
 
     approximator = approximator_using_add_loss

@@ -233,10 +233,17 @@ class ModelComparisonApproximator(Approximator):
         else:
             loss = classifier_metrics.pop("loss")
 
+        if len(self.losses) > 0:
+            layer_loss = keras.ops.sum(self.losses)
+            loss += layer_loss
+            layer_loss_metrics = {"layer_loss": layer_loss}
+        else:
+            layer_loss_metrics = {}
+
         classifier_metrics = {f"{key}/classifier_{key}": value for key, value in classifier_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
-        metrics = {"loss": loss} | classifier_metrics | summary_metrics
+        metrics = {"loss": loss} | layer_loss_metrics | classifier_metrics | summary_metrics
         return metrics
 
     def fit(

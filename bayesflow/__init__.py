@@ -35,7 +35,7 @@ def setup():
                 message += f"{backend.display_name}\n"
             message += "\n"
 
-            message += f"If you continue to see this error, please file an bug report at {issue_url}.\n"
+            message += f"If you continue to see this error, please file a bug report at {issue_url}.\n"
             message += (
                 "You can manually select a backend by setting the KERAS_BACKEND environment variable as shown below:\n"
             )

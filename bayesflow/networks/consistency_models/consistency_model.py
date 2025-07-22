@@ -168,11 +168,12 @@ class ConsistencyModel(InferenceNetwork):
 
         input_shape = list(xz_shape)
 
-        # time vector
-        input_shape[-1] += 1
+        if self._concatenate_subnet_input:
+            # time vector
+            input_shape[-1] += 1
 
-        if conditions_shape is not None:
-            input_shape[-1] += conditions_shape[-1]
+            if conditions_shape is not None:
+                input_shape[-1] += conditions_shape[-1]
 
         input_shape = tuple(input_shape)
 

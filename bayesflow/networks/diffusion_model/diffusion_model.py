@@ -135,10 +135,11 @@ class DiffusionModel(InferenceNetwork):
         self.output_projector.units = xz_shape[-1]
         input_shape = list(xz_shape)
 
-        # construct time vector
-        input_shape[-1] += 1
-        if conditions_shape is not None:
-            input_shape[-1] += conditions_shape[-1]
+        if self._concatenate_subnet_input:
+            # construct time vector
+            input_shape[-1] += 1
+            if conditions_shape is not None:
+                input_shape[-1] += conditions_shape[-1]
 
         input_shape = tuple(input_shape)
 

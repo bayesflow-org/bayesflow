@@ -13,7 +13,7 @@ docsrc/source/contributing.md
 examples/checkpoints/
 build
 docs/
-
+_compatibility_data/
 
 # mypy
 .mypy_cache

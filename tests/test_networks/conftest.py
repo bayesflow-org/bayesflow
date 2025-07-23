@@ -1,8 +1,9 @@
 import pytest
+from collections.abc import Sequence
 
 from bayesflow.networks import MLP, Sequential
 from bayesflow.utils.tensor_utils import concatenate_valid
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, serialize
 
 
 @pytest.fixture()
@@ -19,8 +20,12 @@ def diffusion_model_edm_F():
 
 @serializable("bayesflow.networks")
 class ConcatenateMLP(Sequential):
-    def __init__(self, widths):
-        super().__init__()
+    def __init__(
+        self,
+        widths: Sequence[int] = (256, 256),
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
         self.widths = widths
         self.mlp = MLP(widths)
 
@@ -52,6 +57,11 @@ class ConcatenateMLP(Sequential):
             )
         )
         self.mlp.build(concatenate_input_shapes)
+
+    def get_config(self):
+        config = {"widths": self.widths}
+
+        return serialize(config)
 
 
 @pytest.fixture()

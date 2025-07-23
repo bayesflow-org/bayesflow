@@ -179,17 +179,11 @@ class ConsistencyModel(InferenceNetwork):
             out_shape = self.subnet.compute_output_shape(input_shape)
         else:
             # Multiple separate inputs
-            main_input_shape = xz_shape
             time_shape = xz_shape[:-1] + (1,)  # same batch/sequence dims, 1 feature
-
-            # Build subnet with multiple input shapes
-            input_shape = [main_input_shape, time_shape]
-            if conditions_shape is not None:
-                input_shape.append(conditions_shape)
-
-            self.subnet.build(input_shape)  # Pass list of shapes
-            out_shape = self.subnet.compute_output_shape(input_shape)
-
+            self.subnet.build(input_shape_x=xz_shape, input_shape_t=time_shape, input_shape_conditions=conditions_shape)
+            out_shape = self.subnet.compute_output_shape(
+                input_shape_x=xz_shape, input_shape_t=time_shape, input_shape_conditions=conditions_shape
+            )
         self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3

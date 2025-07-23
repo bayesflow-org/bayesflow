@@ -28,12 +28,24 @@ class ConcatenateMLP(Sequential):
         con = concatenate_valid([x, t, conditions], axis=-1)
         return self.mlp(con)
 
-    def compute_output_shape(self, input_shape):
+    def compute_output_shape(self, input_shape_x, input_shape_t, input_shape_conditions=None):
         concatenate_input_shapes = tuple(
-            (input_shape[0][0], sum([shape[-1] for shape in input_shape if shape is not None]))
+            (
+                input_shape_x[0],
+                input_shape_x[-1]
+                + input_shape_t[-1]
+                + (input_shape_conditions[-1] if input_shape_conditions is not None else 0),
+            )
         )
         out = self.mlp.compute_output_shape(concatenate_input_shapes)
         return out
+
+    def build(self, input_shape_x, input_shape_t, input_shape_conditions=None):
+        if self.built:
+            return
+
+        input_shape = self.compute_output_shape(input_shape_x, input_shape_t, input_shape_conditions)
+        self.mlp.build(input_shape)
 
 
 @pytest.fixture()

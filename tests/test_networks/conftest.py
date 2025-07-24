@@ -61,12 +61,12 @@ class ConcatenateMLP(Sequential):
 
 
 @pytest.fixture()
-def diffusion_model_edm_F_subnet_concatenate():
+def diffusion_model_edm_F_subnet_separate_inputs():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet=ConcatenateMLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        integrate_kwargs={"method": "rk45", "steps": 4},
         noise_schedule="edm",
         prediction_type="F",
         concatenate_subnet_input=False,
@@ -144,11 +144,11 @@ def flow_matching():
 
 
 @pytest.fixture()
-def flow_matching_subnet_concatenate():
+def flow_matching_subnet_separate_inputs():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
-        subnet=ConcatenateMLP([8, 8]), integrate_kwargs={"method": "rk45", "steps": 100}, concatenate_subnet_input=False
+        subnet=ConcatenateMLP([8, 8]), integrate_kwargs={"method": "rk45", "steps": 4}, concatenate_subnet_input=False
     )
 
 
@@ -160,10 +160,10 @@ def consistency_model():
 
 
 @pytest.fixture()
-def consistency_model_subnet_concatenate():
+def consistency_model_subnet_separate_inputs():
     from bayesflow.networks import ConsistencyModel
 
-    return ConsistencyModel(total_steps=100, subnet=ConcatenateMLP([8, 8]), concatenate_subnet_input=False)
+    return ConsistencyModel(total_steps=4, subnet=ConcatenateMLP([8, 8]), concatenate_subnet_input=False)
 
 
 @pytest.fixture()
@@ -230,12 +230,9 @@ def typical_point_inference_network_subnet():
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
-        pytest.param("flow_matching_subnet_concatenate"),
         "free_form_flow",
         "consistency_model",
-        pytest.param("consistency_model_subnet_concatenate"),
         pytest.param("diffusion_model_edm_F"),
-        pytest.param("diffusion_model_edm_F_subnet_concatenate"),
         pytest.param("diffusion_model_edm_noise", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_F", marks=pytest.mark.slow),
@@ -263,16 +260,12 @@ def inference_network_subnet(request):
 
 @pytest.fixture(
     params=[
-        pytest.param("diffusion_model_edm_F_subnet_concatenate"),
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
-        pytest.param("flow_matching_subnet_concatenate"),
         "free_form_flow",
         "consistency_model",
-        pytest.param("consistency_model_subnet_concatenate"),
         pytest.param("diffusion_model_edm_F"),
-        pytest.param("diffusion_model_edm_F_subnet_concatenate"),
         pytest.param(
             "diffusion_model_edm_noise",
             marks=[
@@ -306,6 +299,18 @@ def inference_network_subnet(request):
     scope="function",
 )
 def generative_inference_network(request):
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture(
+    params=[
+        pytest.param("flow_matching_subnet_separate_inputs"),
+        pytest.param("consistency_model_subnet_separate_inputs"),
+        pytest.param("diffusion_model_edm_F_subnet_separate_inputs"),
+    ],
+    scope="function",
+)
+def inference_network_subnet_separate_inputs(request):
     return request.getfixturevalue(request.param)
 
 

@@ -12,16 +12,17 @@ def setup():
     if "KERAS_BACKEND" not in os.environ:
         # check for available backends and automatically set the KERAS_BACKEND env variable or raise an error
         class Backend:
-            def __init__(self, display_name, package_name, env_name, install_url):
+            def __init__(self, display_name, package_name, env_name, install_url, priority):
                 self.display_name = display_name
                 self.package_name = package_name
                 self.env_name = env_name
                 self.install_url = install_url
+                self.priority = priority
 
         backends = [
-            Backend("JAX", "jax", "jax", "https://docs.jax.dev/en/latest/quickstart.html#installation"),
-            Backend("PyTorch", "torch", "torch", "https://pytorch.org/get-started/locally/"),
-            Backend("TensorFlow", "tensorflow", "tensorflow", "https://www.tensorflow.org/install"),
+            Backend("JAX", "jax", "jax", "https://docs.jax.dev/en/latest/quickstart.html#installation", 0),
+            Backend("PyTorch", "torch", "torch", "https://pytorch.org/get-started/locally/", 1),
+            Backend("TensorFlow", "tensorflow", "tensorflow", "https://www.tensorflow.org/install", 2),
         ]
 
         found_backends = []
@@ -42,18 +43,19 @@ def setup():
             message += "https://keras.io/getting_started/#configuring-your-backend"
 
             raise ImportError(message)
-        elif len(found_backends) > 1:
-            message = "Multiple backends found:\n"
-            for backend in found_backends:
-                message += f"- {backend.display_name}\n"
-            message += "\n"
 
-            message += (
-                "You can manually select a backend by setting the KERAS_BACKEND environment variable as shown below:\n"
+        if len(found_backends) > 1:
+            import warnings
+
+            found_backends.sort(key=lambda b: b.priority)
+            chosen_backend = found_backends[0]
+
+            warnings.warn(
+                f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}).\n"
+                f"Defaulting to {chosen_backend.display_name}.\n"
+                "To override, set the KERAS_BACKEND environment variable before importing bayesflow.\n"
+                "See: https://keras.io/getting_started/#configuring-your-backend"
             )
-            message += "https://keras.io/getting_started/#configuring-your-backend"
-
-            raise ImportError(message)
         else:
             os.environ["KERAS_BACKEND"] = found_backends[0].env_name
 

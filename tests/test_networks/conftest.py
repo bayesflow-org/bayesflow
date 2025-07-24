@@ -18,7 +18,7 @@ def diffusion_model_edm_F():
     )
 
 
-@serializable("bayesflow.networks")
+@serializable("test", disable_module_check=True)
 class ConcatenateMLP(Sequential):
     def __init__(
         self,
@@ -33,27 +33,23 @@ class ConcatenateMLP(Sequential):
         con = concatenate_valid([x, t, conditions], axis=-1)
         return self.mlp(con)
 
-    def compute_output_shape(self, input_shape_x, input_shape_t, input_shape_conditions=None):
+    def compute_output_shape(self, x_shape, t_shape, conditions_shape=None):
         concatenate_input_shapes = tuple(
             (
-                input_shape_x[0],
-                input_shape_x[-1]
-                + input_shape_t[-1]
-                + (input_shape_conditions[-1] if input_shape_conditions is not None else 0),
+                x_shape[0],
+                x_shape[-1] + t_shape[-1] + (conditions_shape[-1] if conditions_shape is not None else 0),
             )
         )
         return self.mlp.compute_output_shape(concatenate_input_shapes)
 
-    def build(self, input_shape_x, input_shape_t, input_shape_conditions=None):
+    def build(self, x_shape, t_shape, conditions_shape=None):
         if self.built:
             return
 
         concatenate_input_shapes = tuple(
             (
-                input_shape_x[0],
-                input_shape_x[-1]
-                + input_shape_t[-1]
-                + (input_shape_conditions[-1] if input_shape_conditions is not None else 0),
+                x_shape[0],
+                x_shape[-1] + t_shape[-1] + (conditions_shape[-1] if conditions_shape is not None else 0),
             )
         )
         self.mlp.build(concatenate_input_shapes)

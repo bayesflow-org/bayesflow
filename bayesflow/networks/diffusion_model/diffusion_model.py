@@ -147,9 +147,9 @@ class DiffusionModel(InferenceNetwork):
         else:
             # Multiple separate inputs
             time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(input_shape_x=xz_shape, input_shape_t=time_shape, input_shape_conditions=conditions_shape)
+            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
             out_shape = self.subnet.compute_output_shape(
-                input_shape_x=xz_shape, input_shape_t=time_shape, input_shape_conditions=conditions_shape
+                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
             )
 
         self.output_projector.build(out_shape)

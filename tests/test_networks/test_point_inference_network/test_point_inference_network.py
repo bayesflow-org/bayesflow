@@ -3,7 +3,7 @@ from keras.saving import (
     deserialize_keras_object as deserialize,
     serialize_keras_object as serialize,
 )
-from tests.utils import assert_layers_equal
+from tests.utils import assert_layers_equal, assert_configs_equal
 import pytest
 
 
@@ -72,7 +72,7 @@ def test_save_and_load_quantile(tmp_path, quantile_point_inference_network, rand
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
     print(net.get_config())
-    assert net.get_config() == loaded.get_config()
+    assert_configs_equal(net.get_config(), loaded.get_config())
 
     assert_layers_equal(net, loaded)
 

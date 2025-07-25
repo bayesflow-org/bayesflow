@@ -3,12 +3,16 @@ from copy import copy
 import builtins
 import inspect
 import keras
+import functools
 import numpy as np
 import sys
 from warnings import warn
 
 # this import needs to be exactly like this to work with monkey patching
-from keras.saving import deserialize_keras_object
+from keras.saving import deserialize_keras_object, get_registered_object, get_registered_name
+from keras.src.saving.serialization_lib import SerializableDict
+from keras import dtype_policies
+from keras import tree
 
 from .context_managers import monkey_patch
 from .decorators import allow_args
@@ -95,6 +99,10 @@ def deserialize(config: dict, custom_objects=None, safe_mode=True, **kwargs):
         return obj
 
 
+def _deserializing_from_config(cls, config, custom_objects=None):
+    return cls(**deserialize(config, custom_objects=custom_objects))
+
+
 @allow_args
 def serializable(cls, package: str, name: str | None = None, disable_module_check: bool = False):
     """Register class as Keras serializable.
@@ -142,6 +150,68 @@ def serializable(cls, package: str, name: str | None = None, disable_module_chec
 
     if name is None:
         name = copy(cls.__name__)
+
+    def init_decorator(original_init):
+        # Adds auto-config behavior after the __init__ function. This extends the auto-config capabilities provided
+        # by keras.Operation (base class of keras.Layer) with support for all serializable objects.
+        # This produces a serialized config that has to be deserialized properly, see below.
+        @functools.wraps(original_init)
+        def wrapper(instance, *args, **kwargs):
+            original_init(instance, *args, **kwargs)
+
+            # Generate a config to be returned by default by `get_config()`.
+            # Adapted from keras.Operation.
+            kwargs = kwargs.copy()
+            arg_names = inspect.getfullargspec(original_init).args
+            kwargs.update(dict(zip(arg_names[1 : len(args) + 1], args)))
+
+            # Explicitly serialize `dtype` to support auto_config
+            dtype = kwargs.get("dtype", None)
+            if dtype is not None and isinstance(dtype, dtype_policies.DTypePolicy):
+                # For backward compatibility, we use a str (`name`) for
+                # `DTypePolicy`
+                if dtype.quantization_mode is None:
+                    kwargs["dtype"] = dtype.name
+                # Otherwise, use `dtype_policies.serialize`
+                else:
+                    kwargs["dtype"] = dtype_policies.serialize(dtype)
+
+            # supported basic types
+            supported_types = (str, int, float, bool, type(None))
+
+            flat_arg_values = tree.flatten(kwargs)
+            auto_config = True
+            for value in flat_arg_values:
+                # adaptation: we allow all registered serializable objects
+                is_serializable_object = (
+                    isinstance(value, supported_types)
+                    or get_registered_object(get_registered_name(type(value))) is not None
+                )
+                # adaptation: we allow all registered serializable objects
+                try:
+                    is_serializable_class = inspect.isclass(value) and deserialize(serialize(value))
+                except ValueError:
+                    # deserializtion of type failed, probably not registered
+                    is_serializable_class = False
+                if not (is_serializable_object or is_serializable_class):
+                    auto_config = False
+                    break
+
+            if auto_config:
+                with monkey_patch(keras.saving.serialize_keras_object, serialize):
+                    instance._auto_config = SerializableDict(**kwargs)
+            else:
+                instance._auto_config = None
+
+        return wrapper
+
+    cls.__init__ = init_decorator(cls.__init__)
+
+    if hasattr(cls, "from_config") and cls.from_config.__func__ == keras.Layer.from_config.__func__:
+        # By default, keras.Layer.from_config does not deserializte the config. For this class, there is a
+        # from_config method that is identical to keras.Layer.config, so we replace it with a variant that applies
+        # deserialization to the config.
+        cls.from_config = classmethod(_deserializing_from_config)
 
     # register subclasses as keras serializable
     return keras.saving.register_keras_serializable(package=package, name=name)(cls)

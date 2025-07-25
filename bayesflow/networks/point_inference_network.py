@@ -1,4 +1,6 @@
+from collections.abc import Sequence
 import keras
+from keras.src.utils import python_utils
 
 from bayesflow.utils import model_kwargs, find_network
 from bayesflow.utils.serialization import deserialize, serializable, serialize
@@ -17,9 +19,12 @@ class PointInferenceNetwork(keras.Layer):
         self,
         scores: dict[str, ScoringRule],
         subnet: str | keras.Layer = "mlp",
+        *,
+        metrics: Sequence[keras.Metric] | None = None,
         **kwargs,
     ):
         super().__init__(**model_kwargs(kwargs))
+        self.custom_metrics = metrics
 
         self.scores = scores
 
@@ -28,6 +33,7 @@ class PointInferenceNetwork(keras.Layer):
         self.config = {
             "subnet": serialize(subnet),
             "scores": serialize(scores),
+            "metrics": serialize(metrics),
             **kwargs,
         }
 
@@ -106,6 +112,7 @@ class PointInferenceNetwork(keras.Layer):
             for head_key, head in self.heads[score_key].items():
                 head.name = config["heads"][score_key][head_key]
 
+    @python_utils.default
     def get_config(self):
         base_config = super().get_config()
 
@@ -114,9 +121,7 @@ class PointInferenceNetwork(keras.Layer):
     @classmethod
     def from_config(cls, config):
         config = config.copy()
-        config["scores"] = deserialize(config["scores"])
-        config["subnet"] = deserialize(config["subnet"])
-        return cls(**config)
+        return cls(**deserialize(config))
 
     def call(
         self,

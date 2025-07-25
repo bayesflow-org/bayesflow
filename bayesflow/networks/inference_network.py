@@ -1,13 +1,46 @@
+from typing import Literal
+from collections.abc import Sequence
+
 import keras
+from keras.src.utils import python_utils
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.serialization import serializable, serialize
 
 
+@serializable("bayesflow.networks")
 class InferenceNetwork(keras.Layer):
-    def __init__(self, base_distribution: str = "normal", **kwargs):
+    """
+    Constructs an inference network using a specified base distribution and optional custom metrics.
+    Use this interface for custom inference networks.
+    """
+
+    def __init__(
+        self,
+        base_distribution: Literal["normal", "student", "mixture"] | keras.Layer = "normal",
+        *,
+        metrics: Sequence[keras.Metric] | None = None,
+        **kwargs,
+    ):
+        """
+        Creates the network with provided arguments. Optional user-supplied metrics will be stored
+        in a `custom_metrics` attribute. A special `metrics` attribute will be created internally by `keras.Layer`.
+
+        Parameters
+        ----------
+        base_distribution : Literal["normal", "student", "mixture"] or keras.Layer
+            Name or the actual base distribution to use. Passed to `find_distribution` to
+            obtain the corresponding distribution object.
+        metrics : Sequence[keras.Metric] or None, optional
+            Sequence of custom Keras Metric instances to compute during training
+            and evaluation. If `None`, no custom metrics are used.
+        **kwargs
+            Additional keyword arguments forwarded to the `keras.Layer` constructor.
+        """
         super().__init__(**layer_kwargs(kwargs))
+        self.custom_metrics = metrics
         self.base_distribution = find_distribution(base_distribution)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
@@ -66,9 +99,16 @@ class InferenceNetwork(keras.Layer):
 
         if stage != "training" and any(self.metrics):
             # compute sample-based metrics
-            samples = self.sample((keras.ops.shape(x)[0],), conditions=conditions)
+            samples = self.sample(batch_shape=(keras.ops.shape(x)[0],), conditions=conditions)
 
             for metric in self.metrics:
                 metrics[metric.name] = metric(samples, x)
 
         return metrics
+
+    @python_utils.default
+    def get_config(self):
+        base_config = super().get_config()
+
+        config = {"metrics": self.custom_metrics, "base_distribution": self.base_distribution}
+        return base_config | serialize(config)

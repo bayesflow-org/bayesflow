@@ -29,17 +29,21 @@ class MLP(Sequential):
         dropout: Literal[0, None] | float = 0.05,
         norm: Literal["batch", "layer"] | keras.Layer = None,
         spectral_normalization: bool = False,
+        metrics: Sequence[keras.Metric] | None = None,
         **kwargs,
     ):
         """
-        Implements a flexible multi-layer perceptron (MLP) with optional residual connections, dropout, and
-        spectral normalization.
+        Creates a flexible multi-layer perceptron (MLP) with optional residual connections, dropout,
+        spectral normalization, and metrics.
 
         This MLP can be used as a general-purpose feature extractor or function approximator, supporting configurable
         depth, width, activation functions, and weight initializations.
 
         If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
         supports dropout for regularization and spectral normalization for stability in learning smooth functions.
+
+        Optional user-supplied metrics will be stored in a `custom_metrics` attribute. A special `metrics` attribute
+        will be created internally by `keras.Layer`.
 
         Parameters
         ----------
@@ -54,12 +58,15 @@ class MLP(Sequential):
         dropout : float or None, optional
             Dropout rate applied within the MLP layers for regularization. Default is 0.05.
         norm: str, optional
-
+            Type of learnable normalization to be used (e.g., "batch" or "layer"). Default is None.
         spectral_normalization : bool, optional
             Whether to apply spectral normalization to stabilize training. Default is False.
+        metrics: Sequence[keras.Metric], optional
+            A sequence of callable metrics following keras' `Metric` signature. Default is None.
         **kwargs
             Additional keyword arguments passed to the Keras layer initialization.
         """
+        self.custom_metrics = metrics
         self.widths = list(widths)
         self.activation = activation
         self.kernel_initializer = kernel_initializer
@@ -90,6 +97,7 @@ class MLP(Sequential):
             "dropout": self.dropout,
             "norm": self.norm,
             "spectral_normalization": self.spectral_normalization,
+            "metrics": self.custom_metrics,
         }
 
         return base_config | serialize(config)

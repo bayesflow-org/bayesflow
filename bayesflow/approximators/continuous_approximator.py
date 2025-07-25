@@ -1,6 +1,7 @@
 from collections.abc import Mapping, Sequence, Callable
 
 import numpy as np
+import warnings
 
 import keras
 
@@ -9,7 +10,6 @@ from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     filter_kwargs,
-    logging,
     split_arrays,
     squeeze_inner_estimates_dict,
     concatenate_valid,
@@ -148,18 +148,21 @@ class ContinuousApproximator(Approximator):
     def compile(
         self,
         *args,
-        inference_metrics: Sequence[keras.Metric] = None,
-        summary_metrics: Sequence[keras.Metric] = None,
         **kwargs,
     ):
-        if inference_metrics:
-            self.inference_network._metrics = inference_metrics
+        if "inference_metrics" in kwargs:
+            warnings.warn(
+                "Supplying inference metrics to the approximator is no longer supported. "
+                "Please pass the metrics directly to the network using the metrics parameter.",
+                DeprecationWarning,
+            )
 
-        if summary_metrics:
-            if self.summary_network is None:
-                logging.warning("Ignoring summary metrics because there is no summary network.")
-            else:
-                self.summary_network._metrics = summary_metrics
+        if "summary_metrics" in kwargs:
+            warnings.warn(
+                "Supplying summary metrics to the approximator is no longer supported. "
+                "Please pass the metrics directly to the network using the metrics parameter.",
+                DeprecationWarning,
+            )
 
         return super().compile(*args, **kwargs)
 
@@ -325,16 +328,6 @@ class ContinuousApproximator(Approximator):
             "inference_network": self.inference_network,
             "summary_network": self.summary_network,
             "standardize": self.standardize,
-        }
-
-        return base_config | serialize(config)
-
-    def get_compile_config(self):
-        base_config = super().get_compile_config() or {}
-
-        config = {
-            "inference_metrics": self.inference_network._metrics,
-            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
         }
 
         return base_config | serialize(config)

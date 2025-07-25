@@ -230,10 +230,17 @@ class ContinuousApproximator(Approximator):
         else:
             loss = inference_metrics.pop("loss")
 
+        if len(self.losses) > 0:
+            layer_loss = keras.ops.sum(self.losses)
+            loss += layer_loss
+            layer_loss_metrics = {"layer_loss": layer_loss}
+        else:
+            layer_loss_metrics = {}
+
         inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
-        metrics = {"loss": loss} | inference_metrics | summary_metrics
+        metrics = {"loss": loss} | layer_loss_metrics | inference_metrics | summary_metrics
         return metrics
 
     def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:

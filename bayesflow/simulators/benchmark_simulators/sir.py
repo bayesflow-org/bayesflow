@@ -33,7 +33,9 @@ class SIR(BenchmarkSimulator):
             The number of initially recovered individuals.
         subsample: int or None, optional, default: 10
             The number of evenly spaced time points to return. If `None`,
-            no subsampling will be performed and all `T` timepoints will be returned.
+            no subsampling will be performed, all `T` timepoints will be returned
+            and a trailing dimension will be added. If an integer is provided,
+            subsampling is performed and no trailing dimension will be added.
         total_count: int, optional, default: 1000
             The `N` parameter of the binomial noise distribution. Used just
             for scaling the data and magnifying the effect of noise, such that

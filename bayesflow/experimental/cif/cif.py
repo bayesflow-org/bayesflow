@@ -99,7 +99,7 @@ class CIF(InferenceNetwork):
     def compute_metrics(self, x: Tensor, conditions: Tensor = None, stage: str = "training") -> dict[str, Tensor]:
         base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
 
-        elbo = self.log_prob(x, conditions=conditions)
+        elbo = self.log_prob(x, conditions=conditions, training=stage == "training")
 
         loss = -keras.ops.mean(elbo)
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesflow"
-version = "2.0.3"
+version = "2.0.6"
 authors = [{ name = "The BayesFlow Team" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -36,16 +36,16 @@ dependencies = [
 [project.optional-dependencies]
 all = [
     # dev
-    "jupyter",
-    "jupyterlab",
-    "nbconvert",
     "ipython",
     "ipykernel",
+    "jupyter",
+    "jupyterlab",
+    "line-profiler",
+    "nbconvert",
     "pre-commit",
     "ruff",
     "tox",
     # docs
-
     "myst-nb ~= 1.2",
     "numpydoc ~= 1.8",
     "pydata-sphinx-theme ~= 0.16",
@@ -63,6 +63,7 @@ all = [
 dev = [
     "jupyter",
     "jupyterlab",
+    "line-profiler",
     "pre-commit",
     "ruff",
     "tox",

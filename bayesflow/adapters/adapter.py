@@ -1,4 +1,4 @@
-from collections.abc import Callable, MutableSequence, Sequence, Mapping
+from collections.abc import Callable, MutableSequence, Sequence
 
 import numpy as np
 
@@ -18,7 +18,6 @@ from .transforms import (
     Keep,
     Log,
     MapTransform,
-    NNPE,
     NumpyTransform,
     OneHot,
     Rename,
@@ -87,16 +86,14 @@ class Adapter(MutableSequence[Transform]):
         return serialize(config)
 
     def forward(
-        self, data: dict[str, any], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the forward direction.
 
         Parameters
         ----------
-        data : dict
+        data : dict[str, any]
             The data to be transformed.
-        stage : str, one of ["training", "validation", "inference"]
-            The stage the function is called in.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
@@ -110,28 +107,26 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
         if not log_det_jac:
             for transform in self.transforms:
-                data = transform(data, stage=stage, **kwargs)
+                data = transform(data, **kwargs)
             return data
 
         log_det_jac = {}
         for transform in self.transforms:
-            transformed_data = transform(data, stage=stage, **kwargs)
+            transformed_data = transform(data, **kwargs)
             log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
             data = transformed_data
 
         return data, log_det_jac
 
     def inverse(
-        self, data: dict[str, np.ndarray], *, stage: str = "inference", log_det_jac: bool = False, **kwargs
+        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
         ----------
-        data : dict
+        data : dict[str, any]
             The data to be transformed.
-        stage : str, one of ["training", "validation", "inference"]
-            The stage the function is called in.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
         **kwargs : dict
@@ -145,18 +140,18 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
         if not log_det_jac:
             for transform in reversed(self.transforms):
-                data = transform(data, stage=stage, inverse=True, **kwargs)
+                data = transform(data, inverse=True, **kwargs)
             return data
 
         log_det_jac = {}
         for transform in reversed(self.transforms):
-            data = transform(data, stage=stage, inverse=True, **kwargs)
+            data = transform(data, inverse=True, **kwargs)
             log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
 
         return data, log_det_jac
 
     def __call__(
-        self, data: Mapping[str, any], *, inverse: bool = False, stage="inference", **kwargs
+        self, data: dict[str, any], *, inverse: bool = False, **kwargs
     ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Apply the transforms in the given direction.
 
@@ -166,8 +161,6 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
-        stage : str, one of ["training", "validation", "inference"]
-            The stage the function is called in.
         **kwargs
             Additional keyword arguments passed to each transform.
 
@@ -177,9 +170,9 @@ class Adapter(MutableSequence[Transform]):
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
         if inverse:
-            return self.inverse(data, stage=stage, **kwargs)
+            return self.inverse(data, **kwargs)
 
-        return self.forward(data, stage=stage, **kwargs)
+        return self.forward(data, **kwargs)
 
     def __repr__(self):
         result = ""
@@ -701,43 +694,6 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(transform)
         return self
 
-    def nnpe(
-        self,
-        keys: str | Sequence[str],
-        *,
-        spike_scale: float | None = None,
-        slab_scale: float | None = None,
-        per_dimension: bool = True,
-        seed: int | None = None,
-    ):
-        """Append an :py:class:`~transforms.NNPE` transform to the adapter.
-
-        Parameters
-        ----------
-        keys : str or Sequence of str
-            The names of the variables to transform.
-        spike_scale : float or np.ndarray or None, default=None
-            The scale of the spike (Normal) distribution. Automatically determined if None.
-        slab_scale : float or np.ndarray or None, default=None
-            The scale of the slab (Cauchy) distribution. Automatically determined if None.
-        per_dimension : bool, default=True
-            If true, noise is applied per dimension of the last axis of the input data.
-            If false, noise is applied globally.
-        seed : int or None
-            The seed for the random number generator. If None, a random seed is used.
-        """
-        if isinstance(keys, str):
-            keys = [keys]
-
-        transform = MapTransform(
-            {
-                key: NNPE(spike_scale=spike_scale, slab_scale=slab_scale, per_dimension=per_dimension, seed=seed)
-                for key in keys
-            }
-        )
-        self.transforms.append(transform)
-        return self
-
     def one_hot(self, keys: str | Sequence[str], num_classes: int):
         """Append a :py:class:`~transforms.OneHot` transform to the adapter.
 
@@ -857,6 +813,8 @@ class Adapter(MutableSequence[Transform]):
         self,
         include: str | Sequence[str] = None,
         *,
+        mean: int | float | np.ndarray,
+        std: int | float | np.ndarray,
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
@@ -865,10 +823,14 @@ class Adapter(MutableSequence[Transform]):
 
         Parameters
         ----------
-        predicate : Predicate, optional
-            Function that indicates which variables should be transformed.
         include : str or Sequence of str, optional
             Names of variables to include in the transform.
+        mean : int or float
+            Specifies the mean (location) of the transform.
+        std : int or float
+            Specifies the standard deviation (scale) of the transform.
+        predicate : Predicate, optional
+            Function that indicates which variables should be transformed.
         exclude : str or Sequence of str, optional
             Names of variables to exclude from the transform.
         **kwargs :
@@ -879,6 +841,8 @@ class Adapter(MutableSequence[Transform]):
             predicate=predicate,
             include=include,
             exclude=exclude,
+            mean=mean,
+            std=std,
             **kwargs,
         )
         self.transforms.append(transform)

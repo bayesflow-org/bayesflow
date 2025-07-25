@@ -4,7 +4,7 @@ from keras import ops
 import numpy as np
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, weighted_mean
+from bayesflow.utils import find_network, weighted_mean, tensor_utils, expand_right_as
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -67,6 +67,11 @@ class ConsistencyModel(InferenceNetwork):
             Final number of discretization steps
         subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
+        concatenate_subnet_input: bool, optional
+            Flag for advanced users to control whether all inputs to the subnet should be concatenated
+            into a single vector or passed as separate arguments. If set to False, the subnet
+            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
+            and optional 'conditions'. Default is True.
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
@@ -77,6 +82,7 @@ class ConsistencyModel(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(
@@ -121,6 +127,7 @@ class ConsistencyModel(InferenceNetwork):
             "eps": self.eps,
             "s0": self.s0,
             "s1": self.s1,
+            "concatenate_subnet_input": self._concatenate_subnet_input,
             # we do not need to store subnet_kwargs
         }
 
@@ -163,18 +170,23 @@ class ConsistencyModel(InferenceNetwork):
 
         input_shape = list(xz_shape)
 
-        # time vector
-        input_shape[-1] += 1
+        if self._concatenate_subnet_input:
+            # construct time vector
+            input_shape[-1] += 1
+            if conditions_shape is not None:
+                input_shape[-1] += conditions_shape[-1]
+            input_shape = tuple(input_shape)
 
-        if conditions_shape is not None:
-            input_shape[-1] += conditions_shape[-1]
-
-        input_shape = tuple(input_shape)
-
-        self.subnet.build(input_shape)
-
-        input_shape = self.subnet.compute_output_shape(input_shape)
-        self.output_projector.build(input_shape)
+            self.subnet.build(input_shape)
+            out_shape = self.subnet.compute_output_shape(input_shape)
+        else:
+            # Multiple separate inputs
+            time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
+            out_shape = self.subnet.compute_output_shape(
+                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
+            )
+        self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3
         self.c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
@@ -258,6 +270,35 @@ class ConsistencyModel(InferenceNetwork):
             x = self.consistency_function(x_n, t, conditions=conditions, training=training)
         return x
 
+    def _apply_subnet(
+        self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
+    ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
+        """
+        Prepares and passes the input to the subnet either by concatenating the latent variable `x`,
+        the time `t`, and optional conditions or by returning them separately.
+
+        Parameters
+        ----------
+        x : Tensor
+            The parameter tensor, typically of shape (..., D), but can vary.
+        t : Tensor
+            The time tensor, typically of shape (..., 1).
+        conditions : Tensor, optional
+            The optional conditioning tensor (e.g. parameters).
+        training : bool, optional
+            The training mode flag, which can be used to control behavior during training.
+
+        Returns
+        -------
+        Tensor
+            The output tensor from the subnet.
+        """
+        if self._concatenate_subnet_input:
+            xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
+            return self.subnet(xtc, training=training)
+        else:
+            return self.subnet(x=x, t=t, conditions=conditions, training=training)
+
     def consistency_function(self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         """Compute consistency function.
 
@@ -273,12 +314,8 @@ class ConsistencyModel(InferenceNetwork):
             Whether internal layers (e.g., dropout) should behave in train or inference mode.
         """
 
-        if conditions is not None:
-            xtc = ops.concatenate([x, t, conditions], axis=-1)
-        else:
-            xtc = ops.concatenate([x, t], axis=-1)
-
-        f = self.output_projector(self.subnet(xtc, training=training))
+        subnet_out = self._apply_subnet(x, t, conditions, training=training)
+        f = self.output_projector(subnet_out)
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)
         # Thus, we can do a cross product with the time vector which is (batch_size, 1) for
@@ -318,8 +355,8 @@ class ConsistencyModel(InferenceNetwork):
 
         log_p = ops.log(p)
         times = keras.random.categorical(ops.expand_dims(log_p, 0), ops.shape(x)[0], seed=self.seed_generator)[0]
-        t1 = ops.take(discretized_time, times)[..., None]
-        t2 = ops.take(discretized_time, times + 1)[..., None]
+        t1 = expand_right_as(ops.take(discretized_time, times), x)
+        t2 = expand_right_as(ops.take(discretized_time, times + 1), x)
 
         # generate noise vector
         noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)

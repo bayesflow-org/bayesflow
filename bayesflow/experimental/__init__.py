@@ -9,4 +9,4 @@ from .free_form_flow import FreeFormFlow
 
 from ..utils._docs import _add_imports_to_all
 
-_add_imports_to_all(include_modules=["diffusion_model"])
+_add_imports_to_all()

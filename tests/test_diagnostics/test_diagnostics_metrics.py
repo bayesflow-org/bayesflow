@@ -85,15 +85,15 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
         out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models.transpose)
 
 
-def test_log_gamma(random_estimates, random_targets):
-    out = bf.diagnostics.metrics.log_gamma(random_estimates, random_targets)
+def test_calibration_log_gamma(random_estimates, random_targets):
+    out = bf.diagnostics.metrics.calibration_log_gamma(random_estimates, random_targets)
     assert list(out.keys()) == ["values", "metric_name", "variable_names"]
     assert out["values"].shape == (num_variables(random_estimates),)
     assert out["metric_name"] == "Log Gamma"
     assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
 
 
-def test_log_gamma_end_to_end():
+def test_calibration_log_gamma_end_to_end():
     # This is a function test for simulation-based calibration.
     # First, we sample from a known generative process and then run SBC.
     # If the log gamma statistic is correctly implemented, a 95% interval should exclude
@@ -116,11 +116,11 @@ def test_log_gamma_end_to_end():
         ranks = np.sum(posterior_draws < prior_draws, axis=0)
 
         # this is the distribution of gamma under uniform ranks
-        gamma_null = bf.diagnostics.metrics.sbc.gamma_null_distribution(D, S, num_null_draws=100)
-        lower, upper = np.quantile(gamma_null, (0.05, 0.995))
+        gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=200)
+        lower, upper = np.quantile(gamma_null, (0.025, 0.975))
 
         # this is the empirical gamma
-        observed_gamma = bf.diagnostics.metrics.sbc.gamma_discrepancy(ranks, num_post_draws=S)
+        observed_gamma = bf.diagnostics.metrics.gamma_discrepancy(ranks, num_post_draws=S)
 
         in_interval = lower <= observed_gamma < upper
 
@@ -132,7 +132,7 @@ def test_log_gamma_end_to_end():
     # this test should fail with a probability of 0.1%
     assert lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
-    # sbc should almost always fial for slightly biased posterior draws
+    # sbc should almost always fail for slightly biased posterior draws
     sbc_calibration = [run_sbc(N=N, S=S, D=D, bias=1) for _ in range(100)]
     assert not lower_expected <= np.sum(sbc_calibration) <= upper_expected
 

@@ -40,7 +40,7 @@ class Standardization(keras.Layer):
         """
         return keras.ops.where(
             self.moving_m2[index] > 0,
-            keras.ops.sqrt(self.moving_m2[index] / self.count),
+            keras.ops.sqrt(self.moving_m2[index] / self.count[index]),
             1.0,
         )
 
@@ -53,7 +53,7 @@ class Standardization(keras.Layer):
         self.moving_m2 = [
             self.add_weight(shape=(shape[-1],), initializer="zeros", trainable=False) for shape in flattened_shapes
         ]
-        self.count = self.add_weight(shape=(), initializer="zeros", trainable=False)
+        self.count = [self.add_weight(shape=(), initializer="zeros", trainable=False) for _ in flattened_shapes]
 
     def call(
         self,
@@ -150,7 +150,7 @@ class Standardization(keras.Layer):
         """
 
         reduce_axes = tuple(range(x.ndim - 1))
-        batch_count = keras.ops.cast(keras.ops.shape(x)[0], self.count.dtype)
+        batch_count = keras.ops.cast(keras.ops.prod(keras.ops.shape(x)[:-1]), self.count[index].dtype)
 
         # Compute batch mean and M2 per feature
         batch_mean = keras.ops.mean(x, axis=reduce_axes)
@@ -159,7 +159,7 @@ class Standardization(keras.Layer):
         # Read current totals
         mean = self.moving_mean[index]
         m2 = self.moving_m2[index]
-        count = self.count
+        count = self.count[index]
 
         total_count = count + batch_count
         delta = batch_mean - mean
@@ -169,4 +169,4 @@ class Standardization(keras.Layer):
 
         self.moving_mean[index].assign(new_mean)
         self.moving_m2[index].assign(new_m2)
-        self.count.assign(total_count)
+        self.count[index].assign(total_count)

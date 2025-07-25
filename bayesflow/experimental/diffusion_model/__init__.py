@@ -1,9 +1,13 @@
-from .diffusion_model import DiffusionModel
-from bayesflow.experimental.diffusion_model.schedules import CosineNoiseSchedule
-from bayesflow.experimental.diffusion_model.schedules import EDMNoiseSchedule
-from bayesflow.experimental.diffusion_model.schedules import NoiseSchedule
-from .dispatch import find_noise_schedule
+from bayesflow.networks import DiffusionModel as StabilizedDiffusionModel
 
-from ...utils._docs import _add_imports_to_all
 
-_add_imports_to_all(include_modules=[])
+def DiffusionModel(*args, **kwargs):
+    from warnings import warn
+
+    warn(
+        "DiffusionModel has been stabilized and moved to bayesflow.networks. "
+        "Please switch your imports to the new location. This reference will be "
+        "removed in a future version.",
+        FutureWarning,
+    )
+    return StabilizedDiffusionModel(*args, **kwargs)

@@ -17,7 +17,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
     of the materialized value.
     """
 
-    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("cov_chol",)
+    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("cov_chol_inv",)
     """
     Marks head for covariance matrix Cholesky factor as an exception for adapter transformations.
 
@@ -27,7 +27,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
     For more information see :py:class:`ScoringRule`.
     """
 
-    TRANSFORMATION_TYPE: dict[str, str] = {"cov_chol": "left_side_scale"}
+    TRANSFORMATION_TYPE: dict[str, str] = {"cov_chol_inv": "left_side_scale"}
     """
     Marks covariance Cholesky factor head to handle de-standardization as for covariant rank-(0,2) tensors.
 
@@ -42,7 +42,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         super().__init__(links=links, **kwargs)
 
         self.dim = dim
-        self.links = links or {"cov_chol": CholeskyFactor()}
+        self.links = links or {"cov_chol_inv": CholeskyFactor()}
 
         self.config = {"dim": dim}
 
@@ -52,9 +52,9 @@ class MultivariateNormalScore(ParametricDistributionScore):
 
     def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
         self.dim = target_shape[-1]
-        return dict(mean=(self.dim,), cov_chol=(self.dim, self.dim))
+        return dict(mean=(self.dim,), cov_chol_inv=(self.dim, self.dim))
 
-    def log_prob(self, x: Tensor, mean: Tensor, cov_chol: Tensor) -> Tensor:
+    def log_prob(self, x: Tensor, mean: Tensor, cov_chol_inv: Tensor) -> Tensor:
         """
         Compute the log probability density of a multivariate Gaussian distribution.
 
@@ -82,25 +82,21 @@ class MultivariateNormalScore(ParametricDistributionScore):
         """
         diff = x - mean
 
-        # Calculate precision from Cholesky factors of covariance matrix
-        cov_chol_inv = keras.ops.inv(cov_chol)
-        precision = keras.ops.matmul(
-            keras.ops.swapaxes(cov_chol_inv, -2, -1),
-            cov_chol_inv,
+        # Compute log determinant, exploiting Cholesky factors
+        log_det_covariance = -2 * keras.ops.sum(
+            keras.ops.log(keras.ops.diagonal(cov_chol_inv, axis1=1, axis2=2)), axis=1
         )
 
-        # Compute log determinant, exploiting Cholesky factors
-        log_det_covariance = keras.ops.log(keras.ops.prod(keras.ops.diagonal(cov_chol, axis1=1, axis2=2), axis=1)) * 2
-
-        # Compute the quadratic term in the exponential of the multivariate Gaussian
-        quadratic_term = keras.ops.einsum("...i,...ij,...j->...", diff, precision, diff)
+        # Compute the quadratic term in the exponential of the multivariate Gaussian from Cholesky factors
+        # diff^T * cov_chol_inv^T * cov_chol_inv * diff
+        quadratic_term = keras.ops.einsum("...i,...ji,...jk,...k->...", diff, cov_chol_inv, cov_chol_inv, diff)
 
         # Compute the log probability density
         log_prob = -0.5 * (self.dim * keras.ops.log(2 * math.pi) + log_det_covariance + quadratic_term)
 
         return log_prob
 
-    def sample(self, batch_shape: Shape, mean: Tensor, cov_chol: Tensor) -> Tensor:
+    def sample(self, batch_shape: Shape, mean: Tensor, cov_chol_inv: Tensor) -> Tensor:
         """
         Generate samples from a multivariate Gaussian distribution.
 
@@ -123,6 +119,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         Tensor
             A tensor of shape (batch_size, num_samples, D) containing the generated samples.
         """
+        cov_chol = keras.ops.inv(cov_chol_inv)
         if len(batch_shape) == 1:
             batch_shape = (1,) + tuple(batch_shape)
         batch_size, num_samples = batch_shape
@@ -130,10 +127,10 @@ class MultivariateNormalScore(ParametricDistributionScore):
         if keras.ops.shape(mean) != (batch_size, dim):
             raise ValueError(f"mean must have shape (batch_size, {dim}), but got {keras.ops.shape(mean)}")
 
-        if keras.ops.shape(cov_chol) != (batch_size, dim, dim):
+        if keras.ops.shape(cov_chol_inv) != (batch_size, dim, dim):
             raise ValueError(
                 f"covariance Cholesky factor must have shape (batch_size, {dim}, {dim}),"
-                f"but got {keras.ops.shape(cov_chol)}"
+                f"but got {keras.ops.shape(cov_chol_inv)}"
             )
 
         # Use Cholesky decomposition to generate samples

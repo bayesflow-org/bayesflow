@@ -17,6 +17,6 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    _examples/Bayesian_Experimental_Design.ipynb
    _examples/From_ABC_to_BayesFlow.ipynb
    _examples/One_Sample_TTest.ipynb
-   _examples/Lotka_Volterra_Point_Estimation_and_Expert_Stats.ipynb
+   _examples/Lotka_Volterra_Point_Estimation.ipynb
    _examples/Likelihood_Estimation.ipynb
    _examples/Multimodal_Data.ipynb

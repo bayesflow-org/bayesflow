@@ -43,8 +43,8 @@ class PositiveDefinite(keras.Layer):
 
         There are m nonzero elements of a lower triangular nxn matrix with m = n * (n + 1) / 2.
 
-        Example
-        -------
+        Examples
+        --------
         >>> PositiveDefinite().compute_output_shape((None, 3, 3))
         6
         """

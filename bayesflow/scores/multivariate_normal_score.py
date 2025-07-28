@@ -27,7 +27,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
     For more information see :py:class:`ScoringRule`.
     """
 
-    TRANSFORMATION_TYPE: dict[str, str] = {"cov_chol_inv": "left_side_scale"}
+    TRANSFORMATION_TYPE: dict[str, str] = {"cov_chol_inv": "right_side_scale_inverse"}
     """
     Marks covariance Cholesky factor head to handle de-standardization as for covariant rank-(0,2) tensors.
 

@@ -58,7 +58,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         Compute the log probability density of a multivariate Gaussian distribution.
 
         This function calculates the log probability density for each sample in `x` under a
-        multivariate Gaussian distribution with the given `mean` and `cov_chol`.
+        multivariate Gaussian distribution with the given `mean` and `precision_cholesky_factor`.
 
         The computation includes the determinant of the precision matrix, its inverse, and the quadratic
         form in the exponential term of the Gaussian density function.
@@ -122,7 +122,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         Tensor
             A tensor of shape (batch_size, num_samples, D) containing the generated samples.
         """
-        cov_chol = keras.ops.inv(precision_cholesky_factor)
+        covariance_cholesky_factor = keras.ops.inv(precision_cholesky_factor)
         if len(batch_shape) == 1:
             batch_shape = (1,) + tuple(batch_shape)
         batch_size, num_samples = batch_shape
@@ -139,7 +139,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         # Use Cholesky decomposition to generate samples
         normal_samples = keras.random.normal((*batch_shape, dim))
 
-        scaled_normal = keras.ops.einsum("ijk,ilk->ilj", cov_chol, normal_samples)
+        scaled_normal = keras.ops.einsum("ijk,ilk->ilj", covariance_cholesky_factor, normal_samples)
         samples = mean[:, None, :] + scaled_normal
 
         return samples

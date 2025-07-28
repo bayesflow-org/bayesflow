@@ -68,6 +68,9 @@ def point_inference_network_with_multiple_parametric_scores():
 def point_approximator_with_single_parametric_score(adapter, point_inference_network, summary_network):
     from bayesflow import PointApproximator
 
+    if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
+        pytest.skip("point approximator does not support unconditional estimation")
+
     return PointApproximator(
         adapter=adapter,
         inference_network=point_inference_network,
@@ -80,6 +83,9 @@ def point_approximator_with_multiple_parametric_scores(
     adapter, point_inference_network_with_multiple_parametric_scores, summary_network
 ):
     from bayesflow import PointApproximator
+
+    if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
+        pytest.skip("point approximator does not support unconditional estimation")
 
     return PointApproximator(
         adapter=adapter,
@@ -128,7 +134,16 @@ def adapter_with_sample_weight():
     )
 
 
-@pytest.fixture(params=["adapter_without_sample_weight", "adapter_with_sample_weight"])
+@pytest.fixture()
+def adapter_unconditional():
+    from bayesflow import ContinuousApproximator
+
+    return ContinuousApproximator.build_adapter(
+        inference_variables=["mean", "std"],
+    )
+
+
+@pytest.fixture(params=["adapter_unconditional", "adapter_without_sample_weight", "adapter_with_sample_weight"])
 def adapter(request):
     return request.getfixturevalue(request.param)
 

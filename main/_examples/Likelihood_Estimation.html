@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>8. Likelihood Estimation &#8212; BayesFlow: Amortized Bayesian Inference</title>
+    <title>9. Likelihood Estimation &#8212; BayesFlow: Amortized Bayesian Inference</title>
   
   
   
@@ -60,8 +60,8 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="9. Posterior Estimation With Multimodal Data" href="Multimodal_Data.html" />
-    <link rel="prev" title="7. Simple Model Comparison - One Sample T-Test" href="One_Sample_TTest.html" />
+    <link rel="next" title="10. Posterior Estimation With Multimodal Data" href="Multimodal_Data.html" />
+    <link rel="prev" title="8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics" href="Lotka_Volterra_Point_Estimation.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -438,8 +438,9 @@
 <li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">5. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">7. Simple Model Comparison - One Sample T-Test</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">8. Likelihood Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">9. Posterior Estimation With Multimodal Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">9. Likelihood Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">10. Posterior Estimation With Multimodal Data</a></li>
 </ul>
 </div>
 </nav></div>
@@ -483,7 +484,7 @@
     
     <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">8. </span>Likelihood Estimation</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">9. </span>Likelihood Estimation</span></li>
   </ul>
 </nav>
 </div>
@@ -501,7 +502,7 @@
                 <article class="bd-article">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="likelihood-estimation">
-<h1><span class="section-number">8. </span>Likelihood Estimation<a class="headerlink" href="#likelihood-estimation" title="Link to this heading">#</a></h1>
+<h1><span class="section-number">9. </span>Likelihood Estimation<a class="headerlink" href="#likelihood-estimation" title="Link to this heading">#</a></h1>
 <p><em>Author: Valentin Pratz</em></p>
 <p>The likelihood function <span class="math notranslate nohighlight">\(p(x|\theta)\)</span> describes the distribution of data <span class="math notranslate nohighlight">\(x\)</span> conditional on parameters <span class="math notranslate nohighlight">\(\theta\)</span>.
 While posterior estimation is the predominant use-case in BayesFlow, estimating likelihoods is possible as well.
@@ -512,7 +513,7 @@ Second, one might want to train an approximate <em>synthetic likelihood</em> for
 We will demonstrate the basic steps on a simple toy example below.
 If you have an idea for a more interesting case study, please make a pull request or reach out to us.</p>
 <section id="toy-example">
-<h2><span class="section-number">8.1. </span>Toy Example<a class="headerlink" href="#toy-example" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.1. </span>Toy Example<a class="headerlink" href="#toy-example" title="Link to this heading">#</a></h2>
 <p>We will use a very simple toy example, a bi-modal distribution obtained by mirroring a two-dimensional Gaussian at the origin. For simplicity, we only use the mean as a parameter, and use a fixed diagonal covariance matrix.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -612,7 +613,7 @@ If you have an idea for a more interesting case study, please make a pull reques
 </div>
 </section>
 <section id="training">
-<h2><span class="section-number">8.2. </span>Training<a class="headerlink" href="#training" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.2. </span>Training<a class="headerlink" href="#training" title="Link to this heading">#</a></h2>
 <p>We are now ready to do the actual likelihood estimation. We want to learn the likelihood of the data <span class="math notranslate nohighlight">\(x\)</span> conditional on the parameters <span class="math notranslate nohighlight">\(\theta\)</span>. Therefore, we use the parameters as <code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code>, and the data as <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code>. We do not use a summary network, so no <code class="docutils literal notranslate"><span class="pre">summary_conditions</span></code> are present. We can use a <code class="docutils literal notranslate"><span class="pre">BasicWorkflow</span></code>, which allows us to easily specify the necessary parameters.</p>
 <p><code class="docutils literal notranslate"><span class="pre">CouplingFlow</span></code>s are nice, because they enable fast sampling and likelihood evaluation, but they can struggle with multimodal distributions. Therefore, we will use a diffusion model at the cost of largely increased inference time. What one would choose in practice depends on the speed-accuracy trade-off.</p>
 <p>Accurate likelihood approximation can require a lot of training samples, especially when the distributions are complex and high-dimensional!</p>
@@ -650,7 +651,7 @@ If you have an idea for a more interesting case study, please make a pull reques
 </div>
 </section>
 <section id="evaluation">
-<h2><span class="section-number">8.3. </span>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.3. </span>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">#</a></h2>
 <p>We can now sample from the approximate likelihood by specifying <span class="math notranslate nohighlight">\(\theta_0\)</span> as the condition. Generating 5000 samples from the approximate likelihood should take around 2 seconds using JAX on CPU.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -736,7 +737,7 @@ Wall time: 2.73 s
 </div>
 </section>
 <section id="further-steps">
-<h2><span class="section-number">8.4. </span>Further Steps<a class="headerlink" href="#further-steps" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.4. </span>Further Steps<a class="headerlink" href="#further-steps" title="Link to this heading">#</a></h2>
 <p>In this notebook, we presented the fundamentals of likelihood estimation with BayesFlow, but did not go into much detail regarding training details or network architectures.
 In practice, we advise to start with a simpler inference network like <code class="docutils literal notranslate"><span class="pre">CouplingFlow</span></code>s, and a moderate amount of training samples.
 To improve performance, you can experiment with hyperparameters (learning rate, batch size, epochs, …), and, depending on your setting, increase the number of training samples or move to a slower but more expressive architecture like <code class="docutils literal notranslate"><span class="pre">FlowMatching</span></code> or <code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code>.</p>
@@ -754,12 +755,12 @@ To improve performance, you can experiment with hyperparameters (learning rate, 
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="One_Sample_TTest.html"
+       href="Lotka_Volterra_Point_Estimation.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title"><span class="section-number">7. </span>Simple Model Comparison - One Sample T-Test</p>
+        <p class="prev-next-title"><span class="section-number">8. </span>Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</p>
       </div>
     </a>
     <a class="right-next"
@@ -767,7 +768,7 @@ To improve performance, you can experiment with hyperparameters (learning rate, 
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title"><span class="section-number">9. </span>Posterior Estimation With Multimodal Data</p>
+        <p class="prev-next-title"><span class="section-number">10. </span>Posterior Estimation With Multimodal Data</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -790,10 +791,10 @@ To improve performance, you can experiment with hyperparameters (learning rate, 
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#toy-example">8.1. Toy Example</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training">8.2. Training</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">8.3. Evaluation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#further-steps">8.4. Further Steps</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#toy-example">9.1. Toy Example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training">9.2. Training</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">9.3. Evaluation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#further-steps">9.4. Further Steps</a></li>
 </ul>
   </nav></div>
 

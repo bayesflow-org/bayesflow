@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>9. Posterior Estimation With Multimodal Data &#8212; BayesFlow: Amortized Bayesian Inference</title>
+    <title>10. Posterior Estimation With Multimodal Data &#8212; BayesFlow: Amortized Bayesian Inference</title>
   
   
   
@@ -61,7 +61,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="User Guide" href="../user_guide/index.html" />
-    <link rel="prev" title="8. Likelihood Estimation" href="Likelihood_Estimation.html" />
+    <link rel="prev" title="9. Likelihood Estimation" href="Likelihood_Estimation.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -438,8 +438,9 @@
 <li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">5. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">7. Simple Model Comparison - One Sample T-Test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">8. Likelihood Estimation</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">9. Posterior Estimation With Multimodal Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">9. Likelihood Estimation</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">10. Posterior Estimation With Multimodal Data</a></li>
 </ul>
 </div>
 </nav></div>
@@ -483,7 +484,7 @@
     
     <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">9. </span>Posterior Estimation With Multimodal Data</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">10. </span>Posterior Estimation With Multimodal Data</span></li>
   </ul>
 </nav>
 </div>
@@ -501,13 +502,13 @@
                 <article class="bd-article">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="posterior-estimation-with-multimodal-data">
-<h1><span class="section-number">9. </span>Posterior Estimation With Multimodal Data<a class="headerlink" href="#posterior-estimation-with-multimodal-data" title="Link to this heading">#</a></h1>
+<h1><span class="section-number">10. </span>Posterior Estimation With Multimodal Data<a class="headerlink" href="#posterior-estimation-with-multimodal-data" title="Link to this heading">#</a></h1>
 <p><em>Author: Valentin Pratz</em></p>
 <p>Observed data can come in many forms, like single observations, multiple <em>exchangeable</em> observations or time series.
 A fusion network can combine all those forms into a joint learned summary space, by combining the outputs of different specialized summary networks.
 This requires some pre-processing steps, which we will demonstrate in this tutorial.</p>
 <section id="toy-problem">
-<h2><span class="section-number">9.1. </span>Toy Problem<a class="headerlink" href="#toy-problem" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">10.1. </span>Toy Problem<a class="headerlink" href="#toy-problem" title="Link to this heading">#</a></h2>
 <p>We will construct a simple toy problem, in which we have to determine the mean <span class="math notranslate nohighlight">\(\mu\)</span> and the standard deviation <span class="math notranslate nohighlight">\(\sigma\)</span> of a two-dimensional Gaussian distribution. For this, we simulate data from two experiments:</p>
 <ul class="simple">
 <li><p>Experiment A: <code class="docutils literal notranslate"><span class="pre">n_exchangeable</span></code> exchangeable samples from the distribution.</p></li>
@@ -630,7 +631,7 @@ INFO:bayesflow:Using backend &#39;tensorflow&#39;
 </div>
 </section>
 <section id="summary-networks">
-<h2><span class="section-number">9.2. </span>Summary Networks<a class="headerlink" href="#summary-networks" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">10.2. </span>Summary Networks<a class="headerlink" href="#summary-networks" title="Link to this heading">#</a></h2>
 <p>We start by setting up the individual summary networks, which will be the <em>backbones</em> of the fusion network. For Experiment A, we use a <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code>, which is constructed for exchangeable observations. For Experiment B, we use a <code class="docutils literal notranslate"><span class="pre">TimeSeriesTransformer</span></code>, which is designed to handle time series data. For the latter, we set <code class="docutils literal notranslate"><span class="pre">time_axis=-1</span></code>, indicating that we will concatenate the time to the data at the end of the vector. We will do this below using the adapter.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -664,7 +665,7 @@ INFO:bayesflow:Using backend &#39;tensorflow&#39;
 </div>
 </section>
 <section id="pre-processing-with-the-adapter">
-<h2><span class="section-number">9.3. </span>Pre-processing with the Adapter<a class="headerlink" href="#pre-processing-with-the-adapter" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">10.3. </span>Pre-processing with the Adapter<a class="headerlink" href="#pre-processing-with-the-adapter" title="Link to this heading">#</a></h2>
 <p>We now have to transform the simulator outputs to the structure required by BayesFlow:</p>
 <ul class="simple">
 <li><p>the parameter vector goes to <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code></p></li>
@@ -719,7 +720,7 @@ So it should have the contents:</p>
 </div>
 </section>
 <section id="training">
-<h2><span class="section-number">9.4. </span>Training<a class="headerlink" href="#training" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">10.4. </span>Training<a class="headerlink" href="#training" title="Link to this heading">#</a></h2>
 <p>We have a summary network and the appropriate adapter, which are the two parts in our pipeline that are different for multimodal problems. From now on, the pipeline works as in any other BayesFlow workflow.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -850,7 +851,7 @@ Epoch 50/50
 </div>
 </section>
 <section id="evaluation">
-<h2><span class="section-number">9.5. </span>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">10.5. </span>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">#</a></h2>
 <p>We plot the default diagnostic to assess whether training has been successful. Please refer to the introductory notebooks for details on the interpretation.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -898,7 +899,7 @@ Epoch 50/50
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title"><span class="section-number">8. </span>Likelihood Estimation</p>
+        <p class="prev-next-title"><span class="section-number">9. </span>Likelihood Estimation</p>
       </div>
     </a>
     <a class="right-next"
@@ -929,11 +930,11 @@ Epoch 50/50
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#toy-problem">9.1. Toy Problem</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary-networks">9.2. Summary Networks</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pre-processing-with-the-adapter">9.3. Pre-processing with the Adapter</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training">9.4. Training</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">9.5. Evaluation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#toy-problem">10.1. Toy Problem</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary-networks">10.2. Summary Networks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pre-processing-with-the-adapter">10.3. Pre-processing with the Adapter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training">10.4. Training</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">10.5. Evaluation</a></li>
 </ul>
   </nav></div>
 

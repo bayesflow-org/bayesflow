@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics &#8212; BayesFlow: Amortized Bayesian Inference</title>
+    <title>8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics &#8212; BayesFlow: Amortized Bayesian Inference</title>
   
   
   
@@ -60,6 +60,8 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="9. Likelihood Estimation" href="Likelihood_Estimation.html" />
+    <link rel="prev" title="7. Simple Model Comparison - One Sample T-Test" href="One_Sample_TTest.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -144,7 +146,7 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
+<li class="nav-item current active">
   <a class="nav-link nav-internal" href="../examples.html">
     Examples
   </a>
@@ -296,10 +298,8 @@
       
       
       
-        
-      
       <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -314,7 +314,7 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
+<li class="nav-item current active">
   <a class="nav-link nav-internal" href="../examples.html">
     Examples
   </a>
@@ -425,6 +425,27 @@
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Linear_Regression_Starter.html">1. Bayesian Linear Regression Starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_BayesFlow_1.1_to_2.0.html">2. Moving from BayesFlow v1.1 to v2.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Two_Moons_Starter.html">3. Two Moons: Tackling Bimodal Posteriors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">4. Posterior Estimation for SIR-like Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">5. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">7. Simple Model Comparison - One Sample T-Test</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">9. Likelihood Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">10. Posterior Estimation With Multimodal Data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
       <div class="sidebar-primary-item">
@@ -460,7 +481,10 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</span></li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">8. </span>Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</span></li>
   </ul>
 </nav>
 </div>
@@ -478,7 +502,7 @@
                 <article class="bd-article">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="rapid-iteration-with-point-estimation-lotka-volterra-dynamics">
-<h1>Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics<a class="headerlink" href="#rapid-iteration-with-point-estimation-lotka-volterra-dynamics" title="Link to this heading">#</a></h1>
+<h1><span class="section-number">8. </span>Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics<a class="headerlink" href="#rapid-iteration-with-point-estimation-lotka-volterra-dynamics" title="Link to this heading">#</a></h1>
 <p><em>Author: Hans Olischläger</em></p>
 <p>In this notebook, we will infer parameters of a famous ecology differential equation with BayesFlow.</p>
 <p>We will follow a typical workflow that emphazises rapid iterations early on, before building up towards reliable estimates of the full posterior with end-to-end data embedding.</p>
@@ -524,7 +548,7 @@
 </div>
 </div>
 <section id="ecology-simulator">
-<h2>Ecology Simulator<a class="headerlink" href="#ecology-simulator" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">8.1. </span>Ecology Simulator<a class="headerlink" href="#ecology-simulator" title="Link to this heading">#</a></h2>
 <p>Suppose we measured population counts from two species over time. One of them preys on the other, so we might assume that the dynamics are governed by the classic Lotka-Volterra system. In dimensionless form, with prey population <span class="math notranslate nohighlight">\(x\)</span> and predator population <span class="math notranslate nohighlight">\(y\)</span>, the nonlinear differential equation is</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}
@@ -688,7 +712,7 @@ Interesting dynamics are possible when both predators and prey are present: The 
 Here, we see the prior implies population magnitudes to oscillate (mostly) below 6.</p>
 </section>
 <section id="rapid-inference">
-<h2>Rapid Inference<a class="headerlink" href="#rapid-inference" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">8.2. </span>Rapid Inference<a class="headerlink" href="#rapid-inference" title="Link to this heading">#</a></h2>
 <p>The first goal will be to get a fast but crude approximation of the true posteriors for different observations. Two ingredients will allow us to move fast towards parameter inference:</p>
 <ol class="arabic simple">
 <li><p>Basic hand-crafted summary statistics</p></li>
@@ -696,7 +720,7 @@ Here, we see the prior implies population magnitudes to oscillate (mostly) below
 </ol>
 <p>This will help us diagnose challenges with the simulator and establishes a baseline for the final goal: full posterior inference.</p>
 <section id="domain-expert-statistics">
-<h3>Domain Expert Statistics<a class="headerlink" href="#domain-expert-statistics" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">8.2.1. </span>Domain Expert Statistics<a class="headerlink" href="#domain-expert-statistics" title="Link to this heading">#</a></h3>
 <p>Ultimately, we want to learn maximally informative summary statistics jointly with an amortized posterior approximation, but hand crafted summary statistics have the benefit of being interpretable and fast to compute. Oftentimes, there are a few natural and established statistics for a particular modality of raw data. Researchers of the field are likely to have made significant progress in finding closed form expressions or algorithms for informative summaries.</p>
 <p>Compared to the theoretically optimal summary statistics, we can expect there to be less posterior contraction.</p>
 <p>Still, we can reasonably expect, that oscillation period, mean, (log) variance, autocorrelation at different lags of both trajectories, and the cross correlation between the two trajectories are highly informative when taken together as summary statistics.</p>
@@ -857,7 +881,7 @@ Here, we see the prior implies population magnitudes to oscillate (mostly) below
 </div>
 </section>
 <section id="point-estimation">
-<h3>Point estimation<a class="headerlink" href="#point-estimation" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">8.2.2. </span>Point estimation<a class="headerlink" href="#point-estimation" title="Link to this heading">#</a></h3>
 <p>Ultimately, we want to infer the full posterior distribution, but it can be much faster to infer point estimates of the same and already allow us to diagnose whether inference is or can be successful for a particular simulator.
 Thus, in the spirit of rapid iteration we will first target the posterior mean and a few quantiles.</p>
 <p>BayesFlow provides a convenient interface for point estimation. Here is a brief explantion of the principle:</p>
@@ -1019,7 +1043,7 @@ Wall time: 21.2 s
 </div>
 </div>
 <section id="inference">
-<h4>Inference<a class="headerlink" href="#inference" title="Link to this heading">#</a></h4>
+<h4><span class="section-number">8.2.2.1. </span>Inference<a class="headerlink" href="#inference" title="Link to this heading">#</a></h4>
 <p>The computational cost we have payed for training up front is amortized by cheap inference on simulated or measured observations.
 This means, we can rapidly evaluate posteriors for different observations not seen in training, which allows for comprehensive diagnosis of posterior quality.</p>
 <p>So far so general, but point estimators in particular give a speed advantage not only in training, but also with respect to diagnostics.
@@ -1049,7 +1073,7 @@ Since one point estimate already summarizes many posterior samples, we only have
 </div>
 </section>
 <section id="recovery-and-calibration-diagnostics-for-point-estimates">
-<h4>Recovery and calibration diagnostics for point estimates<a class="headerlink" href="#recovery-and-calibration-diagnostics-for-point-estimates" title="Link to this heading">#</a></h4>
+<h4><span class="section-number">8.2.2.2. </span>Recovery and calibration diagnostics for point estimates<a class="headerlink" href="#recovery-and-calibration-diagnostics-for-point-estimates" title="Link to this heading">#</a></h4>
 <p>Diagnosing problems with point estimation is done similarly to full posterior approximation. For example, you can check how point estimates relate to ground truth values with a recovery plot. The recovery plot can be used for many different point estimates. Just define which point estimate is displayed with what kind of <a class="reference external" href="https://matplotlib.org/stable/api/markers_api.html">matplotlib marker</a> in a dictionary.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1103,7 +1127,7 @@ Since one point estimate already summarizes many posterior samples, we only have
 <p>Neither the recovery nor the calibration diagnostic indicates any problems with the point inferences. Let us go one step further in validation by checking the posterior predictive distribution.</p>
 </section>
 <section id="advanced-posterior-predictive-check-from-quantile-estimates">
-<h4>Advanced: posterior predictive check from quantile estimates<a class="headerlink" href="#advanced-posterior-predictive-check-from-quantile-estimates" title="Link to this heading">#</a></h4>
+<h4><span class="section-number">8.2.2.3. </span>Advanced: posterior predictive check from quantile estimates<a class="headerlink" href="#advanced-posterior-predictive-check-from-quantile-estimates" title="Link to this heading">#</a></h4>
 <p>To sample the posterior we need to assume some concrete probability function. We will choose a diagonal multivariate normal distribution that we construct to be consistent with the quantile estimates.</p>
 <p>More concretely, we calculate a mean and standard deviation for every parameter based on its outer most quantile estimates, that is quantile level 0.1 and 0.9.</p>
 <p>We start by extracting the lower and upper bound from the quantile posterior approximation:</p>
@@ -1285,7 +1309,7 @@ Since one point estimate already summarizes many posterior samples, we only have
 </section>
 </section>
 <section id="full-posterior-approximation">
-<h2>Full Posterior Approximation<a class="headerlink" href="#full-posterior-approximation" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">8.3. </span>Full Posterior Approximation<a class="headerlink" href="#full-posterior-approximation" title="Link to this heading">#</a></h2>
 <p>Flow Matching is a powerful class of generative neural networks. Let try and see if we can use it as a drop-in replacement for the <code class="docutils literal notranslate"><span class="pre">PointInferenceNetwork</span></code> we used previously.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1466,7 +1490,7 @@ Wall time: 3.31 s
 </div>
 </section>
 <section id="end-to-end-learning-of-summary-statistics">
-<h2>End-to-end learning of summary statistics<a class="headerlink" href="#end-to-end-learning-of-summary-statistics" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">8.4. </span>End-to-end learning of summary statistics<a class="headerlink" href="#end-to-end-learning-of-summary-statistics" title="Link to this heading">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">summary_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesNetwork</span><span class="p">()</span>
@@ -1669,6 +1693,24 @@ Wall time: 3.31 s
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="One_Sample_TTest.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">7. </span>Simple Model Comparison - One Sample T-Test</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Likelihood_Estimation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">9. </span>Likelihood Estimation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div>
                 </footer>
               
@@ -1688,19 +1730,19 @@ Wall time: 3.31 s
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ecology-simulator">Ecology Simulator</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rapid-inference">Rapid Inference</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#domain-expert-statistics">Domain Expert Statistics</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#point-estimation">Point estimation</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#inference">Inference</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#recovery-and-calibration-diagnostics-for-point-estimates">Recovery and calibration diagnostics for point estimates</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-posterior-predictive-check-from-quantile-estimates">Advanced: posterior predictive check from quantile estimates</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ecology-simulator">8.1. Ecology Simulator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rapid-inference">8.2. Rapid Inference</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#domain-expert-statistics">8.2.1. Domain Expert Statistics</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#point-estimation">8.2.2. Point estimation</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#inference">8.2.2.1. Inference</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#recovery-and-calibration-diagnostics-for-point-estimates">8.2.2.2. Recovery and calibration diagnostics for point estimates</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-posterior-predictive-check-from-quantile-estimates">8.2.2.3. Advanced: posterior predictive check from quantile estimates</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#full-posterior-approximation">Full Posterior Approximation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#end-to-end-learning-of-summary-statistics">End-to-end learning of summary statistics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#full-posterior-approximation">8.3. Full Posterior Approximation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#end-to-end-learning-of-summary-statistics">8.4. End-to-end learning of summary statistics</a></li>
 </ul>
   </nav></div>
 

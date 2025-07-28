@@ -18,7 +18,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
     the inverse of the covariance matrix, :math:`L^T L = P = \Sigma^{-1}`.
     """
 
-    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("precision_chol",)
+    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("precision_cholesky_factor",)
     """
     Marks head for precision matrix Cholesky factor as an exception for adapter transformations.
 
@@ -28,7 +28,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
     For more information see :py:class:`ScoringRule`.
     """
 
-    TRANSFORMATION_TYPE: dict[str, str] = {"precision_chol": "right_side_scale_inverse"}
+    TRANSFORMATION_TYPE: dict[str, str] = {"precision_cholesky_factor": "right_side_scale_inverse"}
     """
     Marks precision Cholesky factor head to handle de-standardization appropriately.
 
@@ -41,7 +41,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         super().__init__(links=links, **kwargs)
 
         self.dim = dim
-        self.links = links or {"precision_chol": CholeskyFactor()}
+        self.links = links or {"precision_cholesky_factor": CholeskyFactor()}
 
         self.config = {"dim": dim}
 
@@ -51,9 +51,9 @@ class MultivariateNormalScore(ParametricDistributionScore):
 
     def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
         self.dim = target_shape[-1]
-        return dict(mean=(self.dim,), precision_chol=(self.dim, self.dim))
+        return dict(mean=(self.dim,), precision_cholesky_factor=(self.dim, self.dim))
 
-    def log_prob(self, x: Tensor, mean: Tensor, precision_chol: Tensor) -> Tensor:
+    def log_prob(self, x: Tensor, mean: Tensor, precision_cholesky_factor: Tensor) -> Tensor:
         """
         Compute the log probability density of a multivariate Gaussian distribution.
 
@@ -70,7 +70,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
             The shape should be compatible with broadcasting against `mean`.
         mean : Tensor
             A tensor representing the mean of the multivariate Gaussian distribution.
-        precision_chol : Tensor
+        precision_cholesky_factor : Tensor
             A tensor representing the lower-triangular Cholesky factor of the precision matrix
             of the multivariate Gaussian distribution.
 
@@ -84,19 +84,21 @@ class MultivariateNormalScore(ParametricDistributionScore):
 
         # Compute log determinant, exploiting Cholesky factors
         log_det_covariance = -2 * keras.ops.sum(
-            keras.ops.log(keras.ops.diagonal(precision_chol, axis1=1, axis2=2)), axis=1
+            keras.ops.log(keras.ops.diagonal(precision_cholesky_factor, axis1=1, axis2=2)), axis=1
         )
 
         # Compute the quadratic term in the exponential of the multivariate Gaussian from Cholesky factors
-        # diff^T * precision_chol^T * precision_chol * diff
-        quadratic_term = keras.ops.einsum("...i,...ji,...jk,...k->...", diff, precision_chol, precision_chol, diff)
+        # diff^T * precision_cholesky_factor^T * precision_cholesky_factor * diff
+        quadratic_term = keras.ops.einsum(
+            "...i,...ji,...jk,...k->...", diff, precision_cholesky_factor, precision_cholesky_factor, diff
+        )
 
         # Compute the log probability density
         log_prob = -0.5 * (self.dim * keras.ops.log(2 * math.pi) + log_det_covariance + quadratic_term)
 
         return log_prob
 
-    def sample(self, batch_shape: Shape, mean: Tensor, precision_chol: Tensor) -> Tensor:
+    def sample(self, batch_shape: Shape, mean: Tensor, precision_cholesky_factor: Tensor) -> Tensor:
         """
         Generate samples from a multivariate Gaussian distribution.
 
@@ -110,7 +112,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         mean : Tensor
             A tensor representing the mean of the multivariate Gaussian distribution.
             Must have shape (batch_size, D), where D is the dimensionality of the distribution.
-        precision_chol : Tensor
+        precision_cholesky_factor : Tensor
             A tensor representing the lower-triangular Cholesky factor of the precision matrix
             of the multivariate Gaussian distribution.
             Must have shape (batch_size, D, D), where D is the dimensionality.
@@ -120,7 +122,7 @@ class MultivariateNormalScore(ParametricDistributionScore):
         Tensor
             A tensor of shape (batch_size, num_samples, D) containing the generated samples.
         """
-        cov_chol = keras.ops.inv(precision_chol)
+        cov_chol = keras.ops.inv(precision_cholesky_factor)
         if len(batch_shape) == 1:
             batch_shape = (1,) + tuple(batch_shape)
         batch_size, num_samples = batch_shape
@@ -128,10 +130,10 @@ class MultivariateNormalScore(ParametricDistributionScore):
         if keras.ops.shape(mean) != (batch_size, dim):
             raise ValueError(f"mean must have shape (batch_size, {dim}), but got {keras.ops.shape(mean)}")
 
-        if keras.ops.shape(precision_chol) != (batch_size, dim, dim):
+        if keras.ops.shape(precision_cholesky_factor) != (batch_size, dim, dim):
             raise ValueError(
                 f"covariance Cholesky factor must have shape (batch_size, {dim}, {dim}),"
-                f"but got {keras.ops.shape(precision_chol)}"
+                f"but got {keras.ops.shape(precision_cholesky_factor)}"
             )
 
         # Use Cholesky decomposition to generate samples

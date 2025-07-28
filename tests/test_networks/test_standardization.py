@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import keras
 
@@ -156,9 +157,11 @@ def test_transformation_type_both_sides_scale():
     np.testing.assert_allclose(cov_input, cov_standardized_and_recovered, atol=1e-4)
 
 
-def test_transformation_type_left_side_scale():
+@pytest.mark.parametrize("transformation_type", ["left_side_scale", "right_side_scale_inverse"])
+def test_transformation_type_one_side_scale(transformation_type):
     # Fix a known covariance and mean in original (not standardized space)
     covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")
+
     mean = np.array([1, 10], dtype="float32")
 
     # Generate samples
@@ -177,15 +180,24 @@ def test_transformation_type_left_side_scale():
     cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
     cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
     chol_standardized = keras.ops.cholesky(cov_standardized)  # (dim, dim)
+
+    # We test the right_side_scale_inverse transformation by backtransforming a precision chol factor
+    # instead of a covariance chol factor.
+    if "inverse" in transformation_type:
+        chol_standardized = keras.ops.inv(chol_standardized)
+
     # Inverse standardization of covariance matrix in standardized space
     chol_standardized_and_recovered = layer(
-        chol_standardized, stage="inference", forward=False, transformation_type="left_side_scale"
+        chol_standardized, stage="inference", forward=False, transformation_type=transformation_type
     )
 
     random_input = keras.ops.convert_to_numpy(random_input)
     chol_standardized_and_recovered = keras.ops.convert_to_numpy(chol_standardized_and_recovered)
     cov_input = np.cov(random_input, rowvar=False)
     chol_input = np.linalg.cholesky(cov_input)
+
+    if "inverse" in transformation_type:
+        chol_input = np.linalg.inv(chol_input)
 
     np.testing.assert_allclose(chol_input, chol_standardized_and_recovered, atol=1e-4)
 

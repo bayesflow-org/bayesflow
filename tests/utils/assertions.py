@@ -1,4 +1,5 @@
 import keras
+from .normalize import normalize_config
 
 
 def assert_models_equal(model1: keras.Model, model2: keras.Model):
@@ -12,6 +13,11 @@ def assert_models_equal(model1: keras.Model, model2: keras.Model):
             assert_models_equal(layer1, layer2)
         else:
             assert_layers_equal(layer1, layer2)
+
+    assert len(model1.metrics) == len(model2.metrics)
+    for metric1, metric2 in zip(model1.metrics, model2.metrics):
+        assert type(metric1) is type(metric2)
+        assert metric1.name == metric2.name
 
 
 def assert_layers_equal(layer1: keras.Layer, layer2: keras.Layer):
@@ -40,3 +46,12 @@ def assert_layers_equal(layer1: keras.Layer, layer2: keras.Layer):
     # this is turned off for now, see https://github.com/bayesflow-org/bayesflow/issues/412
     msg = f"Layers {layer1.name} and {layer2.name} have a different name."
     # assert layer1.name == layer2.name, msg
+
+    assert len(layer1.metrics) == len(layer2.metrics), f"metrics do not match: {layer1.metrics}!={layer2.metrics}"
+    for metric1, metric2 in zip(layer1.metrics, layer2.metrics):
+        assert type(metric1) is type(metric2)
+        assert metric1.name == metric2.name
+
+
+def assert_configs_equal(config1: dict, config2: dict):
+    assert normalize_config(config1) == normalize_config(config2)

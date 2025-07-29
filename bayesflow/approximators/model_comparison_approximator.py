@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 
 import keras
 import numpy as np
+import warnings
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
@@ -151,18 +152,21 @@ class ModelComparisonApproximator(Approximator):
     def compile(
         self,
         *args,
-        classifier_metrics: Sequence[keras.Metric] = None,
-        summary_metrics: Sequence[keras.Metric] = None,
         **kwargs,
     ):
-        if classifier_metrics:
-            self.classifier_network._metrics = classifier_metrics
+        if "classifier_metrics" in kwargs:
+            warnings.warn(
+                "Supplying classifier metrics to the approximator is no longer supported. "
+                "Please pass the metrics directly to the network using the metrics parameter.",
+                DeprecationWarning,
+            )
 
-        if summary_metrics:
-            if self.summary_network is None:
-                logging.warning("Ignoring summary metrics because there is no summary network.")
-            else:
-                self.summary_network._metrics = summary_metrics
+        if "summary_metrics" in kwargs:
+            warnings.warn(
+                "Supplying summary metrics to the approximator is no longer supported. "
+                "Please pass the metrics directly to the network using the metrics parameter.",
+                DeprecationWarning,
+            )
 
         return super().compile(*args, **kwargs)
 
@@ -223,9 +227,10 @@ class ModelComparisonApproximator(Approximator):
         classifier_metrics = {"loss": cross_entropy}
 
         if stage != "training" and any(self.classifier_network.metrics):
-            predictions = keras.ops.argmax(logits, axis=-1)
+            # compute sample-based metrics
+            probabilities = keras.ops.softmax(logits)
             classifier_metrics |= {
-                metric.name: metric(model_indices, predictions) for metric in self.classifier_network.metrics
+                metric.name: metric(model_indices, probabilities) for metric in self.classifier_network.metrics
             }
 
         if "loss" in summary_metrics:
@@ -338,16 +343,6 @@ class ModelComparisonApproximator(Approximator):
             "classifier_network": self.classifier_network,
             "summary_network": self.summary_network,
             "standardize": self.standardize,
-        }
-
-        return base_config | serialize(config)
-
-    def get_compile_config(self):
-        base_config = super().get_compile_config() or {}
-
-        config = {
-            "classifier_metrics": self.classifier_network._metrics,
-            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
         }
 
         return base_config | serialize(config)

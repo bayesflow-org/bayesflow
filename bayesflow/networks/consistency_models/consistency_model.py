@@ -4,7 +4,7 @@ from keras import ops
 import numpy as np
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, layer_kwargs, weighted_mean, tensor_utils, expand_right_as
+from bayesflow.utils import find_network, weighted_mean, tensor_utils, expand_right_as
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -115,7 +115,9 @@ class ConsistencyModel(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = layer_kwargs(base_config)
+
+        # base distribution is passed manually to InferenceNetwork parent class, do not store it here
+        base_config.pop("base_distribution")
 
         config = {
             "total_steps": self.total_steps,

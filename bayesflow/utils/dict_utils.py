@@ -219,7 +219,7 @@ def make_variable_array(
             # reuse existing variable keys and names if contained in x
             if variable_names is None:
                 variable_names = x.variable_names
-            if variable_keys in None:
+            if variable_keys is None:
                 variable_keys = x.variable_keys
 
         # use default names if not otherwise specified

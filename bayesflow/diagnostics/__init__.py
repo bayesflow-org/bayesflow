@@ -18,6 +18,7 @@ from .plots import (
     mc_confusion_matrix,
     mmd_hypothesis_test,
     pairs_posterior,
+    pairs_quantity,
     pairs_samples,
     recovery,
     recovery_from_estimates,

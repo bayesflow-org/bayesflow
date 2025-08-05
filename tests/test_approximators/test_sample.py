@@ -1,11 +1,9 @@
 import keras
-from tests.utils import check_combination_simulator_adapter, check_approximator_multivariate_normal_score
+from tests.utils import check_combination_simulator_adapter
 
 
 def test_approximator_sample(approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
-    # as long as MultivariateNormalScore is unstable, skip
-    check_approximator_multivariate_normal_score(approximator)
 
     num_batches = 4
     data = simulator.sample((num_batches * batch_size,))

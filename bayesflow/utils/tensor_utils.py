@@ -311,7 +311,7 @@ def tree_stack(structures: Sequence[T], axis: int = 0, numpy: bool = None) -> T:
     return keras.tree.map_structure(stack, *structures)
 
 
-def fill_triangular_matrix(x: Tensor, upper: bool = False, positive_diag: bool = False):
+def fill_triangular_matrix(x: Tensor, upper: bool = False):
     """
     Reshapes a batch of matrix elements into a triangular matrix (either upper or lower).
 

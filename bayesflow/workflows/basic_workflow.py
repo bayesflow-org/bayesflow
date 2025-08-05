@@ -914,6 +914,7 @@ class BasicWorkflow(Workflow):
             self.optimizer = keras.optimizers.Adam(learning_rate, clipnorm=1.5)
         else:
             self.optimizer = keras.optimizers.AdamW(learning_rate, weight_decay=5e-3, clipnorm=1.5)
+        return self.optimizer
 
     def _fit(
         self,
@@ -955,9 +956,10 @@ class BasicWorkflow(Workflow):
             else:
                 kwargs["callbacks"] = [model_checkpoint_callback]
 
-        self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
-
-        if not self.approximator.built:
+        # returns None if no new optimizer was built and assigned to self.optimizer, which indicates we do not have
+        # to (re)compile the approximator.
+        optimizer = self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
+        if optimizer is not None:
             self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
 
         try:

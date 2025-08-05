@@ -5,12 +5,14 @@ import numpy as np
 import keras
 
 from bayesflow.types import Tensor
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
 from .approximator import Approximator
 from .model_comparison_approximator import ModelComparisonApproximator
 
 
+@serializable("bayesflow.approximators")
 class ApproximatorEnsemble(Approximator):
     def __init__(self, approximators: dict[str, Approximator], **kwargs):
         super().__init__(**kwargs)
@@ -27,9 +29,9 @@ class ApproximatorEnsemble(Approximator):
             data_shapes = {k: v[:1] + v[2:] for k, v in data_shapes.items()}
         self.build(data_shapes)
 
-    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+    def build(self, input_shape: dict[str, tuple[int] | dict[str, dict]]) -> None:
         for approximator in self.approximators.values():
-            approximator.build(data_shapes)
+            approximator.build(input_shape)
 
     def compute_metrics(
         self,
@@ -139,3 +141,16 @@ class ApproximatorEnsemble(Approximator):
         inference variables as present.
         """
         return keras.ops.shape(data["inference_variables"])[0]
+
+    def get_config(self):
+        base_config = super().get_config()
+        config = {"approximators": self.approximators}
+        return base_config | serialize(config)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+    def build_from_config(self, config):
+        # the approximators are already built
+        pass

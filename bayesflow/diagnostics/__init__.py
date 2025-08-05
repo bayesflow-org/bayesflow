@@ -20,6 +20,7 @@ from .plots import (
     pairs_posterior,
     pairs_quantity,
     pairs_samples,
+    plot_quantity,
     recovery,
     recovery_from_estimates,
     z_score_contraction,

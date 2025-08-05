@@ -7,6 +7,7 @@ from .mc_confusion_matrix import mc_confusion_matrix
 from .mmd_hypothesis_test import mmd_hypothesis_test
 from .pairs_posterior import pairs_posterior
 from .pairs_quantity import pairs_quantity
+from .plot_quantity import plot_quantity
 from .pairs_samples import pairs_samples
 from .recovery import recovery
 from .recovery_from_estimates import recovery_from_estimates

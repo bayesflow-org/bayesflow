@@ -80,19 +80,18 @@ def pairs_quantity(
     **kwargs    : dict, optional
         Additional keyword arguments passed to the sns.PairGrid constructor
     """
-    targets = make_variable_array(
-        targets,
-        variable_keys=variable_keys,
-        variable_names=variable_names,
-    )
-
     values = make_variable_array(
         values,
         variable_keys=variable_keys,
         variable_names=variable_names,
     )
     variable_names = values.variable_names
-
+    variable_keys = values.variable_keys
+    targets = make_variable_array(
+        targets,
+        variable_keys=variable_keys,
+        variable_names=variable_names,
+    )
     # Convert samples to pd.DataFrame
     data_to_plot = pd.DataFrame(targets, columns=variable_names)
 

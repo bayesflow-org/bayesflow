@@ -143,12 +143,7 @@ class PointApproximator(ContinuousApproximator):
 
         return samples
 
-    def log_prob(
-        self,
-        *,
-        data: Mapping[str, np.ndarray],
-        **kwargs,
-    ) -> np.ndarray | dict[str, np.ndarray]:
+    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
         """
         Computes the log-probability of given data under the parametric distribution(s) for given input conditions.
 

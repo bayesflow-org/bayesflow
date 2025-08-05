@@ -12,6 +12,7 @@ from bayesflow.utils import (
     layer_kwargs,
     optimal_transport,
     weighted_mean,
+    tensor_utils,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 from ..inference_network import InferenceNetwork
@@ -90,6 +91,11 @@ class FlowMatching(InferenceNetwork):
             Additional keyword arguments for configuring optimal transport. Default is None.
         subnet_kwargs: dict[str, any], optional, deprecated
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
+        concatenate_subnet_input: bool, optional
+            Flag for advanced users to control whether all inputs to the subnet should be concatenated
+            into a single vector or passed as separate arguments. If set to False, the subnet
+            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
+            and optional 'conditions'. Default is True.
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
@@ -107,6 +113,7 @@ class FlowMatching(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", name="output_projector")
@@ -121,16 +128,25 @@ class FlowMatching(InferenceNetwork):
 
         self.output_projector.units = xz_shape[-1]
 
-        # account for concatenating the time and conditions
         input_shape = list(xz_shape)
-        input_shape[-1] += 1
-        if conditions_shape is not None:
-            input_shape[-1] += conditions_shape[-1]
-        input_shape = tuple(input_shape)
+        if self._concatenate_subnet_input:
+            # construct time vector
+            input_shape[-1] += 1
+            if conditions_shape is not None:
+                input_shape[-1] += conditions_shape[-1]
+            input_shape = tuple(input_shape)
 
-        self.subnet.build(input_shape)
-        input_shape = self.subnet.compute_output_shape(input_shape)
-        self.output_projector.build(input_shape)
+            self.subnet.build(input_shape)
+            out_shape = self.subnet.compute_output_shape(input_shape)
+        else:
+            # Multiple separate inputs
+            time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
+            out_shape = self.subnet.compute_output_shape(
+                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
+            )
+
+        self.output_projector.build(out_shape)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -147,22 +163,50 @@ class FlowMatching(InferenceNetwork):
             "loss_fn": self.loss_fn,
             "integrate_kwargs": self.integrate_kwargs,
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
+            "concatenate_subnet_input": self._concatenate_subnet_input,
             # we do not need to store subnet_kwargs
         }
 
         return base_config | serialize(config)
 
+    def _apply_subnet(
+        self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
+    ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
+        """
+        Prepares and passes the input to the subnet either by concatenating the latent variable `x`,
+        the time `t`, and optional conditions or by returning them separately.
+
+        Parameters
+        ----------
+        x : Tensor
+            The parameter tensor, typically of shape (..., D), but can vary.
+        t : Tensor
+            The time tensor, typically of shape (..., 1).
+        conditions : Tensor, optional
+            The optional conditioning tensor (e.g. parameters).
+        training : bool, optional
+            The training mode flag, which can be used to control behavior during training.
+
+        Returns
+        -------
+        Tensor
+            The output tensor from the subnet.
+        """
+        if self._concatenate_subnet_input:
+            t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
+            xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
+            return self.subnet(xtc, training=training)
+        else:
+            if training is False:
+                t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
+            return self.subnet(x=x, t=t, conditions=conditions, training=training)
+
     def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
         time = expand_right_as(time, xz)
-        time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
 
-        if conditions is None:
-            xtc = keras.ops.concatenate([xz, time], axis=-1)
-        else:
-            xtc = keras.ops.concatenate([xz, time, conditions], axis=-1)
-
-        return self.output_projector(self.subnet(xtc, training=training), training=training)
+        subnet_out = self._apply_subnet(xz, time, conditions, training=training)
+        return self.output_projector(subnet_out, training=training)
 
     def _velocity_trace(
         self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False

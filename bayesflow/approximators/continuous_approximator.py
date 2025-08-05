@@ -537,7 +537,7 @@ class ContinuousApproximator(Approximator):
             )
             batch_shape = keras.ops.shape(inference_conditions)[:-1]
         else:
-            batch_shape = keras.ops.shape(inference_conditions)[1:-1]
+            batch_shape = (num_samples,)
 
         return self.inference_network.sample(
             batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)

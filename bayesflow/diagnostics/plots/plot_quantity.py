@@ -214,7 +214,7 @@ def _prepare_values(
     if all([key in values for key in ["values", "metric_name", "variable_names"]]):
         # output of a metric function
         label = values["metric_name"] if label is None else label
-        variable_names = values["variable_names"]
+        variable_names = variable_names or values["variable_names"]
         values = values["values"]
 
     if hasattr(values, "variable_keys"):

@@ -133,6 +133,7 @@ def _pairs_samples(
             height=height,
             hue="_source",
             palette=[color2, color],
+            diag_sharey=False,
             **kwargs,
         )
 
@@ -162,7 +163,7 @@ def _pairs_samples(
 
     # add KDEs to the lower diagonal
     try:
-        g.map_lower(sns.kdeplot, fill=True, color=color, alpha=alpha)
+        g.map_lower(sns.kdeplot, fill=True, color=color, alpha=alpha, common_norm=False)
     except Exception as e:
         logging.exception("KDE failed due to the following exception:\n" + repr(e) + "\nSubstituting scatter plot.")
         g.map_lower(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)

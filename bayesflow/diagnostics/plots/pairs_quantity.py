@@ -124,6 +124,8 @@ def pairs_quantity(
                 if i > 0:
                     g.axes[i, j].get_yaxis().set_visible(False)
                     g.axes[i, j].spines["left"].set_visible(False)
+                if i == dim - 1:
+                    ax.set_ylabel(label, size=label_fontsize)
             else:
                 g.axes[i, j].grid(alpha=0.5)
                 g.axes[i, j].set_axisbelow(True)

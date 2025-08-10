@@ -3,13 +3,12 @@ from collections.abc import Callable, Sequence, Mapping
 import matplotlib.pyplot as plt
 import numpy as np
 
-from bayesflow.utils.dict_utils import make_variable_array, dicts_to_arrays, filter_kwargs
+from bayesflow.utils.dict_utils import make_variable_array, dicts_to_arrays, filter_kwargs, compute_test_quantities
 from bayesflow.utils.plot_utils import (
     add_titles_and_labels,
     make_figure,
     set_layout,
     prettify_subplots,
-    compute_test_quantities,
 )
 from bayesflow.utils.validators import check_estimates_prior_shapes
 
@@ -166,15 +165,21 @@ def plot_quantity(
 
 def _prepare_values(
     *,
-    values,
-    targets,
-    estimates,
-    variable_keys,
-    variable_names,
-    test_quantities,
-    label,
-    default_name,
+    values: Mapping[str, np.ndarray] | np.ndarray | Callable,
+    targets: Mapping[str, np.ndarray] | np.ndarray,
+    estimates: Mapping[str, np.ndarray] | np.ndarray | None,
+    variable_keys: Sequence[str],
+    variable_names: Sequence[str],
+    test_quantities: dict[str, Callable],
+    label: str | None,
+    default_name: str,
 ):
+    """
+    Provate helper function to compute/extract the values required for plotting
+    a quantity.
+
+    Refer to pairs_quantity and plot_quantity for details.
+    """
     is_values_callable = isinstance(values, Callable)
     # Optionally, compute and prepend test quantities from draws
     if test_quantities is not None:
@@ -190,7 +195,6 @@ def _prepare_values(
         estimates = updated_data["estimates"]
         targets = updated_data["targets"]
 
-    # input option 3
     if estimates is not None:
         if is_values_callable:
             values = values(estimates=estimates, targets=targets, **filter_kwargs({"aggregation": None}, values))
@@ -210,7 +214,6 @@ def _prepare_values(
         if test_quantities is None:
             variable_names = variable_names or estimates.variable_names
 
-    # input option 2
     if all([key in values for key in ["values", "metric_name", "variable_names"]]):
         # output of a metric function
         label = values["metric_name"] if label is None else label

@@ -1,5 +1,4 @@
 from typing import Sequence, Any, Mapping
-from collections.abc import Callable
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -427,54 +426,3 @@ def create_legends(
             frameon=False,
             fontsize=legend_fontsize,
         )
-
-
-def compute_test_quantities(
-    targets: Mapping[str, np.ndarray] | np.ndarray,
-    estimates: Mapping[str, np.ndarray] | np.ndarray | None = None,
-    variable_keys: Sequence[str] = None,
-    variable_names: Sequence[str] = None,
-    test_quantities: dict[str, Callable] = None,
-):
-    import keras
-
-    test_quantities_estimates = {} if estimates is not None else None
-    test_quantities_targets = {}
-
-    for key, test_quantity_fn in test_quantities.items():
-        # Apply test_quantity_func to ground-truths
-        tq_targets = test_quantity_fn(data=targets)
-        test_quantities_targets[key] = np.expand_dims(tq_targets, axis=1)
-
-        if estimates is not None:
-            # Flatten estimates for batch processing in test_quantity_fn, apply function, and restore shape
-            num_conditions, num_samples = next(iter(estimates.values())).shape[:2]
-            flattened_estimates = keras.tree.map_structure(
-                lambda t: np.reshape(t, (num_conditions * num_samples, *t.shape[2:]))
-                if isinstance(t, np.ndarray)
-                else t,
-                estimates,
-            )
-            flat_tq_estimates = test_quantity_fn(data=flattened_estimates)
-            test_quantities_estimates[key] = np.reshape(flat_tq_estimates, (num_conditions, num_samples, 1))
-
-    # Add custom test quantities to variable keys and names for plotting
-    # keys and names are set to the test_quantities dict keys
-    test_quantities_names = list(test_quantities.keys())
-
-    if variable_keys is None:
-        variable_keys = list(estimates.keys() if estimates is not None else targets.keys())
-    if isinstance(variable_names, list):
-        variable_names = test_quantities_names + variable_names
-
-    variable_keys = test_quantities_names + variable_keys
-    if estimates is not None:
-        estimates = test_quantities_estimates | estimates
-    targets = test_quantities_targets | targets
-
-    return {
-        "variable_keys": variable_keys,
-        "estimates": estimates,
-        "targets": targets,
-        "variable_names": variable_names,
-    }

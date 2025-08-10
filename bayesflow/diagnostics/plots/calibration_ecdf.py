@@ -3,7 +3,8 @@ from collections.abc import Callable, Mapping, Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ...utils.plot_utils import prepare_plot_data, add_titles_and_labels, prettify_subplots, compute_test_quantities
+from ...utils.dict_utils import compute_test_quantities
+from ...utils.plot_utils import prepare_plot_data, add_titles_and_labels, prettify_subplots
 from ...utils.ecdf import simultaneous_ecdf_bands
 from ...utils.ecdf.ranks import fractional_ranks, distance_ranks
 

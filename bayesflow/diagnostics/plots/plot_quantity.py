@@ -26,6 +26,9 @@ def plot_quantity(
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
     color: str = "#132a70",
+    s: float = 25.0,
+    marker: str = "o",
+    alpha: float = 0.5,
     xlabel: str = "Ground truth",
     ylabel: str = "",
     num_col: int = None,
@@ -90,6 +93,12 @@ def plot_quantity(
         The font size of the axis ticklabels
     color             : str, optional, default: '#8f2727'
         The color for the true vs. estimated scatter points and error bars
+    s                 : float, optional, default: 25.0
+        The marker size in points**2 for the scatter plot.
+    marker            : str, optional, default: 'o'
+        The marker for the scatter plot.
+    alpha             : float, default: 0.5
+        The opacity for the scatter plot
     num_row           : int, optional, default: None
         The number of rows for the subplots. Dynamically determined if None.
     num_col           : int, optional, default: None
@@ -143,7 +152,7 @@ def plot_quantity(
         if i >= num_variables:
             break
 
-        ax.scatter(targets[:, i], values[:, i], color=color, alpha=0.5)
+        ax.scatter(targets[:, i], values[:, i], color=color, alpha=alpha, s=s, marker=marker)
 
     prettify_subplots(axes, num_subplots=num_variables, tick_fontsize=tick_fontsize)
 

@@ -5,6 +5,7 @@ A collection of plotting utilities and metrics for evaluating trained :py:class:
 from .metrics import (
     bootstrap_comparison,
     calibration_error,
+    calibration_log_gamma,
     posterior_contraction,
     summary_space_comparison,
 )

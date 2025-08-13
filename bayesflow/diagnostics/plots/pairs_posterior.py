@@ -123,6 +123,7 @@ def pairs_posterior(
             color2=prior_color,
             legend_fontsize=legend_fontsize,
             show_single_legend=False,
+            target_color=target_color,
         )
 
     return g

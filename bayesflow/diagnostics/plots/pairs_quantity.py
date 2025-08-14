@@ -22,7 +22,7 @@ def pairs_quantity(
     height: float = 2.5,
     cmap: str | matplotlib.colors.Colormap = "viridis",
     alpha: float = 0.9,
-    s: float = 8.0,
+    markersize: float = 8.0,
     marker: str = "o",
     label: str = None,
     label_fontsize: int = 14,
@@ -81,6 +81,7 @@ def pairs_quantity(
     test_quantities   : dict or None, optional, default: None
         A dict that maps plot titles to functions that compute
         test quantities based on estimate/target draws.
+        Can only be supplied if `values` is a function.
 
         The dict keys are automatically added to ``variable_keys``
         and ``variable_names``.
@@ -96,7 +97,7 @@ def pairs_quantity(
         The colormap for the plot.
     alpha       : float in [0, 1], optional, default: 0.9
         The opacity of the plot
-    s                 : float, optional, default: 8.0
+    markersize        : float, optional, default: 8.0
         The marker size in points**2 for the scatter plot.
     marker            : str, optional, default: 'o'
         The marker for the scatter plot.
@@ -139,7 +140,13 @@ def pairs_quantity(
     """
 
     if isinstance(values, Callable) and estimates is None:
-        raise ValueError("Supplied a callable as `values`, but not `estimates`.")
+        raise ValueError("Supplied a callable as `values`, but no `estimates`.")
+    if not isinstance(values, Callable) and test_quantities is not None:
+        raise ValueError(
+            "Supplied `test_quantities`, but `values` is not a function. "
+            "As the values have to be calculated for the test quantities, "
+            "passing a function is required."
+        )
 
     d = _prepare_values(
         values=values,
@@ -188,7 +195,7 @@ def pairs_quantity(
                     values[:, i],
                     c=row_values,
                     cmap=cmap,
-                    s=s,
+                    s=markersize,
                     marker=marker,
                     vmin=vmin,
                     vmax=vmax,
@@ -213,7 +220,7 @@ def pairs_quantity(
                     targets[:, i],
                     c=row_values,
                     cmap=cmap,
-                    s=s,
+                    s=markersize,
                     vmin=vmin,
                     vmax=vmax,
                     alpha=alpha,
@@ -252,4 +259,4 @@ def pairs_quantity(
         g.axes[i, 0].set_ylabel(variable_names[i], fontsize=label_fontsize)
         g.axes[dim - 1, i].set_xlabel(variable_names[i], fontsize=label_fontsize)
 
-    return g.figure
+    return g

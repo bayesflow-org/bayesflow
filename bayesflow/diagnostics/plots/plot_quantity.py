@@ -26,7 +26,7 @@ def plot_quantity(
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
     color: str = "#132a70",
-    s: float = 25.0,
+    markersize: float = 25.0,
     marker: str = "o",
     alpha: float = 0.5,
     xlabel: str = "Ground truth",
@@ -74,6 +74,7 @@ def plot_quantity(
     test_quantities   : dict or None, optional, default: None
         A dict that maps plot titles to functions that compute
         test quantities based on estimate/target draws.
+        Can only be supplied if `values` is a function.
 
         The dict keys are automatically added to ``variable_keys``
         and ``variable_names``.
@@ -93,7 +94,7 @@ def plot_quantity(
         The font size of the axis ticklabels
     color             : str, optional, default: '#8f2727'
         The color for the true vs. estimated scatter points and error bars
-    s                 : float, optional, default: 25.0
+    markersize        : float, optional, default: 25.0
         The marker size in points**2 for the scatter plot.
     marker            : str, optional, default: 'o'
         The marker for the scatter plot.
@@ -117,7 +118,13 @@ def plot_quantity(
     """
 
     if isinstance(values, Callable) and estimates is None:
-        raise ValueError("Supplied a callable as `values`, but not `estimates`.")
+        raise ValueError("Supplied a callable as `values`, but no `estimates`.")
+    if not isinstance(values, Callable) and test_quantities is not None:
+        raise ValueError(
+            "Supplied `test_quantities`, but `values` is not a function. "
+            "As the values have to be calculated for the test quantities, "
+            "passing a function is required."
+        )
 
     d = _prepare_values(
         values=values,
@@ -152,7 +159,7 @@ def plot_quantity(
         if i >= num_variables:
             break
 
-        ax.scatter(targets[:, i], values[:, i], color=color, alpha=alpha, s=s, marker=marker)
+        ax.scatter(targets[:, i], values[:, i], color=color, alpha=alpha, s=markersize, marker=marker)
 
     prettify_subplots(axes, num_subplots=num_variables, tick_fontsize=tick_fontsize)
 
@@ -242,16 +249,10 @@ def _prepare_values(
             default_name=default_name,
         )
     except ValueError:
-        if test_quantities is not None and not is_values_callable:
-            raise ValueError(
-                "`test_quantities` requires specifying `values` as callable and passing `estimates "
-                "to enable the computation of the values for each test quantity."
-            )
         raise ValueError(
             "Length of 'variable_names' and number of variables do not match. "
             "Did you forget to specify `variable_keys`?"
         )
-
     variable_names = targets.variable_names
     variable_keys = targets.variable_keys
 
@@ -266,11 +267,6 @@ def _prepare_values(
             default_name=default_name,
         )
     except ValueError:
-        if test_quantities is not None and not is_values_callable:
-            raise ValueError(
-                "`test_quantities` requires specifying `values` as callable and passing `estimates "
-                "to enable the computation of the values for each test quantity."
-            )
         raise ValueError(
             "Length of 'variable_names' and number of variables do not match. "
             "Did you forget to specify `variable_keys`?"

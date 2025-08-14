@@ -31,9 +31,14 @@ class Sequential(keras.Layer):
     """
 
     def __init__(self, *layers: keras.Layer | Sequence[keras.Layer], **kwargs):
-        super().__init__(**layer_kwargs(kwargs))
-        if len(layers) == 1 and isinstance(layers[0], Sequence):
+        if len(layers) == 0 and "layers" in kwargs:
+            # extract layers from kwargs, in case they were passed as a keyword argument
+            layers = kwargs.pop("layers")
+        elif len(layers) > 0 and "layers" in kwargs:
+            raise ValueError("Layers passed both as positional argument and as keyword argument")
+        elif len(layers) == 1 and isinstance(layers[0], Sequence):
             layers = layers[0]
+        super().__init__(**layer_kwargs(kwargs))
 
         self._layers = layers
 
@@ -44,6 +49,8 @@ class Sequential(keras.Layer):
             return
 
         for layer in self._layers:
+            if layer.built:
+                continue
             layer.build(input_shape)
             input_shape = layer.compute_output_shape(input_shape)
 

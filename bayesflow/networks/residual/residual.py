@@ -12,7 +12,12 @@ from ..sequential import Sequential
 @serializable("bayesflow.networks")
 class Residual(Sequential):
     def __init__(self, *layers: keras.Layer, **kwargs):
-        if len(layers) == 1 and isinstance(layers[0], Sequence):
+        if len(layers) == 0 and "layers" in kwargs:
+            # extract layers from kwargs, in case they were passed as a keyword argument
+            layers = kwargs.pop("layers")
+        elif len(layers) > 0 and "layers" in kwargs:
+            raise ValueError("Layers passed both as positional argument and as keyword argument")
+        elif len(layers) == 1 and isinstance(layers[0], Sequence):
             layers = layers[0]
         super().__init__(list(layers), **sequential_kwargs(kwargs))
         self.projector = keras.layers.Dense(units=None, name="projector")
@@ -43,6 +48,8 @@ class Residual(Sequential):
         # this is a work-around for https://github.com/keras-team/keras/issues/21158
         output_shape = input_shape
         for layer in self._layers:
+            if layer.built:
+                continue
             layer.build(output_shape)
             output_shape = layer.compute_output_shape(output_shape)
 

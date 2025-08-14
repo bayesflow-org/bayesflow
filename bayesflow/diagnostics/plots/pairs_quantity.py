@@ -13,8 +13,8 @@ from .plot_quantity import _prepare_values
 
 def pairs_quantity(
     values: Mapping[str, np.ndarray] | np.ndarray | Callable,
-    *,
     targets: Mapping[str, np.ndarray] | np.ndarray,
+    *,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     estimates: Mapping[str, np.ndarray] | np.ndarray | None = None,

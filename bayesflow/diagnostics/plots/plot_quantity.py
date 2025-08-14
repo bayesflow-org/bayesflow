@@ -15,8 +15,8 @@ from bayesflow.utils.validators import check_estimates_prior_shapes
 
 def plot_quantity(
     values: Mapping[str, np.ndarray] | np.ndarray | Callable,
-    *,
     targets: Mapping[str, np.ndarray] | np.ndarray,
+    *,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     estimates: Mapping[str, np.ndarray] | np.ndarray | None = None,

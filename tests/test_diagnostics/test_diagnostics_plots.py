@@ -68,15 +68,10 @@ def test_calibration_ecdf(random_estimates, random_targets, var_names):
 
 def test_calibration_ecdf_from_quantiles(random_estimates, random_targets, var_names):
     quantile_levels = [0.1, 0.5, 0.9]
-    estimators = dict(
-        quantiles=lambda x, axis: np.moveaxis(np.quantile(x, q=quantile_levels, axis=axis), 0, 1),
-    )
 
     estimates = {
-        variable_name: {
-            estimator_name: func(random_estimates[variable_name], axis=1) for estimator_name, func in estimators.items()
-        }
-        for variable_name in random_estimates.keys()
+        variable_name: {"quantiles": np.moveaxis(np.quantile(value, q=quantile_levels, axis=1), 0, 1)}
+        for variable_name, value in random_estimates.items()
     }
 
     out = bf.diagnostics.calibration_ecdf_from_quantiles(estimates, random_targets, quantile_levels=quantile_levels)

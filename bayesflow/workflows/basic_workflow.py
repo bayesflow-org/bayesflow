@@ -125,6 +125,10 @@ class BasicWorkflow(Workflow):
                 file_ext = self.checkpoint_name + ".weights.h5"
             else:
                 file_ext = self.checkpoint_name + ".keras"
+
+            # If the directory checkpoint_filepath does not exist yet, create it.
+            os.makedirs(self.checkpoint_filepath, exist_ok=True)
+
             checkpoint_full_filepath = os.path.join(self.checkpoint_filepath, file_ext)
             if os.path.exists(checkpoint_full_filepath):
                 msg = (

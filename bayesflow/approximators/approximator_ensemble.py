@@ -26,7 +26,7 @@ class ApproximatorEnsemble(Approximator):
         if len(data_shapes["inference_variables"]) > 2:
             # Remove the ensemble dimension from data_shapes. This expects data_shapes are the shapes of a
             # batch of training data, where the second axis corresponds to different approximators.
-            data_shapes = {k: v[:1] + v[2:] for k, v in data_shapes.items()}
+            data_shapes = keras.tree.map_shape_structure(lambda shape: shape[:1] + shape[2:], data_shapes)
         self.build(data_shapes)
 
     def build(self, input_shape: dict[str, tuple[int] | dict[str, dict]]) -> None:
@@ -52,13 +52,13 @@ class ApproximatorEnsemble(Approximator):
 
         for i, (approx_name, approximator) in enumerate(self.approximators.items()):
             # During training each approximator receives its own separate slice
-            if stage == "training":
+            if stage == "training" and inference_variables.ndim > 2:
                 # Pick out the correct slice for each ensemble member
                 _inference_variables = inference_variables[:, i]
                 if inference_conditions is not None:
                     _inference_conditions = inference_conditions[:, i]
                 if summary_variables is not None:
-                    _summary_variables = summary_variables[:, i]
+                    _summary_variables = keras.tree.map_structure(lambda v: v[:, i], summary_variables)
                 if sample_weight is not None:
                     _sample_weight = sample_weight[:, i]
 

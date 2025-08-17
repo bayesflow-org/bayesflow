@@ -26,6 +26,7 @@ def calibration_ecdf_from_quantiles(
     fill_color: str = "grey",
     num_row: int = None,
     num_col: int = None,
+    markersize: float = None,
     **kwargs,
 ) -> plt.Figure:
     """
@@ -97,6 +98,8 @@ def calibration_ecdf_from_quantiles(
     num_col           : int, optional, default: None
         The number of columns for the subplots.
         Dynamically determined if None.
+    markersize        : float, optional, default: None
+        The marker size in points.
     **kwargs          : dict, optional, default: {}
         Keyword arguments can be passed to control the behavior of
         ECDF simultaneous band computation through the ``ecdf_bands_kwargs``
@@ -142,11 +145,15 @@ def calibration_ecdf_from_quantiles(
 
         if stacked:
             if j == 0:
-                plot_data["axes"][0].plot(xx, yy, marker="o", color=rank_ecdf_color, alpha=0.95, label="Rank ECDFs")
+                plot_data["axes"][0].plot(
+                    xx, yy, marker="o", color=rank_ecdf_color, markersize=markersize, alpha=0.95, label="Rank ECDFs"
+                )
             else:
-                plot_data["axes"][0].plot(xx, yy, marker="o", color=rank_ecdf_color, alpha=0.95)
+                plot_data["axes"][0].plot(xx, yy, marker="o", color=rank_ecdf_color, markersize=markersize, alpha=0.95)
         else:
-            plot_data["axes"].flat[j].plot(xx, yy, marker="o", color=rank_ecdf_color, alpha=0.95, label="Rank ECDF")
+            plot_data["axes"].flat[j].plot(
+                xx, yy, marker="o", color=rank_ecdf_color, markersize=markersize, alpha=0.95, label="Rank ECDF"
+            )
 
     # Compute uniform ECDF and bands
     alpha, z, L, U = pointwise_ecdf_bands(estimates.shape[0], **kwargs.pop("ecdf_bands_kwargs", {}))

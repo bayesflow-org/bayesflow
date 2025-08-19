@@ -191,7 +191,7 @@ def _prepare_values(
     default_name: str,
 ):
     """
-    Provate helper function to compute/extract the values required for plotting
+    Private helper function to compute/extract the values required for plotting
     a quantity.
 
     Refer to pairs_quantity and plot_quantity for details.

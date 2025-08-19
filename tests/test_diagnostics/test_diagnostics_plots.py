@@ -161,6 +161,102 @@ def test_pairs_posterior(random_estimates, random_targets, random_priors):
         )
 
 
+def test_pairs_quantity(random_estimates, random_targets, random_priors):
+    # test test_quantities and label assignment
+    key = next(iter(random_estimates.keys()))
+    test_quantities = {
+        "a": lambda data: np.sum(data[key], axis=-1),
+        "b": lambda data: np.prod(data[key], axis=-1),
+    }
+    out = bf.diagnostics.plots.pairs_quantity(
+        values=bf.diagnostics.posterior_contraction,
+        estimates=random_estimates,
+        targets=random_targets,
+        test_quantities=test_quantities,
+    )
+
+    num_vars = num_variables(random_estimates) + len(test_quantities)
+    assert out.axes.shape == (num_vars, num_vars)
+    assert out.axes[0, 0].get_ylabel() == "a"
+    assert out.axes[2, 0].get_ylabel() == "beta_0"
+    assert out.axes[4, 4].get_xlabel() == "sigma"
+
+    values = bf.diagnostics.posterior_contraction(estimates=random_estimates, targets=random_targets, aggregation=None)
+
+    bf.diagnostics.plots.pairs_quantity(
+        values,
+        targets=random_targets,
+    )
+
+    raw_values = np.random.normal(size=values["values"].shape)
+    out = bf.diagnostics.plots.pairs_quantity(raw_values, targets=random_targets, variable_keys=["beta", "sigma"])
+    assert out.axes.shape == (3, 3)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.pairs_quantity(raw_values, targets=random_targets)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.pairs_quantity(
+            values=values,
+            estimates=random_estimates,
+            targets=random_targets,
+            test_quantities=test_quantities,
+        )
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.pairs_quantity(
+            values=bf.diagnostics.posterior_contraction,
+            targets=random_targets,
+        )
+
+
+def test_plot_quantity(random_estimates, random_targets, random_priors):
+    # test test_quantities and label assignment
+    key = next(iter(random_estimates.keys()))
+    test_quantities = {
+        "a": lambda data: np.sum(data[key], axis=-1),
+        "b": lambda data: np.prod(data[key], axis=-1),
+    }
+    out = bf.diagnostics.plots.plot_quantity(
+        values=bf.diagnostics.posterior_contraction,
+        estimates=random_estimates,
+        targets=random_targets,
+        test_quantities=test_quantities,
+    )
+
+    num_vars = num_variables(random_estimates) + len(test_quantities)
+    assert len(out.axes) == num_vars
+    assert out.axes[0].title._text == "a"
+
+    values = bf.diagnostics.posterior_contraction(estimates=random_estimates, targets=random_targets, aggregation=None)
+
+    bf.diagnostics.plots.plot_quantity(
+        values,
+        targets=random_targets,
+    )
+
+    raw_values = np.random.normal(size=values["values"].shape)
+    out = bf.diagnostics.plots.plot_quantity(raw_values, targets=random_targets, variable_keys=["beta", "sigma"])
+    assert len(out.axes) == 3
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.plot_quantity(raw_values, targets=random_targets)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.plot_quantity(
+            values=values,
+            estimates=random_estimates,
+            targets=random_targets,
+            test_quantities=test_quantities,
+        )
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.plot_quantity(
+            values=bf.diagnostics.posterior_contraction,
+            targets=random_targets,
+        )
+
+
 def test_mc_calibration(pred_models, true_models, model_names):
     out = bf.diagnostics.plots.mc_calibration(pred_models, true_models, model_names=model_names, markersize=4)
     assert len(out.axes) == pred_models.shape[-1]

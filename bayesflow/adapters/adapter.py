@@ -21,6 +21,7 @@ from .transforms import (
     NumpyTransform,
     OneHot,
     Rename,
+    Reshape,
     SerializableCustomTransform,
     Squeeze,
     Sqrt,
@@ -744,6 +745,25 @@ class Adapter(MutableSequence[Transform]):
             New variable name
         """
         self.transforms.append(Rename(from_key, to_key))
+        return self
+
+    def reshape(self, keys: str | Sequence[str], *, to: int | Sequence[int]):
+        """Append a :py:class:`~transforms.Reshape` transform to the adapter.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            Variables that should be reshaped
+        to : int or tuple of int
+            Target shape of the variables
+        """
+        from .transforms import Reshape
+
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform({key: Reshape(shape=to) for key in keys})
+        self.transforms.append(transform)
         return self
 
     def scale(self, keys: str | Sequence[str], by: float | np.ndarray):

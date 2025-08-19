@@ -15,6 +15,7 @@ from .map_transform import MapTransform
 from .numpy_transform import NumpyTransform
 from .one_hot import OneHot
 from .rename import Rename
+from .reshape import Reshape
 from .scale import Scale
 from .serializable_custom_transform import SerializableCustomTransform
 from .shift import Shift

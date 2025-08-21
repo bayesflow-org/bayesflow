@@ -28,7 +28,7 @@ class DeepSet(SummaryNetwork):
         output_pooling: str = "mean",
         mlp_widths_equivariant: Sequence[int] = (64, 64),
         mlp_widths_invariant_inner: Sequence[int] = (64, 64),
-        mlp_widths_invariant_outer: Sequence[int] = (64, 64),
+        mlp_widths_invariant_outer: Sequence[int] = (64, 4),
         mlp_widths_invariant_last: Sequence[int] = (64, 64),
         activation: str = "silu",
         kernel_initializer: str = "he_normal",
@@ -68,7 +68,7 @@ class DeepSet(SummaryNetwork):
         mlp_widths_invariant_inner : Sequence[int], optional
             Widths of the inner MLP layers within the invariant module. Default is (64, 64).
         mlp_widths_invariant_outer : Sequence[int], optional
-            Widths of the outer MLP layers within the invariant module. Default is (64, 64).
+            Widths of the outer MLP layers within the invariant module. Default is (64, 4).
         mlp_widths_invariant_last : Sequence[int], optional
             Widths of the MLP layers in the final invariant transformation. Default is (64, 64).
         activation : str, optional
@@ -80,7 +80,7 @@ class DeepSet(SummaryNetwork):
         spectral_normalization : bool, optional
             Whether to apply spectral normalization to stabilize training. Default is False.
         **kwargs
-            Additional keyword arguments passed to the equivariant and invariant modules.
+            Additional keyword arguments passed to the base class.
         """
 
         super().__init__(**kwargs)

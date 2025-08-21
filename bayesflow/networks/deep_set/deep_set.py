@@ -80,7 +80,7 @@ class DeepSet(SummaryNetwork):
         spectral_normalization : bool, optional
             Whether to apply spectral normalization to stabilize training. Default is False.
         **kwargs
-            Additional keyword arguments passed to the equivariant and invariant modules.
+            Additional keyword arguments passed to the base class.
         """
 
         super().__init__(**kwargs)

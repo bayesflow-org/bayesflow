@@ -56,7 +56,7 @@ class EDMNoiseSchedule(NoiseSchedule):
             # SNR = dist.icdf(1-t)  # Kingma paper wrote -F(t) but this seems to be wrong
             loc = -2 * self.p_mean
             scale = 2 * self.p_std
-            snr = loc + scale * ops.erfinv(2 * t - 1) * math.sqrt(2)
+            snr = loc + scale * ops.erfinv(2 * (1 - t) - 1) * math.sqrt(2)
             snr = ops.clip(snr, x_min=self._log_snr_min_training, x_max=self._log_snr_max_training)
         else:
             sigma_min_rho = self.sigma_min ** (1 / self.rho)

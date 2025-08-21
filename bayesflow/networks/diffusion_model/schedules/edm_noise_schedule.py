@@ -53,7 +53,7 @@ class EDMNoiseSchedule(NoiseSchedule):
     def get_log_snr(self, t: float | Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         if training:
-            # SNR = -dist.icdf(t_trunc) # negative seems to be wrong in the Kingma paper
+            # SNR = dist.icdf(1-t)  # Kingma paper wrote -F(t) but this seems to be wrong
             loc = -2 * self.p_mean
             scale = 2 * self.p_std
             snr = loc + scale * ops.erfinv(2 * t - 1) * math.sqrt(2)
@@ -67,11 +67,11 @@ class EDMNoiseSchedule(NoiseSchedule):
     def get_t_from_log_snr(self, log_snr_t: float | Tensor, training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         if training:
-            # SNR = -dist.icdf(t_trunc) => t = dist.cdf(-snr)  # negative seems to be wrong in the Kingma paper
+            # SNR = dist.icdf(1-t) => t = 1-dist.cdf(snr)  # Kingma paper wrote -F(t) but this seems to be wrong
             loc = -2 * self.p_mean
             scale = 2 * self.p_std
             x = log_snr_t
-            t = 0.5 * (1 + ops.erf((x - loc) / (scale * math.sqrt(2.0))))
+            t = 1 - 0.5 * (1 + ops.erf((x - loc) / (scale * math.sqrt(2.0))))
         else:  # sampling
             # SNR = -2 * rho * log(sigma_max ** (1/rho) + (1 - t) * (sigma_min ** (1/rho) - sigma_max ** (1/rho)))
             # => t = 1 - ((exp(-snr/(2*rho)) - sigma_max ** (1/rho)) / (sigma_min ** (1/rho) - sigma_max ** (1/rho)))

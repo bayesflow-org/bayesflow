@@ -1,7 +1,6 @@
-from collections.abc import Sequence, Mapping
+from collections.abc import Mapping, Sequence
 
 import matplotlib.pyplot as plt
-
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -19,7 +18,7 @@ def pairs_posterior(
     dataset_id: int = None,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
-    height: int = 3,
+    height: float = 3.0,
     post_color: str | tuple = "#132a70",
     prior_color: str | tuple = "gray",
     target_color: str | tuple = "red",

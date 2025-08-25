@@ -18,7 +18,9 @@ class EDMNoiseSchedule(NoiseSchedule):
     generative models. Advances in Neural Information Processing Systems, 35, 26565-26577.
     """
 
-    def __init__(self, sigma_data: float = 1.0, sigma_min: float = 1e-4, sigma_max: float = 80.0):
+    def __init__(
+        self, sigma_data: float = 1.0, sigma_min: float = 1e-4, sigma_max: float = 80.0, variance_type="preserving"
+    ):
         """
         Initialize the EDM noise schedule.
 
@@ -31,8 +33,11 @@ class EDMNoiseSchedule(NoiseSchedule):
             The minimum noise level. Only relevant for sampling. Default is 1e-4.
         sigma_max : float, optional
             The maximum noise level. Only relevant for sampling. Default is 80.0.
+        variance_type : str, optional
+            The type of variance to use. One of "preserving", or "exploding". Default is "preserving". Original EDM
+            paper uses "exploding".
         """
-        super().__init__(name="edm_noise_schedule", variance_type="preserving")
+        super().__init__(name="edm_noise_schedule", variance_type=variance_type)
         self.sigma_data = sigma_data
         # training settings
         self.p_mean = -1.2

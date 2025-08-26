@@ -59,6 +59,7 @@ class FlowMatching(InferenceNetwork):
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
+        time_power_law_alpha: float = 0.0,
         **kwargs,
     ):
         """
@@ -97,7 +98,7 @@ class FlowMatching(InferenceNetwork):
             must accept three separate inputs: 'x' (noisy parameters), 't' (time),
             and optional 'conditions'. Default is True.
         time_power_law_alpha: float, optional
-            Change the distribution of sampled times during training. Time is sampled from a power law distribution
+            Changes the distribution of sampled times during training. Time is sampled from a power law distribution
              p(t) ∝ t^(1/(1+α)), where α is the provided value. Default is α=0, which corresponds to uniform sampling.
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
@@ -110,7 +111,7 @@ class FlowMatching(InferenceNetwork):
         self.optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
-        self.time_power_law_alpha = float(kwargs.pop("time_power_law_alpha", 0.0))  # 0 is uniform, <0 favors smaller t
+        self.time_power_law_alpha = float(time_power_law_alpha)
         if self.time_power_law_alpha <= -1.0:
             raise ValueError("'time_power_law_alpha' must be greater than -1.0.")
 

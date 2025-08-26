@@ -49,6 +49,7 @@ def setup():
 
             found_backends.sort(key=lambda b: b.priority)
             chosen_backend = found_backends[0]
+            os.environ["KERAS_BACKEND"] = chosen_backend.env_name
 
             warnings.warn(
                 f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}).\n"
@@ -70,6 +71,9 @@ def setup():
     logger.setLevel(logging.INFO)
 
     from bayesflow.utils import logging
+
+    if keras.backend.backend().lower() != os.environ["KERAS_BACKEND"].lower():
+        logging.warning("Automatic backend selection failed, most likely because Keras was imported before BayesFlow.")
 
     logging.info(f"Using backend {keras.backend.backend()!r}")
 

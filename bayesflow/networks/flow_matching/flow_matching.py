@@ -312,7 +312,7 @@ class FlowMatching(InferenceNetwork):
 
             u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
             # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform
-            t = u ** (1 + self.alpha)
+            t = u ** (1 + self.time_sampling_alpha)
             t = expand_right_as(t, x0)
 
             x = t * x1 + (1 - t) * x0

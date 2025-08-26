@@ -107,6 +107,9 @@ class FlowMatching(InferenceNetwork):
         self.optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
+        self.time_sampling_alpha = kwargs.pop("time_sampling_alpha", 0.0)  # 0 is uniform, <0 favors smaller t
+        if self.time_sampling_alpha <= -1.0:
+            raise ValueError("'time_sampling_alpha' must be greater than -1.0.")
 
         self.seed_generator = keras.random.SeedGenerator()
 
@@ -307,7 +310,9 @@ class FlowMatching(InferenceNetwork):
                     # conditions must be resampled along with x1
                     conditions = keras.ops.take(conditions, assignments, axis=0)
 
-            t = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
+            u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
+            # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform
+            t = u ** (1 + self.alpha)
             t = expand_right_as(t, x0)
 
             x = t * x1 + (1 - t) * x0

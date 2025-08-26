@@ -80,6 +80,8 @@ class NanToNum(Transform):
         data = data.copy()
 
         # Retrieve mask and values to reconstruct NaNs
+        if self.key not in data.keys():
+            return data
         values = data[self.key]
 
         if not self.return_mask:

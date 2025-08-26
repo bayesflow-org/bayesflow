@@ -96,6 +96,9 @@ class FlowMatching(InferenceNetwork):
             into a single vector or passed as separate arguments. If set to False, the subnet
             must accept three separate inputs: 'x' (noisy parameters), 't' (time),
             and optional 'conditions'. Default is True.
+        time_power_law_alpha: float, optional
+            Change the distribution of sampled times during training. Time is sampled from a power law distribution
+             p(t) ∝ t^(1/(1+α)), where α is the provided value. Default is α=0, which corresponds to uniform sampling.
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
@@ -107,9 +110,9 @@ class FlowMatching(InferenceNetwork):
         self.optimal_transport_kwargs = FlowMatching.OPTIMAL_TRANSPORT_DEFAULT_CONFIG | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
-        self.time_sampling_alpha = kwargs.pop("time_sampling_alpha", 0.0)  # 0 is uniform, <0 favors smaller t
-        if self.time_sampling_alpha <= -1.0:
-            raise ValueError("'time_sampling_alpha' must be greater than -1.0.")
+        self.time_power_law_alpha = float(kwargs.pop("time_power_law_alpha", 0.0))  # 0 is uniform, <0 favors smaller t
+        if self.time_power_law_alpha <= -1.0:
+            raise ValueError("'time_power_law_alpha' must be greater than -1.0.")
 
         self.seed_generator = keras.random.SeedGenerator()
 
@@ -167,6 +170,7 @@ class FlowMatching(InferenceNetwork):
             "integrate_kwargs": self.integrate_kwargs,
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
             "concatenate_subnet_input": self._concatenate_subnet_input,
+            "time_power_law_alpha": self.time_power_law_alpha,
             # we do not need to store subnet_kwargs
         }
 
@@ -312,7 +316,7 @@ class FlowMatching(InferenceNetwork):
 
             u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
             # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform
-            t = u ** (1 + self.time_sampling_alpha)
+            t = u ** (1 + self.time_power_law_alpha)
             t = expand_right_as(t, x0)
 
             x = t * x1 + (1 - t) * x0

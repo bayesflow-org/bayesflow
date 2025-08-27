@@ -53,4 +53,6 @@ class SummaryNetwork(keras.Layer):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
+        if hasattr(cls.get_config, "_is_default") and cls.get_config._is_default:
+            return cls(**config)
         return cls(**deserialize(config, custom_objects=custom_objects))

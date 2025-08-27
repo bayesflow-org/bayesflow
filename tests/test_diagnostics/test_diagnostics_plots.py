@@ -66,6 +66,19 @@ def test_calibration_ecdf(random_estimates, random_targets, var_names):
     assert out.axes[-1].title._text == r"$\sigma$"
 
 
+def test_calibration_ecdf_from_quantiles(random_estimates, random_targets, var_names):
+    quantile_levels = [0.1, 0.5, 0.9]
+
+    estimates = {
+        variable_name: {"quantiles": np.moveaxis(np.quantile(value, q=quantile_levels, axis=1), 0, 1)}
+        for variable_name, value in random_estimates.items()
+    }
+
+    out = bf.diagnostics.calibration_ecdf_from_quantiles(estimates, random_targets, quantile_levels=quantile_levels)
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[1].title._text == "beta_1"
+
+
 def test_calibration_histogram(random_estimates, random_targets):
     # basic functionality: automatic variable names
     out = bf.diagnostics.plots.calibration_histogram(random_estimates, random_targets)
@@ -81,14 +94,25 @@ def test_loss(history):
 
 def test_recovery(random_estimates, random_targets):
     # basic functionality: automatic variable names
-    out = bf.diagnostics.plots.recovery(random_estimates, random_targets)
+    out = bf.diagnostics.plots.recovery(random_estimates, random_targets, markersize=4)
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[2].title._text == "sigma"
+
+
+def test_recovery_from_estimates(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    estimates = {variable_name: {"mean": np.mean(value, axis=1)} for variable_name, value in random_estimates.items()}
+
+    out = bf.diagnostics.plots.recovery_from_estimates(
+        estimates, random_targets, markersize=4, marker_mapping={"mean": "x"}
+    )
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[2].title._text == "sigma"
 
 
 def test_z_score_contraction(random_estimates, random_targets):
     # basic functionality: automatic variable names
-    out = bf.diagnostics.plots.z_score_contraction(random_estimates, random_targets)
+    out = bf.diagnostics.plots.z_score_contraction(random_estimates, random_targets, markersize=4)
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[1].title._text == "beta_1"
 
@@ -97,6 +121,7 @@ def test_pairs_samples(random_priors):
     out = bf.diagnostics.plots.pairs_samples(
         samples=random_priors,
         variable_keys=["beta", "sigma"],
+        markersize=4,
     )
     num_vars = random_priors["sigma"].shape[-1] + random_priors["beta"].shape[-1]
     assert out.axes.shape == (num_vars, num_vars)
@@ -107,9 +132,7 @@ def test_pairs_samples(random_priors):
 def test_pairs_posterior(random_estimates, random_targets, random_priors):
     # basic functionality: automatic variable names
     out = bf.diagnostics.plots.pairs_posterior(
-        random_estimates,
-        random_targets,
-        dataset_id=1,
+        random_estimates, random_targets, dataset_id=1, markersize=4, target_markersize=4
     )
     num_vars = num_variables(random_estimates)
     assert out.axes.shape == (num_vars, num_vars)
@@ -138,8 +161,104 @@ def test_pairs_posterior(random_estimates, random_targets, random_priors):
         )
 
 
+def test_pairs_quantity(random_estimates, random_targets, random_priors):
+    # test test_quantities and label assignment
+    key = next(iter(random_estimates.keys()))
+    test_quantities = {
+        "a": lambda data: np.sum(data[key], axis=-1),
+        "b": lambda data: np.prod(data[key], axis=-1),
+    }
+    out = bf.diagnostics.plots.pairs_quantity(
+        values=bf.diagnostics.posterior_contraction,
+        estimates=random_estimates,
+        targets=random_targets,
+        test_quantities=test_quantities,
+    )
+
+    num_vars = num_variables(random_estimates) + len(test_quantities)
+    assert out.axes.shape == (num_vars, num_vars)
+    assert out.axes[0, 0].get_ylabel() == "a"
+    assert out.axes[2, 0].get_ylabel() == "beta_0"
+    assert out.axes[4, 4].get_xlabel() == "sigma"
+
+    values = bf.diagnostics.posterior_contraction(estimates=random_estimates, targets=random_targets, aggregation=None)
+
+    bf.diagnostics.plots.pairs_quantity(
+        values,
+        targets=random_targets,
+    )
+
+    raw_values = np.random.normal(size=values["values"].shape)
+    out = bf.diagnostics.plots.pairs_quantity(raw_values, targets=random_targets, variable_keys=["beta", "sigma"])
+    assert out.axes.shape == (3, 3)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.pairs_quantity(raw_values, targets=random_targets)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.pairs_quantity(
+            values=values,
+            estimates=random_estimates,
+            targets=random_targets,
+            test_quantities=test_quantities,
+        )
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.pairs_quantity(
+            values=bf.diagnostics.posterior_contraction,
+            targets=random_targets,
+        )
+
+
+def test_plot_quantity(random_estimates, random_targets, random_priors):
+    # test test_quantities and label assignment
+    key = next(iter(random_estimates.keys()))
+    test_quantities = {
+        "a": lambda data: np.sum(data[key], axis=-1),
+        "b": lambda data: np.prod(data[key], axis=-1),
+    }
+    out = bf.diagnostics.plots.plot_quantity(
+        values=bf.diagnostics.posterior_contraction,
+        estimates=random_estimates,
+        targets=random_targets,
+        test_quantities=test_quantities,
+    )
+
+    num_vars = num_variables(random_estimates) + len(test_quantities)
+    assert len(out.axes) == num_vars
+    assert out.axes[0].title._text == "a"
+
+    values = bf.diagnostics.posterior_contraction(estimates=random_estimates, targets=random_targets, aggregation=None)
+
+    bf.diagnostics.plots.plot_quantity(
+        values,
+        targets=random_targets,
+    )
+
+    raw_values = np.random.normal(size=values["values"].shape)
+    out = bf.diagnostics.plots.plot_quantity(raw_values, targets=random_targets, variable_keys=["beta", "sigma"])
+    assert len(out.axes) == 3
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.plot_quantity(raw_values, targets=random_targets)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.plot_quantity(
+            values=values,
+            estimates=random_estimates,
+            targets=random_targets,
+            test_quantities=test_quantities,
+        )
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.plots.plot_quantity(
+            values=bf.diagnostics.posterior_contraction,
+            targets=random_targets,
+        )
+
+
 def test_mc_calibration(pred_models, true_models, model_names):
-    out = bf.diagnostics.plots.mc_calibration(pred_models, true_models, model_names=model_names)
+    out = bf.diagnostics.plots.mc_calibration(pred_models, true_models, model_names=model_names, markersize=4)
     assert len(out.axes) == pred_models.shape[-1]
     assert out.axes[0].get_ylabel() == "True Probability"
     assert out.axes[0].get_xlabel() == "Predicted Probability"

@@ -13,6 +13,7 @@ from bayesflow.utils.plot_utils import create_legends
 
 def pairs_samples(
     samples: Mapping[str, np.ndarray] | np.ndarray = None,
+    dataset_id: int = None,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     height: float = 2.5,
@@ -22,6 +23,7 @@ def pairs_samples(
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     show_single_legend: bool = False,
+    markersize: float = 40,
     **kwargs,
 ) -> sns.PairGrid:
     """
@@ -32,6 +34,8 @@ def pairs_samples(
     ----------
     samples     : dict[str, Tensor], default: None
         Sample draws from any dataset
+    dataset_id: Optional ID of the dataset for whose posterior the pair plots shall be generated.
+        Should only be specified if estimates contain posterior draws from multiple datasets.
     variable_keys       : list or None, optional, default: None
        Select keys from the dictionary provided in samples.
        By default, select all keys.
@@ -52,15 +56,23 @@ def pairs_samples(
     show_single_legend : bool, optional, default: False
         Optional toggle for the user to choose whether a single dataset
         should also display legend
+    markersize  : float, optional, default: 40
+        Marker size in points**2 of the scatter plot.
     **kwargs    : dict, optional
         Additional keyword arguments passed to the sns.PairGrid constructor
     """
 
     plot_data = dicts_to_arrays(
         estimates=samples,
+        dataset_ids=dataset_id,
         variable_keys=variable_keys,
         variable_names=variable_names,
     )
+    # dicts_to_arrays will keep the dataset axis even if it is of length 1
+    # however, pairs plotting requires the dataset axis to be removed
+    estimates_shape = plot_data["estimates"].shape
+    if len(estimates_shape) == 3 and estimates_shape[0] == 1:
+        plot_data["estimates"] = np.squeeze(plot_data["estimates"], axis=0)
 
     g = _pairs_samples(
         plot_data=plot_data,
@@ -71,6 +83,7 @@ def pairs_samples(
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
         show_single_legend=show_single_legend,
+        markersize=markersize,
         **kwargs,
     )
 
@@ -88,6 +101,9 @@ def _pairs_samples(
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
     show_single_legend: bool = False,
+    markersize: float = 40,
+    target_markersize: float = 40,
+    target_color: str = "red",
     **kwargs,
 ) -> sns.PairGrid:
     """
@@ -101,6 +117,12 @@ def _pairs_samples(
     color2      : str, optional, default: 'gray'
         Secondary color for the pair plots.
         This is the color used for the prior draws.
+    markersize  : float, optional, default: 40
+        Marker size in points**2 of the scatter plot.
+    target_markersize  : float, optional, default: 40
+        Target marker size in points**2 of the scatter plot.
+    target_color : str, optional, default: "red"
+        Target marker color for the legend.
 
     Other arguments are documented in pairs_samples
     """
@@ -133,6 +155,7 @@ def _pairs_samples(
             height=height,
             hue="_source",
             palette=[color2, color],
+            diag_sharey=False,
             **kwargs,
         )
 
@@ -158,14 +181,14 @@ def _pairs_samples(
     )
 
     # add scatter plots to the upper diagonal
-    g.map_upper(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
+    g.map_upper(sns.scatterplot, alpha=0.6, s=markersize, edgecolor="k", color=color, lw=0)
 
     # add KDEs to the lower diagonal
     try:
-        g.map_lower(sns.kdeplot, fill=True, color=color, alpha=alpha)
+        g.map_lower(sns.kdeplot, fill=True, color=color, alpha=alpha, common_norm=False)
     except Exception as e:
         logging.exception("KDE failed due to the following exception:\n" + repr(e) + "\nSubstituting scatter plot.")
-        g.map_lower(sns.scatterplot, alpha=0.6, s=40, edgecolor="k", color=color, lw=0)
+        g.map_lower(sns.scatterplot, alpha=0.6, s=markersize, edgecolor="k", color=color, lw=0)
 
     # Generate grids
     dim = g.axes.shape[0]
@@ -199,6 +222,9 @@ def _pairs_samples(
         legend_fontsize=legend_fontsize,
         label=label,
         show_single_legend=show_single_legend,
+        markersize=markersize,
+        target_markersize=target_markersize,
+        target_color=target_color,
     )
 
     # Return figure

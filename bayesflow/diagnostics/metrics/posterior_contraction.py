@@ -10,7 +10,7 @@ def posterior_contraction(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
-    aggregation: Callable = np.median,
+    aggregation: Callable | None = np.median,
 ) -> dict[str, any]:
     """
     Computes the posterior contraction (PC) from prior to posterior for the given samples.
@@ -27,8 +27,9 @@ def posterior_contraction(
        By default, select all keys.
     variable_names : Sequence[str], optional (default = None)
         Optional variable names to show in the output.
-    aggregation    : callable, optional (default = np.median)
+    aggregation    : callable or None, optional (default = np.median)
         Function to aggregate the PC across draws. Typically `np.mean` or `np.median`.
+        If None is provided, the individual values are returned.
 
     Returns
     -------
@@ -36,7 +37,7 @@ def posterior_contraction(
         Dictionary containing:
 
         - "values" : float or np.ndarray
-            The aggregated posterior contraction per variable
+            The (optionally aggregated) posterior contraction per variable
         - "metric_name" : str
             The name of the metric ("Posterior Contraction").
         - "variable_names" : str
@@ -59,6 +60,7 @@ def posterior_contraction(
     post_vars = samples["estimates"].var(axis=1, ddof=1)
     prior_vars = samples["targets"].var(axis=0, keepdims=True, ddof=1)
     contraction = np.clip(1 - (post_vars / prior_vars), 0, 1)
-    contraction = aggregation(contraction, axis=0)
+    if aggregation is not None:
+        contraction = aggregation(contraction, axis=0)
     variable_names = samples["estimates"].variable_names
     return {"values": contraction, "metric_name": "Posterior Contraction", "variable_names": variable_names}

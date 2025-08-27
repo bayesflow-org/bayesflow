@@ -117,6 +117,9 @@ class Standardization(keras.Layer):
                     case "left_side_scale":
                         # x_ij = sigma_i * x_ij'
                         out = val * keras.ops.moveaxis(std, -1, -2)
+                    case "right_side_scale_inverse":
+                        # x_ij = x_ij' / sigma_j
+                        out = val / std
                     case _:
                         out = val
 

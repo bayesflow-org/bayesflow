@@ -26,6 +26,7 @@ def recovery(
     num_row: int = None,
     xlabel: str = "Ground truth",
     ylabel: str = "Estimate",
+    markersize: float = None,
     **kwargs,
 ) -> plt.Figure:
     """
@@ -76,8 +77,10 @@ def recovery(
         The number of rows for the subplots. Dynamically determined if None.
     num_col           : int, optional, default: None
         The number of columns for the subplots. Dynamically determined if None.
-    xlabel:
-    ylabel:
+    xlabel :
+    ylabel :
+    markersize        : float, optional, default: None
+        The marker size in points.
 
     Returns
     -------
@@ -122,10 +125,18 @@ def recovery(
                 fmt="o",
                 alpha=0.5,
                 color=color,
+                markersize=markersize,
                 **kwargs,
             )
         else:
-            _ = ax.scatter(targets[:, i], point_estimate[:, i], alpha=0.5, color=color, **kwargs)
+            _ = ax.scatter(
+                targets[:, i],
+                point_estimate[:, i],
+                alpha=0.5,
+                color=color,
+                s=None if markersize is None else markersize**2,
+                **kwargs,
+            )
 
         make_quadratic(ax, targets[:, i], point_estimate[:, i])
 

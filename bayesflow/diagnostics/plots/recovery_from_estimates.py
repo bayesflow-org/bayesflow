@@ -25,6 +25,7 @@ def recovery_from_estimates(
     num_row: int = None,
     xlabel: str = "Ground truth",
     ylabel: str = "Estimate",
+    markersize: float = None,
     **kwargs,
 ) -> plt.Figure:
     """
@@ -79,8 +80,10 @@ def recovery_from_estimates(
         The number of rows for the subplots. Dynamically determined if None.
     num_col           : int, optional, default: None
         The number of columns for the subplots. Dynamically determined if None.
-    xlabel:
-    ylabel:
+    xlabel            :
+    ylabel            :
+    markersize        : float, optional, default: None
+        The marker size in points.
 
     Returns
     -------
@@ -139,6 +142,7 @@ def recovery_from_estimates(
                 marker=markers[q_idx],
                 alpha=0.5,
                 color=color,
+                s=None if markersize is None else markersize**2,
                 **kwargs,
             )
 

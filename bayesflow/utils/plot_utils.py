@@ -374,6 +374,9 @@ def create_legends(
     label: str = "Posterior",
     show_single_legend: bool = False,
     legend_fontsize: int = 14,
+    markersize: float = 40,
+    target_color: str = "red",
+    target_markersize: float = 40,
 ):
     """
     Helper function to create legends for pairplots.
@@ -395,6 +398,12 @@ def create_legends(
         should also display legend
     legend_fontsize    : int, optional, default: 14
         fontsize for the legend
+    markersize  : float, optional, default: 40
+        The marker size in points**2
+    target_color : str, optional, default: "red"
+        Color for the target label
+    target_markersize : float, optional, default: 40
+        Marker size in points**2 of the target marker
     """
     handles = []
     labels = []
@@ -411,7 +420,15 @@ def create_legends(
     labels.append(posterior_label)
 
     if plot_data.get("targets") is not None:
-        target_handle = plt.Line2D([0], [0], color="r", linestyle="--", marker="x", label="Targets")
+        target_handle = plt.Line2D(
+            [0],
+            [0],
+            color=target_color,
+            linestyle="--",
+            marker="x",
+            markersize=np.sqrt(target_markersize),
+            label="Targets",
+        )
         target_label = "Targets"
         handles.append(target_handle)
         labels.append(target_label)

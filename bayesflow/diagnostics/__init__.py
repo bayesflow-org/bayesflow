@@ -5,6 +5,7 @@ A collection of plotting utilities and metrics for evaluating trained :py:class:
 from .metrics import (
     bootstrap_comparison,
     calibration_error,
+    calibration_log_gamma,
     posterior_contraction,
     summary_space_comparison,
 )
@@ -18,7 +19,9 @@ from .plots import (
     mc_confusion_matrix,
     mmd_hypothesis_test,
     pairs_posterior,
+    pairs_quantity,
     pairs_samples,
+    plot_quantity,
     recovery,
     recovery_from_estimates,
     z_score_contraction,

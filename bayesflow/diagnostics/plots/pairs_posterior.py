@@ -1,7 +1,6 @@
-from collections.abc import Sequence, Mapping
+from collections.abc import Mapping, Sequence
 
 import matplotlib.pyplot as plt
-
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -19,11 +18,13 @@ def pairs_posterior(
     dataset_id: int = None,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
-    height: int = 3,
+    height: float = 3.0,
     post_color: str | tuple = "#132a70",
     prior_color: str | tuple = "gray",
     target_color: str | tuple = "red",
     alpha: float = 0.9,
+    markersize: float = 40,
+    target_markersize: float = 40,
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
@@ -62,6 +63,10 @@ def pairs_posterior(
         The color for the optional true parameter lines and points
     alpha             : float in [0, 1], optional, default: 0.9
         The opacity of the posterior plots
+    markersize        : float, optional, default: 40
+        The marker size in points**2 of the scatter plots
+    target_markersize : float, optional, default: 40
+        The marker size in points**2 of the target marker
 
     **kwargs          : dict, optional, default: {}
         Further optional keyword arguments propagated to `_pairs_samples`
@@ -101,6 +106,9 @@ def pairs_posterior(
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
         legend_fontsize=legend_fontsize,
+        markersize=markersize,
+        target_markersize=target_markersize,
+        target_color=target_color,
         **kwargs,
     )
 
@@ -114,7 +122,7 @@ def pairs_posterior(
         g.data = pd.DataFrame(targets, columns=targets.variable_names)
         g.data["_source"] = "True Parameter"
         g.map_diag(plot_true_params_as_lines, color=target_color)
-        g.map_offdiag(plot_true_params_as_points, color=target_color)
+        g.map_offdiag(plot_true_params_as_points, color=target_color, s=target_markersize)
 
         create_legends(
             g,
@@ -123,6 +131,8 @@ def pairs_posterior(
             color2=prior_color,
             legend_fontsize=legend_fontsize,
             show_single_legend=False,
+            target_color=target_color,
+            target_markersize=target_markersize,
         )
 
     return g

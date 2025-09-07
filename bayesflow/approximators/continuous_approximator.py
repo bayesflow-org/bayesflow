@@ -535,7 +535,10 @@ class ContinuousApproximator(Approximator):
             inference_conditions = keras.ops.broadcast_to(
                 inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
-            batch_shape = keras.ops.shape(inference_conditions)[:-1]
+            batch_shape = (
+                batch_size,
+                num_samples,
+            )
         else:
             batch_shape = (num_samples,)
 

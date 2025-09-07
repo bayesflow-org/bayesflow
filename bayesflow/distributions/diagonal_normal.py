@@ -91,7 +91,7 @@ class DiagonalNormal(Distribution):
         result = -0.5 * ops.sum((samples - self._mean) ** 2 / self._std**2, axis=-1)
 
         if normalize:
-            log_normalization_constant = -0.5 * ops.sum(self.dims) * math.log(2.0 * math.pi) - ops.sum(
+            log_normalization_constant = -0.5 * np.sum(self.dims) * math.log(2.0 * math.pi) - ops.sum(
                 ops.log(self._std)
             )
             result += log_normalization_constant

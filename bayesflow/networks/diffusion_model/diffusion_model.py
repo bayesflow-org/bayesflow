@@ -583,7 +583,7 @@ class DiffusionModel(InferenceNetwork):
 
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:1] + (1,))
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         # Compute individual dataset scores

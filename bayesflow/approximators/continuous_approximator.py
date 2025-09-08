@@ -697,7 +697,7 @@ class ContinuousApproximator(Approximator):
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         # Back-transform quantities and samples
-        samples = self._back_transform_compositional(samples, original_shapes, **kwargs)
+        samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
 
         if split:
             samples = split_arrays(samples, axis=-1)
@@ -752,54 +752,3 @@ class ContinuousApproximator(Approximator):
             compositional=True,
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
-
-    def _back_transform_compositional(
-        self, samples: dict[str, np.ndarray], original_shapes: dict[str, tuple], **kwargs
-    ) -> dict[str, np.ndarray]:
-        """
-        Back-transform compositional samples, handling the extra compositional dimension.
-        """
-        # Get the sample shape to understand the compositional structure
-        inference_samples = samples["inference_variables"]
-        sample_shape = inference_samples.shape
-
-        # Determine compositional dimensions from original shapes
-        # Assuming all condition keys have the same compositional structure
-        first_key = next(iter(original_shapes.keys()))
-        n_datasets, n_compositional = original_shapes[first_key][:2]
-
-        # Reshape samples to match compositional structure if needed
-        if len(sample_shape) == 3:  # (n_datasets * n_comp, num_samples, ..., dims)
-            num_samples, dims = sample_shape[1], sample_shape[2:]
-            inference_samples = inference_samples.reshape(n_datasets, n_compositional, num_samples, *dims)
-            samples["inference_variables"] = inference_samples
-
-        # For back-transformation, we might need to flatten again temporarily
-        # depending on how the adapter expects the data
-        flattened_samples = {}
-        for key, value in samples.items():
-            if len(value.shape) == 4:  # (n_datasets, n_comp, num_samples, ...,  dims)
-                n_d, n_c, n_s = value.shape[:3]
-                dims = value.shape[3:]
-                flattened_samples[key] = value.reshape(n_d * n_c, n_s, *dims)
-            else:
-                flattened_samples[key] = value
-
-        # Apply inverse transformation
-        transformed = self.adapter(flattened_samples, inverse=True, strict=False, **kwargs)
-
-        # Reshape back to compositional structure
-        final_samples = {}
-        for key, value in transformed.items():
-            if key in original_shapes:
-                # Reshape to include compositional dimension
-                if len(value.shape) >= 2:
-                    num_samples = value.shape[1]
-                    remaining_dims = value.shape[2:] if len(value.shape) > 2 else ()
-                    final_samples[key] = value.reshape(n_datasets, n_compositional, num_samples, *remaining_dims)
-                else:
-                    final_samples[key] = value
-            else:
-                final_samples[key] = value
-
-        return final_samples

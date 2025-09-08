@@ -619,7 +619,6 @@ class DiffusionModel(InferenceNetwork):
             # ODE: dz = [f(z,t) - 0.5 * g(t)² * score(z,t)] dt
             velocity = f - 0.5 * g_squared * compositional_score
 
-        print(velocity.shape, velocity)
         return velocity
 
     def _compute_individual_scores(
@@ -684,7 +683,7 @@ class DiffusionModel(InferenceNetwork):
         score = (alpha_flat * x_pred - xz_flat) / ops.square(sigma_flat)
 
         # Reshape back to compositional structure
-        score = ops.reshape(score, (n_datasets, n_compositional, num_samples))
+        score = ops.reshape(score, (n_datasets, n_compositional, num_samples) + dims)
         return score
 
     def _forward_compositional(

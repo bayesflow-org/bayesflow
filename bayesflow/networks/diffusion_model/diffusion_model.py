@@ -598,7 +598,7 @@ class DiffusionModel(InferenceNetwork):
         time_tensor = ops.cast(time, dtype=ops.dtype(xz))
 
         # Sum individual scores across compositional dimension
-        summed_individual_scores = ops.sum(individual_scores, axis=1, keepdims=True)
+        summed_individual_scores = ops.sum(individual_scores, axis=1)
 
         # Prior contribution: (1-n)(1-t) * prior_score
         prior_weight = (1.0 - n) * (1.0 - time_tensor)
@@ -608,7 +608,7 @@ class DiffusionModel(InferenceNetwork):
         compositional_score = weighted_prior + summed_individual_scores
 
         # Broadcast back to full compositional shape
-        compositional_score = ops.broadcast_to(compositional_score, ops.shape(xz))
+        # compositional_score = ops.broadcast_to(compositional_score, ops.shape(xz))
 
         # Compute velocity using standard drift-diffusion formulation
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)

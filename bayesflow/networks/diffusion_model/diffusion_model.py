@@ -568,7 +568,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         stochastic_solver: bool,
         conditions: Tensor,
-        mini_batch_idx: Sequence | None,
+        mini_batch_size: int | None = None,
         training: bool = False,
     ) -> Tensor:
         """
@@ -585,8 +585,8 @@ class DiffusionModel(InferenceNetwork):
             Whether to use stochastic (SDE) or deterministic (ODE) formulation
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
-        mini_batch_idx : Sequence
-            Indices for mini-batch selection along the compositional axis.
+        mini_batch_size : int or None
+            Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
             Whether in training mode
 
@@ -609,7 +609,10 @@ class DiffusionModel(InferenceNetwork):
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         # Compute individual dataset scores
-        if mini_batch_idx is not None:
+        if mini_batch_size is not None and mini_batch_size < n_compositional:
+            # sample random indices for mini-batch processing
+            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
+            mini_batch_idx = mini_batch_idx[:mini_batch_size]
             conditions_batch = conditions[:, mini_batch_idx]
         else:
             conditions_batch = conditions
@@ -720,6 +723,14 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | kwargs
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
 
+        if mini_batch_size is not None:
+            # if backend is jax, mini batching does not work
+            if ops.__name__ == "jax":
+                raise ValueError(
+                    "Mini batching is not supported with JAX backend. Set mini_batch_size to None "
+                    "or use another backend."
+                )
+
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
         n_compositional = ops.shape(conditions)[1]
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))
@@ -730,19 +741,12 @@ class DiffusionModel(InferenceNetwork):
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
-                if mini_batch_size is not None and mini_batch_size < n_compositional:
-                    # sample random indices for mini-batch processing
-                    mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
-                    mini_batch_idx = mini_batch_idx[:mini_batch_size]
-                else:
-                    mini_batch_idx = None
-
                 v = self.compositional_velocity(
                     xz,
                     time=time,
                     stochastic_solver=False,
                     conditions=conditions,
-                    mini_batch_idx=mini_batch_idx,
+                    mini_batch_size=mini_batch_size,
                     training=training,
                 )
                 trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
@@ -763,20 +767,13 @@ class DiffusionModel(InferenceNetwork):
         if integrate_kwargs["method"] == "euler_maruyama":
 
             def deltas(time, xz):
-                if mini_batch_size is not None and mini_batch_size < n_compositional:
-                    # sample random indices for mini-batch processing
-                    mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
-                    mini_batch_idx = mini_batch_idx[:mini_batch_size]
-                else:
-                    mini_batch_idx = None
-
                 return {
                     "xz": self.compositional_velocity(
                         xz,
                         time=time,
                         stochastic_solver=True,
                         conditions=conditions,
-                        mini_batch_idx=mini_batch_idx,
+                        mini_batch_size=mini_batch_size,
                         training=training,
                     )
                 }
@@ -794,20 +791,13 @@ class DiffusionModel(InferenceNetwork):
         else:
 
             def deltas(time, xz):
-                if mini_batch_size is not None and mini_batch_size < n_compositional:
-                    # sample random indices for mini-batch processing
-                    mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
-                    mini_batch_idx = mini_batch_idx[:mini_batch_size]
-                else:
-                    mini_batch_idx = None
-
                 return {
                     "xz": self.compositional_velocity(
                         xz,
                         time=time,
                         stochastic_solver=False,
                         conditions=conditions,
-                        mini_batch_idx=mini_batch_idx,
+                        mini_batch_size=mini_batch_size,
                         training=training,
                     )
                 }
@@ -819,4 +809,5 @@ class DiffusionModel(InferenceNetwork):
 
     @staticmethod
     def compute_prior_score(xz: Tensor) -> Tensor:
-        raise NotImplementedError("Please implement the prior score computation method.")
+        return ops.ones_like(xz)
+        # raise NotImplementedError("Please implement the prior score computation method.")

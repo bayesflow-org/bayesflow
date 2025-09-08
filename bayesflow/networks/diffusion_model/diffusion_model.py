@@ -568,7 +568,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         stochastic_solver: bool,
         conditions: Tensor,
-        mini_batch_size: int | None,
+        mini_batch_idx: Sequence | None,
         training: bool = False,
     ) -> Tensor:
         """
@@ -585,8 +585,8 @@ class DiffusionModel(InferenceNetwork):
             Whether to use stochastic (SDE) or deterministic (ODE) formulation
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
-        mini_batch_size : int or None
-            Size of mini-batches for processing compositional conditions to save memory.
+        mini_batch_idx : Sequence
+            Indices for mini-batch selection along the compositional axis.
         training : bool, optional
             Whether in training mode
 
@@ -608,14 +608,11 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-        if mini_batch_size is not None and mini_batch_size < n_compositional:
-            # sample random indices for mini-batch processing
-            idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
-            conditions_batch = conditions[:, idx[:mini_batch_size]]
+        # Compute individual dataset scores
+        if mini_batch_idx is not None:
+            conditions_batch = conditions[:, mini_batch_idx]
         else:
             conditions_batch = conditions
-
-        # Compute individual dataset scores
         individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions_batch, training)
 
         # Compute prior score component
@@ -707,73 +704,6 @@ class DiffusionModel(InferenceNetwork):
         score = ops.reshape(score, (n_datasets, n_compositional, num_samples) + dims)
         return score
 
-    def _forward_compositional(
-        self,
-        x: Tensor,
-        conditions: Tensor = None,
-        density: bool = False,
-        training: bool = False,
-        **kwargs,
-    ) -> Tensor | tuple[Tensor, Tensor]:
-        """
-        Forward pass for compositional diffusion.
-        """
-        integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
-        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
-        integrate_kwargs = integrate_kwargs | kwargs
-        mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
-
-        if integrate_kwargs["method"] == "euler_maruyama":
-            raise ValueError("Stochastic methods are not supported for forward integration.")
-
-        # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
-        scale_latent = ops.shape(conditions)[1] * self.compositional_bridge(ops.ones(1))
-        x = x / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(x)))
-
-        if density:
-
-            def deltas(time, xz):
-                v = self.compositional_velocity(
-                    xz,
-                    time=time,
-                    stochastic_solver=False,
-                    conditions=conditions,
-                    mini_batch_size=mini_batch_size,
-                    training=training,
-                )
-                # For density, we need trace but compositional trace is complex
-                # Simplified version - could be extended
-                trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
-                return {"xz": v, "trace": trace}
-
-            state = {
-                "xz": x,
-                "trace": ops.zeros(ops.shape(x)[:-1] + (1,), dtype=ops.dtype(x)),
-            }
-            state = integrate(deltas, state, **integrate_kwargs)
-
-            z = state["xz"]
-            # Simplified density computation
-            log_density = self.base_distribution.log_prob(ops.mean(z, axis=1)) + ops.squeeze(state["trace"], axis=-1)
-            return z, log_density
-
-        def deltas(time, xz):
-            return {
-                "xz": self.compositional_velocity(
-                    xz,
-                    time=time,
-                    stochastic_solver=False,
-                    conditions=conditions,
-                    mini_batch_size=mini_batch_size,
-                    training=training,
-                )
-            }
-
-        state = {"xz": x}
-        state = integrate(deltas, state, **integrate_kwargs)
-        z = state["xz"]
-        return z
-
     def _inverse_compositional(
         self,
         z: Tensor,
@@ -790,6 +720,17 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | kwargs
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
 
+        # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
+        n_compositional = ops.shape(conditions)[1]
+        scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))
+        z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
+
+        if mini_batch_size is not None and mini_batch_size < n_compositional:
+            # sample random indices for mini-batch processing
+            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
+        else:
+            mini_batch_idx = None
+
         if density:
             if integrate_kwargs["method"] == "euler_maruyama":
                 raise ValueError("Stochastic methods are not supported for density computation.")
@@ -800,7 +741,7 @@ class DiffusionModel(InferenceNetwork):
                     time=time,
                     stochastic_solver=False,
                     conditions=conditions,
-                    mini_batch_size=mini_batch_size,
+                    mini_batch_idx=mini_batch_idx,
                     training=training,
                 )
                 trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
@@ -827,7 +768,7 @@ class DiffusionModel(InferenceNetwork):
                         time=time,
                         stochastic_solver=True,
                         conditions=conditions,
-                        mini_batch_size=mini_batch_size,
+                        mini_batch_idx=mini_batch_idx,
                         training=training,
                     )
                 }
@@ -851,7 +792,7 @@ class DiffusionModel(InferenceNetwork):
                         time=time,
                         stochastic_solver=False,
                         conditions=conditions,
-                        mini_batch_size=mini_batch_size,
+                        mini_batch_idx=mini_batch_idx,
                         training=training,
                     )
                 }

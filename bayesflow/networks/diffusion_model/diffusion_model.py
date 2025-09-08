@@ -579,7 +579,6 @@ class DiffusionModel(InferenceNetwork):
 
         # Get shapes for compositional structure
         n_compositional = ops.shape(conditions)[1]
-        print(ops.shape(xz), ops.shape(conditions))  # (1, 100, 2), (1, 2, 100, 2)
 
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
@@ -587,8 +586,6 @@ class DiffusionModel(InferenceNetwork):
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         # Compute individual dataset scores
-        print(xz.shape, log_snr_t.shape, alpha_t.shape, sigma_t.shape, conditions.shape)
-        # (1, 100, 2) (1, 100, 1) (1, 100, 1) (1, 100, 1) (1, 2, 100, 2)
         individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions, training)
 
         # Compute prior score component
@@ -659,19 +656,19 @@ class DiffusionModel(InferenceNetwork):
 
         # Expand noise schedule components to match compositional structure
         log_snr_expanded = ops.expand_dims(transformed_log_snr, axis=1)
-        log_snr_expanded = ops.broadcast_to(log_snr_expanded, (n_datasets, n_compositional, num_samples) + dims)
+        log_snr_expanded = ops.broadcast_to(log_snr_expanded, (n_datasets, n_compositional, num_samples, 1))
 
         alpha_expanded = ops.expand_dims(alpha_t, axis=1)
-        alpha_expanded = ops.broadcast_to(alpha_expanded, (n_datasets, n_compositional, num_samples) + dims)
+        alpha_expanded = ops.broadcast_to(alpha_expanded, (n_datasets, n_compositional, num_samples, 1))
 
         sigma_expanded = ops.expand_dims(sigma_t, axis=1)
-        sigma_expanded = ops.broadcast_to(sigma_expanded, (n_datasets, n_compositional, num_samples) + dims)
+        sigma_expanded = ops.broadcast_to(sigma_expanded, (n_datasets, n_compositional, num_samples, 1))
 
         # Flatten for subnet application: (n_datasets * n_compositional, num_samples, ..., dims)
         xz_flat = ops.reshape(xz_expanded, (n_datasets * n_compositional, num_samples) + dims)
-        log_snr_flat = ops.reshape(log_snr_expanded, (n_datasets * n_compositional, num_samples) + dims)
-        alpha_flat = ops.reshape(alpha_expanded, (n_datasets * n_compositional, num_samples) + dims)
-        sigma_flat = ops.reshape(sigma_expanded, (n_datasets * n_compositional, num_samples) + dims)
+        log_snr_flat = ops.reshape(log_snr_expanded, (n_datasets * n_compositional, num_samples, 1))
+        alpha_flat = ops.reshape(alpha_expanded, (n_datasets * n_compositional, num_samples, 1))
+        sigma_flat = ops.reshape(sigma_expanded, (n_datasets * n_compositional, num_samples, 1))
         conditions_flat = ops.reshape(conditions, (n_datasets * n_compositional, num_samples) + conditions_dims)
 
         # Apply subnet

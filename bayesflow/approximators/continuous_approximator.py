@@ -691,7 +691,6 @@ class ContinuousApproximator(Approximator):
 
         # Prepare prior scores to handle adapter
         def compute_prior_score_pre(_samples: Tensor) -> Tensor:
-            return keras.ops.zeros_like(_samples)
             if "inference_variables" in self.standardize:
                 _samples, log_det_jac_standardize = self.standardize_layers["inference_variables"](
                     _samples, forward=False, log_det_jac=True
@@ -707,7 +706,8 @@ class ContinuousApproximator(Approximator):
                 prior_score[key] = prior_score[key]
                 if len(log_det_jac) > 0:
                     prior_score[key] += log_det_jac[key]
-                prior_score[key] = keras.ops.convert_to_tensor(prior_score[key])
+
+            prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
             # make a tensor
             out = keras.ops.concatenate(
                 list(prior_score.values()), axis=-1

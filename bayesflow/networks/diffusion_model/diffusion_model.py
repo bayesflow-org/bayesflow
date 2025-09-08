@@ -550,6 +550,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         stochastic_solver: bool,
         conditions: Tensor,
+        mini_batch_size: int | None,
         training: bool = False,
     ) -> Tensor:
         """
@@ -566,6 +567,8 @@ class DiffusionModel(InferenceNetwork):
             Whether to use stochastic (SDE) or deterministic (ODE) formulation
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+        mini_batch_size : int or None
+            Size of mini-batches for processing compositional conditions to save memory.
         training : bool, optional
             Whether in training mode
 
@@ -579,35 +582,35 @@ class DiffusionModel(InferenceNetwork):
 
         # Get shapes for compositional structure
         n_compositional = ops.shape(conditions)[1]
+        n = ops.cast(n_compositional, dtype=ops.dtype(time))
+        time_tensor = ops.cast(time, dtype=ops.dtype(xz))
 
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
+        if mini_batch_size is not None and mini_batch_size < n_compositional:
+            # sample random indices for mini-batch processing
+            idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
+            conditions_batch = conditions[:, idx[:mini_batch_size]]
+        else:
+            conditions_batch = conditions
+
         # Compute individual dataset scores
-        individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions, training)
+        individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions_batch, training)
 
         # Compute prior score component
         prior_score = self.compute_prior_score(xz)
 
-        # Combine scores using compositional formula
-        # s_ψ(θ,t,Y) = (1-n)(1-t) ∇_θ log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
-        n = ops.cast(n_compositional, dtype=ops.dtype(time))
-        time_tensor = ops.cast(time, dtype=ops.dtype(xz))
+        # Combine scores using compositional formula, mean over individual scores and scale with n to get sum
+        summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
 
-        # Sum individual scores across compositional dimension
-        summed_individual_scores = ops.sum(individual_scores, axis=1)
-
-        # Prior contribution: (1-n)(1-t) * prior_score
-        prior_weight = (1.0 - n) * (1.0 - time_tensor)
-        weighted_prior = prior_weight * prior_score
+        # Prior contribution
+        weighted_prior_score = (1.0 - n) * (1.0 - time_tensor) * prior_score
 
         # Combined score
-        compositional_score = weighted_prior + summed_individual_scores
-
-        # Broadcast back to full compositional shape
-        # compositional_score = ops.broadcast_to(compositional_score, ops.shape(xz))
+        compositional_score = weighted_prior_score + summed_individual_scores
 
         # Compute velocity using standard drift-diffusion formulation
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
@@ -700,6 +703,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
+        mini_batch_size = integrate_kwargs.get("mini_batch_size", None)
 
         if integrate_kwargs["method"] == "euler_maruyama":
             raise ValueError("Stochastic methods are not supported for forward integration.")
@@ -711,7 +715,12 @@ class DiffusionModel(InferenceNetwork):
 
             def deltas(time, xz):
                 v = self.compositional_velocity(
-                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                    xz,
+                    time=time,
+                    stochastic_solver=False,
+                    conditions=conditions,
+                    mini_batch_size=mini_batch_size,
+                    training=training,
                 )
                 # For density, we need trace but compositional trace is complex
                 # Simplified version - could be extended
@@ -732,7 +741,12 @@ class DiffusionModel(InferenceNetwork):
         def deltas(time, xz):
             return {
                 "xz": self.compositional_velocity(
-                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                    xz,
+                    time=time,
+                    stochastic_solver=False,
+                    conditions=conditions,
+                    mini_batch_size=mini_batch_size,
+                    training=training,
                 )
             }
 
@@ -755,6 +769,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
+        mini_batch_size = integrate_kwargs.get("mini_batch_size", None)
 
         if density:
             if integrate_kwargs["method"] == "euler_maruyama":
@@ -762,7 +777,12 @@ class DiffusionModel(InferenceNetwork):
 
             def deltas(time, xz):
                 v = self.compositional_velocity(
-                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                    xz,
+                    time=time,
+                    stochastic_solver=False,
+                    conditions=conditions,
+                    mini_batch_size=mini_batch_size,
+                    training=training,
                 )
                 trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
                 return {"xz": v, "trace": trace}
@@ -784,7 +804,12 @@ class DiffusionModel(InferenceNetwork):
             def deltas(time, xz):
                 return {
                     "xz": self.compositional_velocity(
-                        xz, time=time, stochastic_solver=True, conditions=conditions, training=training
+                        xz,
+                        time=time,
+                        stochastic_solver=True,
+                        conditions=conditions,
+                        mini_batch_size=mini_batch_size,
+                        training=training,
                     )
                 }
 
@@ -803,7 +828,12 @@ class DiffusionModel(InferenceNetwork):
             def deltas(time, xz):
                 return {
                     "xz": self.compositional_velocity(
-                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                        xz,
+                        time=time,
+                        stochastic_solver=False,
+                        conditions=conditions,
+                        mini_batch_size=mini_batch_size,
+                        training=training,
                     )
                 }
 

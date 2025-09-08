@@ -672,7 +672,7 @@ class DiffusionModel(InferenceNetwork):
 
         return score
 
-    def _compositional_forward(
+    def _forward_compositional(
         self,
         x: Tensor,
         conditions: Tensor = None,
@@ -727,7 +727,7 @@ class DiffusionModel(InferenceNetwork):
         z = state["xz"]
         return z
 
-    def _compositional_inverse(
+    def _inverse_compositional(
         self,
         z: Tensor,
         conditions: Tensor = None,

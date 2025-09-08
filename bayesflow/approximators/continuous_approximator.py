@@ -14,6 +14,7 @@ from bayesflow.utils import (
     squeeze_inner_estimates_dict,
     concatenate_valid,
     concatenate_valid_shapes,
+    expand_right_as,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -690,29 +691,28 @@ class ContinuousApproximator(Approximator):
 
         # Prepare prior scores to handle adapter
         def compute_prior_score_pre(_samples: Tensor) -> Tensor:
+            return keras.ops.zeros_like(_samples)
             if "inference_variables" in self.standardize:
                 _samples, log_det_jac_standardize = self.standardize_layers["inference_variables"](
                     _samples, forward=False, log_det_jac=True
                 )
             else:
                 log_det_jac_standardize = 0
-            _samples = {"inference_variables": _samples}
-            _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, _samples)
+            _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": _samples})
             adapted_samples, log_det_jac = self.adapter(
                 _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
             )
             prior_score = compute_prior_score(adapted_samples)
-            prior_score_final = {}
-            for i, key in enumerate(adapted_samples):  # todo: assumes same order, might incorrect
-                prior_score_final[key] = prior_score[key]
-                if len(log_det_jac_standardize) > 0:
-                    prior_score_final[key] += log_det_jac_standardize[:, i]
+            for key in adapted_samples:
+                prior_score[key] = prior_score[key]
                 if len(log_det_jac) > 0:
-                    prior_score_final[key] += log_det_jac[:, i]
-                prior_score_final[key] = keras.ops.convert_to_tensor(prior_score_final[key])
+                    prior_score[key] += log_det_jac[key]
+                prior_score[key] = keras.ops.convert_to_tensor(prior_score[key])
             # make a tensor
-            out = keras.ops.concatenate(list(prior_score_final.values()), axis=-1)
-            return out
+            out = keras.ops.concatenate(
+                list(prior_score.values()), axis=-1
+            )  # todo: assumes same order, might be incorrect
+            return out + expand_right_as(log_det_jac_standardize, out)
 
         # Test prior score function, useful for debugging
         test = self.inference_network.base_distribution.sample((n_datasets, num_samples))

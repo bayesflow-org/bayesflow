@@ -579,7 +579,7 @@ class DiffusionModel(InferenceNetwork):
 
         # Get shapes for compositional structure
         n_compositional = ops.shape(conditions)[1]
-        print(ops.shape(xz), ops.shape(conditions))
+        print(ops.shape(xz), ops.shape(conditions))  # (1, 100, 2), (1, 2, 100, 2)
 
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
@@ -644,12 +644,13 @@ class DiffusionModel(InferenceNetwork):
         transformed_log_snr = self._transform_log_snr(log_snr_t)
 
         # Reshape for processing: flatten compositional dimension temporarily
-        original_shape = ops.shape(xz)
+        original_shape = ops.shape(conditions)
         n_datasets, n_comp = original_shape[0], original_shape[1]
-        remaining_dims = original_shape[2:]
 
         # Flatten for subnet application
-        xz_flat = ops.reshape(xz, (n_datasets * n_comp,) + remaining_dims)
+        xz_flat = ops.expand_dims(xz, axis=1)  # (n_datasets, 1, ...)
+        xz_flat = ops.broadcast_to(xz_flat, (n_datasets, n_comp) + ops.shape(xz)[1:])
+        xz_flat = ops.reshape(xz_flat, (n_datasets * n_comp,) + ops.shape(xz)[1:])
         log_snr_flat = ops.reshape(transformed_log_snr, (n_datasets * n_comp,) + ops.shape(transformed_log_snr)[2:])
         conditions_flat = ops.reshape(conditions, (n_datasets * n_comp,) + ops.shape(conditions)[2:])
         alpha_flat = ops.reshape(alpha_t, (n_datasets * n_comp,) + ops.shape(alpha_t)[2:])

@@ -731,7 +731,7 @@ class ContinuousApproximator(Approximator):
         if inference_conditions is not None:
             # Reshape conditions for compositional sampling
             # From (n_datasets * n_comp, ...., dims) to (n_datasets, n_comp, ...., dims)
-            condition_dims = keras.ops.shape(inference_conditions)[2:]
+            condition_dims = keras.ops.shape(inference_conditions)[1:]
             inference_conditions = keras.ops.reshape(
                 inference_conditions, (n_datasets, n_compositional, *condition_dims)
             )

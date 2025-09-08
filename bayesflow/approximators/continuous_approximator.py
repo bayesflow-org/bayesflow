@@ -701,12 +701,27 @@ class ContinuousApproximator(Approximator):
             adapted_samples, log_det_jac = self.adapter(
                 _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
             )
-            prior_score = keras.ops.convert_to_tensor(compute_prior_score(adapted_samples))
-            if log_det_jac is not None:
-                prior_score += keras.ops.convert_to_tensor(log_det_jac)
-            if log_det_jac_standardize is not None:
-                prior_score += keras.ops.convert_to_tensor(log_det_jac_standardize)
-            return prior_score
+            prior_score = compute_prior_score(adapted_samples)
+            prior_score_final = {}
+            for i, key in enumerate(adapted_samples):  # todo: assumes same order, might incorrect
+                prior_score_final[key] = prior_score[key]
+                if len(log_det_jac_standardize) > 0:
+                    prior_score_final[key] += log_det_jac_standardize[:, i]
+                if len(log_det_jac) > 0:
+                    prior_score_final[key] += log_det_jac[:, i]
+                prior_score_final[key] = keras.ops.convert_to_tensor(prior_score_final[key])
+            # make a tensor
+            out = keras.ops.concatenate(list(prior_score_final.values()), axis=-1)
+            return out
+
+        # Test prior score function, useful for debugging
+        test = self.inference_network.base_distribution.sample((n_datasets, num_samples))
+        test = compute_prior_score_pre(test)
+        if test.shape[:2] != (n_datasets, num_samples):
+            raise ValueError(
+                "The provided compute_prior_score function does not return the correct shape. "
+                f"Expected ({n_datasets}, {num_samples}, ...), got {test.shape}."
+            )
 
         # Sample using compositional sampling
         samples = self._compositional_sample(
@@ -778,7 +793,6 @@ class ContinuousApproximator(Approximator):
         return self.inference_network.sample(
             batch_shape,
             conditions=inference_conditions,
-            compositional=True,
             compute_prior_score=compute_prior_score,
             **filter_kwargs(kwargs, self.inference_network.sample),
         )

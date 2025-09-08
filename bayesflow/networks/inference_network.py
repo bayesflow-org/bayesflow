@@ -28,18 +28,32 @@ class InferenceNetwork(keras.Layer):
         conditions: Tensor = None,
         inverse: bool = False,
         density: bool = False,
-        compositional: bool = False,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         if inverse:
-            if compositional:
+            if compute_prior_score is not None:
                 return self._inverse_compositional(
                     xz, conditions=conditions, density=density, training=training, **kwargs
                 )
-            return self._inverse(xz, conditions=conditions, density=density, training=training, **kwargs)
-        if compositional:
-            return self._forward_compositional(xz, conditions=conditions, density=density, training=training, **kwargs)
+            return self._inverse(
+                xz,
+                conditions=conditions,
+                compute_prior_score=compute_prior_score,
+                density=density,
+                training=training,
+                **kwargs,
+            )
+        if compute_prior_score is not None:
+            return self._forward_compositional(
+                xz,
+                conditions=conditions,
+                compute_prior_score=compute_prior_score,
+                density=density,
+                training=training,
+                **kwargs,
+            )
         return self._forward(xz, conditions=conditions, density=density, training=training, **kwargs)
 
     def _forward(

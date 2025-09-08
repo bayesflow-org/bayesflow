@@ -725,17 +725,18 @@ class DiffusionModel(InferenceNetwork):
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))
         z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
 
-        if mini_batch_size is not None and mini_batch_size < n_compositional:
-            # sample random indices for mini-batch processing
-            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
-        else:
-            mini_batch_idx = None
-
         if density:
             if integrate_kwargs["method"] == "euler_maruyama":
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
+                if mini_batch_size is not None and mini_batch_size < n_compositional:
+                    # sample random indices for mini-batch processing
+                    mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
+                    mini_batch_idx = mini_batch_idx[:mini_batch_size]
+                else:
+                    mini_batch_idx = None
+
                 v = self.compositional_velocity(
                     xz,
                     time=time,
@@ -762,6 +763,13 @@ class DiffusionModel(InferenceNetwork):
         if integrate_kwargs["method"] == "euler_maruyama":
 
             def deltas(time, xz):
+                if mini_batch_size is not None and mini_batch_size < n_compositional:
+                    # sample random indices for mini-batch processing
+                    mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
+                    mini_batch_idx = mini_batch_idx[:mini_batch_size]
+                else:
+                    mini_batch_idx = None
+
                 return {
                     "xz": self.compositional_velocity(
                         xz,
@@ -786,6 +794,13 @@ class DiffusionModel(InferenceNetwork):
         else:
 
             def deltas(time, xz):
+                if mini_batch_size is not None and mini_batch_size < n_compositional:
+                    # sample random indices for mini-batch processing
+                    mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
+                    mini_batch_idx = mini_batch_idx[:mini_batch_size]
+                else:
+                    mini_batch_idx = None
+
                 return {
                     "xz": self.compositional_velocity(
                         xz,

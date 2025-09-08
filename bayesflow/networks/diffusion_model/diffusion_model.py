@@ -362,6 +362,7 @@ class DiffusionModel(InferenceNetwork):
         conditions: Tensor = None,
         density: bool = False,
         training: bool = False,
+        compositional: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
@@ -412,6 +413,7 @@ class DiffusionModel(InferenceNetwork):
         conditions: Tensor = None,
         density: bool = False,
         training: bool = False,
+        compositional: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
@@ -541,3 +543,262 @@ class DiffusionModel(InferenceNetwork):
 
         base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
         return base_metrics | {"loss": loss}
+
+    def compositional_velocity(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        conditions: Tensor,
+        training: bool = False,
+    ) -> Tensor:
+        """
+        Computes the compositional velocity for multiple datasets using the formula:
+        s_ψ(θ,t,Y) = (1-n)(1-t) ∇_θ log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable, shape (n_datasets, n_compositional, ...)
+        time : float or Tensor
+            Time step for the diffusion process
+        stochastic_solver : bool
+            Whether to use stochastic (SDE) or deterministic (ODE) formulation
+        conditions : Tensor
+            Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+        training : bool, optional
+            Whether in training mode
+
+        Returns
+        -------
+        Tensor
+            Compositional velocity of same shape as input xz
+        """
+        if conditions is None:
+            raise ValueError("Conditions are required for compositional sampling")
+
+        # Get shapes for compositional structure
+        n_datasets, n_compositional = ops.shape(xz)[0], ops.shape(xz)[1]
+        print(xz.shape, n_datasets, n_compositional)
+
+        # Calculate standard noise schedule components
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+
+        # Compute individual dataset scores
+        individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions, training)
+
+        # Compute prior score component
+        prior_score = self.compute_prior_score(xz)
+
+        # Combine scores using compositional formula
+        # s_ψ(θ,t,Y) = (1-n)(1-t) ∇_θ log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
+        n = ops.cast(n_compositional, dtype=ops.dtype(time))
+        time_tensor = ops.cast(time, dtype=ops.dtype(xz))
+
+        # Sum individual scores across compositional dimension
+        summed_individual_scores = ops.sum(individual_scores, axis=1, keepdims=True)
+
+        # Prior contribution: (1-n)(1-t) * prior_score
+        prior_weight = (1.0 - n) * (1.0 - time_tensor)
+        weighted_prior = prior_weight * prior_score
+
+        # Combined score
+        compositional_score = weighted_prior + summed_individual_scores
+
+        # Broadcast back to full compositional shape
+        compositional_score = ops.broadcast_to(compositional_score, ops.shape(xz))
+
+        # Compute velocity using standard drift-diffusion formulation
+        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
+
+        if stochastic_solver:
+            # SDE: dz = [f(z,t) - g(t)² * score(z,t)] dt + g(t) dW
+            velocity = f - g_squared * compositional_score
+        else:
+            # ODE: dz = [f(z,t) - 0.5 * g(t)² * score(z,t)] dt
+            velocity = f - 0.5 * g_squared * compositional_score
+
+        print(velocity.shape)
+        return velocity
+
+    def _compute_individual_scores(
+        self,
+        xz: Tensor,
+        log_snr_t: Tensor,
+        alpha_t: Tensor,
+        sigma_t: Tensor,
+        conditions: Tensor,
+        training: bool,
+    ) -> Tensor:
+        """
+        Compute individual dataset scores s_ψ(θ,t,yᵢ) for each compositional condition.
+
+        Returns
+        -------
+        Tensor
+            Individual scores with shape (n_datasets, n_compositional, ...)
+        """
+        # Apply subnet to each compositional condition separately
+        transformed_log_snr = self._transform_log_snr(log_snr_t)
+
+        # Reshape for processing: flatten compositional dimension temporarily
+        original_shape = ops.shape(xz)
+        n_datasets, n_comp = original_shape[0], original_shape[1]
+        remaining_dims = original_shape[2:]
+
+        # Flatten for subnet application
+        xz_flat = ops.reshape(xz, (n_datasets * n_comp,) + remaining_dims)
+        log_snr_flat = ops.reshape(transformed_log_snr, (n_datasets * n_comp,) + ops.shape(transformed_log_snr)[2:])
+        conditions_flat = ops.reshape(conditions, (n_datasets * n_comp,) + ops.shape(conditions)[2:])
+        alpha_flat = ops.reshape(alpha_t, (n_datasets * n_comp,) + ops.shape(alpha_t)[2:])
+        sigma_flat = ops.reshape(sigma_t, (n_datasets * n_comp,) + ops.shape(sigma_t)[2:])
+
+        # Apply subnet
+        subnet_out = self._apply_subnet(xz_flat, log_snr_flat, conditions=conditions_flat, training=training)
+        pred = self.output_projector(subnet_out, training=training)
+
+        # Convert prediction to x
+        x_pred = self.convert_prediction_to_x(
+            pred=pred, z=xz_flat, alpha_t=alpha_flat, sigma_t=sigma_flat, log_snr_t=log_snr_flat
+        )
+
+        # Compute score: (α_t * x_pred - z) / σ_t²
+        score = (alpha_flat * x_pred - xz_flat) / ops.square(sigma_flat)
+
+        # Reshape back to compositional structure
+        score = ops.reshape(score, original_shape)
+
+        return score
+
+    def _compositional_forward(
+        self,
+        x: Tensor,
+        conditions: Tensor = None,
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        """
+        Forward pass for compositional diffusion.
+        """
+        integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
+        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
+        integrate_kwargs = integrate_kwargs | kwargs
+
+        if integrate_kwargs["method"] == "euler_maruyama":
+            raise ValueError("Stochastic methods are not supported for forward integration.")
+
+        # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
+        x = x / ops.sqrt(ops.cast(ops.shape(x)[1], dtype=ops.dtype(x)))
+
+        if density:
+
+            def deltas(time, xz):
+                v = self.compositional_velocity(
+                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                )
+                # For density, we need trace but compositional trace is complex
+                # Simplified version - could be extended
+                trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
+                return {"xz": v, "trace": trace}
+
+            state = {
+                "xz": x,
+                "trace": ops.zeros(ops.shape(x)[:-1] + (1,), dtype=ops.dtype(x)),
+            }
+            state = integrate(deltas, state, **integrate_kwargs)
+
+            z = state["xz"]
+            # Simplified density computation
+            log_density = self.base_distribution.log_prob(ops.mean(z, axis=1)) + ops.squeeze(state["trace"], axis=-1)
+            return z, log_density
+
+        def deltas(time, xz):
+            return {
+                "xz": self.compositional_velocity(
+                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                )
+            }
+
+        state = {"xz": x}
+        state = integrate(deltas, state, **integrate_kwargs)
+        z = state["xz"]
+        return z
+
+    def _compositional_inverse(
+        self,
+        z: Tensor,
+        conditions: Tensor = None,
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        """
+        Inverse pass for compositional diffusion (sampling).
+        """
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
+        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
+        integrate_kwargs = integrate_kwargs | kwargs
+
+        if density:
+            if integrate_kwargs["method"] == "euler_maruyama":
+                raise ValueError("Stochastic methods are not supported for density computation.")
+
+            def deltas(time, xz):
+                v = self.compositional_velocity(
+                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                )
+                trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
+                return {"xz": v, "trace": trace}
+
+            state = {
+                "xz": z,
+                "trace": ops.zeros(ops.shape(z)[:-1] + (1,), dtype=ops.dtype(z)),
+            }
+            state = integrate(deltas, state, **integrate_kwargs)
+
+            x = state["xz"]
+            log_density = self.base_distribution.log_prob(ops.mean(z, axis=1)) - ops.squeeze(state["trace"], axis=-1)
+            return x, log_density
+
+        state = {"xz": z}
+
+        if integrate_kwargs["method"] == "euler_maruyama":
+
+            def deltas(time, xz):
+                return {
+                    "xz": self.compositional_velocity(
+                        xz, time=time, stochastic_solver=True, conditions=conditions, training=training
+                    )
+                }
+
+            def diffusion(time, xz):
+                return {"xz": self.diffusion_term(xz, time=time, training=training)}
+
+            state = integrate_stochastic(
+                drift_fn=deltas,
+                diffusion_fn=diffusion,
+                state=state,
+                seed=self.seed_generator,
+                **integrate_kwargs,
+            )
+        else:
+
+            def deltas(time, xz):
+                return {
+                    "xz": self.compositional_velocity(
+                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                    )
+                }
+
+            state = integrate(deltas, state, **integrate_kwargs)
+
+        x = state["xz"]
+        return x
+
+    @staticmethod
+    def compute_prior_score(xz: Tensor) -> Tensor:
+        return ops.ones_like(xz)  # todo: Placeholder implementation
+        # raise NotImplementedError('Please implement the prior score computation method.')

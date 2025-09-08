@@ -27,11 +27,18 @@ class InferenceNetwork(keras.Layer):
         conditions: Tensor = None,
         inverse: bool = False,
         density: bool = False,
+        compositional: bool = False,
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         if inverse:
+            if compositional:
+                return self._inverse_compositional(
+                    xz, conditions=conditions, density=density, training=training, **kwargs
+                )
             return self._inverse(xz, conditions=conditions, density=density, training=training, **kwargs)
+        if compositional:
+            return self._forward_compositional(xz, conditions=conditions, density=density, training=training, **kwargs)
         return self._forward(xz, conditions=conditions, density=density, training=training, **kwargs)
 
     def _forward(
@@ -40,6 +47,16 @@ class InferenceNetwork(keras.Layer):
         raise NotImplementedError
 
     def _inverse(
+        self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        raise NotImplementedError
+
+    def _forward_compositional(
+        self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        raise NotImplementedError
+
+    def _inverse_compositional(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError

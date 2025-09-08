@@ -638,3 +638,167 @@ class ContinuousApproximator(Approximator):
         inference variables as present.
         """
         return keras.ops.shape(data["inference_variables"])[0]
+
+    def compositional_sample(
+        self,
+        *,
+        num_samples: int,
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generates compositional samples from the approximator given input conditions.
+        The `conditions` dictionary should have shape (n_datasets, n_compositional_conditions, ...).
+        This method handles the extra compositional dimension appropriately.
+
+        Parameters
+        ----------
+        num_samples : int
+            Number of samples to generate.
+        conditions : dict[str, np.ndarray]
+            Dictionary of conditioning variables as NumPy arrays with shape
+            (n_datasets, n_compositional_conditions, ...).
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one column vector per target variable
+            samples.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and sampling process.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Dictionary containing generated samples with compositional structure preserved.
+        """
+        original_shapes = {}
+        flattened_conditions = {}
+        for key, value in conditions.items():  # Flatten compositional dimensions
+            original_shapes[key] = value.shape
+            n_datasets, n_comp = value.shape[:2]
+            flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
+            flattened_conditions[key] = value.reshape(flattened_shape)
+        n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
+
+        # Prepare data using existing method (handles adaptation and standardization)
+        prepared_conditions = self._prepare_data(flattened_conditions, **kwargs)
+
+        # Remove any superfluous keys, just retain actual conditions
+        prepared_conditions = {k: v for k, v in prepared_conditions.items() if k in self.CONDITION_KEYS}
+
+        # Sample using compositional sampling
+        samples = self._compositional_sample(
+            num_samples=num_samples, n_datasets=n_datasets, n_compositional=n_comp, **prepared_conditions, **kwargs
+        )
+
+        if "inference_variables" in self.standardize:
+            samples = self.standardize_layers["inference_variables"](samples, forward=False)
+
+        samples = {"inference_variables": samples}
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
+
+        # Back-transform quantities and samples
+        samples = self._back_transform_compositional(samples, original_shapes, **kwargs)
+
+        if split:
+            samples = split_arrays(samples, axis=-1)
+        return samples
+
+    def _compositional_sample(
+        self,
+        num_samples: int,
+        n_datasets: int,
+        n_compositional: int,
+        inference_conditions: Tensor = None,
+        summary_variables: Tensor = None,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Internal method for compositional sampling.
+        """
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot use summary variables without a summary network.")
+        else:
+            if summary_variables is None:
+                raise ValueError("Summary variables are required when a summary network is present.")
+
+        if self.summary_network is not None:
+            summary_outputs = self.summary_network(
+                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+            )
+            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
+
+        if inference_conditions is not None:
+            # Reshape conditions for compositional sampling
+            # From (n_datasets * n_comp, dims) to (n_datasets, n_comp, dims)
+            condition_dims = keras.ops.shape(inference_conditions)[-1]
+            inference_conditions = keras.ops.reshape(
+                inference_conditions, (n_datasets, n_compositional, condition_dims)
+            )
+
+            # Expand for num_samples: (n_datasets, n_comp, dims) -> (n_datasets, n_comp, num_samples, dims)
+            inference_conditions = keras.ops.expand_dims(inference_conditions, axis=2)
+            inference_conditions = keras.ops.broadcast_to(
+                inference_conditions, (n_datasets, n_compositional, num_samples, condition_dims)
+            )
+
+            batch_shape = (n_datasets, n_compositional, num_samples)
+        else:
+            raise ValueError("Cannot perform compositional sampling without inference conditions.")
+
+        return self.inference_network.sample(
+            batch_shape,
+            conditions=inference_conditions,
+            compositional=True,
+            **filter_kwargs(kwargs, self.inference_network.sample),
+        )
+
+    def _back_transform_compositional(
+        self, samples: dict[str, np.ndarray], original_shapes: dict[str, tuple], **kwargs
+    ) -> dict[str, np.ndarray]:
+        """
+        Back-transform compositional samples, handling the extra compositional dimension.
+        """
+        # Get the sample shape to understand the compositional structure
+        inference_samples = samples["inference_variables"]
+        sample_shape = inference_samples.shape
+
+        # Determine compositional dimensions from original shapes
+        # Assuming all condition keys have the same compositional structure
+        first_key = next(iter(original_shapes.keys()))
+        n_datasets, n_compositional = original_shapes[first_key][:2]
+
+        # Reshape samples to match compositional structure if needed
+        if len(sample_shape) == 3:  # (n_datasets * n_comp, num_samples, dims)
+            num_samples, dims = sample_shape[1], sample_shape[2]
+            inference_samples = inference_samples.reshape(n_datasets, n_compositional, num_samples, dims)
+            samples["inference_variables"] = inference_samples
+
+        # For back-transformation, we might need to flatten again temporarily
+        # depending on how the adapter expects the data
+        flattened_samples = {}
+        for key, value in samples.items():
+            if len(value.shape) == 4:  # (n_datasets, n_comp, num_samples, dims)
+                n_d, n_c, n_s, dims = value.shape
+                flattened_samples[key] = value.reshape(n_d * n_c, n_s, dims)
+            else:
+                flattened_samples[key] = value
+
+        # Apply inverse transformation
+        transformed = self.adapter(flattened_samples, inverse=True, strict=False, **kwargs)
+
+        # Reshape back to compositional structure
+        final_samples = {}
+        for key, value in transformed.items():
+            if key in original_shapes:
+                # Reshape to include compositional dimension
+                if len(value.shape) >= 2:
+                    num_samples = value.shape[1]
+                    remaining_dims = value.shape[2:] if len(value.shape) > 2 else ()
+                    final_samples[key] = value.reshape(n_datasets, n_compositional, num_samples, *remaining_dims)
+                else:
+                    final_samples[key] = value
+            else:
+                final_samples[key] = value
+
+        return final_samples

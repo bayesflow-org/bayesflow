@@ -644,6 +644,7 @@ class ContinuousApproximator(Approximator):
         *,
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
+        compute_prior_score: Callable[[Mapping[str, np.ndarray]], np.ndarray],
         split: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
@@ -659,6 +660,8 @@ class ContinuousApproximator(Approximator):
         conditions : dict[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays with shape
             (n_datasets, n_compositional_conditions, ...).
+        compute_prior_score : Callable[[Mapping[str, np.ndarray]], np.ndarray]
+            A function that computes the log probability of samples under the prior distribution.
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one column vector per target variable
             samples.
@@ -685,9 +688,34 @@ class ContinuousApproximator(Approximator):
         # Remove any superfluous keys, just retain actual conditions
         prepared_conditions = {k: v for k, v in prepared_conditions.items() if k in self.CONDITION_KEYS}
 
+        # Prepare prior scores to handle adapter
+        def compute_prior_score_pre(_samples: Tensor) -> Tensor:
+            if "inference_variables" in self.standardize:
+                _samples, log_det_jac_standardize = self.standardize_layers["inference_variables"](
+                    _samples, forward=False, log_det_jac=True
+                )
+            else:
+                log_det_jac_standardize = 0
+            _samples = {"inference_variables": _samples}
+            _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, _samples)
+            adapted_samples, log_det_jac = self.adapter(
+                _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
+            )
+            prior_score = keras.ops.convert_to_tensor(compute_prior_score(adapted_samples))
+            if log_det_jac is not None:
+                prior_score += keras.ops.convert_to_tensor(log_det_jac)
+            if log_det_jac_standardize is not None:
+                prior_score += keras.ops.convert_to_tensor(log_det_jac_standardize)
+            return prior_score
+
         # Sample using compositional sampling
         samples = self._compositional_sample(
-            num_samples=num_samples, n_datasets=n_datasets, n_compositional=n_comp, **prepared_conditions, **kwargs
+            num_samples=num_samples,
+            n_datasets=n_datasets,
+            n_compositional=n_comp,
+            compute_prior_score=compute_prior_score_pre,
+            **prepared_conditions,
+            **kwargs,
         )
 
         if "inference_variables" in self.standardize:
@@ -708,6 +736,7 @@ class ContinuousApproximator(Approximator):
         num_samples: int,
         n_datasets: int,
         n_compositional: int,
+        compute_prior_score: Callable[[Tensor], Tensor],
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         **kwargs,
@@ -750,5 +779,6 @@ class ContinuousApproximator(Approximator):
             batch_shape,
             conditions=inference_conditions,
             compositional=True,
+            compute_prior_score=compute_prior_score,
             **filter_kwargs(kwargs, self.inference_network.sample),
         )

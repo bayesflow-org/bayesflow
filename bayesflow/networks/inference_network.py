@@ -1,3 +1,4 @@
+from typing import Callable
 import keras
 
 from bayesflow.types import Shape, Tensor
@@ -52,12 +53,24 @@ class InferenceNetwork(keras.Layer):
         raise NotImplementedError
 
     def _forward_compositional(
-        self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
+        self,
+        x: Tensor,
+        conditions: Tensor,
+        compute_prior_score: Callable[[Tensor], Tensor],
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
 
     def _inverse_compositional(
-        self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
+        self,
+        z: Tensor,
+        conditions: Tensor,
+        compute_prior_score: Callable[[Tensor], Tensor],
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
 

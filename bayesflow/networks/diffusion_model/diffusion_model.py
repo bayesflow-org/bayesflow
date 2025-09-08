@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Literal
+from typing import Literal, Callable
 
 import keras
 from keras import ops
@@ -568,6 +568,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         stochastic_solver: bool,
         conditions: Tensor,
+        compute_prior_score: Callable[[Tensor], Tensor],
         mini_batch_size: int | None = None,
         training: bool = False,
     ) -> Tensor:
@@ -585,6 +586,8 @@ class DiffusionModel(InferenceNetwork):
             Whether to use stochastic (SDE) or deterministic (ODE) formulation
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+        compute_prior_score: Callable
+            Function to compute the prior score ∇_θ log p(θ).
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
@@ -619,7 +622,7 @@ class DiffusionModel(InferenceNetwork):
         individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions_batch, training)
 
         # Compute prior score component
-        prior_score = self.compute_prior_score(xz)
+        prior_score = compute_prior_score(xz)
 
         # Combine scores using compositional formula, mean over individual scores and scale with n to get sum
         summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
@@ -710,13 +713,14 @@ class DiffusionModel(InferenceNetwork):
     def _inverse_compositional(
         self,
         z: Tensor,
-        conditions: Tensor = None,
+        conditions: Tensor,
+        compute_prior_score: Callable[[Tensor], Tensor],
         density: bool = False,
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         """
-        Inverse pass for compositional diffusion (sampling).
+        Inverse pass for compositional diffusion sampling.
         """
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
@@ -725,7 +729,7 @@ class DiffusionModel(InferenceNetwork):
 
         if mini_batch_size is not None:
             # if backend is jax, mini batching does not work
-            if ops.__name__ == "jax":
+            if keras.backend.backend() == "jax":
                 raise ValueError(
                     "Mini batching is not supported with JAX backend. Set mini_batch_size to None "
                     "or use another backend."
@@ -746,6 +750,7 @@ class DiffusionModel(InferenceNetwork):
                     time=time,
                     stochastic_solver=False,
                     conditions=conditions,
+                    compute_prior_score=compute_prior_score,
                     mini_batch_size=mini_batch_size,
                     training=training,
                 )
@@ -773,6 +778,7 @@ class DiffusionModel(InferenceNetwork):
                         time=time,
                         stochastic_solver=True,
                         conditions=conditions,
+                        compute_prior_score=compute_prior_score,
                         mini_batch_size=mini_batch_size,
                         training=training,
                     )
@@ -797,6 +803,7 @@ class DiffusionModel(InferenceNetwork):
                         time=time,
                         stochastic_solver=False,
                         conditions=conditions,
+                        compute_prior_score=compute_prior_score,
                         mini_batch_size=mini_batch_size,
                         training=training,
                     )
@@ -806,8 +813,3 @@ class DiffusionModel(InferenceNetwork):
 
         x = state["xz"]
         return x
-
-    @staticmethod
-    def compute_prior_score(xz: Tensor) -> Tensor:
-        return ops.ones_like(xz)
-        # raise NotImplementedError("Please implement the prior score computation method.")

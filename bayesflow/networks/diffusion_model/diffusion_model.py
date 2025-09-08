@@ -578,8 +578,8 @@ class DiffusionModel(InferenceNetwork):
             raise ValueError("Conditions are required for compositional sampling")
 
         # Get shapes for compositional structure
-        n_datasets, n_compositional = ops.shape(xz)[0], ops.shape(xz)[1]
-        print(xz.shape, n_datasets, n_compositional)
+        n_compositional = ops.shape(conditions)[1]
+        print(ops.shape(xz), ops.shape(conditions))
 
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
@@ -620,7 +620,7 @@ class DiffusionModel(InferenceNetwork):
             # ODE: dz = [f(z,t) - 0.5 * g(t)² * score(z,t)] dt
             velocity = f - 0.5 * g_squared * compositional_score
 
-        print(velocity.shape)
+        print(velocity.shape, velocity)
         return velocity
 
     def _compute_individual_scores(

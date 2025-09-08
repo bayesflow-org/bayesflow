@@ -730,19 +730,19 @@ class ContinuousApproximator(Approximator):
 
         if inference_conditions is not None:
             # Reshape conditions for compositional sampling
-            # From (n_datasets * n_comp, dims) to (n_datasets, n_comp, dims)
-            condition_dims = keras.ops.shape(inference_conditions)[-1]
+            # From (n_datasets * n_comp, ...., dims) to (n_datasets, n_comp, ...., dims)
+            condition_dims = keras.ops.shape(inference_conditions)[2:]
             inference_conditions = keras.ops.reshape(
-                inference_conditions, (n_datasets, n_compositional, condition_dims)
+                inference_conditions, (n_datasets, n_compositional, *condition_dims)
             )
 
             # Expand for num_samples: (n_datasets, n_comp, dims) -> (n_datasets, n_comp, num_samples, dims)
             inference_conditions = keras.ops.expand_dims(inference_conditions, axis=2)
             inference_conditions = keras.ops.broadcast_to(
-                inference_conditions, (n_datasets, n_compositional, num_samples, condition_dims)
+                inference_conditions, (n_datasets, n_compositional, num_samples, *condition_dims)
             )
 
-            batch_shape = (n_datasets, n_compositional, num_samples)
+            batch_shape = (n_datasets, num_samples)
         else:
             raise ValueError("Cannot perform compositional sampling without inference conditions.")
 
@@ -769,18 +769,19 @@ class ContinuousApproximator(Approximator):
         n_datasets, n_compositional = original_shapes[first_key][:2]
 
         # Reshape samples to match compositional structure if needed
-        if len(sample_shape) == 3:  # (n_datasets * n_comp, num_samples, dims)
-            num_samples, dims = sample_shape[1], sample_shape[2]
-            inference_samples = inference_samples.reshape(n_datasets, n_compositional, num_samples, dims)
+        if len(sample_shape) == 3:  # (n_datasets * n_comp, num_samples, ..., dims)
+            num_samples, dims = sample_shape[1], sample_shape[2:]
+            inference_samples = inference_samples.reshape(n_datasets, n_compositional, num_samples, *dims)
             samples["inference_variables"] = inference_samples
 
         # For back-transformation, we might need to flatten again temporarily
         # depending on how the adapter expects the data
         flattened_samples = {}
         for key, value in samples.items():
-            if len(value.shape) == 4:  # (n_datasets, n_comp, num_samples, dims)
-                n_d, n_c, n_s, dims = value.shape
-                flattened_samples[key] = value.reshape(n_d * n_c, n_s, dims)
+            if len(value.shape) == 4:  # (n_datasets, n_comp, num_samples, ...,  dims)
+                n_d, n_c, n_s = value.shape[:3]
+                dims = value.shape[3:]
+                flattened_samples[key] = value.reshape(n_d * n_c, n_s, *dims)
             else:
                 flattened_samples[key] = value
 

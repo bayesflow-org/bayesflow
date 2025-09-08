@@ -544,6 +544,24 @@ class DiffusionModel(InferenceNetwork):
         base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
         return base_metrics | {"loss": loss}
 
+    @staticmethod
+    def compositional_bridge(time: Tensor) -> Tensor:
+        """
+        Bridge function for compositional diffusion. In the simplest case, this is just 1.
+
+        Parameters
+        ----------
+        time: Tensor
+            Time step for the diffusion process.
+
+        Returns
+        -------
+        Tensor
+            Bridge function value with same shape as time.
+
+        """
+        return ops.ones_like(time)
+
     def compositional_velocity(
         self,
         xz: Tensor,
@@ -610,7 +628,7 @@ class DiffusionModel(InferenceNetwork):
         weighted_prior_score = (1.0 - n) * (1.0 - time_tensor) * prior_score
 
         # Combined score
-        compositional_score = weighted_prior_score + summed_individual_scores
+        compositional_score = self.compositional_bridge(time_tensor) * (weighted_prior_score + summed_individual_scores)
 
         # Compute velocity using standard drift-diffusion formulation
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
@@ -703,13 +721,14 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
-        mini_batch_size = integrate_kwargs.get("mini_batch_size", None)
+        mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
 
         if integrate_kwargs["method"] == "euler_maruyama":
             raise ValueError("Stochastic methods are not supported for forward integration.")
 
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
-        x = x / ops.sqrt(ops.cast(ops.shape(x)[1], dtype=ops.dtype(x)))
+        scale_latent = ops.shape(conditions)[1] * self.compositional_bridge(ops.ones(1))
+        x = x / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(x)))
 
         if density:
 
@@ -769,7 +788,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
-        mini_batch_size = integrate_kwargs.get("mini_batch_size", None)
+        mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
 
         if density:
             if integrate_kwargs["method"] == "euler_maruyama":
@@ -844,5 +863,4 @@ class DiffusionModel(InferenceNetwork):
 
     @staticmethod
     def compute_prior_score(xz: Tensor) -> Tensor:
-        return ops.ones_like(xz)  # todo: Placeholder implementation
-        # raise NotImplementedError('Please implement the prior score computation method.')
+        raise NotImplementedError("Please implement the prior score computation method.")

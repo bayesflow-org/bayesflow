@@ -603,8 +603,6 @@ class DiffusionModel(InferenceNetwork):
 
         # Get shapes for compositional structure
         n_compositional = ops.shape(conditions)[1]
-        n = ops.cast(n_compositional, dtype=ops.dtype(time))
-        time_tensor = ops.cast(time, dtype=ops.dtype(xz))
 
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
@@ -628,9 +626,10 @@ class DiffusionModel(InferenceNetwork):
         summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
 
         # Prior contribution
-        weighted_prior_score = (1.0 - n) * (1.0 - time_tensor) * prior_score
+        weighted_prior_score = (1.0 - n_compositional) * (1.0 - time) * prior_score
 
         # Combined score
+        time_tensor = ops.cast(time, dtype=ops.dtype(xz))
         compositional_score = self.compositional_bridge(time_tensor) * (weighted_prior_score + summed_individual_scores)
 
         # Compute velocity using standard drift-diffusion formulation

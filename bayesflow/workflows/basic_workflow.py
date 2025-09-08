@@ -286,6 +286,37 @@ class BasicWorkflow(Workflow):
         """
         return self.approximator.sample(num_samples=num_samples, conditions=conditions, **kwargs)
 
+    def compositional_sample(
+        self,
+        *,
+        num_samples: int,
+        conditions: Mapping[str, np.ndarray],
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Draws `num_samples` samples from the approximator given specified composition conditions.
+        The `conditions` dictionary should have shape (n_datasets, n_compositional_conditions, ...).
+
+        Parameters
+        ----------
+        num_samples : int
+            The number of samples to generate.
+        conditions : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
+            conditions during training should be present.
+            Should have shape (n_datasets, n_compositional_conditions, ...).
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the approximator's sampling function.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary where keys correspond to variable names and
+            values are arrays containing the generated samples.
+        """
+        return self.approximator.compositional_sample(num_samples=num_samples, conditions=conditions, **kwargs)
+
     def estimate(
         self,
         *,

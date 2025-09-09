@@ -662,7 +662,7 @@ class ContinuousApproximator(Approximator):
             Dictionary of conditioning variables as NumPy arrays with shape
             (n_datasets, n_compositional_conditions, ...).
         compute_prior_score : Callable[[Mapping[str, np.ndarray]], np.ndarray]
-            A function that computes the log probability of samples under the prior distribution.
+            A function that computes the score of the log prior distribution.
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one column vector per target variable
             samples.

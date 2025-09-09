@@ -536,10 +536,13 @@ class ContinuousApproximator(Approximator):
             inference_conditions = keras.ops.broadcast_to(
                 inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
-            batch_shape = (
-                batch_size,
-                num_samples,
-            )
+
+            if hasattr(self.inference_network, "base_distribution"):
+                target_shape_len = len(self.inference_network.base_distribution.dims)
+            else:
+                # point approximator has no base_distribution
+                target_shape_len = 1
+            batch_shape = keras.ops.shape(inference_conditions)[:-target_shape_len]
         else:
             batch_shape = (num_samples,)
 

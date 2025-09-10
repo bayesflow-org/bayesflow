@@ -706,7 +706,8 @@ class ContinuousApproximator(Approximator):
             )
             prior_score = compute_prior_score(adapted_samples)
             for key in adapted_samples:
-                prior_score[key] = prior_score[key]
+                if isinstance(prior_score[key], np.ndarray):
+                    prior_score[key] = prior_score[key].astype("float32")
                 if len(log_det_jac) > 0:
                     prior_score[key] += log_det_jac[key]
 

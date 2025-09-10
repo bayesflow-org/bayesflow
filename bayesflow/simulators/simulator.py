@@ -95,3 +95,8 @@ class Simulator:
             return np.full((sample_size,), True)
 
         return self.rejection_sample(batch_shape, predicate=accept_all_predicate, sample_size=sample_size, **kwargs)
+
+    def sample_parallel(
+        self, batch_shape: Shape, n_jobs: int = -1, verbose: int = 1, **kwargs
+    ) -> dict[str, np.ndarray]:
+        raise NotImplementedError

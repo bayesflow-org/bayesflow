@@ -88,7 +88,7 @@ class SequentialSimulator(Simulator):
         return self.sample(batch_shape=(1, *tuple(batch_shape_ext)), **kwargs)
 
     def sample_parallel(
-        self, batch_shape: Shape, n_jobs: int = -1, verbose: int = 0, **kwargs
+        self, batch_shape: Shape, n_jobs: int = -1, verbose: int = 1, **kwargs
     ) -> dict[str, np.ndarray]:
         """
         Sample in parallel from the sequential simulator.
@@ -101,7 +101,7 @@ class SequentialSimulator(Simulator):
         n_jobs : int, optional
             Number of parallel jobs. -1 uses all available cores. Default is -1.
         verbose : int, optional
-            Verbosity level for joblib. Default is 0 (no output).
+            Verbosity level for joblib. Default is 1 (minimal output).
         **kwargs
             Additional keyword arguments passed to each simulator. These may include previously
             sampled outputs used as inputs for subsequent simulators.

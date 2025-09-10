@@ -1,4 +1,3 @@
-
 name: Multi-Backend Tests
 
 on:
@@ -16,7 +15,6 @@ defaults:
   run:
     shell: bash
 
-
 jobs:
   test:
     name: Run Multi-Backend Tests
@@ -24,7 +22,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10"]  # we usually only need to test the oldest python version
+        python-version: ["3.10"] # we usually only need to test the oldest python version
         backend: ["jax", "tensorflow", "torch"]
 
     runs-on: ${{ matrix.os }}

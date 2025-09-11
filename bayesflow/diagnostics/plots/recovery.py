@@ -3,9 +3,8 @@ from collections.abc import Sequence, Mapping
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scipy.stats import median_abs_deviation
-
 from bayesflow.utils import prepare_plot_data, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
+from bayesflow.utils.numpy_utils import credible_interval
 
 
 def recovery(
@@ -14,7 +13,8 @@ def recovery(
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     point_agg=np.median,
-    uncertainty_agg=median_abs_deviation,
+    uncertainty_agg=credible_interval,
+    prob=0.95,
     add_corr: bool = True,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -58,7 +58,8 @@ def recovery(
     variable_names    : list or None, optional, default: None
         The individual parameter names for nice plot titles. Inferred if None
     point_agg         : function to compute point estimates. Default: median
-    uncertainty_agg   : function to compute uncertainty estimates. Default: MAD
+    uncertainty_agg   : function to compute uncertainty interval bounds.
+        Default: credible_interval
     add_corr          : boolean, default: True
         Should correlations between estimates and ground truth values be shown?
     figsize           : tuple or None, optional, default : None
@@ -110,7 +111,10 @@ def recovery(
     point_estimate = point_agg(estimates, axis=1)
 
     if uncertainty_agg is not None:
-        u = uncertainty_agg(estimates, axis=1)
+        u = uncertainty_agg(estimates, prob=prob, axis=1)
+        # compute lower and upper error
+        u[0, :, :] = point_estimate - u[0, :, :]
+        u[1, :, :] = u[1, :, :] - point_estimate
 
     for i, ax in enumerate(plot_data["axes"].flat):
         if i >= plot_data["num_variables"]:
@@ -121,7 +125,7 @@ def recovery(
             _ = ax.errorbar(
                 targets[:, i],
                 point_estimate[:, i],
-                yerr=u[:, i],
+                yerr=u[:, :, i],
                 fmt="o",
                 alpha=0.5,
                 color=color,

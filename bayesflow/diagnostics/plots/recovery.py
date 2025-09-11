@@ -14,7 +14,6 @@ def recovery(
     variable_names: Sequence[str] = None,
     point_agg=np.median,
     uncertainty_agg=credible_interval,
-    prob=0.95,
     add_corr: bool = True,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -108,10 +107,10 @@ def recovery(
     targets = plot_data.pop("targets")
 
     # Compute point estimates and uncertainties
-    point_estimate = point_agg(estimates, axis=1)
+    point_estimate = point_agg(estimates, axis=1, **kwargs.get("point_agg_kwargs", {}))
 
     if uncertainty_agg is not None:
-        u = uncertainty_agg(estimates, prob=prob, axis=1)
+        u = uncertainty_agg(estimates, axis=1, **kwargs.get("uncertainty_agg_kwargs", {}))
         # compute lower and upper error
         u[0, :, :] = point_estimate - u[0, :, :]
         u[1, :, :] = u[1, :, :] - point_estimate

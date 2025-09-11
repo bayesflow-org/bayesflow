@@ -45,7 +45,7 @@ def softplus(x: np.ndarray, beta: float = 1.0, threshold: float = 20.0) -> np.nd
     return np.where(beta * x > threshold, x, np.log1p(exp_beta_x) / beta)
 
 
-def credible_interval(x: np.ndarray, prob: float = 0.95, axis: Sequence[int] = None, **kwargs) -> np.ndarray:
+def credible_interval(x: np.ndarray, prob: float = 0.95, axis: Sequence[int] | int = None, **kwargs) -> np.ndarray:
     """
     Compute credible interval from samples using quantiles.
 
@@ -69,7 +69,7 @@ def credible_interval(x: np.ndarray, prob: float = 0.95, axis: Sequence[int] = N
     --------
     >>> import numpy as np
     >>> # Simulate posterior samples
-    >>> samples = np.random.normal(10, 1000, 3)
+    >>> samples = np.random.normal(size=(10, 1000, 3))
 
     >>> # Different coverage probabilities
     >>> credible_interval(samples, prob=0.5, axis=1)  # 50% CI

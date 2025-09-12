@@ -403,6 +403,7 @@ def integrate_stochastic(
     method: str = "euler_maruyama",
     score_fn: Callable = None,
     corrector_steps: int = 0,
+    noise_schedule=None,
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
     """
@@ -424,6 +425,7 @@ def integrate_stochastic(
         score_fn: Optional score function for predictor-corrector sampling.
                  Should take (time, **state) and return score dict.
         corrector_steps: Number of corrector steps to take after each predictor step.
+        noise_schedule: Noise schedule object for computing lambda_t and alpha_t in corrector.
         **kwargs: Additional arguments to pass to the step function.
 
     Returns:
@@ -455,7 +457,10 @@ def integrate_stochastic(
 
     # Pre-generate corrector noise if score_fn is provided: shape = (steps, corrector_steps, *state_shape)
     corrector_noise_history = {}
-    if score_fn is not None and corrector_steps > 0:
+    if corrector_steps > 0:
+        if score_fn is None or noise_schedule is None:
+            raise ValueError("Please provide both score_fn and noise_schedule when using corrector_steps > 0.")
+
         for key, val in state.items():
             corrector_noise_history[key] = keras.random.normal(
                 (steps, corrector_steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed
@@ -469,19 +474,29 @@ def integrate_stochastic(
         new_state, new_time = step_fn(state=_current_state, time=_current_time, step_size=step_size, noise=_noise_i)
 
         # Corrector steps: annealed Langevin dynamics if score_fn is provided
-        if score_fn is not None:
-            first_key = next(iter(new_state.keys()))
-            dim = keras.ops.cast(keras.ops.shape(new_state[first_key])[-1], keras.ops.dtype(new_state[first_key]))
-            e = keras.ops.sqrt(dim)
-            sqrt_2e = keras.ops.sqrt(2.0 * e)
-
+        if corrector_steps > 0:
             for corrector_step in range(corrector_steps):
                 score = score_fn(new_time, **filter_kwargs(new_state, score_fn))
                 _corrector_noise = {k: corrector_noise_history[k][_loop_var, corrector_step] for k in new_state.keys()}
 
+                # Compute noise schedule components for corrector step size
+                log_snr_t = noise_schedule.get_log_snr(t=new_time, training=False)
+                alpha_t, _ = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+                lambda_t = keras.ops.exp(-log_snr_t)  # lambda_t from noise schedule
+
                 # Corrector update: x_i+1 = x_i + e * score + sqrt(2e) * noise_corrector
+                # where e = 2*alpha_t * (lambda_t * ||z|| / ||score||)**2
                 for k in new_state.keys():
                     if k in score:
+                        z_norm = keras.ops.norm(new_state[k], axis=-1, keepdims=True)
+                        score_norm = keras.ops.norm(score[k], axis=-1, keepdims=True)
+
+                        # Prevent division by zero
+                        score_norm = keras.ops.maximum(score_norm, 1e-8)
+
+                        e = 2.0 * alpha_t * (lambda_t * z_norm / score_norm) ** 2
+                        sqrt_2e = keras.ops.sqrt(2.0 * e)
+
                         new_state[k] = new_state[k] + e * score[k] + sqrt_2e * _corrector_noise[k]
 
         return new_state, new_time

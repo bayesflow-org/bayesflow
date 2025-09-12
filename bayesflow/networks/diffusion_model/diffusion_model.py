@@ -836,9 +836,26 @@ class DiffusionModel(InferenceNetwork):
             def diffusion(time, xz):
                 return {"xz": self.diffusion_term(xz, time=time, training=training)}
 
+            scores = None
+            if "corrector_steps" in integrate_kwargs:
+                if integrate_kwargs["corrector_steps"] > 0:
+
+                    def scores(time, xz):
+                        return {
+                            "xz": self.compositional_score(
+                                xz,
+                                time=time,
+                                conditions=conditions,
+                                compute_prior_score=compute_prior_score,
+                                mini_batch_size=mini_batch_size,
+                                training=training,
+                            )
+                        }
+
             state = integrate_stochastic(
                 drift_fn=deltas,
                 diffusion_fn=diffusion,
+                score_fn=scores,
                 state=state,
                 seed=self.seed_generator,
                 **integrate_kwargs,

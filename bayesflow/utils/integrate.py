@@ -401,10 +401,16 @@ def integrate_stochastic(
     steps: int,
     seed: keras.random.SeedGenerator,
     method: str = "euler_maruyama",
+    score_fn: Callable = None,
+    corrector_steps: int = 0,
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
     """
     Integrates a stochastic differential equation from start_time to stop_time.
+
+    When score_fn is provided, performs predictor-corrector sampling where:
+    - Predictor: reverse diffusion SDE solver
+    - Corrector: annealed Langevin dynamics with step size e = sqrt(dim)
 
     Args:
         drift_fn: Function that computes the drift term.
@@ -415,11 +421,13 @@ def integrate_stochastic(
         steps: Number of integration steps.
         seed: Random seed for noise generation.
         method: Integration method to use, e.g., 'euler_maruyama'.
+        score_fn: Optional score function for predictor-corrector sampling.
+                 Should take (time, **state) and return score dict.
+        corrector_steps: Number of corrector steps to take after each predictor step.
         **kwargs: Additional arguments to pass to the step function.
 
     Returns:
-        If return_noise is False, returns the final state dictionary.
-        If return_noise is True, returns a tuple of (final_state, noise_history).
+        Final state dictionary after integration.
     """
     if steps <= 0:
         raise ValueError("Number of steps must be positive.")
@@ -438,17 +446,44 @@ def integrate_stochastic(
     step_size = (stop_time - start_time) / steps
     sqrt_dt = keras.ops.sqrt(keras.ops.abs(step_size))
 
-    # Pre-generate noise history: shape = (steps, *state_shape)
+    # Pre-generate noise history for predictor: shape = (steps, *state_shape)
     noise_history = {}
     for key, val in state.items():
         noise_history[key] = (
             keras.random.normal((steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed) * sqrt_dt
         )
 
+    # Pre-generate corrector noise if score_fn is provided: shape = (steps, corrector_steps, *state_shape)
+    corrector_noise_history = {}
+    if score_fn is not None and corrector_steps > 0:
+        for key, val in state.items():
+            corrector_noise_history[key] = keras.random.normal(
+                (steps, corrector_steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed
+            )
+
     def body(_loop_var, _loop_state):
         _current_state, _current_time = _loop_state
         _noise_i = {k: noise_history[k][_loop_var] for k in _current_state.keys()}
+
+        # Predictor step
         new_state, new_time = step_fn(state=_current_state, time=_current_time, step_size=step_size, noise=_noise_i)
+
+        # Corrector steps: annealed Langevin dynamics if score_fn is provided
+        if score_fn is not None:
+            first_key = next(iter(new_state.keys()))
+            dim = keras.ops.cast(keras.ops.shape(new_state[first_key])[-1], keras.ops.dtype(new_state[first_key]))
+            e = keras.ops.sqrt(dim)
+            sqrt_2e = keras.ops.sqrt(2.0 * e)
+
+            for corrector_step in range(corrector_steps):
+                score = score_fn(new_time, **filter_kwargs(new_state, score_fn))
+                _corrector_noise = {k: corrector_noise_history[k][_loop_var, corrector_step] for k in new_state.keys()}
+
+                # Corrector update: x_i+1 = x_i + e * score + sqrt(2e) * noise_corrector
+                for k in new_state.keys():
+                    if k in score:
+                        new_state[k] = new_state[k] + e * score[k] + sqrt_2e * _corrector_noise[k]
+
         return new_state, new_time
 
     final_state, final_time = keras.ops.fori_loop(0, steps, body, (state, start_time))

@@ -61,7 +61,10 @@ def recovery(
     point_agg         : callable, optional, default: median
         Function to compute point estimates.
     uncertainty_agg   : callable, optional, default: credible_interval with coverage probability 95%
-        Function to compute uncertainty interval bounds.
+        Function to compute a measure of uncertainty. Can either be the lower and upper
+        uncertainty bounds provided with the shape (2, num_datasets, num_params) or a
+        scalar measure of uncertainty (e.g., the median absolute deviation) with shape
+        (num_datasets, num_params).
     point_agg_kwargs : Optional dictionary of further arguments passed to point_agg.
     uncertainty_agg_kwargs : Optional dictionary of further arguments passed to uncertainty_agg.
         For example, to change the coverage probability of credible_interval to 50%,
@@ -121,9 +124,10 @@ def recovery(
 
     if uncertainty_agg is not None:
         u = uncertainty_agg(estimates, axis=1, **uncertainty_agg_kwargs)
-        # compute lower and upper error
-        u[0, :, :] = point_estimate - u[0, :, :]
-        u[1, :, :] = u[1, :, :] - point_estimate
+        if u.ndim == 3:
+            # compute lower and upper error
+            u[0, :, :] = point_estimate - u[0, :, :]
+            u[1, :, :] = u[1, :, :] - point_estimate
 
     for i, ax in enumerate(plot_data["axes"].flat):
         if i >= plot_data["num_variables"]:
@@ -134,7 +138,7 @@ def recovery(
             _ = ax.errorbar(
                 targets[:, i],
                 point_estimate[:, i],
-                yerr=u[:, :, i],
+                yerr=u[..., i],
                 fmt="o",
                 alpha=0.5,
                 color=color,

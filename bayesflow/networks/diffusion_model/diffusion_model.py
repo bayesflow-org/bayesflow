@@ -598,6 +598,64 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             Compositional velocity of same shape as input xz
         """
+        # Calculate standard noise schedule components
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
+        compositional_score = self.compositional_score(
+            xz=xz,
+            time=time,
+            conditions=conditions,
+            compute_prior_score=compute_prior_score,
+            mini_batch_size=mini_batch_size,
+            training=training,
+        )
+
+        # Compute velocity using standard drift-diffusion formulation
+        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
+
+        if stochastic_solver:
+            # SDE: dz = [f(z,t) - g(t)² * score(z,t)] dt + g(t) dW
+            velocity = f - g_squared * compositional_score
+        else:
+            # ODE: dz = [f(z,t) - 0.5 * g(t)² * score(z,t)] dt
+            velocity = f - 0.5 * g_squared * compositional_score
+
+        return velocity
+
+    def compositional_score(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        conditions: Tensor,
+        compute_prior_score: Callable[[Tensor], Tensor],
+        mini_batch_size: int | None = None,
+        training: bool = False,
+    ) -> Tensor:
+        """
+        Computes the compositional score for multiple datasets using the formula:
+        s_ψ(θ,t,Y) = (1-n)(1-t) ∇_θ log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable, shape (n_datasets, n_compositional, ...)
+        time : float or Tensor
+            Time step for the diffusion process
+        conditions : Tensor
+            Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+        compute_prior_score: Callable
+            Function to compute the prior score ∇_θ log p(θ).
+        mini_batch_size : int or None
+            Mini batch size for computing individual scores. If None, use all conditions.
+        training : bool, optional
+            Whether in training mode
+
+        Returns
+        -------
+        Tensor
+            Compositional velocity of same shape as input xz
+        """
         if conditions is None:
             raise ValueError("Conditions are required for compositional sampling")
 
@@ -631,18 +689,7 @@ class DiffusionModel(InferenceNetwork):
         # Combined score
         time_tensor = ops.cast(time, dtype=ops.dtype(xz))
         compositional_score = self.compositional_bridge(time_tensor) * (weighted_prior_score + summed_individual_scores)
-
-        # Compute velocity using standard drift-diffusion formulation
-        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
-
-        if stochastic_solver:
-            # SDE: dz = [f(z,t) - g(t)² * score(z,t)] dt + g(t) dW
-            velocity = f - g_squared * compositional_score
-        else:
-            # ODE: dz = [f(z,t) - 0.5 * g(t)² * score(z,t)] dt
-            velocity = f - 0.5 * g_squared * compositional_score
-
-        return velocity
+        return compositional_score
 
     def _compute_individual_scores(
         self,

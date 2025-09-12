@@ -3,17 +3,14 @@
 This folder contains single-file context artifacts to improve LLM assistance for BayesFlow.
 
 ## Files
-- `bayesflow-context-full-<TAG>.md`
-  Full Markdown snapshot: README, examples (converted to Markdown), and all `bayesflow/` code.
-
 - `bayesflow-context-compact-<TAG>.md`
-  Smaller snapshot: README + examples fully, `bayesflow/` code partially (truncated previews).
+  Smaller snapshot: README + examples
 
-- `bayesflow-context-<TAG>.manifest.json`
-  Metadata (tag, commit, dependencies, file sizes).
+- `bayesflow-context-full-<TAG>.md`
+  Full Markdown snapshot: README + examples + source code (`bayesflow/`).
 
 ## Usage
-1. Download either the full or compact file for the release tag of interest: The compact file is cheaper and faster; the full file is most accurate.
+1. Download either the compact or full file for the release tag of interest: The compact file is cheaper and faster; the full file is most accurate.
 2. Paste it into your LLM context before asking questions about BayesFlow.
 
 ## Prompt Tip

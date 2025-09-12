@@ -734,13 +734,13 @@ class DiffusionModel(InferenceNetwork):
         individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions_batch, training)
 
         # Compute prior score component
-        weighted_prior_score = (1.0 - time) * compute_prior_score(xz)
+        prior_score = compute_prior_score(xz)
+        weighted_prior_score = (1.0 - n_compositional) * (1.0 - time) * prior_score
 
-        # Combine scores using compositional formula, mean over individual scores and scale with n to get sum
-        weighted_individual_scores = individual_scores - keras.ops.expand_dims(weighted_prior_score, axis=1)
-        summed_individual_scores = n_compositional * ops.mean(weighted_individual_scores, axis=1)
+        # Sum individual scores across compositional dimensiont
+        summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
 
-        # Combined score
+        # Combined score using compositional formula: (1-n)(1-t)∇log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
         time_tensor = ops.cast(time, dtype=ops.dtype(xz))
         compositional_score = self.compositional_bridge(time_tensor) * (weighted_prior_score + summed_individual_scores)
         return compositional_score

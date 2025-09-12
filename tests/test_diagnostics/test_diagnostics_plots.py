@@ -92,9 +92,20 @@ def test_loss(history):
     assert out.axes[0].title._text == "Loss Trajectory"
 
 
-def test_recovery(random_estimates, random_targets):
+def test_recovery_bounds(random_estimates, random_targets):
     # basic functionality: automatic variable names
-    out = bf.diagnostics.plots.recovery(random_estimates, random_targets, markersize=4)
+    from bayesflow.utils.numpy_utils import credible_interval
+
+    out = bf.diagnostics.plots.recovery(
+        random_estimates, random_targets, markersize=4, uncertainty_agg=credible_interval
+    )
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[2].title._text == "sigma"
+
+
+def test_recovery_symmetric(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    out = bf.diagnostics.plots.recovery(random_estimates, random_targets, markersize=4, uncertainty_agg=np.std)
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[2].title._text == "sigma"
 

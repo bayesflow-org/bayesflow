@@ -859,6 +859,7 @@ class DiffusionModel(InferenceNetwork):
 
             state = annealed_langevin(
                 score_fn=scores,
+                noise_schedule=self.noise_schedule,
                 state=state,
                 seed=self.seed_generator,
                 **filter_kwargs(integrate_kwargs, annealed_langevin),
@@ -886,13 +887,14 @@ class DiffusionModel(InferenceNetwork):
 
 def annealed_langevin(
     score_fn: Callable,
+    noise_schedule: Callable,
     state: dict[str, ArrayLike],
     steps: int,
     seed: keras.random.SeedGenerator,
-    L: int = 5,
     start_time: ArrayLike = None,
     stop_time: ArrayLike = None,
-    eps: float = 0.01,
+    langevin_corrector_steps: int = 5,
+    step_size_factor: float = 0.1,
 ) -> dict[str, ArrayLike]:
     """
     Annealed Langevin dynamics for diffusion sampling.
@@ -902,30 +904,25 @@ def annealed_langevin(
         eta ~ N(0, I)
         theta <- theta + (dt[t]/2) * psi(theta, t) + sqrt(dt[t]) * eta
     """
-    ratio = keras.ops.convert_to_tensor(
-        (stop_time + eps) / start_time, dtype=keras.ops.dtype(next(iter(state.values())))
-    )
+    log_snr_t = noise_schedule.get_log_snr(t=start_time, training=False)
+    _, max_sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-    T = steps
     # main loops
-    for t_T in range(T - 1, 0, -1):
-        t = t_T / T
-        dt = keras.ops.convert_to_tensor(stop_time, dtype=keras.ops.dtype(next(iter(state.values())))) * (
-            ratio ** (stop_time - t)
-        )
+    for step in range(steps - 1, 0, -1):
+        t = step / steps
+        log_snr_t = noise_schedule.get_log_snr(t=t, training=False)
+        _, sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+        annealing_step_size = step_size_factor * keras.ops.square(sigma_t / max_sigma_t)
 
-        sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
-        # inner L Langevin steps at level t
-        for _ in range(L):
-            # score
+        sqrt_dt = keras.ops.sqrt(keras.ops.abs(annealing_step_size))
+        for _ in range(langevin_corrector_steps):
             drift = score_fn(t, **filter_kwargs(state, score_fn))
-            # noise
-            eta = {
+            noise = {
                 k: keras.random.normal(keras.ops.shape(v), dtype=keras.ops.dtype(v), seed=seed)
                 for k, v in state.items()
             }
 
             # update
             for k, d in drift.items():
-                state[k] = state[k] + 0.5 * dt * d + sqrt_dt * eta[k]
+                state[k] = state[k] + 0.5 * annealing_step_size * d + sqrt_dt * noise[k]
     return state

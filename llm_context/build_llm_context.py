@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Build two repomix LLM-context files, but write converted .md files into a temporary directory
-so the real examples/ folder is never modified.
+Builds two repomix LLM-context files:
 
- - llm_context/llm_context_compact.md  -> examples only (from temp dir)
- - llm_context/llm_context_full.md     -> examples (temp dir) + bayesflow source code
+ - llm_context/llm_context_compact.md  -> README + examples only
+ - llm_context/llm_context_full.md     -> README + examples + bayesflow source code
+
+ .ipynb files from examples/ are temporarily converted to .md for clean repomix conversion.
 """
 import json
 import subprocess
@@ -22,6 +23,8 @@ readme_file = base_dir / "README.md"
 output_dir = base_dir / "llm_context"
 compact_output_file = output_dir / "llm_context_compact.md"
 full_output_file = output_dir / "llm_context_full.md"
+
+EXCLUDED_DIR_NAMES = ["experimental"]
 
 # Ensure output directory exists
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -77,9 +80,15 @@ def convert_notebooks_to_md_in_temp(src_examples_dir: Path, temp_examples_dir: P
 
     return md_paths, created_paths
 
-def collect_bayesflow_py_abs_paths(src_bayesflow_dir: Path):
-    """Return a sorted list of absolute Paths for all .py files in src_bayesflow_dir."""
-    return sorted(p.resolve() for p in sorted(src_bayesflow_dir.rglob("*.py")))
+def collect_bayesflow_py_abs_paths(src_bayesflow_dir: Path, excluded_dir_names=EXCLUDED_DIR_NAMES):
+    """Return a sorted list of absolute Paths for all .py files in src_bayesflow_dir,
+    excluding any found under directories whose name is in excluded_dir_names (at any depth)."""
+    excluded = set(excluded_dir_names)
+    return sorted(
+        p.resolve()
+        for p in src_bayesflow_dir.rglob("*.py")
+        if not any(parent.name in excluded for parent in p.parents)
+    )
 
 def run_repomix_with_file_list(file_paths, output_path, repo_cwd, include_patterns="**/*.py,**/*.md"):
     """Run repomix (cwd=repo_cwd) with --stdin reading newline-separated paths (absolute or relative)."""
@@ -92,7 +101,6 @@ def run_repomix_with_file_list(file_paths, output_path, repo_cwd, include_patter
         "--style", "markdown",
         "--stdin",
         "--include", include_patterns,
-        "--ignore", "bayesflow/experimental/",
         "-o", str(output_path),
     ]
     print(f"Running repomix in cwd={repo_cwd}: {' '.join(cmd)}")

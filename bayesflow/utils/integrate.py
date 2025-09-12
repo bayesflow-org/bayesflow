@@ -404,6 +404,7 @@ def integrate_stochastic(
     score_fn: Callable = None,
     corrector_steps: int = 0,
     noise_schedule=None,
+    r: float = 0.1,
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
     """
@@ -426,6 +427,7 @@ def integrate_stochastic(
                  Should take (time, **state) and return score dict.
         corrector_steps: Number of corrector steps to take after each predictor step.
         noise_schedule: Noise schedule object for computing lambda_t and alpha_t in corrector.
+        r: Scaling factor for corrector step size.
         **kwargs: Additional arguments to pass to the step function.
 
     Returns:
@@ -482,10 +484,9 @@ def integrate_stochastic(
                 # Compute noise schedule components for corrector step size
                 log_snr_t = noise_schedule.get_log_snr(t=new_time, training=False)
                 alpha_t, _ = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-                lambda_t = keras.ops.exp(-log_snr_t)  # lambda_t from noise schedule
 
                 # Corrector update: x_i+1 = x_i + e * score + sqrt(2e) * noise_corrector
-                # where e = 2*alpha_t * (lambda_t * ||z|| / ||score||)**2
+                # where e = 2*alpha_t * (r * ||z|| / ||score||)**2
                 for k in new_state.keys():
                     if k in score:
                         z_norm = keras.ops.norm(new_state[k], axis=-1, keepdims=True)
@@ -494,7 +495,7 @@ def integrate_stochastic(
                         # Prevent division by zero
                         score_norm = keras.ops.maximum(score_norm, 1e-8)
 
-                        e = 2.0 * alpha_t * (lambda_t * z_norm / score_norm) ** 2
+                        e = 2.0 * alpha_t * (r * z_norm / score_norm) ** 2
                         sqrt_2e = keras.ops.sqrt(2.0 * e)
 
                         new_state[k] = new_state[k] + e * score[k] + sqrt_2e * _corrector_noise[k]

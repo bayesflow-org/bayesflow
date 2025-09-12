@@ -14,6 +14,8 @@ def recovery(
     variable_names: Sequence[str] = None,
     point_agg=np.median,
     uncertainty_agg=credible_interval,
+    point_agg_kwargs=None,
+    uncertainty_agg_kwargs=None,
     add_corr: bool = True,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -58,7 +60,11 @@ def recovery(
         The individual parameter names for nice plot titles. Inferred if None
     point_agg         : function to compute point estimates. Default: median
     uncertainty_agg   : function to compute uncertainty interval bounds.
-        Default: credible_interval
+        Default: credible_interval with coverage probability 95%.
+    point_agg_kwargs : Optional dictionary of further arguments passed to point_agg.
+    uncertainty_agg_kwargs : Optional dictionary of further arguments passed to uncertainty_agg.
+        For example, to change the coverage probability of credible_interval to 50%,
+        use uncertainty_agg_kwargs = dict(prob = 0.5)
     add_corr          : boolean, default: True
         Should correlations between estimates and ground truth values be shown?
     figsize           : tuple or None, optional, default : None
@@ -106,11 +112,17 @@ def recovery(
     estimates = plot_data.pop("estimates")
     targets = plot_data.pop("targets")
 
+    if point_agg_kwargs is None:
+        point_agg_kwargs = {}
+
+    if uncertainty_agg_kwargs is None:
+        uncertainty_agg_kwargs = {}
+
     # Compute point estimates and uncertainties
-    point_estimate = point_agg(estimates, axis=1, **kwargs.get("point_agg_kwargs", {}))
+    point_estimate = point_agg(estimates, axis=1, **point_agg_kwargs)
 
     if uncertainty_agg is not None:
-        u = uncertainty_agg(estimates, axis=1, **kwargs.get("uncertainty_agg_kwargs", {}))
+        u = uncertainty_agg(estimates, axis=1, **uncertainty_agg_kwargs)
         # compute lower and upper error
         u[0, :, :] = point_estimate - u[0, :, :]
         u[1, :, :] = u[1, :, :] - point_estimate

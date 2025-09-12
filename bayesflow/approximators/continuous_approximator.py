@@ -699,7 +699,7 @@ class ContinuousApproximator(Approximator):
                     _samples, forward=False, log_det_jac=True
                 )
             else:
-                log_det_jac_standardize = 0
+                log_det_jac_standardize = keras.ops.cast(0.0, dtype="float32")
             _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": _samples})
             adapted_samples, log_det_jac = self.adapter(
                 _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
@@ -708,15 +708,12 @@ class ContinuousApproximator(Approximator):
             for key in adapted_samples:
                 if isinstance(prior_score[key], np.ndarray):
                     prior_score[key] = prior_score[key].astype("float32")
-                if len(log_det_jac) > 0:
-                    prior_score[key] += log_det_jac[key]
+                if len(log_det_jac) > 0 and key in log_det_jac:
+                    prior_score[key] -= expand_right_as(log_det_jac[key], prior_score[key])
 
             prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
-            # make a tensor
-            out = keras.ops.concatenate(
-                list(prior_score.values()), axis=-1
-            )  # todo: assumes same order, might be incorrect
-            return out + expand_right_as(log_det_jac_standardize, out)
+            out = keras.ops.concatenate(list(prior_score.values()), axis=-1)
+            return out - keras.ops.expand_dims(log_det_jac_standardize, axis=-1)
 
         # Test prior score function, useful for debugging
         test = self.inference_network.base_distribution.sample((n_datasets, num_samples))

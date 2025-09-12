@@ -220,3 +220,56 @@ def approximator_with_summaries(request):
             )
         case _:
             raise ValueError("Invalid param for approximator class.")
+
+
+@pytest.fixture
+def simple_log_simulator():
+    """Create a simple simulator for testing."""
+    import numpy as np
+    from bayesflow.simulators import Simulator
+    from bayesflow.utils.decorators import allow_batch_size
+    from bayesflow.types import Shape, Tensor
+
+    class SimpleSimulator(Simulator):
+        """Simple simulator that generates mean and scale parameters."""
+
+        @allow_batch_size
+        def sample(self, batch_shape: Shape) -> dict[str, Tensor]:
+            # Generate parameters in original space
+            loc = np.random.normal(0.0, 1.0, size=batch_shape + (2,))  # location parameters
+            scale = np.random.lognormal(0.0, 0.5, size=batch_shape + (2,))  # scale parameters > 0
+
+            # Generate some dummy conditions
+            conditions = np.random.normal(0.0, 1.0, size=batch_shape + (3,))
+
+            return dict(
+                loc=loc.astype("float32"), scale=scale.astype("float32"), conditions=conditions.astype("float32")
+            )
+
+    return SimpleSimulator()
+
+
+@pytest.fixture
+def transforming_adapter():
+    """Create an adapter that applies log transformation to scale parameters."""
+    from bayesflow.adapters import Adapter
+
+    adapter = Adapter()
+    adapter.to_array()
+    adapter.convert_dtype("float64", "float32")
+
+    # Apply log transformation to scale parameters (to make them unbounded)
+    adapter.log(["scale"])
+
+    adapter.concatenate(["loc", "scale"], into="inference_variables")
+    adapter.concatenate(["conditions"], into="inference_conditions")
+    adapter.keep(["inference_variables", "inference_conditions"])
+    return adapter
+
+
+@pytest.fixture
+def diffusion_network():
+    """Create a diffusion network for compositional sampling."""
+    from bayesflow.networks import DiffusionModel, MLP
+
+    return DiffusionModel(subnet=MLP(widths=[32, 32]))

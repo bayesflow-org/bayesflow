@@ -721,7 +721,6 @@ class DiffusionModel(InferenceNetwork):
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         # Compute individual dataset scores
         if mini_batch_size is not None and mini_batch_size < n_compositional:
@@ -731,13 +730,13 @@ class DiffusionModel(InferenceNetwork):
             conditions_batch = conditions[:, mini_batch_idx]
         else:
             conditions_batch = conditions
-        individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions_batch, training)
+        individual_scores = self._compute_individual_scores(xz, log_snr_t, conditions_batch, training)
 
         # Compute prior score component
         prior_score = compute_prior_score(xz)
         weighted_prior_score = (1.0 - n_compositional) * (1.0 - time) * prior_score
 
-        # Sum individual scores across compositional dimensiont
+        # Sum individual scores across compositional dimensions
         summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
 
         # Combined score using compositional formula: (1-n)(1-t)∇log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
@@ -749,8 +748,6 @@ class DiffusionModel(InferenceNetwork):
         self,
         xz: Tensor,
         log_snr_t: Tensor,
-        alpha_t: Tensor,
-        sigma_t: Tensor,
         conditions: Tensor,
         training: bool,
     ) -> Tensor:
@@ -762,9 +759,6 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             Individual scores with shape (n_datasets, n_compositional, ...)
         """
-        # Apply subnet to each compositional condition separately
-        transformed_log_snr = self._transform_log_snr(log_snr_t)
-
         # Get shapes
         xz_shape = ops.shape(xz)  # (n_datasets, num_samples, ..., dims)
         conditions_shape = ops.shape(conditions)  # (n_datasets, n_compositional, num_samples, ..., dims)
@@ -777,38 +771,21 @@ class DiffusionModel(InferenceNetwork):
         xz_expanded = ops.expand_dims(xz, axis=1)  # (n_datasets, 1, num_samples, ..., dims)
         xz_expanded = ops.broadcast_to(xz_expanded, (n_datasets, n_compositional, num_samples) + dims)
 
-        # Expand noise schedule components to match compositional structure
-        log_snr_expanded = ops.expand_dims(transformed_log_snr, axis=1)
+        # Expand log_snr_t to match compositional structure
+        log_snr_expanded = ops.expand_dims(log_snr_t, axis=1)
         log_snr_expanded = ops.broadcast_to(log_snr_expanded, (n_datasets, n_compositional, num_samples, 1))
 
-        alpha_expanded = ops.expand_dims(alpha_t, axis=1)
-        alpha_expanded = ops.broadcast_to(alpha_expanded, (n_datasets, n_compositional, num_samples, 1))
-
-        sigma_expanded = ops.expand_dims(sigma_t, axis=1)
-        sigma_expanded = ops.broadcast_to(sigma_expanded, (n_datasets, n_compositional, num_samples, 1))
-
-        # Flatten for subnet application: (n_datasets * n_compositional, num_samples, ..., dims)
+        # Flatten for score computation: (n_datasets * n_compositional, num_samples, ..., dims)
         xz_flat = ops.reshape(xz_expanded, (n_datasets * n_compositional, num_samples) + dims)
         log_snr_flat = ops.reshape(log_snr_expanded, (n_datasets * n_compositional, num_samples, 1))
-        alpha_flat = ops.reshape(alpha_expanded, (n_datasets * n_compositional, num_samples, 1))
-        sigma_flat = ops.reshape(sigma_expanded, (n_datasets * n_compositional, num_samples, 1))
         conditions_flat = ops.reshape(conditions, (n_datasets * n_compositional, num_samples) + conditions_dims)
 
-        # Apply subnet
-        subnet_out = self._apply_subnet(xz_flat, log_snr_flat, conditions=conditions_flat, training=training)
-        pred = self.output_projector(subnet_out, training=training)
-
-        # Convert prediction to x
-        x_pred = self.convert_prediction_to_x(
-            pred=pred, z=xz_flat, alpha_t=alpha_flat, sigma_t=sigma_flat, log_snr_t=log_snr_flat
-        )
-
-        # Compute score: (α_t * x_pred - z) / σ_t²
-        score = (alpha_flat * x_pred - xz_flat) / ops.square(sigma_flat)
+        # Use standard score function
+        scores_flat = self.score(xz_flat, log_snr_t=log_snr_flat, conditions=conditions_flat, training=training)
 
         # Reshape back to compositional structure
-        score = ops.reshape(score, (n_datasets, n_compositional, num_samples) + dims)
-        return score
+        scores = ops.reshape(scores_flat, (n_datasets, n_compositional, num_samples) + dims)
+        return scores
 
     def _inverse_compositional(
         self,

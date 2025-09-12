@@ -16,14 +16,11 @@ from bayesflow.utils import (
     integrate_stochastic,
     logging,
     tensor_utils,
-    filter_kwargs,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
-
-ArrayLike = int | float | Tensor
 
 
 # disable module check, use potential module after moving from experimental
@@ -917,27 +914,6 @@ class DiffusionModel(InferenceNetwork):
                 seed=self.seed_generator,
                 **integrate_kwargs,
             )
-        elif integrate_kwargs["method"] == "langevin":
-
-            def scores(time, xz):
-                return {
-                    "xz": self.compositional_score(
-                        xz,
-                        time=time,
-                        conditions=conditions,
-                        compute_prior_score=compute_prior_score,
-                        mini_batch_size=mini_batch_size,
-                        training=training,
-                    )
-                }
-
-            state = annealed_langevin(
-                score_fn=scores,
-                noise_schedule=self.noise_schedule,
-                state=state,
-                seed=self.seed_generator,
-                **filter_kwargs(integrate_kwargs, annealed_langevin),
-            )
         else:
 
             def deltas(time, xz):
@@ -957,46 +933,3 @@ class DiffusionModel(InferenceNetwork):
 
         x = state["xz"]
         return x
-
-
-def annealed_langevin(
-    score_fn: Callable,
-    noise_schedule: Callable,
-    state: dict[str, ArrayLike],
-    steps: int,
-    seed: keras.random.SeedGenerator,
-    start_time: ArrayLike = None,
-    stop_time: ArrayLike = None,
-    langevin_corrector_steps: int = 5,
-    step_size_factor: float = 0.1,
-) -> dict[str, ArrayLike]:
-    """
-    Annealed Langevin dynamics for diffusion sampling.
-
-    for t = T-1,...,1:
-      for s = 1,...,L:
-        eta ~ N(0, I)
-        theta <- theta + (dt[t]/2) * psi(theta, t) + sqrt(dt[t]) * eta
-    """
-    log_snr_t = noise_schedule.get_log_snr(t=start_time, training=False)
-    _, max_sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-
-    # main loops
-    for step in range(steps - 1, 0, -1):
-        t = step / steps
-        log_snr_t = noise_schedule.get_log_snr(t=t, training=False)
-        _, sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-        annealing_step_size = step_size_factor * keras.ops.square(sigma_t / max_sigma_t)
-
-        sqrt_dt = keras.ops.sqrt(keras.ops.abs(annealing_step_size))
-        for _ in range(langevin_corrector_steps):
-            drift = score_fn(t, **filter_kwargs(state, score_fn))
-            noise = {
-                k: keras.random.normal(keras.ops.shape(v), dtype=keras.ops.dtype(v), seed=seed)
-                for k, v in state.items()
-            }
-
-            # update
-            for k, d in drift.items():
-                state[k] = state[k] + 0.5 * annealing_step_size * d + sqrt_dt * noise[k]
-    return state

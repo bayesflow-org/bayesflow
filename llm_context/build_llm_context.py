@@ -1,349 +1,171 @@
+#!/usr/bin/env python3
 """
-Build BayesFlow LLM context files (full + compact).
+Build two repomix LLM-context files, but write converted .md files into a temporary directory
+so the real examples/ folder is never modified.
 
-Artifacts written to llm_context/:
-- bayesflow-context-full-<TAG>.md
-- bayesflow-context-compact-<TAG>.md
-- bayesflow-context-<TAG>.manifest.json
-
-Strategy:
-- Convert notebooks in examples/ to Markdown (temporary, not committed).
-- Run repomix on bayesflow/, examples/, README.md.
-- Compact file: README + examples fully, bayesflow/ truncated unless short.
-- Both files include a short dependency summary from pyproject.toml.
+ - llm_context/llm_context_compact.md  -> examples only (from temp dir)
+ - llm_context/llm_context_full.md     -> examples (temp dir) + bayesflow source code
 """
-
-from __future__ import annotations
-import argparse
-import datetime
 import json
-import logging
-import os
 import subprocess
-import tempfile
 from pathlib import Path
-import re
-import nbformat
-from typing import List, Optional, Tuple
+import tempfile
+import sys
+import shutil
 
-# Configuration
-ROOT = Path(".").resolve()
-OUT_DIR = Path("llm_context")
-INCLUDE_FOLDERS = ("bayesflow/",)
-INCLUDE_FILES = ("README.md",)
-PYPROJECT = Path("pyproject.toml")
-HEADING_RE = re.compile(r"^\s#{2,}\s*(?:FILE:\s*)?(?P<path>.+?)\s*$", flags=re.MULTILINE)
-TOKEN_CHAR_RATIO = 4
+base_dir = Path(__file__).parent.parent.resolve()
+print("base_dir:", base_dir)
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+examples_dir = base_dir / "examples"
+src_dir = base_dir / "bayesflow"
+readme_file = base_dir / "README.md"
+output_dir = base_dir / "llm_context"
+compact_output_file = output_dir / "llm_context_compact.md"
+full_output_file = output_dir / "llm_context_full.md"
 
+# Ensure output directory exists
+output_dir.mkdir(parents=True, exist_ok=True)
 
-# Utilities
-def run(cmd: List[str], input_text: Optional[str] = None) -> str:
+# Safety checks
+if not examples_dir.exists():
+    print(f"ERROR: examples directory not found: {examples_dir}", file=sys.stderr)
+    raise SystemExit(1)
+if not src_dir.exists():
+    print(f"WARNING: bayesflow source directory not found: {src_dir} -- full context will be skipped.", file=sys.stderr)
+
+def convert_notebooks_to_md_in_temp(src_examples_dir: Path, temp_examples_dir: Path):
     """
-    Run a shell command and capture stdout.
-
-    Parameters
-    ----------
-    cmd : list of str
-        Command and arguments.
-    input_text : str, optional
-        Text passed to stdin.
-
-    Returns
-    -------
-    str
-        Captured stdout.
-
-    Raises
-    ------
-    RuntimeError
-        If the command exits with a non-zero status.
+    Convert .ipynb files to .md and write them into temp_examples_dir.
+    Returns:
+      - list of Path objects (absolute) to the markdown files created (for repomix input)
+      - list of actual file paths created (for cleanup)
     """
-    res = subprocess.run(cmd, check=False, text=True, input=input_text, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if res.returncode != 0:
-        raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{res.stderr.strip()}")
-    return res.stdout
+    created_paths = []
+    md_paths = []
 
+    for ipynb_file in sorted(src_examples_dir.glob("*.ipynb")):
+        with open(ipynb_file, "r", encoding="utf-8") as f:
+            notebook = json.load(f)
 
-def token_estimate(text: str) -> int:
-    """
-    Roughly estimate token count for text.
+        parts = []
+        for cell in notebook.get("cells", []):
+            if cell.get("cell_type") == "markdown":
+                parts.append("".join(cell.get("source", [])))
+            elif cell.get("cell_type") == "code":
+                parts.append("```python\n" + "".join(cell.get("source", [])) + "\n```")
 
-    Parameters
-    ----------
-    text : str
-        Input text.
+        # write into the temporary examples directory (never into the real examples/)
+        md_file = temp_examples_dir / f"{ipynb_file.stem}.md"
 
-    Returns
-    -------
-    int
-        Estimated token count.
-    """
-    return max(1, len(text) // TOKEN_CHAR_RATIO)
+        # ensure unique name just in case (temp dir typically empty, but keep behaviour consistent)
+        if md_file.exists():
+            i = 1
+            while True:
+                candidate = temp_examples_dir / f"{ipynb_file.stem}.repomix.{i}.md"
+                if not candidate.exists():
+                    md_file = candidate
+                    break
+                i += 1
 
+        with open(md_file, "w", encoding="utf-8") as f:
+            f.write("\n\n".join(parts))
 
-def load_dependency_summary(pyproject: Path = PYPROJECT) -> List[str]:
-    """
-    Extract dependencies from pyproject.toml.
+        created_paths.append(md_file)
+        md_paths.append(md_file.resolve())
 
-    Parameters
-    ----------
-    pyproject : Path
-        Path to pyproject.toml.
+        print("Created temporary md:", md_file)
 
-    Returns
-    -------
-    list of str
-        Dependency strings, or empty list if not available.
-    """
-    if not pyproject.exists():
-        return []
+    return md_paths, created_paths
+
+def collect_bayesflow_py_abs_paths(src_bayesflow_dir: Path):
+    """Return a sorted list of absolute Paths for all .py files in src_bayesflow_dir."""
+    return sorted(p.resolve() for p in sorted(src_bayesflow_dir.rglob("*.py")))
+
+def run_repomix_with_file_list(file_paths, output_path, repo_cwd, include_patterns="**/*.py,**/*.md"):
+    """Run repomix (cwd=repo_cwd) with --stdin reading newline-separated paths (absolute or relative)."""
+    if not file_paths:
+        print(f"No files provided for repomix output {output_path}. Skipping.", file=sys.stderr)
+        return
+
+    cmd = [
+        "repomix",
+        "--style", "markdown",
+        "--stdin",
+        "--include", include_patterns,
+        "--ignore", "bayesflow/experimental/",
+        "-o", str(output_path),
+    ]
+    print(f"Running repomix in cwd={repo_cwd}: {' '.join(cmd)}")
+    print(f"  -> {len(file_paths)} files (showing up to 20):")
+    for p in file_paths[:20]:
+        print("    ", str(p))
+
+    stdin_input = "\n".join(str(p) for p in file_paths) + "\n"
+    subprocess.run(cmd, input=stdin_input, text=True, check=True, cwd=str(repo_cwd))
+    print(f"✅ Repomix packaged output saved to {output_path}")
+
+# --- Main flow ---
+# Create a temporary examples directory *under the repo root* so repomix can use relative paths if it wants.
+temp_dir_path = None
+created_files = []
+
+try:
+    temp_dir = tempfile.mkdtemp(prefix=".examples_temporary_", dir=str(base_dir))
+    temp_examples_dir = Path(temp_dir)
+    temp_dir_path = temp_examples_dir
+    print("Using temporary examples dir:", temp_examples_dir)
+
+    # Convert notebooks into the temp folder (no changes in the real examples/ directory)
+    md_abs_paths, created_files = convert_notebooks_to_md_in_temp(examples_dir, temp_examples_dir)
+    if not md_abs_paths:
+        print("ERROR: No example notebooks (*.ipynb) found or conversion produced no markdown files.", file=sys.stderr)
+        raise SystemExit(1)
+
+    # For repomix we can pass relative paths (relative to repo root) — convert if possible
     try:
-        import tomllib as _toml  # Python 3.11+
+        md_rel_for_repomix = [p.relative_to(base_dir) for p in md_abs_paths]
     except Exception:
-        import tomli as _toml  # Fallback
-    try:
-        data = _toml.loads(pyproject.read_text(encoding="utf8"))
-    except Exception:
-        return []
-    proj = data.get("project", {}) or {}
-    raw = proj.get("dependencies", []) or []
-    return [d.split(";")[0].strip() for d in raw if isinstance(d, str)]
+        # fallback to absolute paths if relative conversion fails
+        md_rel_for_repomix = md_abs_paths
 
+    # Include README if present (use relative path so repomix sees it correctly)
+    if readme_file.exists():
+        print("Including top-level README.md in repomix inputs")
+        md_rel_for_repomix.append(Path("README.md"))
 
-# Notebook conversion
-def notebook_to_md(nb_path: Path) -> str:
-    """
-    Convert Jupyter notebook to Markdown.
+    # ---- Compact: examples only ----
+    run_repomix_with_file_list(md_rel_for_repomix, compact_output_file, repo_cwd=base_dir, include_patterns="**/*.md")
 
-    Parameters
-    ----------
-    nb_path : Path
-        Path to .ipynb file.
-
-    Returns
-    -------
-    str
-        Markdown text with markdown and code cells.
-    """
-    nb = nbformat.read(str(nb_path), as_version=4)
-    out: List[str] = [f"# Notebook: {nb_path.name}", ""]
-    for cell in nb.cells:
-        src = "".join(cell.get("source", "")) if isinstance(cell.get("source", ""), list) else cell.get("source", "")
-        if cell.get("cell_type") == "markdown":
-            out.append(src.rstrip())
-            out.append("")
-        elif cell.get("cell_type") == "code" and src.strip():
-            out.extend(["```python", src.strip("\n"), "```", ""])
-    return "\n".join(out).rstrip() + "\n"
-
-
-def convert_examples_to_md(src: Path, out: Path) -> List[Path]:
-    """
-    Convert all .ipynb notebooks in a directory tree to Markdown.
-
-    Parameters
-    ----------
-    src : Path
-        Source examples/ directory.
-    out : Path
-        Destination directory for converted .md files.
-
-    Returns
-    -------
-    list of Path
-        List of generated Markdown file paths.
-    """
-    created: List[Path] = []
-    if not src.exists():
-        return created
-    out.mkdir(parents=True, exist_ok=True)
-    for nb in sorted(src.rglob("*.ipynb")):
+    # ---- Full: examples + bayesflow .py files ----
+    if src_dir.exists():
+        py_abs_paths = collect_bayesflow_py_abs_paths(src_dir)
+        # convert py paths to relative if possible
         try:
-            dst = out / (nb.stem + ".md")
-            dst.write_text(notebook_to_md(nb), encoding="utf8")
-            created.append(dst)
-            logging.info("Converted %s -> %s", nb, dst)
+            py_rel_for_repomix = [p.relative_to(base_dir) for p in py_abs_paths]
+        except Exception:
+            py_rel_for_repomix = py_abs_paths
+
+        full_list = md_rel_for_repomix + py_rel_for_repomix
+        run_repomix_with_file_list(full_list, full_output_file, repo_cwd=base_dir, include_patterns="**/*.py,**/*.md")
+    else:
+        print("Skipping creation of full context because bayesflow directory was not found.", file=sys.stderr)
+
+finally:
+    # Clean up only the temporary files / dir we created
+    if created_files:
+        for p in created_files:
+            try:
+                if p.exists():
+                    p.unlink()
+                    print("Removed temporary md:", p)
+            except Exception as e:
+                print(f"Warning: failed to remove {p}: {e}", file=sys.stderr)
+
+    if temp_dir_path and temp_dir_path.exists():
+        try:
+            shutil.rmtree(temp_dir_path)
+            print("Removed temporary directory:", temp_dir_path)
         except Exception as e:
-            logging.warning("Failed to convert %s: %s", nb, e)
-    return created
+            print(f"Warning: failed to remove temporary directory {temp_dir_path}: {e}", file=sys.stderr)
 
-
-# Context generation
-def run_repomix_on_paths(paths: List[str], style: str = "markdown") -> str:
-    """
-    Run repomix on given paths.
-
-    Parameters
-    ----------
-    paths : list of str
-        Relative paths to include.
-    style : str
-        Output style, default 'markdown'.
-
-    Returns
-    -------
-    str
-        Repomix output.
-    """
-    cmd = ["repomix", "--style", style, "--stdin", "--stdout"]
-    return run(cmd, input_text="\n".join(paths) + "\n")
-
-
-def generate_compact(full_text: str, tag: str, repo_root: Path, conv_examples_dir: Path) -> str:
-    """
-    Create compact context file from full repomix output.
-
-    Parameters
-    ----------
-    full_text : str
-        Full repomix output.
-    tag : str
-        Release tag.
-    repo_root : Path
-        Repository root.
-    conv_examples_dir : Path
-        Path to temporary converted examples.
-
-    Returns
-    -------
-    str
-        Compact context content.
-    """
-    lines = full_text.splitlines(keepends=True)
-    sections: List[Tuple[str, int, int]] = []
-    cur_path: Optional[str] = None
-    cur_start = 0
-    for i, line in enumerate(lines):
-        m = HEADING_RE.match(line)
-        if m:
-            if cur_path is not None:
-                sections.append((cur_path, cur_start, i))
-            cur_path = m.group("path").strip()
-            cur_start = i + 1
-    if cur_path is not None:
-        sections.append((cur_path, cur_start, len(lines)))
-
-    if not sections:
-        return f"<!-- Compact artifact for BayesFlow {tag} (fallback) -->\n\n{''.join(lines[:40])}"
-
-    out_lines: List[str] = [f"<!-- Compact artifact for BayesFlow {tag} -->\n\n"]
-    preview_lines = 40
-    max_keep_tokens = 1200
-    for idx, (path, s, e) in enumerate(sections, start=1):
-        seg = "".join(lines[s:e])
-        path_lower = path.lower()
-        keep_full = (
-            path_lower.endswith("readme.md")
-            or path_lower.startswith("examples")
-            or (conv_examples_dir.exists() and (conv_examples_dir / Path(path).name).exists())
-            or (path.startswith("bayesflow") and token_estimate(seg) <= max_keep_tokens)
-        )
-        out_lines.append(f"## {path}  <!-- chunk {idx} lines {s + 1}-{e} -->\n\n")
-        if keep_full:
-            out_lines.append(seg + "\n")
-        else:
-            out_lines.append("".join(seg.splitlines(keepends=True)[:preview_lines]))
-            out_lines.append(f"\n> [TRUNCATED] See full file for `{path}` lines {s + 1}-{e}.\n\n")
-    return "".join(out_lines)
-
-
-# Build pipeline
-def build(tag: Optional[str], out_dir: Path):
-    """
-    Generate full + compact context files and manifest.
-
-    Parameters
-    ----------
-    tag : str or None
-        Release tag. If None, inferred from environment or commit hash.
-    out_dir : Path
-        Destination directory.
-
-    Returns
-    -------
-    tuple of Path
-        (full_file, compact_file, manifest_file)
-    """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    deps = load_dependency_summary(PYPROJECT)
-    dep_md = "**Dependency summary:**\n" + "\n".join(f"- {d}" for d in deps) + "\n\n" if deps else ""
-
-    with tempfile.TemporaryDirectory(prefix="bf-conv-") as tmp:
-        tmp_path = Path(tmp)
-        convert_examples_to_md(ROOT / "examples", tmp_path)
-        repomix_inputs = [str(p) for p in INCLUDE_FOLDERS if (ROOT / p).exists()]
-        if tmp_path.exists():
-            repomix_inputs.append(str(tmp_path))
-        for f in INCLUDE_FILES:
-            if (ROOT / f).exists():
-                repomix_inputs.append(f)
-        repomix_out = run_repomix_on_paths(repomix_inputs, style="markdown")
-
-    try:
-        commit = run(["git", "rev-parse", "HEAD"]).strip()
-    except Exception:
-        commit = None
-
-    tag = (
-        tag
-        or os.environ.get("RELEASE_TAG")
-        or (commit[:7] if commit else datetime.datetime.utcnow().strftime("%Y%m%d"))
-    )
-    header = {
-        "artifact": f"bayesflow-context-full-{tag}.md",
-        "tag": tag,
-        "commit": commit,
-        "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
-    }
-    header_block = ["---"] + [f"{k}: {v}" for k, v in header.items() if v] + ["---", ""]
-
-    full_text = "\n".join(header_block) + dep_md + repomix_out
-    full_path = out_dir / f"bayesflow-context-full-{tag}.md"
-    full_path.write_text(full_text, encoding="utf8")
-
-    compact_text = generate_compact(repomix_out, tag, ROOT, tmp_path)
-    compact_path = out_dir / f"bayesflow-context-compact-{tag}.md"
-    compact_path.write_text("\n".join(header_block) + dep_md + compact_text, encoding="utf8")
-
-    manifest = {
-        "tag": tag,
-        "commit": commit,
-        "generated_at": header["generated_at"],
-        "dependency_summary": deps,
-        "files": {
-            full_path.name: {"size_bytes": full_path.stat().st_size},
-            compact_path.name: {"size_bytes": compact_path.stat().st_size},
-        },
-    }
-    manifest_path = out_dir / f"bayesflow-context-{tag}.manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf8")
-
-    logging.info("Built artifacts: %s, %s, %s", full_path, compact_path, manifest_path)
-    return full_path, compact_path, manifest_path
-
-
-def main(argv=None):
-    """
-    CLI entrypoint.
-
-    Parameters
-    ----------
-    argv : list of str, optional
-        Command-line arguments.
-
-    Returns
-    -------
-    int
-        Exit status code.
-    """
-    parser = argparse.ArgumentParser(description="Build BayesFlow LLM context (full + compact).")
-    parser.add_argument("--tag", type=str, default=None)
-    args = parser.parse_args(argv)
-    build(args.tag, OUT_DIR)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+print("Done.")

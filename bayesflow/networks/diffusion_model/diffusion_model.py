@@ -734,13 +734,11 @@ class DiffusionModel(InferenceNetwork):
         individual_scores = self._compute_individual_scores(xz, log_snr_t, alpha_t, sigma_t, conditions_batch, training)
 
         # Compute prior score component
-        prior_score = compute_prior_score(xz)
+        weighted_prior_score = (1.0 - time) * compute_prior_score(xz)
 
         # Combine scores using compositional formula, mean over individual scores and scale with n to get sum
-        summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
-
-        # Prior contribution
-        weighted_prior_score = (1.0 - n_compositional) * (1.0 - time) * prior_score
+        weighted_individual_scores = individual_scores - weighted_prior_score
+        summed_individual_scores = n_compositional * ops.mean(weighted_individual_scores, axis=1)
 
         # Combined score
         time_tensor = ops.cast(time, dtype=ops.dtype(xz))

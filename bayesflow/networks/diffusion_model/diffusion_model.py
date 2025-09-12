@@ -16,11 +16,14 @@ from bayesflow.utils import (
     integrate_stochastic,
     logging,
     tensor_utils,
+    filter_kwargs,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
+
+ArrayLike = int | float | Tensor
 
 
 # disable module check, use potential module after moving from experimental
@@ -840,6 +843,26 @@ class DiffusionModel(InferenceNetwork):
                 seed=self.seed_generator,
                 **integrate_kwargs,
             )
+        elif integrate_kwargs["method"] == "langevin":
+
+            def scores(time, xz):
+                return {
+                    "xz": self.compositional_score(
+                        xz,
+                        time=time,
+                        conditions=conditions,
+                        compute_prior_score=compute_prior_score,
+                        mini_batch_size=mini_batch_size,
+                        training=training,
+                    )
+                }
+
+            state = annealed_langevin(
+                score_fn=scores,
+                state=state,
+                seed=self.seed_generator,
+                **filter_kwargs(integrate_kwargs, annealed_langevin),
+            )
         else:
 
             def deltas(time, xz):
@@ -859,3 +882,50 @@ class DiffusionModel(InferenceNetwork):
 
         x = state["xz"]
         return x
+
+
+def annealed_langevin(
+    score_fn: Callable,
+    state: dict[str, ArrayLike],
+    steps: int,
+    seed: keras.random.SeedGenerator,
+    L: int = 5,
+    start_time: ArrayLike = None,
+    stop_time: ArrayLike = None,
+    eps: float = 0.01,
+) -> dict[str, ArrayLike]:
+    """
+    Annealed Langevin dynamics for diffusion sampling.
+
+    for t = T-1,...,1:
+      for s = 1,...,L:
+        eta ~ N(0, I)
+        theta <- theta + (dt[t]/2) * psi(theta, t) + sqrt(dt[t]) * eta
+    """
+    ratio = keras.ops.convert_to_tensor(
+        (stop_time + eps) / start_time, dtype=keras.ops.dtype(next(iter(state.values())))
+    )
+
+    T = steps
+    # main loops
+    for t_T in range(T - 1, 0, -1):
+        t = t_T / T
+        dt = keras.ops.convert_to_tensor(stop_time, dtype=keras.ops.dtype(next(iter(state.values())))) * (
+            ratio ** (stop_time - t)
+        )
+
+        sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
+        # inner L Langevin steps at level t
+        for _ in range(L):
+            # score
+            drift = score_fn(t, **filter_kwargs(state, score_fn))
+            # noise
+            eta = {
+                k: keras.random.normal(keras.ops.shape(v), dtype=keras.ops.dtype(v), seed=seed)
+                for k, v in state.items()
+            }
+
+            # update
+            for k, d in drift.items():
+                state[k] = state[k] + 0.5 * dt * d + sqrt_dt * eta[k]
+    return state

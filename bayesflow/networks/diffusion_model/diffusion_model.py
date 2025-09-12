@@ -737,7 +737,7 @@ class DiffusionModel(InferenceNetwork):
         weighted_prior_score = (1.0 - time) * compute_prior_score(xz)
 
         # Combine scores using compositional formula, mean over individual scores and scale with n to get sum
-        weighted_individual_scores = individual_scores - weighted_prior_score
+        weighted_individual_scores = individual_scores - keras.ops.expand_dims(weighted_prior_score, axis=1)
         summed_individual_scores = n_compositional * ops.mean(weighted_individual_scores, axis=1)
 
         # Combined score

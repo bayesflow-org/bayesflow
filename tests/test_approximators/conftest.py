@@ -261,7 +261,7 @@ def transforming_adapter():
     # Apply log transformation to scale parameters (to make them unbounded)
     adapter.log(["scale"])
 
-    adapter.concatenate(["loc", "scale"], into="inference_variables")
+    adapter.concatenate(["scale", "loc"], into="inference_variables")
     adapter.concatenate(["conditions"], into="inference_conditions")
     adapter.keep(["inference_variables", "inference_conditions"])
     return adapter

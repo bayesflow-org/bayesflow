@@ -712,7 +712,7 @@ class ContinuousApproximator(Approximator):
                     prior_score[key] -= expand_right_as(log_det_jac[key], prior_score[key])
 
             prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
-            out = keras.ops.concatenate(list(prior_score.values()), axis=-1)
+            out = keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
             return out - keras.ops.expand_dims(log_det_jac_standardize, axis=-1)
 
         # Test prior score function, useful for debugging

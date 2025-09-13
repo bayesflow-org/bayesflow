@@ -812,7 +812,7 @@ class DiffusionModel(InferenceNetwork):
                     "or use another backend."
                 )
         else:
-            mini_batch_size = integrate_kwargs.get("mini_batch_size", int(n_compositional * 0.1))
+            mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
         self.compositional_d0 = float(integrate_kwargs.pop("compositional_d0", 1.0))
         self.compositional_d1 = float(integrate_kwargs.pop("compositional_d1", 1.0))
 

@@ -617,7 +617,7 @@ class DiffusionModel(InferenceNetwork):
             Bridge function value with same shape as time.
 
         """
-        return ops.exp(-np.log(self.compositional_d0 / self.compositional_d1) * time)
+        return ops.exp(-np.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time)
 
     def compositional_velocity(
         self,
@@ -813,8 +813,8 @@ class DiffusionModel(InferenceNetwork):
                 )
         else:
             mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
-        self.compositional_d0 = float(integrate_kwargs.pop("compositional_d0", 1.0))
-        self.compositional_d1 = float(integrate_kwargs.pop("compositional_d1", 1.0))
+        self.compositional_bridge_d0 = float(integrate_kwargs.pop("compositional_bridge_d0", 1.0))
+        self.compositional_bridge_d1 = float(integrate_kwargs.pop("compositional_bridge_d1", 1.0))
 
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))
@@ -893,6 +893,7 @@ class DiffusionModel(InferenceNetwork):
                 **integrate_kwargs,
             )
         else:
+            integrate_kwargs.pop("corrector_steps", None)
 
             def deltas(time, xz):
                 return {

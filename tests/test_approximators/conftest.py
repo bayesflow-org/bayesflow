@@ -250,6 +250,21 @@ def simple_log_simulator():
 
 
 @pytest.fixture
+def identity_adapter():
+    """Create an adapter that applies no transformation to the parameters."""
+    from bayesflow.adapters import Adapter
+
+    adapter = Adapter()
+    adapter.to_array()
+    adapter.convert_dtype("float64", "float32")
+
+    adapter.concatenate(["loc"], into="inference_variables")
+    adapter.concatenate(["conditions"], into="inference_conditions")
+    adapter.keep(["inference_variables", "inference_conditions"])
+    return adapter
+
+
+@pytest.fixture
 def transforming_adapter():
     """Create an adapter that applies log transformation to scale parameters."""
     from bayesflow.adapters import Adapter

@@ -14,7 +14,6 @@ from bayesflow.utils import (
     squeeze_inner_estimates_dict,
     concatenate_valid,
     concatenate_valid_shapes,
-    expand_right_as,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -695,25 +694,52 @@ class ContinuousApproximator(Approximator):
         # Prepare prior scores to handle adapter
         def compute_prior_score_pre(_samples: Tensor) -> Tensor:
             if "inference_variables" in self.standardize:
-                _samples, log_det_jac_standardize = self.standardize_layers["inference_variables"](
-                    _samples, forward=False, log_det_jac=True
-                )
-            else:
-                log_det_jac_standardize = keras.ops.cast(0.0, dtype="float32")
+                _samples = self.standardize_layers["inference_variables"](_samples, forward=False)
             _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": _samples})
             adapted_samples, log_det_jac = self.adapter(
                 _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
             )
+
+            if len(log_det_jac) > 0:
+                problematic_keys = [key for key in log_det_jac if log_det_jac[key] != 0.0]
+                raise NotImplementedError(
+                    f"Cannot use compositional sampling with adapters "
+                    f"that have non-zero log_det_jac. Problematic keys: {problematic_keys}"
+                )
+
             prior_score = compute_prior_score(adapted_samples)
             for key in adapted_samples:
-                if isinstance(prior_score[key], np.ndarray):
-                    prior_score[key] = prior_score[key].astype("float32")
-                if len(log_det_jac) > 0 and key in log_det_jac:
-                    prior_score[key] -= expand_right_as(log_det_jac[key], prior_score[key])
+                prior_score[key] = prior_score[key].astype(np.float32)
 
             prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
             out = keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
-            return out - keras.ops.expand_dims(log_det_jac_standardize, axis=-1)
+
+            if "inference_variables" in self.standardize:
+                # Apply jacobian correction from standardization
+                # For standardization T^{-1}(z) = z * std + mean, the jacobian is diagonal with std on diagonal
+                # The gradient of log|det(J)| w.r.t. z is 0 since log|det(J)| = sum(log(std)) is constant w.r.t. z
+                # But we need to transform the score: score_z = score_x * std where x = T^{-1}(z)
+                standardize_layer = self.standardize_layers["inference_variables"]
+
+                # Compute the correct standard deviation for all components
+                std_components = []
+                for idx in range(len(standardize_layer.moving_mean)):
+                    std_val = standardize_layer.moving_std(idx)
+                    std_components.append(std_val)
+
+                # Concatenate std components to match the shape of out
+                if len(std_components) == 1:
+                    std = std_components[0]
+                else:
+                    std = keras.ops.concatenate(std_components, axis=-1)
+
+                # Expand std to match batch dimension of out
+                std_expanded = keras.ops.expand_dims(std, (0, 1))  # Add batch, sample dimensions
+                std_expanded = keras.ops.tile(std_expanded, [n_datasets, num_samples, 1])
+
+                # Apply the jacobian: score_z = score_x * std
+                out = out * std_expanded
+            return out
 
         # Test prior score function, useful for debugging
         test = self.inference_network.base_distribution.sample((n_datasets, num_samples))

@@ -3,6 +3,7 @@ from typing import Literal, Callable
 
 import keras
 from keras import ops
+import numpy as np
 
 from ..inference_network import InferenceNetwork
 from bayesflow.types import Tensor, Shape
@@ -600,10 +601,10 @@ class DiffusionModel(InferenceNetwork):
         base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
         return base_metrics | {"loss": loss}
 
-    @staticmethod
-    def compositional_bridge(time: Tensor) -> Tensor:
+    def compositional_bridge(self, time: Tensor) -> Tensor:
         """
-        Bridge function for compositional diffusion. In the simplest case, this is just 1.
+        Bridge function for compositional diffusion. In the simplest case, this is just 1 if d0 == d1.
+        Otherwise, it can be used to scale the compositional score over time.
 
         Parameters
         ----------
@@ -616,7 +617,7 @@ class DiffusionModel(InferenceNetwork):
             Bridge function value with same shape as time.
 
         """
-        return ops.ones_like(time)
+        return ops.exp(-np.log(self.compositional_d0 / self.compositional_d1) * time)
 
     def compositional_velocity(
         self,
@@ -812,6 +813,8 @@ class DiffusionModel(InferenceNetwork):
                 )
         else:
             mini_batch_size = integrate_kwargs.get("mini_batch_size", int(n_compositional * 0.1))
+        self.compositional_d0 = float(integrate_kwargs.pop("compositional_d0", 1.0))
+        self.compositional_d1 = float(integrate_kwargs.pop("compositional_d1", 1.0))
 
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))

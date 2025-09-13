@@ -799,21 +799,21 @@ class DiffusionModel(InferenceNetwork):
         """
         Inverse pass for compositional diffusion sampling.
         """
-        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
+        n_compositional = ops.shape(conditions)[1]
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0, "corrector_steps": 1}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
-        mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
-
-        if mini_batch_size is not None:
-            # if backend is jax, mini batching does not work
-            if keras.backend.backend() == "jax":
+        if keras.backend.backend() == "jax":
+            mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
+            if mini_batch_size is not None:
                 raise ValueError(
                     "Mini batching is not supported with JAX backend. Set mini_batch_size to None "
                     "or use another backend."
                 )
+        else:
+            mini_batch_size = integrate_kwargs.get("mini_batch_size", int(n_compositional * 0.1))
 
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
-        n_compositional = ops.shape(conditions)[1]
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))
         z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
 

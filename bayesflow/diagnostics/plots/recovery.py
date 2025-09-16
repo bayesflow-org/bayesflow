@@ -1,11 +1,10 @@
-from collections.abc import Sequence, Mapping
+from collections.abc import Sequence, Mapping, Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scipy.stats import median_abs_deviation
-
 from bayesflow.utils import prepare_plot_data, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
+from bayesflow.utils.numpy_utils import credible_interval
 
 
 def recovery(
@@ -13,8 +12,10 @@ def recovery(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
-    point_agg=np.median,
-    uncertainty_agg=median_abs_deviation,
+    point_agg: Callable = np.median,
+    uncertainty_agg: Callable = credible_interval,
+    point_agg_kwargs: dict = None,
+    uncertainty_agg_kwargs: dict = None,
     add_corr: bool = True,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
@@ -57,8 +58,17 @@ def recovery(
        By default, select all keys.
     variable_names    : list or None, optional, default: None
         The individual parameter names for nice plot titles. Inferred if None
-    point_agg         : function to compute point estimates. Default: median
-    uncertainty_agg   : function to compute uncertainty estimates. Default: MAD
+    point_agg         : callable, optional, default: median
+        Function to compute point estimates.
+    uncertainty_agg   : callable, optional, default: credible_interval with coverage probability 95%
+        Function to compute a measure of uncertainty. Can either be the lower and upper
+        uncertainty bounds provided with the shape (2, num_datasets, num_params) or a
+        scalar measure of uncertainty (e.g., the median absolute deviation) with shape
+        (num_datasets, num_params).
+    point_agg_kwargs : Optional dictionary of further arguments passed to point_agg.
+    uncertainty_agg_kwargs : Optional dictionary of further arguments passed to uncertainty_agg.
+        For example, to change the coverage probability of credible_interval to 50%,
+        use uncertainty_agg_kwargs = dict(prob=0.5)
     add_corr          : boolean, default: True
         Should correlations between estimates and ground truth values be shown?
     figsize           : tuple or None, optional, default : None
@@ -106,11 +116,18 @@ def recovery(
     estimates = plot_data.pop("estimates")
     targets = plot_data.pop("targets")
 
+    point_agg_kwargs = point_agg_kwargs or {}
+    uncertainty_agg_kwargs = uncertainty_agg_kwargs or {}
+
     # Compute point estimates and uncertainties
-    point_estimate = point_agg(estimates, axis=1)
+    point_estimate = point_agg(estimates, axis=1, **point_agg_kwargs)
 
     if uncertainty_agg is not None:
-        u = uncertainty_agg(estimates, axis=1)
+        u = uncertainty_agg(estimates, axis=1, **uncertainty_agg_kwargs)
+        if u.ndim == 3:
+            # compute lower and upper error
+            u[0, :, :] = point_estimate - u[0, :, :]
+            u[1, :, :] = u[1, :, :] - point_estimate
 
     for i, ax in enumerate(plot_data["axes"].flat):
         if i >= plot_data["num_variables"]:
@@ -121,7 +138,7 @@ def recovery(
             _ = ax.errorbar(
                 targets[:, i],
                 point_estimate[:, i],
-                yerr=u[:, i],
+                yerr=u[..., i],
                 fmt="o",
                 alpha=0.5,
                 color=color,

@@ -29,28 +29,66 @@ EXCLUDED_DIR_NAMES = ["experimental"]
 
 
 def convert_notebooks_to_md(src_dir: Path, dst_dir: Path) -> List[Path]:
-    """Convert Jupyter notebooks (*.ipynb) to Markdown."""
+    """
+    Convert Jupyter notebooks (*.ipynb) to Markdown files.
+
+    Parameters
+    ----------
+    src_dir : Path
+        Source directory containing Jupyter notebooks.
+    dst_dir : Path
+        Destination directory where converted Markdown files will be written.
+
+    Returns
+    -------
+    List[Path]
+        List of paths to the generated Markdown files.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no notebooks are found in `src_dir`.
+    """
     created: List[Path] = []
+
     for ipynb_file in sorted(src_dir.glob("*.ipynb")):
         notebook = json.loads(ipynb_file.read_text(encoding="utf-8"))
         parts: List[str] = []
+
         for cell in notebook.get("cells", []):
             src = "".join(cell.get("source", []))
             if cell.get("cell_type") == "markdown":
                 parts.append(src)
             elif cell.get("cell_type") == "code":
                 parts.append(f"```python\n{src}\n```")
+
         if parts:
             md_file = dst_dir / f"{ipynb_file.stem}.md"
             md_file.write_text("\n\n".join(parts), encoding="utf-8")
             created.append(md_file.resolve())
+
     if not created:
         raise FileNotFoundError("No example notebooks (*.ipynb) found.")
+
     return created
 
 
 def collect_py_files(root: Path, exclude: Sequence[str] = ()) -> List[Path]:
-    """Collect Python source files from a directory."""
+    """
+    Collect Python source files from a directory, excluding specified folders.
+
+    Parameters
+    ----------
+    root : Path
+        Root directory to search for Python files.
+    exclude : Sequence[str], optional
+        Names of directories to exclude from the search (default is empty).
+
+    Returns
+    -------
+    List[Path]
+        Sorted list of resolved paths to Python files.
+    """
     excluded = set(exclude)
     return sorted(
         f.resolve()
@@ -60,11 +98,30 @@ def collect_py_files(root: Path, exclude: Sequence[str] = ()) -> List[Path]:
 
 
 def run_gitingest(work_dir: Path, output: Path, exclude: Sequence[str] | None = None) -> None:
-    """Run gitingest on a directory."""
+    """
+    Run `gitingest` on a directory to generate an LLM context bundle.
+
+    Parameters
+    ----------
+    work_dir : Path
+        Directory to run gitingest on.
+    output : Path
+        Output Markdown file path where results will be saved.
+    exclude : Sequence[str] or None, optional
+        List of exclusion patterns for gitingest (default is None).
+
+    Raises
+    ------
+    FileNotFoundError
+        If `gitingest` is not installed or not found in PATH.
+    subprocess.CalledProcessError
+        If `gitingest` execution fails.
+    """
     cmd = ["gitingest", str(work_dir), "--output", str(output)]
     if exclude:
         for pat in exclude:
             cmd.extend(["--exclude-pattern", pat])
+
     try:
         subprocess.run(cmd, check=True)
     except FileNotFoundError:
@@ -73,11 +130,29 @@ def run_gitingest(work_dir: Path, output: Path, exclude: Sequence[str] | None = 
     except subprocess.CalledProcessError as e:
         sys.stderr.write(f"ERROR: gitingest failed (exit code {e.returncode}).\n")
         raise
+
     print(f"Gitingest executed; output saved to {output}")
 
 
 def main() -> None:
-    """Build compact and full LLM context bundles with versioned filenames."""
+    """
+    Build compact and full LLM context bundles with versioned filenames.
+
+    Workflow
+    --------
+    1. Validate presence of README and examples directory.
+    2. Remove old context files from the output directory.
+    3. Convert Jupyter notebooks in `examples/` to Markdown.
+    4. Build two bundles:
+       - Compact: README + examples
+       - Full: README + examples + source files (excluding certain directories)
+    5. Run `gitingest` to generate Markdown bundles.
+
+    Raises
+    ------
+    FileNotFoundError
+        If required files or directories are missing.
+    """
     tag = (sys.argv[1] if len(sys.argv) > 1 else None) or "dev"
 
     if not README_FILE.exists():

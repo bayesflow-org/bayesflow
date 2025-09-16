@@ -1,40 +1,33 @@
-name: Build BayesFlow LLM Context (full + compact)
+name: Build LLM Context
 
 on:
-  workflow_dispatch:
   release:
     types: [published]
 
-permissions:
-  contents: write
-
 jobs:
-  build:
+  build-context:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r llm_context/requirements.txt
 
-      - name: Build artifacts
+      - name: Build LLM context files
         run: |
-          python llm_context/build_llm_context.py --tag "${{ github.event.release.tag_name }}"
+          TAG="${GITHUB_REF_NAME}"
+          python scripts/build_llm_context.py "$TAG"
 
-      - name: Upload artifacts to release
+      - name: Upload context files as release assets
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            llm_context/bayesflow-context-full-${{ github.event.release.tag_name }}.md
-            llm_context/bayesflow-context-compact-${{ github.event.release.tag_name }}.md
-            llm_context/bayesflow-context-${{ github.event.release.tag_name }}.manifest.json
+          files: llm_context/llm_context_*.md

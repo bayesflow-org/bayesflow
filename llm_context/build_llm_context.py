@@ -1,246 +1,135 @@
-#!/usr/bin/env python3
 """
-Build two Repomix LLM-context files:
+Build compact and full Gitingest LLM-context bundles.
 
-- llm_context/llm_context_compact.md  -> README + examples only
-- llm_context/llm_context_full.md     -> README + examples + bayesflow source code
+On release, generates:
 
-Example notebooks (.ipynb) are converted to temporary Markdown files for clean Repomix conversion.
+- llm_context/llm_context_compact_<tag>.md
+- llm_context/llm_context_full_<tag>.md
+
+Old context files in ``llm_context/`` are removed before writing new ones.
 """
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Iterable, List, Sequence
+from typing import List, Sequence
 
 # --- Paths and config ---
-base_dir = Path(__file__).parent.parent.resolve()
-readme_file = base_dir / "README.md"
-examples_dir = base_dir / "examples"
-src_dir = base_dir / "bayesflow"
-output_dir = base_dir / "llm_context"
-compact_output_file = output_dir / "llm_context_compact.md"
-full_output_file = output_dir / "llm_context_full.md"
+BASE_DIR = Path(__file__).parent.parent.resolve()
+README_FILE = BASE_DIR / "README.md"
+EXAMPLES_DIR = BASE_DIR / "examples"
+SRC_DIR = BASE_DIR / "bayesflow"
+OUTPUT_DIR = BASE_DIR / "llm_context"
 
 EXCLUDED_DIR_NAMES = ["experimental"]
 
-# Ensure output directory exists
-output_dir.mkdir(parents=True, exist_ok=True)
 
-# Safety checks
-if not examples_dir.exists():
-    print(f"ERROR: examples directory not found: {examples_dir}", file=sys.stderr)
-    raise SystemExit(1)
-if not src_dir.exists():
-    print(f"WARNING: bayesflow source directory not found: {src_dir} -- full context will be skipped.", file=sys.stderr)
-
-
-def convert_notebooks_to_md_in_temp(src_examples_dir: Path, temp_examples_dir: Path) -> List[Path]:
-    """
-    Convert Jupyter notebooks (*.ipynb) in a source directory to Markdown files.
-
-    Notes are saved into a temporary examples directory, leaving the original examples/
-    untouched. Markdown files are created with code cells fenced as Python blocks.
-
-    Parameters
-    ----------
-    src_examples_dir : Path
-        Directory containing the source *.ipynb notebooks (non-recursive).
-    temp_examples_dir : Path
-        Temporary directory where the generated *.md files will be written.
-
-    Returns
-    -------
-    List[Path]
-        Absolute paths to the created Markdown files.
-
-    Raises
-    ------
-    SystemExit
-        If no notebooks are found or conversion yields no Markdown content.
-    """
-    created_md_paths: List[Path] = []
-
-    for ipynb_file in sorted(src_examples_dir.glob("*.ipynb")):
-        with ipynb_file.open("r", encoding="utf-8") as f:
-            notebook = json.load(f)
-
+def convert_notebooks_to_md(src_dir: Path, dst_dir: Path) -> List[Path]:
+    """Convert Jupyter notebooks (*.ipynb) to Markdown."""
+    created: List[Path] = []
+    for ipynb_file in sorted(src_dir.glob("*.ipynb")):
+        notebook = json.loads(ipynb_file.read_text(encoding="utf-8"))
         parts: List[str] = []
         for cell in notebook.get("cells", []):
-            ctype = cell.get("cell_type")
             src = "".join(cell.get("source", []))
-            if ctype == "markdown":
+            if cell.get("cell_type") == "markdown":
                 parts.append(src)
-            elif ctype == "code":
+            elif cell.get("cell_type") == "code":
                 parts.append(f"```python\n{src}\n```")
-
-        # Skip empty conversions (e.g., empty notebook)
-        if not parts:
-            continue
-
-        md_file = temp_examples_dir / f"{ipynb_file.stem}.md"
-
-        with md_file.open("w", encoding="utf-8") as f:
-            f.write("\n\n".join(parts))
-
-        created_md_paths.append(md_file.resolve())
-
-    if not created_md_paths:
-        raise FileNotFoundError("No example notebooks (*.ipynb) found or conversion produced no markdown files.")
-
-    return created_md_paths
+        if parts:
+            md_file = dst_dir / f"{ipynb_file.stem}.md"
+            md_file.write_text("\n\n".join(parts), encoding="utf-8")
+            created.append(md_file.resolve())
+    if not created:
+        raise FileNotFoundError("No example notebooks (*.ipynb) found.")
+    return created
 
 
-def collect_py_abs_paths(dir: Path, excluded_dir_names: Sequence[str] = EXCLUDED_DIR_NAMES) -> List[Path]:
-    """
-    Collect absolute paths to Python files under a directory, excluding certain folder names.
-
-    Parameters
-    ----------
-    dir : Path
-        Root directory to scan for *.py files (recursive).
-    excluded_dir_names : Sequence[str], optional
-        Directory names to exclude at any depth, e.g., experimental folders.
-
-    Returns
-    -------
-    List[Path]
-        Sorted list of absolute paths to included Python files.
-    """
-    excluded = set(excluded_dir_names)
+def collect_py_files(root: Path, exclude: Sequence[str] = ()) -> List[Path]:
+    """Collect Python source files from a directory."""
+    excluded = set(exclude)
     return sorted(
-        p.resolve()
-        for p in dir.rglob("*.py")
-        if not any(parent.name in excluded for parent in p.parents)
+        f.resolve()
+        for f in root.rglob("*.py")
+        if not any(p.name in excluded for p in f.parents)
     )
 
 
-def run_repomix_with_file_list(
-    file_paths: Sequence[Path],
-    output_path: Path,
-    repo_cwd: Path,
-) -> None:
-    """
-    Run Repomix to bundle a list of files into a single Markdown output.
-
-    Parameters
-    ----------
-    file_paths : Sequence[Path]
-        Files to include in the Repomix run. Paths may be absolute or relative to repo_cwd.
-    output_path : Path
-        Destination for the generated Markdown output.
-    repo_cwd : Path
-        Repository root to use as the working directory for Repomix.
-
-        Raises
-    ------
-    ValueError
-        If file_paths is empty.
-    FileNotFoundError
-        If the 'repomix' executable is not found on PATH.
-    RuntimeError
-        If the Repomix command fails.
-    """
-    if not file_paths:
-        raise ValueError(f"No files provided for repomix output: {output_path}")
-
-    cmd = [
-        "repomix",
-        "--style",
-        "markdown",
-        "--stdin",
-        "-o",
-        str(output_path),
-    ]
-
-    # Prepare file path list
-    stdin_input = "\n".join(str(p) for p in file_paths) + "\n"
-
+def run_gitingest(work_dir: Path, output: Path, exclude: Sequence[str] | None = None) -> None:
+    """Run gitingest on a directory."""
+    cmd = ["gitingest", str(work_dir), "--output", str(output)]
+    if exclude:
+        for pat in exclude:
+            cmd.extend(["--exclude-pattern", pat])
     try:
-        subprocess.run(cmd, input=stdin_input, text=True, check=True, cwd=str(repo_cwd))
-    except FileNotFoundError as e:
-        raise FileNotFoundError("'repomix' not found on PATH. Please install it and retry.") from e
+        subprocess.run(cmd, check=True)
+    except FileNotFoundError:
+        sys.stderr.write("ERROR: 'gitingest' not found. Install and add to PATH.\n")
+        raise
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Repomix failed with exit code {e.returncode}.") from e
-
-    print(f"Repomix packaged output saved to {output_path}")
-
-
-def to_relative_paths(paths: Iterable[Path], base: Path) -> List[Path]:
-    """
-    Convert a list of paths to paths relative to a base directory when possible.
-
-    Parameters
-    ----------
-    paths : Iterable[Path]
-        Paths to convert.
-    base : Path
-        Base directory.
-
-    Returns
-    -------
-    List[Path]
-        Relative paths if conversion succeeds; otherwise original paths.
-    """
-    rels: List[Path] = []
-    for p in paths:
-        try:
-            rels.append(p.relative_to(base))
-        except Exception:
-            rels.append(p)
-    return rels
+        sys.stderr.write(f"ERROR: gitingest failed (exit code {e.returncode}).\n")
+        raise
+    print(f"Gitingest executed; output saved to {output}")
 
 
 def main() -> None:
-    """
-    Entry point to build compact and full LLM context bundles.
+    """Build compact and full LLM context bundles with versioned filenames."""
+    tag = (sys.argv[1] if len(sys.argv) > 1 else None) or "dev"
 
-    - Compact: README + example notebooks (converted to Markdown)
-    - Full: Compact + all bayesflow/*.py files (excluding certain directories)
-    """
-    # Validate required inputs
-    if not readme_file.exists():
-        raise FileNotFoundError(f"README.md file not found: {readme_file}")
-    if not examples_dir.exists():
-        raise FileNotFoundError(f"examples directory not found: {examples_dir}")
-    if not src_dir.exists():
-        raise FileNotFoundError(f"bayesflow source directory not found: {src_dir}")
+    if not README_FILE.exists():
+        raise FileNotFoundError(f"Missing README.md: {README_FILE}")
+    if not EXAMPLES_DIR.exists():
+        raise FileNotFoundError(f"Missing examples dir: {EXAMPLES_DIR}")
 
-    # Prepare temporary examples directory under repo root so Repomix can use relative paths.
-    with tempfile.TemporaryDirectory(prefix=".examples_temporary_", dir=str(base_dir)) as tmpdir:
-        temp_examples_dir = Path(tmpdir)
+    # Clean old context files
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    for old in OUTPUT_DIR.glob("llm_context_*.md"):
+        old.unlink()
 
-        # Convert notebooks into the temp folder (no changes in the real examples/ directory)
-        md_abs_paths = convert_notebooks_to_md_in_temp(examples_dir, temp_examples_dir)
+    compact_output = OUTPUT_DIR / f"llm_context_compact_{tag}.md"
+    full_output = OUTPUT_DIR / f"llm_context_full_{tag}.md"
 
-        # Prefer relative paths for Repomix
-        md_for_repomix = to_relative_paths(md_abs_paths, base_dir)
+    with (
+        tempfile.TemporaryDirectory(prefix="examples_", dir=BASE_DIR) as tmp_examples,
+        tempfile.TemporaryDirectory(prefix="compact_", dir=BASE_DIR) as tmp_compact,
+        tempfile.TemporaryDirectory(prefix="full_", dir=BASE_DIR) as tmp_full,
+    ):
+        tmp_examples = Path(tmp_examples)
+        tmp_compact = Path(tmp_compact)
+        tmp_full = Path(tmp_full)
 
-        # Include README if present (relative path so Repomix sees it correctly)
-        if readme_file.exists():
-            md_for_repomix.append(Path("README.md"))
+        # Convert notebooks
+        example_mds = convert_notebooks_to_md(EXAMPLES_DIR, tmp_examples)
 
-        # ---- Compact: examples only ----
-        run_repomix_with_file_list(
-            md_for_repomix,
-            compact_output_file,
-            repo_cwd=base_dir
-        )
+        # ==== Compact bundle ====
+        (tmp_compact / "examples").mkdir(parents=True, exist_ok=True)
+        shutil.copy(README_FILE, tmp_compact / "README.md")
+        for md in example_mds:
+            shutil.copy(md, tmp_compact / "examples" / md.name)
+        run_gitingest(tmp_compact, compact_output)
 
-        # ---- Full: examples + bayesflow .py files ----
-        py_abs_paths = collect_py_abs_paths(src_dir)
-        if not py_abs_paths:
-            raise FileNotFoundError(f"No Python files found in bayesflow source directory: {src_dir}")
-        py_for_repomix = to_relative_paths(py_abs_paths, base_dir)
-        full_list = [*md_for_repomix, *py_for_repomix]
-        run_repomix_with_file_list(
-            full_list,
-            full_output_file,
-            repo_cwd=base_dir
-        )
+        # ==== Full bundle ====
+        (tmp_full / "examples").mkdir(parents=True, exist_ok=True)
+        shutil.copy(README_FILE, tmp_full / "README.md")
+        for md in example_mds:
+            shutil.copy(md, tmp_full / "examples" / md.name)
+
+        if SRC_DIR.exists():
+            for pyfile in collect_py_files(SRC_DIR, EXCLUDED_DIR_NAMES):
+                rel = pyfile.relative_to(SRC_DIR)
+                dest = tmp_full / "bayesflow" / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(pyfile, dest)
+        else:
+            sys.stderr.write(f"WARNING: source dir not found: {SRC_DIR}\n")
+
+        exclude = [f"**/{d}/**" for d in EXCLUDED_DIR_NAMES] if EXCLUDED_DIR_NAMES else None
+        run_gitingest(tmp_full, full_output, exclude)
+
 
 if __name__ == "__main__":
     main()

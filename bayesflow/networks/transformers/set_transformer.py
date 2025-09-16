@@ -1,7 +1,7 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import check_lengths_same, filter_kwargs
+from bayesflow.utils import check_lengths_same
 from bayesflow.utils.serialization import serializable
 
 from ..summary_network import SummaryNetwork
@@ -147,11 +147,7 @@ class SetTransformer(SummaryNetwork):
         out : Tensor
             Output of shape (batch_size, set_size, output_dim)
         """
-        summary = self.attention_blocks(
-            input_set, training=training, **filter_kwargs(kwargs, self.attention_blocks.call)
-        )
-        summary = self.pooling_by_attention(
-            summary, training=training, **filter_kwargs(kwargs, self.pooling_by_attention.call)
-        )
+        summary = self.attention_blocks(input_set, training=training)
+        summary = self.pooling_by_attention(summary, training=training)
         summary = self.output_projector(summary)
         return summary

@@ -4,17 +4,22 @@ This folder contains single-file context artifacts to improve LLM assistance for
 
 ## Files
 - `bayesflow-context-compact-<TAG>.md`
-  Smaller snapshot: README + examples
+  Smaller snapshot: README + examples; ~ 50k tokens.
 
 - `bayesflow-context-full-<TAG>.md`
-  Full Markdown snapshot: README + examples + source code (`bayesflow/`).
+  Full Markdown snapshot: README + examples + source code (`bayesflow/`); ~ 250k tokens.
 
 ## Usage
 1. Download either the compact or full file for the release tag of interest: The compact file is cheaper and faster; the full file is most accurate.
 2. Paste it into your LLM context before asking questions about BayesFlow.
 
 ## Prompt Tip
-You are answering questions about BayesFlow using only the provided context .md file. If using code, cite the file or notebook name shown in the context.
+### Compact File
+You are answering questions about BayesFlow using the provided context .md file containing all BayesFlow tutorials. If needed, look up the latest source code from the BayesFlow documentation.
+QUESTION: <user question here>
+
+### Full File
+You are answering questions about BayesFlow using only the provided context .md file containing all BayesFlow tutorials as well as the BayesFlow source code.
 QUESTION: <user question here>
 
 ## Disclaimer

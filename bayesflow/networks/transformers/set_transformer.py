@@ -148,6 +148,6 @@ class SetTransformer(SummaryNetwork):
             Output of shape (batch_size, set_size, output_dim)
         """
         summary = self.attention_blocks(input_set, training=training)
-        summary = self.pooling_by_attention(summary, training=training)
+        summary = self.pooling_by_attention(summary, training=training, **kwargs)
         summary = self.output_projector(summary)
         return summary

@@ -107,6 +107,5 @@ class InducedSetAttentionBlock(keras.Layer):
         batch_size = keras.ops.shape(input_set)[0]
         inducing_points_expanded = keras.ops.expand_dims(self.inducing_points, axis=0)
         inducing_points_tiled = keras.ops.tile(inducing_points_expanded, [batch_size, 1, 1])
-        print(kwargs)
         h = self.mab0(inducing_points_tiled, input_set, training=training, **kwargs)
         return self.mab1(input_set, h, training=training, **kwargs)

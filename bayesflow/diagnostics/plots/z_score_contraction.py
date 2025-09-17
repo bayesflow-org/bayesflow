@@ -18,6 +18,7 @@ def z_score_contraction(
     color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
+    markersize: float = None,
 ) -> plt.Figure:
     """
     Implements a graphical check for global model sensitivity by plotting the
@@ -76,6 +77,8 @@ def z_score_contraction(
         The number of rows for the subplots. Dynamically determined if None.
     num_col           : int, optional, default: None
         The number of columns for the subplots. Dynamically determined if None.
+    markersize        : float, optional, default: None
+        The marker size in points**2 of the scatter plot.
 
     Returns
     -------
@@ -118,7 +121,7 @@ def z_score_contraction(
         if i >= plot_data["num_variables"]:
             break
 
-        ax.scatter(contraction[:, i], z_score[:, i], color=color, alpha=0.5)
+        ax.scatter(contraction[:, i], z_score[:, i], color=color, alpha=0.5, s=markersize)
         ax.set_xlim([-0.05, 1.05])
 
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)

@@ -27,6 +27,7 @@ def mc_calibration(
     color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
+    markersize: float = None,
 ) -> plt.Figure:
     """Plots the calibration curves, the ECEs and the marginal histograms of predicted posterior model probabilities
     for a model comparison problem. The marginal histograms inform about the fraction of predictions in each bin.
@@ -60,6 +61,8 @@ def mc_calibration(
         The number of rows for the subplots. Dynamically determined if None.
     num_col             : int, optional, default: None
         The number of columns for the subplots. Dynamically determined if None.
+    markersize          : float, optional, default: None
+        The marker size in points.
 
     Returns
     -------
@@ -88,7 +91,7 @@ def mc_calibration(
 
     for j, ax in enumerate(plot_data["axes"].flat):
         # Plot calibration curve
-        ax.plot(ece["probs_pred"][j], ece["probs_true"][j], "o-", color=color)
+        ax.plot(ece["probs_pred"][j], ece["probs_true"][j], "o-", color=color, markersize=markersize)
 
         # Plot PMP distribution over bins
         uniform_bins = np.linspace(0.0, 1.0, num_bins + 1)

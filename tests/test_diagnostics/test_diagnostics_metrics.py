@@ -43,6 +43,9 @@ def test_posterior_contraction(random_estimates, random_targets):
     assert out["values"].shape == (num_variables(random_estimates),)
     assert out["metric_name"] == "Posterior Contraction"
     assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
+    # test without aggregation
+    out = bf.diagnostics.metrics.posterior_contraction(random_estimates, random_targets, aggregation=None)
+    assert out["values"].shape == (random_estimates["sigma"].shape[0], num_variables(random_estimates))
 
 
 def test_root_mean_squared_error(random_estimates, random_targets):

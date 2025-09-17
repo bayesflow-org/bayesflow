@@ -5,7 +5,15 @@
 def setup():
     # perform any necessary setup without polluting the namespace
     import os
+    import logging
     from importlib.util import find_spec
+
+    # set the basic logging level if the user hasn't already
+    logging.basicConfig(level=logging.INFO)
+
+    # use a separate logger for the bayesflow package
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
 
     issue_url = "https://github.com/bayesflow-org/bayesflow/issues/new?template=bug_report.md"
 
@@ -45,12 +53,11 @@ def setup():
             raise ImportError(message)
 
         if len(found_backends) > 1:
-            import warnings
-
             found_backends.sort(key=lambda b: b.priority)
             chosen_backend = found_backends[0]
+            os.environ["KERAS_BACKEND"] = chosen_backend.env_name
 
-            warnings.warn(
+            logging.warning(
                 f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}).\n"
                 f"Defaulting to {chosen_backend.display_name}.\n"
                 "To override, set the KERAS_BACKEND environment variable before importing bayesflow.\n"
@@ -60,16 +67,10 @@ def setup():
             os.environ["KERAS_BACKEND"] = found_backends[0].env_name
 
     import keras
-    import logging
-
-    # set the basic logging level if the user hasn't already
-    logging.basicConfig(level=logging.INFO)
-
-    # use a separate logger for the bayesflow package
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-
     from bayesflow.utils import logging
+
+    if keras.backend.backend().lower() != os.environ["KERAS_BACKEND"].lower():
+        logging.warning("Automatic backend selection failed, most likely because Keras was imported before BayesFlow.")
 
     logging.info(f"Using backend {keras.backend.backend()!r}")
 

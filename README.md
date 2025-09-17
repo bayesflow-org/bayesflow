@@ -51,7 +51,7 @@ complex to be described analytically.
 
 ## Install
 
-We currently support Python 3.10 to 3.12. You can install the latest stable version from PyPI using:
+We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"
@@ -76,7 +76,7 @@ Note that BayesFlow **will not run** without a backend.
 
 If you don't know which backend to use, we recommend JAX as it is currently the fastest backend.
 
-Once installed, [set the backend environment variable as required by keras](https://keras.io/getting_started/#configuring-your-backend).
+As of version ``2.0.7``, the backend will be set automatically. If you have multiple backends, you can manually [set the backend environment variable as described by keras](https://keras.io/getting_started/#configuring-your-backend).
 For example, inside your Python script write:
 
 ```python
@@ -96,8 +96,6 @@ Or just plainly set the environment variable in your shell:
 ```bash
 export KERAS_BACKEND=jax
 ```
-
-This way, you also don't have to manually set the backend every time you are starting Python to use BayesFlow.
 
 ## Getting Started
 

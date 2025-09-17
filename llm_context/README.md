@@ -1,6 +1,6 @@
 # BayesFlow LLM Context
 
-This folder contains single-file context artifacts to improve LLM assistance for BayesFlow.
+This folder contains context files to improve LLM assistance for BayesFlow.
 
 ## Files
 - `bayesflow-context-compact-<TAG>.md`
@@ -10,12 +10,12 @@ This folder contains single-file context artifacts to improve LLM assistance for
   Full Markdown snapshot: README + examples + source code (`bayesflow/`); ~ 250k tokens.
 
 ## Usage
-1. Download either the compact or full file for the release tag of interest: The compact file is cheaper and faster; the full file is most accurate.
+1. Download either the compact or full file for the current release tag: The compact file is cheaper and more focused; the full file contains the complete codebase.
 2. Paste it into your LLM context before asking questions about BayesFlow.
 
 ## Prompt Tip
 ### Compact File
-You are answering questions about BayesFlow using the provided context .md file containing all BayesFlow tutorials. If needed, look up the latest source code from the BayesFlow documentation.
+You are answering questions about BayesFlow using the provided context .md file containing all BayesFlow tutorials. If needed, additionally look up the latest source code from the BayesFlow documentation.
 QUESTION: <user question here>
 
 ### Full File

@@ -8,6 +8,7 @@ On release, generates:
 
 Old context files in ``llm_context/`` are removed before writing new ones.
 """
+
 from __future__ import annotations
 
 import json
@@ -90,14 +91,10 @@ def collect_py_files(root: Path, exclude: Sequence[str] = ()) -> List[Path]:
         Sorted list of resolved paths to Python files.
     """
     excluded = set(exclude)
-    return sorted(
-        f.resolve()
-        for f in root.rglob("*.py")
-        if not any(p.name in excluded for p in f.parents)
-    )
+    return sorted(f.resolve() for f in root.rglob("*.py") if not any(p.name in excluded for p in f.parents))
 
 
-def run_gitingest(work_dir: Path, output: Path, exclude: Sequence[str] | None = None) -> None:
+def run_gitingest(work_dir: Path, output: Path) -> None:
     """
     Run `gitingest` on a directory to generate an LLM context bundle.
 
@@ -107,8 +104,6 @@ def run_gitingest(work_dir: Path, output: Path, exclude: Sequence[str] | None = 
         Directory to run gitingest on.
     output : Path
         Output Markdown file path where results will be saved.
-    exclude : Sequence[str] or None, optional
-        List of exclusion patterns for gitingest (default is None).
 
     Raises
     ------
@@ -118,9 +113,6 @@ def run_gitingest(work_dir: Path, output: Path, exclude: Sequence[str] | None = 
         If `gitingest` execution fails.
     """
     cmd = ["gitingest", str(work_dir), "--output", str(output)]
-    if exclude:
-        for pat in exclude:
-            cmd.extend(["--exclude-pattern", pat])
 
     try:
         subprocess.run(cmd, check=True)
@@ -202,8 +194,7 @@ def main() -> None:
         else:
             sys.stderr.write(f"WARNING: source dir not found: {SRC_DIR}\n")
 
-        exclude = [f"**/{d}/**" for d in EXCLUDED_DIR_NAMES] if EXCLUDED_DIR_NAMES else None
-        run_gitingest(tmp_full, full_output, exclude)
+        run_gitingest(tmp_full, full_output)
 
 
 if __name__ == "__main__":

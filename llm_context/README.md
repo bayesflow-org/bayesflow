@@ -24,3 +24,10 @@ QUESTION: <user question here>
 
 ## Disclaimer
 The context files are generated automatically and may be outdated or incomplete. While they aim at improving LLM accuracy, hallucinations may still occur frequently during LLM assistance. Please always refer to the official BayesFlow documentation and codebase for the most accurate information.
+
+## For Developers
+The context files are automatically updated upon new BayesFlow releases by `.github/workflows/build-llm-context.yaml`. The script `llm_context/build_llm_context.py` can also be run manually with an optional `--tag <TAG>` argument (default: `dev`):
+```bash
+pip install -r llm_context/requirements.txt
+python llm_context/build_llm_context.py --tag <TAG>
+```

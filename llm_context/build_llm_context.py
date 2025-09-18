@@ -27,9 +27,12 @@ SRC_DIR = BASE_DIR / "bayesflow"
 OUTPUT_DIR = BASE_DIR / "llm_context"
 
 EXCLUDED_DIR_NAMES = ["experimental"]
+EXCLUDED_FILE_NAMES = ["From_BayesFlow_1.1_to_2.0.ipynb"]
 
 
-def convert_notebooks_to_md(src_dir: Path, dst_dir: Path) -> List[Path]:
+def convert_notebooks_to_md(
+    src_dir: Path, dst_dir: Path, exclude_files: Sequence[str] = ()
+) -> List[Path]:
     """
     Convert Jupyter notebooks (*.ipynb) to Markdown files.
 
@@ -39,6 +42,8 @@ def convert_notebooks_to_md(src_dir: Path, dst_dir: Path) -> List[Path]:
         Source directory containing Jupyter notebooks.
     dst_dir : Path
         Destination directory where converted Markdown files will be written.
+    exclude_files : Sequence[str], optional
+        File names to exclude from conversion.
 
     Returns
     -------
@@ -51,8 +56,12 @@ def convert_notebooks_to_md(src_dir: Path, dst_dir: Path) -> List[Path]:
         If no notebooks are found in `src_dir`.
     """
     created: List[Path] = []
+    excluded = set(exclude_files)
 
     for ipynb_file in sorted(src_dir.glob("*.ipynb")):
+        if ipynb_file.name in excluded:
+            continue
+
         notebook = json.loads(ipynb_file.read_text(encoding="utf-8"))
         parts: List[str] = []
 
@@ -74,24 +83,33 @@ def convert_notebooks_to_md(src_dir: Path, dst_dir: Path) -> List[Path]:
     return created
 
 
-def collect_py_files(root: Path, exclude: Sequence[str] = ()) -> List[Path]:
+def collect_py_files(
+    root: Path, exclude_dirs: Sequence[str] = (), exclude_files: Sequence[str] = ()
+) -> List[Path]:
     """
-    Collect Python source files from a directory, excluding specified folders.
+    Collect Python source files from a directory, excluding specified folders and files.
 
     Parameters
     ----------
     root : Path
         Root directory to search for Python files.
-    exclude : Sequence[str], optional
-        Names of directories to exclude from the search (default is empty).
+    exclude_dirs : Sequence[str], optional
+        Names of directories to exclude from the search.
+    exclude_files : Sequence[str], optional
+        Names of files to exclude from the search.
 
     Returns
     -------
     List[Path]
         Sorted list of resolved paths to Python files.
     """
-    excluded = set(exclude)
-    return sorted(f.resolve() for f in root.rglob("*.py") if not any(p.name in excluded for p in f.parents))
+    excluded_d = set(exclude_dirs)
+    excluded_f = set(exclude_files)
+    return sorted(
+        f.resolve()
+        for f in root.rglob("*.py")
+        if f.name not in excluded_f and not any(p.name in excluded_d for p in f.parents)
+    )
 
 
 def run_gitingest(work_dir: Path, output: Path) -> None:
@@ -134,10 +152,10 @@ def main() -> None:
     --------
     1. Validate presence of README and examples directory.
     2. Remove old context files from the output directory.
-    3. Convert Jupyter notebooks in `examples/` to Markdown.
+    3. Convert Jupyter notebooks in `examples/` to Markdown, excluding specified files.
     4. Build two bundles:
-       - Compact: README + examples
-       - Full: README + examples + source files (excluding certain directories)
+        - Compact: README + examples
+        - Full: README + examples + source files (excluding specified directories and files)
     5. Run `gitingest` to generate Markdown bundles.
 
     Raises
@@ -169,8 +187,10 @@ def main() -> None:
         tmp_compact = Path(tmp_compact)
         tmp_full = Path(tmp_full)
 
-        # Convert notebooks
-        example_mds = convert_notebooks_to_md(EXAMPLES_DIR, tmp_examples)
+        # Convert notebooks, respecting file exclusions
+        example_mds = convert_notebooks_to_md(
+            EXAMPLES_DIR, tmp_examples, EXCLUDED_FILE_NAMES
+        )
 
         # ==== Compact bundle ====
         (tmp_compact / "examples").mkdir(parents=True, exist_ok=True)
@@ -186,7 +206,9 @@ def main() -> None:
             shutil.copy(md, tmp_full / "examples" / md.name)
 
         if SRC_DIR.exists():
-            for pyfile in collect_py_files(SRC_DIR, EXCLUDED_DIR_NAMES):
+            for pyfile in collect_py_files(
+                SRC_DIR, EXCLUDED_DIR_NAMES, EXCLUDED_FILE_NAMES
+            ):
                 rel = pyfile.relative_to(SRC_DIR)
                 dest = tmp_full / "bayesflow" / rel
                 dest.parent.mkdir(parents=True, exist_ok=True)

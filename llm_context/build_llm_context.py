@@ -30,9 +30,7 @@ EXCLUDED_DIR_NAMES = ["experimental"]
 EXCLUDED_FILE_NAMES = ["From_BayesFlow_1.1_to_2.0.ipynb"]
 
 
-def convert_notebooks_to_md(
-    src_dir: Path, dst_dir: Path, exclude_files: Sequence[str] = ()
-) -> List[Path]:
+def convert_notebooks_to_md(src_dir: Path, dst_dir: Path, exclude_files: Sequence[str] = ()) -> List[Path]:
     """
     Convert Jupyter notebooks (*.ipynb) to Markdown files.
 
@@ -83,9 +81,7 @@ def convert_notebooks_to_md(
     return created
 
 
-def collect_py_files(
-    root: Path, exclude_dirs: Sequence[str] = (), exclude_files: Sequence[str] = ()
-) -> List[Path]:
+def collect_py_files(root: Path, exclude_dirs: Sequence[str] = (), exclude_files: Sequence[str] = ()) -> List[Path]:
     """
     Collect Python source files from a directory, excluding specified folders and files.
 
@@ -188,9 +184,7 @@ def main() -> None:
         tmp_full = Path(tmp_full)
 
         # Convert notebooks, respecting file exclusions
-        example_mds = convert_notebooks_to_md(
-            EXAMPLES_DIR, tmp_examples, EXCLUDED_FILE_NAMES
-        )
+        example_mds = convert_notebooks_to_md(EXAMPLES_DIR, tmp_examples, EXCLUDED_FILE_NAMES)
 
         # ==== Compact bundle ====
         (tmp_compact / "examples").mkdir(parents=True, exist_ok=True)
@@ -206,9 +200,7 @@ def main() -> None:
             shutil.copy(md, tmp_full / "examples" / md.name)
 
         if SRC_DIR.exists():
-            for pyfile in collect_py_files(
-                SRC_DIR, EXCLUDED_DIR_NAMES, EXCLUDED_FILE_NAMES
-            ):
+            for pyfile in collect_py_files(SRC_DIR, EXCLUDED_DIR_NAMES, EXCLUDED_FILE_NAMES):
                 rel = pyfile.relative_to(SRC_DIR)
                 dest = tmp_full / "bayesflow" / rel
                 dest.parent.mkdir(parents=True, exist_ok=True)

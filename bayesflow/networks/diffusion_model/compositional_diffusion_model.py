@@ -11,7 +11,7 @@ from bayesflow.utils import (
     integrate_stochastic,
 )
 from bayesflow.utils.serialization import serializable
-from diffusion_model import DiffusionModel
+from .diffusion_model import DiffusionModel
 from .schedules.noise_schedule import NoiseSchedule
 
 
@@ -299,7 +299,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         Inverse pass for compositional diffusion sampling.
         """
         n_compositional = ops.shape(conditions)[1]
-        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0, "corrector_steps": 1}
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
         if keras.backend.backend() == "jax":

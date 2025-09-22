@@ -3,7 +3,7 @@ from keras import layers
 
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs
+from bayesflow.utils import layer_kwargs, filter_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
@@ -111,7 +111,7 @@ class MultiHeadAttentionBlock(keras.Layer):
         """
 
         h = self.input_projector(seq_x) + self.attention(
-            query=seq_x, key=seq_y, value=seq_y, training=training, **kwargs
+            query=seq_x, key=seq_y, value=seq_y, training=training, **filter_kwargs(kwargs, self.attention.call)
         )
         if self.ln_pre is not None:
             h = self.ln_pre(h, training=training)

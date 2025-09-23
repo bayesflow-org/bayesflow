@@ -4,7 +4,8 @@ import keras
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils import layer_kwargs
+from bayesflow.utils.serialization import serializable, serialize, deserialize
 
 
 @serializable("bayesflow.networks")
@@ -47,6 +48,8 @@ class FourierEmbedding(keras.Layer):
         self.scale = scale
         self.embed_dim = embed_dim
         self.include_identity = include_identity
+        self.initializer = initializer
+        self.trainable = trainable
 
     def call(self, t: Tensor) -> Tensor:
         """Embeds the one-dimensional time scalar into a higher-dimensional Fourier embedding.
@@ -68,3 +71,20 @@ class FourierEmbedding(keras.Layer):
         else:
             emb = ops.concatenate([ops.sin(proj), ops.cos(proj)], axis=-1)
         return emb
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = layer_kwargs(base_config)
+
+        config = {
+            "embed_dim": self.embed_dim,
+            "scale": self.scale,
+            "initializer": self.initializer,
+            "trainable": self.trainable,
+            "include_identity": self.include_identity,
+        }
+        return base_config | serialize(config)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))

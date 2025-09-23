@@ -132,7 +132,7 @@ class StableConsistencyModel(InferenceNetwork):
     def _discretize_time(self, num_steps: int, rho: float = 3.5, **kwargs):
         t = keras.ops.linspace(0.0, pi / 2, num_steps)
         times = keras.ops.exp((t - pi / 2) * rho) * pi / 2
-        times.at[0].set(0.0)
+        times = keras.ops.concatenate([keras.ops.zeros((1,)), times[1:]], axis=0)
 
         # if rho is set too low, bad schedules can occur
         if times[1] > StableConsistencyModel.EPS_WARN:

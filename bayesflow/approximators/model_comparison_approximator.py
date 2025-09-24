@@ -433,6 +433,10 @@ class ModelComparisonApproximator(Approximator):
             raise ValueError("Summary variables are required to compute summaries.")
 
         summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
+
+        if "summary_variables" in self.standardize:
+            summary_variables = self.standardize_layers["summary_variables"](summary_variables)
+
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         summaries = keras.ops.convert_to_numpy(summaries)
 

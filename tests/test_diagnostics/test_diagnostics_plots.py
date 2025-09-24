@@ -294,8 +294,8 @@ def test_coverage(random_estimates, random_targets):
 
 def test_coverage_diff(random_estimates, random_targets):
     # basic functionality: automatic variable names
-    out = bf.diagnostics.plots.coverage_diff(random_estimates, random_targets)
+    out = bf.diagnostics.plots.coverage(random_estimates, random_targets, difference=True)
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[1].title._text == "beta_1"
     assert out.axes[0].get_xlabel() == "Central interval width"
-    assert out.axes[0].get_ylabel() == "Coverage difference"
+    assert out.axes[0].get_ylabel() == "Observed coverage difference"

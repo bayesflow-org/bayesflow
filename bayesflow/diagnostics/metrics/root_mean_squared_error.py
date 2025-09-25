@@ -10,7 +10,7 @@ def root_mean_squared_error(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
-    normalize: bool = True,
+    normalize: str | None = "range",
     aggregation: Callable = np.median,
 ) -> dict[str, any]:
     """
@@ -28,8 +28,9 @@ def root_mean_squared_error(
        By default, select all keys.
     variable_names : Sequence[str], optional (default = None)
         Optional variable names to show in the output.
-    normalize      : bool, optional (default = True)
-        Whether to normalize the RMSE using the range of the prior samples.
+    normalize      : str or None, optional (default = "range")
+        Whether to normalize the RMSE using statistics of the prior samples.
+        Possible options are ("mean", "range", "median", "iqr", "std", None)
     aggregation    : callable, optional (default = np.median)
         Function to aggregate the RMSE across draws. Typically `np.mean` or `np.median`.
 
@@ -59,13 +60,40 @@ def root_mean_squared_error(
     )
 
     rmse = np.sqrt(np.mean((samples["estimates"] - samples["targets"][:, None, :]) ** 2, axis=0))
+    targets = samples["targets"]
 
-    if normalize:
-        rmse /= (samples["targets"].max(axis=0) - samples["targets"].min(axis=0))[None, :]
-        metric_name = "NRMSE"
-    else:
-        metric_name = "RMSE"
+    match normalize:
+        case None | False:
+            normalizer = np.array(1.0)
+            metric_name = "RMSE"
 
+        case "mean":
+            normalizer = np.mean(targets, axis=0)
+            metric_name = "NRMSE"
+
+        case "median":
+            normalizer = np.median(targets, axis=0)
+            metric_name = "NRMSE"
+
+        case "range":
+            normalizer = targets.max(axis=0) - targets.min(axis=0)
+            metric_name = "NRMSE"
+
+        case "std":
+            normalizer = np.std(targets, axis=0, ddof=0)
+            metric_name = "NRMSE"
+
+        case "iqr":
+            q75 = np.percentile(targets, 75, axis=0)
+            q25 = np.percentile(targets, 25, axis=0)
+            normalizer = q75 - q25
+            metric_name = "NRMSE"
+
+        case _:
+            raise ValueError(f"Unknown normalization mode: {normalize}")
+
+    rmse /= normalizer[None, ...]
     rmse = aggregation(rmse, axis=0)
+
     variable_names = samples["estimates"].variable_names
     return {"values": rmse, "metric_name": metric_name, "variable_names": variable_names}

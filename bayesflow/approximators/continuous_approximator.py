@@ -570,11 +570,11 @@ class ContinuousApproximator(Approximator):
         if self.summary_network is None:
             raise ValueError("A summary network is required to compute summaries.")
 
-        data_adapted = self.adapter(data, strict=False, **kwargs)
+        data_adapted = self._prepare_data(data, **kwargs)
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
             raise ValueError("Summary variables are required to compute summaries.")
 
-        summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
+        summary_variables = data_adapted["summary_variables"]
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         summaries = keras.ops.convert_to_numpy(summaries)
 

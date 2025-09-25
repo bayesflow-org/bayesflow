@@ -281,3 +281,21 @@ def test_mc_confusion_matrix(pred_models, true_models, model_names):
     assert out.axes[0].get_ylabel() == "True model"
     assert out.axes[0].get_xlabel() == "Predicted model"
     assert out.axes[0].get_title() == "Confusion Matrix"
+
+
+def test_coverage(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    out = bf.diagnostics.plots.coverage(random_estimates, random_targets)
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[1].title._text == "beta_1"
+    assert out.axes[0].get_xlabel() == "Central interval width"
+    assert out.axes[0].get_ylabel() == "Observed coverage"
+
+
+def test_coverage_diff(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    out = bf.diagnostics.plots.coverage(random_estimates, random_targets, difference=True)
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[1].title._text == "beta_1"
+    assert out.axes[0].get_xlabel() == "Central interval width"
+    assert out.axes[0].get_ylabel() == "Observed coverage difference"

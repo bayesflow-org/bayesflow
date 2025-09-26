@@ -7,7 +7,7 @@ The module features inference networks (IN), summary networks (SN), as well as g
 from .consistency_models import ConsistencyModel
 from .coupling_flow import CouplingFlow
 from .deep_set import DeepSet
-from .diffusion_model import DiffusionModel
+from .diffusion_model import DiffusionModel, CompositionalDiffusionModel
 from .flow_matching import FlowMatching
 from .inference_network import InferenceNetwork
 from .point_inference_network import PointInferenceNetwork

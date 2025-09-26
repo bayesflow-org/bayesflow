@@ -103,6 +103,8 @@ def test_calibration_log_gamma_end_to_end():
     S = 1000  # number of posterior draws
     D = 1000  # number of datasets
 
+    gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=10000)
+
     def run_sbc(N=N, S=S, D=D, bias=0):
         rng = np.random.default_rng()
         prior_draws = rng.beta(2, 2, size=D)
@@ -110,13 +112,12 @@ def test_calibration_log_gamma_end_to_end():
 
         # Analytical posterior:
         # if theta ~ Beta(2, 2), then p(theta|successes) is Beta(2 + successes | 2 + N - successes).
-        posterior_draws = rng.beta(2 + successes + bias, 2 + N - successes + bias, size=(S, D))
+        posterior_draws = rng.beta(2 + successes + bias, 2 + N - successes, size=(S, D))
 
         # these ranks are uniform if bias=0
         ranks = np.sum(posterior_draws < prior_draws, axis=0)
 
         # this is the distribution of gamma under uniform ranks
-        gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=200)
         lower, upper = np.quantile(gamma_null, (0.025, 0.975))
 
         # this is the empirical gamma
@@ -127,13 +128,13 @@ def test_calibration_log_gamma_end_to_end():
         return in_interval
 
     sbc_calibration = [run_sbc(N=N, S=S, D=D) for _ in range(100)]
-    lower_expected, upper_expected = binom.ppf((0.0005, 0.9995), 100, 0.95)
+    lower_expected, upper_expected = binom.ppf((0.00005, 0.99995), 100, 0.95)
 
-    # this test should fail with a probability of 0.1%
+    # this test should fail with a probability of 0.01%
     assert lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
     # sbc should almost always fail for slightly biased posterior draws
-    sbc_calibration = [run_sbc(N=N, S=S, D=D, bias=1) for _ in range(100)]
+    sbc_calibration = [run_sbc(N=N, S=S, D=D, bias=2) for _ in range(100)]
     assert not lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
 

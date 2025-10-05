@@ -14,8 +14,10 @@ def coverage(
     variable_names: Sequence[str] = None,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
+    legend_fontsize: int = 14,
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
+    legend_location: str = "upper right",
     color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
@@ -52,6 +54,8 @@ def coverage(
         The figure size passed to the matplotlib constructor. Inferred if None.
     label_fontsize : int, optional, default: 16
         The font size of the y-label and x-label text
+    legend_fontsize   : int, optional, default: 14
+        The font size of the legend text
     title_fontsize : int, optional, default: 18
         The font size of the title text
     tick_fontsize : int, optional, default: 12
@@ -133,12 +137,6 @@ def coverage(
             # Plot empirical coverage difference
             ax.plot(width_rep, diff_est, color=color, alpha=1.0, label="Coverage Difference")
 
-            # Set axis limits
-            ax.set_xlim(0, 1)
-
-            # Add legend to first subplot
-            if i == 0:
-                ax.legend(fontsize=tick_fontsize, loc="upper right")
         else:
             # Plot confidence ribbon
             ax.fill_between(
@@ -156,13 +154,13 @@ def coverage(
             # Plot empirical coverage
             ax.plot(width_rep, coverage_est, color=color, alpha=1.0, label="Empirical Coverage")
 
-            # Set axis limits
-            ax.set_xlim(0, 1)
-            ax.set_ylim(0, 1)
+        # Set axis limits
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
-            # Add legend to first subplot
-            if i == 0:
-                ax.legend(fontsize=tick_fontsize, loc="upper left")
+        # Add legend to first subplot
+        if i == 0:
+            ax.legend(fontsize=legend_fontsize, loc=legend_location)
 
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 

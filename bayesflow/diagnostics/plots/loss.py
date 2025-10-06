@@ -168,7 +168,7 @@ def loss(
         num_col=1,
         title=["Loss Trajectory"],
         xlabel="Training epoch #",
-        ylabel="Value",
+        ylabel="Loss",
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )

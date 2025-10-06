@@ -87,8 +87,10 @@ def recovery(
         The number of rows for the subplots. Dynamically determined if None.
     num_col           : int, optional, default: None
         The number of columns for the subplots. Dynamically determined if None.
-    xlabel :
-    ylabel :
+    xlabel            : str, optional, default: "Ground truth"
+        The label shown on the x-axis.
+    ylabel            : str, optional, default: "Estimate"
+        The label shown on the y-axis.
     markersize        : float, optional, default: None
         The marker size in points.
 

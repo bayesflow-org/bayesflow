@@ -289,7 +289,7 @@ def test_coverage(random_estimates, random_targets):
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[1].title._text == "beta_1"
     assert out.axes[0].get_xlabel() == "Central interval width"
-    assert out.axes[0].get_ylabel() == "Observed coverage"
+    assert out.axes[0].get_ylabel() == "Empirical coverage"
 
 
 def test_coverage_diff(random_estimates, random_targets):
@@ -298,4 +298,4 @@ def test_coverage_diff(random_estimates, random_targets):
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[1].title._text == "beta_1"
     assert out.axes[0].get_xlabel() == "Central interval width"
-    assert out.axes[0].get_ylabel() == "Observed coverage difference"
+    assert out.axes[0].get_ylabel() == "Empirical coverage difference"

@@ -23,9 +23,9 @@ def test_basic_workflow(tmp_path, inference_network, summary_network):
 
     assert "loss" in list(history.history.keys())
     assert len(history.history["loss"]) == 4
-    assert list(plots.keys()) == ["losses", "recovery", "calibration_ecdf", "z_score_contraction"]
+    assert list(plots.keys()) == ["losses", "recovery", "calibration_ecdf", "coverage", "z_score_contraction"]
     assert list(metrics.columns) == ["p1", "p2"]
-    assert metrics.values.shape == (3, 2)
+    assert metrics.values.shape == (4, 2)
 
     # Ensure saving and loading from workflow works fine
     loaded_approximator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
@@ -54,9 +54,9 @@ def test_basic_workflow_fusion(
 
     assert "loss" in list(history.history.keys())
     assert len(history.history["loss"]) == 4
-    assert list(plots.keys()) == ["losses", "recovery", "calibration_ecdf", "z_score_contraction"]
+    assert list(plots.keys()) == ["losses", "recovery", "calibration_ecdf", "coverage", "z_score_contraction"]
     assert list(metrics.columns) == ["p1", "p2"]
-    assert metrics.values.shape == (3, 2)
+    assert metrics.values.shape == (4, 2)
 
     # Ensure saving and loading from workflow works fine
     loaded_approximator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))

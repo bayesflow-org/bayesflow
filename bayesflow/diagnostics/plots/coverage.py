@@ -14,8 +14,10 @@ def coverage(
     variable_names: Sequence[str] = None,
     figsize: Sequence[int] = None,
     label_fontsize: int = 16,
+    legend_fontsize: int = 14,
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
+    legend_location: str = "lower right",
     color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
@@ -39,7 +41,7 @@ def coverage(
         The posterior draws obtained from num_datasets
     targets : np.ndarray of shape (num_datasets, num_params)
         The true parameter values used for generating num_datasets
-    difference : bool, optional, default: False
+    difference : bool, optional, default: True
         If True, plots the difference between empirical coverage and ideal coverage
         (coverage - width), making deviations from ideal calibration more visible.
         If False, plots the standard coverage plot.
@@ -52,10 +54,14 @@ def coverage(
         The figure size passed to the matplotlib constructor. Inferred if None.
     label_fontsize : int, optional, default: 16
         The font size of the y-label and x-label text
+    legend_fontsize   : int, optional, default: 14
+        The font size of the legend text
     title_fontsize : int, optional, default: 18
         The font size of the title text
     tick_fontsize : int, optional, default: 12
         The font size of the axis ticklabels
+    legend_location : str, optional, default: 'upper right
+        The location of the legend.
     color : str, optional, default: '#132a70'
         The color for the coverage line
     num_row : int, optional, default: None
@@ -128,17 +134,11 @@ def coverage(
             )
 
             # Plot ideal coverage difference line (y = 0)
-            ax.axhline(y=0, color="skyblue", linewidth=2.0, label="Ideal Coverage")
+            ax.axhline(y=0, color="black", linestyle="dashed", label="Ideal Coverage")
 
             # Plot empirical coverage difference
             ax.plot(width_rep, diff_est, color=color, alpha=1.0, label="Coverage Difference")
 
-            # Set axis limits
-            ax.set_xlim(0, 1)
-
-            # Add legend to first subplot
-            if i == 0:
-                ax.legend(fontsize=tick_fontsize, loc="upper right")
         else:
             # Plot confidence ribbon
             ax.fill_between(
@@ -151,23 +151,19 @@ def coverage(
             )
 
             # Plot ideal coverage line (y = x)
-            ax.plot([0, 1], [0, 1], color="skyblue", linewidth=2.0, label="Ideal Coverage")
+            ax.plot([0, 1], [0, 1], color="black", linestyle="dashed", label="Ideal Coverage")
 
             # Plot empirical coverage
             ax.plot(width_rep, coverage_est, color=color, alpha=1.0, label="Empirical Coverage")
 
-            # Set axis limits
-            ax.set_xlim(0, 1)
-            ax.set_ylim(0, 1)
-
-            # Add legend to first subplot
-            if i == 0:
-                ax.legend(fontsize=tick_fontsize, loc="upper left")
+        # Add legend to first subplot
+        if i == 0:
+            ax.legend(fontsize=legend_fontsize, loc=legend_location)
 
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 
     # Add labels, titles, and set font sizes
-    ylabel = "Observed coverage difference" if difference else "Observed coverage"
+    ylabel = "Empirical coverage difference" if difference else "Empirical coverage"
     add_titles_and_labels(
         axes=plot_data["axes"],
         num_row=plot_data["num_row"],

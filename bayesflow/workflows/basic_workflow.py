@@ -353,7 +353,7 @@ class BasicWorkflow(Workflow):
         - Z-score contraction plots.
 
         Caution: For models with many parameters, plotting all marginal diagnostics becomes unwieldy. Consider
-        providing `variables_keyes` for visualizing the diagnostics for subsets of the parameter space.
+        providing `variables_keys` for visualizing the diagnostics for subsets of the parameter space.
 
         Parameters
         ----------

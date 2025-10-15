@@ -44,9 +44,9 @@ def test_save_and_load(tmp_path, point_inference_network, random_samples, random
 
     for key_outer in out1.keys():
         for key_inner in out1[key_outer].keys():
-            assert keras.ops.all(
-                keras.ops.isclose(out1[key_outer][key_inner], out2[key_outer][key_inner])
-            ), "Output of original and loaded model differs significantly."
+            assert keras.ops.all(keras.ops.isclose(out1[key_outer][key_inner], out2[key_outer][key_inner])), (
+                "Output of original and loaded model differs significantly."
+            )
 
 
 def test_copy_unequal(point_inference_network, random_samples, random_conditions):

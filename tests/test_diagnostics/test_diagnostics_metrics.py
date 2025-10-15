@@ -43,6 +43,7 @@ def test_metric_calibration_error(random_estimates, random_targets, var_names):
     out = bf.diagnostics.metrics.calibration_error(random_estimates, random_targets, test_quantities=test_quantities)
     assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
 
+
 def test_posterior_contraction(random_estimates, random_targets):
     # basic functionality: automatic variable names
     out = bf.diagnostics.metrics.posterior_contraction(random_estimates, random_targets)

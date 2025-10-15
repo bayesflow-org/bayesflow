@@ -23,9 +23,9 @@ def check_ordering(output, axis):
     assert np.all(np.diff(output, axis=axis) > 0), f"is not ordered along specified axis: {axis}."
     for i in range(output.ndim):
         if i != axis % output.ndim:
-            assert not np.all(np.diff(output, axis=i) > 0), (
-                f"is ordered along axis which is not meant to be ordered: {i}."
-            )
+            assert not np.all(
+                np.diff(output, axis=i) > 0
+            ), f"is ordered along axis which is not meant to be ordered: {i}."
 
 
 @pytest.mark.parametrize("axis", [0, 1, 2])

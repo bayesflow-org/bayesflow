@@ -7,6 +7,7 @@ from bayesflow.utils import prepare_plot_data, prettify_subplots, make_quadratic
 from bayesflow.utils.numpy_utils import credible_interval
 from bayesflow.utils.dict_utils import compute_test_quantities
 
+
 def recovery(
     estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray,
@@ -130,7 +131,6 @@ def recovery(
         variable_keys = updated_data["variable_keys"]
         estimates = updated_data["estimates"]
         targets = updated_data["targets"]
-
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(

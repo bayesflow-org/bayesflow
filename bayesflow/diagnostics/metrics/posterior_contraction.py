@@ -77,7 +77,6 @@ def posterior_contraction(
         estimates = updated_data["estimates"]
         targets = updated_data["targets"]
 
-
     samples = dicts_to_arrays(
         estimates=estimates,
         targets=targets,

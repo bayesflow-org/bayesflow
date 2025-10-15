@@ -6,6 +6,7 @@ import numpy as np
 from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_subplots
 from bayesflow.utils.dict_utils import compute_test_quantities
 
+
 def z_score_contraction(
     estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray,
@@ -116,7 +117,6 @@ def z_score_contraction(
         variable_keys = updated_data["variable_keys"]
         estimates = updated_data["estimates"]
         targets = updated_data["targets"]
-
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(

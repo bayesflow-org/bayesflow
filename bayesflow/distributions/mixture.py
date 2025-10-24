@@ -59,7 +59,7 @@ class Mixture(Distribution):
 
         self.trainable_mixture = trainable_mixture
 
-        self.dim = None
+        self.dims = None
         self._mixture_logits = None
 
     @allow_batch_size
@@ -78,7 +78,7 @@ class Mixture(Distribution):
         Returns
         -------
         samples: Tensor
-            A tensor of shape `batch_shape + (dim,)` containing samples drawn
+            A tensor of shape `batch_shape + dims` containing samples drawn
             from the mixture.
         """
         # Will use numpy until keras adds support for N-D categorical sampling
@@ -87,7 +87,7 @@ class Mixture(Distribution):
         cat_samples = cat_samples.argmax(axis=-1)
 
         # Prepare array to fill and dtype to infer
-        samples = np.zeros(batch_shape + (self.dim,))
+        samples = np.zeros(batch_shape + self.dims)
         dtype = None
 
         # Fill in array with vectorized sampling per component
@@ -137,7 +137,7 @@ class Mixture(Distribution):
         if self.built:
             return
 
-        self.dim = input_shape[-1]
+        self.dims = tuple(input_shape[1:])
 
         for distribution in self.distributions:
             distribution.build(input_shape)

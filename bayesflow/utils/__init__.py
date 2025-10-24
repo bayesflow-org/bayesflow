@@ -71,6 +71,7 @@ from .plot_utils import (
     prettify_subplots,
     make_quadratic,
     add_metric,
+    compute_empirical_coverage,
 )
 from .serialization import serialize_value_or_type, deserialize_value_or_type
 

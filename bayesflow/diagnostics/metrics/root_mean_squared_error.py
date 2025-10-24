@@ -2,7 +2,7 @@ from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
 
-from ...utils.dict_utils import dicts_to_arrays
+from ...utils.dict_utils import dicts_to_arrays, compute_test_quantities
 
 
 def root_mean_squared_error(
@@ -10,7 +10,8 @@ def root_mean_squared_error(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
-    normalize: bool = True,
+    test_quantities: dict[str, Callable] = None,
+    normalize: str | None = "range",
     aggregation: Callable = np.median,
 ) -> dict[str, any]:
     """
@@ -28,8 +29,21 @@ def root_mean_squared_error(
        By default, select all keys.
     variable_names : Sequence[str], optional (default = None)
         Optional variable names to show in the output.
-    normalize      : bool, optional (default = True)
-        Whether to normalize the RMSE using the range of the prior samples.
+    test_quantities   : dict or None, optional, default: None
+        A dict that maps plot titles to functions that compute
+        test quantities based on estimate/target draws.
+
+        The dict keys are automatically added to ``variable_keys``
+        and ``variable_names``.
+        Test quantity functions are expected to accept a dict of draws with
+        shape ``(batch_size, ...)`` as the first (typically only)
+        positional argument and return an NumPy array of shape
+        ``(batch_size,)``.
+        The functions do not have to deal with an additional
+        sample dimension, as appropriate reshaping is done internally.
+    normalize      : str or None, optional (default = "range")
+        Whether to normalize the RMSE using statistics of the prior samples.
+        Possible options are ("mean", "range", "median", "iqr", "std", None)
     aggregation    : callable, optional (default = np.median)
         Function to aggregate the RMSE across draws. Typically `np.mean` or `np.median`.
 
@@ -51,6 +65,20 @@ def root_mean_squared_error(
             The (inferred) variable names.
     """
 
+    # Optionally, compute and prepend test quantities from draws
+    if test_quantities is not None:
+        updated_data = compute_test_quantities(
+            targets=targets,
+            estimates=estimates,
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+        )
+        variable_names = updated_data["variable_names"]
+        variable_keys = updated_data["variable_keys"]
+        estimates = updated_data["estimates"]
+        targets = updated_data["targets"]
+
     samples = dicts_to_arrays(
         estimates=estimates,
         targets=targets,
@@ -59,13 +87,40 @@ def root_mean_squared_error(
     )
 
     rmse = np.sqrt(np.mean((samples["estimates"] - samples["targets"][:, None, :]) ** 2, axis=0))
+    targets = samples["targets"]
 
-    if normalize:
-        rmse /= (samples["targets"].max(axis=0) - samples["targets"].min(axis=0))[None, :]
-        metric_name = "NRMSE"
-    else:
-        metric_name = "RMSE"
+    match normalize:
+        case None | False:
+            normalizer = np.array(1.0)
+            metric_name = "RMSE"
 
+        case "mean":
+            normalizer = np.mean(targets, axis=0)
+            metric_name = "NRMSE"
+
+        case "median":
+            normalizer = np.median(targets, axis=0)
+            metric_name = "NRMSE"
+
+        case "range":
+            normalizer = targets.max(axis=0) - targets.min(axis=0)
+            metric_name = "NRMSE"
+
+        case "std":
+            normalizer = np.std(targets, axis=0, ddof=0)
+            metric_name = "NRMSE"
+
+        case "iqr":
+            q75 = np.percentile(targets, 75, axis=0)
+            q25 = np.percentile(targets, 25, axis=0)
+            normalizer = q75 - q25
+            metric_name = "NRMSE"
+
+        case _:
+            raise ValueError(f"Unknown normalization mode: {normalize}")
+
+    rmse /= normalizer[None, ...]
     rmse = aggregation(rmse, axis=0)
+
     variable_names = samples["estimates"].variable_names
     return {"values": rmse, "metric_name": metric_name, "variable_names": variable_names}

@@ -13,6 +13,8 @@ docsrc/source/contributing.md
 examples/checkpoints/
 build
 docs/
+.venv/
+.env
 
 
 # mypy

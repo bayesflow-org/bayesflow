@@ -115,5 +115,5 @@ class InvariantLayer(keras.Layer):
         return set_summary
 
     @sanitize_input_shape
-    def build(self, input_shape):
-        self.call(keras.ops.zeros(input_shape))
+    def build(self, input_set_shape):
+        self.call(keras.ops.zeros(input_set_shape))

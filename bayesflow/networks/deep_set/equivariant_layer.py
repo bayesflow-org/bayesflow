@@ -99,8 +99,8 @@ class EquivariantLayer(keras.Layer):
         self.layer_norm = layers.LayerNormalization() if layer_norm else None
 
     @sanitize_input_shape
-    def build(self, input_shape):
-        self.call(keras.ops.zeros(input_shape))
+    def build(self, input_set_shape):
+        self.call(keras.ops.zeros(input_set_shape))
 
     def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass of a learnable equivariant transform.

@@ -385,7 +385,11 @@ class BasicWorkflow(Workflow):
         - Loss history (if training history is available).
         - Parameter recovery plots.
         - Calibration ECDF plots.
+        - Coverage plots.
         - Z-score contraction plots.
+
+        Caution: For models with many parameters, plotting all marginal diagnostics becomes unwieldy. Consider
+        providing `variables_keys` for visualizing the diagnostics for subsets of the parameter space.
 
         Parameters
         ----------
@@ -436,6 +440,7 @@ class BasicWorkflow(Workflow):
         plot_fns = {
             "recovery": bf_plots.recovery,
             "calibration_ecdf": bf_plots.calibration_ecdf,
+            "coverage": bf_plots.coverage,
             "z_score_contraction": bf_plots.z_score_contraction,
         }
 
@@ -535,9 +540,10 @@ class BasicWorkflow(Workflow):
         """
         Computes default diagnostic metrics to evaluate the quality of inference. The function computes several
         diagnostic metrics, including:
-        - Root Mean Squared Error (RMSE)
-        - Posterior contraction
-        - Calibration error
+        - (Normalized) Root Mean Squared Error ((N)RMSE): summarizes the recovery plots
+        - Log-gamma statistic - summarizes the ECDF calibration plots
+        - Expected Calibration Error (ECE) - summarizes the coverage plots
+        - Posterior contraction - partially summarizes the contraction plots
 
         Parameters
         ----------
@@ -589,12 +595,12 @@ class BasicWorkflow(Workflow):
             **kwargs.get("root_mean_squared_error_kwargs", {}),
         )
 
-        contraction = bf_metrics.posterior_contraction(
+        log_gamma = bf_metrics.calibration_log_gamma(
             estimates=samples,
             targets=test_data,
             variable_keys=variable_keys,
             variable_names=variable_names,
-            **kwargs.get("posterior_contraction_kwargs", {}),
+            **kwargs.get("log_gamma_kwargs", {}),
         )
 
         calibration_errors = bf_metrics.calibration_error(
@@ -605,17 +611,26 @@ class BasicWorkflow(Workflow):
             **kwargs.get("calibration_error_kwargs", {}),
         )
 
+        contraction = bf_metrics.posterior_contraction(
+            estimates=samples,
+            targets=test_data,
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            **kwargs.get("posterior_contraction_kwargs", {}),
+        )
+
         if as_data_frame:
             metrics = pd.DataFrame(
                 {
                     root_mean_squared_error["metric_name"]: root_mean_squared_error["values"],
-                    contraction["metric_name"]: contraction["values"],
+                    log_gamma["metric_name"]: log_gamma["values"],
                     calibration_errors["metric_name"]: calibration_errors["values"],
+                    contraction["metric_name"]: contraction["values"],
                 },
                 index=variable_keys or root_mean_squared_error["variable_names"],
             ).T
         else:
-            metrics = (root_mean_squared_error, contraction, calibration_errors)
+            metrics = (root_mean_squared_error, log_gamma, calibration_errors, contraction)
 
         return metrics
 

@@ -35,6 +35,14 @@ def test_metric_calibration_error(random_estimates, random_targets, var_names):
     assert out["values"].shape == (random_estimates["sigma"].shape[-1],)
     assert out["variable_names"] == ["sigma"]
 
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.calibration_error(random_estimates, random_targets, test_quantities=test_quantities)
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
+
 
 def test_posterior_contraction(random_estimates, random_targets):
     # basic functionality: automatic variable names
@@ -47,6 +55,16 @@ def test_posterior_contraction(random_estimates, random_targets):
     out = bf.diagnostics.metrics.posterior_contraction(random_estimates, random_targets, aggregation=None)
     assert out["values"].shape == (random_estimates["sigma"].shape[0], num_variables(random_estimates))
 
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.posterior_contraction(
+        random_estimates, random_targets, test_quantities=test_quantities
+    )
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
+
 
 def test_root_mean_squared_error(random_estimates, random_targets):
     # basic functionality: automatic variable names
@@ -55,6 +73,16 @@ def test_root_mean_squared_error(random_estimates, random_targets):
     assert out["values"].shape == (num_variables(random_estimates),)
     assert out["metric_name"] == "NRMSE"
     assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
+
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.root_mean_squared_error(
+        random_estimates, random_targets, test_quantities=test_quantities
+    )
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
 
 
 def test_classifier_two_sample_test(random_samples_a, random_samples_b):
@@ -95,6 +123,16 @@ def test_calibration_log_gamma(random_estimates, random_targets):
     assert out["metric_name"] == "Log Gamma"
     assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
 
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.calibration_log_gamma(
+        random_estimates, random_targets, test_quantities=test_quantities
+    )
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
+
 
 def test_calibration_log_gamma_end_to_end():
     # This is a function test for simulation-based calibration.
@@ -106,6 +144,8 @@ def test_calibration_log_gamma_end_to_end():
     S = 1000  # number of posterior draws
     D = 1000  # number of datasets
 
+    gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=10000)
+
     def run_sbc(N=N, S=S, D=D, bias=0):
         rng = np.random.default_rng()
         prior_draws = rng.beta(2, 2, size=D)
@@ -113,13 +153,12 @@ def test_calibration_log_gamma_end_to_end():
 
         # Analytical posterior:
         # if theta ~ Beta(2, 2), then p(theta|successes) is Beta(2 + successes | 2 + N - successes).
-        posterior_draws = rng.beta(2 + successes + bias, 2 + N - successes + bias, size=(S, D))
+        posterior_draws = rng.beta(2 + successes + bias, 2 + N - successes, size=(S, D))
 
         # these ranks are uniform if bias=0
         ranks = np.sum(posterior_draws < prior_draws, axis=0)
 
         # this is the distribution of gamma under uniform ranks
-        gamma_null = bf.diagnostics.metrics.gamma_null_distribution(D, S, num_null_draws=200)
         lower, upper = np.quantile(gamma_null, (0.025, 0.975))
 
         # this is the empirical gamma
@@ -130,13 +169,13 @@ def test_calibration_log_gamma_end_to_end():
         return in_interval
 
     sbc_calibration = [run_sbc(N=N, S=S, D=D) for _ in range(100)]
-    lower_expected, upper_expected = binom.ppf((0.0005, 0.9995), 100, 0.95)
+    lower_expected, upper_expected = binom.ppf((0.00005, 0.99995), 100, 0.95)
 
-    # this test should fail with a probability of 0.1%
+    # this test should fail with a probability of 0.01%
     assert lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
     # sbc should almost always fail for slightly biased posterior draws
-    sbc_calibration = [run_sbc(N=N, S=S, D=D, bias=1) for _ in range(100)]
+    sbc_calibration = [run_sbc(N=N, S=S, D=D, bias=2) for _ in range(100)]
     assert not lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
 

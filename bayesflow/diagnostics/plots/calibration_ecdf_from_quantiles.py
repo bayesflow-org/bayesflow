@@ -14,12 +14,12 @@ def calibration_ecdf_from_quantiles(
     quantiles_key: str = "quantiles",
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
-    difference: bool = False,
+    difference: bool = True,
     stacked: bool = False,
     figsize: Sequence[float] = None,
     label_fontsize: int = 16,
     legend_fontsize: int = 14,
-    legend_location: str = "upper right",
+    legend_location: str = "lower right",
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
     rank_ecdf_color: str = "#132a70",
@@ -69,7 +69,7 @@ def calibration_ecdf_from_quantiles(
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles.
         Inferred if None. Only relevant if `stacked=False`.
-    difference        : bool, optional, default: False
+    difference        : bool, optional, default: True
         If `True`, plots the ECDF difference.
         Enables a more dynamic visualization range.
     stacked           : bool, optional, default: False
@@ -82,7 +82,9 @@ def calibration_ecdf_from_quantiles(
     label_fontsize    : int, optional, default: 16
         The font size of the y-label and y-label texts
     legend_fontsize   : int, optional, default: 14
-        The font size of the legend text
+        The font size of the legend text.
+    legend_location : str, optional, default: 'lower right
+        The location of the legend.
     title_fontsize    : int, optional, default: 18
         The font size of the title text.
         Only relevant if `stacked=False`

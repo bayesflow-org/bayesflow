@@ -7,6 +7,7 @@ from .metrics import (
     calibration_error,
     calibration_log_gamma,
     posterior_contraction,
+    posterior_z_score,
     summary_space_comparison,
 )
 

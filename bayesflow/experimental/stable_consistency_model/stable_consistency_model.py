@@ -105,7 +105,6 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         embedding_kwargs = embedding_kwargs or {}
-        self.embedding_kwargs = embedding_kwargs
         self.time_emb = FourierEmbedding(**embedding_kwargs)
         self.time_emb_dim = self.time_emb.embed_dim
 
@@ -123,13 +122,14 @@ class StableConsistencyModel(InferenceNetwork):
         config = {
             "subnet": self.subnet,
             "sigma": self.sigma,
-            "embedding_kwargs": self.embedding_kwargs,
+            "time_emb": self.time_emb,
             "concatenate_subnet_input": self._concatenate_subnet_input,
         }
 
         return base_config | serialize(config)
 
-    def _discretize_time(self, num_steps: int, rho: float = 3.5, **kwargs):
+    @staticmethod
+    def _discretize_time(num_steps: int, rho: float = 3.5):
         t = keras.ops.linspace(0.0, pi / 2, num_steps)
         times = keras.ops.exp((t - pi / 2) * rho) * pi / 2
         times = keras.ops.concatenate([keras.ops.zeros((1,)), times[1:]], axis=0)

@@ -101,7 +101,6 @@ def posterior_z_score(
     post_vars = samples["estimates"].var(axis=1, ddof=1)
     post_means = samples["estimates"].mean(axis=1)
     post_stds = np.sqrt(post_vars)
-    prior_vars = samples["targets"].var(axis=0, keepdims=True, ddof=1)
     z_score = (post_means - samples["targets"]) / post_stds
     if aggregation is not None:
         z_score = aggregation(z_score, axis=0)

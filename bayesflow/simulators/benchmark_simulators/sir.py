@@ -32,7 +32,7 @@ class SIR(BenchmarkSimulator):
             The number of initially infected individuals.
         R0: float, optional, default: 0.0
             The number of initially recovered individuals.
-        subsample: int or None, optional, default: 'original'
+        subsample: int, str or None, optional, default: 'original'
             The number of evenly spaced time points to return. If `None`,
             no subsampling will be performed, all `T` timepoints will be returned
             and a trailing dimension will be added. If an integer is provided,

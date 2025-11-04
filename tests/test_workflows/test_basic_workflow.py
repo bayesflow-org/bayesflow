@@ -12,7 +12,7 @@ def test_basic_workflow(tmp_path, inference_network, summary_network):
         summary_network=summary_network,
         inference_variables=["parameters"],
         summary_variables=["observables"],
-        simulator=bf.simulators.SIR(),
+        simulator=bf.simulators.SIR(subsample=None),
         checkpoint_filepath=str(tmp_path),
     )
 

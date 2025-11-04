@@ -11,7 +11,7 @@ class SIR(BenchmarkSimulator):
         T: int = 160,
         I0: float = 1.0,
         R0: float = 0.0,
-        subsample: int = None,
+        subsample: int | str = "original",
         total_count: int = 1000,
         scale_by_total: bool = True,
         rng: np.random.Generator = None,
@@ -27,15 +27,17 @@ class SIR(BenchmarkSimulator):
             The size of the simulated population.
         T: int, optional, default: 160
             The duration (time horizon) of the simulation.
+            The last time-point is not included.
         I0: float, optional, default: 1.0
             The number of initially infected individuals.
         R0: float, optional, default: 0.0
             The number of initially recovered individuals.
-        subsample: int or None, optional, default: 10
+        subsample: int or None, optional, default: 'original'
             The number of evenly spaced time points to return. If `None`,
             no subsampling will be performed, all `T` timepoints will be returned
             and a trailing dimension will be added. If an integer is provided,
             subsampling is performed and no trailing dimension will be added.
+            'original' reproduces the original benchmark task subsampling of 10 points.
         total_count: int, optional, default: 1000
             The `N` parameter of the binomial noise distribution. Used just
             for scaling the data and magnifying the effect of noise, such that
@@ -100,14 +102,16 @@ class SIR(BenchmarkSimulator):
         # Unpack parameter vector into scalars
         beta, gamma = params
 
-        # Prepate time vector between 0 and T of length T
-        t_vec = np.linspace(0, self.T, self.T)
+        # Prepare time vector between 0 and T of length T
+        t_vec = np.arange(0, self.T)
 
         # Integrate using scipy and retain only infected (2-nd dimension)
         irt = odeint(self._deriv, x0, t_vec, args=(self.N, beta, gamma))[:, 1]
 
         # Subsample evenly the specified number of points, if specified
-        if self.subsample is not None:
+        if self.subsample == "original":
+            irt = irt[::17]
+        elif self.subsample is not None:
             irt = irt[:: (self.T // self.subsample)]
         else:
             irt = irt[:, None]

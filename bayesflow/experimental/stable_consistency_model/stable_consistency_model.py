@@ -222,9 +222,9 @@ class StableConsistencyModel(InferenceNetwork):
         z           : Tensor
             Samples from a standard normal distribution
         conditions  : Tensor, optional, default: None
-            Conditions for a approximate conditional distribution
+            Conditions for an approximate conditional distribution
         **kwargs    : dict, optional, default: {}
-            Additional keyword arguments. Include `steps` (default: 30) to
+            Additional keyword arguments. Include `steps` (default: 15) to
             adjust the number of sampling steps.
 
         Returns

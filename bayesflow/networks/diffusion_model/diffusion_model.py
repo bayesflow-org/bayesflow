@@ -243,6 +243,55 @@ class DiffusionModel(InferenceNetwork):
         else:
             return self.subnet(x=xz, t=log_snr, conditions=conditions, training=training)
 
+    def score(
+        self,
+        xz: Tensor,
+        time: float | Tensor = None,
+        log_snr_t: Tensor = None,
+        conditions: Tensor = None,
+        training: bool = False,
+    ) -> Tensor:
+        """
+        Computes the score of the target or latent variable `xz`.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable `z`, typically of shape (..., D),
+            where D is the dimensionality of the latent space.
+        time : float or Tensor
+            Scalar or tensor representing the time (or noise level) at which the velocity
+            should be computed. Will be broadcasted to xz. If None, log_snr_t must be provided.
+        log_snr_t : Tensor
+            The log signal-to-noise ratio at time `t`. If None, time must be provided.
+        conditions : Tensor, optional
+            Conditional inputs to the network, such as conditioning variables
+            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
+        training : bool, optional
+            Whether the model is in training mode. Affects behavior of dropout, batch norm,
+            or other stochastic layers. Default is False.
+
+        Returns
+        -------
+        Tensor
+            The velocity tensor of the same shape as `xz`, representing the right-hand
+            side of the SDE or ODE at the given `time`.
+        """
+        if log_snr_t is None:
+            log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+            log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+
+        subnet_out = self._apply_subnet(
+            xz, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
+        )
+        pred = self.output_projector(subnet_out, training=training)
+
+        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
+
+        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+        return score
+
     def velocity(
         self,
         xz: Tensor,
@@ -279,19 +328,10 @@ class DiffusionModel(InferenceNetwork):
             The velocity tensor of the same shape as `xz`, representing the right-hand
             side of the SDE or ODE at the given `time`.
         """
-        # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-        subnet_out = self._apply_subnet(
-            xz, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
-        )
-        pred = self.output_projector(subnet_out, training=training)
-
-        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
-
-        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+        score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training)
 
         # compute velocity f, g of the SDE or ODE
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
@@ -447,9 +487,25 @@ class DiffusionModel(InferenceNetwork):
             def diffusion(time, xz):
                 return {"xz": self.diffusion_term(xz, time=time, training=training)}
 
+            score_fn = None
+            if "corrector_steps" in integrate_kwargs:
+                if integrate_kwargs["corrector_steps"] > 0:
+
+                    def score_fn(time, xz):
+                        return {
+                            "xz": self.score(
+                                xz,
+                                time=time,
+                                conditions=conditions,
+                                training=training,
+                            )
+                        }
+
             state = integrate_stochastic(
                 drift_fn=deltas,
                 diffusion_fn=diffusion,
+                score_fn=score_fn,
+                noise_schedule=self.noise_schedule,
                 state=state,
                 seed=self.seed_generator,
                 **integrate_kwargs,

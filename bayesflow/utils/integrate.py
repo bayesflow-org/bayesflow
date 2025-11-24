@@ -770,7 +770,7 @@ def integrate_stochastic_adaptive(
         return _i + 1, new_state, new_time, new_step, _counter
 
     # Execute the adaptive loop
-    _, final_state, _, final_counter = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
+    _, final_state, _, _, final_counter = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
     logging.debug("Finished integration after {} steps.", final_counter)
     return final_state
 

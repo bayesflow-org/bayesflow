@@ -729,7 +729,7 @@ def integrate_stochastic_adaptive(
     """
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, 0)
 
-    def cond(i, current_state, current_time, current_step):
+    def cond(i, current_state, current_time, current_step, counter):
         # We use a small epsilon check for floating point equality
         time_reached = keras.ops.all(keras.ops.isclose(current_time, stop_time))
         return keras.ops.logical_and(keras.ops.less(i, max_steps), keras.ops.logical_not(time_reached))
@@ -770,8 +770,8 @@ def integrate_stochastic_adaptive(
         return _i + 1, new_state, new_time, new_step, _counter
 
     # Execute the adaptive loop
-    _, final_state, _, counter = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
-    logging.debug("Finished integration after {} steps.", counter)
+    _, final_state, _, final_counter = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
+    logging.debug("Finished integration after {} steps.", final_counter)
     return final_state
 
 

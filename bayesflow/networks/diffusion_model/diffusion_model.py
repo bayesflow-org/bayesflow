@@ -408,7 +408,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
 
-        if integrate_kwargs["method"] == "euler_maruyama":
+        if integrate_kwargs["method"] in ["euler_maruyama", "shark"]:
             raise ValueError("Stochastic methods are not supported for forward integration.")
 
         if density:
@@ -458,7 +458,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
         if density:
-            if integrate_kwargs["method"] == "euler_maruyama":
+            if integrate_kwargs["method"] in ["euler_maruyama", "shark"]:
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
@@ -477,7 +477,7 @@ class DiffusionModel(InferenceNetwork):
             return x, log_density
 
         state = {"xz": z}
-        if integrate_kwargs["method"] == "euler_maruyama":
+        if integrate_kwargs["method"] in ["euler_maruyama", "shark"]:
 
             def deltas(time, xz):
                 return {

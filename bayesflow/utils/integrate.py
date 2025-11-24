@@ -717,14 +717,9 @@ def integrate_stochastic(
                 bridge_aux=_bridge,
                 use_adaptive_step_size=True,
             )
-            new_state, new_time, new_step = out
         else:
             out = step_fn(state=_current_state, time=_current_time, step_size=dt, noise=_noise_i)
-            if isinstance(out, tuple) and len(out) == 2:
-                new_state, new_time = out
-                new_step = _current_step
-            else:
-                new_state, new_time, new_step = out
+        new_state, new_time, new_step = out
 
         # corrector
         if corrector_steps > 0:

@@ -119,6 +119,7 @@ def test_additive_OU_weak_means_and_vars(method, use_adapt):
         steps=steps,
         seed=seed,
         method=method,
+        max_steps=1_000,
     )
 
     xT = np.array(out["x"])
@@ -164,6 +165,7 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
         steps=steps,
         seed=seed,
         method=method,
+        max_steps=1_000,
     )["x"]
 
     exact = x0 * np.exp(a * T)

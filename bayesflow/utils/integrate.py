@@ -699,10 +699,10 @@ def integrate_stochastic(
 
     def body(_i, _loop_state):
         _current_state, _current_time, _current_step = _loop_state
-
-        # clamp last step to hit stop_time
         remaining = stop_time - _current_time
-        dt = keras.ops.minimum(_current_step, remaining)
+        sign = keras.ops.sign(remaining)
+        dt_mag = keras.ops.minimum(keras.ops.abs(_current_step), keras.ops.abs(remaining))
+        dt = sign * dt_mag
 
         sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
         _noise_i = {k: z_history[k][_i] * sqrt_dt for k in _current_state.keys()}

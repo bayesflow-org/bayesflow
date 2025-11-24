@@ -475,6 +475,8 @@ def euler_maruyama_step(
     time: ArrayLike,
     step_size: ArrayLike,
     noise: dict[str, ArrayLike],
+    min_step_size: ArrayLike = None,
+    max_step_size: ArrayLike = None,
 ) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
     """
     Performs a single Euler-Maruyama step for stochastic differential equations.
@@ -486,6 +488,8 @@ def euler_maruyama_step(
         time: Current time scalar tensor.
         step_size: Time increment dt.
         noise: Mapping of variable names to dW noise tensors.
+        min_step_size: Minimum allowed step size (not used here).
+        max_step_size: Maximum allowed step size (not used here).
 
     Returns:
         new_state: Updated state after one Euler-Maruyama step.
@@ -516,19 +520,22 @@ def shark_step(
     time: ArrayLike,
     step_size: ArrayLike,
     noise: Dict[str, ArrayLike],
+    min_step_size: ArrayLike,
+    max_step_size: ArrayLike,
     use_adaptive_step_size: bool = False,
     tolerance: ArrayLike = 1e-3,
-    min_step_size: ArrayLike = 1e-6,
-    max_step_size: ArrayLike = float("inf"),
     half_noises: Optional[Tuple[Dict[str, ArrayLike], Dict[str, ArrayLike]]] = None,
     bridge_aux: Optional[Dict[str, ArrayLike]] = None,
     validate_split: bool = True,
-) -> Tuple[Dict[str, ArrayLike], ArrayLike] | Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]:
+) -> Union[Tuple[Dict[str, ArrayLike], ArrayLike], Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]]:
     """
-    Shifted Additive-noise Runge-Kutta method for additive SDEs.
+    Shifted Additive noise Runge Kutta for additive SDEs.
     """
+    # direction aware handling
     h = step_size
     t = time
+    h_sign = keras.ops.sign(h)
+    h_mag = keras.ops.abs(h)
 
     # full step: midpoint drift, diffusion at midpoint time
     k1 = drift_fn(t, **filter_kwargs(state, drift_fn))
@@ -562,20 +569,20 @@ def shark_step(
             raise ValueError("Provide either half_noises or bridge_aux when use_adaptive_step_size is True")
         if set(bridge_aux.keys()) != set(noise.keys()):
             raise ValueError("bridge_aux must have the same keys as noise")
-        sqrt_h = keras.ops.sqrt(h + 1e-12)
+        sqrt_h = keras.ops.sqrt(h_mag + 1e-12)  # use magnitude
         dW1 = {k: 0.5 * noise[k] + 0.5 * sqrt_h * bridge_aux[k] for k in noise}
         dW2 = {k: noise[k] - dW1[k] for k in noise}
 
     half = 0.5 * h
 
-    # first half step on [t, t + h 2]
+    # first half step
     k1h = drift_fn(t, **filter_kwargs(state, drift_fn))
     mid1 = {k: state[k] + 0.5 * half * k1h[k] for k in state}
     k2h = drift_fn(t + 0.5 * half, **filter_kwargs(mid1, drift_fn))
     g_q1 = diffusion_fn(t + 0.5 * half, **filter_kwargs(state, diffusion_fn))
     y_half = {k: state[k] + half * k2h[k] + g_q1.get(k, 0) * dW1.get(k, 0) for k in state}
 
-    # second half step on [t + h 2, t + h]
+    # second half step
     k1h2 = drift_fn(t + half, **filter_kwargs(y_half, drift_fn))
     mid2 = {k: y_half[k] + 0.5 * half * k1h2[k] for k in y_half}
     k2h2 = drift_fn(t + 1.5 * half, **filter_kwargs(mid2, drift_fn))
@@ -591,9 +598,14 @@ def shark_step(
         parts.append(keras.ops.norm(v, ord=2, axis=-1))
     err = keras.ops.max(keras.ops.stack(parts))
 
-    # controller for strong order one on additive noise  local error ~ h^{3 2}
+    # controller for strong order one on additive noise
     factor = 0.9 * (tolerance / (err + 1e-12)) ** (2.0 / 3.0)
-    h_new = keras.ops.clip(h * keras.ops.clip(factor, 0.2, 5.0), min_step_size, max_step_size)
+    h_prop = h * keras.ops.clip(factor, 0.2, 5.0)
+
+    # clip by magnitude bounds then restore original sign
+    mag = keras.ops.abs(h_prop)
+    mag_new = keras.ops.clip(mag, min_step_size, max_step_size)
+    h_new = h_sign * mag_new
 
     return y_full, t + h, h_new
 
@@ -656,12 +668,17 @@ def integrate_stochastic(
         use_adaptive = True
         loop_steps = max_steps
         initial_step = (stop_time - start_time) / float(min_steps)
+
+        span_mag = keras.ops.abs(stop_time - start_time)
+        min_step_size = span_mag / keras.ops.cast(max_steps, span_mag.dtype)
+        max_step_size = span_mag / keras.ops.cast(min_steps, span_mag.dtype)
     elif isinstance(steps, int):
         if steps <= 0:
             raise ValueError("Number of steps must be positive.")
         use_adaptive = False
         loop_steps = steps
         initial_step = (stop_time - start_time) / float(steps)
+        min_step_size, max_step_size = initial_step, initial_step
     else:
         raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
 
@@ -675,7 +692,14 @@ def integrate_stochastic(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    step_fn = partial(step_fn, drift_fn=drift_fn, diffusion_fn=diffusion_fn, **kwargs)
+    step_fn = partial(
+        step_fn,
+        drift_fn=drift_fn,
+        diffusion_fn=diffusion_fn,
+        min_step_size=min_step_size,
+        max_step_size=max_step_size,
+        **kwargs,
+    )
 
     # pre generate standard normals  scale by sqrt(dt) inside the loop using the current dt
     z_history = {}

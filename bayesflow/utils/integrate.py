@@ -29,6 +29,7 @@ def euler_step(
     k1 = fn(time, **filter_kwargs(state, fn))
 
     if use_adaptive_step_size:
+        # Use Heun's method (RK2) as embedded pair for proper error estimation
         intermediate_state = state.copy()
         for key, delta in k1.items():
             intermediate_state[key] = state[key] + step_size * delta
@@ -39,18 +40,23 @@ def euler_step(
         if set(k1.keys()) != set(k2.keys()):
             raise ValueError("Keys of the deltas do not match. Please return zero for unchanged variables.")
 
-        # compute next step size
-        intermediate_error = keras.ops.stack([keras.ops.norm(k2[key] - k1[key], ord=2, axis=-1) for key in k1])
-        new_step_size = step_size * tolerance / (intermediate_error + 1e-9)
+        # Heun's (RK2) solution
+        heun_state = state.copy()
+        for key in k1.keys():
+            heun_state[key] = state[key] + 0.5 * step_size * (k1[key] + k2[key])
+
+        # Error estimate: difference between Euler and Heun
+        intermediate_error = keras.ops.stack(
+            [keras.ops.norm(heun_state[key] - intermediate_state[key], ord=2, axis=-1) for key in k1]
+        )
+
+        max_error = keras.ops.max(intermediate_error)
+        new_step_size = step_size * keras.ops.sqrt(tolerance / (max_error + 1e-9))
 
         new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
-
-        # consolidate step size
-        new_step_size = keras.ops.take(new_step_size, keras.ops.argmin(keras.ops.abs(new_step_size)))
     else:
         new_step_size = step_size
 
-    # apply updates
     new_state = state.copy()
     for key in k1.keys():
         new_state[key] = state[key] + step_size * k1[key]
@@ -58,6 +64,16 @@ def euler_step(
     new_time = time + step_size
 
     return new_state, new_time, new_step_size
+
+
+def add_scaled(state, ks, coeffs, h):
+    out = {}
+    for key, y in state.items():
+        acc = keras.ops.zeros_like(y)
+        for c, k in zip(coeffs, ks):
+            acc = acc + c * k[key]
+        out[key] = y + h * acc
+    return out
 
 
 def rk45_step(
@@ -70,57 +86,151 @@ def rk45_step(
     max_step_size: ArrayLike = float("inf"),
     use_adaptive_step_size: bool = False,
 ) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
+    """
+    Dormand-Prince 5(4) method with embedded error estimation.
+    """
     step_size = last_step_size
+    h = step_size
 
     k1 = fn(time, **filter_kwargs(state, fn))
+    k2 = fn(time + h * (1 / 5), **add_scaled(state, [k1], [1 / 5], h))
+    k3 = fn(time + h * (3 / 10), **add_scaled(state, [k1, k2], [3 / 40, 9 / 40], h))
+    k4 = fn(time + h * (4 / 5), **add_scaled(state, [k1, k2, k3], [44 / 45, -56 / 15, 32 / 9], h))
+    k5 = fn(
+        time + h * (8 / 9),
+        **add_scaled(state, [k1, k2, k3, k4], [19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729], h),
+    )
+    k6 = fn(
+        time + h,
+        **add_scaled(state, [k1, k2, k3, k4, k5], [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656], h),
+    )
 
-    intermediate_state = state.copy()
-    for key, delta in k1.items():
-        intermediate_state[key] = state[key] + 0.5 * step_size * delta
+    # check all keys are equal
+    if not all(set(k.keys()) == set(k1.keys()) for k in [k2, k3, k4, k5, k6]):
+        raise ValueError("Keys of the deltas do not match. Please return zero for unchanged variables.")
 
-    k2 = fn(time + 0.5 * step_size, **filter_kwargs(intermediate_state, fn))
-
-    intermediate_state = state.copy()
-    for key, delta in k2.items():
-        intermediate_state[key] = state[key] + 0.5 * step_size * delta
-
-    k3 = fn(time + 0.5 * step_size, **filter_kwargs(intermediate_state, fn))
-
-    intermediate_state = state.copy()
-    for key, delta in k3.items():
-        intermediate_state[key] = state[key] + step_size * delta
-
-    k4 = fn(time + step_size, **filter_kwargs(intermediate_state, fn))
+    # 5th order solution
+    new_state = {}
+    for key in k1.keys():
+        new_state[key] = state[key] + h * (
+            35 / 384 * k1[key] + 500 / 1113 * k3[key] + 125 / 192 * k4[key] - 2187 / 6784 * k5[key] + 11 / 84 * k6[key]
+        )
 
     if use_adaptive_step_size:
-        intermediate_state = state.copy()
-        for key, delta in k4.items():
-            intermediate_state[key] = state[key] + 0.5 * step_size * delta
+        k7 = fn(time + h, **filter_kwargs(new_state, fn))
 
-        k5 = fn(time + 0.5 * step_size, **filter_kwargs(intermediate_state, fn))
+        # 4th order embedded solution
+        err_state = {}
+        for key in k1.keys():
+            y4 = state[key] + h * (
+                5179 / 57600 * k1[key]
+                + 7571 / 16695 * k3[key]
+                + 393 / 640 * k4[key]
+                - 92097 / 339200 * k5[key]
+                + 187 / 2100 * k6[key]
+                + 1 / 40 * k7[key]
+            )
+            err_state[key] = new_state[key] - y4
 
-        # check all keys are equal
-        if not all(set(k.keys()) == set(k1.keys()) for k in [k2, k3, k4, k5]):
-            raise ValueError("Keys of the deltas do not match. Please return zero for unchanged variables.")
+        err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
+        err = keras.ops.max(err_norm)
 
-        # compute next step size
-        intermediate_error = keras.ops.stack([keras.ops.norm(k5[key] - k4[key], ord=2, axis=-1) for key in k5.keys()])
-        new_step_size = step_size * tolerance / (intermediate_error + 1e-9)
-
+        new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
         new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
-
-        # consolidate step size
-        new_step_size = keras.ops.take(new_step_size, keras.ops.argmin(keras.ops.abs(new_step_size)))
     else:
         new_step_size = step_size
 
-    # apply updates
-    new_state = state.copy()
-    for key in k1.keys():
-        new_state[key] = state[key] + (step_size / 6.0) * (k1[key] + 2.0 * k2[key] + 2.0 * k3[key] + k4[key])
+    new_time = time + h
+    return new_state, new_time, new_step_size
 
-    new_time = time + step_size
 
+def tsit5_step(
+    fn: Callable,
+    state: dict[str, ArrayLike],
+    time: ArrayLike,
+    last_step_size: ArrayLike,
+    tolerance: ArrayLike = 1e-6,
+    min_step_size: ArrayLike = -float("inf"),
+    max_step_size: ArrayLike = float("inf"),
+    use_adaptive_step_size: bool = False,
+):
+    """
+    Implements a single step of the Tsitouras 5/4 Runge-Kutta method.
+    """
+    step_size = last_step_size
+    h = step_size
+
+    # Butcher tableau coefficients
+    c2 = 0.161
+    c3 = 0.327
+    c4 = 0.9
+    c5 = 0.9800255409045097
+
+    k1 = fn(time, **filter_kwargs(state, fn))
+    k2 = fn(time + h * c2, **add_scaled(state, [k1], [0.161], h))
+    k3 = fn(time + h * c3, **add_scaled(state, [k1, k2], [-0.0084806554923570, 0.3354806554923570], h))
+    k4 = fn(
+        time + h * c4, **add_scaled(state, [k1, k2, k3], [2.897153057105494, -6.359448489975075, 4.362295432869581], h)
+    )
+    k5 = fn(
+        time + h * c5,
+        **add_scaled(
+            state, [k1, k2, k3, k4], [4.325279681768730, -11.74888356406283, 7.495539342889836, -0.09249506636175525], h
+        ),
+    )
+    k6 = fn(
+        time + h,
+        **add_scaled(
+            state,
+            [k1, k2, k3, k4, k5],
+            [5.86145544294270, -12.92096931784711, 8.159367898576159, -0.07158497328140100, -0.02826905039406838],
+            h,
+        ),
+    )
+
+    # 5th order solution: b coefficients
+    new_state = {}
+    for key in state.keys():
+        new_state[key] = state[key] + h * (
+            0.09646076681806523 * k1[key]
+            + 0.01 * k2[key]
+            + 0.4798896504144996 * k3[key]
+            + 1.379008574103742 * k4[key]
+            - 3.290069515436081 * k5[key]
+            + 2.324710524099774 * k6[key]
+        )
+
+    if use_adaptive_step_size:
+        # 7th stage evaluation
+        k7 = fn(time + h, **filter_kwargs(new_state, fn))
+
+        # 4th order embedded solution: b_hat coefficients
+        y4 = {}
+        for key in state.keys():
+            y4[key] = state[key] + h * (
+                0.001780011052226 * k1[key]
+                + 0.000816434459657 * k2[key]
+                - 0.007880878010262 * k3[key]
+                + 0.144711007173263 * k4[key]
+                - 0.582357165452555 * k5[key]
+                + 0.458082105929187 * k6[key]
+                + (1.0 / 66.0) * k7[key]
+            )
+
+        # Error estimate
+        err_state = {}
+        for key in state.keys():
+            err_state[key] = new_state[key] - y4[key]
+
+        err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
+        err = keras.ops.max(err_norm)
+
+        new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
+        new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
+    else:
+        new_step_size = h
+
+    new_time = time + h
     return new_state, new_time, new_step_size
 
 
@@ -141,6 +251,8 @@ def integrate_fixed(
             step_fn = euler_step
         case "rk45":
             step_fn = rk45_step
+        case "tsit5":
+            step_fn = tsit5_step
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -180,6 +292,8 @@ def integrate_adaptive(
             step_fn = euler_step
         case "rk45":
             step_fn = rk45_step
+        case "tsit5":
+            step_fn = tsit5_step
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -249,6 +363,8 @@ def integrate_scheduled(
             step_fn = euler_step
         case "rk45":
             step_fn = rk45_step
+        case "tsit5":
+            step_fn = tsit5_step
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -401,10 +517,18 @@ def integrate_stochastic(
     steps: int,
     seed: keras.random.SeedGenerator,
     method: str = "euler_maruyama",
+    score_fn: Callable = None,
+    corrector_steps: int = 0,
+    noise_schedule=None,
+    step_size_factor: float = 0.1,
     **kwargs,
 ) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
     """
     Integrates a stochastic differential equation from start_time to stop_time.
+
+    When score_fn is provided, performs predictor-corrector sampling where:
+    - Predictor: reverse diffusion SDE solver
+    - Corrector: annealed Langevin dynamics with step size e = sqrt(dim)
 
     Args:
         drift_fn: Function that computes the drift term.
@@ -415,11 +539,15 @@ def integrate_stochastic(
         steps: Number of integration steps.
         seed: Random seed for noise generation.
         method: Integration method to use, e.g., 'euler_maruyama'.
+        score_fn: Optional score function for predictor-corrector sampling.
+                 Should take (time, **state) and return score dict.
+        corrector_steps: Number of corrector steps to take after each predictor step.
+        noise_schedule: Noise schedule object for computing lambda_t and alpha_t in corrector.
+        step_size_factor: Scaling factor for corrector step size.
         **kwargs: Additional arguments to pass to the step function.
 
     Returns:
-        If return_noise is False, returns the final state dictionary.
-        If return_noise is True, returns a tuple of (final_state, noise_history).
+        Final state dictionary after integration.
     """
     if steps <= 0:
         raise ValueError("Number of steps must be positive.")
@@ -438,17 +566,56 @@ def integrate_stochastic(
     step_size = (stop_time - start_time) / steps
     sqrt_dt = keras.ops.sqrt(keras.ops.abs(step_size))
 
-    # Pre-generate noise history: shape = (steps, *state_shape)
+    # Pre-generate noise history for predictor: shape = (steps, *state_shape)
     noise_history = {}
     for key, val in state.items():
         noise_history[key] = (
             keras.random.normal((steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed) * sqrt_dt
         )
 
+    # Pre-generate corrector noise if score_fn is provided: shape = (steps, corrector_steps, *state_shape)
+    corrector_noise_history = {}
+    if corrector_steps > 0:
+        if score_fn is None or noise_schedule is None:
+            raise ValueError("Please provide both score_fn and noise_schedule when using corrector_steps > 0.")
+
+        for key, val in state.items():
+            corrector_noise_history[key] = keras.random.normal(
+                (steps, corrector_steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed
+            )
+
     def body(_loop_var, _loop_state):
         _current_state, _current_time = _loop_state
         _noise_i = {k: noise_history[k][_loop_var] for k in _current_state.keys()}
+
+        # Predictor step
         new_state, new_time = step_fn(state=_current_state, time=_current_time, step_size=step_size, noise=_noise_i)
+
+        # Corrector steps: annealed Langevin dynamics if score_fn is provided
+        if corrector_steps > 0:
+            for corrector_step in range(corrector_steps):
+                score = score_fn(new_time, **filter_kwargs(new_state, score_fn))
+                _corrector_noise = {k: corrector_noise_history[k][_loop_var, corrector_step] for k in new_state.keys()}
+
+                # Compute noise schedule components for corrector step size
+                log_snr_t = noise_schedule.get_log_snr(t=new_time, training=False)
+                alpha_t, _ = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+
+                # Corrector update: x_i+1 = x_i + e * score + sqrt(2e) * noise_corrector
+                # where e = 2*alpha_t * (r * ||z|| / ||score||)**2
+                for k in new_state.keys():
+                    if k in score:
+                        z_norm = keras.ops.norm(_corrector_noise[k], axis=-1, keepdims=True)
+                        score_norm = keras.ops.norm(score[k], axis=-1, keepdims=True)
+
+                        # Prevent division by zero
+                        score_norm = keras.ops.maximum(score_norm, 1e-8)
+
+                        e = 2.0 * alpha_t * (step_size_factor * z_norm / score_norm) ** 2
+                        sqrt_2e = keras.ops.sqrt(2.0 * e)
+
+                        new_state[k] = new_state[k] + e * score[k] + sqrt_2e * _corrector_noise[k]
+
         return new_state, new_time
 
     final_state, final_time = keras.ops.fori_loop(0, steps, body, (state, start_time))

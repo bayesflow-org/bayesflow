@@ -742,11 +742,4 @@ def integrate_stochastic(
         return new_state, new_time, new_step
 
     final_state, final_time, last_step = keras.ops.fori_loop(0, loop_steps, body, (state, start_time, initial_step))
-
-    if use_adaptive and float(final_time) < float(stop_time):
-        logging.warning(
-            f"Reached max_steps={max_steps} before stop_time. "
-            f"final_time={float(final_time)} stop_time={float(stop_time)}"
-        )
-
     return final_state

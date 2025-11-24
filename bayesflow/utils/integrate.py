@@ -1,4 +1,5 @@
 from collections.abc import Callable, Sequence
+from typing import Dict, Tuple, Optional
 from functools import partial
 
 import keras
@@ -505,24 +506,115 @@ def euler_maruyama_step(
             base = base + diffusion[key] * noise[key]
         new_state[key] = base
 
-    return new_state, time + step_size
+    return new_state, time + step_size, step_size
+
+
+def shark_step(
+    drift_fn: Callable,
+    diffusion_fn: Callable,
+    state: Dict[str, ArrayLike],
+    time: ArrayLike,
+    step_size: ArrayLike,
+    noise: Dict[str, ArrayLike],
+    use_adaptive_step_size: bool = False,
+    tolerance: ArrayLike = 1e-3,
+    min_step_size: ArrayLike = 1e-6,
+    max_step_size: ArrayLike = float("inf"),
+    half_noises: Optional[Tuple[Dict[str, ArrayLike], Dict[str, ArrayLike]]] = None,
+    bridge_aux: Optional[Dict[str, ArrayLike]] = None,
+    validate_split: bool = True,
+) -> Tuple[Dict[str, ArrayLike], ArrayLike] | Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]:
+    """
+    Shifted Additive-noise Runge-Kutta method for additive SDEs.
+    """
+    h = step_size
+    t = time
+
+    # full step: midpoint drift, diffusion at midpoint time
+    k1 = drift_fn(t, **filter_kwargs(state, drift_fn))
+    mid_state = {k: state[k] + 0.5 * h * k1[k] for k in state}
+    k2 = drift_fn(t + 0.5 * h, **filter_kwargs(mid_state, drift_fn))
+    g_mid = diffusion_fn(t + 0.5 * h, **filter_kwargs(state, diffusion_fn))
+
+    det_full = {k: state[k] + h * k2[k] for k in state}
+    sto_full = {k: g_mid[k] * noise[k] for k in g_mid}
+    y_full = {k: det_full[k] + sto_full.get(k, keras.ops.zeros_like(det_full[k])) for k in det_full}
+
+    if not use_adaptive_step_size:
+        return y_full, t + h, h
+
+    # prepare two half step noises without drawing randomness here
+    if half_noises is not None:
+        dW1, dW2 = half_noises
+        if set(dW1.keys()) != set(noise.keys()) or set(dW2.keys()) != set(noise.keys()):
+            raise ValueError("half_noises must have the same keys as noise")
+        if validate_split:
+            sum_diff = {k: dW1[k] + dW2[k] - noise[k] for k in noise}
+            parts = []
+            for v in sum_diff.values():
+                if not hasattr(v, "shape") or len(v.shape) == 0:
+                    v = keras.ops.reshape(v, (1,))
+                parts.append(keras.ops.norm(v, ord=2, axis=-1))
+            if float(keras.ops.max(keras.ops.stack(parts))) > 1e-6:
+                raise ValueError("half_noises do not sum to provided noise")
+    else:
+        if bridge_aux is None:
+            raise ValueError("Provide either half_noises or bridge_aux when use_adaptive_step_size is True")
+        if set(bridge_aux.keys()) != set(noise.keys()):
+            raise ValueError("bridge_aux must have the same keys as noise")
+        sqrt_h = keras.ops.sqrt(h + 1e-12)
+        dW1 = {k: 0.5 * noise[k] + 0.5 * sqrt_h * bridge_aux[k] for k in noise}
+        dW2 = {k: noise[k] - dW1[k] for k in noise}
+
+    half = 0.5 * h
+
+    # first half step on [t, t + h 2]
+    k1h = drift_fn(t, **filter_kwargs(state, drift_fn))
+    mid1 = {k: state[k] + 0.5 * half * k1h[k] for k in state}
+    k2h = drift_fn(t + 0.5 * half, **filter_kwargs(mid1, drift_fn))
+    g_q1 = diffusion_fn(t + 0.5 * half, **filter_kwargs(state, diffusion_fn))
+    y_half = {k: state[k] + half * k2h[k] + g_q1.get(k, 0) * dW1.get(k, 0) for k in state}
+
+    # second half step on [t + h 2, t + h]
+    k1h2 = drift_fn(t + half, **filter_kwargs(y_half, drift_fn))
+    mid2 = {k: y_half[k] + 0.5 * half * k1h2[k] for k in y_half}
+    k2h2 = drift_fn(t + 1.5 * half, **filter_kwargs(mid2, drift_fn))
+    g_q2 = diffusion_fn(t + 1.5 * half, **filter_kwargs(state, diffusion_fn))
+    y_twohalf = {k: y_half[k] + half * k2h2[k] + g_q2.get(k, 0) * dW2.get(k, 0) for k in y_half}
+
+    # error estimate
+    parts = []
+    for k in y_full:
+        v = y_full[k] - y_twohalf[k]
+        if not hasattr(v, "shape") or len(v.shape) == 0:
+            v = keras.ops.reshape(v, (1,))
+        parts.append(keras.ops.norm(v, ord=2, axis=-1))
+    err = keras.ops.max(keras.ops.stack(parts))
+
+    # controller for strong order one on additive noise  local error ~ h^{3 2}
+    factor = 0.9 * (tolerance / (err + 1e-12)) ** (2.0 / 3.0)
+    h_new = keras.ops.clip(h * keras.ops.clip(factor, 0.2, 5.0), min_step_size, max_step_size)
+
+    return y_full, t + h, h_new
 
 
 def integrate_stochastic(
     drift_fn: Callable,
     diffusion_fn: Callable,
-    state: dict[str, ArrayLike],
+    state: Dict[str, ArrayLike],
     start_time: ArrayLike,
     stop_time: ArrayLike,
-    steps: int,
     seed: keras.random.SeedGenerator,
+    min_steps: int = 10,
+    max_steps: int = 10_000,
+    steps: int | Literal["adaptive"] = 100,
     method: str = "euler_maruyama",
     score_fn: Callable = None,
     corrector_steps: int = 0,
     noise_schedule=None,
     step_size_factor: float = 0.1,
     **kwargs,
-) -> Union[dict[str, ArrayLike], tuple[dict[str, ArrayLike], dict[str, Sequence[ArrayLike]]]]:
+) -> Union[Dict[str, ArrayLike], Tuple[Dict[str, ArrayLike], Dict[str, Sequence[ArrayLike]]]]:
     """
     Integrates a stochastic differential equation from start_time to stop_time.
 
@@ -535,88 +627,131 @@ def integrate_stochastic(
         diffusion_fn: Function that computes the diffusion term.
         state: Dictionary containing the initial state.
         start_time: Starting time for integration.
-        stop_time: Ending time for integration.
-        steps: Number of integration steps.
+        stop_time: Ending time for integration. steps: Number of integration steps.
         seed: Random seed for noise generation.
-        method: Integration method to use, e.g., 'euler_maruyama'.
+        min_steps: Minimum number of steps for adaptive integration.
+        max_steps: Maximum number of steps for adaptive integration.
+        steps: Number of steps or 'adaptive' for adaptive step sizing. Only 'shark' method supports adaptive steps.
+        method: Integration method to use, e.g., 'euler_maruyama' or 'shark'.
         score_fn: Optional score function for predictor-corrector sampling.
-                 Should take (time, **state) and return score dict.
+            Should take (time, **state) and return score dict.
         corrector_steps: Number of corrector steps to take after each predictor step.
         noise_schedule: Noise schedule object for computing lambda_t and alpha_t in corrector.
         step_size_factor: Scaling factor for corrector step size.
         **kwargs: Additional arguments to pass to the step function.
 
-    Returns:
-        Final state dictionary after integration.
+    Returns: Final state dictionary after integration.
     """
-    if steps <= 0:
-        raise ValueError("Number of steps must be positive.")
+    use_adaptive = False
+    if isinstance(steps, str) and steps in ["adaptive", "dynamic"]:
+        if start_time is None or stop_time is None:
+            raise ValueError(
+                "Please provide start_time and stop_time for the integration, was "
+                f"'start_time={start_time}', 'stop_time={stop_time}'."
+            )
+        if min_steps <= 0 or max_steps <= 0:
+            raise ValueError("min_steps and max_steps must be positive.")
+        if max_steps < min_steps:
+            raise ValueError("max_steps must be greater or equal to min_steps.")
+        use_adaptive = True
+        loop_steps = max_steps
+        initial_step = (stop_time - start_time) / float(min_steps)
+    elif isinstance(steps, int):
+        if steps <= 0:
+            raise ValueError("Number of steps must be positive.")
+        use_adaptive = False
+        loop_steps = steps
+        initial_step = (stop_time - start_time) / float(steps)
+    else:
+        raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
 
-    # Select step function based on method
     match method:
         case "euler_maruyama":
             step_fn = euler_maruyama_step
+            if use_adaptive:
+                raise ValueError("Adaptive step size is not supported for Euler Maruyama method.")
+        case "shark":
+            step_fn = shark_step
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    # Prepare step function with partial application
     step_fn = partial(step_fn, drift_fn=drift_fn, diffusion_fn=diffusion_fn, **kwargs)
 
-    # Time step
-    step_size = (stop_time - start_time) / steps
-    sqrt_dt = keras.ops.sqrt(keras.ops.abs(step_size))
-
-    # Pre-generate noise history for predictor: shape = (steps, *state_shape)
-    noise_history = {}
+    # pre generate standard normals  scale by sqrt(dt) inside the loop using the current dt
+    z_history = {}
+    bridge_history = {}
     for key, val in state.items():
-        noise_history[key] = (
-            keras.random.normal((steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed) * sqrt_dt
-        )
+        shape = keras.ops.shape(val)
+        z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
+        if method == "shark" and use_adaptive:
+            bridge_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
 
-    # Pre-generate corrector noise if score_fn is provided: shape = (steps, corrector_steps, *state_shape)
+    # pre generate corrector noise if requested
     corrector_noise_history = {}
     if corrector_steps > 0:
         if score_fn is None or noise_schedule is None:
             raise ValueError("Please provide both score_fn and noise_schedule when using corrector_steps > 0.")
-
         for key, val in state.items():
+            shape = keras.ops.shape(val)
             corrector_noise_history[key] = keras.random.normal(
-                (steps, corrector_steps, *keras.ops.shape(val)), dtype=keras.ops.dtype(val), seed=seed
+                (loop_steps, corrector_steps, *shape), dtype=keras.ops.dtype(val), seed=seed
             )
 
-    def body(_loop_var, _loop_state):
-        _current_state, _current_time = _loop_state
-        _noise_i = {k: noise_history[k][_loop_var] for k in _current_state.keys()}
+    def body(_i, _loop_state):
+        _current_state, _current_time, _current_step = _loop_state
 
-        # Predictor step
-        new_state, new_time = step_fn(state=_current_state, time=_current_time, step_size=step_size, noise=_noise_i)
+        # clamp last step to hit stop_time
+        remaining = stop_time - _current_time
+        dt = keras.ops.minimum(_current_step, remaining)
 
-        # Corrector steps: annealed Langevin dynamics if score_fn is provided
+        sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
+        _noise_i = {k: z_history[k][_i] * sqrt_dt for k in _current_state.keys()}
+
+        if method == "shark" and use_adaptive:
+            _bridge = {k: bridge_history[k][_i] for k in _current_state.keys()}
+            out = step_fn(
+                state=_current_state,
+                time=_current_time,
+                step_size=dt,
+                noise=_noise_i,
+                bridge_aux=_bridge,
+                use_adaptive_step_size=True,
+            )
+            new_state, new_time, new_step = out
+        else:
+            out = step_fn(state=_current_state, time=_current_time, step_size=dt, noise=_noise_i)
+            if isinstance(out, tuple) and len(out) == 2:
+                new_state, new_time = out
+                new_step = _current_step
+            else:
+                new_state, new_time, new_step = out
+
+        # corrector
         if corrector_steps > 0:
-            for corrector_step in range(corrector_steps):
+            for j in range(corrector_steps):
                 score = score_fn(new_time, **filter_kwargs(new_state, score_fn))
-                _corrector_noise = {k: corrector_noise_history[k][_loop_var, corrector_step] for k in new_state.keys()}
+                _z_corr = {k: corrector_noise_history[k][_i, j] for k in new_state.keys()}
 
-                # Compute noise schedule components for corrector step size
                 log_snr_t = noise_schedule.get_log_snr(t=new_time, training=False)
                 alpha_t, _ = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-                # Corrector update: x_i+1 = x_i + e * score + sqrt(2e) * noise_corrector
-                # where e = 2*alpha_t * (r * ||z|| / ||score||)**2
                 for k in new_state.keys():
                     if k in score:
-                        z_norm = keras.ops.norm(_corrector_noise[k], axis=-1, keepdims=True)
+                        z_norm = keras.ops.norm(_z_corr[k], axis=-1, keepdims=True)
                         score_norm = keras.ops.norm(score[k], axis=-1, keepdims=True)
-
-                        # Prevent division by zero
                         score_norm = keras.ops.maximum(score_norm, 1e-8)
 
                         e = 2.0 * alpha_t * (step_size_factor * z_norm / score_norm) ** 2
-                        sqrt_2e = keras.ops.sqrt(2.0 * e)
+                        new_state[k] = new_state[k] + e * score[k] + keras.ops.sqrt(2.0 * e) * _z_corr[k]
 
-                        new_state[k] = new_state[k] + e * score[k] + sqrt_2e * _corrector_noise[k]
+        return new_state, new_time, new_step
 
-        return new_state, new_time
+    final_state, final_time, last_step = keras.ops.fori_loop(0, loop_steps, body, (state, start_time, initial_step))
 
-    final_state, final_time = keras.ops.fori_loop(0, steps, body, (state, start_time))
+    if use_adaptive and float(final_time) < float(stop_time):
+        logging.warning(
+            f"Reached max_steps={max_steps} before stop_time. "
+            f"final_time={float(final_time)} stop_time={float(stop_time)}"
+        )
+
     return final_state

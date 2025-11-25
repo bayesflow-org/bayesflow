@@ -31,30 +31,19 @@ def euler_step(
     k1 = fn(time, **filter_kwargs(state, fn))
 
     if use_adaptive_step_size:
-        # Use Heun's method (RK2) as embedded pair for proper error estimation
-        intermediate_state = state.copy()
-        for key, delta in k1.items():
-            intermediate_state[key] = state[key] + step_size * delta
+        # Euler step
+        y_euler = {k: state[k] + step_size * k1[k] for k in state}
 
-        k2 = fn(time + step_size, **filter_kwargs(intermediate_state, fn))
+        # Heun slope
+        k2 = fn(time + step_size, **filter_kwargs(y_euler, fn))
 
-        # check all keys are equal
-        if set(k1.keys()) != set(k2.keys()):
-            raise ValueError("Keys of the deltas do not match. Please return zero for unchanged variables.")
+        # error = (h/2) (k2 - k1)
+        err_state = {k: 0.5 * step_size * (k2[k] - k1[k]) for k in state}
 
-        # Heun's (RK2) solution
-        heun_state = state.copy()
-        for key in k1.keys():
-            heun_state[key] = state[key] + 0.5 * step_size * (k1[key] + k2[key])
+        err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
+        err = keras.ops.max(err_norm)
 
-        # Error estimate: difference between Euler and Heun
-        intermediate_error = keras.ops.stack(
-            [keras.ops.norm(heun_state[key] - intermediate_state[key], ord=2, axis=-1) for key in k1]
-        )
-
-        max_error = keras.ops.max(intermediate_error)
-        new_step_size = step_size * keras.ops.sqrt(tolerance / (max_error + 1e-9))
-
+        new_step_size = step_size * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.5, 0.2, 5.0)
         new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
     else:
         new_step_size = step_size
@@ -177,7 +166,7 @@ def tsit5_step(
     k5 = fn(
         time + h * c5,
         **add_scaled(
-            state, [k1, k2, k3, k4], [4.325279681768730, -11.74888356406283, 7.495539342889836, -0.09249506636175525], h
+            state, [k1, k2, k3, k4], [5.325864828439257, -11.74888356406283, 7.495539342889836, -0.09249506636175525], h
         ),
     )
     k6 = fn(
@@ -203,26 +192,19 @@ def tsit5_step(
         )
 
     if use_adaptive_step_size:
-        # 7th stage evaluation
         k7 = fn(time + h, **filter_kwargs(new_state, fn))
 
-        # 4th order embedded solution: b_hat coefficients
-        y4 = {}
-        for key in state.keys():
-            y4[key] = state[key] + h * (
-                0.001780011052226 * k1[key]
-                + 0.000816434459657 * k2[key]
-                - 0.007880878010262 * k3[key]
-                + 0.144711007173263 * k4[key]
-                - 0.582357165452555 * k5[key]
-                + 0.458082105929187 * k6[key]
-                + (1.0 / 66.0) * k7[key]
-            )
-
-        # Error estimate
         err_state = {}
         for key in state.keys():
-            err_state[key] = new_state[key] - y4[key]
+            err_state[key] = h * (
+                -0.00178001105222577714 * k1[key]
+                - 0.0008164344596567469 * k2[key]
+                + 0.007880878010261995 * k3[key]
+                - 0.1447110071732629 * k4[key]
+                + 0.5823571654525552 * k5[key]
+                - 0.45808210592918697 * k6[key]
+                + 0.015151515151515152 * k7[key]
+            )
 
         err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
         err = keras.ops.max(err_norm)
@@ -230,7 +212,7 @@ def tsit5_step(
         new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
         new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
     else:
-        new_step_size = h
+        new_step_size = step_size
 
     new_time = time + h
     return new_state, new_time, new_step_size

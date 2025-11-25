@@ -28,33 +28,17 @@ def euler_step(
     max_step_size: ArrayLike = float("inf"),
     use_adaptive_step_size: bool = False,
 ) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
-    k1 = fn(time, **filter_kwargs(state, fn))
-
     if use_adaptive_step_size:
-        # Euler step
-        y_euler = {k: state[k] + step_size * k1[k] for k in state}
+        raise ValueError("Adaptive step size not supported for Euler method.")
 
-        # Heun slope
-        k2 = fn(time + step_size, **filter_kwargs(y_euler, fn))
-
-        # error = (h/2) (k2 - k1)
-        err_state = {k: 0.5 * step_size * (k2[k] - k1[k]) for k in state}
-
-        err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
-        err = keras.ops.max(err_norm)
-
-        new_step_size = step_size * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.5, 0.2, 5.0)
-        new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
-    else:
-        new_step_size = step_size
+    k1 = fn(time, **filter_kwargs(state, fn))
 
     new_state = state.copy()
     for key in k1.keys():
         new_state[key] = state[key] + step_size * k1[key]
-
     new_time = time + step_size
 
-    return new_state, new_time, new_step_size
+    return new_state, new_time, step_size
 
 
 def add_scaled(state, ks, coeffs, h):
@@ -224,7 +208,7 @@ def integrate_fixed(
     start_time: ArrayLike,
     stop_time: ArrayLike,
     steps: int,
-    method: str = "rk45",
+    method: str,
     **kwargs,
 ) -> dict[str, ArrayLike]:
     if steps <= 0:
@@ -263,17 +247,15 @@ def integrate_adaptive(
     state: dict[str, ArrayLike],
     start_time: ArrayLike,
     stop_time: ArrayLike,
-    min_steps: int = 10,
-    max_steps: int = 1000,
-    method: str = "rk45",
+    min_steps: int,
+    max_steps: int,
+    method: str,
     **kwargs,
 ) -> dict[str, ArrayLike]:
     if max_steps <= min_steps:
         raise ValueError("Maximum number of steps must be greater than minimum number of steps.")
 
     match method:
-        case "euler":
-            step_fn = euler_step
         case "rk45":
             step_fn = rk45_step
         case "tsit5":
@@ -339,7 +321,7 @@ def integrate_scheduled(
     fn: Callable,
     state: dict[str, ArrayLike],
     steps: Tensor | np.ndarray,
-    method: str = "rk45",
+    method: str,
     **kwargs,
 ) -> dict[str, ArrayLike]:
     match method:
@@ -422,7 +404,7 @@ def integrate(
     min_steps: int = 10,
     max_steps: int = 10_000,
     steps: int | Literal["adaptive"] | Tensor | np.ndarray = 100,
-    method: str = "euler",
+    method: str = "rk45",
     **kwargs,
 ) -> dict[str, ArrayLike]:
     if isinstance(steps, str) and steps in ["adaptive", "dynamic"]:
@@ -480,6 +462,9 @@ def euler_maruyama_step(
         new_state: Updated state after one Euler-Maruyama step.
         new_time: time + dt.
     """
+    if use_adaptive_step_size:
+        raise ValueError("Adaptive step size not supported for Euler method.")
+
     # Compute drift and diffusion
     drift = drift_fn(time, **filter_kwargs(state, drift_fn))
     diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))

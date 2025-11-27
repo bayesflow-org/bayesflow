@@ -16,6 +16,7 @@ from bayesflow.utils import (
     integrate_stochastic,
     logging,
     tensor_utils,
+    STOCHASTIC_METHODS,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -408,7 +409,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
 
-        if integrate_kwargs["method"] in ["euler_maruyama", "shark"]:
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
             raise ValueError("Stochastic methods are not supported for forward integration.")
 
         if density:
@@ -458,7 +459,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
         if density:
-            if integrate_kwargs["method"] in ["euler_maruyama", "shark"]:
+            if integrate_kwargs["method"] in STOCHASTIC_METHODS:
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
@@ -477,7 +478,7 @@ class DiffusionModel(InferenceNetwork):
             return x, log_density
 
         state = {"xz": z}
-        if integrate_kwargs["method"] in ["euler_maruyama", "shark"]:
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
 
             def deltas(time, xz):
                 return {

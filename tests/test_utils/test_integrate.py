@@ -175,3 +175,76 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
 
     exact = x0 * np.exp(a * T)
     np.testing.assert_allclose(np.array(out).mean(), exact, atol=TOL_DET, rtol=0.1)
+
+
+@pytest.mark.parametrize("steps", [500])
+def test_langevin_gaussian_sampling(steps):
+    """
+    Test annealed Langevin dynamics on a 1D Gaussian target.
+
+    Target distribution: N(mu, sigma^2), with score
+        ∇_x log p(x) = -(x - mu) / sigma^2
+
+    We verify that the empirical mean and variance after Langevin sampling
+    match the target within a loose tolerance (to allow for Monte Carlo noise).
+    """
+    # target parameters
+    mu = 0.3
+    sigma = 0.7
+
+    # number of particles
+    N = 20000
+    start_time = 0.0
+    stop_time = 1.0
+
+    # tolerances for mean and variance
+    tol_mean = 5e-2
+    tol_var = 5e-2
+
+    # initial state: broad Gaussian, independent of target
+    seed = keras.random.SeedGenerator(42)
+    x0 = keras.random.normal((N,), dtype="float32", seed=seed)
+    initial_state = {"x": x0}
+
+    # simple dummy noise schedule: constant alpha
+    class DummyNoiseSchedule:
+        def get_log_snr(self, t, training=False):
+            return keras.ops.zeros_like(t)
+
+        def get_alpha_sigma(self, log_snr_t):
+            alpha_t = keras.ops.ones_like(log_snr_t)
+            sigma_t = keras.ops.ones_like(log_snr_t)
+            return alpha_t, sigma_t
+
+    noise_schedule = DummyNoiseSchedule()
+
+    # score of the target Gaussian
+    def score_fn(t, x):
+        s = -(x - mu) / (sigma**2)
+        return {"x": s}
+
+    # run Langevin
+    final_state = integrate_stochastic(
+        drift_fn=None,
+        diffusion_fn=None,
+        score_fn=score_fn,
+        noise_schedule=noise_schedule,
+        state=initial_state,
+        start_time=start_time,
+        stop_time=stop_time,
+        steps=steps,
+        seed=seed,
+        method="langevin",
+        max_steps=1_000,
+        corrector_steps=1,
+    )
+
+    xT = np.array(final_state["x"])
+    emp_mean = float(xT.mean())
+    emp_var = float(xT.var())
+
+    exp_mean = mu
+    exp_var = sigma**2
+
+    np.testing.assert_allclose(emp_mean, exp_mean, atol=tol_mean, rtol=0.0)
+    np.testing.assert_allclose(emp_var, exp_var, atol=tol_var, rtol=0.0)

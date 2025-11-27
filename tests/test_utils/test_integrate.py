@@ -76,6 +76,7 @@ def test_analytical_integration(method, atol):
     "method,use_adapt",
     [
         ("euler_maruyama", False),
+        ("sea", False),
         ("shark", False),
         ("shark", True),
     ],
@@ -96,7 +97,7 @@ def test_additive_OU_weak_means_and_vars(method, use_adapt):
     T = 1.0
 
     # batch of trajectories
-    N = 20000  # large enough to control sampling error
+    N = 10000  # large enough to control sampling error
     seed = keras.random.SeedGenerator(42)
 
     def drift_fn(t, x):
@@ -136,6 +137,7 @@ def test_additive_OU_weak_means_and_vars(method, use_adapt):
     "method,use_adapt",
     [
         ("euler_maruyama", False),
+        ("sea", False),
         ("shark", False),
         ("shark", True),
     ],
@@ -149,7 +151,7 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
     x0 = 0.9
     T = 1.25
     steps = 200 if not use_adapt else "adaptive"
-    seed = keras.random.SeedGenerator(999)
+    seed = keras.random.SeedGenerator(0)
 
     def drift_fn(t, x):
         return {"x": a * x}

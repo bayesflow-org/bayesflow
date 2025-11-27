@@ -440,6 +440,7 @@ def euler_maruyama_step(
     time: ArrayLike,
     step_size: ArrayLike,
     noise: dict[str, ArrayLike],
+    noise_aux: dict[str, ArrayLike] = None,
     use_adaptive_step_size: bool = False,
     min_step_size: ArrayLike = None,
     max_step_size: ArrayLike = None,
@@ -454,6 +455,7 @@ def euler_maruyama_step(
         time: Current time scalar tensor.
         step_size: Time increment dt.
         noise: Mapping of variable names to dW noise tensors.
+        noise_aux: Mapping of variable names to auxiliary noise (not used here).
         use_adaptive_step_size: Whether to use adaptive step sizing (not used here).
         min_step_size: Minimum allowed step size (not used here).
         max_step_size: Maximum allowed step size (not used here).
@@ -483,101 +485,244 @@ def euler_maruyama_step(
     return new_state, time + step_size, step_size
 
 
+def sea_step(
+    drift_fn: Callable,
+    diffusion_fn: Callable,
+    state: dict[str, ArrayLike],
+    time: ArrayLike,
+    step_size: ArrayLike,
+    noise: dict[str, ArrayLike],
+    noise_aux: dict[str, ArrayLike] = None,
+    use_adaptive_step_size: bool = False,
+    min_step_size: ArrayLike = None,
+    max_step_size: ArrayLike = None,
+) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
+    """
+    Performs a single shifted Euler step for SDEs with additive noise [1].
+
+    Compared to Euler-Maruyama, this evaluates the drift at a shifted state,
+    which improves the local error and the global error constant for additive noise.
+
+    The scheme is
+        X_{n+1} = X_n + f(t_n, X_n + 0.5 * g(t_n) * ΔW_n) * h + g(t_n) * ΔW_n
+
+    [1] Foster et al., "High order splitting methods for SDEs satisfying a commutativity condition" (2023)
+    Args:
+        drift_fn: Function computing the drift term f(t, **state).
+        diffusion_fn: Function computing the diffusion term g(t, **state).
+        state: Current state, mapping variable names to tensors.
+        time: Current time scalar tensor.
+        step_size: Time increment dt.
+        noise: Mapping of variable names to dW noise tensors.
+        noise_aux: Mapping of variable names to auxiliary noise (not used here).
+        use_adaptive_step_size: Whether to use adaptive step sizing (not used here).
+        min_step_size: Minimum allowed step size (not used here).
+        max_step_size: Maximum allowed step size (not used here).
+
+    Returns:
+        new_state: Updated state after one SEA step.
+        new_time: time + dt.
+    """
+    if use_adaptive_step_size:
+        raise ValueError("Adaptive step size not supported for Euler method.")
+
+    # Compute diffusion (assumed additive or weakly state dependent)
+    diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))
+
+    # Check noise keys
+    if set(diffusion.keys()) != set(noise.keys()):
+        raise ValueError("Keys of diffusion terms and noise do not match.")
+
+    # Build shifted state: X_shift = X + 0.5 * g * ΔW
+    shifted_state = {}
+    for key, x in state.items():
+        if key in diffusion:
+            shifted_state[key] = x + 0.5 * diffusion[key] * noise[key]
+        else:
+            shifted_state[key] = x
+
+    # Drift evaluated at shifted state
+    drift_shifted = drift_fn(time, **filter_kwargs(shifted_state, drift_fn))
+
+    # Final update
+    new_state = {}
+    for key, d in drift_shifted.items():
+        base = state[key] + step_size * d
+        if key in diffusion:
+            base = base + diffusion[key] * noise[key]
+        new_state[key] = base
+
+    return new_state, time + step_size, step_size
+
+
 def shark_step(
     drift_fn: Callable,
     diffusion_fn: Callable,
     state: Dict[str, ArrayLike],
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: Dict[str, ArrayLike],
-    min_step_size: ArrayLike,
-    max_step_size: ArrayLike,
+    noise: Dict[str, ArrayLike],  # w_k = ΔW_k (already scaled by sqrt(|h|))
+    noise_aux: Dict[str, ArrayLike],  # Z_k ~ N(0,1), used to build H_k
     use_adaptive_step_size: bool = False,
-    tolerance: ArrayLike = 1e-3,
-    half_noises: Optional[Tuple[Dict[str, ArrayLike], Dict[str, ArrayLike]]] = None,
-    bridge_aux: Optional[Dict[str, ArrayLike]] = None,
-    validate_split: bool = True,
+    min_step_size: ArrayLike = -float("inf"),
+    max_step_size: ArrayLike = float("inf"),
+    tolerance: float = 1e-3,
 ) -> Union[Tuple[Dict[str, ArrayLike], ArrayLike], Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]]:
     """
-    Shifted Additive noise Runge Kutta for additive SDEs.
+    Shifted Additive noise Runge Kutta (SHARK) for additive SDEs [1]. Makes two evaluations of the drift and diffusion
+    per step and has a strong order 1.5.
+
+    SHARK method as specified:
+
+        1)  ỹ_k = y_k + g(y_k) H_k
+        2)  ỹ_{k+5/6} = ỹ_k + (5/6)[ f(ỹ_k) h + g(ỹ_k) W_k ]
+        3)  y_{k+1} = y_k
+                     + (2/5) f(ỹ_k) h
+                     + (3/5) f(ỹ_{k+5/6}) h
+                     + g(ỹ_k) ( 2/5 W_k +  6/5 H_k )
+                     + g(ỹ_{k+5/6}) ( 3/5 W_k -  6/5 H_k )
+
+        with
+            H_k = 0.5 * |h| * W_k + (|h| ** 1.5) / (2 * sqrt(3)) * Z_k
+
+    [1] Foster et al., "High order splitting methods for SDEs satisfying a commutativity condition" (2023)
+
+    Args:
+        drift_fn: Function computing the drift term f(t, **state).
+        diffusion_fn: Function computing the diffusion term g(t, **state).
+        state: Current state, mapping variable names to tensors.
+        time: Current time scalar tensor.
+        step_size: Time increment dt.
+        noise: Mapping of variable names to dW noise tensors.
+        noise_aux: Mapping of variable names to auxiliary noise.
+        use_adaptive_step_size: Whether to use adaptive step sizing (not used here).
+        min_step_size: Minimum allowed step size (not used here).
+        max_step_size: Maximum allowed step size (not used here).
+        tolerance: Tolerance for adaptive step sizing.
+
+    Returns:
+        new_state: Updated state after one SHARK step.
+        new_time: time + dt.
     """
-    # direction aware handling
     h = step_size
     t = time
-    h_sign = keras.ops.sign(h)
+
+    # Magnitude of the time step for stochastic scaling
     h_mag = keras.ops.abs(h)
+    h_sign = keras.ops.sign(h)
+    sqrt_h_mag = keras.ops.sqrt(h_mag)
+    inv_sqrt3 = keras.ops.cast(1.0 / np.sqrt(3.0), dtype=keras.ops.dtype(h_mag))
 
-    # full step: midpoint drift, diffusion at midpoint time
-    k1 = drift_fn(t, **filter_kwargs(state, drift_fn))
-    mid_state = {k: state[k] + 0.5 * h * k1[k] for k in state}
-    k2 = drift_fn(t + 0.5 * h, **filter_kwargs(mid_state, drift_fn))
-    g_mid = diffusion_fn(t + 0.5 * h, **filter_kwargs(state, diffusion_fn))
+    # g(y_k)
+    g0 = diffusion_fn(t, **filter_kwargs(state, diffusion_fn))
 
-    det_full = {k: state[k] + h * k2[k] for k in state}
-    sto_full = {k: g_mid[k] * noise[k] for k in g_mid}
-    y_full = {k: det_full[k] + sto_full.get(k, keras.ops.zeros_like(det_full[k])) for k in det_full}
+    # Build H_k from w_k and Z_k
+    H = {}
+    for k in state.keys():
+        if k in g0:
+            w_k = noise[k]  # already scaled by sqrt(|h|)
+            z_k = noise_aux[k]  # standard normal
+            term1 = 0.5 * h_mag * w_k
+            term2 = 0.5 * h_mag * sqrt_h_mag * inv_sqrt3 * z_k
+            H[k] = term1 + term2
+        else:
+            H[k] = keras.ops.zeros_like(state[k])
+
+    # === 1) shifted initial state ===
+    y_tilde_k = {}
+    for k in state.keys():
+        if k in g0:
+            y_tilde_k[k] = state[k] + g0[k] * H[k]
+        else:
+            y_tilde_k[k] = state[k]
+
+    # === evaluate drift and diffusion at ỹ_k ===
+    f_tilde_k = drift_fn(t, **filter_kwargs(y_tilde_k, drift_fn))
+    g_tilde_k = diffusion_fn(t, **filter_kwargs(y_tilde_k, diffusion_fn))
+
+    # === 2) internal stage at 5/6 ===
+    y_tilde_mid = {}
+    for k in state.keys():
+        drift_part = (5.0 / 6.0) * f_tilde_k[k] * h
+        if k in g_tilde_k:
+            sto_part = (5.0 / 6.0) * g_tilde_k[k] * noise[k]
+        else:
+            sto_part = keras.ops.zeros_like(state[k])
+        y_tilde_mid[k] = y_tilde_k[k] + drift_part + sto_part
+
+    # === evaluate drift and diffusion at ỹ_(k+5/6) ===
+    f_tilde_mid = drift_fn(t + 5.0 / 6.0 * h, **filter_kwargs(y_tilde_mid, drift_fn))
+    g_tilde_mid = diffusion_fn(t + 5.0 / 6.0 * h, **filter_kwargs(y_tilde_mid, diffusion_fn))
+
+    # === 3) final update ===
+    new_state = {}
+    for k in state.keys():
+        # deterministic weights
+        det = state[k] + (2.0 / 5.0) * f_tilde_k[k] * h + (3.0 / 5.0) * f_tilde_mid[k] * h
+
+        # stochastic parts
+        sto1 = (
+            g_tilde_k[k] * ((2.0 / 5.0) * noise[k] + (6.0 / 5.0) * H[k])
+            if k in g_tilde_k
+            else keras.ops.zeros_like(det)
+        )
+        sto2 = (
+            g_tilde_mid[k] * ((3.0 / 5.0) * noise[k] - (6.0 / 5.0) * H[k])
+            if k in g_tilde_mid
+            else keras.ops.zeros_like(det)
+        )
+
+        new_state[k] = det + sto1 + sto2
 
     if not use_adaptive_step_size:
-        return y_full, t + h, h
+        return new_state, t + h, h
 
-    # prepare two half step noises without drawing randomness here
-    if half_noises is not None:
-        dW1, dW2 = half_noises
-        if set(dW1.keys()) != set(noise.keys()) or set(dW2.keys()) != set(noise.keys()):
-            raise ValueError("half_noises must have the same keys as noise")
-        if validate_split:
-            sum_diff = {k: dW1[k] + dW2[k] - noise[k] for k in noise}
-            parts = []
-            for v in sum_diff.values():
-                if not hasattr(v, "shape") or len(v.shape) == 0:
-                    v = keras.ops.reshape(v, (1,))
-                parts.append(keras.ops.norm(v, ord=2, axis=-1))
-            if float(keras.ops.max(keras.ops.stack(parts))) > 1e-6:
-                raise ValueError("half_noises do not sum to provided noise")
+    # embedded lower order solution y_low
+    # here: one stage strong order one method using y_tilde_k
+    y_low = {}
+    for k in state.keys():
+        det_low = state[k] + f_tilde_k[k] * h
+        if k in g0:
+            sto_low = g0[k] * noise[k]
+        else:
+            sto_low = keras.ops.zeros_like(det_low)
+        y_low[k] = det_low + sto_low
+
+    # error estimate as max over components of RMS norm
+    err_list = []
+    for k in state.keys():
+        diff = new_state[k] - y_low[k]
+        sq = keras.ops.square(diff)
+        mean_sq = keras.ops.mean(sq)
+        err_k = keras.ops.sqrt(mean_sq)
+        err_list.append(err_k)
+
+    if len(err_list) == 0:
+        err = keras.ops.zeros_like(h_mag)
     else:
-        if bridge_aux is None:
-            raise ValueError("Provide either half_noises or bridge_aux when use_adaptive_step_size is True")
-        if set(bridge_aux.keys()) != set(noise.keys()):
-            raise ValueError("bridge_aux must have the same keys as noise")
-        sqrt_h = keras.ops.sqrt(h_mag + 1e-12)  # use magnitude
-        dW1 = {k: 0.5 * noise[k] + 0.5 * sqrt_h * bridge_aux[k] for k in noise}
-        dW2 = {k: noise[k] - dW1[k] for k in noise}
+        err = err_list[0]
+        for e_k in err_list[1:]:
+            err = keras.ops.maximum(err, e_k)
 
-    half = 0.5 * h
+    tiny = keras.ops.cast(1e12, dtype=keras.ops.dtype(h_mag))
+    safety = keras.ops.cast(0.9, dtype=keras.ops.dtype(h_mag))
+    # effective order between one and one point five
+    exponent = keras.ops.cast(0.5, dtype=keras.ops.dtype(h_mag))
 
-    # first half step
-    k1h = drift_fn(t, **filter_kwargs(state, drift_fn))
-    mid1 = {k: state[k] + 0.5 * half * k1h[k] for k in state}
-    k2h = drift_fn(t + 0.5 * half, **filter_kwargs(mid1, drift_fn))
-    g_q1 = diffusion_fn(t + 0.5 * half, **filter_kwargs(state, diffusion_fn))
-    y_half = {k: state[k] + half * k2h[k] + g_q1.get(k, 0) * dW1.get(k, 0) for k in state}
+    factor = safety * keras.ops.power(tolerance / (err + tiny), exponent)
 
-    # second half step
-    k1h2 = drift_fn(t + half, **filter_kwargs(y_half, drift_fn))
-    mid2 = {k: y_half[k] + 0.5 * half * k1h2[k] for k in y_half}
-    k2h2 = drift_fn(t + 1.5 * half, **filter_kwargs(mid2, drift_fn))
-    g_q2 = diffusion_fn(t + 1.5 * half, **filter_kwargs(state, diffusion_fn))
-    y_twohalf = {k: y_half[k] + half * k2h2[k] + g_q2.get(k, 0) * dW2.get(k, 0) for k in y_half}
+    # clamp factor
+    factor_min = keras.ops.cast(0.2, dtype=keras.ops.dtype(h_mag))
+    factor_max = keras.ops.cast(5.0, dtype=keras.ops.dtype(h_mag))
+    factor = keras.ops.minimum(keras.ops.maximum(factor, factor_min), factor_max)
 
-    # error estimate
-    parts = []
-    for k in y_full:
-        v = y_full[k] - y_twohalf[k]
-        if not hasattr(v, "shape") or len(v.shape) == 0:
-            v = keras.ops.reshape(v, (1,))
-        parts.append(keras.ops.norm(v, ord=2, axis=-1))
-    err = keras.ops.max(keras.ops.stack(parts))
+    new_h_mag = h_mag * factor
+    new_h_mag = keras.ops.maximum(new_h_mag, min_step_size)
+    new_h_mag = keras.ops.minimum(new_h_mag, max_step_size)
 
-    # controller for strong order one on additive noise
-    factor = 0.9 * (tolerance / (err + 1e-12)) ** (2.0 / 3.0)
-    h_prop = h * keras.ops.clip(factor, 0.2, 5.0)
+    new_h = h_sign * new_h_mag
 
-    # clip by magnitude bounds then restore original sign
-    mag = keras.ops.abs(h_prop)
-    mag_new = keras.ops.clip(mag, min_step_size, max_step_size)
-    h_new = h_sign * mag_new
-
-    return y_full, t + h, h_new
+    return new_state, t + h, new_h
 
 
 def _apply_corrector(
@@ -627,6 +772,7 @@ def integrate_stochastic_fixed(
     stop_time: ArrayLike,
     steps: int,
     z_history: Dict[str, ArrayLike],
+    z_extra_history: Dict[str, ArrayLike],
     corrector_steps: int,
     score_fn: Optional[Callable],
     step_size_factor: float,
@@ -650,12 +796,17 @@ def integrate_stochastic_fixed(
         # Generate noise increment scaled by sqrt(dt)
         sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
         _noise_i = {k: z_history[k][_i] * sqrt_dt for k in _current_state.keys()}
+        if len(z_extra_history) == 0:
+            _noise_extra_i = None
+        else:
+            _noise_extra_i = {k: z_extra_history[k][_i] for k in _current_state.keys()}
 
         new_state, new_time, new_step = step_fn(
             state=_current_state,
             time=_current_time,
             step_size=dt,
             noise=_noise_i,
+            noise_aux=_noise_extra_i,
             use_adaptive_step_size=False,
         )
 
@@ -684,7 +835,7 @@ def integrate_stochastic_adaptive(
     max_steps: int,
     initial_step: ArrayLike,
     z_history: Dict[str, ArrayLike],
-    bridge_history: Dict[str, ArrayLike],
+    z_extra_history: Dict[str, ArrayLike],
     corrector_steps: int,
     score_fn: Optional[Callable],
     step_size_factor: float,
@@ -712,14 +863,17 @@ def integrate_stochastic_adaptive(
 
         sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
         _noise_i = {k: z_history[k][_i] * sqrt_dt for k in _current_state.keys()}
-        _bridge = {k: bridge_history[k][_i] for k in _current_state.keys()}
+        if len(z_extra_history) == 0:
+            _noise_extra_i = None
+        else:
+            _noise_extra_i = {k: z_extra_history[k][_i] for k in _current_state.keys()}
 
         new_state, new_time, new_step = step_fn(
             state=_current_state,
             time=_current_time,
             step_size=dt,
             noise=_noise_i,
-            bridge_aux=_bridge,
+            noise_aux=_noise_extra_i,
             use_adaptive_step_size=True,
         )
 
@@ -808,6 +962,8 @@ def integrate_stochastic(
     match method:
         case "euler_maruyama":
             step_fn_raw = euler_maruyama_step
+        case "sea":
+            step_fn_raw = sea_step
         case "shark":
             step_fn_raw = shark_step
         case other:
@@ -825,13 +981,12 @@ def integrate_stochastic(
 
     # Pre-generate standard normals for the predictor step (up to max_steps)
     z_history = {}
-    bridge_history = {}
+    z_extra_history = {}
     for key, val in state.items():
         shape = keras.ops.shape(val)
         z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
-        if is_adaptive and method == "shark":
-            # Only required for SHARK adaptive step (Brownian Bridge aux noise)
-            bridge_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
+        if method == "shark":
+            z_extra_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
 
     # Pre-generate corrector noise if requested
     corrector_noise_history = {}
@@ -853,7 +1008,7 @@ def integrate_stochastic(
             max_steps=max_steps,
             initial_step=initial_step,
             z_history=z_history,
-            bridge_history=bridge_history,
+            z_extra_history=z_extra_history,
             corrector_steps=corrector_steps,
             score_fn=score_fn,
             noise_schedule=noise_schedule,
@@ -868,6 +1023,7 @@ def integrate_stochastic(
             stop_time=stop_time,
             steps=loop_steps,
             z_history=z_history,
+            z_extra_history=z_extra_history,
             corrector_steps=corrector_steps,
             score_fn=score_fn,
             noise_schedule=noise_schedule,

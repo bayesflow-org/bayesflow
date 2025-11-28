@@ -76,7 +76,9 @@ def test_analytical_integration(method, atol):
     "method,use_adapt",
     [
         ("euler_maruyama", False),
+        ("euler_maruyama", True),
         ("sea", False),
+        ("sea", True),
         ("shark", False),
         ("shark", True),
     ],
@@ -137,7 +139,9 @@ def test_additive_OU_weak_means_and_vars(method, use_adapt):
     "method,use_adapt",
     [
         ("euler_maruyama", False),
+        ("euler_maruyama", True),
         ("sea", False),
+        ("sea", True),
         ("shark", False),
         ("shark", True),
     ],

@@ -489,18 +489,17 @@ class DiffusionModel(InferenceNetwork):
                 return {"xz": self.diffusion_term(xz, time=time, training=training)}
 
             score_fn = None
-            if "corrector_steps" in integrate_kwargs:
-                if integrate_kwargs["corrector_steps"] > 0:
+            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
 
-                    def score_fn(time, xz):
-                        return {
-                            "xz": self.score(
-                                xz,
-                                time=time,
-                                conditions=conditions,
-                                training=training,
-                            )
-                        }
+                def score_fn(time, xz):
+                    return {
+                        "xz": self.score(
+                            xz,
+                            time=time,
+                            conditions=conditions,
+                            training=training,
+                        )
+                    }
 
             state = integrate_stochastic(
                 drift_fn=deltas,

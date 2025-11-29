@@ -435,7 +435,13 @@ def integrate(
         raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
 
 
-def adaptive_step_size_controller(state, drift, adaptive_factor, min_step_size, max_step_size):
+def adaptive_step_size_controller(
+    state,
+    drift,
+    adaptive_factor: ArrayLike = 1.0,
+    min_step_size: float = -float("inf"),
+    max_step_size: float = float("inf"),
+) -> ArrayLike:
     """
     Adaptive step size controller based on [1].
 
@@ -477,7 +483,7 @@ def euler_maruyama_step(
     use_adaptive_step_size: bool = False,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
-    adaptive_factor: float = 1.0,
+    adaptive_factor: float = 0.1,
     **kwargs,
 ) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
     """
@@ -493,7 +499,7 @@ def euler_maruyama_step(
         use_adaptive_step_size: Whether to use adaptive step sizing.
         min_step_size: Minimum allowed step size.
         max_step_size: Maximum allowed step size.
-        adaptive_factor: Factor to compute adaptive step size (0 < step_size_factor < 1).
+        adaptive_factor: Factor to compute adaptive step size (0 < adaptive_factor < 1).
 
     Returns:
         new_state: Updated state after one Euler-Maruyama step.
@@ -537,7 +543,7 @@ def sea_step(
     use_adaptive_step_size: bool = False,
     min_step_size: ArrayLike = -float("inf"),
     max_step_size: ArrayLike = float("inf"),
-    adaptive_factor: ArrayLike = 1.0,
+    adaptive_factor: ArrayLike = 0.1,
     **kwargs,
 ) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
     """
@@ -560,7 +566,7 @@ def sea_step(
         use_adaptive_step_size: Whether to use adaptive step sizing.
         min_step_size: Minimum allowed step size.
         max_step_size: Maximum allowed step size.
-        adaptive_factor: Factor to compute adaptive step size (0 < step_size_factor < 1).
+        adaptive_factor: Factor to compute adaptive step size (0 < adaptive_factor < 1).
 
     Returns:
         new_state: Updated state after one SEA step.
@@ -616,7 +622,7 @@ def shark_step(
     use_adaptive_step_size: bool = False,
     min_step_size: ArrayLike = -float("inf"),
     max_step_size: ArrayLike = float("inf"),
-    adaptive_factor: ArrayLike = 1.0,
+    adaptive_factor: ArrayLike = 0.1,
 ) -> Union[Tuple[Dict[str, ArrayLike], ArrayLike], Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]]:
     """
     Shifted Additive noise Runge Kutta (SHARK) for additive SDEs [1]. Makes two evaluations of the drift and diffusion
@@ -648,7 +654,7 @@ def shark_step(
         use_adaptive_step_size: Whether to use adaptive step sizing.
         min_step_size: Minimum allowed step size.
         max_step_size: Maximum allowed step size.
-        adaptive_factor: Factor to compute adaptive step size (0 < step_size_factor < 1).
+        adaptive_factor: Factor to compute adaptive step size (0 < adaptive_factor < 1).
 
     Returns:
         new_state: Updated state after one SHARK step.
@@ -724,9 +730,6 @@ def shark_step(
 
         new_state[k] = det + sto1 + sto2
 
-    # if not use_adaptive_step_size:
-    #    return new_state, t + h, h
-
     new_step_size = h
     if use_adaptive_step_size:
         new_step_size = adaptive_step_size_controller(
@@ -738,53 +741,6 @@ def shark_step(
         )
 
     return new_state, t + h, new_step_size
-
-    # # embedded lower order solution y_low
-    # # here: one stage strong order one method using y_tilde_k
-    # y_low = {}
-    # for k in state.keys():
-    #     det_low = state[k] + f_tilde_k[k] * h
-    #     if k in g0:
-    #         sto_low = g0[k] * noise[k]
-    #     else:
-    #         sto_low = keras.ops.zeros_like(det_low)
-    #     y_low[k] = det_low + sto_low
-    #
-    # # error estimate as max over components of RMS norm
-    # err_list = []
-    # for k in state.keys():
-    #     diff = new_state[k] - y_low[k]
-    #     sq = keras.ops.square(diff)
-    #     mean_sq = keras.ops.mean(sq)
-    #     err_k = keras.ops.sqrt(mean_sq)
-    #     err_list.append(err_k)
-    #
-    # if len(err_list) == 0:
-    #     err = keras.ops.zeros_like(h_mag)
-    # else:
-    #     err = err_list[0]
-    #     for e_k in err_list[1:]:
-    #         err = keras.ops.maximum(err, e_k)
-    #
-    # tiny = keras.ops.cast(1e12, dtype=keras.ops.dtype(h_mag))
-    # safety = keras.ops.cast(0.9, dtype=keras.ops.dtype(h_mag))
-    # # effective order between one and one point five
-    # exponent = keras.ops.cast(0.5, dtype=keras.ops.dtype(h_mag))
-    #
-    # factor = safety * keras.ops.power(tolerance / (err + tiny), exponent)
-    #
-    # # clamp factor
-    # factor_min = keras.ops.cast(0.2, dtype=keras.ops.dtype(h_mag))
-    # factor_max = keras.ops.cast(5.0, dtype=keras.ops.dtype(h_mag))
-    # factor = keras.ops.minimum(keras.ops.maximum(factor, factor_min), factor_max)
-    #
-    # new_h_mag = h_mag * factor
-    # new_h_mag = keras.ops.maximum(new_h_mag, min_step_size)
-    # new_h_mag = keras.ops.minimum(new_h_mag, max_step_size)
-    #
-    # new_h = h_sign * new_h_mag
-    #
-    # return new_state, t + h, new_h
 
 
 def _apply_corrector(

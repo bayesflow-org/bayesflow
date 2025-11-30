@@ -19,7 +19,7 @@ StateDict = Dict[str, ArrayLike]
 
 
 DETERMINISTIC_METHODS = ["euler", "rk45", "tsit5"]
-STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "langevin"]
+STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "langevin", "fast_adaptive"]
 
 
 def euler_step(
@@ -27,12 +27,8 @@ def euler_step(
     state: dict[str, ArrayLike],
     time: ArrayLike,
     step_size: ArrayLike,
-    use_adaptive_step_size: bool = False,
     **kwargs,
 ) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
-    if use_adaptive_step_size:
-        raise ValueError("Adaptive step size not supported for Euler method.")
-
     k1 = fn(time, **filter_kwargs(state, fn))
 
     new_state = state.copy()
@@ -81,10 +77,6 @@ def rk45_step(
         time + h,
         **add_scaled(state, [k1, k2, k3, k4, k5], [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656], h),
     )
-
-    # check all keys are equal
-    if not all(set(k.keys()) == set(k1.keys()) for k in [k2, k3, k4, k5, k6]):
-        raise ValueError("Keys of the deltas do not match. Please return zero for unchanged variables.")
 
     # 5th order solution
     new_state = {}
@@ -262,6 +254,8 @@ def integrate_adaptive(
             step_fn = rk45_step
         case "tsit5":
             step_fn = tsit5_step
+        case "euler":
+            raise ValueError("Adaptive step sizing is not supported for the 'euler' method.")
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -438,12 +432,12 @@ def integrate(
 def adaptive_step_size_controller(
     state,
     drift,
-    adaptive_factor: ArrayLike = 1.0,
+    adaptive_factor: ArrayLike,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
 ) -> ArrayLike:
     """
-    Adaptive step size controller based on [1].
+    Adaptive step size controller based on [1]. Similar to a tamed explicit Euler method when used in Euler-Maruyama.
 
     Adaptive step sizing uses:
         h = max(1, ||x||**2) / max(1, ||f(x)||**2) * adaptive_factor
@@ -483,9 +477,12 @@ def euler_maruyama_step(
     use_adaptive_step_size: bool = False,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
-    adaptive_factor: float = 0.1,
+    adaptive_factor: float = 0.01,
     **kwargs,
-) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
+) -> Union[
+    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike],
+    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike, Dict[str, ArrayLike]],
+]:
     """
     Performs a single Euler-Maruyama step for stochastic differential equations.
 
@@ -509,19 +506,9 @@ def euler_maruyama_step(
     drift = drift_fn(time, **filter_kwargs(state, drift_fn))
     diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))
 
-    # Check noise keys
-    if set(diffusion.keys()) != set(noise.keys()):
-        raise ValueError("Keys of diffusion terms and noise do not match.")
-
-    new_state = {}
-    for key, d in drift.items():
-        base = state[key] + step_size * d
-        if key in diffusion:  # stochastic update
-            base = base + diffusion[key] * noise[key]
-        new_state[key] = base
-
     new_step_size = step_size
     if use_adaptive_step_size:
+        sign_step = keras.ops.sign(step_size)
         new_step_size = adaptive_step_size_controller(
             state=state,
             drift=drift,
@@ -529,8 +516,168 @@ def euler_maruyama_step(
             min_step_size=min_step_size,
             max_step_size=max_step_size,
         )
+        new_step_size = sign_step * keras.ops.abs(new_step_size)
 
-    return new_state, time + step_size, new_step_size
+    sqrt_step_size = keras.ops.sqrt(keras.ops.abs(new_step_size))
+
+    new_state = {}
+    for key, d in drift.items():
+        base = state[key] + new_step_size * d
+        if key in diffusion:
+            base = base + diffusion[key] * sqrt_step_size * noise[key]
+        new_state[key] = base
+
+    if use_adaptive_step_size:
+        return new_state, time + new_step_size, new_step_size, state
+    return new_state, time + new_step_size, new_step_size
+
+
+def fast_adaptive_step(
+    drift_fn: Callable,
+    diffusion_fn: Callable,
+    state: dict[str, ArrayLike],
+    time: ArrayLike,
+    step_size: ArrayLike,
+    noise: dict[str, ArrayLike],
+    last_state: dict[str, ArrayLike] = None,
+    use_adaptive_step_size: bool = True,
+    min_step_size: float = -float("inf"),
+    max_step_size: float = float("inf"),
+    e_abs: float = 0.01,
+    e_rel: float = 0.01,
+    r: float = 0.9,
+    adapt_safety: float = 0.9,
+    **kwargs,
+) -> Union[
+    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike],
+    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike, Dict[str, ArrayLike]],
+]:
+    """
+    Performs a single adaptive step for stochastic differential equations based on [1].
+
+    Based on
+
+    This method uses a predictor-corrector approach with error estimation:
+    1. Take an Euler-Maruyama step (predictor)
+    2. Take another Euler-Maruyama step from the predicted state
+    3. Average the two predictions (corrector)
+    4. Estimate error and adapt step size
+
+    When step_size reaches min_step_size, steps are always accepted regardless of
+    error to ensure progress and termination within max_steps.
+
+    [1] Jolicoeur-Martineau et al. (2021) "Gotta Go Fast When Generating Data with Score-Based Models"
+
+    Args:
+        drift_fn: Function computing the drift term f(t, **state).
+        diffusion_fn: Function computing the diffusion term g(t, **state).
+        state: Current state, mapping variable names to tensors.
+        time: Current time scalar tensor.
+        step_size: Time increment dt.
+        noise: Mapping of variable names to dW noise tensors (pre-scaled by sqrt(dt)).
+        last_state: Previous state for error estimation.
+        use_adaptive_step_size: Whether to adapt step size.
+        min_step_size: Minimum allowed step size.
+        max_step_size: Maximum allowed step size.
+        e_abs: Absolute error tolerance.
+        e_rel: Relative error tolerance.
+        r: Order of the method for step size adaptation.
+        adapt_safety: Safety factor for step size adaptation.
+        **kwargs: Additional arguments passed to drift_fn and diffusion_fn.
+
+    Returns:
+        new_state: Updated state after one adaptive step.
+        new_time: time + dt (or time if step rejected).
+        new_step_size: Adapted step size for next iteration.
+    """
+    state_euler, time_mid, _ = euler_maruyama_step(
+        drift_fn=drift_fn,
+        diffusion_fn=diffusion_fn,
+        state=state,
+        time=time,
+        step_size=step_size,
+        min_step_size=min_step_size,
+        max_step_size=max_step_size,
+        noise=noise,
+        use_adaptive_step_size=False,
+    )
+
+    # Compute drift and diffusion at new state, but update from old state
+    drift_mid = drift_fn(time_mid, **filter_kwargs(state_euler, drift_fn))
+    diffusion_mid = diffusion_fn(time_mid, **filter_kwargs(state_euler, diffusion_fn))
+    sqrt_step_size = keras.ops.sqrt(keras.ops.abs(step_size))
+
+    state_euler_mid = {}
+    for key, d in drift_mid.items():
+        base = state[key] + step_size * d
+        if key in diffusion_mid:
+            base = base + diffusion_mid[key] * sqrt_step_size * noise[key]
+        state_euler_mid[key] = base
+
+    # average the two predictions
+    state_heun = {}
+    for key in state.keys():
+        state_heun[key] = 0.5 * (state_euler[key] + state_euler_mid[key])
+
+    # Error estimation
+    if use_adaptive_step_size:
+        # Check if we're at minimum step size - if so, force acceptance
+        at_min_step = keras.ops.less_equal(step_size, min_step_size)
+
+        # Compute error tolerance for each component
+        e_abs_tensor = keras.ops.cast(e_abs, dtype=keras.ops.dtype(list(state.values())[0]))
+        e_rel_tensor = keras.ops.cast(e_rel, dtype=keras.ops.dtype(list(state.values())[0]))
+
+        max_error = keras.ops.cast(0.0, dtype=keras.ops.dtype(list(state.values())[0]))
+
+        for key in state.keys():
+            # Local error estimate: difference between Heun and first Euler step
+            error_estimate = keras.ops.abs(state_heun[key] - state_euler[key])
+
+            # Tolerance threshold
+            delta = keras.ops.maximum(
+                e_abs_tensor,
+                e_rel_tensor * keras.ops.maximum(keras.ops.abs(state_euler[key]), keras.ops.abs(last_state[key])),
+            )
+
+            # Normalized error
+            normalized_error = error_estimate / (delta + 1e-10)
+
+            # Maximum error across all components and batch dimensions
+            component_max_error = keras.ops.max(normalized_error)
+            max_error = keras.ops.maximum(max_error, component_max_error)
+
+        error_scale = 1  # 1/sqrt(n_params)
+        E2 = error_scale * max_error
+
+        # Accept step if error is acceptable OR if at minimum step size
+        error_acceptable = keras.ops.less_equal(E2, keras.ops.cast(1.0, dtype=keras.ops.dtype(E2)))
+        accepted = keras.ops.logical_or(error_acceptable, at_min_step)
+
+        # Adapt step size for next iteration (only if not at minimum)
+        # Ensure E2 is not zero to avoid division issues
+        E2_safe = keras.ops.maximum(E2, 1e-10)
+
+        # New step size based on error estimate
+        adapt_factor = adapt_safety * keras.ops.power(E2_safe, -r)
+        new_step_candidate = step_size * adapt_factor
+
+        # Clamp to valid range
+        sign_step = keras.ops.sign(step_size)
+        new_step_size = keras.ops.minimum(keras.ops.maximum(new_step_candidate, min_step_size), max_step_size)
+        new_step_size = sign_step * keras.ops.abs(new_step_size)
+
+        # Return appropriate state based on acceptance
+        new_state = keras.ops.cond(accepted, lambda: state_heun, lambda: state)
+
+        new_time = keras.ops.cond(accepted, lambda: time_mid, lambda: time)
+
+        prev_state = keras.ops.cond(accepted, lambda: state_euler, lambda: state)
+
+        return new_state, new_time, new_step_size, prev_state
+
+    else:
+        return state_heun, time_mid, step_size
 
 
 def sea_step(
@@ -540,12 +687,8 @@ def sea_step(
     time: ArrayLike,
     step_size: ArrayLike,
     noise: dict[str, ArrayLike],
-    use_adaptive_step_size: bool = False,
-    min_step_size: ArrayLike = -float("inf"),
-    max_step_size: ArrayLike = float("inf"),
-    adaptive_factor: ArrayLike = 0.1,
     **kwargs,
-) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
+) -> Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]:
     """
     Performs a single shifted Euler step for SDEs with additive noise [1].
 
@@ -563,10 +706,6 @@ def sea_step(
         time: Current time scalar tensor.
         step_size: Time increment dt.
         noise: Mapping of variable names to dW noise tensors.
-        use_adaptive_step_size: Whether to use adaptive step sizing.
-        min_step_size: Minimum allowed step size.
-        max_step_size: Maximum allowed step size.
-        adaptive_factor: Factor to compute adaptive step size (0 < adaptive_factor < 1).
 
     Returns:
         new_state: Updated state after one SEA step.
@@ -574,16 +713,13 @@ def sea_step(
     """
     # Compute diffusion (assumed additive or weakly state dependent)
     diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))
-
-    # Check noise keys
-    if set(diffusion.keys()) != set(noise.keys()):
-        raise ValueError("Keys of diffusion terms and noise do not match.")
+    sqrt_step_size = keras.ops.sqrt(keras.ops.abs(step_size))
 
     # Build shifted state: X_shift = X + 0.5 * g * ΔW
     shifted_state = {}
     for key, x in state.items():
         if key in diffusion:
-            shifted_state[key] = x + 0.5 * diffusion[key] * noise[key]
+            shifted_state[key] = x + 0.5 * diffusion[key] * sqrt_step_size * noise[key]
         else:
             shifted_state[key] = x
 
@@ -595,20 +731,10 @@ def sea_step(
     for key, d in drift_shifted.items():
         base = state[key] + step_size * d
         if key in diffusion:
-            base = base + diffusion[key] * noise[key]
+            base = base + diffusion[key] * sqrt_step_size * noise[key]
         new_state[key] = base
 
-    new_step_size = step_size
-    if use_adaptive_step_size:
-        new_step_size = adaptive_step_size_controller(
-            state=state,
-            drift=drift_shifted,
-            adaptive_factor=adaptive_factor,
-            min_step_size=min_step_size,
-            max_step_size=max_step_size,
-        )
-
-    return new_state, time + step_size, new_step_size
+    return new_state, time + step_size, step_size
 
 
 def shark_step(
@@ -617,13 +743,10 @@ def shark_step(
     state: Dict[str, ArrayLike],
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: Dict[str, ArrayLike],  # w_k = ΔW_k (already scaled by sqrt(|h|))
-    noise_aux: Dict[str, ArrayLike],  # Z_k ~ N(0,1), used to build H_k
-    use_adaptive_step_size: bool = False,
-    min_step_size: ArrayLike = -float("inf"),
-    max_step_size: ArrayLike = float("inf"),
-    adaptive_factor: ArrayLike = 0.1,
-) -> Union[Tuple[Dict[str, ArrayLike], ArrayLike], Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]]:
+    noise: Dict[str, ArrayLike],
+    noise_aux: Dict[str, ArrayLike],
+    **kwargs,
+) -> Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]:
     """
     Shifted Additive noise Runge Kutta (SHARK) for additive SDEs [1]. Makes two evaluations of the drift and diffusion
     per step and has a strong order 1.5.
@@ -651,10 +774,6 @@ def shark_step(
         step_size: Time increment dt.
         noise: Mapping of variable names to dW noise tensors.
         noise_aux: Mapping of variable names to auxiliary noise.
-        use_adaptive_step_size: Whether to use adaptive step sizing.
-        min_step_size: Minimum allowed step size.
-        max_step_size: Maximum allowed step size.
-        adaptive_factor: Factor to compute adaptive step size (0 < adaptive_factor < 1).
 
     Returns:
         new_state: Updated state after one SHARK step.
@@ -676,7 +795,7 @@ def shark_step(
     H = {}
     for k in state.keys():
         if k in g0:
-            w_k = noise[k]  # already scaled by sqrt(|h|)
+            w_k = sqrt_h_mag * noise[k]
             z_k = noise_aux[k]  # standard normal
             term1 = 0.5 * h_mag * w_k
             term2 = 0.5 * h_mag * sqrt_h_mag * inv_sqrt3 * z_k
@@ -701,7 +820,7 @@ def shark_step(
     for k in state.keys():
         drift_part = (5.0 / 6.0) * f_tilde_k[k] * h
         if k in g_tilde_k:
-            sto_part = (5.0 / 6.0) * g_tilde_k[k] * noise[k]
+            sto_part = (5.0 / 6.0) * g_tilde_k[k] * sqrt_h_mag * noise[k]
         else:
             sto_part = keras.ops.zeros_like(state[k])
         y_tilde_mid[k] = y_tilde_k[k] + drift_part + sto_part
@@ -718,29 +837,19 @@ def shark_step(
 
         # stochastic parts
         sto1 = (
-            g_tilde_k[k] * ((2.0 / 5.0) * noise[k] + (6.0 / 5.0) * H[k])
+            g_tilde_k[k] * ((2.0 / 5.0) * sqrt_h_mag * noise[k] + (6.0 / 5.0) * H[k])
             if k in g_tilde_k
             else keras.ops.zeros_like(det)
         )
         sto2 = (
-            g_tilde_mid[k] * ((3.0 / 5.0) * noise[k] - (6.0 / 5.0) * H[k])
+            g_tilde_mid[k] * ((3.0 / 5.0) * sqrt_h_mag * noise[k] - (6.0 / 5.0) * H[k])
             if k in g_tilde_mid
             else keras.ops.zeros_like(det)
         )
 
         new_state[k] = det + sto1 + sto2
 
-    new_step_size = h
-    if use_adaptive_step_size:
-        new_step_size = adaptive_step_size_controller(
-            state=state,
-            drift=f_tilde_k,
-            adaptive_factor=adaptive_factor,
-            min_step_size=min_step_size,
-            max_step_size=max_step_size,
-        )
-
-    return new_state, t + h, new_step_size
+    return new_state, t + h, h
 
 
 def _apply_corrector(
@@ -792,6 +901,8 @@ def integrate_stochastic_fixed(
     start_time: ArrayLike,
     stop_time: ArrayLike,
     steps: int,
+    min_step_size: ArrayLike,
+    max_step_size: ArrayLike,
     z_history: Dict[str, ArrayLike],
     z_extra_history: Dict[str, ArrayLike],
     score_fn: Optional[Callable],
@@ -809,14 +920,13 @@ def integrate_stochastic_fixed(
         _current_state, _current_time, _current_step = _loop_state
 
         # Determine step size: either the constant size or the remainder to reach stop_time
-        remaining = stop_time - _current_time
-        sign = keras.ops.sign(remaining)
-        dt_mag = keras.ops.minimum(keras.ops.abs(_current_step), keras.ops.abs(remaining))
+        remaining = keras.ops.abs(stop_time - _current_time)
+        sign = keras.ops.sign(_current_step)
+        dt_mag = keras.ops.minimum(keras.ops.abs(_current_step), remaining)
         dt = sign * dt_mag
 
         # Generate noise increment
-        sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
-        _noise_i = {k: z_history[k][_i] * sqrt_dt for k in _current_state.keys()}
+        _noise_i = {k: z_history[k][_i] for k in _current_state.keys()}
         if len(z_extra_history) == 0:
             _noise_extra_i = None
         else:
@@ -826,6 +936,8 @@ def integrate_stochastic_fixed(
             state=_current_state,
             time=_current_time,
             step_size=dt,
+            min_step_size=min_step_size,
+            max_step_size=keras.ops.minimum(max_step_size, remaining),
             noise=_noise_i,
             noise_aux=_noise_extra_i,
             use_adaptive_step_size=False,
@@ -854,6 +966,8 @@ def integrate_stochastic_adaptive(
     start_time: ArrayLike,
     stop_time: ArrayLike,
     max_steps: int,
+    min_step_size: ArrayLike,
+    max_step_size: ArrayLike,
     initial_step: ArrayLike,
     z_history: Dict[str, ArrayLike],
     z_extra_history: Dict[str, ArrayLike],
@@ -866,33 +980,34 @@ def integrate_stochastic_adaptive(
     """
     Performs adaptive-step SDE integration.
     """
-    initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, 0)
+    initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, 0, state)
 
-    def cond(i, current_state, current_time, current_step, counter):
-        # We use a small epsilon check for floating point equality
-        time_reached = keras.ops.all(keras.ops.isclose(current_time, stop_time))
-        return keras.ops.logical_and(keras.ops.less(i, max_steps), keras.ops.logical_not(time_reached))
+    def cond(i, current_state, current_time, current_step, counter, last_state):
+        # time remaining after the next step
+        time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))
+        return keras.ops.logical_and(keras.ops.all(time_remaining > 0), keras.ops.less(i, max_steps))
 
-    def body_adaptive(_i, _current_state, _current_time, _current_step, _counter):
+    def body_adaptive(_i, _current_state, _current_time, _current_step, _counter, _last_state):
         # Step Size Control
-        remaining = stop_time - _current_time
-        sign = keras.ops.sign(remaining)
+        remaining = keras.ops.abs(stop_time - _current_time)
+        sign = keras.ops.sign(_current_step)
         # Ensure the next step does not overshoot the stop_time
-        dt_mag = keras.ops.minimum(keras.ops.abs(_current_step), keras.ops.abs(remaining))
+        dt_mag = keras.ops.minimum(keras.ops.abs(_current_step), remaining)
         dt = sign * dt_mag
         _counter += 1
 
-        sqrt_dt = keras.ops.sqrt(keras.ops.abs(dt))
-        _noise_i = {k: z_history[k][_i] * sqrt_dt for k in _current_state.keys()}
-        if len(z_extra_history) == 0:
-            _noise_extra_i = None
-        else:
+        _noise_i = {k: z_history[k][_i] for k in _current_state.keys()}
+        _noise_extra_i = None
+        if len(z_extra_history) > 0:
             _noise_extra_i = {k: z_extra_history[k][_i] for k in _current_state.keys()}
 
-        new_state, new_time, new_step = step_fn(
+        new_state, new_time, new_step, _new_current_state = step_fn(
             state=_current_state,
+            last_state=_last_state,
             time=_current_time,
             step_size=dt,
+            min_step_size=min_step_size,
+            max_step_size=keras.ops.minimum(max_step_size, remaining),
             noise=_noise_i,
             noise_aux=_noise_extra_i,
             use_adaptive_step_size=True,
@@ -909,10 +1024,10 @@ def integrate_stochastic_adaptive(
             corrector_noise_history=corrector_noise_history,
         )
 
-        return _i + 1, new_state, new_time, new_step, _counter
+        return _i + 1, new_state, new_time, new_step, _counter, _new_current_state
 
     # Execute the adaptive loop
-    _, final_state, _, _, final_counter = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
+    _, final_state, _, _, final_counter, _ = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
     logging.debug("Finished integration after {} steps.", final_counter)
     return final_state
 
@@ -1009,7 +1124,7 @@ def integrate_stochastic(
     seed: keras.random.SeedGenerator,
     steps: int | Literal["adaptive"] = 100,
     method: str = "euler_maruyama",
-    min_steps: int = 10,
+    min_steps: int = 20,
     max_steps: int = 10_000,
     score_fn: Callable = None,
     corrector_steps: int = 0,
@@ -1078,8 +1193,14 @@ def integrate_stochastic(
             step_fn_raw = euler_maruyama_step
         case "sea":
             step_fn_raw = sea_step
+            if is_adaptive:
+                raise ValueError("SEA SDE solver does not support adaptive steps.")
         case "shark":
             step_fn_raw = shark_step
+            if is_adaptive:
+                raise ValueError("SHARK SDE solver does not support adaptive steps.")
+        case "fast_adaptive":
+            step_fn_raw = fast_adaptive_step
         case "langevin":
             if is_adaptive:
                 raise ValueError("Langevin sampling does not support adaptive steps.")
@@ -1109,8 +1230,6 @@ def integrate_stochastic(
         step_fn_raw,
         drift_fn=drift_fn,
         diffusion_fn=diffusion_fn,
-        min_step_size=min_step_size,
-        max_step_size=max_step_size,
         **kwargs,
     )
 
@@ -1130,6 +1249,8 @@ def integrate_stochastic(
             start_time=start_time,
             stop_time=stop_time,
             max_steps=max_steps,
+            min_step_size=min_step_size,
+            max_step_size=max_step_size,
             initial_step=initial_step,
             z_history=z_history,
             z_extra_history=z_extra_history,
@@ -1145,6 +1266,8 @@ def integrate_stochastic(
             state=state,
             start_time=start_time,
             stop_time=stop_time,
+            min_step_size=min_step_size,
+            max_step_size=max_step_size,
             steps=loop_steps,
             z_history=z_history,
             z_extra_history=z_extra_history,

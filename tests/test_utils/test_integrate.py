@@ -78,42 +78,44 @@ def test_analytical_integration(method, atol):
         ("euler_maruyama", False),
         ("euler_maruyama", True),
         ("sea", False),
-        ("sea", True),
         ("shark", False),
-        ("shark", True),
+        ("fast_adaptive", False),
+        ("fast_adaptive", True),
     ],
 )
-def test_additive_OU_weak_means_and_vars(method, use_adapt):
+def test_forward_additive_ou_weak_means_and_vars(method, use_adapt):
     """
-    Ornstein Uhlenbeck with additive noise
+    Ornstein-Uhlenbeck with additive noise, integrated FORWARD in time.
+    This serves as a sanity check that forward integration still works correctly.
+
+    Forward SDE:
         dX = a X dt + sigma dW
-    Exact at time T:
-        E[X_T] = x0 * exp(a T)
-        Var[X_T] = sigma^2 * (exp(2 a T) - 1) / (2 a)
-    We verify weak accuracy by matching empirical mean and variance.
+
+    Exact at time T starting from X(0) = x_0:
+        E[X(T)] = x_0 * exp(a T)
+        Var[X(T)] = sigma^2 * (exp(2 a T) - 1) / (2 a)
     """
     # SDE parameters
     a = -1.0
     sigma = 0.5
-    x0 = 1.2
+    x_0 = 1.2  # initial condition at time 0
     T = 1.0
 
     # batch of trajectories
-    N = 10000  # large enough to control sampling error
+    N = 10000
     seed = keras.random.SeedGenerator(42)
 
     def drift_fn(t, x):
         return {"x": a * x}
 
     def diffusion_fn(t, x):
-        # additive noise, independent of state
         return {"x": keras.ops.convert_to_tensor([sigma])}
 
-    initial_state = {"x": keras.ops.ones((N,)) * x0}
+    initial_state = {"x": keras.ops.ones((N,)) * x_0}
     steps = 200 if not use_adapt else "adaptive"
 
-    # expected mean and variance
-    exp_mean = x0 * np.exp(a * T)
+    # Expected mean and variance at t=T
+    exp_mean = x_0 * np.exp(a * T)
     exp_var = sigma**2 * (np.exp(2.0 * a * T) - 1.0) / (2.0 * a)
 
     out = integrate_stochastic(
@@ -128,9 +130,10 @@ def test_additive_OU_weak_means_and_vars(method, use_adapt):
         max_steps=1_000,
     )
 
-    xT = np.array(out["x"])
-    emp_mean = float(xT.mean())
-    emp_var = float(xT.var())
+    x_T = np.array(out["x"])
+    emp_mean = float(x_T.mean())
+    emp_var = float(x_T.var())
+
     np.testing.assert_allclose(emp_mean, exp_mean, atol=TOL_MEAN, rtol=0.0)
     np.testing.assert_allclose(emp_var, exp_var, atol=TOL_VAR, rtol=0.0)
 
@@ -141,9 +144,77 @@ def test_additive_OU_weak_means_and_vars(method, use_adapt):
         ("euler_maruyama", False),
         ("euler_maruyama", True),
         ("sea", False),
-        ("sea", True),
         ("shark", False),
-        ("shark", True),
+        ("fast_adaptive", False),
+        ("fast_adaptive", True),
+    ],
+)
+def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
+    """
+    Ornstein-Uhlenbeck with additive noise, integrated BACKWARD in time.
+
+    When integrating from t=T back to t=0 with initial condition X(T) = x_T,
+    we get X(0) which should satisfy:
+        E[X(0)] = x_T * exp(-a T)  (-a because we go backward)
+        Var[X(0)] = sigma^2 * (exp(-2 a T) - 1) / (-2 a)
+
+    We verify weak accuracy by matching empirical mean and variance.
+    """
+    # SDE parameters
+    a = -1.0
+    sigma = 0.5
+    x_T = 1.2  # initial condition at time T
+    T = 1.0
+
+    # batch of trajectories
+    N = 10000  # large enough to control sampling error
+    seed = keras.random.SeedGenerator(42)
+
+    def drift_fn(t, x):
+        return {"x": a * x}
+
+    def diffusion_fn(t, x):
+        # additive noise, independent of state
+        return {"x": keras.ops.convert_to_tensor([sigma])}
+
+    # Start at time T with value x_T
+    initial_state = {"x": keras.ops.ones((N,)) * x_T}
+    steps = 200 if not use_adapt else "adaptive"
+
+    # Expected mean and variance at t=0 after integrating backward from t=T
+    # For backward integration, the effective drift coefficient changes sign
+    exp_mean = x_T * np.exp(-a * T)
+    exp_var = sigma**2 * (np.exp(-2.0 * a * T) - 1.0) / (-2.0 * a)
+
+    out = integrate_stochastic(
+        drift_fn=drift_fn,
+        diffusion_fn=diffusion_fn,
+        state=initial_state,
+        start_time=T,
+        stop_time=0.0,
+        steps=steps,
+        seed=seed,
+        method=method,
+        max_steps=1_000,
+    )
+
+    x_0 = np.array(out["x"])
+    emp_mean = float(x_0.mean())
+    emp_var = float(x_0.var())
+
+    np.testing.assert_allclose(emp_mean, exp_mean, atol=TOL_MEAN, rtol=0.0)
+    np.testing.assert_allclose(emp_var, exp_var, atol=TOL_VAR, rtol=0.0)
+
+
+@pytest.mark.parametrize(
+    "method,use_adapt",
+    [
+        ("euler_maruyama", False),
+        ("euler_maruyama", True),
+        ("sea", False),
+        ("shark", False),
+        ("fast_adaptive", False),
+        ("fast_adaptive", True),
     ],
 )
 def test_zero_noise_reduces_to_deterministic(method, use_adapt):

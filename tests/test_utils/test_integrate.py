@@ -13,23 +13,20 @@ TOL_VAR = 5e-2
 TOL_DET = 1e-3
 
 
-def test_scheduled_integration():
-    import keras
-    from bayesflow.utils import integrate
-
+@pytest.mark.parametrize("method", ["euler", "rk45", "tsit5"])
+def test_scheduled_integration(method):
     def fn(t, x):
         return {"x": t**2}
 
-    steps = keras.ops.convert_to_tensor([0.0, 0.5, 1.0])
-    approximate_result = 0.0 + 0.5**2 * 0.5
-    result = integrate(fn, {"x": 0.0}, steps=steps)["x"]
-    assert result == approximate_result
+    def analytical_result(t):
+        return (t**3) / 3.0
+
+    steps = keras.ops.arange(0.0, 1.0 + 1e-6, 0.01)
+    result = integrate(fn, {"x": 0.0}, steps=steps, method=method)["x"]
+    np.testing.assert_allclose(result, analytical_result(steps[-1]), atol=1e-1, rtol=1e-1)
 
 
 def test_scipy_integration():
-    import keras
-    from bayesflow.utils import integrate
-
     def fn(t, x):
         return {"x": keras.ops.exp(t)}
 

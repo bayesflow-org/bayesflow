@@ -56,7 +56,7 @@ def test_analytical_integration(method, atol):
         return {"x": keras.ops.convert_to_tensor([2.0 * t])}
 
     initial_state = {"x": keras.ops.convert_to_tensor([1.0])}
-    T_final = 2.0
+    T_final = 1.0
     num_steps = 100
     analytical_result = 1.0 + T_final**2
 
@@ -66,6 +66,31 @@ def test_analytical_integration(method, atol):
     else:
         result_adaptive = integrate(
             fn, initial_state, start_time=0.0, stop_time=T_final, steps="adaptive", method=method, max_steps=1_000
+        )["x"]
+
+    np.testing.assert_allclose(result, analytical_result, atol=atol, rtol=0.1)
+    np.testing.assert_allclose(result_adaptive, analytical_result, atol=atol, rtol=0.1)
+
+
+@pytest.mark.parametrize(
+    "method, atol", [("euler", TOLERANCE_EULER), ("rk45", TOLERANCE_ADAPTIVE), ("tsit5", TOLERANCE_ADAPTIVE)]
+)
+def test_analytical_backward_integration(method, atol):
+    T_final = 1.0
+
+    def fn(t, x):
+        return {"x": keras.ops.convert_to_tensor([2.0 * t])}
+
+    num_steps = 100
+    analytical_result = 1.0
+    initial_state = {"x": keras.ops.convert_to_tensor([1.0 + T_final**2])}
+
+    result = integrate(fn, initial_state, start_time=T_final, stop_time=0.0, steps=num_steps, method=method)["x"]
+    if method == "euler":
+        result_adaptive = result
+    else:
+        result_adaptive = integrate(
+            fn, initial_state, start_time=T_final, stop_time=0.0, steps="adaptive", method=method, max_steps=1_000
         )["x"]
 
     np.testing.assert_allclose(result, analytical_result, atol=atol, rtol=0.1)

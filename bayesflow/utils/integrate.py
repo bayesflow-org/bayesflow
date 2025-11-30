@@ -24,11 +24,11 @@ STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "langevin", "fast_adapti
 
 def euler_step(
     fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
     **kwargs,
-) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
+) -> Tuple[StateDict, ArrayLike, None, ArrayLike]:
     k1 = fn(time, **filter_kwargs(state, fn))
 
     new_state = state.copy()
@@ -36,7 +36,7 @@ def euler_step(
         new_state[key] = state[key] + step_size * k1[key]
     new_time = time + step_size
 
-    return new_state, new_time, step_size
+    return new_state, new_time, None, 0.0
 
 
 def add_scaled(state, ks, coeffs, h):
@@ -51,21 +51,19 @@ def add_scaled(state, ks, coeffs, h):
 
 def rk45_step(
     fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     time: ArrayLike,
-    last_step_size: ArrayLike,
-    tolerance: ArrayLike = 1e-6,
-    min_step_size: ArrayLike = -float("inf"),
-    max_step_size: ArrayLike = float("inf"),
-    use_adaptive_step_size: bool = False,
-) -> (dict[str, ArrayLike], ArrayLike, ArrayLike):
+    step_size: ArrayLike,
+    k1: StateDict = None,
+    use_adaptive_step_size: bool = True,
+) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
     """
     Dormand-Prince 5(4) method with embedded error estimation.
     """
-    step_size = last_step_size
     h = step_size
 
-    k1 = fn(time, **filter_kwargs(state, fn))
+    if k1 is None:  # reuse k1 if available
+        k1 = fn(time, **filter_kwargs(state, fn))
     k2 = fn(time + h * (1 / 5), **add_scaled(state, [k1], [1 / 5], h))
     k3 = fn(time + h * (3 / 10), **add_scaled(state, [k1, k2], [3 / 40, 9 / 40], h))
     k4 = fn(time + h * (4 / 5), **add_scaled(state, [k1, k2, k3], [44 / 45, -56 / 15, 32 / 9], h))
@@ -85,48 +83,42 @@ def rk45_step(
             35 / 384 * k1[key] + 500 / 1113 * k3[key] + 125 / 192 * k4[key] - 2187 / 6784 * k5[key] + 11 / 84 * k6[key]
         )
 
-    if use_adaptive_step_size:
-        k7 = fn(time + h, **filter_kwargs(new_state, fn))
-
-        # 4th order embedded solution
-        err_state = {}
-        for key in k1.keys():
-            y4 = state[key] + h * (
-                5179 / 57600 * k1[key]
-                + 7571 / 16695 * k3[key]
-                + 393 / 640 * k4[key]
-                - 92097 / 339200 * k5[key]
-                + 187 / 2100 * k6[key]
-                + 1 / 40 * k7[key]
-            )
-            err_state[key] = new_state[key] - y4
-
-        err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
-        err = keras.ops.max(err_norm)
-
-        new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
-        new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
-    else:
-        new_step_size = step_size
-
     new_time = time + h
-    return new_state, new_time, new_step_size
+    if not use_adaptive_step_size:
+        return new_state, new_time, None, 0.0
+
+    k7 = fn(time + h, **filter_kwargs(new_state, fn))
+
+    # 4th order embedded solution
+    err_state = {}
+    for key in k1.keys():
+        y4 = state[key] + h * (
+            5179 / 57600 * k1[key]
+            + 7571 / 16695 * k3[key]
+            + 393 / 640 * k4[key]
+            - 92097 / 339200 * k5[key]
+            + 187 / 2100 * k6[key]
+            + 1 / 40 * k7[key]
+        )
+        err_state[key] = new_state[key] - y4
+
+    err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
+    err = keras.ops.max(err_norm)
+
+    return new_state, new_time, k7, err
 
 
 def tsit5_step(
     fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     time: ArrayLike,
-    last_step_size: ArrayLike,
-    tolerance: ArrayLike = 1e-6,
-    min_step_size: ArrayLike = -float("inf"),
-    max_step_size: ArrayLike = float("inf"),
-    use_adaptive_step_size: bool = False,
-):
+    step_size: ArrayLike,
+    k1: StateDict = None,
+    use_adaptive_step_size: bool = True,
+) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
     """
     Implements a single step of the Tsitouras 5/4 Runge-Kutta method.
     """
-    step_size = last_step_size
     h = step_size
 
     # Butcher tableau coefficients
@@ -135,7 +127,8 @@ def tsit5_step(
     c4 = 0.9
     c5 = 0.9800255409045097
 
-    k1 = fn(time, **filter_kwargs(state, fn))
+    if k1 is None:  # reuse k1 if available
+        k1 = fn(time, **filter_kwargs(state, fn))
     k2 = fn(time + h * c2, **add_scaled(state, [k1], [0.161], h))
     k3 = fn(time + h * c3, **add_scaled(state, [k1, k2], [-0.0084806554923570, 0.3354806554923570], h))
     k4 = fn(
@@ -169,42 +162,39 @@ def tsit5_step(
             + 2.324710524099774 * k6[key]
         )
 
-    if use_adaptive_step_size:
-        k7 = fn(time + h, **filter_kwargs(new_state, fn))
-
-        err_state = {}
-        for key in state.keys():
-            err_state[key] = h * (
-                -0.00178001105222577714 * k1[key]
-                - 0.0008164344596567469 * k2[key]
-                + 0.007880878010261995 * k3[key]
-                - 0.1447110071732629 * k4[key]
-                + 0.5823571654525552 * k5[key]
-                - 0.45808210592918697 * k6[key]
-                + 0.015151515151515152 * k7[key]
-            )
-
-        err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
-        err = keras.ops.max(err_norm)
-
-        new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
-        new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
-    else:
-        new_step_size = step_size
-
     new_time = time + h
-    return new_state, new_time, new_step_size
+    if not use_adaptive_step_size:
+        return new_state, new_time, None, 0.0
+
+    k7 = fn(time + h, **filter_kwargs(new_state, fn))
+
+    err_state = {}
+    for key in state.keys():
+        err_state[key] = h * (
+            -0.00178001105222577714 * k1[key]
+            - 0.0008164344596567469 * k2[key]
+            + 0.007880878010261995 * k3[key]
+            - 0.1447110071732629 * k4[key]
+            + 0.5823571654525552 * k5[key]
+            - 0.45808210592918697 * k6[key]
+            + 0.015151515151515152 * k7[key]
+        )
+
+    err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
+    err = keras.ops.max(err_norm)
+
+    return new_state, new_time, k7, err
 
 
 def integrate_fixed(
     fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     start_time: ArrayLike,
     stop_time: ArrayLike,
     steps: int,
     method: str,
     **kwargs,
-) -> dict[str, ArrayLike]:
+) -> StateDict:
     if steps <= 0:
         raise ValueError("Number of steps must be positive.")
 
@@ -227,12 +217,43 @@ def integrate_fixed(
 
     def body(_loop_var, _loop_state):
         _state, _time = _loop_state
-        _state, _time, _ = step_fn(_state, _time, step_size)
+        _state, _time, _, _ = step_fn(_state, _time, step_size)
 
         return _state, _time
 
     state, time = keras.ops.fori_loop(0, steps, body, (state, time))
 
+    return state
+
+
+def integrate_scheduled(
+    fn: Callable,
+    state: StateDict,
+    steps: Tensor | np.ndarray,
+    method: str,
+    **kwargs,
+) -> StateDict:
+    match method:
+        case "euler":
+            step_fn = euler_step
+        case "rk45":
+            step_fn = rk45_step
+        case "tsit5":
+            step_fn = tsit5_step
+        case str() as name:
+            raise ValueError(f"Unknown integration method name: {name!r}")
+        case other:
+            raise TypeError(f"Invalid integration method: {other!r}")
+
+    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
+
+    def body(_loop_var, _loop_state):
+        _time = steps[_loop_var]
+        step_size = steps[_loop_var + 1] - steps[_loop_var]
+        _loop_state, _, _, _ = step_fn(_loop_state, _time, step_size)
+        return _loop_state
+
+    state = keras.ops.fori_loop(0, len(steps) - 1, body, state)
     return state
 
 
@@ -261,98 +282,106 @@ def integrate_adaptive(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
+    tolerance = keras.ops.convert_to_tensor(kwargs.get("tolerance", 1e-6), dtype="float32")
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=True)
 
-    def cond(_state, _time, _step_size, _step):
-        # while step < min_steps or time_remaining > 0 and step < max_steps
+    # Initial (conservative) step size guess
+    total_time = stop_time - start_time
+    step_size0 = keras.ops.convert_to_tensor(total_time / max_steps, dtype="float32")
 
-        # time remaining after the next step
-        time_remaining = keras.ops.abs(stop_time - (_time + _step_size))
+    # Track step count as scalar tensor
+    step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
+    count_not_accepted = 0
+
+    # "First Same As Last" (FSAL) property
+    k1_0 = fn(start_time, **filter_kwargs(state, fn))
+
+    def cond(_state, _time, _step_size, _step, _k1, _count_not_accepted):
+        time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (_time + _step_size))
+        step_lt_min = keras.ops.less(_step, float(min_steps))
+        step_lt_max = keras.ops.less(_step, float(max_steps))
 
         return keras.ops.logical_or(
-            keras.ops.all(_step < min_steps),
-            keras.ops.logical_and(keras.ops.all(time_remaining > 0), keras.ops.all(_step < max_steps)),
+            step_lt_min,
+            keras.ops.logical_and(keras.ops.all(time_remaining > 0), step_lt_max),
         )
 
-    def body(_state, _time, _step_size, _step):
-        _step = _step + 1
+    def body(_state, _time, _step_size, _step, _k1, _count_not_accepted):
+        # Time remaining from current point
+        time_remaining = stop_time - _time
 
-        # time remaining after the next step
-        time_remaining = stop_time - (_time + _step_size)
-
+        # Per-step min/max step sizes (like original code)
         min_step_size = time_remaining / (max_steps - _step)
         max_step_size = time_remaining / keras.ops.maximum(min_steps - _step, 1.0)
 
-        # reorder
-        min_step_size, max_step_size = (
-            keras.ops.minimum(min_step_size, max_step_size),
-            keras.ops.maximum(min_step_size, max_step_size),
+        # Ensure ordering: min_step_size <= max_step_size
+        lower = keras.ops.minimum(min_step_size, max_step_size)
+        upper = keras.ops.maximum(min_step_size, max_step_size)
+        min_step_size = lower
+        max_step_size = upper
+        h = keras.ops.clip(_step_size, min_step_size, max_step_size)
+
+        # Take one trial step
+        new_state, new_time, new_k1, err = step_fn(
+            state=_state,
+            time=_time,
+            step_size=h,
+            k1=_k1,
         )
 
-        _state, _time, _step_size = step_fn(
-            _state, _time, _step_size, min_step_size=min_step_size, max_step_size=max_step_size
+        new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
+        new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
+
+        # Error control: reject if err > tolerance
+        too_big = keras.ops.greater(err, tolerance)
+        at_min = keras.ops.less_equal(
+            keras.ops.abs(h),
+            keras.ops.abs(min_step_size),
         )
+        accepted = keras.ops.logical_or(keras.ops.logical_not(too_big), at_min)
 
-        return _state, _time, _step_size, _step
+        updated_state = keras.ops.cond(accepted, lambda: new_state, lambda: _state)
+        updated_time = keras.ops.cond(accepted, lambda: new_time, lambda: _time)
+        updated_k1 = keras.ops.cond(accepted, lambda: new_k1, lambda: _k1)
 
-    # select initial step size conservatively
-    step_size = (stop_time - start_time) / max_steps
+        # Step counter: increment only on accepted steps
+        updated_step = _step + keras.ops.where(accepted, 1.0, 0.0)
+        _count_not_accepted = _count_not_accepted + 1 if not accepted else _count_not_accepted
 
-    step = 0
-    time = start_time
+        # For the next iteration, always use the new suggested step size
+        return updated_state, updated_time, new_step_size, updated_step, updated_k1, _count_not_accepted
 
-    state, time, step_size, step = keras.ops.while_loop(cond, body, [state, time, step_size, step])
+    # Run the adaptive loop
+    state, time, step_size, step, k1, count_not_accepted = keras.ops.while_loop(
+        cond,
+        body,
+        [state, start_time, step_size0, step0, k1_0, count_not_accepted],
+    )
 
-    # do the last step
-    step_size = stop_time - time
-    state, _, _ = step_fn(state, time, step_size)
-    step = step + 1
+    # Final step to hit stop_time exactly
+    time_diff = stop_time - time
+    time_remaining = keras.ops.sign(stop_time - start_time) * time_diff
+    if keras.ops.all(time_remaining > 0):
+        state, time, _, _ = step_fn(
+            state=state,
+            time=time,
+            step_size=time_diff,
+            k1=k1,
+        )
+        step = step + 1.0
 
-    logging.debug("Finished integration after {} steps.", step)
-
-    return state
-
-
-def integrate_scheduled(
-    fn: Callable,
-    state: dict[str, ArrayLike],
-    steps: Tensor | np.ndarray,
-    method: str,
-    **kwargs,
-) -> dict[str, ArrayLike]:
-    match method:
-        case "euler":
-            step_fn = euler_step
-        case "rk45":
-            step_fn = rk45_step
-        case "tsit5":
-            step_fn = tsit5_step
-        case str() as name:
-            raise ValueError(f"Unknown integration method name: {name!r}")
-        case other:
-            raise TypeError(f"Invalid integration method: {other!r}")
-
-    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
-
-    def body(_loop_var, _loop_state):
-        _time = steps[_loop_var]
-        step_size = steps[_loop_var + 1] - steps[_loop_var]
-
-        _loop_state, _, _ = step_fn(_loop_state, _time, step_size)
-        return _loop_state
-
-    state = keras.ops.fori_loop(0, len(steps) - 1, body, state)
+    logging.debug(f"Finished integration after {step} steps with {count_not_accepted} rejected steps.")
     return state
 
 
 def integrate_scipy(
     fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     start_time: ArrayLike,
     stop_time: ArrayLike,
     scipy_kwargs: dict | None = None,
     **kwargs,
-) -> dict[str, ArrayLike]:
+) -> StateDict:
     import scipy.integrate
 
     scipy_kwargs = scipy_kwargs or {}
@@ -394,7 +423,7 @@ def integrate_scipy(
 
 def integrate(
     fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     start_time: ArrayLike | None = None,
     stop_time: ArrayLike | None = None,
     min_steps: int = 10,
@@ -402,7 +431,7 @@ def integrate(
     steps: int | Literal["adaptive"] | Tensor | np.ndarray = 100,
     method: str = "rk45",
     **kwargs,
-) -> dict[str, ArrayLike]:
+) -> StateDict:
     if isinstance(steps, str) and steps in ["adaptive", "dynamic"]:
         if start_time is None or stop_time is None:
             raise ValueError(
@@ -429,7 +458,10 @@ def integrate(
         raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
 
 
-def adaptive_step_size_controller(
+############ SDE Solvers #############
+
+
+def stochastic_adaptive_step_size_controller(
     state,
     drift,
     adaptive_factor: ArrayLike,
@@ -470,19 +502,16 @@ def adaptive_step_size_controller(
 def euler_maruyama_step(
     drift_fn: Callable,
     diffusion_fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: dict[str, ArrayLike],
+    noise: StateDict,
     use_adaptive_step_size: bool = False,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
     adaptive_factor: float = 0.01,
     **kwargs,
-) -> Union[
-    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike],
-    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike, Dict[str, ArrayLike]],
-]:
+) -> Union[Tuple[StateDict, ArrayLike, ArrayLike], Tuple[StateDict, ArrayLike, ArrayLike, StateDict]]:
     """
     Performs a single Euler-Maruyama step for stochastic differential equations.
 
@@ -509,7 +538,7 @@ def euler_maruyama_step(
     new_step_size = step_size
     if use_adaptive_step_size:
         sign_step = keras.ops.sign(step_size)
-        new_step_size = adaptive_step_size_controller(
+        new_step_size = stochastic_adaptive_step_size_controller(
             state=state,
             drift=drift,
             adaptive_factor=adaptive_factor,
@@ -535,11 +564,11 @@ def euler_maruyama_step(
 def fast_adaptive_step(
     drift_fn: Callable,
     diffusion_fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: dict[str, ArrayLike],
-    last_state: dict[str, ArrayLike] = None,
+    noise: StateDict,
+    last_state: StateDict = None,
     use_adaptive_step_size: bool = True,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
@@ -549,8 +578,8 @@ def fast_adaptive_step(
     adapt_safety: float = 0.9,
     **kwargs,
 ) -> Union[
-    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike],
-    Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike, Dict[str, ArrayLike]],
+    Tuple[StateDict, ArrayLike, ArrayLike],
+    Tuple[StateDict, ArrayLike, ArrayLike, StateDict],
 ]:
     """
     Performs a single adaptive step for stochastic differential equations based on [1].
@@ -683,12 +712,12 @@ def fast_adaptive_step(
 def sea_step(
     drift_fn: Callable,
     diffusion_fn: Callable,
-    state: dict[str, ArrayLike],
+    state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: dict[str, ArrayLike],
+    noise: StateDict,
     **kwargs,
-) -> Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]:
+) -> Tuple[StateDict, ArrayLike, ArrayLike]:
     """
     Performs a single shifted Euler step for SDEs with additive noise [1].
 
@@ -740,13 +769,13 @@ def sea_step(
 def shark_step(
     drift_fn: Callable,
     diffusion_fn: Callable,
-    state: Dict[str, ArrayLike],
+    state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: Dict[str, ArrayLike],
-    noise_aux: Dict[str, ArrayLike],
+    noise: StateDict,
+    noise_aux: StateDict,
     **kwargs,
-) -> Tuple[Dict[str, ArrayLike], ArrayLike, ArrayLike]:
+) -> Tuple[StateDict, ArrayLike, ArrayLike]:
     """
     Shifted Additive noise Runge Kutta (SHARK) for additive SDEs [1]. Makes two evaluations of the drift and diffusion
     per step and has a strong order 1.5.
@@ -858,7 +887,7 @@ def _apply_corrector(
     i: ArrayLike,
     corrector_steps: int,
     score_fn: Optional[Callable],
-    corrector_noise_history: Dict[str, ArrayLike],
+    corrector_noise_history: StateDict,
     step_size_factor: ArrayLike = 0.01,
     noise_schedule=None,
 ) -> StateDict:
@@ -903,11 +932,11 @@ def integrate_stochastic_fixed(
     steps: int,
     min_step_size: ArrayLike,
     max_step_size: ArrayLike,
-    z_history: Dict[str, ArrayLike],
-    z_extra_history: Dict[str, ArrayLike],
+    z_history: StateDict,
+    z_extra_history: StateDict,
     score_fn: Optional[Callable],
     step_size_factor: ArrayLike,
-    corrector_noise_history: Dict[str, ArrayLike],
+    corrector_noise_history: StateDict,
     corrector_steps: int = 0,
     noise_schedule=None,
 ) -> StateDict:
@@ -969,11 +998,11 @@ def integrate_stochastic_adaptive(
     min_step_size: ArrayLike,
     max_step_size: ArrayLike,
     initial_step: ArrayLike,
-    z_history: Dict[str, ArrayLike],
-    z_extra_history: Dict[str, ArrayLike],
+    z_history: StateDict,
+    z_extra_history: StateDict,
     score_fn: Optional[Callable],
     step_size_factor: ArrayLike,
-    corrector_noise_history: Dict[str, ArrayLike],
+    corrector_noise_history: StateDict,
     corrector_steps: int = 0,
     noise_schedule=None,
 ) -> StateDict:
@@ -1027,8 +1056,9 @@ def integrate_stochastic_adaptive(
         return _i + 1, new_state, new_time, new_step, _counter, _new_current_state
 
     # Execute the adaptive loop
-    _, final_state, _, _, final_counter, _ = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
-    logging.debug("Finished integration after {} steps.", final_counter)
+    _, final_state, final_time, _, final_counter, _ = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
+
+    logging.debug(f"Finished integration after {final_counter} steps at {final_time}.")
     return final_state
 
 
@@ -1037,10 +1067,10 @@ def integrate_langevin(
     start_time: ArrayLike,
     stop_time: ArrayLike,
     steps: int,
-    z_history: Dict[str, ArrayLike],
+    z_history: StateDict,
     score_fn: Callable,
     noise_schedule,
-    corrector_noise_history: Dict[str, ArrayLike],
+    corrector_noise_history: StateDict,
     step_size_factor: ArrayLike = 0.01,
     corrector_steps: int = 0,
 ) -> StateDict:

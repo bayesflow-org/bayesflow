@@ -218,7 +218,6 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
         seed=seed,
         method=method,
         max_steps=1_000,
-        min_steps=100,
     )
 
     x_0 = np.array(out["x"])

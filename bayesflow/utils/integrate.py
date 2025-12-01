@@ -640,7 +640,7 @@ def two_step_adaptive_step(
         if e_abs is None:
             e_abs = 0.02576  # 1% of 99% CI of standardized unit variance
         # Check if we're at minimum step size - if so, force acceptance
-        at_min_step = keras.ops.less_equal(step_size, min_step_size)
+        at_min_step = keras.ops.less_equal(keras.ops.abs(step_size), min_step_size)
 
         # Compute error tolerance for each component
         e_abs_tensor = keras.ops.cast(e_abs, dtype=keras.ops.dtype(list(state.values())[0]))
@@ -681,9 +681,8 @@ def two_step_adaptive_step(
         new_step_candidate = step_size * adapt_factor
 
         # Clamp to valid range
-        sign_step = keras.ops.sign(step_size)
-        new_step_size = keras.ops.minimum(keras.ops.maximum(new_step_candidate, min_step_size), max_step_size)
-        new_step_size = sign_step * keras.ops.abs(new_step_size)
+        new_step_size = keras.ops.clip(keras.ops.abs(new_step_candidate), min_step_size, max_step_size)
+        new_step_size = keras.ops.sign(step_size) * new_step_size
 
         # Return appropriate state based on acceptance
         new_state = keras.ops.cond(accepted, lambda: state_heun, lambda: state)
@@ -1147,7 +1146,7 @@ def integrate_stochastic(
     seed: keras.random.SeedGenerator,
     steps: int | Literal["adaptive"] = 100,
     method: str = "euler_maruyama",
-    min_steps: int = 10,
+    min_steps: int = 50,
     max_steps: int = 10_000,
     score_fn: Callable = None,
     corrector_steps: int = 0,

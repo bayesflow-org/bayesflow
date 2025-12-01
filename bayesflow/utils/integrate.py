@@ -906,10 +906,6 @@ def _apply_corrector(
     if corrector_steps <= 0:
         return new_state
 
-    # Ensures score_fn and noise_schedule are present if needed, though checked in integrate_stochastic
-    if score_fn is None or noise_schedule is None:
-        return new_state  # Should not happen if checks are passed
-
     for j in range(corrector_steps):
         score = score_fn(new_time, **filter_kwargs(new_state, score_fn))
         _z_corr = {k: corrector_noise_history[k][i, j] for k in new_state.keys()}

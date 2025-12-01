@@ -284,12 +284,7 @@ def integrate_adaptive(
 
     tolerance = keras.ops.convert_to_tensor(kwargs.get("tolerance", 1e-6), dtype="float32")
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=True)
-
-    # Initial (conservative) step size guess
-    total_time = stop_time - start_time
-    step_size0 = keras.ops.convert_to_tensor(total_time / max_steps, dtype="float32")
-
-    # Track step count as scalar tensor
+    initial_step = (stop_time - start_time) / float(min_steps)
     step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
     count_not_accepted = 0
 
@@ -308,18 +303,10 @@ def integrate_adaptive(
 
     def body(_state, _time, _step_size, _step, _k1, _count_not_accepted):
         # Time remaining from current point
-        time_remaining = stop_time - _time
-
-        # Per-step min/max step sizes (like original code)
+        time_remaining = keras.ops.abs(stop_time - _time)
         min_step_size = time_remaining / (max_steps - _step)
         max_step_size = time_remaining / keras.ops.maximum(min_steps - _step, 1.0)
-
-        # Ensure ordering: min_step_size <= max_step_size
-        lower = keras.ops.minimum(min_step_size, max_step_size)
-        upper = keras.ops.maximum(min_step_size, max_step_size)
-        min_step_size = lower
-        max_step_size = upper
-        h = keras.ops.clip(_step_size, min_step_size, max_step_size)
+        h = keras.ops.sign(_step_size) * keras.ops.clip(keras.ops.abs(_step_size), min_step_size, max_step_size)
 
         # Take one trial step
         new_state, new_time, new_k1, err = step_fn(
@@ -330,7 +317,9 @@ def integrate_adaptive(
         )
 
         new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
-        new_step_size = keras.ops.clip(new_step_size, min_step_size, max_step_size)
+        new_step_size = keras.ops.sign(new_step_size) * keras.ops.clip(
+            keras.ops.abs(new_step_size), min_step_size, max_step_size
+        )
 
         # Error control: reject if err > tolerance
         too_big = keras.ops.greater(err, tolerance)
@@ -355,7 +344,7 @@ def integrate_adaptive(
     state, time, step_size, step, k1, count_not_accepted = keras.ops.while_loop(
         cond,
         body,
-        [state, start_time, step_size0, step0, k1_0, count_not_accepted],
+        [state, start_time, initial_step, step0, k1_0, count_not_accepted],
     )
 
     # Final step to hit stop_time exactly

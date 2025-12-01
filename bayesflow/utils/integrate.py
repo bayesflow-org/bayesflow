@@ -19,7 +19,7 @@ StateDict = Dict[str, ArrayLike]
 
 
 DETERMINISTIC_METHODS = ["euler", "rk45", "tsit5"]
-STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "langevin", "fast_adaptive"]
+STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin"]
 
 
 def euler_step(
@@ -509,7 +509,6 @@ def euler_maruyama_step(
     use_adaptive_step_size: bool = False,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
-    adaptive_factor: float = 0.01,
     **kwargs,
 ) -> Union[Tuple[StateDict, ArrayLike, ArrayLike], Tuple[StateDict, ArrayLike, ArrayLike, StateDict]]:
     """
@@ -525,7 +524,6 @@ def euler_maruyama_step(
         use_adaptive_step_size: Whether to use adaptive step sizing.
         min_step_size: Minimum allowed step size.
         max_step_size: Maximum allowed step size.
-        adaptive_factor: Factor to compute adaptive step size (0 < adaptive_factor < 1).
 
     Returns:
         new_state: Updated state after one Euler-Maruyama step.
@@ -541,7 +539,7 @@ def euler_maruyama_step(
         new_step_size = stochastic_adaptive_step_size_controller(
             state=state,
             drift=drift,
-            adaptive_factor=adaptive_factor,
+            adaptive_factor=max_step_size,
             min_step_size=min_step_size,
             max_step_size=max_step_size,
         )
@@ -561,7 +559,7 @@ def euler_maruyama_step(
     return new_state, time + new_step_size, new_step_size
 
 
-def fast_adaptive_step(
+def two_step_adaptive_step(
     drift_fn: Callable,
     diffusion_fn: Callable,
     state: StateDict,
@@ -572,8 +570,8 @@ def fast_adaptive_step(
     use_adaptive_step_size: bool = True,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
-    e_abs: float = 0.01,
-    e_rel: float = 0.01,
+    e_rel: float = 0.1,
+    e_abs: float = None,
     r: float = 0.9,
     adapt_safety: float = 0.9,
     **kwargs,
@@ -608,8 +606,8 @@ def fast_adaptive_step(
         use_adaptive_step_size: Whether to adapt step size.
         min_step_size: Minimum allowed step size.
         max_step_size: Maximum allowed step size.
-        e_abs: Absolute error tolerance.
         e_rel: Relative error tolerance.
+        e_abs: Absolute error tolerance. Default assumes standardized targets.
         r: Order of the method for step size adaptation.
         adapt_safety: Safety factor for step size adaptation.
         **kwargs: Additional arguments passed to drift_fn and diffusion_fn.
@@ -650,6 +648,8 @@ def fast_adaptive_step(
 
     # Error estimation
     if use_adaptive_step_size:
+        if e_abs is None:
+            e_abs = 0.02576  # 1% of 99% CI of standardized unit variance
         # Check if we're at minimum step size - if so, force acceptance
         at_min_step = keras.ops.less_equal(step_size, min_step_size)
 
@@ -709,13 +709,33 @@ def fast_adaptive_step(
         return state_heun, time_mid, step_size
 
 
+def compute_levy_area(
+    state: StateDict, diffusion: StateDict, noise: StateDict, noise_aux: StateDict, step_size: ArrayLike
+) -> StateDict:
+    step_size_abs = keras.ops.abs(step_size)
+    sqrt_step_size = keras.ops.sqrt(step_size_abs)
+    inv_sqrt3 = keras.ops.cast(1.0 / np.sqrt(3.0), dtype=keras.ops.dtype(step_size_abs))
+
+    # Build Lévy area H_k from w_k and Z_k
+    H = {}
+    for k in state.keys():
+        if k in diffusion:
+            term1 = 0.5 * step_size_abs * noise[k]
+            term2 = 0.5 * step_size_abs * sqrt_step_size * inv_sqrt3 * noise_aux[k]
+            H[k] = term1 + term2
+        else:
+            H[k] = keras.ops.zeros_like(state[k])
+    return H
+
+
 def sea_step(
     drift_fn: Callable,
     diffusion_fn: Callable,
     state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
-    noise: StateDict,
+    noise: StateDict,  # standard normals
+    noise_aux: StateDict,  # standard normals
     **kwargs,
 ) -> Tuple[StateDict, ArrayLike, ArrayLike]:
     """
@@ -725,7 +745,7 @@ def sea_step(
     which improves the local error and the global error constant for additive noise.
 
     The scheme is
-        X_{n+1} = X_n + f(t_n, X_n + 0.5 * g(t_n) * ΔW_n) * h + g(t_n) * ΔW_n
+        X_{n+1} = X_n + f(t_n, X_n + g(t_n) * (0.5 * ΔW_n + ΔH_n) * h + g(t_n) * ΔW_n
 
     [1] Foster et al., "High order splitting methods for SDEs satisfying a commutativity condition" (2023)
     Args:
@@ -735,20 +755,23 @@ def sea_step(
         time: Current time scalar tensor.
         step_size: Time increment dt.
         noise: Mapping of variable names to dW noise tensors.
+        noise_aux: Mapping of variable names to auxiliary noise.
 
     Returns:
         new_state: Updated state after one SEA step.
         new_time: time + dt.
     """
-    # Compute diffusion (assumed additive or weakly state dependent)
+    # Compute diffusion
     diffusion = diffusion_fn(time, **filter_kwargs(state, diffusion_fn))
     sqrt_step_size = keras.ops.sqrt(keras.ops.abs(step_size))
 
-    # Build shifted state: X_shift = X + 0.5 * g * ΔW
+    la = compute_levy_area(state=state, diffusion=diffusion, noise=noise, noise_aux=noise_aux, step_size=step_size)
+
+    # Build shifted state: X_shift = X + g * (0.5 * ΔW + ΔH)
     shifted_state = {}
     for key, x in state.items():
         if key in diffusion:
-            shifted_state[key] = x + 0.5 * diffusion[key] * sqrt_step_size * noise[key]
+            shifted_state[key] = x + diffusion[key] * (0.5 * sqrt_step_size * noise[key] + la[key])
         else:
             shifted_state[key] = x
 
@@ -810,33 +833,18 @@ def shark_step(
     """
     h = step_size
     t = time
-
-    # Magnitude of the time step for stochastic scaling
     h_mag = keras.ops.abs(h)
-    # h_sign = keras.ops.sign(h)
     sqrt_h_mag = keras.ops.sqrt(h_mag)
-    inv_sqrt3 = keras.ops.cast(1.0 / np.sqrt(3.0), dtype=keras.ops.dtype(h_mag))
 
-    # g(y_k)
-    g0 = diffusion_fn(t, **filter_kwargs(state, diffusion_fn))
+    diffusion = diffusion_fn(t, **filter_kwargs(state, diffusion_fn))
 
-    # Build H_k from w_k and Z_k
-    H = {}
-    for k in state.keys():
-        if k in g0:
-            w_k = sqrt_h_mag * noise[k]
-            z_k = noise_aux[k]  # standard normal
-            term1 = 0.5 * h_mag * w_k
-            term2 = 0.5 * h_mag * sqrt_h_mag * inv_sqrt3 * z_k
-            H[k] = term1 + term2
-        else:
-            H[k] = keras.ops.zeros_like(state[k])
+    la = compute_levy_area(state=state, diffusion=diffusion, noise=noise, noise_aux=noise_aux, step_size=step_size)
 
     # === 1) shifted initial state ===
     y_tilde_k = {}
     for k in state.keys():
-        if k in g0:
-            y_tilde_k[k] = state[k] + g0[k] * H[k]
+        if k in diffusion:
+            y_tilde_k[k] = state[k] + diffusion[k] * la[k]
         else:
             y_tilde_k[k] = state[k]
 
@@ -866,12 +874,12 @@ def shark_step(
 
         # stochastic parts
         sto1 = (
-            g_tilde_k[k] * ((2.0 / 5.0) * sqrt_h_mag * noise[k] + (6.0 / 5.0) * H[k])
+            g_tilde_k[k] * ((2.0 / 5.0) * sqrt_h_mag * noise[k] + (6.0 / 5.0) * la[k])
             if k in g_tilde_k
             else keras.ops.zeros_like(det)
         )
         sto2 = (
-            g_tilde_mid[k] * ((3.0 / 5.0) * sqrt_h_mag * noise[k] - (6.0 / 5.0) * H[k])
+            g_tilde_mid[k] * ((3.0 / 5.0) * sqrt_h_mag * noise[k] - (6.0 / 5.0) * la[k])
             if k in g_tilde_mid
             else keras.ops.zeros_like(det)
         )
@@ -1154,7 +1162,7 @@ def integrate_stochastic(
     seed: keras.random.SeedGenerator,
     steps: int | Literal["adaptive"] = 100,
     method: str = "euler_maruyama",
-    min_steps: int = 20,
+    min_steps: int = 10,
     max_steps: int = 10_000,
     score_fn: Callable = None,
     corrector_steps: int = 0,
@@ -1229,8 +1237,8 @@ def integrate_stochastic(
             step_fn_raw = shark_step
             if is_adaptive:
                 raise ValueError("SHARK SDE solver does not support adaptive steps.")
-        case "fast_adaptive":
-            step_fn_raw = fast_adaptive_step
+        case "two_step_adaptive":
+            step_fn_raw = two_step_adaptive_step
         case "langevin":
             if is_adaptive:
                 raise ValueError("Langevin sampling does not support adaptive steps.")
@@ -1269,7 +1277,7 @@ def integrate_stochastic(
     for key, val in state.items():
         shape = keras.ops.shape(val)
         z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
-        if method == "shark":
+        if method in ["sea", "shark"]:
             z_extra_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
 
     if is_adaptive:

@@ -101,8 +101,8 @@ def test_analytical_backward_integration(method, atol):
         ("euler_maruyama", True),
         ("sea", False),
         ("shark", False),
-        ("fast_adaptive", False),
-        ("fast_adaptive", True),
+        ("two_step_adaptive", False),
+        ("two_step_adaptive", True),
     ],
 )
 def test_forward_additive_ou_weak_means_and_vars(method, use_adapt):
@@ -167,8 +167,8 @@ def test_forward_additive_ou_weak_means_and_vars(method, use_adapt):
         ("euler_maruyama", True),
         ("sea", False),
         ("shark", False),
-        ("fast_adaptive", False),
-        ("fast_adaptive", True),
+        ("two_step_adaptive", False),
+        ("two_step_adaptive", True),
     ],
 )
 def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
@@ -218,6 +218,7 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
         seed=seed,
         method=method,
         max_steps=1_000,
+        min_steps=100,
     )
 
     x_0 = np.array(out["x"])
@@ -235,8 +236,8 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
         ("euler_maruyama", True),
         ("sea", False),
         ("shark", False),
-        ("fast_adaptive", False),
-        ("fast_adaptive", True),
+        ("two_step_adaptive", False),
+        ("two_step_adaptive", True),
     ],
 )
 def test_zero_noise_reduces_to_deterministic(method, use_adapt):

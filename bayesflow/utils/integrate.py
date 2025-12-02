@@ -22,6 +22,13 @@ DETERMINISTIC_METHODS = ["euler", "rk45", "tsit5"]
 STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin"]
 
 
+def _check_all_nans(state: StateDict):
+    all_nans_flags = []
+    for v in state.values():
+        all_nans_flags.append(keras.ops.all(keras.ops.isnan(v)))
+    return keras.ops.all(keras.ops.stack(all_nans_flags))
+
+
 def euler_step(
     fn: Callable,
     state: StateDict,
@@ -218,7 +225,8 @@ def integrate_fixed(
     def body(_loop_var, _loop_state):
         _state, _time = _loop_state
         _state, _time, _, _ = step_fn(_state, _time, step_size)
-
+        if _check_all_nans(_state):
+            raise RuntimeError(f"All values are NaNs in state during integration at {_time}.")
         return _state, _time
 
     state, time = keras.ops.fori_loop(0, steps, body, (state, time))
@@ -251,6 +259,9 @@ def integrate_scheduled(
         _time = steps[_loop_var]
         step_size = steps[_loop_var + 1] - steps[_loop_var]
         _loop_state, _, _, _ = step_fn(_loop_state, _time, step_size)
+
+        if _check_all_nans(_loop_state):
+            raise RuntimeError(f"All values are NaNs in state during integration at {_time}.")
         return _loop_state
 
     state = keras.ops.fori_loop(0, len(steps) - 1, body, state)
@@ -296,10 +307,12 @@ def integrate_adaptive(
         step_lt_min = keras.ops.less(_step, float(min_steps))
         step_lt_max = keras.ops.less(_step, float(max_steps))
 
-        return keras.ops.logical_or(
-            step_lt_min,
-            keras.ops.logical_and(keras.ops.all(time_remaining > 0), step_lt_max),
+        all_nans = _check_all_nans(_state)
+
+        end_now = keras.ops.logical_or(
+            step_lt_min, keras.ops.logical_and(keras.ops.all(time_remaining > 0), step_lt_max)
         )
+        return keras.ops.logical_and(~all_nans, end_now)
 
     def body(_state, _time, _step_size, _step, _k1, _count_not_accepted):
         # Time remaining from current point
@@ -346,6 +359,9 @@ def integrate_adaptive(
         body,
         [state, start_time, initial_step, step0, k1_0, count_not_accepted],
     )
+
+    if _check_all_nans(state):
+        raise RuntimeError(f"All values are NaNs in state during integration at {time}.")
 
     # Final step to hit stop_time exactly
     time_diff = stop_time - time
@@ -974,6 +990,9 @@ def integrate_stochastic_fixed(
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
         )
+        all_nans = _check_all_nans(new_state)
+        if all_nans:
+            raise RuntimeError(f"All values are NaNs in state during integration at {_current_time}.")
         return new_state, new_time, initial_step
 
     # Execute the fixed loop
@@ -1004,9 +1023,10 @@ def integrate_stochastic_adaptive(
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, 0, state)
 
     def cond(i, current_state, current_time, current_step, counter, last_state):
-        # time remaining after the next step
         time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))
-        return keras.ops.logical_and(keras.ops.all(time_remaining > 0), keras.ops.less(i, max_steps))
+        all_nans = _check_all_nans(current_state)
+        end_now = keras.ops.logical_and(keras.ops.all(time_remaining > 0), keras.ops.less(i, max_steps))
+        return keras.ops.logical_and(~all_nans, end_now)
 
     def body_adaptive(_i, _current_state, _current_time, _current_step, _counter, _last_state):
         # Step Size Control
@@ -1048,9 +1068,36 @@ def integrate_stochastic_adaptive(
         return _i + 1, new_state, new_time, new_step, _counter, _new_current_state
 
     # Execute the adaptive loop
-    _, final_state, final_time, _, final_counter, _ = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
+    _, final_state, final_time, _, final_counter, final_k1 = keras.ops.while_loop(
+        cond, body_adaptive, initial_loop_state
+    )
 
-    logging.debug(f"Finished integration after {final_counter} steps at {final_time}.")
+    if _check_all_nans(final_state):
+        raise RuntimeError(f"All values are NaNs in state during integration at {final_time}.")
+
+    # Final step to hit stop_time exactly
+    time_diff = stop_time - final_time
+    time_remaining = keras.ops.sign(stop_time - start_time) * time_diff
+    if keras.ops.all(time_remaining > 0):
+        noise_final = {k: z_history[k][-1] for k in final_state.keys()}
+        noise_extra_final = None
+        if len(z_extra_history) > 0:
+            noise_extra_final = {k: z_extra_history[k][-1] for k in final_state.keys()}
+
+        final_state, _, _ = step_fn(
+            state=final_state,
+            time=final_time,
+            step_size=time_diff,
+            last_state=final_k1,
+            min_step_size=min_step_size,
+            max_step_size=time_remaining,
+            noise=noise_final,
+            noise_aux=noise_extra_final,
+            use_adaptive_step_size=False,
+        )
+        final_counter = final_counter + 1
+
+    logging.debug(f"Finished integration after {final_counter}.")
     return final_state
 
 
@@ -1094,13 +1141,12 @@ def integrate_langevin(
 
     def body(_i, loop_state):
         current_state, current_time = loop_state
-        t = current_time
 
         # score at current time
-        score = score_fn(t, **filter_kwargs(current_state, score_fn))
+        score = score_fn(current_time, **filter_kwargs(current_state, score_fn))
 
         # noise schedule
-        log_snr_t = noise_schedule.get_log_snr(t=t, training=False)
+        log_snr_t = noise_schedule.get_log_snr(t=current_time, training=False)
         _, sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         new_state: StateDict = {}
@@ -1125,6 +1171,8 @@ def integrate_langevin(
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
         )
+        if _check_all_nans(new_state):
+            raise RuntimeError(f"All values are NaNs in state during integration at {current_time}.")
 
         return new_state, new_time
 

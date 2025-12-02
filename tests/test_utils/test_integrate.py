@@ -202,7 +202,6 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
     # Start at time T with value x_T
     initial_state = {"x": keras.ops.ones((N,)) * x_T}
     steps = 200 if not use_adapt else "adaptive"
-
     # Expected mean and variance at t=0 after integrating backward from t=T
     # For backward integration, the effective drift coefficient changes sign
     exp_mean = x_T * np.exp(-a * T)

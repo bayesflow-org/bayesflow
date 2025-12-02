@@ -631,7 +631,7 @@ def two_step_adaptive_step(
         min_step_size=min_step_size,
         max_step_size=max_step_size,
         noise=noise,
-        use_adaptive_step_size=False,
+        use_adaptive_step_size=True,
     )
 
     # Compute drift and diffusion at new state, but update from old state

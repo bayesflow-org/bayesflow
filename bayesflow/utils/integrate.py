@@ -11,7 +11,6 @@ from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from bayesflow.utils.logging import warning
-from keras import backend as K
 
 from . import logging
 
@@ -24,8 +23,6 @@ STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "la
 
 
 def _check_all_nans(state: StateDict):
-    if K.backend() == "jax":
-        return False  # JAX backend does not support checks of the state variables
     all_nans_flags = []
     for v in state.values():
         all_nans_flags.append(keras.ops.all(keras.ops.isnan(v)))
@@ -376,7 +373,7 @@ def integrate_adaptive(
 
         # Step counter: increment only on accepted steps
         updated_step = _step + keras.ops.where(accepted, 1.0, 0.0)
-        _count_not_accepted = _count_not_accepted + 1 if not accepted else _count_not_accepted
+        _count_not_accepted = _count_not_accepted + keras.ops.where(accepted, 1.0, 0.0)
 
         # For the next iteration, always use the new suggested step size
         return updated_state, updated_time, new_step_size, updated_step, updated_k1, _count_not_accepted

@@ -224,17 +224,22 @@ def integrate_fixed(
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
     step_size = (stop_time - start_time) / steps
 
-    time = start_time
+    def cond(_loop_var, _loop_state, _loop_time):
+        all_nans = _check_all_nans(_loop_state)
+        end_now = keras.ops.less(_loop_var, steps)
+        return keras.ops.logical_and(~all_nans, end_now)
 
-    def body(_loop_var, _loop_state):
-        _state, _time = _loop_state
-        _state, _time, _, _ = step_fn(_state, _time, step_size)
-        if _check_all_nans(_state):
-            raise RuntimeError(f"All values are NaNs in state during integration at {_time}.")
-        return _state, _time
+    def body(_loop_var, _loop_state, _loop_time):
+        _loop_state, _loop_time, _, _ = step_fn(_loop_state, _loop_time, step_size)
+        return _loop_var + 1, _loop_state, _loop_time
 
-    state, time = keras.ops.fori_loop(0, steps, body, (state, time))
-
+    _, state, _ = keras.ops.while_loop(
+        cond,
+        body,
+        [0, state, start_time],
+    )
+    if _check_all_nans(state):
+        raise RuntimeError("All values are NaNs in state during integration.")
     return state
 
 
@@ -259,16 +264,25 @@ def integrate_scheduled(
 
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
 
+    def cond(_loop_var, _loop_state):
+        all_nans = _check_all_nans(_loop_state)
+        end_now = keras.ops.less(_loop_var, len(steps) - 1)
+        return keras.ops.logical_and(~all_nans, end_now)
+
     def body(_loop_var, _loop_state):
         _time = steps[_loop_var]
         step_size = steps[_loop_var + 1] - steps[_loop_var]
         _loop_state, _, _, _ = step_fn(_loop_state, _time, step_size)
+        return _loop_var + 1, _loop_state
 
-        if _check_all_nans(_loop_state):
-            raise RuntimeError(f"All values are NaNs in state during integration at {_time}.")
-        return _loop_state
+    _, state = keras.ops.while_loop(
+        cond,
+        body,
+        [0, state],
+    )
 
-    state = keras.ops.fori_loop(0, len(steps) - 1, body, state)
+    if _check_all_nans(state):
+        raise RuntimeError("All values are NaNs in state during integration.")
     return state
 
 
@@ -635,7 +649,7 @@ def two_step_adaptive_step(
         min_step_size=min_step_size,
         max_step_size=max_step_size,
         noise=noise,
-        use_adaptive_step_size=True,
+        use_adaptive_step_size=False,
     )
 
     # Compute drift and diffusion at new state, but update from old state
@@ -957,9 +971,12 @@ def integrate_stochastic_fixed(
     """
     initial_step = (stop_time - start_time) / float(steps)
 
-    def body_fixed(_i, _loop_state):
-        _current_state, _current_time, _current_step = _loop_state
+    def cond(_loop_var, _loop_state, _loop_time, _loop_step):
+        all_nans = _check_all_nans(_loop_state)
+        end_now = keras.ops.less(_loop_var, steps)
+        return keras.ops.logical_and(~all_nans, end_now)
 
+    def body(_i, _current_state, _current_time, _current_step):
         # Determine step size: either the constant size or the remainder to reach stop_time
         remaining = keras.ops.abs(stop_time - _current_time)
         sign = keras.ops.sign(_current_step)
@@ -994,13 +1011,16 @@ def integrate_stochastic_fixed(
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
         )
-        all_nans = _check_all_nans(new_state)
-        if all_nans:
-            raise RuntimeError(f"All values are NaNs in state during integration at {_current_time}.")
-        return new_state, new_time, initial_step
+        return _i + 1, new_state, new_time, initial_step
 
-    # Execute the fixed loop
-    final_state, final_time, _ = keras.ops.fori_loop(0, steps, body_fixed, (state, start_time, initial_step))
+    _, final_state, final_time, _ = keras.ops.while_loop(
+        cond,
+        body,
+        [0, state, start_time, initial_step],
+    )
+    if _check_all_nans(final_state):
+        raise RuntimeError(f"All values are NaNs in state during integration at {final_time}.")
+
     return final_state
 
 
@@ -1024,22 +1044,21 @@ def integrate_stochastic_adaptive(
     """
     Performs adaptive-step SDE integration.
     """
-    initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, 0, state)
+    initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, state)
 
-    def cond(i, current_state, current_time, current_step, counter, last_state):
+    def cond(i, current_state, current_time, current_step, last_state):
         time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))
         all_nans = _check_all_nans(current_state)
         end_now = keras.ops.logical_and(keras.ops.all(time_remaining > 0), keras.ops.less(i, max_steps))
         return keras.ops.logical_and(~all_nans, end_now)
 
-    def body_adaptive(_i, _current_state, _current_time, _current_step, _counter, _last_state):
+    def body_adaptive(_i, _current_state, _current_time, _current_step, _last_state):
         # Step Size Control
         remaining = keras.ops.abs(stop_time - _current_time)
         sign = keras.ops.sign(_current_step)
         # Ensure the next step does not overshoot the stop_time
         dt_mag = keras.ops.minimum(keras.ops.abs(_current_step), remaining)
         dt = sign * dt_mag
-        _counter += 1
 
         _noise_i = {k: z_history[k][_i] for k in _current_state.keys()}
         _noise_extra_i = None
@@ -1069,12 +1088,10 @@ def integrate_stochastic_adaptive(
             corrector_noise_history=corrector_noise_history,
         )
 
-        return _i + 1, new_state, new_time, new_step, _counter, _new_current_state
+        return _i + 1, new_state, new_time, new_step, _new_current_state
 
     # Execute the adaptive loop
-    _, final_state, final_time, _, final_counter, final_k1 = keras.ops.while_loop(
-        cond, body_adaptive, initial_loop_state
-    )
+    final_counter, final_state, final_time, _, final_k1 = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
 
     if _check_all_nans(final_state):
         raise RuntimeError(f"All values are NaNs in state during integration at {final_time}.")
@@ -1143,27 +1160,30 @@ def integrate_langevin(
     dt = (stop_time - start_time) / float(steps)
     effective_factor = step_size_factor * 100 / np.sqrt(steps)
 
-    def body(_i, loop_state):
-        current_state, current_time = loop_state
+    def cond(_loop_var, _loop_state, _loop_time):
+        all_nans = _check_all_nans(_loop_state)
+        end_now = keras.ops.less(_loop_var, steps)
+        return keras.ops.logical_and(~all_nans, end_now)
 
+    def body(_i, _loop_state, _loop_time):
         # score at current time
-        score = score_fn(current_time, **filter_kwargs(current_state, score_fn))
+        score = score_fn(_loop_time, **filter_kwargs(_loop_state, score_fn))
 
         # noise schedule
-        log_snr_t = noise_schedule.get_log_snr(t=current_time, training=False)
+        log_snr_t = noise_schedule.get_log_snr(t=_loop_time, training=False)
         _, sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         new_state: StateDict = {}
-        for k in current_state.keys():
+        for k in _loop_state.keys():
             s_k = score.get(k, None)
             if s_k is None:
-                new_state[k] = current_state[k]
+                new_state[k] = _loop_state[k]
                 continue
 
             e = effective_factor * sigma_t**2
-            new_state[k] = current_state[k] + e * s_k + keras.ops.sqrt(2.0 * e) * z_history[k][_i]
+            new_state[k] = _loop_state[k] + e * s_k + keras.ops.sqrt(2.0 * e) * z_history[k][_i]
 
-        new_time = current_time + dt
+        new_time = _loop_time + dt
 
         new_state = _apply_corrector(
             new_state=new_state,
@@ -1175,17 +1195,16 @@ def integrate_langevin(
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
         )
-        if _check_all_nans(new_state):
-            raise RuntimeError(f"All values are NaNs in state during integration at {current_time}.")
 
-        return new_state, new_time
+        return _i + 1, new_state, new_time
 
-    final_state, _ = keras.ops.fori_loop(
-        0,
-        steps,
+    _, final_state, final_time = keras.ops.while_loop(
+        cond,
         body,
-        (state, start_time),
+        (0, state, start_time),
     )
+    if _check_all_nans(final_state):
+        raise RuntimeError(f"All values are NaNs in state during integration at {final_time}.")
     return final_state
 
 

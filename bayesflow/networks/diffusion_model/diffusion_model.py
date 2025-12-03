@@ -413,6 +413,12 @@ class DiffusionModel(InferenceNetwork):
             raise ValueError("Stochastic methods are not supported for forward integration.")
 
         if density:
+            if integrate_kwargs["steps"] == "adaptive":
+                logging.warning(
+                    "Using adaptive integration for density estimation can lead to "
+                    "problems with autodiff. Switching to 200 fixed steps instead."
+                )
+                integrate_kwargs["steps"] = 200
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
@@ -461,6 +467,12 @@ class DiffusionModel(InferenceNetwork):
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
                 raise ValueError("Stochastic methods are not supported for density computation.")
+            if integrate_kwargs["steps"] == "adaptive":
+                logging.warning(
+                    "Using adaptive integration for density estimation can lead to "
+                    "problems with autodiff. Switching to 200 fixed steps instead."
+                )
+                integrate_kwargs["steps"] = 200
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)

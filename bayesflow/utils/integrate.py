@@ -22,13 +22,6 @@ DETERMINISTIC_METHODS = ["euler", "rk45", "tsit5"]
 STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin"]
 
 
-def _check_all_nans(state: StateDict):
-    all_nans_flags = []
-    for v in state.values():
-        all_nans_flags.append(keras.ops.all(keras.ops.isnan(v)))
-    return keras.ops.all(keras.ops.stack(all_nans_flags))
-
-
 def euler_step(
     fn: Callable,
     state: StateDict,
@@ -243,22 +236,17 @@ def integrate_fixed(
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
     step_size = (stop_time - start_time) / steps
 
-    def cond(_loop_var, _loop_state, _loop_time):
-        all_nans = _check_all_nans(_loop_state)
-        end_now = keras.ops.less(_loop_var, steps)
-        return keras.ops.logical_and(~all_nans, end_now)
+    def body(_loop_var, _loop_state):
+        _state, _time = _loop_state
+        _state, _time, _, _ = step_fn(_state, _time, step_size)
+        return _state, _time
 
-    def body(_loop_var, _loop_state, _loop_time):
-        _loop_state, _loop_time, _, _ = step_fn(_loop_state, _loop_time, step_size)
-        return _loop_var + 1, _loop_state, _loop_time
-
-    _, state, _ = keras.ops.while_loop(
-        cond,
+    state, _ = keras.ops.fori_loop(
+        0,
+        steps,
         body,
-        [0, state, start_time],
+        (state, start_time),
     )
-    if _check_all_nans(state):
-        raise RuntimeError("All values are NaNs in state during integration.")
     return state
 
 
@@ -283,25 +271,18 @@ def integrate_scheduled(
 
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
 
-    def cond(_loop_var, _loop_state):
-        all_nans = _check_all_nans(_loop_state)
-        end_now = keras.ops.less(_loop_var, len(steps) - 1)
-        return keras.ops.logical_and(~all_nans, end_now)
-
     def body(_loop_var, _loop_state):
         _time = steps[_loop_var]
         step_size = steps[_loop_var + 1] - steps[_loop_var]
         _loop_state, _, _, _ = step_fn(_loop_state, _time, step_size)
-        return _loop_var + 1, _loop_state
+        return _loop_state
 
-    _, state = keras.ops.while_loop(
-        cond,
+    state = keras.ops.fori_loop(
+        0,
+        keras.ops.shape(steps)[0] - 1,
         body,
-        [0, state],
+        state,
     )
-
-    if _check_all_nans(state):
-        raise RuntimeError("All values are NaNs in state during integration.")
     return state
 
 
@@ -501,6 +482,11 @@ def integrate(
 
 
 ############ SDE Solvers #############
+def _check_all_nans(state: StateDict):
+    all_nans_flags = []
+    for v in state.values():
+        all_nans_flags.append(keras.ops.all(keras.ops.isnan(v)))
+    return keras.ops.all(keras.ops.stack(all_nans_flags))
 
 
 def stochastic_adaptive_step_size_controller(

@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Sequence
 
 import keras
@@ -236,14 +237,21 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
+            if integrate_kwargs["steps"] == "adaptive":
+                logging.warning(
+                    "Using adaptive integration for density estimation can lead to "
+                    "problems with autodiff. Switching to 200 fixed steps instead."
+                )
+                integrate_kwargs["steps"] = 200
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
-            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
+            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
 
             z = state["xz"]
             log_density = self.base_distribution.log_prob(z) + keras.ops.squeeze(state["trace"], axis=-1)
@@ -254,7 +262,7 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": x}
-        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
+        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
 
         z = state["xz"]
 
@@ -263,14 +271,21 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
+            if integrate_kwargs["steps"] == "adaptive":
+                logging.warning(
+                    "Using adaptive integration for density estimation can lead to "
+                    "problems with autodiff. Switching to 200 fixed steps instead."
+                )
+                integrate_kwargs["steps"] = 200
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
-            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
+            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
 
             x = state["xz"]
             log_density = self.base_distribution.log_prob(z) - keras.ops.squeeze(state["trace"], axis=-1)
@@ -281,7 +296,7 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": z}
-        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
+        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
 
         x = state["xz"]
 

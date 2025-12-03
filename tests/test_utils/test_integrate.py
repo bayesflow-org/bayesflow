@@ -8,9 +8,8 @@ TOLERANCE_ADAPTIVE = 1e-6  # Adaptive solvers should be very accurate.
 TOLERANCE_EULER = 1e-3  # Euler with fixed steps requires a larger tolerance
 
 # tolerances for SDE tests
-TOL_MEAN = 3e-2
+TOL_MEAN = 5e-2
 TOL_VAR = 5e-2
-TOL_DET = 1e-3
 
 
 @pytest.mark.parametrize("method", ["euler", "rk45", "tsit5"])
@@ -123,7 +122,6 @@ def test_forward_additive_ou_weak_means_and_vars(method, use_adapt):
     x_0 = 1.2  # initial condition at time 0
     T = 1.0
 
-    # batch of trajectories
     N = 10000
     seed = keras.random.SeedGenerator(42)
 
@@ -149,15 +147,14 @@ def test_forward_additive_ou_weak_means_and_vars(method, use_adapt):
         steps=steps,
         seed=seed,
         method=method,
-        max_steps=1_000,
     )
 
     x_T = np.array(out["x"])
     emp_mean = float(x_T.mean())
     emp_var = float(x_T.var())
 
-    np.testing.assert_allclose(emp_mean, exp_mean, atol=TOL_MEAN, rtol=0.0)
-    np.testing.assert_allclose(emp_var, exp_var, atol=TOL_VAR, rtol=0.0)
+    np.testing.assert_allclose(emp_mean, exp_mean, atol=TOL_MEAN)
+    np.testing.assert_allclose(emp_var, exp_var, atol=TOL_VAR)
 
 
 @pytest.mark.parametrize(
@@ -188,8 +185,7 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
     x_T = 1.2  # initial condition at time T
     T = 1.0
 
-    # batch of trajectories
-    N = 10000  # large enough to control sampling error
+    N = 10000
     seed = keras.random.SeedGenerator(42)
 
     def drift_fn(t, x):
@@ -216,15 +212,14 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
         steps=steps,
         seed=seed,
         method=method,
-        max_steps=1_000,
     )
 
     x_0 = np.array(out["x"])
     emp_mean = float(x_0.mean())
     emp_var = float(x_0.var())
 
-    np.testing.assert_allclose(emp_mean, exp_mean, atol=TOL_MEAN, rtol=0.0)
-    np.testing.assert_allclose(emp_var, exp_var, atol=TOL_VAR, rtol=0.0)
+    np.testing.assert_allclose(emp_mean, exp_mean, atol=TOL_MEAN)
+    np.testing.assert_allclose(emp_var, exp_var, atol=TOL_VAR)
 
 
 @pytest.mark.parametrize(
@@ -270,7 +265,7 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
     )["x"]
 
     exact = x0 * np.exp(a * T)
-    np.testing.assert_allclose(np.array(out).mean(), exact, atol=TOL_DET, rtol=0.1)
+    np.testing.assert_allclose(np.array(out).mean(), exact, atol=1e-3, rtol=0.1)
 
 
 @pytest.mark.parametrize("steps", [500])

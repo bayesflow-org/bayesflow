@@ -12,7 +12,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from bayesflow.utils.logging import warning
 
-from . import logging
+import logging
 
 ArrayLike = int | float | Tensor
 StateDict = Dict[str, ArrayLike]

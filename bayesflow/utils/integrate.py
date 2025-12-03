@@ -11,6 +11,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from bayesflow.utils.logging import warning
+from keras import backend as K
 
 from . import logging
 
@@ -20,6 +21,15 @@ StateDict = Dict[str, ArrayLike]
 
 DETERMINISTIC_METHODS = ["euler", "rk45", "tsit5"]
 STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin"]
+
+
+def _check_all_nans(state: StateDict):
+    if K.backend() == "jax":
+        return False  # JAX backend does not support checks of the state variables
+    all_nans_flags = []
+    for v in state.values():
+        all_nans_flags.append(keras.ops.all(keras.ops.isnan(v)))
+    return keras.ops.all(keras.ops.stack(all_nans_flags))
 
 
 def euler_step(
@@ -482,11 +492,6 @@ def integrate(
 
 
 ############ SDE Solvers #############
-def _check_all_nans(state: StateDict):
-    all_nans_flags = []
-    for v in state.values():
-        all_nans_flags.append(keras.ops.all(keras.ops.isnan(v)))
-    return keras.ops.all(keras.ops.stack(all_nans_flags))
 
 
 def stochastic_adaptive_step_size_controller(

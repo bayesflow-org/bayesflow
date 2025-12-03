@@ -65,7 +65,9 @@ def rk45_step(
     use_adaptive_step_size: bool = True,
 ) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
     """
-    Dormand-Prince 5(4) method with embedded error estimation.
+    Dormand-Prince 5(4) method with embedded error estimation [1].
+
+    Dormand (1996), Numerical Methods for Differential Equations: A Computational Approach
     """
     h = step_size
 
@@ -124,7 +126,9 @@ def tsit5_step(
     use_adaptive_step_size: bool = True,
 ) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
     """
-    Implements a single step of the Tsitouras 5/4 Runge-Kutta method.
+    Implements a single step of the Tsitouras 5/4 Runge-Kutta method [1].
+
+    [1] Tsitouras (2011), Runge--Kutta pairs of order 5(4) satisfying only the first column simplifying assumption
     """
     h = step_size
 

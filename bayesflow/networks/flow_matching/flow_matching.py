@@ -53,8 +53,8 @@ class FlowMatching(InferenceNetwork):
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": 100,
+        "method": "tsit5",
+        "steps": "adaptive",
     }
 
     def __init__(

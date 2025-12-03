@@ -73,16 +73,21 @@ def rk45_step(
 
     if k1 is None:  # reuse k1 if available
         k1 = fn(time, **filter_kwargs(state, fn))
-    k2 = fn(time + h * (1 / 5), **add_scaled(state, [k1], [1 / 5], h))
-    k3 = fn(time + h * (3 / 10), **add_scaled(state, [k1, k2], [3 / 40, 9 / 40], h))
-    k4 = fn(time + h * (4 / 5), **add_scaled(state, [k1, k2, k3], [44 / 45, -56 / 15, 32 / 9], h))
+    k2 = fn(time + h * (1 / 5), **filter_kwargs(add_scaled(state, [k1], [1 / 5], h), fn))
+    k3 = fn(time + h * (3 / 10), **filter_kwargs(add_scaled(state, [k1, k2], [3 / 40, 9 / 40], h), fn))
+    k4 = fn(time + h * (4 / 5), **filter_kwargs(add_scaled(state, [k1, k2, k3], [44 / 45, -56 / 15, 32 / 9], h), fn))
     k5 = fn(
         time + h * (8 / 9),
-        **add_scaled(state, [k1, k2, k3, k4], [19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729], h),
+        **filter_kwargs(
+            add_scaled(state, [k1, k2, k3, k4], [19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729], h), fn
+        ),
     )
     k6 = fn(
         time + h,
-        **add_scaled(state, [k1, k2, k3, k4, k5], [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656], h),
+        **filter_kwargs(
+            add_scaled(state, [k1, k2, k3, k4, k5], [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656], h),
+            fn,
+        ),
     )
 
     # 5th order solution
@@ -140,24 +145,38 @@ def tsit5_step(
 
     if k1 is None:  # reuse k1 if available
         k1 = fn(time, **filter_kwargs(state, fn))
-    k2 = fn(time + h * c2, **add_scaled(state, [k1], [0.161], h))
-    k3 = fn(time + h * c3, **add_scaled(state, [k1, k2], [-0.0084806554923570, 0.3354806554923570], h))
+    k2 = fn(time + h * c2, **filter_kwargs(add_scaled(state, [k1], [0.161], h), fn))
+    k3 = fn(
+        time + h * c3, **filter_kwargs(add_scaled(state, [k1, k2], [-0.0084806554923570, 0.3354806554923570], h), fn)
+    )
     k4 = fn(
-        time + h * c4, **add_scaled(state, [k1, k2, k3], [2.897153057105494, -6.359448489975075, 4.362295432869581], h)
+        time + h * c4,
+        **filter_kwargs(
+            add_scaled(state, [k1, k2, k3], [2.897153057105494, -6.359448489975075, 4.362295432869581], h), fn
+        ),
     )
     k5 = fn(
         time + h * c5,
-        **add_scaled(
-            state, [k1, k2, k3, k4], [5.325864828439257, -11.74888356406283, 7.495539342889836, -0.09249506636175525], h
+        **filter_kwargs(
+            add_scaled(
+                state,
+                [k1, k2, k3, k4],
+                [5.325864828439257, -11.74888356406283, 7.495539342889836, -0.09249506636175525],
+                h,
+            ),
+            fn,
         ),
     )
     k6 = fn(
         time + h,
-        **add_scaled(
-            state,
-            [k1, k2, k3, k4, k5],
-            [5.86145544294270, -12.92096931784711, 8.159367898576159, -0.07158497328140100, -0.02826905039406838],
-            h,
+        **filter_kwargs(
+            add_scaled(
+                state,
+                [k1, k2, k3, k4, k5],
+                [5.86145544294270, -12.92096931784711, 8.159367898576159, -0.07158497328140100, -0.02826905039406838],
+                h,
+            ),
+            fn,
         ),
     )
 

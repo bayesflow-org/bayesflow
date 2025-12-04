@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Sequence
 
 import keras
@@ -239,12 +238,6 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
-            if integrate_kwargs["steps"] == "adaptive":
-                logging.warning(
-                    "Using adaptive integration for density estimation can lead to "
-                    "problems with autodiff. Switching to 200 fixed steps instead."
-                )
-                integrate_kwargs["steps"] = 200
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
@@ -273,12 +266,6 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
-            if integrate_kwargs["steps"] == "adaptive":
-                logging.warning(
-                    "Using adaptive integration for density estimation can lead to "
-                    "problems with autodiff. Switching to 200 fixed steps instead."
-                )
-                integrate_kwargs["steps"] = 200
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)

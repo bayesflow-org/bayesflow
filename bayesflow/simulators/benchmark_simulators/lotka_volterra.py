@@ -10,10 +10,10 @@ class LotkaVolterra(BenchmarkSimulator):
         X0: int = 30,
         Y0: int = 1,
         T: int | None = 20,
-        subsample: int = 10,
+        subsample: int | str = "original",
         flatten: bool = True,
         obs_noise: float = 0.1,
-        dt: float = None,
+        dt: float = 0.1,
         rng: np.random.Generator = None,
     ):
         """Lotka Volterra simulated benchmark.
@@ -27,14 +27,17 @@ class LotkaVolterra(BenchmarkSimulator):
             Initial number of predator species.
         T: int, optional, default: 20
             The duration (time horizon) of the simulation.
-        subsample: int or None, optional, default: 10
+        subsample: int, str or None, optional, default: 'original'
             The number of evenly spaced time points to return.
             If None, no subsampling will be performed and all T timepoints will be returned.
+            If 'original', the original benchmark task subsampling of 20 points is used.
         flatten: bool, optional, default: True
             A flag to indicate whether a 1D (`flatten=True`) or 2D (`flatten=False`)
             representation of the simulated data is returned.
         obs_noise: float, optional, default: 0.1
             The standard deviation of the log-normal likelihood.
+        dt: float, optional, default: 0.1
+            The time step size for the ODE solver.
         rng: np.random.Generator or None, optional, default: None
             An optional random number generator to use.
         """
@@ -95,21 +98,23 @@ class LotkaVolterra(BenchmarkSimulator):
         # Unpack parameter vector into scalars
         alpha, beta, gamma, delta = params
 
-        # Prepate time vector between 0 and T of length T
-        t_vec = np.linspace(0, self.T, int(1 / self.dt))
+        # Prepare time vector between 0 and T of length T
+        t_vec = np.arange(0, self.T + self.dt, self.dt)
 
         # Integrate using scipy and retain only infected (2-nd dimension)
         pp = odeint(self._deriv, x0, t_vec, args=(alpha, beta, gamma, delta))
 
         # Subsample evenly the specified number of points, if specified
-        if self.subsample is not None:
+        if self.subsample == "original":
+            pp = pp[::21]
+        elif self.subsample is not None:
             pp = pp[:: (self.T // self.subsample)]
 
-        # Ensure minimum count is 0, which will later pass by log(0 + 1)
-        pp[pp < 0] = 0.0
+        # Ensure minimum count is 0
+        pp = np.clip(pp, a_min=1e-10, a_max=10000.0)
 
         # Add noise, decide whether to flatten and return
-        x = self.rng.lognormal(np.log1p(pp), sigma=self.obs_noise)
+        x = self.rng.lognormal(np.log(pp), sigma=self.obs_noise)
         if self.flatten:
             return x.flatten()
         return x

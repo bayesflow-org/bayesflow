@@ -16,6 +16,7 @@ from bayesflow.utils import (
     integrate_stochastic,
     logging,
     tensor_utils,
+    STOCHASTIC_METHODS,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -39,13 +40,13 @@ class DiffusionModel(InferenceNetwork):
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
-        "dropout": 0.0,
+        "dropout": 0.05,
         "spectral_normalization": False,
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": 100,
+        "method": "two_step_adaptive",
+        "steps": "adaptive",
     }
 
     def __init__(
@@ -402,14 +403,13 @@ class DiffusionModel(InferenceNetwork):
         conditions: Tensor = None,
         density: bool = False,
         training: bool = False,
-        compositional: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
 
-        if integrate_kwargs["method"] == "euler_maruyama":
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
             raise ValueError("Stochastic methods are not supported for forward integration.")
 
         if density:
@@ -453,14 +453,13 @@ class DiffusionModel(InferenceNetwork):
         conditions: Tensor = None,
         density: bool = False,
         training: bool = False,
-        compositional: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
         if density:
-            if integrate_kwargs["method"] == "euler_maruyama":
+            if integrate_kwargs["method"] in STOCHASTIC_METHODS:
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
@@ -479,7 +478,7 @@ class DiffusionModel(InferenceNetwork):
             return x, log_density
 
         state = {"xz": z}
-        if integrate_kwargs["method"] == "euler_maruyama":
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
 
             def deltas(time, xz):
                 return {
@@ -490,18 +489,17 @@ class DiffusionModel(InferenceNetwork):
                 return {"xz": self.diffusion_term(xz, time=time, training=training)}
 
             score_fn = None
-            if "corrector_steps" in integrate_kwargs:
-                if integrate_kwargs["corrector_steps"] > 0:
+            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
 
-                    def score_fn(time, xz):
-                        return {
-                            "xz": self.score(
-                                xz,
-                                time=time,
-                                conditions=conditions,
-                                training=training,
-                            )
-                        }
+                def score_fn(time, xz):
+                    return {
+                        "xz": self.score(
+                            xz,
+                            time=time,
+                            conditions=conditions,
+                            training=training,
+                        )
+                    }
 
             state = integrate_stochastic(
                 drift_fn=deltas,

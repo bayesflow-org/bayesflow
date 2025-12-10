@@ -5,11 +5,7 @@ import numpy as np
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils import (
-    expand_right_as,
-    integrate,
-    integrate_stochastic,
-)
+from bayesflow.utils import expand_right_as, integrate, integrate_stochastic, STOCHASTIC_METHODS
 from bayesflow.utils.serialization import serializable
 from .diffusion_model import DiffusionModel
 from .schedules.noise_schedule import NoiseSchedule
@@ -318,7 +314,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
 
         if density:
-            if integrate_kwargs["method"] == "euler_maruyama":
+            if integrate_kwargs["method"] in STOCHASTIC_METHODS:
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
@@ -346,7 +342,7 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         state = {"xz": z}
 
-        if integrate_kwargs["method"] == "euler_maruyama":
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
 
             def deltas(time, xz):
                 return {
@@ -365,20 +361,19 @@ class CompositionalDiffusionModel(DiffusionModel):
                 return {"xz": self.diffusion_term(xz, time=time, training=training)}
 
             score_fn = None
-            if "corrector_steps" in integrate_kwargs:
-                if integrate_kwargs["corrector_steps"] > 0:
+            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
 
-                    def score_fn(time, xz):
-                        return {
-                            "xz": self.compositional_score(
-                                xz,
-                                time=time,
-                                conditions=conditions,
-                                compute_prior_score=compute_prior_score,
-                                mini_batch_size=mini_batch_size,
-                                training=training,
-                            )
-                        }
+                def score_fn(time, xz):
+                    return {
+                        "xz": self.compositional_score(
+                            xz,
+                            time=time,
+                            conditions=conditions,
+                            compute_prior_score=compute_prior_score,
+                            mini_batch_size=mini_batch_size,
+                            training=training,
+                        )
+                    }
 
             state = integrate_stochastic(
                 drift_fn=deltas,
@@ -390,7 +385,6 @@ class CompositionalDiffusionModel(DiffusionModel):
                 **integrate_kwargs,
             )
         else:
-            integrate_kwargs.pop("corrector_steps", None)
 
             def deltas(time, xz):
                 return {

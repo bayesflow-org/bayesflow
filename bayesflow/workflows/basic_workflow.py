@@ -291,7 +291,7 @@ class BasicWorkflow(Workflow):
         *,
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
-        compute_prior_score: Callable[[Mapping[str, np.ndarray]], np.ndarray],
+        compute_prior_score: Callable[[Mapping[str, np.ndarray]], Mapping[str, np.ndarray]],
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """

@@ -291,7 +291,7 @@ class BasicWorkflow(Workflow):
         *,
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
-        compute_prior_score: Callable[Mapping[str, np.ndarray], Mapping[str, np.ndarray]],
+        compute_prior_score: Callable[[Mapping[str, np.ndarray]], Mapping[str, np.ndarray]],
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -307,7 +307,7 @@ class BasicWorkflow(Workflow):
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
             Should have shape (n_datasets, n_compositional_conditions, ...).
-        compute_prior_score : Callable[dict[str, np.ndarray], dict[str, np.ndarray]]
+        compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]]
             A function that computes the log probability of samples under the prior distribution.
         **kwargs : dict, optional
             Additional keyword arguments passed to the approximator's sampling function.

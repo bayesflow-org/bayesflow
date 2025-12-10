@@ -32,14 +32,13 @@ class CompositionalDiffusionModel(DiffusionModel):
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
-        "dropout": 0.0,
+        "dropout": 0.05,
         "spectral_normalization": False,
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "euler_maruyama",
-        "corrector_steps": 1,
-        "steps": 100,
+        "method": "two_step_adaptive",
+        "steps": "adaptive",
     }
 
     def __init__(

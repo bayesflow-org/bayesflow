@@ -11,7 +11,6 @@ from .ot_utils import (
     search_for_conditional_weight,
     auto_regularization,
 )
-from .. import logging
 
 
 def sinkhorn(
@@ -129,10 +128,6 @@ def sinkhorn_plan(
 
     if regularization == "auto":
         regularization = auto_regularization(cost)
-        logging.debug(
-            f"Using regularization {float(keras.ops.convert_to_numpy(regularization))} "
-            f"(auto-tuned) for Sinkhorn-Knopp OT."
-        )
     elif regularization <= 0.0:
         raise ValueError(f"regularization must be positive, got {regularization}")
 
@@ -193,19 +188,6 @@ def sinkhorn_plan(
 
     steps = 0
     steps, plan = keras.ops.while_loop(cond, body, (steps, plan), maximum_iterations=max_steps)
-
-    steps_value = int(keras.ops.convert_to_numpy(steps))
-    has_nans = bool(keras.ops.convert_to_numpy(contains_nans(plan)))
-    converged = bool(keras.ops.convert_to_numpy(is_converged(plan)))
-
-    if has_nans:
-        logging.warning(f"Sinkhorn-Knopp produced NaNs after {steps_value} steps.")
-    elif converged:
-        logging.debug(f"Sinkhorn-Knopp converged after {steps_value} steps.")
-    elif max_steps is not None and steps_value >= max_steps:
-        logging.warning(f"Sinkhorn-Knopp did not converge after {max_steps} steps. ")
-    elif not converged:
-        logging.warning("Sinkhorn-Knopp did not converge.")
 
     if partial:
         plan = plan[:-1, :-1]

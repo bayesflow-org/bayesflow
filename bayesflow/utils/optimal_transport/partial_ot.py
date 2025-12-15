@@ -7,7 +7,7 @@ def augment_for_partial_ot(
     regularization: float,
     s: float,
     dummy_cost: float,
-):
+) -> tuple[Tensor, Tensor, Tensor]:
     """
     Augments a scaled cost matrix for partial OT via a dummy row/column and returns
     (cost_scaled_aug, a, b, real_slice), where:

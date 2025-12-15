@@ -8,7 +8,7 @@ from .euclidean import euclidean
 from .partial_ot import augment_for_partial_ot
 
 
-def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **kwargs) -> (Tensor, Tensor):
+def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **kwargs) -> Tensor:
     """
     Matches elements from x2 onto x1 using the Sinkhorn-Knopp algorithm.
 

@@ -1,12 +1,14 @@
 import keras
 
+from bayesflow.types import Tensor
+
 from .. import logging
 
 from .euclidean import euclidean
 from .partial_ot import augment_for_partial_ot
 
 
-def log_sinkhorn(x1, x2, seed: int = None, partial: bool = False, **kwargs):
+def log_sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **kwargs) -> Tensor:
     """
     Log-stabilized version of :py:func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn`.
     About 50% slower than the unstabilized version, so use only when you need numerical stability.
@@ -28,8 +30,8 @@ def log_sinkhorn(x1, x2, seed: int = None, partial: bool = False, **kwargs):
 
 
 def log_sinkhorn_plan(
-    x1,
-    x2,
+    x1: Tensor,
+    x2: Tensor,
     regularization: float = 1.0,
     rtol=1e-5,
     atol=1e-8,
@@ -37,7 +39,7 @@ def log_sinkhorn_plan(
     partial: bool = False,
     s: float = 0.8,
     dummy_cost: float = 1.0,
-):
+) -> Tensor:
     """
     Log-stabilized version of :py:func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn_plan`.
     About 50% slower than the unstabilized version, so use primarily when you need numerical stability.

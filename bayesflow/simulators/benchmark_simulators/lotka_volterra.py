@@ -116,5 +116,5 @@ class LotkaVolterra(BenchmarkSimulator):
         # Add noise, decide whether to flatten and return
         x = self.rng.lognormal(np.log(pp), sigma=self.obs_noise)
         if self.flatten:
-            return x.flatten()
+            return x.T.flatten()
         return x

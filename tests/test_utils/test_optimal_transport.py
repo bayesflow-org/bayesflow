@@ -16,43 +16,68 @@ def test_jit_compile():
     ot(x, y, regularization=1.0, seed=0, max_steps=10)
 
 
-@pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
-def test_shapes(method):
+@pytest.mark.parametrize(
+    ["method", "partial"],
+    [
+        ("log_sinkhorn", True),
+        ("log_sinkhorn", False),
+        ("sinkhorn", True),
+        ("sinkhorn", False),
+    ],
+)
+def test_shapes(method, partial):
     x = keras.random.normal((128, 8), seed=0)
     y = keras.random.normal((128, 8), seed=1)
 
-    ox, oy = optimal_transport(x, y, regularization=1.0, seed=0, max_steps=10, method=method)
+    ox, oy = optimal_transport(x, y, regularization=1.0, seed=0, max_steps=10, method=method, partial=partial)
 
     assert keras.ops.shape(ox) == keras.ops.shape(x)
     assert keras.ops.shape(oy) == keras.ops.shape(y)
 
 
-@pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
-def test_transport_cost_improves(method):
+@pytest.mark.parametrize(
+    ["method", "partial"],
+    [
+        ("log_sinkhorn", True),
+        ("log_sinkhorn", False),
+        ("sinkhorn", True),
+        ("sinkhorn", False),
+    ],
+)
+def test_transport_cost_improves(method, partial):
     x = keras.random.normal((128, 2), seed=0)
     y = keras.random.normal((128, 2), seed=1)
 
     before_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
 
-    x, y = optimal_transport(x, y, regularization=0.1, seed=0, max_steps=1000, method=method)
-
-    after_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
+    x_after, y_after = optimal_transport(
+        x, y, regularization=0.1, seed=0, max_steps=1000, method=method, partial=partial
+    )
+    after_cost = keras.ops.sum(keras.ops.norm(x_after - y_after, axis=-1))
 
     assert after_cost < before_cost
 
 
-@pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
-def test_assignment_is_optimal(method):
+@pytest.mark.parametrize(
+    ["method", "partial"],
+    [
+        ("log_sinkhorn", True),
+        ("log_sinkhorn", False),
+        ("sinkhorn", True),
+        ("sinkhorn", False),
+    ],
+)
+def test_assignment_is_optimal(method, partial):
     y = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(y)[0]), seed=0)
 
     x = keras.ops.take(y, p, axis=0)
 
     _, _, assignments = optimal_transport(
-        x, y, regularization=0.1, seed=0, max_steps=10_000, method=method, return_assignments=True
+        x, y, regularization=0.1, seed=0, max_steps=10_000, method=method, return_assignments=True, partial=partial
     )
 
-    # transport is stochastic, so it is expected that a small fraction of assignments do not match
+    # transport is stochastic, so it is expected that a small fraction of assignments does not match
     assert keras.ops.sum(assignments == p) > 14
 
 

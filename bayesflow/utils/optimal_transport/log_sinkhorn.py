@@ -102,8 +102,7 @@ def log_sinkhorn_plan(
     if regularization == "auto":
         regularization = auto_regularization(cost)
         logging.debug(f"Using regularization {regularization} (auto-tuned) for log Sinkhorn-Knopp OT.")
-
-    if regularization <= 0.0:
+    elif regularization <= 0.0:
         raise ValueError(f"regularization must be positive, got {regularization}")
 
     if conditions is not None and condition_ratio < 0.5:

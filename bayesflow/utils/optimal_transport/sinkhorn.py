@@ -134,13 +134,6 @@ def sinkhorn_plan(
         raise ValueError(f"regularization must be positive, got {regularization}")
 
     if conditions is not None and condition_ratio < 0.5:
-        n_shape = keras.ops.shape(x1)[0]
-        m_shape = keras.ops.shape(x2)[0]
-        if not keras.ops.equal(n_shape, m_shape):
-            raise ValueError(
-                f"Conditional OT requires equal batch sizes. Got n={n_shape}, m={m_shape}. "
-                f"Set condition_ratio=0.5 to disable conditioning."
-            )
         cond_cost = cosine_distance(conditions, conditions)
         cost, w = search_for_conditional_weight(
             M=cost, C=cond_cost, condition_ratio=condition_ratio, **filter_kwargs(kwargs, search_for_conditional_weight)

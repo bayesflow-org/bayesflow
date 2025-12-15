@@ -1225,7 +1225,7 @@ def integrate_stochastic(
     steps: int | Literal["adaptive"] = 100,
     method: str = "euler_maruyama",
     min_steps: int = 50,
-    max_steps: int = 10_000,
+    max_steps: int = 1_000,
     score_fn: Callable = None,
     corrector_steps: int = 0,
     noise_schedule=None,
@@ -1247,7 +1247,8 @@ def integrate_stochastic(
         steps: Number of steps or 'adaptive' for adaptive step sizing. Only 'shark' method supports adaptive steps.
         method: Integration method to use, e.g., 'euler_maruyama' or 'shark'.
         min_steps: Minimum number of steps for adaptive integration.
-        max_steps: Maximum number of steps for adaptive integration.
+        max_steps: Maximum number of steps for adaptive integration. We pre-generate noise up to this many steps,
+            which may impact memory usage.
         score_fn: Optional score function for predictor-corrector sampling.
         corrector_steps: Number of corrector steps to take after each predictor step.
         noise_schedule: Noise schedule object for computing alpha_t in corrector.

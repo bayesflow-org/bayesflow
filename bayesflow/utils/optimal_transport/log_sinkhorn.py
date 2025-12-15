@@ -101,7 +101,10 @@ def log_sinkhorn_plan(
 
     if regularization == "auto":
         regularization = auto_regularization(cost)
-        logging.debug(f"Using regularization {regularization} (auto-tuned) for log Sinkhorn-Knopp OT.")
+        logging.debug(
+            f"Using regularization {float(keras.ops.convert_to_numpy(regularization))} (auto-tuned)"
+            f" for log Sinkhorn-Knopp OT."
+        )
     elif regularization <= 0.0:
         raise ValueError(f"regularization must be positive, got {regularization}")
 

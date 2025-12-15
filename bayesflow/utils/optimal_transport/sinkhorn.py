@@ -5,15 +5,21 @@ from bayesflow.types import Tensor
 from .. import logging
 
 from .euclidean import euclidean
+from .partial_ot import augment_for_partial_ot
 
 
-def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, **kwargs) -> (Tensor, Tensor):
+def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **kwargs) -> (Tensor, Tensor):
     """
     Matches elements from x2 onto x1 using the Sinkhorn-Knopp algorithm.
 
     Sinkhorn-Knopp is an iterative algorithm that repeatedly normalizes the cost matrix into a
     transport plan, containing assignment probabilities.
     The permutation is then sampled randomly according to the transport plan.
+
+    Partial optimal transport can be performed by setting `partial=True` to reduce the effect of misspecified mappings
+    in mini-batch settings [1].
+
+    [1] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
 
     :param x1: Tensor of shape (n, ...)
         Samples from the first distribution.
@@ -27,11 +33,17 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, **kwargs) -> (Tensor, Ten
     :param seed: Random seed to use for sampling indices.
         Default: None, which means the seed will be auto-determined for non-compiled contexts.
 
+    :param partial: Whether to use partial optimal transport.
+        Default: False
+
     :return: Tensor of shape (n,)
         Assignment indices for x2.
 
     """
-    plan = sinkhorn_plan(x1, x2, **kwargs)
+    plan = sinkhorn_plan(x1, x2, partial=partial, **kwargs)
+
+    if partial:  # Ensure assignments are always among real targets
+        plan = plan[:-1, :-1]
 
     # we sample from log(plan) to receive assignments of length n, corresponding to indices of x2
     # such that x2[assignments] matches x1
@@ -48,6 +60,9 @@ def sinkhorn_plan(
     max_steps: int = None,
     rtol: float = 1e-5,
     atol: float = 1e-8,
+    partial: bool = False,
+    s: float = 0.8,
+    dummy_cost: float = 1.0,
 ) -> Tensor:
     """
     Computes the Sinkhorn-Knopp optimal transport plan.
@@ -70,16 +85,34 @@ def sinkhorn_plan(
     :param atol: Absolute tolerance for convergence.
         Default: 1e-8.
 
+    :param partial: Whether to use partial optimal transport.
+        Default: False
+
+    :param s: Proportion of mass to transport in partial optimal transport.
+        Only used if `partial=True`.
+        Default: 0.8
+
+    :param dummy_cost: Cost for dummy assignments in partial optimal transport.
+        Only used if `partial=True`.
+        Default: 1.0
+
     :return: Tensor of shape (n, m)
         The transport probabilities.
     """
     cost = euclidean(x1, x2)
     cost_scaled = -cost / regularization
 
+    if partial:
+        cost_scaled, n, m = augment_for_partial_ot(
+            cost_scaled=cost_scaled, regularization=regularization, s=s, dummy_cost=dummy_cost
+        )
+    else:
+        # balanced uniform marginals (scalars)
+        n, m = keras.ops.shape(cost_scaled)
+
     # initialize transport plan from a gaussian kernel
     # (more numerically stable version of keras.ops.exp(-cost/regularization))
     plan = keras.ops.exp(cost_scaled - keras.ops.max(cost_scaled))
-    n, m = keras.ops.shape(cost)
 
     def contains_nans(plan):
         return keras.ops.any(keras.ops.isnan(plan))

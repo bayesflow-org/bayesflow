@@ -1,11 +1,17 @@
+from typing import Literal
+
 import keras
 
 from bayesflow.types import Tensor
-
+from bayesflow.utils import filter_kwargs
+from .ot_utils import (
+    euclidean,
+    cosine_distance,
+    augment_for_partial_ot,
+    search_for_conditional_weight,
+    auto_regularization,
+)
 from .. import logging
-
-from .distances import euclidean, cosine_distance
-from .partial_ot import augment_for_partial_ot, search_for_conditional_weight
 
 
 def sinkhorn(
@@ -19,7 +25,8 @@ def sinkhorn(
     The permutation is then sampled randomly according to the transport plan.
 
     Partial optimal transport can be performed by setting `partial=True` to reduce the effect of misspecified mappings
-    in mini-batch settings [1].
+    in mini-batch settings [1]. For conditional optimal transport, conditions can be provided along with a
+    `condition_ratio` [2].
 
     [1] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
     [2] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
@@ -50,9 +57,6 @@ def sinkhorn(
     """
     plan = sinkhorn_plan(x1, x2, conditions=conditions, partial=partial, **kwargs)
 
-    if partial:  # Ensure assignments are always among real targets
-        plan = plan[:-1, :-1]
-
     # we sample from log(plan) to receive assignments of length n, corresponding to indices of x2
     # such that x2[assignments] matches x1
     assignments = keras.random.categorical(keras.ops.log(plan), num_samples=1, seed=seed)
@@ -65,7 +69,7 @@ def sinkhorn_plan(
     x1: Tensor,
     x2: Tensor,
     conditions: Tensor | None = None,
-    regularization: float = 1.0,
+    regularization: Literal["auto"] | float = "auto",
     max_steps: int | None = None,
     rtol: float = 1e-5,
     atol: float = 1e-8,
@@ -118,21 +122,45 @@ def sinkhorn_plan(
     :return: Tensor of shape (n, m)
         The transport probabilities.
     """
+    if partial and not (0.0 < s < 1.0):
+        raise ValueError(f"s must be in (0, 1) for partial OT, got {s}")
+
     cost = euclidean(x1, x2)
 
+    if regularization == "auto":
+        regularization = auto_regularization(cost)
+        logging.debug(f"Using regularization {regularization} (auto-tuned) for Sinkhorn-Knopp OT.")
+
+    if regularization <= 0.0:
+        raise ValueError(f"regularization must be positive, got {regularization}")
+
     if conditions is not None and condition_ratio < 0.5:
+        n_shape = keras.ops.shape(x1)[0]
+        m_shape = keras.ops.shape(x2)[0]
+        if not keras.ops.equal(n_shape, m_shape):
+            raise ValueError(
+                f"Conditional OT requires equal batch sizes. Got n={n_shape}, m={m_shape}. "
+                f"Set condition_ratio=0.5 to disable conditioning."
+            )
         cond_cost = cosine_distance(conditions, conditions)
-        cost, w = search_for_conditional_weight(M=cost, C=cond_cost, condition_ratio=condition_ratio, **kwargs)
+        cost, w = search_for_conditional_weight(
+            M=cost, C=cond_cost, condition_ratio=condition_ratio, **filter_kwargs(kwargs, search_for_conditional_weight)
+        )
 
     cost_scaled = -cost / regularization
 
     if partial:
-        cost_scaled, n, m = augment_for_partial_ot(
+        cost_scaled, a, b = augment_for_partial_ot(
             cost_scaled=cost_scaled, regularization=regularization, s=s, dummy_cost=dummy_cost
         )
+        # a and b are vectors of shape (n,) and (m,)
+        a_reshape = keras.ops.reshape(a, (-1, 1))  # (n, 1)
+        b_reshape = keras.ops.reshape(b, (1, -1))  # (1, m)
     else:
         # balanced uniform marginals (scalars)
         n, m = keras.ops.shape(cost_scaled)
+        a_reshape = 1.0 / keras.ops.cast(n, cost_scaled.dtype)
+        b_reshape = 1.0 / keras.ops.cast(m, cost_scaled.dtype)
 
     # initialize transport plan from a gaussian kernel
     # (more numerically stable version of keras.ops.exp(-cost/regularization))
@@ -143,8 +171,18 @@ def sinkhorn_plan(
 
     def is_converged(plan):
         # for convergence, the target marginals must match
-        conv0 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), 1.0 / m, rtol=rtol, atol=atol))
-        conv1 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), 1.0 / n, rtol=rtol, atol=atol))
+        if partial:
+            # Check against vector marginals
+            conv0 = keras.ops.all(
+                keras.ops.isclose(keras.ops.sum(plan, axis=0, keepdims=True), b_reshape, rtol=rtol, atol=atol)
+            )
+            conv1 = keras.ops.all(
+                keras.ops.isclose(keras.ops.sum(plan, axis=1, keepdims=True), a_reshape, rtol=rtol, atol=atol)
+            )
+        else:
+            # Check against scalar marginals
+            conv0 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), b_reshape, rtol=rtol, atol=atol))
+            conv1 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), a_reshape, rtol=rtol, atol=atol))
         return conv0 & conv1
 
     def cond(_, plan):
@@ -153,8 +191,8 @@ def sinkhorn_plan(
 
     def body(steps, plan):
         # Sinkhorn-Knopp: repeatedly normalize the transport plan along each dimension
-        plan = plan / keras.ops.sum(plan, axis=0, keepdims=True) * (1.0 / m)
-        plan = plan / keras.ops.sum(plan, axis=1, keepdims=True) * (1.0 / n)
+        plan = plan / keras.ops.sum(plan, axis=0, keepdims=True) * b_reshape
+        plan = plan / keras.ops.sum(plan, axis=1, keepdims=True) * a_reshape
 
         return steps + 1, plan
 
@@ -165,20 +203,28 @@ def sinkhorn_plan(
         pass
 
     def log_steps():
-        msg = "Sinkhorn-Knopp converged after {} steps."
-
-        logging.debug(msg, max_steps)
+        msg = f"Sinkhorn-Knopp converged after {steps} steps."
+        logging.debug(msg)
 
     def warn_convergence():
-        msg = "Sinkhorn-Knopp did not converge after {}."
-
-        logging.warning(msg, max_steps)
+        if max_steps is not None:
+            msg = f"Sinkhorn-Knopp did not converge after {max_steps} steps."
+        else:
+            msg = "Sinkhorn-Knopp did not converge."
+        logging.warning(msg)
 
     def warn_nans():
-        msg = "Sinkhorn-Knopp produced NaNs after {} steps."
-        logging.warning(msg, steps)
+        msg = f"Sinkhorn-Knopp produced NaNs after {steps} steps."
+        logging.warning(msg)
 
     keras.ops.cond(contains_nans(plan), warn_nans, do_nothing)
-    keras.ops.cond(is_converged(plan), log_steps, warn_convergence)
+    if max_steps is not None:
+        keras.ops.cond(
+            is_converged(plan), log_steps, lambda: keras.ops.cond(steps >= max_steps, warn_convergence, do_nothing)
+        )
+    else:
+        keras.ops.cond(is_converged(plan), log_steps, do_nothing)
 
+    if partial:
+        plan = plan[:-1, :-1]
     return plan

@@ -72,7 +72,7 @@ def test_transport_cost_improves(method, partial, condition_ratio):
         x,
         y,
         conditions=cond,
-        regularization=0.1,
+        regularization="auto",
         seed=0,
         max_steps=1000,
         method=method,
@@ -100,7 +100,7 @@ def test_assignment_is_optimal(method, partial):
     x = keras.ops.take(y, p, axis=0)
 
     _, _, assignments = optimal_transport(
-        x, y, regularization=0.1, seed=0, max_steps=10_000, method=method, return_assignments=True, partial=partial
+        x, y, regularization="auto", seed=0, max_steps=10_000, method=method, return_assignments=True, partial=partial
     )
 
     # transport is stochastic, so it is expected that a small fraction of assignments does not match
@@ -149,7 +149,7 @@ def test_sinkhorn_plan_aligns_with_pot():
         pytest.skip("Need to install POT to run this test.")
 
     from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
-    from bayesflow.utils.optimal_transport.euclidean import euclidean
+    from bayesflow.utils.optimal_transport.ot_utils import euclidean
 
     x1 = keras.random.normal((10, 3), seed=0)
     x2 = keras.random.normal((20, 3), seed=1)
@@ -202,7 +202,7 @@ def test_log_sinkhorn_plan_aligns_with_pot():
         pytest.skip("Need to install POT to run this test.")
 
     from bayesflow.utils.optimal_transport.log_sinkhorn import log_sinkhorn_plan
-    from bayesflow.utils.optimal_transport.euclidean import euclidean
+    from bayesflow.utils.optimal_transport.ot_utils import euclidean
 
     x1 = keras.random.normal((100, 3), seed=0)
     x2 = keras.random.normal((200, 3), seed=1)

@@ -167,31 +167,18 @@ def log_sinkhorn_plan(
     steps = 0
     steps, log_plan = keras.ops.while_loop(cond, body, (steps, log_plan), maximum_iterations=max_steps)
 
-    def do_nothing():
-        pass
+    steps_value = int(keras.ops.convert_to_numpy(steps))
+    has_nans = bool(keras.ops.convert_to_numpy(contains_nans(log_plan)))
+    converged = bool(keras.ops.convert_to_numpy(is_converged(log_plan)))
 
-    def log_steps():
-        msg = f"Log-Sinkhorn-Knopp converged after {steps} steps."
-        logging.debug(msg)
-
-    def warn_convergence():
-        if max_steps is not None:
-            msg = f"Log-Sinkhorn-Knopp did not converge after {max_steps} steps."
-        else:
-            msg = "Log-Sinkhorn-Knopp did not converge."
-        logging.warning(msg)
-
-    def warn_nans():
-        msg = f"Log-Sinkhorn-Knopp produced NaNs after {steps} steps."
-        logging.warning(msg)
-
-    keras.ops.cond(contains_nans(log_plan), warn_nans, do_nothing)
-    if max_steps is not None:
-        keras.ops.cond(
-            is_converged(log_plan), log_steps, lambda: keras.ops.cond(steps >= max_steps, warn_convergence, do_nothing)
-        )
-    else:
-        keras.ops.cond(is_converged(log_plan), log_steps, do_nothing)
+    if has_nans:
+        logging.warning(f"Log-Sinkhorn-Knopp produced NaNs after {steps_value} steps.")
+    elif converged:
+        logging.debug(f"Log-Sinkhorn-Knopp converged after {steps_value} steps.")
+    elif max_steps is not None and steps_value >= max_steps:
+        logging.warning(f"Log-Sinkhorn-Knopp did not converge after {max_steps} steps. ")
+    elif not converged:
+        logging.warning("Log-Sinkhorn-Knopp did not converge.")
 
     if partial:
         return log_plan[:-1, :-1]

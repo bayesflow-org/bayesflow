@@ -17,41 +17,67 @@ def test_jit_compile():
 
 
 @pytest.mark.parametrize(
-    ["method", "partial"],
+    ["method", "partial", "condition_ratio"],
     [
-        ("log_sinkhorn", True),
-        ("log_sinkhorn", False),
-        ("sinkhorn", True),
-        ("sinkhorn", False),
+        ("log_sinkhorn", True, 0.01),
+        ("log_sinkhorn", False, 0.5),
+        ("sinkhorn", True, 0.01),
+        ("sinkhorn", False, 0.5),
     ],
 )
-def test_shapes(method, partial):
+def test_shapes(method, partial, condition_ratio):
     x = keras.random.normal((128, 8), seed=0)
     y = keras.random.normal((128, 8), seed=1)
 
-    ox, oy = optimal_transport(x, y, regularization=1.0, seed=0, max_steps=10, method=method, partial=partial)
+    cond = None
+    if condition_ratio < 0.5:
+        cond = keras.random.normal((128, 4, 1), seed=2)
+
+    ox, oy = optimal_transport(
+        x,
+        y,
+        conditions=cond,
+        regularization=1.0,
+        seed=0,
+        max_steps=10,
+        method=method,
+        partial=partial,
+        condition_ratio=condition_ratio,
+    )
 
     assert keras.ops.shape(ox) == keras.ops.shape(x)
     assert keras.ops.shape(oy) == keras.ops.shape(y)
 
 
 @pytest.mark.parametrize(
-    ["method", "partial"],
+    ["method", "partial", "condition_ratio"],
     [
-        ("log_sinkhorn", True),
-        ("log_sinkhorn", False),
-        ("sinkhorn", True),
-        ("sinkhorn", False),
+        ("log_sinkhorn", True, 0.01),
+        ("log_sinkhorn", False, 0.5),
+        ("sinkhorn", True, 0.01),
+        ("sinkhorn", False, 0.5),
     ],
 )
-def test_transport_cost_improves(method, partial):
+def test_transport_cost_improves(method, partial, condition_ratio):
     x = keras.random.normal((128, 2), seed=0)
     y = keras.random.normal((128, 2), seed=1)
+
+    cond = None
+    if condition_ratio < 0.5:
+        cond = keras.random.normal((128, 4, 1), seed=2)
 
     before_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
 
     x_after, y_after = optimal_transport(
-        x, y, regularization=0.1, seed=0, max_steps=1000, method=method, partial=partial
+        x,
+        y,
+        conditions=cond,
+        regularization=0.1,
+        seed=0,
+        max_steps=1000,
+        method=method,
+        partial=partial,
+        condition_ratio=condition_ratio,
     )
     after_cost = keras.ops.sum(keras.ops.norm(x_after - y_after, axis=-1))
 

@@ -1,5 +1,7 @@
 import keras
 
+from bayesflow.types import Tensor
+
 from .log_sinkhorn import log_sinkhorn
 from .sinkhorn import sinkhorn
 
@@ -11,7 +13,9 @@ methods = {
 }
 
 
-def optimal_transport(x1, x2, method="log_sinkhorn", return_assignments=False, **kwargs):
+def optimal_transport(
+    x1: Tensor, x2: Tensor, conditions: Tensor | None = None, method="log_sinkhorn", return_assignments=False, **kwargs
+):
     """Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method
     and cost matrix used.
 
@@ -27,6 +31,10 @@ def optimal_transport(x1, x2, method="log_sinkhorn", return_assignments=False, *
     :param x2: Tensor of shape (m, ...)
         Samples from the second distribution.
 
+    :param conditions: Optional tensor of shape (k, ...)
+        Conditions to be used in conditional optimal transport settings.
+        Default: None
+
     :param method: Method used to compute the transport cost.
         Default: 'log_sinkhorn'
 
@@ -38,7 +46,7 @@ def optimal_transport(x1, x2, method="log_sinkhorn", return_assignments=False, *
     :return: Tensors of shapes (n, ...) and (m, ...)
         x1 and x2 in optimal transport permutation order.
     """
-    assignments = methods[method.lower()](x1, x2, **kwargs)
+    assignments = methods[method.lower()](x1, x2, conditions, **kwargs)
     x2 = keras.ops.take(x2, assignments, axis=0)
 
     if return_assignments:

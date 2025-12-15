@@ -4,11 +4,13 @@ from bayesflow.types import Tensor
 
 from .. import logging
 
-from .euclidean import euclidean
-from .partial_ot import augment_for_partial_ot
+from .distances import euclidean, cosine_distance
+from .partial_ot import augment_for_partial_ot, search_for_conditional_weight
 
 
-def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **kwargs) -> Tensor:
+def sinkhorn(
+    x1: Tensor, x2: Tensor, conditions: Tensor | None = None, seed: int = None, partial: bool = False, **kwargs
+) -> Tensor:
     """
     Matches elements from x2 onto x1 using the Sinkhorn-Knopp algorithm.
 
@@ -20,6 +22,8 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **
     in mini-batch settings [1].
 
     [1] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
+    [2] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
+        Conditional Flow-Based Generation"
 
     :param x1: Tensor of shape (n, ...)
         Samples from the first distribution.
@@ -27,8 +31,9 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **
     :param x2: Tensor of shape (m, ...)
         Samples from the second distribution.
 
-    :param kwargs:
-        Additional keyword arguments that are passed to :py:func:`sinkhorn_plan`.
+    :param conditions: Optional tensor of shape (k, ...)
+        Conditions to be used in conditional optimal transport settings.
+        Default: None
 
     :param seed: Random seed to use for sampling indices.
         Default: None, which means the seed will be auto-determined for non-compiled contexts.
@@ -36,11 +41,14 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **
     :param partial: Whether to use partial optimal transport.
         Default: False
 
+    :param kwargs:
+        Additional keyword arguments that are passed to :py:func:`sinkhorn_plan`.
+
     :return: Tensor of shape (n,)
         Assignment indices for x2.
 
     """
-    plan = sinkhorn_plan(x1, x2, partial=partial, **kwargs)
+    plan = sinkhorn_plan(x1, x2, conditions=conditions, partial=partial, **kwargs)
 
     if partial:  # Ensure assignments are always among real targets
         plan = plan[:-1, :-1]
@@ -56,13 +64,16 @@ def sinkhorn(x1: Tensor, x2: Tensor, seed: int = None, partial: bool = False, **
 def sinkhorn_plan(
     x1: Tensor,
     x2: Tensor,
+    conditions: Tensor | None = None,
     regularization: float = 1.0,
-    max_steps: int = None,
+    max_steps: int | None = None,
     rtol: float = 1e-5,
     atol: float = 1e-8,
+    condition_ratio: float = 0.5,
     partial: bool = False,
     s: float = 0.8,
     dummy_cost: float = 1.0,
+    **kwargs,
 ) -> Tensor:
     """
     Computes the Sinkhorn-Knopp optimal transport plan.
@@ -72,6 +83,9 @@ def sinkhorn_plan(
 
     :param x2: Tensor of shape (m, ...)
         Samples from the second distribution.
+
+    :param conditions: Optional tensor of shape (m, ...)
+        Conditions to be used in conditional optimal transport settings.
 
     :param regularization: Regularization parameter.
         Controls the standard deviation of the Gaussian kernel.
@@ -84,6 +98,11 @@ def sinkhorn_plan(
 
     :param atol: Absolute tolerance for convergence.
         Default: 1e-8.
+
+    :param condition_ratio: Ratio which measures the proportion of samples that are considered “potential optimal
+        transport candidates”. 0.5 is equivalent to no conditioning. [2] recommends a ratio of 0.01.
+        Only used if `conditions` is not None.
+        Default: 0.0
 
     :param partial: Whether to use partial optimal transport.
         Default: False
@@ -100,6 +119,11 @@ def sinkhorn_plan(
         The transport probabilities.
     """
     cost = euclidean(x1, x2)
+
+    if conditions is not None and condition_ratio < 0.5:
+        cond_cost = cosine_distance(conditions, conditions)
+        cost, w = search_for_conditional_weight(M=cost, C=cond_cost, condition_ratio=condition_ratio, **kwargs)
+
     cost_scaled = -cost / regularization
 
     if partial:

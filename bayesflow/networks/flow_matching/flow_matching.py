@@ -313,7 +313,7 @@ class FlowMatching(InferenceNetwork):
                 # since the data is possibly noisy and may contain outliers, it is better
                 # to possibly drop some samples from x1 than from x0
                 # in the marginal over multiple batches, this is not a problem
-                x0, x1, assignments, conditions = optimal_transport(
+                x0, x1, conditions, assignments = optimal_transport(
                     x0,
                     x1,
                     conditions=conditions,

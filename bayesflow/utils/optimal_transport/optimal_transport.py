@@ -49,7 +49,11 @@ def optimal_transport(
     assignments = methods[method.lower()](x1, x2, conditions, **kwargs)
     x2 = keras.ops.take(x2, assignments, axis=0)
 
-    if return_assignments:
-        return x1, x2, assignments
+    if conditions is not None:
+        # conditions must be resampled along with x1
+        conditions = keras.ops.take(conditions, assignments, axis=0)
 
-    return x1, x2
+    if return_assignments:
+        return x1, x2, conditions, assignments
+
+    return x1, x2, conditions

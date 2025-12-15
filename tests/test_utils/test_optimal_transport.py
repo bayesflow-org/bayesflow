@@ -33,7 +33,7 @@ def test_shapes(method, partial, condition_ratio):
     if condition_ratio < 0.5:
         cond = keras.random.normal((128, 4, 1), seed=2)
 
-    ox, oy = optimal_transport(
+    ox, oy, ocond = optimal_transport(
         x,
         y,
         conditions=cond,
@@ -68,7 +68,7 @@ def test_transport_cost_improves(method, partial, condition_ratio):
 
     before_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
 
-    x_after, y_after = optimal_transport(
+    x_after, y_after, cond_after = optimal_transport(
         x,
         y,
         conditions=cond,
@@ -99,7 +99,7 @@ def test_assignment_is_optimal(method, partial):
 
     x = keras.ops.take(y, p, axis=0)
 
-    _, _, assignments = optimal_transport(
+    _, _, _, assignments = optimal_transport(
         x, y, regularization="auto", seed=0, max_steps=10_000, method=method, return_assignments=True, partial=partial
     )
 
@@ -127,7 +127,9 @@ def test_assignment_aligns_with_pot():
     pot_assignments = keras.random.categorical(keras.ops.log(pot_plan), num_samples=1, seed=0)
     pot_assignments = keras.ops.squeeze(pot_assignments, axis=-1)
 
-    _, _, assignments = optimal_transport(x, y, regularization=1e-3, seed=0, max_steps=10_000, return_assignments=True)
+    _, _, _, assignments = optimal_transport(
+        x, y, regularization=1e-3, seed=0, max_steps=10_000, return_assignments=True
+    )
 
     assert_allclose(pot_assignments, assignments)
 

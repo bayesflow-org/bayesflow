@@ -15,9 +15,7 @@ from .ot_utils import (
 from .. import logging
 
 
-def sinkhorn(
-    x1: Tensor, x2: Tensor, conditions: Tensor | None = None, seed: int = None, partial: bool = False, **kwargs
-) -> Tensor:
+def sinkhorn(x1: Tensor, x2: Tensor, conditions: Tensor | None = None, seed: int = None, **kwargs) -> Tensor:
     """
     Matches elements from x2 onto x1 using the Sinkhorn-Knopp algorithm.
 
@@ -47,9 +45,6 @@ def sinkhorn(
     :param seed: Random seed to use for sampling indices.
         Default: None, which means the seed will be auto-determined for non-compiled contexts.
 
-    :param partial: Whether to use partial optimal transport.
-        Default: False
-
     :param kwargs:
         Additional keyword arguments that are passed to :py:func:`sinkhorn_plan`.
 
@@ -57,7 +52,7 @@ def sinkhorn(
         Assignment indices for x2.
 
     """
-    plan = sinkhorn_plan(x1, x2, conditions=conditions, partial=partial, **kwargs)
+    plan = sinkhorn_plan(x1, x2, conditions=conditions, **kwargs)
 
     # we sample from log(plan) to receive assignments of length n, corresponding to indices of x2
     # such that x2[assignments] matches x1

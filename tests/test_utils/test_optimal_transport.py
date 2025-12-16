@@ -17,15 +17,15 @@ def test_jit_compile():
 
 
 @pytest.mark.parametrize(
-    ["method", "partial", "condition_ratio"],
+    ["method", "partial_s", "condition_ratio"],
     [
-        ("log_sinkhorn", True, 0.01),
-        ("log_sinkhorn", False, 0.5),
-        ("sinkhorn", True, 0.01),
-        ("sinkhorn", False, 0.5),
+        ("log_sinkhorn", 1.0, 0.01),
+        ("log_sinkhorn", 0.8, 0.5),
+        ("sinkhorn", 1.0, 0.01),
+        ("sinkhorn", 0.8, 0.5),
     ],
 )
-def test_shapes(method, partial, condition_ratio):
+def test_shapes(method, partial_s, condition_ratio):
     x = keras.random.normal((128, 8), seed=0)
     y = keras.random.normal((128, 8), seed=1)
 
@@ -41,7 +41,7 @@ def test_shapes(method, partial, condition_ratio):
         seed=0,
         max_steps=10,
         method=method,
-        partial=partial,
+        partial_s=partial_s,
         condition_ratio=condition_ratio,
     )
 
@@ -52,15 +52,15 @@ def test_shapes(method, partial, condition_ratio):
 
 
 @pytest.mark.parametrize(
-    ["method", "partial", "condition_ratio"],
+    ["method", "partial_s", "condition_ratio"],
     [
-        ("log_sinkhorn", True, 0.01),
-        ("log_sinkhorn", False, 0.5),
-        ("sinkhorn", True, 0.01),
-        ("sinkhorn", False, 0.5),
+        ("log_sinkhorn", 1.0, 0.01),
+        ("log_sinkhorn", 0.8, 0.5),
+        ("sinkhorn", 1.0, 0.01),
+        ("sinkhorn", 0.8, 0.5),
     ],
 )
-def test_transport_cost_improves(method, partial, condition_ratio):
+def test_transport_cost_improves(method, partial_s, condition_ratio):
     x = keras.random.normal((128, 2), seed=0)
     y = keras.random.normal((128, 2), seed=1)
 
@@ -78,7 +78,7 @@ def test_transport_cost_improves(method, partial, condition_ratio):
         seed=0,
         max_steps=1000,
         method=method,
-        partial=partial,
+        partial_s=partial_s,
         condition_ratio=condition_ratio,
     )
     after_cost = keras.ops.sum(keras.ops.norm(x_after - y_after, axis=-1))
@@ -87,21 +87,28 @@ def test_transport_cost_improves(method, partial, condition_ratio):
 
 
 @pytest.mark.parametrize(
-    ["method", "partial"],
+    ["method", "partial_s"],
     [
-        ("log_sinkhorn", True),
-        ("log_sinkhorn", False),
-        ("sinkhorn", True),
-        ("sinkhorn", False),
+        ("log_sinkhorn", 1.0),
+        ("log_sinkhorn", 0.8),
+        ("sinkhorn", 1.0),
+        ("sinkhorn", 0.8),
     ],
 )
-def test_assignment_is_optimal(method, partial):
+def test_assignment_is_optimal(method, partial_s):
     y = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(y)[0]), seed=0)
     x = keras.ops.take(y, p, axis=0)
 
     _, _, _, assignments = optimal_transport(
-        x, y, regularization="auto", seed=0, max_steps=10_000, method=method, return_assignments=True, partial=partial
+        x,
+        y,
+        regularization="auto",
+        seed=0,
+        max_steps=10_000,
+        method=method,
+        return_assignments=True,
+        partial_s=partial_s,
     )
 
     # transport is stochastic, so it is expected that a small fraction of assignments does not match
@@ -266,3 +273,47 @@ def test_sinkhorn_vs_log_sinkhorn_consistency():
     plan_log_sinkhorn = keras.ops.exp(log_sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-6))
 
     assert_allclose(plan_sinkhorn, plan_log_sinkhorn, rtol=1e-3)
+
+
+@pytest.mark.parametrize(
+    ["method", "s"],
+    [
+        ("log_sinkhorn", 0.3),
+        ("log_sinkhorn", 0.8),
+        ("sinkhorn", 0.4),
+        ("sinkhorn", 0.7),
+    ],
+)
+def test_partial_ot_leaves_unmatched_mass(method, s):
+    """Test that partial OT correctly leaves a fraction of mass unmatched."""
+    if method == "sinkhorn":
+        from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan as sinkhorn
+    else:
+        from bayesflow.utils.optimal_transport.log_sinkhorn import log_sinkhorn_plan as sinkhorn
+    n, m = 20, 20
+
+    # Create two distinct distributions
+    x = keras.random.normal((n, 2), seed=42)
+    y = keras.random.normal((m, 2), seed=123)
+
+    # Get the transport plan with partial OT
+    plan = sinkhorn(x, y, regularization="auto", max_steps=10_000, partial_s=s)
+
+    if method == "log_sinkhorn":
+        plan = keras.ops.exp(plan)
+
+    # Check marginal sums: each should be approximately s/n and s/m
+    row_sums = keras.ops.sum(plan, axis=1)
+    col_sums = keras.ops.sum(plan, axis=0)
+
+    expected_row_mass = s / n
+    expected_col_mass = s / m
+
+    # Each row should have approximately s/n mass (allowing small numerical error)
+    assert keras.ops.all(keras.ops.abs(row_sums - expected_row_mass) < 0.05)
+
+    # Each column should have approximately s/m mass
+    assert keras.ops.all(keras.ops.abs(col_sums - expected_col_mass) < 0.05)
+
+    # Total transported mass should be approximately s
+    assert abs(float(keras.ops.sum(plan)) - s) < 1e-3

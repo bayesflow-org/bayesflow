@@ -51,12 +51,10 @@ def augment_for_partial_ot(
     dummy_cost: float,
 ) -> tuple[Tensor, Tensor, Tensor]:
     """
-    Augments a scaled cost matrix for partial OT via a dummy row/column and returns
-    (cost_scaled_aug, a, b, real_slice), where:
-      - cost_scaled_aug has shape (n+1, m+1)
-      - a is row-marginal vector of shape (n+1,)
-      - b is col-marginal vector of shape (m+1,)
-      - real_slice is a tuple of slices to extract the real-to-real block.
+    Augments a scaled cost matrix for partial OT via a dummy row/column.
+
+    For partial OT with mass s ∈ (0,1), we transport s proportion of mass
+    and leave (1-s) unmatched via dummy nodes.
     """
     # cost_scaled is expected to be -C/eps with shape (n, m)
     A = keras.ops.convert_to_tensor(dummy_cost, dtype=cost_scaled.dtype)

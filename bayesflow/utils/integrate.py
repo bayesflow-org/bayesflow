@@ -3,6 +3,7 @@ from typing import Dict, Tuple, Optional
 from functools import partial
 
 import keras
+from keras import backend as K
 
 import numpy as np
 from typing import Literal, Union
@@ -491,6 +492,13 @@ def integrate(
 ############ SDE Solvers #############
 
 
+def generate_noise(z: StateDict, seed: keras.random.SeedGenerator) -> StateDict:
+    noise = {
+        k: keras.random.normal(keras.ops.shape(val), dtype=keras.ops.dtype(val), seed=seed) for k, val in z.items()
+    }
+    return noise
+
+
 def stochastic_adaptive_step_size_controller(
     state,
     drift,
@@ -924,7 +932,8 @@ def _apply_corrector(
     i: ArrayLike,
     corrector_steps: int,
     score_fn: Optional[Callable],
-    corrector_noise_history: StateDict,
+    corrector_noise_history: StateDict | None,
+    seed: keras.random.SeedGenerator,
     step_size_factor: ArrayLike = 0.01,
     noise_schedule=None,
 ) -> StateDict:
@@ -937,7 +946,10 @@ def _apply_corrector(
 
     for j in range(corrector_steps):
         score = score_fn(new_time, **filter_kwargs(new_state, score_fn))
-        _z_corr = {k: corrector_noise_history[k][i, j] for k in new_state.keys()}
+        if corrector_noise_history is None:
+            _z_corr = generate_noise(new_state, seed=seed)
+        else:
+            _z_corr = {k: val[i, j] for k, val in corrector_noise_history.items()}
 
         log_snr_t = noise_schedule.get_log_snr(t=new_time, training=False)
         alpha_t, _ = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
@@ -965,11 +977,12 @@ def integrate_stochastic_fixed(
     steps: int,
     min_step_size: ArrayLike,
     max_step_size: ArrayLike,
-    z_history: StateDict,
-    z_extra_history: StateDict,
+    z_history: StateDict | None,
+    z_extra_history: StateDict | None,
     score_fn: Optional[Callable],
     step_size_factor: ArrayLike,
-    corrector_noise_history: StateDict,
+    corrector_noise_history: StateDict | None,
+    seed: keras.random.SeedGenerator,
     corrector_steps: int = 0,
     noise_schedule=None,
 ) -> StateDict:
@@ -991,11 +1004,16 @@ def integrate_stochastic_fixed(
         dt = sign * dt_mag
 
         # Generate noise increment
-        _noise_i = {k: z_history[k][_i] for k in _current_state.keys()}
-        if len(z_extra_history) == 0:
-            _noise_extra_i = None
+        if z_history is None:
+            _noise_i = generate_noise(_current_state, seed=seed)
         else:
-            _noise_extra_i = {k: z_extra_history[k][_i] for k in _current_state.keys()}
+            _noise_i = {k: val[_i] for k, val in z_history.items()}
+        _noise_extra_i = None
+        if z_extra_history is not None:
+            if len(z_extra_history) == 0:
+                _noise_extra_i = generate_noise(_current_state, seed=seed)
+            else:
+                _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
 
         new_state, new_time, new_step = step_fn(
             state=_current_state,
@@ -1017,6 +1035,7 @@ def integrate_stochastic_fixed(
             noise_schedule=noise_schedule,
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
+            seed=seed,
         )
         return _i + 1, new_state, new_time, initial_step
 
@@ -1040,11 +1059,12 @@ def integrate_stochastic_adaptive(
     min_step_size: ArrayLike,
     max_step_size: ArrayLike,
     initial_step: ArrayLike,
-    z_history: StateDict,
-    z_extra_history: StateDict,
+    z_history: StateDict | None,
+    z_extra_history: StateDict | None,
     score_fn: Optional[Callable],
     step_size_factor: ArrayLike,
-    corrector_noise_history: StateDict,
+    seed: keras.random.SeedGenerator,
+    corrector_noise_history: StateDict | None,
     corrector_steps: int = 0,
     noise_schedule=None,
 ) -> StateDict:
@@ -1067,10 +1087,17 @@ def integrate_stochastic_adaptive(
         dt_mag = keras.ops.minimum(keras.ops.abs(_current_step), remaining)
         dt = sign * dt_mag
 
-        _noise_i = {k: z_history[k][_i] for k in _current_state.keys()}
+        if z_history is None:
+            _noise_i = generate_noise(_current_state, seed=seed)
+        else:
+            _noise_i = {k: val[_i] for k, val in z_history.items()}
+
         _noise_extra_i = None
-        if len(z_extra_history) > 0:
-            _noise_extra_i = {k: z_extra_history[k][_i] for k in _current_state.keys()}
+        if z_extra_history is not None:
+            if len(z_extra_history) == 0:
+                _noise_extra_i = generate_noise(_current_state, seed=seed)
+            else:
+                _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
 
         new_state, new_time, new_step, _new_current_state = step_fn(
             state=_current_state,
@@ -1093,6 +1120,7 @@ def integrate_stochastic_adaptive(
             noise_schedule=noise_schedule,
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
+            seed=seed,
         )
 
         return _i + 1, new_state, new_time, new_step, _new_current_state
@@ -1107,10 +1135,10 @@ def integrate_stochastic_adaptive(
     time_diff = stop_time - final_time
     time_remaining = keras.ops.sign(stop_time - start_time) * time_diff
     if keras.ops.all(time_remaining > 0):
-        noise_final = {k: z_history[k][-1] for k in final_state.keys()}
+        noise_final = generate_noise(final_state, seed=seed)
         noise_extra_final = None
-        if len(z_extra_history) > 0:
-            noise_extra_final = {k: z_extra_history[k][-1] for k in final_state.keys()}
+        if z_extra_history is not None and len(z_extra_history) > 0:
+            noise_extra_final = generate_noise(final_state, seed=seed)
 
         final_state, _, _ = step_fn(
             state=final_state,
@@ -1134,10 +1162,11 @@ def integrate_langevin(
     start_time: ArrayLike,
     stop_time: ArrayLike,
     steps: int,
-    z_history: StateDict,
+    z_history: StateDict | None,
     score_fn: Callable,
     noise_schedule,
-    corrector_noise_history: StateDict,
+    seed: keras.random.SeedGenerator,
+    corrector_noise_history: StateDict | None,
     step_size_factor: ArrayLike = 0.01,
     corrector_steps: int = 0,
 ) -> StateDict:
@@ -1156,12 +1185,6 @@ def integrate_langevin(
         raise ValueError("Number of Langevin steps must be positive.")
     if score_fn is None or noise_schedule is None:
         raise ValueError("score_fn and noise_schedule must be provided.")
-        # basic shape check
-    for k, v in state.items():
-        if k not in z_history:
-            raise ValueError(f"Missing noise for key {k!r} in z_history.")
-        if keras.ops.shape(z_history[k])[0] < steps:
-            raise ValueError(f"z_history[{k!r}] has fewer than {steps} steps.")
 
     # Linear time grid
     dt = (stop_time - start_time) / float(steps)
@@ -1181,6 +1204,10 @@ def integrate_langevin(
         _, sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         new_state: StateDict = {}
+        if z_history is None:
+            z_history_i = generate_noise(_loop_state, seed=seed)
+        else:
+            z_history_i = {k: val[_i] for k, val in z_history.items()}
         for k in _loop_state.keys():
             s_k = score.get(k, None)
             if s_k is None:
@@ -1188,7 +1215,7 @@ def integrate_langevin(
                 continue
 
             e = effective_factor * sigma_t**2
-            new_state[k] = _loop_state[k] + e * s_k + keras.ops.sqrt(2.0 * e) * z_history[k][_i]
+            new_state[k] = _loop_state[k] + e * s_k + keras.ops.sqrt(2.0 * e) * z_history_i[k]
 
         new_time = _loop_time + dt
 
@@ -1201,6 +1228,7 @@ def integrate_langevin(
             noise_schedule=noise_schedule,
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
+            seed=seed,
         )
 
         return _i + 1, new_state, new_time
@@ -1279,15 +1307,17 @@ def integrate_stochastic(
         min_step_size, max_step_size = initial_step, initial_step
 
     # Pre-generate corrector noise if requested
-    corrector_noise_history = {}
+    corrector_noise_history = None
     if corrector_steps > 0:
         if score_fn is None or noise_schedule is None:
             raise ValueError("Please provide both score_fn and noise_schedule when using corrector_steps > 0.")
-        for key, val in state.items():
-            shape = keras.ops.shape(val)
-            corrector_noise_history[key] = keras.random.normal(
-                (loop_steps, corrector_steps, *shape), dtype=keras.ops.dtype(val), seed=seed
-            )
+        if K.backend() == "jax":
+            corrector_noise_history = {}
+            for key, val in state.items():
+                shape = keras.ops.shape(val)
+                corrector_noise_history[key] = keras.random.normal(
+                    (loop_steps, corrector_steps, *shape), dtype=keras.ops.dtype(val), seed=seed
+                )
 
     match method:
         case "euler_maruyama":
@@ -1306,10 +1336,13 @@ def integrate_stochastic(
             if is_adaptive:
                 raise ValueError("Langevin sampling does not support adaptive steps.")
 
-            z_history = {}
-            for key, val in state.items():
-                shape = keras.ops.shape(val)
-                z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
+            z_history = None
+            if K.backend() == "jax":
+                logging.warning("JAX backend needs to preallocate random samples for max steps.")
+                z_history = {}
+                for key, val in state.items():
+                    shape = keras.ops.shape(val)
+                    z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
 
             return integrate_langevin(
                 state=state,
@@ -1322,6 +1355,7 @@ def integrate_stochastic(
                 step_size_factor=step_size_factor,
                 corrector_steps=corrector_steps,
                 corrector_noise_history=corrector_noise_history,
+                seed=seed,
             )
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
@@ -1335,13 +1369,17 @@ def integrate_stochastic(
     )
 
     # Pre-generate standard normals for the predictor step (up to max_steps)
-    z_history = {}
-    z_extra_history = {}
-    for key, val in state.items():
-        shape = keras.ops.shape(val)
-        z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
-        if method in ["sea", "shark"]:
-            z_extra_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
+    z_history = None
+    z_extra_history = None if method not in ["sea", "shark"] else {}
+    if K.backend() == "jax":
+        logging.warning("JAX backend needs to preallocate random samples for max steps.")
+        z_history = {}
+        z_extra_history = {}
+        for key, val in state.items():
+            shape = keras.ops.shape(val)
+            z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
+            if method in ["sea", "shark"]:
+                z_extra_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
 
     if is_adaptive:
         return integrate_stochastic_adaptive(
@@ -1360,6 +1398,7 @@ def integrate_stochastic(
             noise_schedule=noise_schedule,
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
+            seed=seed,
         )
     else:
         return integrate_stochastic_fixed(
@@ -1377,4 +1416,5 @@ def integrate_stochastic(
             noise_schedule=noise_schedule,
             step_size_factor=step_size_factor,
             corrector_noise_history=corrector_noise_history,
+            seed=seed,
         )

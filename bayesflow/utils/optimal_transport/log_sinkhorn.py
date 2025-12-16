@@ -46,8 +46,7 @@ def log_sinkhorn_plan(
     atol=1e-8,
     max_steps: int | None = None,
     condition_ratio: float = 0.5,
-    partial: bool = False,
-    s: float = 0.8,
+    partial_s: float = 1.0,
     dummy_cost: float = 1.0,
     **kwargs,
 ) -> Tensor:
@@ -82,12 +81,8 @@ def log_sinkhorn_plan(
         Only used if `conditions` is not None.
         Default: 0.01
 
-    :param partial: Whether to use partial optimal transport.
-        Default: False
-
-    :param s: Proportion of mass to transport in partial optimal transport.
-        Must be in (0, 1). Only used if `partial=True`.
-        Default: 0.8
+    :param partial_s: Proportion of mass to transport in partial optimal transport.
+        Default: 1.0 (i.e., balanced OT)
 
     :param dummy_cost: Cost for dummy assignments in partial optimal transport.
         Only used if `partial=True`.
@@ -96,8 +91,11 @@ def log_sinkhorn_plan(
     :return: Tensor of shape (n, m) or (n+1, m+1) if partial=True
         The log transport probabilities.
     """
-    if partial and not (0.0 < s < 1.0):
-        raise ValueError(f"s must be in (0, 1) for partial OT, got {s}")
+    partial = False
+    if not (0.0 < partial_s <= 1.0):
+        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_s}")
+    elif partial_s < 1.0:
+        partial = True
 
     cost = euclidean(x1, x2)
 
@@ -116,7 +114,7 @@ def log_sinkhorn_plan(
 
     if partial:
         cost_scaled, a, b = augment_for_partial_ot(
-            cost_scaled=cost_scaled, regularization=regularization, s=s, dummy_cost=dummy_cost
+            cost_scaled=cost_scaled, regularization=regularization, s=partial_s, dummy_cost=dummy_cost
         )
         log_a = keras.ops.log(a)
         log_b = keras.ops.log(b)

@@ -72,7 +72,6 @@ def sinkhorn_plan(
     atol: float = 1e-8,
     condition_ratio: float = 0.5,
     partial_s: float = 1.0,
-    dummy_cost: float = 1.0,
     **kwargs,
 ) -> Tensor:
     """
@@ -107,10 +106,6 @@ def sinkhorn_plan(
     :param partial_s: Proportion of mass to transport in partial optimal transport.
         Default: 1.0 (i.e., balanced OT)
 
-    :param dummy_cost: Cost for dummy assignments in partial optimal transport.
-        Only used if `partial=True`.
-        Default: 1.0
-
     :return: Tensor of shape (n, m)
         The transport probabilities.
     """
@@ -134,10 +129,12 @@ def sinkhorn_plan(
         )
 
     cost_scaled = -cost / regularization
-
     if partial:
         cost_scaled, a, b = augment_for_partial_ot(
-            cost_scaled=cost_scaled, regularization=regularization, s=partial_s, dummy_cost=dummy_cost
+            cost_scaled=cost_scaled,
+            regularization=regularization,
+            s=partial_s,
+            **filter_kwargs(kwargs, augment_for_partial_ot),
         )
         # a and b are vectors of shape (n,) and (m,)
         a_reshape = keras.ops.reshape(a, (-1, 1))  # (n, 1)

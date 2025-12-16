@@ -38,17 +38,18 @@ def cosine_distance(x1: Tensor, x2: Tensor, eps: float = 1e-8) -> Tensor:
     return 1.0 - cos_sim
 
 
-def auto_regularization(cost_matrix: Tensor, tol: float = 1e-3) -> Tensor:
+def auto_regularization(cost_matrix: Tensor) -> Tensor:
     """Automatically tune regularization based on cost statistics."""
     cost_median = keras.ops.median(cost_matrix)
-    return keras.ops.maximum(0.1 * cost_median, tol)
+    max_reg = 200.0 / keras.ops.max(cost_matrix)  # taken from Sinkhorn Scaling for Optimal Transport
+    return keras.ops.minimum(0.1 * cost_median, max_reg)
 
 
 def augment_for_partial_ot(
     cost_scaled: Tensor,
     regularization: float,
     s: float,
-    dummy_cost: float,
+    dummy_cost: float | None = None,
 ) -> tuple[Tensor, Tensor, Tensor]:
     """
     Augments a scaled cost matrix for partial OT via a dummy row/column.
@@ -56,6 +57,9 @@ def augment_for_partial_ot(
     For partial OT with mass s ∈ (0,1), we transport s proportion of mass
     and leave (1-s) unmatched via dummy nodes.
     """
+    if dummy_cost is None:
+        dummy_cost = keras.ops.max(-cost_scaled * regularization) + 1  # same as POT library default
+
     # cost_scaled is expected to be -C/eps with shape (n, m)
     A = keras.ops.convert_to_tensor(dummy_cost, dtype=cost_scaled.dtype)
 

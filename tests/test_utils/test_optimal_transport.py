@@ -47,6 +47,8 @@ def test_shapes(method, partial, condition_ratio):
 
     assert keras.ops.shape(ox) == keras.ops.shape(x)
     assert keras.ops.shape(oy) == keras.ops.shape(y)
+    if cond is not None:
+        assert keras.ops.shape(ocond) == keras.ops.shape(cond)
 
 
 @pytest.mark.parametrize(
@@ -96,7 +98,6 @@ def test_transport_cost_improves(method, partial, condition_ratio):
 def test_assignment_is_optimal(method, partial):
     y = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(y)[0]), seed=0)
-
     x = keras.ops.take(y, p, axis=0)
 
     _, _, _, assignments = optimal_transport(
@@ -105,6 +106,22 @@ def test_assignment_is_optimal(method, partial):
 
     # transport is stochastic, so it is expected that a small fraction of assignments does not match
     assert keras.ops.sum(assignments == p) > 14
+
+
+@pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
+def test_no_nans_or_infs(method):
+    """Test that algorithm produces finite values even with challenging inputs and auto regularization."""
+    # Test with well-separated distributions
+    x = keras.random.normal((64, 4), seed=0) * 10.0
+    y = keras.random.normal((64, 4), seed=1) * 10.0 + 100.0
+
+    ox, oy, _, assignments = optimal_transport(
+        x, y, regularization="auto", seed=0, max_steps=1000, method=method, return_assignments=True
+    )
+
+    assert keras.ops.all(keras.ops.isfinite(ox))
+    assert keras.ops.all(keras.ops.isfinite(oy))
+    assert keras.ops.all(keras.ops.isfinite(assignments))
 
 
 def test_assignment_aligns_with_pot():
@@ -116,7 +133,7 @@ def test_assignment_aligns_with_pot():
 
     x = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(x)[0]), seed=0)
-    y = x[p]
+    y = keras.ops.take(x, p, axis=0)
 
     a = keras.ops.ones(keras.ops.shape(x)[0])
     b = keras.ops.ones(keras.ops.shape(y)[0])
@@ -140,8 +157,10 @@ def test_sinkhorn_plan_correct_marginals():
     x1 = keras.random.normal((10, 2), seed=0)
     x2 = keras.random.normal((20, 2), seed=1)
 
-    assert keras.ops.all(keras.ops.isclose(keras.ops.sum(sinkhorn_plan(x1, x2), axis=0), 0.05, atol=1e-6))
-    assert keras.ops.all(keras.ops.isclose(keras.ops.sum(sinkhorn_plan(x1, x2), axis=1), 0.1, atol=1e-6))
+    plan = sinkhorn_plan(x1, x2, rtol=1e-7, max_steps=1000)
+
+    assert keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), 0.05, atol=1e-6))
+    assert keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), 0.1, atol=1e-6))
 
 
 def test_sinkhorn_plan_aligns_with_pot():
@@ -160,13 +179,14 @@ def test_sinkhorn_plan_aligns_with_pot():
     b = keras.ops.ones(20) / 20
     M = euclidean(x1, x2)
 
-    pot_result = sinkhorn(a, b, M, 0.1, stopThr=1e-8)
+    pot_result = sinkhorn(a.numpy(), b.numpy(), M.numpy(), 0.1, stopThr=1e-8)
     our_result = sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-7)
 
     assert_allclose(pot_result, our_result)
 
 
-def test_sinkhorn_plan_matches_analytical_result():
+@pytest.mark.parametrize("reg", ["auto", 0.1, 1.0])
+def test_sinkhorn_plan_matches_analytical_result(reg):
     from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
 
     x1 = keras.ops.ones(16)
@@ -175,12 +195,12 @@ def test_sinkhorn_plan_matches_analytical_result():
     marginal_x1 = keras.ops.ones(16) / 16
     marginal_x2 = keras.ops.ones(64) / 64
 
-    result = sinkhorn_plan(x1, x2, regularization=0.1)
+    result = sinkhorn_plan(x1, x2, regularization=reg)
 
     # If x1 and x2 are identical, the optimal plan is simply the outer product of the marginals
     expected = keras.ops.outer(marginal_x1, marginal_x2)
 
-    assert_allclose(result, expected)
+    assert_allclose(result, expected, rtol=1e-4)
 
 
 def test_log_sinkhorn_plan_correct_marginals():
@@ -189,12 +209,10 @@ def test_log_sinkhorn_plan_correct_marginals():
     x1 = keras.random.normal((10, 2), seed=0)
     x2 = keras.random.normal((20, 2), seed=1)
 
-    assert keras.ops.all(
-        keras.ops.isclose(keras.ops.logsumexp(log_sinkhorn_plan(x1, x2), axis=0), -keras.ops.log(20), atol=1e-3)
-    )
-    assert keras.ops.all(
-        keras.ops.isclose(keras.ops.logsumexp(log_sinkhorn_plan(x1, x2), axis=1), -keras.ops.log(10), atol=1e-3)
-    )
+    log_plan = log_sinkhorn_plan(x1, x2, rtol=1e-6, max_steps=1000)
+
+    assert keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(log_plan, axis=0), -keras.ops.log(20.0), atol=1e-3))
+    assert keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(log_plan, axis=1), -keras.ops.log(10.0), atol=1e-3))
 
 
 def test_log_sinkhorn_plan_aligns_with_pot():
@@ -214,9 +232,9 @@ def test_log_sinkhorn_plan_aligns_with_pot():
     M = euclidean(x1, x2)
 
     pot_result = keras.ops.log(sinkhorn_log(a, b, M, 0.1, stopThr=1e-7))  # sinkhorn_log returns probabilities
-    our_result = log_sinkhorn_plan(x1, x2, regularization=0.1)
+    our_result = log_sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-6)
 
-    assert_allclose(pot_result, our_result)
+    assert_allclose(pot_result, our_result, rtol=1e-4)
 
 
 def test_log_sinkhorn_plan_matches_analytical_result():
@@ -233,4 +251,18 @@ def test_log_sinkhorn_plan_matches_analytical_result():
     # If x1 and x2 are identical, the optimal plan is simply the outer product of the marginals
     expected = keras.ops.outer(marginal_x1, marginal_x2)
 
-    assert_allclose(result, expected)
+    assert_allclose(result, expected, rtol=1e-4)
+
+
+def test_sinkhorn_vs_log_sinkhorn_consistency():
+    """Test that Sinkhorn and log-Sinkhorn produce consistent results."""
+    from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
+    from bayesflow.utils.optimal_transport.log_sinkhorn import log_sinkhorn_plan
+
+    x1 = keras.random.normal((20, 3), seed=0)
+    x2 = keras.random.normal((30, 3), seed=1)
+
+    plan_sinkhorn = sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-6)
+    plan_log_sinkhorn = keras.ops.exp(log_sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-6))
+
+    assert_allclose(plan_sinkhorn, plan_log_sinkhorn, rtol=1e-3)

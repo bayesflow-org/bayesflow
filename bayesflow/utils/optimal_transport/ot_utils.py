@@ -38,10 +38,10 @@ def cosine_distance(x1: Tensor, x2: Tensor, eps: float = 1e-8) -> Tensor:
     return 1.0 - cos_sim
 
 
-def auto_regularization(cost_matrix):
+def auto_regularization(cost_matrix: Tensor, tol: float = 1e-3) -> Tensor:
     """Automatically tune regularization based on cost statistics."""
     cost_median = keras.ops.median(cost_matrix)
-    return 0.1 * cost_median
+    return keras.ops.maximum(0.1 * cost_median, tol)
 
 
 def augment_for_partial_ot(

@@ -12,6 +12,8 @@ from .ot_utils import (
     auto_regularization,
 )
 
+from .. import logging
+
 
 def sinkhorn(
     x1: Tensor, x2: Tensor, conditions: Tensor | None = None, seed: int = None, partial: bool = False, **kwargs
@@ -30,6 +32,7 @@ def sinkhorn(
     [1] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
     [2] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
         Conditional Flow-Based Generation"
+    [3] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
 
     :param x1: Tensor of shape (n, ...)
         Samples from the first distribution.
@@ -188,6 +191,24 @@ def sinkhorn_plan(
 
     steps = 0
     steps, plan = keras.ops.while_loop(cond, body, (steps, plan), maximum_iterations=max_steps)
+
+    def do_nothing():
+        pass
+
+    def log_steps():
+        msg = "Sinkhorn-Knopp converged after {} steps."
+        logging.debug(msg, steps)
+
+    def warn_convergence():
+        msg = "Sinkhorn-Knopp did not converge after {} steps."
+        logging.warning(msg, steps)
+
+    def warn_nans():
+        msg = "Sinkhorn-Knopp produced NaNs after {} steps."
+        logging.warning(msg, steps)
+
+    keras.ops.cond(contains_nans(plan), warn_nans, do_nothing)
+    keras.ops.cond(is_converged(plan), log_steps, warn_convergence)
 
     if partial:
         plan = plan[:-1, :-1]

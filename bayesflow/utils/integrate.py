@@ -941,9 +941,6 @@ def _apply_corrector(
 
     [1] Song et al., "Score-Based Generative Modeling through Stochastic Differential Equations" (2020)
     """
-    if corrector_steps <= 0:
-        return new_state
-
     for j in range(corrector_steps):
         score = score_fn(new_time, **filter_kwargs(new_state, score_fn))
         if corrector_noise_history is None:
@@ -1026,17 +1023,18 @@ def integrate_stochastic_fixed(
             use_adaptive_step_size=False,
         )
 
-        new_state = _apply_corrector(
-            new_state=new_state,
-            new_time=new_time,
-            i=_i,
-            corrector_steps=corrector_steps,
-            score_fn=score_fn,
-            noise_schedule=noise_schedule,
-            step_size_factor=step_size_factor,
-            corrector_noise_history=corrector_noise_history,
-            seed=seed,
-        )
+        if corrector_steps > 0:
+            new_state = _apply_corrector(
+                new_state=new_state,
+                new_time=new_time,
+                i=_i,
+                corrector_steps=corrector_steps,
+                score_fn=score_fn,
+                noise_schedule=noise_schedule,
+                step_size_factor=step_size_factor,
+                corrector_noise_history=corrector_noise_history,
+                seed=seed,
+            )
         return _i + 1, new_state, new_time, initial_step
 
     _, final_state, final_time, _ = keras.ops.while_loop(
@@ -1072,6 +1070,10 @@ def integrate_stochastic_adaptive(
     Performs adaptive-step SDE integration.
     """
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, state)
+    if K.backend() == "jax":
+        seed = None  # not needed, noise is generated upfront
+    else:
+        seed_body = seed
 
     def cond(i, current_state, current_time, current_step, last_state):
         time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))
@@ -1088,14 +1090,14 @@ def integrate_stochastic_adaptive(
         dt = sign * dt_mag
 
         if z_history is None:
-            _noise_i = generate_noise(_current_state, seed=seed)
+            _noise_i = generate_noise(_current_state, seed=seed_body)
         else:
             _noise_i = {k: val[_i] for k, val in z_history.items()}
 
         _noise_extra_i = None
         if z_extra_history is not None:
             if len(z_extra_history) == 0:
-                _noise_extra_i = generate_noise(_current_state, seed=seed)
+                _noise_extra_i = generate_noise(_current_state, seed=seed_body)
             else:
                 _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
 
@@ -1111,17 +1113,18 @@ def integrate_stochastic_adaptive(
             use_adaptive_step_size=True,
         )
 
-        new_state = _apply_corrector(
-            new_state=new_state,
-            new_time=new_time,
-            i=_i,
-            corrector_steps=corrector_steps,
-            score_fn=score_fn,
-            noise_schedule=noise_schedule,
-            step_size_factor=step_size_factor,
-            corrector_noise_history=corrector_noise_history,
-            seed=seed,
-        )
+        if corrector_steps > 0:
+            new_state = _apply_corrector(
+                new_state=new_state,
+                new_time=new_time,
+                i=_i,
+                corrector_steps=corrector_steps,
+                score_fn=score_fn,
+                noise_schedule=noise_schedule,
+                step_size_factor=step_size_factor,
+                corrector_noise_history=corrector_noise_history,
+                seed=seed_body,
+            )
 
         return _i + 1, new_state, new_time, new_step, _new_current_state
 
@@ -1219,17 +1222,18 @@ def integrate_langevin(
 
         new_time = _loop_time + dt
 
-        new_state = _apply_corrector(
-            new_state=new_state,
-            new_time=new_time,
-            i=_i,
-            corrector_steps=corrector_steps,
-            score_fn=score_fn,
-            noise_schedule=noise_schedule,
-            step_size_factor=step_size_factor,
-            corrector_noise_history=corrector_noise_history,
-            seed=seed,
-        )
+        if corrector_steps > 0:
+            new_state = _apply_corrector(
+                new_state=new_state,
+                new_time=new_time,
+                i=_i,
+                corrector_steps=corrector_steps,
+                score_fn=score_fn,
+                noise_schedule=noise_schedule,
+                step_size_factor=step_size_factor,
+                corrector_noise_history=corrector_noise_history,
+                seed=seed,
+            )
 
         return _i + 1, new_state, new_time
 
@@ -1374,7 +1378,6 @@ def integrate_stochastic(
     if K.backend() == "jax":
         logging.warning("JAX backend needs to preallocate random samples for max steps.")
         z_history = {}
-        z_extra_history = {}
         for key, val in state.items():
             shape = keras.ops.shape(val)
             z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)

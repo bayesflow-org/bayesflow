@@ -1,15 +1,12 @@
-from typing import Literal
-
 import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from .ot_utils import (
-    euclidean,
+    squared_euclidean,
     cosine_distance,
     augment_for_partial_ot,
     search_for_conditional_weight,
-    auto_regularization,
 )
 
 from .. import logging
@@ -56,7 +53,7 @@ def sinkhorn(x1: Tensor, x2: Tensor, conditions: Tensor | None = None, seed: int
 
     # we sample from log(plan) to receive assignments of length n, corresponding to indices of x2
     # such that x2[assignments] matches x1
-    assignments = keras.random.categorical(keras.ops.log(plan), num_samples=1, seed=seed)
+    assignments = keras.random.categorical(keras.ops.log(plan + 1e-10), num_samples=1, seed=seed)
     assignments = keras.ops.squeeze(assignments, axis=1)
 
     return assignments
@@ -66,12 +63,11 @@ def sinkhorn_plan(
     x1: Tensor,
     x2: Tensor,
     conditions: Tensor | None = None,
-    regularization: Literal["auto"] | float = "auto",
-    max_steps: int | None = None,
-    rtol: float = 1e-5,
-    atol: float = 1e-8,
-    condition_ratio: float = 0.5,
-    partial_s: float = 1.0,
+    regularization: float = 1.0,
+    max_steps: int = 1000,
+    atol: float = 1e-5,
+    conditional_ot_ratio: float = 0.5,
+    partial_ot_factor: float = 1.0,
     **kwargs,
 ) -> Tensor:
     """
@@ -88,44 +84,41 @@ def sinkhorn_plan(
 
     :param regularization: Regularization parameter.
         Controls the standard deviation of the Gaussian kernel.
+        Default: 1.0
 
-    :param max_steps: Maximum number of iterations, or None to run until convergence.
-        Default: None
+    :param max_steps: Maximum number of iterations.
+        Default: 1000
 
-    :param rtol: Relative tolerance for convergence.
+    :param atol: Tolerance for convergence.
         Default: 1e-5.
 
-    :param atol: Absolute tolerance for convergence.
-        Default: 1e-8.
-
-    :param condition_ratio: Ratio which measures the proportion of samples that are considered “potential optimal
+    :param conditional_ot_ratio: Ratio which measures the proportion of samples that are considered “potential optimal
         transport candidates”. 0.5 is equivalent to no conditioning. [2] recommends a ratio of 0.01.
         Only used if `conditions` is not None.
         Default: 0.0
 
-    :param partial_s: Proportion of mass to transport in partial optimal transport.
+    :param partial_ot_factor: Proportion of mass to transport in partial optimal transport.
         Default: 1.0 (i.e., balanced OT)
 
     :return: Tensor of shape (n, m)
         The transport probabilities.
     """
-    partial = False
-    if not (0.0 < partial_s <= 1.0):
-        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_s}")
-    elif partial_s < 1.0:
-        partial = True
+    if not (0.0 < partial_ot_factor <= 1.0):
+        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_ot_factor}")
+    partial = partial_ot_factor < 1.0
 
-    cost = euclidean(x1, x2)
+    cost = squared_euclidean(x1, x2)
 
-    if regularization == "auto":
-        regularization = auto_regularization(cost)
-    elif regularization <= 0.0:
+    if regularization <= 0.0:
         raise ValueError(f"regularization must be positive, got {regularization}")
 
-    if conditions is not None and condition_ratio < 0.5:
+    if conditions is not None and conditional_ot_ratio < 0.5:
         cond_cost = cosine_distance(conditions, conditions)
         cost, w = search_for_conditional_weight(
-            M=cost, C=cond_cost, condition_ratio=condition_ratio, **filter_kwargs(kwargs, search_for_conditional_weight)
+            M=cost,
+            C=cond_cost,
+            condition_ratio=conditional_ot_ratio,
+            **filter_kwargs(kwargs, search_for_conditional_weight),
         )
 
     cost_scaled = -cost / regularization
@@ -133,54 +126,46 @@ def sinkhorn_plan(
         cost_scaled, a, b = augment_for_partial_ot(
             cost_scaled=cost_scaled,
             regularization=regularization,
-            s=partial_s,
+            s=partial_ot_factor,
             **filter_kwargs(kwargs, augment_for_partial_ot),
         )
-        # a and b are vectors of shape (n,) and (m,)
-        a_reshape = keras.ops.reshape(a, (-1, 1))  # (n, 1)
-        b_reshape = keras.ops.reshape(b, (1, -1))  # (1, m)
+        a = keras.ops.reshape(a, (-1,))  # (n,)
+        b = keras.ops.reshape(b, (-1,))  # (m,)
     else:
         # balanced uniform marginals (scalars)
         n, m = keras.ops.shape(cost_scaled)
-        a_reshape = 1.0 / keras.ops.cast(n, cost_scaled.dtype)
-        b_reshape = 1.0 / keras.ops.cast(m, cost_scaled.dtype)
+        a = keras.ops.ones((n,), dtype=cost_scaled.dtype) / keras.ops.cast(n, cost_scaled.dtype)
+        b = keras.ops.ones((m,), dtype=cost_scaled.dtype) / keras.ops.cast(m, cost_scaled.dtype)
 
     # initialize transport plan from a gaussian kernel
     # (more numerically stable version of keras.ops.exp(-cost/regularization))
     plan = keras.ops.exp(cost_scaled - keras.ops.max(cost_scaled))
+    u = keras.ops.ones_like(a)
+    v = keras.ops.ones_like(b)
+    tiny = keras.ops.cast(1e-12, plan.dtype)
 
-    def contains_nans(plan):
-        return keras.ops.any(keras.ops.isnan(plan))
+    def contains_nans(_plan):
+        return keras.ops.any(keras.ops.isnan(_plan))
 
-    def is_converged(plan):
-        # for convergence, the target marginals must match
-        if partial:
-            # Check against vector marginals
-            conv0 = keras.ops.all(
-                keras.ops.isclose(keras.ops.sum(plan, axis=0, keepdims=True), b_reshape, rtol=rtol, atol=atol)
-            )
-            conv1 = keras.ops.all(
-                keras.ops.isclose(keras.ops.sum(plan, axis=1, keepdims=True), a_reshape, rtol=rtol, atol=atol)
-            )
-        else:
-            # Check against scalar marginals
-            conv0 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), b_reshape, rtol=rtol, atol=atol))
-            conv1 = keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), a_reshape, rtol=rtol, atol=atol))
-        return conv0 & conv1
+    def cond(_, __, ___, _err):
+        return _err > atol
 
-    def cond(_, plan):
-        # break the while loop if the plan contains nans or is converged
-        return ~(contains_nans(plan) | is_converged(plan))
+    def body(_steps, _u, _v, _err):
+        plan_v = keras.ops.matmul(plan, keras.ops.expand_dims(_v, 1))[:, 0] + tiny
+        u_new = a / plan_v
+        plan_T_u = keras.ops.matmul(keras.ops.transpose(plan), keras.ops.expand_dims(u_new, 1))[:, 0] + tiny
+        v_new = b / plan_T_u
 
-    def body(steps, plan):
-        # Sinkhorn-Knopp: repeatedly normalize the transport plan along each dimension
-        plan = plan / keras.ops.sum(plan, axis=0, keepdims=True) * b_reshape
-        plan = plan / keras.ops.sum(plan, axis=1, keepdims=True) * a_reshape
+        # log-relative change (stable even if u/v span many orders of magnitude)
+        du = keras.ops.max(keras.ops.abs(keras.ops.log((u_new + tiny) / (_u + tiny))))
+        dv = keras.ops.max(keras.ops.abs(keras.ops.log((v_new + tiny) / (_v + tiny))))
+        err_new = keras.ops.maximum(du, dv)
 
-        return steps + 1, plan
+        return _steps + 1, u_new, v_new, err_new
 
-    steps = 0
-    steps, plan = keras.ops.while_loop(cond, body, (steps, plan), maximum_iterations=max_steps)
+    err0 = keras.ops.cast(1e30, plan.dtype)
+    steps, u, v, err = keras.ops.while_loop(cond, body, (0, u, v, err0), maximum_iterations=max_steps)
+    plan = (keras.ops.expand_dims(u, 1) * plan) * keras.ops.expand_dims(v, 0)
 
     def do_nothing():
         pass
@@ -198,7 +183,7 @@ def sinkhorn_plan(
         logging.warning(msg, steps)
 
     keras.ops.cond(contains_nans(plan), warn_nans, do_nothing)
-    keras.ops.cond(is_converged(plan), log_steps, warn_convergence)
+    keras.ops.cond(cond(None, None, None, err), log_steps, warn_convergence)
 
     if partial:
         plan = plan[:-1, :-1]

@@ -3,13 +3,17 @@ import keras
 from bayesflow.types import Tensor
 
 
-def euclidean(x1: Tensor, x2: Tensor) -> Tensor:
-    result = x1[:, None] - x2[None, :]
-    shape = list(keras.ops.shape(result))
-    shape[2:] = [-1]
-    result = keras.ops.reshape(result, shape)
-    result = keras.ops.norm(result, ord=2, axis=-1)
-    return result
+def squared_euclidean(x1: Tensor, x2: Tensor) -> Tensor:
+    # flatten trailing dims
+    x1 = keras.ops.reshape(x1, (keras.ops.shape(x1)[0], -1))
+    x2 = keras.ops.reshape(x2, (keras.ops.shape(x2)[0], -1))
+
+    x1_sq = keras.ops.sum(x1 * x1, axis=1, keepdims=True)  # (n,1)
+    x2_sq = keras.ops.sum(x2 * x2, axis=1, keepdims=True)  # (m,1)
+    cross = keras.ops.matmul(x1, keras.ops.transpose(x2))  # (n,m)
+
+    dist2 = x1_sq + keras.ops.transpose(x2_sq) - 2.0 * cross
+    return keras.ops.maximum(dist2, 0.0)
 
 
 def cosine_distance(x1: Tensor, x2: Tensor, eps: float = 1e-8) -> Tensor:
@@ -21,28 +25,16 @@ def cosine_distance(x1: Tensor, x2: Tensor, eps: float = 1e-8) -> Tensor:
     x2: Tensor of shape (m, ...)
     returns: Tensor of shape (n, m)
     """
-    # Flatten trailing dimensions
-    x1_flat = keras.ops.reshape(x1, (keras.ops.shape(x1)[0], -1))
-    x2_flat = keras.ops.reshape(x2, (keras.ops.shape(x2)[0], -1))
+    x1 = keras.ops.reshape(x1, (keras.ops.shape(x1)[0], -1))
+    x2 = keras.ops.reshape(x2, (keras.ops.shape(x2)[0], -1))
 
-    # L2 norms
-    x1_norm = keras.ops.norm(x1_flat, ord=2, axis=1, keepdims=True)  # (n, 1)
-    x2_norm = keras.ops.norm(x2_flat, ord=2, axis=1, keepdims=True)  # (m, 1)
+    x1 = x1 / (keras.ops.norm(x1, axis=1, keepdims=True) + eps)
+    x2 = x2 / (keras.ops.norm(x2, axis=1, keepdims=True) + eps)
 
-    # Dot products (n, m)
-    dot = keras.ops.matmul(x1_flat, keras.ops.transpose(x2_flat))
-
-    # Cosine similarity and distance
-    denom = keras.ops.maximum(x1_norm * keras.ops.transpose(x2_norm), eps)
-    cos_sim = dot / denom
-    return 1.0 - cos_sim
-
-
-def auto_regularization(cost_matrix: Tensor) -> Tensor:
-    """Automatically tune regularization based on cost statistics."""
-    cost_median = keras.ops.median(cost_matrix)
-    max_reg = 200.0 / keras.ops.max(cost_matrix)  # taken from Sinkhorn Scaling for Optimal Transport
-    return keras.ops.minimum(0.1 * cost_median, max_reg)
+    # cosine similarity
+    sim = keras.ops.matmul(x1, keras.ops.transpose(x2))
+    sim = keras.ops.clip(sim, -1.0, 1.0)
+    return 1.0 - sim
 
 
 def augment_for_partial_ot(
@@ -103,9 +95,9 @@ def augment_for_partial_ot(
 
 
 def search_for_conditional_weight(
-    M: Tensor,  # (N,N) nonnegative data cost
-    C: Tensor,  # (N,N) nonnegative conditional cost
-    condition_ratio: float,  # target ratio
+    M: Tensor,
+    C: Tensor,
+    condition_ratio: float,
     initial_w: float = 1.0,
     max_iter: int = 10,
     abs_tol: float = 1e-3,
@@ -120,73 +112,53 @@ def search_for_conditional_weight(
     """
     dtype = M.dtype
     r_t = keras.ops.convert_to_tensor(condition_ratio, dtype=dtype)
-    abs_tol_t = keras.ops.convert_to_tensor(abs_tol, dtype=dtype)
     max_w_t = keras.ops.convert_to_tensor(max_w, dtype=dtype)
 
-    # diag(M) as (N,1) for broadcasting
-    n = keras.ops.shape(M)[0]
-    idx = keras.ops.arange(n)
-    oh = keras.ops.one_hot(idx, n, dtype=dtype)
-    M_diag = keras.ops.sum(M * oh, axis=1)  # (N,)
-    M_diag = keras.ops.reshape(M_diag, (-1, 1))  # (N,1)
+    # condition: M + w*C <= M_diag  =>  w*C <= M_diag - M
+    M_diag = keras.ops.expand_dims(keras.ops.diagonal(M), 1)
+    Delta = M_diag - M  # Pre-computed target threshold
 
-    def r_fn(w):
-        cost = M + w * C
-        curr_r = keras.ops.mean(keras.ops.cast(cost <= M_diag, dtype))
-        return cost, curr_r
+    def get_ratio(w):
+        return keras.ops.mean(keras.ops.cast(w * C <= Delta, dtype))
 
-    # r is maximized at w=0; if already below target, return w=0
-    cost0, r0 = r_fn(keras.ops.convert_to_tensor(0.0, dtype=dtype))
-
-    def return_zero():
-        return cost0, keras.ops.convert_to_tensor(0.0, dtype=dtype)
+    # Boundary check at w=0
+    r0 = get_ratio(keras.ops.convert_to_tensor(0.0, dtype=dtype))
 
     def do_search():
-        low0 = keras.ops.convert_to_tensor(0.0, dtype=dtype)
-        high0 = keras.ops.convert_to_tensor(initial_w, dtype=dtype)
-
-        # ---- exponential search to bracket ----
+        # Exponential search to bracket w
         def exp_cond(it, low, high):
-            _, curr_r = r_fn(high)
-            return (it < max_iter) & (curr_r > r_t) & (high <= max_w_t)
+            return (it < max_iter) & (get_ratio(high) > r_t) & (high < max_w_t)
 
         def exp_body(it, low, high):
-            low = high
-            high = high * 2.0
-            return it + 1, low, high
+            return it + 1, high, high * 2.0
 
-        it0 = keras.ops.convert_to_tensor(0, dtype="int32")
-        it, low, high = keras.ops.while_loop(exp_cond, exp_body, (it0, low0, high0))
+        _, low, high = keras.ops.while_loop(exp_cond, exp_body, (0, 0.0, initial_w))
         high = keras.ops.minimum(high, max_w_t)
 
-        # ---- binary search ----
-        # Keep best (w,cost,r) encountered to return even if we don't hit tol.
-        best_w0 = high
-        best_cost0, best_r0 = r_fn(high)
+        # Binary search for optimal w
+        def bin_cond(it, low, high, best_w, best_r):
+            return (it < max_iter) & (keras.ops.abs(best_r - r_t) > abs_tol)
 
-        def bin_cond(it, low, high, best_w, best_cost, best_r):
-            return (it < max_iter) & (keras.ops.abs(best_r - r_t) > abs_tol_t)
-
-        def bin_body(it, low, high, best_w, best_cost, best_r):
+        def bin_body(it, low, high, best_w, best_r):
             mid = (low + high) / 2.0
-            cost_mid, r_mid = r_fn(mid)
+            r_mid = get_ratio(mid)
 
-            # if r_mid < r: w too large => move high down, else move low up
-            high = keras.ops.where(r_mid < r_t, mid, high)
-            low = keras.ops.where(r_mid < r_t, low, mid)
+            # Update bounds
+            new_high = keras.ops.where(r_mid < r_t, mid, high)
+            new_low = keras.ops.where(r_mid < r_t, low, mid)
 
-            # update best if closer to target
-            better = keras.ops.abs(r_mid - r_t) < keras.ops.abs(best_r - r_t)
-            best_w = keras.ops.where(better, mid, best_w)
-            best_r = keras.ops.where(better, r_mid, best_r)
-            best_cost = keras.ops.where(better, cost_mid, best_cost)
+            # Update best_w based on proximity to target ratio
+            closer = keras.ops.abs(r_mid - r_t) < keras.ops.abs(best_r - r_t)
+            best_w_next = keras.ops.where(closer, mid, best_w)
+            best_r_next = keras.ops.where(closer, r_mid, best_r)
 
-            return it + 1, low, high, best_w, best_cost, best_r
+            return it + 1, new_low, new_high, best_w_next, best_r_next
 
-        it1 = keras.ops.convert_to_tensor(0, dtype="int32")
-        it, low, high, best_w, best_cost, best_r = keras.ops.while_loop(
-            bin_cond, bin_body, (it1, low, high, best_w0, best_cost0, best_r0)
-        )
-        return best_cost, best_w
+        _, _, _, final_w, _ = keras.ops.while_loop(bin_cond, bin_body, (0, low, high, high, get_ratio(high)))
+        return final_w
 
-    return keras.ops.cond(r0 < r_t, return_zero, do_search)
+    # Select w and construct final cost matrix once
+    optimal_w = keras.ops.cond(r0 < r_t, lambda: 0.0, do_search)
+    final_cost = M + optimal_w * C
+
+    return final_cost, optimal_w

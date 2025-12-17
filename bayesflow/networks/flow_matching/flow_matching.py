@@ -23,6 +23,9 @@ class FlowMatching(InferenceNetwork):
     """(IN) Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas
     incorporated from [1-5].
 
+    For optimal transport, the Sinkhorn algorithm is used to compute mini-batch optimal transport plans
+    between samples from the base distribution and the target distribution during training [6-8].
+
     [1] Liu et al. (2022). Flow straight and fast: Learning to generate and transfer data with rectified flow.
         arXiv preprint arXiv:2209.03003.
     [2] Lipman et al. (2022). Flow matching for generative modeling.
@@ -33,6 +36,10 @@ class FlowMatching(InferenceNetwork):
         Advances in Neural Information Processing Systems, 36, 16837-16864.
     [5] Orsini et al. (2025). Flow matching posterior estimation for simulation-based atmospheric retrieval of
         exoplanets. IEEE Access.
+    [6] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
+    [7] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
+        Conditional Flow-Based Generation"
+    [8] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
     """
 
     MLP_DEFAULT_CONFIG = {
@@ -49,7 +56,8 @@ class FlowMatching(InferenceNetwork):
         "regularization": 0.1,
         "max_steps": 100,
         "atol": 1e-5,
-        "rtol": 1e-4,
+        "partial_ot_factor": 1.0,  # no partial OT
+        "conditional_ot_ratio": 0.01,  # only used if conditions are provided
     }
 
     INTEGRATE_DEFAULT_CONFIG = {

@@ -14,7 +14,7 @@ methods = {
 
 
 def optimal_transport(
-    x1: Tensor, x2: Tensor, conditions: Tensor | None = None, method="log_sinkhorn", return_assignments=False, **kwargs
+    x1: Tensor, x2: Tensor, conditions: Tensor | None = None, method="sinkhorn", return_assignments=False, **kwargs
 ):
     """Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method
     and cost matrix used.

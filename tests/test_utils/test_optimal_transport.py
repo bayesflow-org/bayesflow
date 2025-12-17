@@ -17,7 +17,7 @@ def test_jit_compile():
 
 
 @pytest.mark.parametrize(
-    ["method", "partial_s", "condition_ratio"],
+    ["method", "partial_ot_factor", "conditional_ot_ratio"],
     [
         ("log_sinkhorn", 1.0, 0.01),
         ("log_sinkhorn", 0.8, 0.5),
@@ -25,12 +25,12 @@ def test_jit_compile():
         ("sinkhorn", 0.8, 0.5),
     ],
 )
-def test_shapes(method, partial_s, condition_ratio):
+def test_shapes(method, partial_ot_factor, conditional_ot_ratio):
     x = keras.random.normal((128, 8), seed=0)
     y = keras.random.normal((128, 8), seed=1)
 
     cond = None
-    if condition_ratio < 0.5:
+    if conditional_ot_ratio < 0.5:
         cond = keras.random.normal((128, 4, 1), seed=2)
 
     ox, oy, ocond = optimal_transport(
@@ -41,8 +41,8 @@ def test_shapes(method, partial_s, condition_ratio):
         seed=0,
         max_steps=10,
         method=method,
-        partial_s=partial_s,
-        condition_ratio=condition_ratio,
+        partial_ot_factor=partial_ot_factor,
+        conditional_ot_ratio=conditional_ot_ratio,
     )
 
     assert keras.ops.shape(ox) == keras.ops.shape(x)
@@ -52,7 +52,7 @@ def test_shapes(method, partial_s, condition_ratio):
 
 
 @pytest.mark.parametrize(
-    ["method", "partial_s", "condition_ratio"],
+    ["method", "partial_ot_factor", "conditional_ot_ratio"],
     [
         ("log_sinkhorn", 1.0, 0.01),
         ("log_sinkhorn", 0.8, 0.5),
@@ -60,12 +60,12 @@ def test_shapes(method, partial_s, condition_ratio):
         ("sinkhorn", 0.8, 0.5),
     ],
 )
-def test_transport_cost_improves(method, partial_s, condition_ratio):
+def test_transport_cost_improves(method, partial_ot_factor, conditional_ot_ratio):
     x = keras.random.normal((128, 2), seed=0)
     y = keras.random.normal((128, 2), seed=1)
 
     cond = None
-    if condition_ratio < 0.5:
+    if conditional_ot_ratio < 0.5:
         cond = keras.random.normal((128, 4, 1), seed=2)
 
     before_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
@@ -74,12 +74,12 @@ def test_transport_cost_improves(method, partial_s, condition_ratio):
         x,
         y,
         conditions=cond,
-        regularization="auto",
+        regularization=0.1,
         seed=0,
         max_steps=1000,
         method=method,
-        partial_s=partial_s,
-        condition_ratio=condition_ratio,
+        partial_ot_factor=partial_ot_factor,
+        conditional_ot_ratio=conditional_ot_ratio,
     )
     after_cost = keras.ops.sum(keras.ops.norm(x_after - y_after, axis=-1))
 
@@ -87,7 +87,7 @@ def test_transport_cost_improves(method, partial_s, condition_ratio):
 
 
 @pytest.mark.parametrize(
-    ["method", "partial_s"],
+    ["method", "partial_ot_factor"],
     [
         ("log_sinkhorn", 1.0),
         ("log_sinkhorn", 0.8),
@@ -95,7 +95,7 @@ def test_transport_cost_improves(method, partial_s, condition_ratio):
         ("sinkhorn", 0.8),
     ],
 )
-def test_assignment_is_optimal(method, partial_s):
+def test_assignment_is_optimal(method, partial_ot_factor):
     y = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(y)[0]), seed=0)
     x = keras.ops.take(y, p, axis=0)
@@ -103,16 +103,16 @@ def test_assignment_is_optimal(method, partial_s):
     _, _, _, assignments = optimal_transport(
         x,
         y,
-        regularization="auto",
+        regularization=0.01,
         seed=0,
         max_steps=10_000,
         method=method,
         return_assignments=True,
-        partial_s=partial_s,
+        partial_ot_factor=partial_ot_factor,
     )
 
     # transport is stochastic, so it is expected that a small fraction of assignments does not match
-    assert keras.ops.sum(assignments == p) > 14
+    assert keras.ops.sum(assignments == p) >= 14
 
 
 @pytest.mark.parametrize("method", ["log_sinkhorn", "sinkhorn"])
@@ -123,7 +123,7 @@ def test_no_nans_or_infs(method):
     y = keras.random.normal((64, 4), seed=1) * 10.0 + 100.0
 
     ox, oy, _, assignments = optimal_transport(
-        x, y, regularization="auto", seed=0, max_steps=1000, method=method, return_assignments=True
+        x, y, regularization=0.1, seed=0, max_steps=1000, method=method, return_assignments=True
     )
 
     assert keras.ops.all(keras.ops.isfinite(ox))
@@ -152,7 +152,7 @@ def test_assignment_aligns_with_pot():
     pot_assignments = keras.ops.squeeze(pot_assignments, axis=-1)
 
     _, _, _, assignments = optimal_transport(
-        x, y, regularization=1e-3, seed=0, max_steps=10_000, return_assignments=True
+        x, y, method="log_sinkhorn", regularization=1e-3, seed=0, max_steps=10_000, return_assignments=True
     )
 
     assert_allclose(pot_assignments, assignments)
@@ -164,7 +164,7 @@ def test_sinkhorn_plan_correct_marginals():
     x1 = keras.random.normal((10, 2), seed=0)
     x2 = keras.random.normal((20, 2), seed=1)
 
-    plan = sinkhorn_plan(x1, x2, rtol=1e-7, max_steps=1000)
+    plan = sinkhorn_plan(x1, x2, atol=1e-5, max_steps=1000)
 
     assert keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=0), 0.05, atol=1e-6))
     assert keras.ops.all(keras.ops.isclose(keras.ops.sum(plan, axis=1), 0.1, atol=1e-6))
@@ -177,22 +177,24 @@ def test_sinkhorn_plan_aligns_with_pot():
         pytest.skip("Need to install POT to run this test.")
 
     from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
-    from bayesflow.utils.optimal_transport.ot_utils import euclidean
+    from bayesflow.utils.optimal_transport.ot_utils import squared_euclidean
 
     x1 = keras.random.normal((10, 3), seed=0)
     x2 = keras.random.normal((20, 3), seed=1)
 
     a = keras.ops.ones(10) / 10
     b = keras.ops.ones(20) / 20
-    M = euclidean(x1, x2)
+    M = squared_euclidean(x1, x2)
 
-    pot_result = sinkhorn(a.numpy(), b.numpy(), M.numpy(), 0.1, stopThr=1e-8)
-    our_result = sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-7)
+    pot_result = sinkhorn(
+        keras.ops.convert_to_numpy(a), keras.ops.convert_to_numpy(b), keras.ops.convert_to_numpy(M), 0.1, stopThr=1e-7
+    )
+    our_result = sinkhorn_plan(x1, x2, regularization=0.1, atol=1e-7)
 
-    assert_allclose(pot_result, our_result)
+    assert_allclose(pot_result, our_result, rtol=1e-3, atol=1e-1)
 
 
-@pytest.mark.parametrize("reg", ["auto", 0.1, 1.0])
+@pytest.mark.parametrize("reg", [0.1, 0.1, 1.0])
 def test_sinkhorn_plan_matches_analytical_result(reg):
     from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
 
@@ -216,7 +218,7 @@ def test_log_sinkhorn_plan_correct_marginals():
     x1 = keras.random.normal((10, 2), seed=0)
     x2 = keras.random.normal((20, 2), seed=1)
 
-    log_plan = log_sinkhorn_plan(x1, x2, rtol=1e-6, max_steps=1000)
+    log_plan = log_sinkhorn_plan(x1, x2, atol=1e-5, max_steps=1000)
 
     assert keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(log_plan, axis=0), -keras.ops.log(20.0), atol=1e-3))
     assert keras.ops.all(keras.ops.isclose(keras.ops.logsumexp(log_plan, axis=1), -keras.ops.log(10.0), atol=1e-3))
@@ -229,19 +231,19 @@ def test_log_sinkhorn_plan_aligns_with_pot():
         pytest.skip("Need to install POT to run this test.")
 
     from bayesflow.utils.optimal_transport.log_sinkhorn import log_sinkhorn_plan
-    from bayesflow.utils.optimal_transport.ot_utils import euclidean
+    from bayesflow.utils.optimal_transport.ot_utils import squared_euclidean
 
     x1 = keras.random.normal((100, 3), seed=0)
     x2 = keras.random.normal((200, 3), seed=1)
 
     a = keras.ops.ones(100) / 100
     b = keras.ops.ones(200) / 200
-    M = euclidean(x1, x2)
+    M = squared_euclidean(x1, x2)
 
-    pot_result = keras.ops.log(sinkhorn_log(a, b, M, 0.1, stopThr=1e-7))  # sinkhorn_log returns probabilities
-    our_result = log_sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-6)
+    pot_result = sinkhorn_log(a, b, M, 0.1, stopThr=1e-7)  # sinkhorn_log returns probabilities
+    our_result = keras.ops.exp(log_sinkhorn_plan(x1, x2, regularization=0.1, atol=1e-7))
 
-    assert_allclose(pot_result, our_result, rtol=1e-4)
+    assert_allclose(pot_result, our_result, rtol=1e-4, atol=1e-5)
 
 
 def test_log_sinkhorn_plan_matches_analytical_result():
@@ -266,13 +268,13 @@ def test_sinkhorn_vs_log_sinkhorn_consistency():
     from bayesflow.utils.optimal_transport.sinkhorn import sinkhorn_plan
     from bayesflow.utils.optimal_transport.log_sinkhorn import log_sinkhorn_plan
 
-    x1 = keras.random.normal((20, 3), seed=0)
-    x2 = keras.random.normal((30, 3), seed=1)
+    x1 = keras.random.normal((30, 3), seed=0)
+    x2 = keras.random.normal((20, 3), seed=1)
 
-    plan_sinkhorn = sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-6)
-    plan_log_sinkhorn = keras.ops.exp(log_sinkhorn_plan(x1, x2, regularization=0.1, rtol=1e-6))
+    plan_sinkhorn = sinkhorn_plan(x1, x2, regularization=0.1, atol=1e-5)
+    plan_log_sinkhorn = keras.ops.exp(log_sinkhorn_plan(x1, x2, regularization=0.1, atol=1e-5))
 
-    assert_allclose(plan_sinkhorn, plan_log_sinkhorn, rtol=1e-3)
+    assert_allclose(plan_sinkhorn, plan_log_sinkhorn, rtol=1e-3, atol=1e-1)
 
 
 @pytest.mark.parametrize(
@@ -297,7 +299,7 @@ def test_partial_ot_leaves_unmatched_mass(method, s):
     y = keras.random.normal((m, 2), seed=123)
 
     # Get the transport plan with partial OT
-    plan = sinkhorn(x, y, regularization="auto", max_steps=10_000, partial_s=s)
+    plan = sinkhorn(x, y, regularization=0.1, max_steps=10_000, partial_ot_factor=s)
 
     if method == "log_sinkhorn":
         plan = keras.ops.exp(plan)

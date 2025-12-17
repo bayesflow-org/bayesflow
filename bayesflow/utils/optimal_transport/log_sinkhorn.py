@@ -1,15 +1,12 @@
-from typing import Literal
-
 import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from .ot_utils import (
-    euclidean,
+    squared_euclidean,
     cosine_distance,
     augment_for_partial_ot,
     search_for_conditional_weight,
-    auto_regularization,
 )
 
 from .. import logging
@@ -41,12 +38,11 @@ def log_sinkhorn_plan(
     x1: Tensor,
     x2: Tensor,
     conditions: Tensor | None = None,
-    regularization: Literal["auto"] | float = "auto",
-    rtol=1e-5,
-    atol=1e-8,
-    max_steps: int | None = None,
-    condition_ratio: float = 0.5,
-    partial_s: float = 1.0,
+    regularization: float = 1.0,
+    atol: float = 1e-5,
+    max_steps: int = 1000,
+    conditional_ot_ratio: float = 0.5,
+    partial_ot_factor: float = 1.0,
     **kwargs,
 ) -> Tensor:
     """
@@ -66,103 +62,81 @@ def log_sinkhorn_plan(
         Controls the standard deviation of the Gaussian kernel.
         Default: 1.0
 
-    :param max_steps: Maximum number of iterations, or None to run until convergence.
-        Default: None
-
-    :param rtol: Relative tolerance for convergence.
-        Default: 1e-6.
+    :param max_steps: Maximum number of iterations.
+        Default: 1000
 
     :param atol: Absolute tolerance for convergence.
-        Default: 1e-8.
+        Default: 1e-5.
 
-    :param condition_ratio: Ratio which measures the proportion of samples that are considered "potential optimal
+    :param conditional_ot_ratio: Ratio which measures the proportion of samples that are considered "potential optimal
         transport candidates". 0.5 is equivalent to no conditioning. [2] recommends a ratio of 0.01.
         Only used if `conditions` is not None.
         Default: 0.01
 
-    :param partial_s: Proportion of mass to transport in partial optimal transport.
+    :param partial_ot_factor: Proportion of mass to transport in partial optimal transport.
         Default: 1.0 (i.e., balanced OT)
 
     :return: Tensor of shape (n, m) or (n+1, m+1) if partial=True
         The log transport probabilities.
     """
-    partial = False
-    if not (0.0 < partial_s <= 1.0):
-        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_s}")
-    elif partial_s < 1.0:
-        partial = True
+    if not (0.0 < partial_ot_factor <= 1.0):
+        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_ot_factor}")
+    partial = partial_ot_factor < 1.0
 
-    cost = euclidean(x1, x2)
+    cost = squared_euclidean(x1, x2)
 
-    if regularization == "auto":
-        regularization = auto_regularization(cost)
-    elif regularization <= 0.0:
+    if regularization <= 0.0:
         raise ValueError(f"regularization must be positive, got {regularization}")
 
-    if conditions is not None and condition_ratio < 0.5:
+    if conditions is not None and conditional_ot_ratio < 0.5:
         cond_cost = cosine_distance(conditions, conditions)
         cost, w = search_for_conditional_weight(
-            M=cost, C=cond_cost, condition_ratio=condition_ratio, **filter_kwargs(kwargs, search_for_conditional_weight)
+            M=cost,
+            C=cond_cost,
+            condition_ratio=conditional_ot_ratio,
+            **filter_kwargs(kwargs, search_for_conditional_weight),
         )
 
     cost_scaled = -cost / regularization
-
     if partial:
         cost_scaled, a, b = augment_for_partial_ot(
             cost_scaled=cost_scaled,
             regularization=regularization,
-            s=partial_s,
+            s=partial_ot_factor,
             **filter_kwargs(kwargs, augment_for_partial_ot),
         )
         log_a = keras.ops.log(a)
         log_b = keras.ops.log(b)
-        log_a_reshape = keras.ops.reshape(log_a, (-1, 1))  # (n+1, 1)
-        log_b_reshape = keras.ops.reshape(log_b, (1, -1))  # (1, m+1)
+        n, m = keras.ops.shape(cost_scaled)
     else:
         # balanced uniform marginals (scalars)
         n, m = keras.ops.shape(cost_scaled)
-        log_a_reshape = -keras.ops.log(keras.ops.cast(n, cost_scaled.dtype))  # scalar
-        log_b_reshape = -keras.ops.log(keras.ops.cast(m, cost_scaled.dtype))  # scalar
+        log_a = keras.ops.full((n,), -keras.ops.log(keras.ops.cast(n, cost_scaled.dtype)))
+        log_b = keras.ops.full((m,), -keras.ops.log(keras.ops.cast(m, cost_scaled.dtype)))
 
-    # initialize transport plan from a gaussian kernel in log space
-    log_plan = cost_scaled - keras.ops.max(cost_scaled)
+    # log-plan is implicitly: log_plan = cost_scaled + u[:, None] + v[None, :]
+    u = keras.ops.zeros((n,), dtype=cost_scaled.dtype)
+    v = keras.ops.zeros((m,), dtype=cost_scaled.dtype)
 
-    def contains_nans(plan):
-        return keras.ops.any(keras.ops.isnan(plan))
+    def contains_nans(_plan):
+        return keras.ops.any(keras.ops.isnan(_plan))
 
-    def is_converged(plan):
-        # For convergence, the log marginals must match
-        if partial:
-            # Compare against vector log marginals
-            conv0 = keras.ops.all(
-                keras.ops.isclose(keras.ops.logsumexp(plan, axis=0, keepdims=True), log_b_reshape, rtol=rtol, atol=atol)
-            )
-            conv1 = keras.ops.all(
-                keras.ops.isclose(keras.ops.logsumexp(plan, axis=1, keepdims=True), log_a_reshape, rtol=rtol, atol=atol)
-            )
-        else:
-            # Compare against scalar log marginals
-            conv0 = keras.ops.all(
-                keras.ops.isclose(keras.ops.logsumexp(plan, axis=0), log_b_reshape, rtol=rtol, atol=atol)
-            )
-            conv1 = keras.ops.all(
-                keras.ops.isclose(keras.ops.logsumexp(plan, axis=1), log_a_reshape, rtol=rtol, atol=atol)
-            )
-        return conv0 & conv1
+    def cond(_, __, ___, _err):
+        return _err > atol
 
-    def cond(_, plan):
-        # break the while loop if the plan contains nans or is converged
-        return ~(contains_nans(plan) | is_converged(plan))
+    def body(_steps, _u, _v, _err):
+        u_next = log_a - keras.ops.logsumexp(cost_scaled + keras.ops.expand_dims(_v, 0), axis=1)
+        v_next = log_b - keras.ops.logsumexp(cost_scaled + keras.ops.expand_dims(u_next, 1), axis=0)
 
-    def body(steps, plan):
-        # Sinkhorn-Knopp: repeatedly normalize the transport plan along each dimension
-        plan = plan - keras.ops.logsumexp(plan, axis=0, keepdims=True) + log_b_reshape
-        plan = plan - keras.ops.logsumexp(plan, axis=1, keepdims=True) + log_a_reshape
+        # Error check on dual variable change
+        err_next = keras.ops.max(keras.ops.abs(u_next - _u))
+        return _steps + 1, u_next, v_next, err_next
 
-        return steps + 1, plan
+    err0 = keras.ops.cast(1e30, cost_scaled.dtype)
+    steps, u, v, err = keras.ops.while_loop(cond, body, (0, u, v, err0), maximum_iterations=max_steps)
 
-    steps = 0
-    steps, log_plan = keras.ops.while_loop(cond, body, (steps, log_plan), maximum_iterations=max_steps)
+    # final reconstruction
+    log_plan = cost_scaled + keras.ops.expand_dims(u, 1) + keras.ops.expand_dims(v, 0)
 
     def do_nothing():
         pass
@@ -180,7 +154,7 @@ def log_sinkhorn_plan(
         logging.warning(msg, steps)
 
     keras.ops.cond(contains_nans(log_plan), warn_nans, do_nothing)
-    keras.ops.cond(is_converged(log_plan), log_steps, warn_convergence)
+    keras.ops.cond(cond(None, None, None, err), log_steps, warn_convergence)
 
     if partial:
         return log_plan[:-1, :-1]

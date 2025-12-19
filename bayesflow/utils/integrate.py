@@ -1342,7 +1342,7 @@ def integrate_stochastic(
 
             z_history = None
             if K.backend() == "jax":
-                logging.warning("JAX backend needs to preallocate random samples for max steps.")
+                logging.warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
                 z_history = {}
                 for key, val in state.items():
                     shape = keras.ops.shape(val)
@@ -1376,7 +1376,7 @@ def integrate_stochastic(
     z_history = None
     z_extra_history = None if method not in ["sea", "shark"] else {}
     if K.backend() == "jax":
-        logging.warning("JAX backend needs to preallocate random samples for max steps.")
+        logging.warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
         z_history = {}
         for key, val in state.items():
             shape = keras.ops.shape(val)

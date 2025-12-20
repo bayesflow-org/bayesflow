@@ -11,9 +11,8 @@ from typing import Literal, Union
 from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
-from bayesflow.utils.logging import warning
+from bayesflow.utils.logging import warning, debug
 
-import logging
 
 ArrayLike = int | float | Tensor
 StateDict = Dict[str, ArrayLike]
@@ -401,7 +400,7 @@ def integrate_adaptive(
         )
         step = step + 1.0
 
-    logging.debug(f"Finished integration after {step} steps with {count_not_accepted} rejected steps.")
+    debug(f"Finished integration after {step} steps with {count_not_accepted} rejected steps.")
     return state
 
 
@@ -457,7 +456,7 @@ def integrate(
     state: StateDict,
     start_time: ArrayLike | None = None,
     stop_time: ArrayLike | None = None,
-    min_steps: int = 10,
+    min_steps: int = 50,
     max_steps: int = 10_000,
     steps: int | Literal["adaptive"] | Tensor | np.ndarray = 100,
     method: str = "rk45",
@@ -1156,7 +1155,7 @@ def integrate_stochastic_adaptive(
         )
         final_counter = final_counter + 1
 
-    logging.debug(f"Finished integration after {final_counter}.")
+    debug(f"Finished integration after {final_counter}.")
     return final_state
 
 
@@ -1342,7 +1341,7 @@ def integrate_stochastic(
 
             z_history = None
             if K.backend() == "jax":
-                logging.warning("JAX backend needs to preallocate random samples for max steps.")
+                warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
                 z_history = {}
                 for key, val in state.items():
                     shape = keras.ops.shape(val)
@@ -1376,7 +1375,7 @@ def integrate_stochastic(
     z_history = None
     z_extra_history = None if method not in ["sea", "shark"] else {}
     if K.backend() == "jax":
-        logging.warning("JAX backend needs to preallocate random samples for max steps.")
+        warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
         z_history = {}
         for key, val in state.items():
             shape = keras.ops.shape(val)

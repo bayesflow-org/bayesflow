@@ -373,7 +373,7 @@ def integrate_adaptive(
 
         # Step counter: increment only on accepted steps
         updated_step = _step + keras.ops.where(accepted, 1.0, 0.0)
-        _count_not_accepted = _count_not_accepted + keras.ops.where(accepted, 1.0, 0.0)
+        _count_not_accepted = _count_not_accepted + keras.ops.where(accepted, 0.0, 1.0)
 
         # For the next iteration, always use the new suggested step size
         return updated_state, updated_time, new_step_size, updated_step, updated_k1, _count_not_accepted

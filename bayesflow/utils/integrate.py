@@ -309,8 +309,11 @@ def integrate_adaptive(
     match method:
         case "rk45":
             step_fn = rk45_step
+            tolerance = keras.ops.convert_to_tensor(kwargs.get("tolerance", 1e-6), dtype="float32")
         case "tsit5":
             step_fn = tsit5_step
+            # more sensitive to error accumulation on GPU
+            tolerance = keras.ops.convert_to_tensor(kwargs.get("tolerance", 1e-5), dtype="float32")
         case "euler":
             raise ValueError("Adaptive step sizing is not supported for the 'euler' method.")
         case str() as name:
@@ -318,7 +321,6 @@ def integrate_adaptive(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    tolerance = keras.ops.convert_to_tensor(kwargs.get("tolerance", 1e-6), dtype="float32")
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=True)
     initial_step = (stop_time - start_time) / float(min_steps)
     step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")

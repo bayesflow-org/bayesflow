@@ -309,11 +309,8 @@ def integrate_adaptive(
     match method:
         case "rk45":
             step_fn = rk45_step
-            tolerance = keras.ops.convert_to_tensor(kwargs.get("tolerance", 1e-6), dtype="float32")
         case "tsit5":
             step_fn = tsit5_step
-            # more sensitive to error accumulation on GPU
-            tolerance = keras.ops.convert_to_tensor(kwargs.get("tolerance", 1e-5), dtype="float32")
         case "euler":
             raise ValueError("Adaptive step sizing is not supported for the 'euler' method.")
         case str() as name:
@@ -321,8 +318,10 @@ def integrate_adaptive(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
+    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype="float32")
+    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4), dtype="float32")
     step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=True)
-    initial_step = (stop_time - start_time) / float(min_steps)
+    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype="float32")
     step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
     count_not_accepted = 0
 
@@ -356,13 +355,16 @@ def integrate_adaptive(
             k1=_k1,
         )
 
-        new_step_size = h * keras.ops.clip(0.9 * (tolerance / (err + 1e-12)) ** 0.2, 0.2, 5.0)
+        # New step size suggestion
+        scale = atol + rtol * keras.ops.max([keras.ops.abs(v) for v in _state.values()])
+        error_ratio = err / scale
+        new_step_size = h * keras.ops.clip(0.9 * (1.0 / (error_ratio + 1e-12)) ** 0.2, 0.2, 5.0)
         new_step_size = keras.ops.sign(new_step_size) * keras.ops.clip(
             keras.ops.abs(new_step_size), min_step_size, max_step_size
         )
 
-        # Error control: reject if err > tolerance
-        too_big = keras.ops.greater(err, tolerance)
+        # Error control
+        too_big = keras.ops.greater(error_ratio, 1.0)
         at_min = keras.ops.less_equal(
             keras.ops.abs(h),
             keras.ops.abs(min_step_size),

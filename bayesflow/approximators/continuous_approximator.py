@@ -699,7 +699,6 @@ class ContinuousApproximator(Approximator):
             adapted_samples, log_det_jac = self.adapter(
                 _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
             )
-
             if len(log_det_jac) > 0:
                 problematic_keys = [key for key in log_det_jac if log_det_jac[key] != 0.0]
                 raise NotImplementedError(

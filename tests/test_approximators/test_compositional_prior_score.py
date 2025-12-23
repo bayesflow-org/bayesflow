@@ -14,13 +14,11 @@ def mock_prior_score_original_space(data_dict):
     return {"loc": loc_score}
 
 
-def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, diffusion_network):
-    """Test that prior scores work correctly with transforming adapter (log transformation)."""
-
+def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, compositional_diffusion_network):
     # Create approximator with transforming adapter
     approximator = ContinuousApproximator(
         adapter=identity_adapter,
-        inference_network=diffusion_network,
+        inference_network=compositional_diffusion_network,
     )
 
     # Generate test data and adapt it

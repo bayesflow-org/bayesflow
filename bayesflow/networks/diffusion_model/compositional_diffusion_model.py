@@ -221,7 +221,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             # sample random indices for mini-batch processing
             mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
             mini_batch_idx = mini_batch_idx[:mini_batch_size]
-            conditions_batch = conditions[:, mini_batch_idx]
+            conditions_batch = ops.take(conditions, mini_batch_idx, axis=1)
         else:
             conditions_batch = conditions
         individual_scores = self._compute_individual_scores(xz, log_snr_t, conditions_batch, training)
@@ -297,17 +297,12 @@ class CompositionalDiffusionModel(DiffusionModel):
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
-        if keras.backend.backend() == "jax":
-            mini_batch_size = integrate_kwargs.pop("mini_batch_size", None)
-            if mini_batch_size is not None:
-                raise ValueError(
-                    "Mini batching is not supported with JAX backend. Set mini_batch_size to None "
-                    "or use another backend."
-                )
-        else:
-            mini_batch_size = max(integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1)), 1)
+        mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
+        if mini_batch_size is None:
+            mini_batch_size = n_compositional
+        mini_batch_size = max(mini_batch_size, 1)
         self.compositional_bridge_d0 = float(integrate_kwargs.pop("compositional_bridge_d0", 1.0))
-        self.compositional_bridge_d1 = float(integrate_kwargs.pop("compositional_bridge_d1", 1.0))
+        self.compositional_bridge_d1 = float(integrate_kwargs.pop("compositional_bridge_d1", 1 / n_compositional))
 
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))

@@ -39,6 +39,20 @@ def simple_diffusion_model():
 
 
 @pytest.fixture
+def simple_compositional_diffusion_model():
+    """Create a simple diffusion model for testing compositional sampling."""
+    from bayesflow.networks.diffusion_model import CompositionalDiffusionModel
+    from bayesflow.networks import MLP
+
+    return CompositionalDiffusionModel(
+        subnet=MLP(widths=[32, 32]),
+        noise_schedule="cosine",
+        prediction_type="noise",
+        loss_type="noise",
+    )
+
+
+@pytest.fixture
 def compositional_conditions():
     """Create test conditions for compositional sampling."""
     batch_size = 2

@@ -697,8 +697,9 @@ class ContinuousApproximator(Approximator):
         def compute_prior_score_pre(_samples: Tensor) -> Tensor:
             if "inference_variables" in self.standardize:
                 _samples = self.standardize_layers["inference_variables"](_samples, forward=False)
+            _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": _samples})
             adapted_samples, log_det_jac = self.adapter(
-                {"inference_variables": _samples}, inverse=True, strict=False, log_det_jac=True, **kwargs
+                _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
             )
             if len(log_det_jac) > 0:
                 problematic_keys = [key for key in log_det_jac if log_det_jac[key] != 0.0]

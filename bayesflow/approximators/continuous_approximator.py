@@ -676,6 +676,9 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with compositional structure preserved.
         """
+        if keras.backend.backend() == "jax":
+            NotImplemented("Compositional sampling with JAX backend is not supported yet.")
+
         original_shapes = {}
         flattened_conditions = {}
         for key, value in conditions.items():  # Flatten compositional dimensions
@@ -691,13 +694,11 @@ class ContinuousApproximator(Approximator):
         # Remove any superfluous keys, just retain actual conditions
         prepared_conditions = {k: v for k, v in prepared_conditions.items() if k in self.CONDITION_KEYS}
 
-        # Prepare prior scores to handle adapter
         def compute_prior_score_pre(_samples: Tensor) -> Tensor:
             if "inference_variables" in self.standardize:
                 _samples = self.standardize_layers["inference_variables"](_samples, forward=False)
-            _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": _samples})
             adapted_samples, log_det_jac = self.adapter(
-                _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
+                {"inference_variables": _samples}, inverse=True, strict=False, log_det_jac=True, **kwargs
             )
             if len(log_det_jac) > 0:
                 problematic_keys = [key for key in log_det_jac if log_det_jac[key] != 0.0]
@@ -708,7 +709,7 @@ class ContinuousApproximator(Approximator):
 
             prior_score = compute_prior_score(adapted_samples)
             for key in adapted_samples:
-                prior_score[key] = prior_score[key].astype(np.float32)
+                prior_score[key] = keras.ops.cast(prior_score[key], "float32")
 
             prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
             out = keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
@@ -748,6 +749,7 @@ class ContinuousApproximator(Approximator):
                 "The provided compute_prior_score function does not return the correct shape. "
                 f"Expected ({n_datasets}, {num_samples}, ...), got {test.shape}."
             )
+        del test
 
         # Sample using compositional sampling
         samples = self._compositional_sample(

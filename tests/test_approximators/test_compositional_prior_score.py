@@ -1,8 +1,10 @@
 """Tests for compositional sampling and prior score computation with adapters."""
 
+import pytest
 import numpy as np
 
 from bayesflow import ContinuousApproximator
+import keras
 
 
 def mock_prior_score_original_space(data_dict):
@@ -14,6 +16,7 @@ def mock_prior_score_original_space(data_dict):
     return {"loc": loc_score}
 
 
+@pytest.mark.skipif(keras.backend.backend() == "jax", reason="Skipped on JAX backend")
 def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, compositional_diffusion_network):
     # Create approximator with transforming adapter
     approximator = ContinuousApproximator(

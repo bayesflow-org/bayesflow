@@ -654,7 +654,6 @@ class ContinuousApproximator(Approximator):
         """
         Generates compositional samples from the approximator given input conditions.
         The `conditions` dictionary should have shape (n_datasets, n_compositional_conditions, ...).
-        This method handles the extra compositional dimension appropriately.
 
         Parameters
         ----------

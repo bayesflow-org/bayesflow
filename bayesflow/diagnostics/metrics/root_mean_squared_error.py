@@ -2,7 +2,7 @@ from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
 
-from ...utils.dict_utils import dicts_to_arrays
+from ...utils.dict_utils import dicts_to_arrays, compute_test_quantities
 
 
 def root_mean_squared_error(
@@ -10,6 +10,7 @@ def root_mean_squared_error(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
+    test_quantities: dict[str, Callable] = None,
     normalize: str | None = "range",
     aggregation: Callable = np.median,
 ) -> dict[str, any]:
@@ -28,6 +29,18 @@ def root_mean_squared_error(
        By default, select all keys.
     variable_names : Sequence[str], optional (default = None)
         Optional variable names to show in the output.
+    test_quantities   : dict or None, optional, default: None
+        A dict that maps plot titles to functions that compute
+        test quantities based on estimate/target draws.
+
+        The dict keys are automatically added to ``variable_keys``
+        and ``variable_names``.
+        Test quantity functions are expected to accept a dict of draws with
+        shape ``(batch_size, ...)`` as the first (typically only)
+        positional argument and return an NumPy array of shape
+        ``(batch_size,)``.
+        The functions do not have to deal with an additional
+        sample dimension, as appropriate reshaping is done internally.
     normalize      : str or None, optional (default = "range")
         Whether to normalize the RMSE using statistics of the prior samples.
         Possible options are ("mean", "range", "median", "iqr", "std", None)
@@ -51,6 +64,20 @@ def root_mean_squared_error(
         - "variable_names" : str
             The (inferred) variable names.
     """
+
+    # Optionally, compute and prepend test quantities from draws
+    if test_quantities is not None:
+        updated_data = compute_test_quantities(
+            targets=targets,
+            estimates=estimates,
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+        )
+        variable_names = updated_data["variable_names"]
+        variable_keys = updated_data["variable_keys"]
+        estimates = updated_data["estimates"]
+        targets = updated_data["targets"]
 
     samples = dicts_to_arrays(
         estimates=estimates,

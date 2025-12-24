@@ -1,0 +1,132 @@
+from copy import deepcopy
+import inspect
+from typing import Any, Callable, TypeAlias
+
+import networkx as nx
+
+from .utils import split_node, merge_root_nodes
+
+Node: TypeAlias = str
+SimulationNode: TypeAlias = str
+ExpandedNode: TypeAlias = str
+
+
+class SimulationGraph(nx.DiGraph):
+    """
+    Directed acyclic graph defining a simulation composed of sampling nodes.
+    Created and mutated internally when building a `GraphicalSimulator`.
+
+    A `SimulationGraph` is used to infer a factorization of the joint posterior
+    in two stages: First, the graph is expanded into an `ExpandedGraph`.
+    This is necessary to determine if variables from a node can be estimated
+    group-wise (enabling amortization over groups).
+
+    Second, an inversion algorithm is applied to the `ExpandedGraph` to produce
+    an `InvertedGraph`, which served as an input to the `GraphicalApproximator`.
+
+    Parameters
+    ----------
+    meta_fn : Callable[[], dict[str, Any]] | None
+        Function returning a dict of meta data.
+        This meta data can be used to dynamically vary the number of sampling repetitions (`reps`)
+        for nodes added via `add_node`.
+    """
+
+    def __init__(self, meta_fn: Callable | None = None):
+        super().__init__()
+        self.meta_fn = meta_fn
+
+    def expand(self, merge_roots: bool = True):
+        """
+        Expands the graph by splitting interior nodes into explicit subgraphs.
+
+        Returns
+        -------
+        ExpandedGraph
+            Expanded representation of the simulation graph.
+        """
+        from .expanded_graph import ExpandedGraph
+
+        graph = deepcopy(self)
+        if merge_roots:
+            graph = merge_root_nodes(graph)
+
+        for node in nx.lexicographical_topological_sort(graph):
+            interior_node = graph.in_degree(node) != 0 and graph.out_degree(node) != 0
+
+            if interior_node and node in graph.nodes:
+                graph = split_node(graph, node)
+
+        for node in nx.lexicographical_topological_sort(graph):
+            for key in ["split_by", "previous_names", "merged_from"]:
+                if key not in graph.nodes[node]:
+                    graph.nodes[node][key] = []
+
+        return ExpandedGraph(graph, simulation_graph=self)
+
+    def invert(self, merge_roots: bool = True):
+        """
+        Inverts the expanded simulation graph.
+
+        Parameters
+        ----------
+        merge_roots : bool, optional
+            Whether to merge root nodes in the inverted graph.
+
+        Returns
+        -------
+        InvertedGraph
+            Inverted representation of the expanded graph.
+        """
+        expanded_graph = self.expand(merge_roots=merge_roots)
+        inverted_graph = expanded_graph.invert(merge_roots=merge_roots)
+
+        return inverted_graph
+
+    def variable_names(self) -> dict[SimulationNode, list[str]]:
+        """
+        Returns a mapping from each node to the list of variable names it produces.
+
+        The graph is evaluated once in topological order o collect sample outputs.
+        This may be expensive; results are cached in `GraphicalApproximator`.
+        """
+
+        def _call_sample_fn(sample_fn: Callable[[], dict[str, Any]], args) -> dict[str, Any]:
+            signature = inspect.signature(sample_fn)
+            fn_args = signature.parameters
+            accepted_args = {k: v for k, v in args.items() if k in fn_args}
+
+            return sample_fn(**accepted_args)
+
+        simulation_graph = deepcopy(self)
+        meta_dict = simulation_graph.meta_fn() if simulation_graph.meta_fn else {}
+        samples_by_node = {}
+
+        for node in nx.lexicographical_topological_sort(simulation_graph):
+            simulation_graph.nodes[node]["reps"] = 1
+            parent_nodes = list(simulation_graph.predecessors(node))
+            sample_fn = simulation_graph.nodes[node]["sample_fn"]
+
+            if not parent_nodes:
+                samples_by_node[node] = _call_sample_fn(sample_fn, {})
+            else:
+                parent_samples = [samples_by_node[p] for p in parent_nodes]
+                merged_dict = {k: v for d in parent_samples for k, v in d.items()}
+
+                sample_fn_input = merged_dict | meta_dict
+                samples_by_node[node] = _call_sample_fn(sample_fn, sample_fn_input)
+
+        return {k: list(v.keys()) for k, v in samples_by_node.items()}
+
+    def data_node(self) -> SimulationNode:
+        """
+        Returns the terminal (leaf) node of the simulation graph.
+
+        Returns
+        -------
+        SimulationNode
+            Node with no outgoing edges.
+        """
+        leaf_nodes = [n for n, d in self.out_degree() if d == 0]
+
+        return leaf_nodes[0]

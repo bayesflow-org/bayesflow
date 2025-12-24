@@ -5,6 +5,7 @@ import numpy as np
 
 from bayesflow.utils import prepare_plot_data, prettify_subplots, make_quadratic, add_titles_and_labels, add_metric
 from bayesflow.utils.numpy_utils import credible_interval
+from bayesflow.utils.dict_utils import compute_test_quantities
 
 
 def recovery(
@@ -12,6 +13,7 @@ def recovery(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
+    test_quantities: dict[str, Callable] = None,
     point_agg: Callable = np.median,
     uncertainty_agg: Callable = credible_interval,
     point_agg_kwargs: dict = None,
@@ -58,6 +60,18 @@ def recovery(
        By default, select all keys.
     variable_names    : list or None, optional, default: None
         The individual parameter names for nice plot titles. Inferred if None
+    test_quantities   : dict or None, optional, default: None
+        A dict that maps plot titles to functions that compute
+        test quantities based on estimate/target draws.
+
+        The dict keys are automatically added to ``variable_keys``
+        and ``variable_names``.
+        Test quantity functions are expected to accept a dict of draws with
+        shape ``(batch_size, ...)`` as the first (typically only)
+        positional argument and return an NumPy array of shape
+        ``(batch_size,)``.
+        The functions do not have to deal with an additional
+        sample dimension, as appropriate reshaping is done internally.
     point_agg         : callable, optional, default: median
         Function to compute point estimates.
     uncertainty_agg   : callable, optional, default: credible_interval with coverage probability 95%
@@ -103,6 +117,20 @@ def recovery(
     ShapeError
         If there is a deviation from the expected shapes of ``estimates`` and ``targets``.
     """
+
+    # Optionally, compute and prepend test quantities from draws
+    if test_quantities is not None:
+        updated_data = compute_test_quantities(
+            targets=targets,
+            estimates=estimates,
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+        )
+        variable_names = updated_data["variable_names"]
+        variable_keys = updated_data["variable_keys"]
+        estimates = updated_data["estimates"]
+        targets = updated_data["targets"]
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(

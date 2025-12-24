@@ -35,6 +35,14 @@ def test_metric_calibration_error(random_estimates, random_targets, var_names):
     assert out["values"].shape == (random_estimates["sigma"].shape[-1],)
     assert out["variable_names"] == ["sigma"]
 
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.calibration_error(random_estimates, random_targets, test_quantities=test_quantities)
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
+
 
 def test_posterior_contraction(random_estimates, random_targets):
     # basic functionality: automatic variable names
@@ -47,6 +55,36 @@ def test_posterior_contraction(random_estimates, random_targets):
     out = bf.diagnostics.metrics.posterior_contraction(random_estimates, random_targets, aggregation=None)
     assert out["values"].shape == (random_estimates["sigma"].shape[0], num_variables(random_estimates))
 
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.posterior_contraction(
+        random_estimates, random_targets, test_quantities=test_quantities
+    )
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
+
+
+def test_posterior_z_score(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    out = bf.diagnostics.metrics.posterior_z_score(random_estimates, random_targets)
+    assert list(out.keys()) == ["values", "metric_name", "variable_names"]
+    assert out["values"].shape == (num_variables(random_estimates),)
+    assert out["metric_name"] == "Posterior z-score"
+    assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
+    # test without aggregation
+    out = bf.diagnostics.metrics.posterior_z_score(random_estimates, random_targets, aggregation=None)
+    assert out["values"].shape == (random_estimates["sigma"].shape[0], num_variables(random_estimates))
+
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.posterior_z_score(random_estimates, random_targets, test_quantities=test_quantities)
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
+
 
 def test_root_mean_squared_error(random_estimates, random_targets):
     # basic functionality: automatic variable names
@@ -55,6 +93,16 @@ def test_root_mean_squared_error(random_estimates, random_targets):
     assert out["values"].shape == (num_variables(random_estimates),)
     assert out["metric_name"] == "NRMSE"
     assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
+
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.root_mean_squared_error(
+        random_estimates, random_targets, test_quantities=test_quantities
+    )
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
 
 
 def test_classifier_two_sample_test(random_samples_a, random_samples_b):
@@ -94,6 +142,16 @@ def test_calibration_log_gamma(random_estimates, random_targets):
     assert out["values"].shape == (num_variables(random_estimates),)
     assert out["metric_name"] == "Log Gamma"
     assert out["variable_names"] == ["beta_0", "beta_1", "sigma"]
+
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.metrics.calibration_log_gamma(
+        random_estimates, random_targets, test_quantities=test_quantities
+    )
+    assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
 
 
 def test_calibration_log_gamma_end_to_end():

@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 from typing import TypeAlias
 
 import networkx as nx
@@ -170,12 +171,13 @@ def merge_root_nodes(graph: nx.DiGraph):
     return merge_nodes(graph, root_nodes)
 
 
-# Returns a graph with merged nodes. Used for merging root nodes.
 def merge_nodes(graph: nx.DiGraph, nodes: list[Node]):
     """
     Given an input graph, returns a graph where the nodes given in `nodes` are merged
     into a single node. Used for merging root nodes.
     """
+    graph = deepcopy(graph)
+
     for node in nodes[1::]:
         graph = nx.contracted_nodes(graph, nodes[0], node, copy=False, self_loops=False)
 

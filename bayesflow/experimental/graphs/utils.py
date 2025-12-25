@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 from typing import TypeAlias
 
 import networkx as nx
@@ -25,8 +26,8 @@ def split_node(graph: nx.DiGraph, node: Node) -> nx.DiGraph:
             split_graph.add_node(renamed)
 
             # add metadata
-            split_graph = add_split_by_metadata(split_graph, subgraph, original, renamed, node)
-            split_graph = add_previous_names_metadata(split_graph, subgraph, original, renamed)
+            split_graph = add_split_by_metadata(subgraph, split_graph, original, renamed, node)
+            split_graph = add_previous_names_metadata(subgraph, split_graph, original, renamed)
 
         # add edges
         for parent in graph.predecessors(node):
@@ -100,51 +101,61 @@ def add_suffix(string: str, suffix: int):
 
 
 def add_split_by_metadata(
-    graph: nx.DiGraph,
-    subgraph: nx.DiGraph,
-    original: Node,
-    renamed: Node,
+    from_graph: nx.DiGraph,
+    to_graph: nx.DiGraph,
+    from_node: Node,
+    to_node: Node,
     split_node: Node,
 ) -> nx.DiGraph:
     """
-    Adds a "split_by" node annotation field, which contains a reference to the
-    nodes that cause a node to be split during graph expansion.
-    """
-    graph = graph.copy()
+    Given a node `from_node` in `from_graph`, takes existing split_by metadata and
+    add it to `to_node` in `to_graph`. Then, append `split_node` to split_by
+    entry in `to_node`.
 
-    if "split_by" in subgraph.nodes[original]:
-        # transfer metadata on subgraph to graph
-        splits = subgraph.nodes[original]["split_by"]
-        graph.nodes[renamed]["split_by"] = splits
+    This is used internally to add a "split_by" annotation field, which contains a
+    reference to which nodes caused another node to be split during graph expansion.
+    """
+    to_graph = deepcopy(to_graph)
+
+    if "split_by" in from_graph.nodes[from_node]:
+        # transfer metadata in from_graph to to_graph
+        splits = from_graph.nodes[from_node]["split_by"]
+        to_graph.nodes[to_node]["split_by"] = splits
 
         # add split_node to split_on
         if split_node not in splits:
-            graph.nodes[renamed]["split_by"].append(split_node)
+            to_graph.nodes[to_node]["split_by"].append(split_node)
     else:
-        graph.nodes[renamed]["split_by"] = [split_node]
+        to_graph.nodes[to_node]["split_by"] = [split_node]
 
-    return graph
+    return to_graph
 
 
-def add_previous_names_metadata(graph: nx.DiGraph, subgraph: nx.DiGraph, original: Node, renamed: Node) -> nx.DiGraph:
+def add_previous_names_metadata(
+    from_graph: nx.DiGraph, to_graph: nx.DiGraph, from_node: Node, to_node: Node
+) -> nx.DiGraph:
     """
-    Adds a "previous_names" node annotation field, which contains a reference
-    to previous node names during split operations of the graph expansion.
-    """
-    graph = graph.copy()
+    Given a node `from_node` in `from_graph`, takes existing previous_names metadata and
+    adds it to `to_node` in `to_graph`. Then, append `from_node` to previous_names
+    entry in `to_node`.
 
-    if "previous_names" in subgraph.nodes[original]:
+    This is used internally to add a "previous_names" node annotation field, which
+    contains a reference to previous node names during graph expansion.
+    """
+    to_graph = deepcopy(to_graph)
+
+    if "previous_names" in from_graph.nodes[from_node]:
         # transfer metadata on subgraph to graph
-        previous_names = subgraph.nodes[original]["previous_names"]
-        graph.nodes[renamed]["previous_names"] = previous_names
+        previous_names = from_graph.nodes[from_node]["previous_names"]
+        to_graph.nodes[to_node]["previous_names"] = previous_names
 
         # add name to previous_names
-        if original not in previous_names:
-            graph.nodes[renamed]["previous_names"].append(original)
+        if from_node not in previous_names:
+            to_graph.nodes[to_node]["previous_names"].append(from_node)
     else:
-        graph.nodes[renamed]["previous_names"] = [original]
+        to_graph.nodes[to_node]["previous_names"] = [from_node]
 
-    return graph
+    return to_graph
 
 
 def sort_nodes_topologically(graph: nx.DiGraph, nodes: list[Node]):
@@ -170,12 +181,13 @@ def merge_root_nodes(graph: nx.DiGraph):
     return merge_nodes(graph, root_nodes)
 
 
-# Returns a graph with merged nodes. Used for merging root nodes.
 def merge_nodes(graph: nx.DiGraph, nodes: list[Node]):
     """
     Given an input graph, returns a graph where the nodes given in `nodes` are merged
     into a single node. Used for merging root nodes.
     """
+    graph = deepcopy(graph)
+
     for node in nodes[1::]:
         graph = nx.contracted_nodes(graph, nodes[0], node, copy=False, self_loops=False)
 

@@ -72,16 +72,21 @@ def test_split_node(three_level_graph):
     split_graph_2 = split_node(split_graph, "classrooms_1")
 
     expected = nx.DiGraph()
-    # fmt: off
-    expected.add_edges_from([
-        ("schools", "classrooms_11"), ("schools", "classrooms_12"), 
-        ("classrooms_11", "students_11"), ("students_11", "scores_11"),
-        ("classrooms_12", "students_12"), ("students_12", "scores_12"), 
-        ("schools", "classrooms_2"), ("classrooms_2", "students_2"), ("students_2", "scores_2"),
-        ("shared", "scores_11"),
-        ("shared", "scores_12"),
-        ("shared", "scores_2"),
-    ]
+    expected.add_edges_from(
+        [
+            ("schools", "classrooms_11"),
+            ("schools", "classrooms_12"),
+            ("classrooms_11", "students_11"),
+            ("students_11", "scores_11"),
+            ("classrooms_12", "students_12"),
+            ("students_12", "scores_12"),
+            ("schools", "classrooms_2"),
+            ("classrooms_2", "students_2"),
+            ("students_2", "scores_2"),
+            ("shared", "scores_11"),
+            ("shared", "scores_12"),
+            ("shared", "scores_2"),
+        ]
     )
 
     assert nx.is_isomorphic(split_graph_2, expected)
@@ -111,7 +116,6 @@ def test_split_node(three_level_graph):
         "scores_12": ["classrooms", "classrooms_1"],
         "scores_2": ["classrooms"],
     }
-    # fmt: on
 
     for node, split_by in expected_split_by.items():
         assert split_graph_2.nodes[node]["split_by"] == split_by

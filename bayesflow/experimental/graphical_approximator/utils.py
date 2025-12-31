@@ -433,7 +433,7 @@ def concatenate(tensors, batch_dims=1):
     >>> y = keras.random.normal((20, 15, 3)
     >>> z = concatenate([x, y])
     >>> keras.ops.shape(z)
-    (20, 15, 3)
+    (20, 15, 8)
     """
     max_rank = max([len(keras.ops.shape(t)) for t in tensors])
 

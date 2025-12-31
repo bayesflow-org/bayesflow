@@ -2,7 +2,6 @@ from copy import deepcopy
 
 import networkx as nx
 
-from bayesflow.experimental.graphical_simulator.example_simulators.two_level_simulator import two_level_simulator
 from bayesflow.experimental.graphs.utils import (
     add_previous_names_metadata,
     add_split_by_metadata,

@@ -1,3 +1,4 @@
+from bayesflow.experimental.graphs.utils import sort_nodes_topologically
 from functools import reduce
 from typing import TYPE_CHECKING, Mapping
 
@@ -202,7 +203,7 @@ def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Ma
     conditions = []
     nodes_to_condition_on = set(network_conditions) - {data_node} - set(network_composition)
 
-    for node in nodes_to_condition_on:
+    for node in sort_nodes_topologically(approximator.graph.simulation_graph, list(nodes_to_condition_on)):
         for name in variable_names[node]:
             var = data[name]
 

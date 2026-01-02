@@ -230,7 +230,9 @@ def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Ma
 
     # add node repetitions
     repetitions = repetitions_from_data_shape(approximator, approximator._data_shapes(data))
-    conditions = add_node_reps_to_conditions(conditions, repetitions)
+
+    if repetitions != {}:
+        conditions = add_node_reps_to_conditions(conditions, repetitions)
 
     return conditions
 

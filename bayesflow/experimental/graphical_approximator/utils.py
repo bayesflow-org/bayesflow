@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from .graphical_approximator import GraphicalApproximator
 
 import keras
-
 from ...types import Shape, Tensor
 
 
@@ -356,7 +355,7 @@ def inference_variable_shapes_by_network(approximator: "GraphicalApproximator", 
 
                 # flatten group dimension if node is not amortizable
                 if not approximator.graph.allows_amortization(node):
-                    shape = shape[:-2] + (keras.ops.prod(shape[-2:]),)
+                    shape = shape[:-2] + (int(keras.ops.prod(shape[-2:])),)
 
                 variable_shapes.append(tuple(shape))
 

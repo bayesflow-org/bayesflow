@@ -219,7 +219,7 @@ class GraphicalApproximator(Approximator):
         """
 
         if "dataset" in kwargs.keys():
-            if type(kwargs["dataset"]) is SimulationOutput:
+            if isinstance(kwargs["dataset"], SimulationOutput):
                 kwargs["dataset"] = kwargs["dataset"].data
 
         return super(GraphicalApproximator, self).fit(*args, **kwargs, adapter=self.adapter)

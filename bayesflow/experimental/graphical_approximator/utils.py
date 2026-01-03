@@ -2,8 +2,6 @@ from bayesflow.experimental.graphs.utils import sort_nodes_topologically
 from functools import reduce
 from typing import TYPE_CHECKING, Mapping
 
-# TODO REVIEW: This type checking direction seems to be required.
-# Any way around this?
 if TYPE_CHECKING:
     from .graphical_approximator import GraphicalApproximator
 
@@ -14,7 +12,7 @@ from ...types import Shape, Tensor
 def split_network_output(approximator: "GraphicalApproximator", output: Tensor, network_idx: int):
     """
     Given the output of an inference network and its network index,
-    splits the tensor into a dictionary where each key is a variable variable name
+    splits the tensor into a dictionary where each key is a variable name
     and the values are tensors of the appropriate shape.
     """
     network_composition = approximator.graph.network_composition()
@@ -193,7 +191,7 @@ def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Ma
     """
     Returns the inference conditions for the inference network denoted by `network_idx`.
     """
-    data_conditions = data_conditions_by_network(approximator, data)  # TODO: this is a bit wasteful
+    data_conditions = data_conditions_by_network(approximator, data)
     network_composition = approximator.graph.network_composition()[network_idx]
     network_conditions = approximator.graph.network_conditions()[network_idx]
     variable_names = approximator.graph.simulation_graph.variable_names()

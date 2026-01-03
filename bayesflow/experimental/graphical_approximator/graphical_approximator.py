@@ -3,7 +3,6 @@ from collections.abc import Mapping, Sequence
 import keras
 import numpy as np
 
-# TODO: add log_prob method to approximator
 from ...adapters import Adapter
 from ...approximators import Approximator
 from ...networks import InferenceNetwork, SummaryNetwork

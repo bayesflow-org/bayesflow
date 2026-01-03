@@ -1,21 +1,31 @@
+import keras
+import pytest
+
 from bayesflow.experimental.graphical_approximator.utils import (
-    expand_shape_rank,
-    stack_shapes,
-    concatenate_shapes,
+    add_node_reps_to_conditions,
     add_sample_dimension,
     concatenate,
-    repetitions_from_data_shape,
-    inference_condition_shapes_by_network,
-    inference_variable_shapes_by_network,
+    concatenate_shapes,
     data_condition_shapes_by_network,
-    summary_input_shapes_by_network,
-    summary_output_shapes_by_network,
-    summary_input_shape,
-    add_node_reps_to_conditions,
+    data_conditions_by_network,
+    expand_shape_rank,
+    inference_condition_shapes_by_network,
+    inference_conditions_by_network,
+    inference_variable_shapes_by_network,
+    inference_variables_by_network,
+    prepare_data_conditions,
     prepare_inference_conditions,
+    prepare_inference_variables,
+    repetitions_from_data_shape,
+    split_network_output,
+    stack_shapes,
+    summary_input,
+    summary_input_shape,
+    summary_input_shapes_by_network,
+    summary_inputs_by_network,
+    summary_output_shapes_by_network,
     summary_outputs_by_network,
 )
-import keras
 
 
 def test_expand_shape_rank():
@@ -920,7 +930,7 @@ def test_prepare_inference_conditions_crossed_design_irt(crossed_design_irt_simu
     sigma_question_std = approximator.standardize_layers["sigma_question_std"](data["sigma_question_std"])
 
     question_mean = approximator.standardize_layers["question_mean"](data["question_mean"])
-    question_mean_rank = keras.ops.ndim(question_mean)
+    question_mean_rank = keras.ops.cast(keras.ops.ndim(question_mean), "int32")
     question_mean_perm = (*range(question_mean_rank - 2), question_mean_rank - 1, question_mean_rank - 2)
     question_mean_transpose = keras.ops.transpose(question_mean, axes=question_mean_perm)
     question_mean_reshape = keras.ops.reshape(
@@ -928,7 +938,7 @@ def test_prepare_inference_conditions_crossed_design_irt(crossed_design_irt_simu
     )
 
     question_std = approximator.standardize_layers["question_std"](data["question_std"])
-    question_std_rank = keras.ops.ndim(question_std)
+    question_std_rank = keras.ops.cast(keras.ops.ndim(question_std), "int32")
     question_std_perm = (*range(question_std_rank - 2), question_std_rank - 1, question_std_rank - 2)
     question_std_transpose = keras.ops.transpose(question_std, axes=question_std_perm)
     question_std_reshape = keras.ops.reshape(
@@ -936,7 +946,7 @@ def test_prepare_inference_conditions_crossed_design_irt(crossed_design_irt_simu
     )
 
     question_difficulty = approximator.standardize_layers["question_difficulty"](data["question_difficulty"])
-    question_difficulty_rank = keras.ops.ndim(question_difficulty)
+    question_difficulty_rank = keras.ops.cast(keras.ops.ndim(question_difficulty), "int32")
     question_difficulty_perm = (
         *range(question_difficulty_rank - 2),
         question_difficulty_rank - 1,
@@ -964,3 +974,567 @@ def test_prepare_inference_conditions_crossed_design_irt(crossed_design_irt_simu
         repetitions,
     )
     assert keras.ops.all(conditions == expected_output)
+
+
+def test_inference_conditions_by_network_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_simulator.sample(2)
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = (2, 10)
+
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[0]) == expected_shape_0
+
+
+def test_inference_conditions_by_network_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_simulator.sample(2)
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = (2, 22)
+    expected_shape_1 = (2, 6, 15)
+
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[0]) == expected_shape_0
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[1]) == expected_shape_1
+
+
+def test_inference_conditions_by_network_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_simulator.sample(2)
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = (2, 33)
+    expected_shape_1 = (2, data.meta["N_classrooms"], 26)
+    expected_shape_2 = (2, data.meta["N_classrooms"], data.meta["N_students"], 18)
+
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[0]) == expected_shape_0
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[1]) == expected_shape_1
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[2]) == expected_shape_2
+
+
+def test_inference_conditions_by_network_crossed_design_irt(
+    crossed_design_irt_simulator, crossed_design_irt_approximator
+):
+    data = crossed_design_irt_simulator.sample(2)
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = (2, 22)
+    expected_shape_1 = (2, 26)
+    expected_shape_2 = (
+        2,
+        data.meta["num_students"],
+        10 + data.meta["num_questions"] * 3 + 4 + 2,
+    )
+
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[0]) == expected_shape_0
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[1]) == expected_shape_1
+    assert keras.ops.shape(inference_conditions_by_network(approximator, data)[2]) == expected_shape_2
+
+
+def test_prepare_inference_variables_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_simulator.sample(2)
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    conditions = prepare_inference_variables(approximator, data, 0)
+
+    beta = approximator.standardize_layers["beta"](data["beta"])
+    sigma = approximator.standardize_layers["sigma"](data["sigma"])
+
+    expected_output = concatenate([beta, sigma])
+    assert keras.ops.all(conditions == expected_output)
+
+
+def test_prepare_inference_variables_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_simulator.sample(2)
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    conditions = prepare_inference_variables(approximator, data, 0)
+
+    hyper_mean = approximator.standardize_layers["hyper_mean"](data["hyper_mean"])
+    hyper_std = approximator.standardize_layers["hyper_std"](data["hyper_std"])
+    shared_std = approximator.standardize_layers["shared_std"](data["shared_std"])
+
+    expected_output = concatenate([hyper_mean, hyper_std, shared_std])
+    assert keras.ops.all(conditions == expected_output)
+
+    conditions = prepare_inference_variables(approximator, data, 1)
+
+    expected_output = approximator.standardize_layers["local_mean"](data["local_mean"])
+    assert keras.ops.all(conditions == expected_output)
+
+
+def test_prepare_inference_variables_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_simulator.sample(2)
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    conditions = prepare_inference_variables(approximator, data, 0)
+
+    school_mu = approximator.standardize_layers["school_mu"](data["school_mu"])
+    school_sigma = approximator.standardize_layers["school_sigma"](data["school_sigma"])
+    shared_sigma = approximator.standardize_layers["shared_sigma"](data["shared_sigma"])
+
+    expected_output = concatenate([school_mu, school_sigma, shared_sigma])
+    assert keras.ops.all(conditions == expected_output)
+
+    conditions = prepare_inference_variables(approximator, data, 1)
+
+    classroom_mu = approximator.standardize_layers["classroom_mu"](data["classroom_mu"])
+    classroom_sigma = approximator.standardize_layers["classroom_sigma"](data["classroom_sigma"])
+
+    expected_output = concatenate([classroom_mu, classroom_sigma])
+    assert keras.ops.all(conditions == expected_output)
+
+    conditions = prepare_inference_variables(approximator, data, 2)
+
+    student_mu = approximator.standardize_layers["student_mu"](data["student_mu"])
+    student_sigma = approximator.standardize_layers["student_sigma"](data["student_sigma"])
+
+    expected_output = concatenate([student_mu, student_sigma])
+    assert keras.ops.all(conditions == expected_output)
+
+
+def test_prepare_inference_variables_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
+    data = crossed_design_irt_simulator.sample(2)
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    conditions = prepare_inference_variables(approximator, data, 0)
+
+    mu_question_mean = approximator.standardize_layers["mu_question_mean"](data["mu_question_mean"])
+    sigma_question_mean = approximator.standardize_layers["sigma_question_mean"](data["sigma_question_mean"])
+    mu_question_std = approximator.standardize_layers["mu_question_std"](data["mu_question_std"])
+    sigma_question_std = approximator.standardize_layers["sigma_question_std"](data["sigma_question_std"])
+
+    expected_output = concatenate([mu_question_mean, sigma_question_mean, mu_question_std, sigma_question_std])
+    assert keras.ops.all(conditions == expected_output)
+
+    conditions = prepare_inference_variables(approximator, data, 1)
+
+    question_mean = approximator.standardize_layers["question_mean"](data["question_mean"])
+    question_mean_rank = keras.ops.cast(keras.ops.ndim(question_mean), "int32")
+    question_mean_perm = (*range(question_mean_rank - 2), question_mean_rank - 1, question_mean_rank - 2)
+    question_mean_transpose = keras.ops.transpose(question_mean, axes=question_mean_perm)
+    question_mean_reshape = keras.ops.reshape(
+        question_mean_transpose, (*keras.ops.shape(question_mean_transpose)[:-2], -1)
+    )
+
+    question_std = approximator.standardize_layers["question_std"](data["question_std"])
+    question_std_rank = keras.ops.cast(keras.ops.ndim(question_std), "int32")
+    question_std_perm = (*range(question_std_rank - 2), question_std_rank - 1, question_std_rank - 2)
+    question_std_transpose = keras.ops.transpose(question_std, axes=question_std_perm)
+    question_std_reshape = keras.ops.reshape(
+        question_std_transpose, (*keras.ops.shape(question_std_transpose)[:-2], -1)
+    )
+
+    question_difficulty = approximator.standardize_layers["question_difficulty"](data["question_difficulty"])
+    question_difficulty_rank = keras.ops.cast(keras.ops.ndim(question_difficulty), "int32")
+    question_difficulty_perm = (
+        *range(question_difficulty_rank - 2),
+        question_difficulty_rank - 1,
+        question_difficulty_rank - 2,
+    )
+    question_difficulty_transpose = keras.ops.transpose(question_difficulty, axes=question_difficulty_perm)
+    question_difficulty_reshape = keras.ops.reshape(
+        question_difficulty_transpose, (*keras.ops.shape(question_mean_transpose)[:-2], -1)
+    )
+
+    expected_output = concatenate([question_mean_reshape, question_std_reshape, question_difficulty_reshape])
+    assert keras.ops.all(conditions == expected_output)
+
+    conditions = prepare_inference_variables(approximator, data, 2)
+
+    expected_output = approximator.standardize_layers["student_ability"](data["student_ability"])
+    assert keras.ops.all(conditions == expected_output)
+
+
+def test_inference_variables_by_network_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_simulator.sample(2)
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = concatenate_shapes([data_shapes["beta"], data_shapes["sigma"]])
+
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
+
+
+def test_inference_variables_by_network_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_simulator.sample(2)
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = concatenate_shapes(
+        [data_shapes["hyper_mean"], data_shapes["hyper_std"], data_shapes["shared_std"]]
+    )
+    expected_shape_1 = data_shapes["local_mean"]
+
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1
+
+
+def test_inference_variables_by_network_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_simulator.sample(2)
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = concatenate_shapes(
+        [data_shapes["school_mu"], data_shapes["school_sigma"], data_shapes["shared_sigma"]]
+    )
+    expected_shape_1 = concatenate_shapes([data_shapes["classroom_mu"], data_shapes["classroom_sigma"]])
+    expected_shape_2 = concatenate_shapes([data_shapes["student_mu"], data_shapes["student_sigma"]])
+
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2
+
+
+def test_inference_variables_by_network_crossed_design_irt(
+    crossed_design_irt_simulator, crossed_design_irt_approximator
+):
+    data = crossed_design_irt_simulator.sample(2)
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    expected_shape_0 = concatenate_shapes(
+        [
+            data_shapes["mu_question_mean"],
+            data_shapes["sigma_question_mean"],
+            data_shapes["mu_question_std"],
+            data_shapes["sigma_question_std"],
+        ]
+    )
+    expected_shape_1 = (2, data.meta["num_questions"] * 3)
+    expected_shape_2 = (2, data.meta["num_students"], 1)
+
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1
+    assert keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2
+
+
+def test_prepare_data_conditions_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_simulator.sample(2)
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+
+    conditions = prepare_data_conditions(approximator, data, 0)
+    assert keras.ops.all(conditions == summary_outputs[0])
+
+
+def test_prepare_data_conditions_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_simulator.sample(2)
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+
+    conditions = prepare_data_conditions(approximator, data, 0)
+    assert keras.ops.all(conditions == summary_outputs[1])
+
+    conditions = prepare_data_conditions(approximator, data, 1)
+    assert keras.ops.all(conditions == summary_outputs[0])
+
+
+def test_prepare_data_conditions_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_simulator.sample(2)
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+
+    conditions = prepare_data_conditions(approximator, data, 0)
+    assert keras.ops.all(conditions == summary_outputs[2])
+
+    conditions = prepare_data_conditions(approximator, data, 1)
+    assert keras.ops.all(conditions == summary_outputs[1])
+
+    conditions = prepare_data_conditions(approximator, data, 2)
+    assert keras.ops.all(conditions == summary_outputs[0])
+
+
+def test_prepare_data_conditions_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
+    data = crossed_design_irt_simulator.sample(2)
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+
+    conditions = prepare_data_conditions(approximator, data, 0)
+    assert keras.ops.all(conditions == summary_outputs[1])
+
+    conditions = prepare_data_conditions(approximator, data, 1)
+    assert keras.ops.all(conditions == summary_outputs[1])
+
+    conditions = prepare_data_conditions(approximator, data, 2)
+    assert keras.ops.all(conditions == summary_outputs[0])
+
+
+def test_data_conditions_by_network_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_simulator.sample(2)
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    conditions = data_conditions_by_network(approximator, data)
+
+    assert keras.ops.all(conditions[0] == summary_outputs[0])
+
+
+def test_data_conditions_by_network_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_simulator.sample(2)
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    conditions = data_conditions_by_network(approximator, data)
+
+    assert keras.ops.all(conditions[0] == summary_outputs[1])
+    assert keras.ops.all(conditions[1] == summary_outputs[0])
+
+
+def test_data_conditions_by_network_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_simulator.sample(2)
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    conditions = data_conditions_by_network(approximator, data)
+
+    assert keras.ops.all(conditions[0] == summary_outputs[2])
+    assert keras.ops.all(conditions[1] == summary_outputs[1])
+    assert keras.ops.all(conditions[2] == summary_outputs[0])
+
+
+def test_data_conditions_by_network_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
+    data = crossed_design_irt_simulator.sample(2)
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    conditions = data_conditions_by_network(approximator, data)
+
+    assert keras.ops.all(conditions[0] == summary_outputs[1])
+    assert keras.ops.all(conditions[1] == summary_outputs[1])
+    assert keras.ops.all(conditions[2] == summary_outputs[0])
+
+
+def test_summary_inputs_by_network_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_approximator.adapter(single_level_simulator.sample(2))
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    summary_inputs = summary_inputs_by_network(approximator, data)
+
+    assert keras.ops.all(summary_inputs[0] == summary_input(approximator, data))
+
+
+def test_summary_inputs_by_network_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_approximator.adapter(two_level_simulator.sample(2))
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    summary_inputs = summary_inputs_by_network(approximator, data)
+
+    assert keras.ops.all(summary_inputs[0] == summary_input(approximator, data))
+    assert keras.ops.all(summary_inputs[1] == approximator.summary_networks[0](summary_inputs[0]))
+
+
+def test_summary_inputs_by_network_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_approximator.adapter(three_level_simulator.sample(2))
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    summary_inputs = summary_inputs_by_network(approximator, data)
+
+    assert keras.ops.all(summary_inputs[0] == summary_input(approximator, data))
+    assert keras.ops.all(summary_inputs[1] == approximator.summary_networks[0](summary_inputs[0]))
+    assert keras.ops.all(summary_inputs[2] == approximator.summary_networks[1](summary_inputs[1]))
+
+
+def test_summary_inputs_by_network_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
+    data = crossed_design_irt_approximator.adapter(crossed_design_irt_simulator.sample(2))
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    summary_inputs = summary_inputs_by_network(approximator, data)
+
+    assert keras.ops.all(summary_inputs[0] == summary_input(approximator, data))
+    assert keras.ops.all(summary_inputs[1] == approximator.summary_networks[0](summary_inputs[0]))
+
+
+def test_summary_outputs_by_network_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_approximator.adapter(single_level_simulator.sample(2))
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    input = summary_input(approximator, data)
+
+    assert keras.ops.all(summary_outputs[0] == approximator.summary_networks[0](input))
+
+
+def test_summary_outputs_by_network_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_approximator.adapter(two_level_simulator.sample(2))
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    input = summary_input(approximator, data)
+
+    assert keras.ops.all(summary_outputs[0] == approximator.summary_networks[0](input))
+    assert keras.ops.all(summary_outputs[1] == approximator.summary_networks[1](summary_outputs[0]))
+
+
+def test_summary_outputs_by_network_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_approximator.adapter(three_level_simulator.sample(2))
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    input = summary_input(approximator, data)
+
+    assert keras.ops.all(summary_outputs[0] == approximator.summary_networks[0](input))
+    assert keras.ops.all(summary_outputs[1] == approximator.summary_networks[1](summary_outputs[0]))
+    assert keras.ops.all(summary_outputs[2] == approximator.summary_networks[2](summary_outputs[1]))
+
+
+def test_summary_outputs_by_network_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
+    data = crossed_design_irt_approximator.adapter(crossed_design_irt_simulator.sample(2))
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    input = summary_input(approximator, data)
+
+    assert keras.ops.all(summary_outputs[0] == approximator.summary_networks[0](input))
+    assert keras.ops.all(summary_outputs[1] == approximator.summary_networks[1](summary_outputs[0]))
+
+
+def test_summary_input_single_level(single_level_simulator, single_level_approximator):
+    data = single_level_approximator.adapter(single_level_simulator.sample(2))
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    expected_output = concatenate([data["x"], data["y"]])
+    assert keras.ops.all(summary_input(approximator, data) == expected_output)
+
+
+def test_summary_input_two_level(two_level_simulator, two_level_approximator):
+    data = two_level_approximator.adapter(two_level_simulator.sample(2))
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    expected_output = data["y"]
+    assert keras.ops.all(summary_input(approximator, data) == expected_output)
+
+
+def test_summary_input_three_level(three_level_simulator, three_level_approximator):
+    data = three_level_approximator.adapter(three_level_simulator.sample(2))
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    expected_output = data["y"]
+    assert keras.ops.all(summary_input(approximator, data) == expected_output)
+
+
+def test_summary_input_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
+    data = crossed_design_irt_approximator.adapter(crossed_design_irt_simulator.sample(2))
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    expected_output = keras.ops.transpose(data["obs"], (0, 2, 1, 3))
+    assert keras.ops.all(summary_input(approximator, data) == expected_output)
+
+
+@pytest.mark.parametrize(
+    ("simulator_fixture", "approximator_fixture"),
+    [
+        ("single_level_simulator", "single_level_approximator"),
+        ("two_level_simulator", "two_level_approximator"),
+        ("three_level_simulator", "three_level_approximator"),
+        ("crossed_design_irt_simulator", "crossed_design_irt_approximator"),
+    ],
+)
+def test_split_network_output(request, simulator_fixture, approximator_fixture):
+    simulator = request.getfixturevalue(simulator_fixture)
+    approximator = request.getfixturevalue(approximator_fixture)
+
+    data = approximator.adapter(simulator.sample(2))
+    data_shapes = approximator._data_shapes(data)
+    approximator.build(data_shapes)
+
+    variables = inference_variables_by_network(approximator, data)
+    for network_idx, vars in variables.items():
+        rep_vars = add_sample_dimension(vars, 5)
+        split_output = split_network_output(approximator, rep_vars, network_idx)
+
+        for k, v in split_output.items():
+            assert keras.ops.all(v[:, 0, ...] == data[k])

@@ -31,22 +31,22 @@ from bayesflow.experimental.graphical_approximator.utils import (
 def test_expand_shape_rank():
     x = (10, 2, 3)
 
-    assert expand_shape_rank(x, 4) == (10, 2, 1, 3)
-    assert expand_shape_rank(x, 5) == (10, 2, 1, 1, 3)
+    assert keras.ops.all(expand_shape_rank(x, 4) == (10, 2, 1, 3))
+    assert keras.ops.all(expand_shape_rank(x, 5) == (10, 2, 1, 1, 3))
 
 
 def test_stack_shapes():
     a = (10, 2, 3)
     b = (32, 1)
 
-    assert stack_shapes(a, b, axis=-1) == (32, 2, 4)
-    assert stack_shapes(a, b, axis=0) == (42, 2, 3)
-    assert stack_shapes(a, b, axis=1) == (32, 3, 3)
+    assert keras.ops.all(stack_shapes(a, b, axis=-1) == (32, 2, 4))
+    assert keras.ops.all(stack_shapes(a, b, axis=0) == (42, 2, 3))
+    assert keras.ops.all(stack_shapes(a, b, axis=1) == (32, 3, 3))
 
 
 def test_concatenate_shapes():
-    assert concatenate_shapes([(7, 5, 2), (3, 20)]) == (7, 5, 22)
-    assert concatenate_shapes([(3, 20), (7, 5, 2)]) == (7, 5, 22)
+    assert keras.ops.all(concatenate_shapes([(7, 5, 2), (3, 20)]) == (7, 5, 22))
+    assert keras.ops.all(concatenate_shapes([(3, 20), (7, 5, 2)]) == (7, 5, 22))
 
 
 def test_add_sample_dimension():
@@ -1176,7 +1176,7 @@ def test_inference_variables_by_network_single_level(single_level_simulator, sin
 
     expected_shape_0 = concatenate_shapes([data_shapes["beta"], data_shapes["sigma"]])
 
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
 
 
 def test_inference_variables_by_network_two_level(two_level_simulator, two_level_approximator):
@@ -1191,8 +1191,8 @@ def test_inference_variables_by_network_two_level(two_level_simulator, two_level
     )
     expected_shape_1 = data_shapes["local_mean"]
 
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1)
 
 
 def test_inference_variables_by_network_three_level(three_level_simulator, three_level_approximator):
@@ -1208,9 +1208,9 @@ def test_inference_variables_by_network_three_level(three_level_simulator, three
     expected_shape_1 = concatenate_shapes([data_shapes["classroom_mu"], data_shapes["classroom_sigma"]])
     expected_shape_2 = concatenate_shapes([data_shapes["student_mu"], data_shapes["student_sigma"]])
 
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1)
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2)
 
 
 def test_inference_variables_by_network_crossed_design_irt(
@@ -1233,9 +1233,9 @@ def test_inference_variables_by_network_crossed_design_irt(
     expected_shape_1 = (2, data.meta["num_questions"] * 3)
     expected_shape_2 = (2, data.meta["num_students"], 1)
 
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1
-    assert keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1)
+    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2)
 
 
 def test_prepare_data_conditions_single_level(single_level_simulator, single_level_approximator):

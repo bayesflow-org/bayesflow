@@ -108,10 +108,8 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         embedding_kwargs = embedding_kwargs or {}
-        if time_emb is not None:
-            self.time_emb = time_emb
-        else:
-            self.time_emb = FourierEmbedding(**embedding_kwargs)
+        self.time_emb = time_emb or FourierEmbedding(**embedding_kwargs)
+
         self.time_emb_dim = self.time_emb.embed_dim
 
         self.sigma = sigma

@@ -14,41 +14,46 @@ from .. import logging
 
 def sinkhorn(x1: Tensor, x2: Tensor, conditions: Tensor | None = None, seed: int = None, **kwargs) -> Tensor:
     """
-    Matches elements from x2 onto x1 using the Sinkhorn-Knopp algorithm.
+    Match elements from ``x2`` onto ``x1`` using the Sinkhorn–Knopp algorithm.
 
-    Sinkhorn-Knopp is an iterative algorithm that repeatedly normalizes the cost matrix into a
-    transport plan, containing assignment probabilities.
-    The permutation is then sampled randomly according to the transport plan.
+    The Sinkhorn–Knopp algorithm is an iterative procedure that normalizes a cost
+    matrix into a transport plan containing assignment probabilities. A permutation
+    is then sampled randomly according to this transport plan.
 
-    Partial optimal transport can be performed by setting `partial=True` to reduce the effect of misspecified mappings
-    in mini-batch settings [1]. For conditional optimal transport, conditions can be provided along with a
-    `condition_ratio` [2].
+    Partial optimal transport can be enabled to reduce the impact of misspecified
+    mappings in mini-batch settings [1]. Conditional optimal transport is supported
+    by providing ``conditions`` together with an appropriate conditioning ratio [2].
 
-    [1] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
-    [2] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
-        Conditional Flow-Based Generation"
-    [3] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
+    Parameters
+    ----------
+    x1 : Tensor
+        Tensor of shape ``(n, ...)`` containing samples from the first distribution.
+    x2 : Tensor
+        Tensor of shape ``(m, ...)`` containing samples from the second distribution.
+    conditions : Tensor, optional
+        Optional tensor of shape ``(k, ...)`` providing conditioning information for
+        conditional optimal transport. If ``None``, unconditional matching is
+        performed. Default is ``None``.
+    seed : int or None, optional
+        Random seed used for sampling assignment indices. If ``None``, the seed is
+        automatically determined in non-compiled contexts. Default is ``None``.
+    **kwargs
+        Additional keyword arguments forwarded to :func:`sinkhorn_plan`.
 
-    :param x1: Tensor of shape (n, ...)
-        Samples from the first distribution.
+    Returns
+    -------
+    Tensor
+        Tensor of shape ``(n,)`` containing assignment indices mapping elements of
+        ``x2`` onto ``x1``.
 
-    :param x2: Tensor of shape (m, ...)
-        Samples from the second distribution.
-
-    :param conditions: Optional tensor of shape (k, ...)
-        Conditions to be used in conditional optimal transport settings.
-        Default: None
-
-    :param seed: Random seed to use for sampling indices.
-        Default: None, which means the seed will be auto-determined for non-compiled contexts.
-
-    :param kwargs:
-        Additional keyword arguments that are passed to :py:func:`sinkhorn_plan`.
-
-    :return: Tensor of shape (n,)
-        Assignment indices for x2.
-
+    References
+    ----------
+    [1] Nguyen et al. (2022). *Improving Mini-batch Optimal Transport via Partial Transportation*.
+    [2] Cheng et al. (2025). *The Curse of Conditions: Analyzing and Improving Optimal Transport for
+        Conditional Flow-Based Generation*.
+    [3] Fluri et al. (2024). *Improving Flow Matching for Simulation-Based Inference*.
     """
+
     plan = sinkhorn_plan(x1, x2, conditions=conditions, **kwargs)
 
     # we sample from log(plan) to receive assignments of length n, corresponding to indices of x2
@@ -66,58 +71,63 @@ def sinkhorn_plan(
     regularization: float = 1.0,
     max_steps: int = 1000,
     atol: float = 1e-5,
-    conditional_ot_ratio: float = 0.5,
-    partial_ot_factor: float = 1.0,
+    condition_ratio: float = 0.5,
+    partial_factor: float = 1.0,
     **kwargs,
 ) -> Tensor:
     """
-    Computes the Sinkhorn-Knopp optimal transport plan.
+    Compute the Sinkhorn–Knopp optimal transport plan.
 
-    :param x1: Tensor of shape (n, ...)
-        Samples from the first distribution.
+    Parameters
+    ----------
+    x1 : Tensor
+        Tensor of shape ``(n, ...)`` containing samples from the first distribution.
+    x2 : Tensor
+        Tensor of shape ``(m, ...)`` containing samples from the second distribution.
+    conditions : Tensor, optional
+        Optional tensor of shape ``(m, ...)`` providing conditioning information for
+        conditional optimal transport. If ``None``, unconditional optimal transport
+        is performed.
+    regularization : float, optional
+        Entropic regularization parameter controlling the bandwidth (standard
+        deviation) of the Gaussian kernel. Default is ``1.0``.
+    max_steps : int, optional
+        Maximum number of Sinkhorn iterations. Default is ``1000``.
+    atol : float, optional
+        Absolute tolerance used as the convergence criterion. Default is ``1e-5``.
+    condition_ratio : float, optional
+        Ratio determining the proportion of samples considered as potential optimal
+        transport candidates in conditional optimal transport. A value of ``0.5``
+        corresponds to no conditioning; smaller values enforce stronger conditioning.
+        Only used if ``conditions`` is not ``None``. Default is ``0.5``.
+    partial_factor : float, optional
+        Proportion of mass to transport in partial optimal transport. A value of
+        ``1.0`` corresponds to balanced optimal transport. Default is ``1.0``.
+    **kwargs
+        Additional keyword arguments passed to the underlying Sinkhorn routine.
 
-    :param x2: Tensor of shape (m, ...)
-        Samples from the second distribution.
-
-    :param conditions: Optional tensor of shape (m, ...)
-        Conditions to be used in conditional optimal transport settings.
-
-    :param regularization: Regularization parameter.
-        Controls the standard deviation of the Gaussian kernel.
-        Default: 1.0
-
-    :param max_steps: Maximum number of iterations.
-        Default: 1000
-
-    :param atol: Tolerance for convergence.
-        Default: 1e-5.
-
-    :param conditional_ot_ratio: Ratio which measures the proportion of samples that are considered “potential optimal
-        transport candidates”. 0.5 is equivalent to no conditioning. [2] recommends a ratio of 0.01.
-        Only used if `conditions` is not None.
-        Default: 0.0
-
-    :param partial_ot_factor: Proportion of mass to transport in partial optimal transport.
-        Default: 1.0 (i.e., balanced OT)
-
-    :return: Tensor of shape (n, m)
-        The transport probabilities.
+    Returns
+    -------
+    Tensor
+        Tensor of shape ``(n, m)`` containing the optimal transport plan (transport
+        probabilities).
     """
-    if not (0.0 < partial_ot_factor <= 1.0):
-        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_ot_factor}")
-    partial = partial_ot_factor < 1.0
+
+    if not (0.0 < partial_factor <= 1.0):
+        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_factor}")
+    partial = partial_factor < 1.0
 
     cost = squared_euclidean(x1, x2)
 
     if regularization <= 0.0:
         raise ValueError(f"regularization must be positive, got {regularization}")
 
-    if conditions is not None and conditional_ot_ratio < 0.5:
+    if conditions is not None and condition_ratio < 0.5:
         cond_cost = cosine_distance(conditions, conditions)
         cost, w = search_for_conditional_weight(
             M=cost,
             C=cond_cost,
-            condition_ratio=conditional_ot_ratio,
+            condition_ratio=condition_ratio,
             **filter_kwargs(kwargs, search_for_conditional_weight),
         )
 
@@ -126,7 +136,7 @@ def sinkhorn_plan(
         cost_scaled, a, b = augment_for_partial_ot(
             cost_scaled=cost_scaled,
             regularization=regularization,
-            s=partial_ot_factor,
+            s=partial_factor,
             **filter_kwargs(kwargs, augment_for_partial_ot),
         )
         a = keras.ops.reshape(a, (-1,))  # (n,)

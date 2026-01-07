@@ -16,36 +16,49 @@ methods = {
 def optimal_transport(
     x1: Tensor, x2: Tensor, conditions: Tensor | None = None, method="sinkhorn", return_assignments=False, **kwargs
 ):
-    """Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method
-    and cost matrix used.
-
-    Depending on the method used, elements in either tensor may be permuted, dropped, duplicated, or otherwise modified,
-    such that the assignment is optimal.
-
-    Note: this is just a dispatch function that calls the appropriate optimal transport method.
-    See the documentation of the respective method for more details.
-
-    :param x1: Tensor of shape (n, ...)
-        Samples from the first distribution.
-
-    :param x2: Tensor of shape (m, ...)
-        Samples from the second distribution.
-
-    :param conditions: Optional tensor of shape (k, ...)
-        Conditions to be used in conditional optimal transport settings.
-        Default: None
-
-    :param method: Method used to compute the transport cost.
-        Default: 'log_sinkhorn'
-
-    :param return_assignments: Whether to return the assignment indices.
-        Default: False
-
-    :param kwargs: Additional keyword arguments that are passed to the optimization method.
-
-    :return: Tensors of shapes (n, ...) and (m, ...)
-        x1 and x2 in optimal transport permutation order.
     """
+    Match elements from ``x2`` onto ``x1`` by minimizing the transport cost.
+
+    This function dispatches to a specific optimal transport method according to
+    the selected ``method`` and cost formulation. Depending on the method used,
+    elements in either tensor may be permuted, dropped, duplicated, or otherwise
+    modified in order to achieve an optimal assignment.
+
+    Note
+    ----
+    This is a dispatch function that calls the appropriate optimal transport
+    implementation. See the documentation of the selected method for details on
+    the exact optimization procedure and assumptions.
+
+    Parameters
+    ----------
+    x1 : Tensor
+        Tensor of shape ``(n, ...)`` containing samples from the first distribution.
+    x2 : Tensor
+        Tensor of shape ``(m, ...)`` containing samples from the second distribution.
+    conditions : Tensor, optional
+        Tensor of shape ``(k, ...)`` providing conditioning information for
+        conditional optimal transport. If ``None``, unconditional optimal transport
+        is performed. Default is ``None``.
+    method : str, optional
+        Method used to compute the optimal transport plan (e.g., ``'sinkhorn'``).
+        Default is ``'sinkhorn'``.
+    return_assignments : bool, optional
+        If ``True``, also return the assignment indices produced by the transport
+        method. Default is ``False``.
+    **kwargs
+        Additional keyword arguments passed to the selected optimal transport method.
+
+    Returns
+    -------
+    Tuple of tensors
+        If ``return_assignments`` is ``False``, returns two tensors of shapes
+        ``(n, ...)`` and ``(m, ...)`` corresponding to ``x1`` and ``x2`` reordered
+        according to the optimal transport solution. If ``return_assignments`` is
+        ``True``, the reordered tensors and the corresponding assignment indices
+        are returned.
+    """
+
     assignments = methods[method.lower()](x1, x2, conditions, **kwargs)
     x2 = keras.ops.take(x2, assignments, axis=0)
 

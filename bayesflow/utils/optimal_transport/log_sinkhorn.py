@@ -41,59 +41,69 @@ def log_sinkhorn_plan(
     regularization: float = 1.0,
     atol: float = 1e-5,
     max_steps: int = 1000,
-    conditional_ot_ratio: float = 0.5,
-    partial_ot_factor: float = 1.0,
+    condition_ratio: float = 0.5,
+    partial_factor: float = 1.0,
     **kwargs,
 ) -> Tensor:
     """
-    Log-stabilized version of :py:func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn_plan`.
-    About 50% slower than the unstabilized version, so use primarily when you need numerical stability.
+    Compute a log-stabilized Sinkhorn–Knopp optimal transport plan.
 
-    :param x1: Tensor of shape (n, ...)
-        Samples from the first distribution.
+    This function provides a numerically stabilized variant of
+    :func:`~bayesflow.utils.optimal_transport.sinkhorn.sinkhorn_plan`. It is
+    approximately 50% slower than the unstabilized version and should primarily
+    be used when improved numerical stability is required.
 
-    :param x2: Tensor of shape (m, ...)
-        Samples from the second distribution.
+    Parameters
+    ----------
+    x1 : Tensor
+        Tensor of shape ``(n, ...)`` containing samples from the first distribution.
+    x2 : Tensor
+        Tensor of shape ``(m, ...)`` containing samples from the second distribution.
+    conditions : Tensor, optional
+        Optional tensor of shape ``(m, ...)`` providing conditioning information for
+        conditional optimal transport. If ``None``, unconditional optimal transport
+        is performed.
+    regularization : float, optional
+        Entropic regularization parameter controlling the bandwidth (standard
+        deviation) of the Gaussian kernel. Default is ``1.0``.
+    atol : float, optional
+        Absolute tolerance used as the convergence criterion. Default is ``1e-5``.
+    max_steps : int, optional
+        Maximum number of Sinkhorn iterations. Default is ``1000``.
+    condition_ratio : float, optional
+        Ratio determining the proportion of samples considered as potential optimal
+        transport candidates in conditional optimal transport. A value of ``0.5``
+        corresponds to no conditioning; smaller values enforce stronger conditioning.
+        Only used if ``conditions`` is not ``None``. Default is ``0.5``.
+    partial_factor : float, optional
+        Proportion of mass to transport in partial optimal transport. A value of
+        ``1.0`` corresponds to balanced optimal transport. Default is ``1.0``.
+    **kwargs
+        Additional keyword arguments passed to the underlying Sinkhorn routine.
 
-    :param conditions: Optional tensor of shape (m, ...)
-        Conditions to be used in conditional optimal transport settings.
-
-    :param regularization: Regularization parameter.
-        Controls the standard deviation of the Gaussian kernel.
-        Default: 1.0
-
-    :param max_steps: Maximum number of iterations.
-        Default: 1000
-
-    :param atol: Absolute tolerance for convergence.
-        Default: 1e-5.
-
-    :param conditional_ot_ratio: Ratio which measures the proportion of samples that are considered "potential optimal
-        transport candidates". 0.5 is equivalent to no conditioning. [2] recommends a ratio of 0.01.
-        Only used if `conditions` is not None.
-        Default: 0.01
-
-    :param partial_ot_factor: Proportion of mass to transport in partial optimal transport.
-        Default: 1.0 (i.e., balanced OT)
-
-    :return: Tensor of shape (n, m) or (n+1, m+1) if partial=True
-        The log transport probabilities.
+    Returns
+    -------
+    Tensor
+        Tensor of shape ``(n, m)`` containing the log transport probabilities. If
+        partial optimal transport is used, the returned tensor may have shape
+        ``(n + 1, m + 1)``.
     """
-    if not (0.0 < partial_ot_factor <= 1.0):
-        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_ot_factor}")
-    partial = partial_ot_factor < 1.0
+
+    if not (0.0 < partial_factor <= 1.0):
+        raise ValueError(f"s must be in (0, 1] for partial OT, got {partial_factor}")
+    partial = partial_factor < 1.0
 
     cost = squared_euclidean(x1, x2)
 
     if regularization <= 0.0:
         raise ValueError(f"regularization must be positive, got {regularization}")
 
-    if conditions is not None and conditional_ot_ratio < 0.5:
+    if conditions is not None and condition_ratio < 0.5:
         cond_cost = cosine_distance(conditions, conditions)
         cost, w = search_for_conditional_weight(
             M=cost,
             C=cond_cost,
-            condition_ratio=conditional_ot_ratio,
+            condition_ratio=condition_ratio,
             **filter_kwargs(kwargs, search_for_conditional_weight),
         )
 
@@ -102,7 +112,7 @@ def log_sinkhorn_plan(
         cost_scaled, a, b = augment_for_partial_ot(
             cost_scaled=cost_scaled,
             regularization=regularization,
-            s=partial_ot_factor,
+            s=partial_factor,
             **filter_kwargs(kwargs, augment_for_partial_ot),
         )
         log_a = keras.ops.log(a)

@@ -17,7 +17,7 @@ def test_jit_compile():
 
 
 @pytest.mark.parametrize(
-    ["method", "partial_ot_factor", "conditional_ot_ratio"],
+    ["method", "partial_factor", "condition_ratio"],
     [
         ("log_sinkhorn", 1.0, 0.01),
         ("log_sinkhorn", 0.8, 0.5),
@@ -25,12 +25,12 @@ def test_jit_compile():
         ("sinkhorn", 0.8, 0.5),
     ],
 )
-def test_shapes(method, partial_ot_factor, conditional_ot_ratio):
+def test_shapes(method, partial_factor, condition_ratio):
     x = keras.random.normal((128, 8), seed=0)
     y = keras.random.normal((128, 8), seed=1)
 
     cond = None
-    if conditional_ot_ratio < 0.5:
+    if condition_ratio < 0.5:
         cond = keras.random.normal((128, 4, 1), seed=2)
 
     ox, oy, ocond = optimal_transport(
@@ -41,8 +41,8 @@ def test_shapes(method, partial_ot_factor, conditional_ot_ratio):
         seed=0,
         max_steps=10,
         method=method,
-        partial_ot_factor=partial_ot_factor,
-        conditional_ot_ratio=conditional_ot_ratio,
+        partial_factor=partial_factor,
+        condition_ratio=condition_ratio,
     )
 
     assert keras.ops.shape(ox) == keras.ops.shape(x)
@@ -52,7 +52,7 @@ def test_shapes(method, partial_ot_factor, conditional_ot_ratio):
 
 
 @pytest.mark.parametrize(
-    ["method", "partial_ot_factor", "conditional_ot_ratio"],
+    ["method", "partial_factor", "condition_ratio"],
     [
         ("log_sinkhorn", 1.0, 0.01),
         ("log_sinkhorn", 0.8, 0.5),
@@ -60,12 +60,12 @@ def test_shapes(method, partial_ot_factor, conditional_ot_ratio):
         ("sinkhorn", 0.8, 0.5),
     ],
 )
-def test_transport_cost_improves(method, partial_ot_factor, conditional_ot_ratio):
+def test_transport_cost_improves(method, partial_factor, condition_ratio):
     x = keras.random.normal((128, 2), seed=0)
     y = keras.random.normal((128, 2), seed=1)
 
     cond = None
-    if conditional_ot_ratio < 0.5:
+    if condition_ratio < 0.5:
         cond = keras.random.normal((128, 4, 1), seed=2)
 
     before_cost = keras.ops.sum(keras.ops.norm(x - y, axis=-1))
@@ -78,8 +78,8 @@ def test_transport_cost_improves(method, partial_ot_factor, conditional_ot_ratio
         seed=0,
         max_steps=1000,
         method=method,
-        partial_ot_factor=partial_ot_factor,
-        conditional_ot_ratio=conditional_ot_ratio,
+        partial_factor=partial_factor,
+        condition_ratio=condition_ratio,
     )
     after_cost = keras.ops.sum(keras.ops.norm(x_after - y_after, axis=-1))
 
@@ -87,7 +87,7 @@ def test_transport_cost_improves(method, partial_ot_factor, conditional_ot_ratio
 
 
 @pytest.mark.parametrize(
-    ["method", "partial_ot_factor"],
+    ["method", "partial_factor"],
     [
         ("log_sinkhorn", 1.0),
         ("log_sinkhorn", 0.8),
@@ -95,7 +95,7 @@ def test_transport_cost_improves(method, partial_ot_factor, conditional_ot_ratio
         ("sinkhorn", 0.8),
     ],
 )
-def test_assignment_is_optimal(method, partial_ot_factor):
+def test_assignment_is_optimal(method, partial_factor):
     y = keras.random.normal((16, 2), seed=0)
     p = keras.random.shuffle(keras.ops.arange(keras.ops.shape(y)[0]), seed=0)
     x = keras.ops.take(y, p, axis=0)
@@ -108,7 +108,7 @@ def test_assignment_is_optimal(method, partial_ot_factor):
         max_steps=10_000,
         method=method,
         return_assignments=True,
-        partial_ot_factor=partial_ot_factor,
+        partial_factor=partial_factor,
     )
 
     # transport is stochastic, so it is expected that a small fraction of assignments does not match
@@ -299,7 +299,7 @@ def test_partial_ot_leaves_unmatched_mass(method, s):
     y = keras.random.normal((m, 2), seed=123)
 
     # Get the transport plan with partial OT
-    plan = sinkhorn(x, y, regularization=0.1, max_steps=10_000, partial_ot_factor=s)
+    plan = sinkhorn(x, y, regularization=0.1, max_steps=10_000, partial_factor=s)
 
     if method == "log_sinkhorn":
         plan = keras.ops.exp(plan)

@@ -56,8 +56,8 @@ class FlowMatching(InferenceNetwork):
         "regularization": 0.1,
         "max_steps": 100,
         "atol": 1e-5,
-        "partial_factor": 1.0,  # no partial OT
-        "condition_ratio": 0.01,  # only used if conditions are provided
+        "partial_ot_factor": 1.0,  # no partial OT
+        "conditional_ot_ratio": 0.01,  # only used if conditions are provided
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
@@ -325,7 +325,6 @@ class FlowMatching(InferenceNetwork):
                     x0,
                     x1,
                     conditions=conditions,
-                    return_assignments=True,
                     seed=self.seed_generator,
                     **self.optimal_transport_kwargs,
                 )

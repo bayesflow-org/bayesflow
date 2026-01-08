@@ -15,7 +15,7 @@ methods = {
 
 def optimal_transport(
     x1: Tensor, x2: Tensor, conditions: Tensor | None = None, method="sinkhorn", return_assignments=False, **kwargs
-):
+) -> tuple[Tensor, Tensor, Tensor | None, Tensor] | tuple[Tensor, Tensor, Tensor | None]:
     """
     Match elements from ``x2`` onto ``x1`` by minimizing the transport cost.
 
@@ -43,7 +43,7 @@ def optimal_transport(
     method : str, optional
         Method used to compute the optimal transport plan (e.g., ``'sinkhorn'``).
         Default is ``'sinkhorn'``.
-    return_assignments : bool, optional
+    return_assignments : bool
         If ``True``, also return the assignment indices produced by the transport
         method. Default is ``False``.
     **kwargs
@@ -52,11 +52,11 @@ def optimal_transport(
     Returns
     -------
     Tuple of tensors
-        If ``return_assignments`` is ``False``, returns two tensors of shapes
-        ``(n, ...)`` and ``(m, ...)`` corresponding to ``x1`` and ``x2`` reordered
+        If ``return_assignments`` is ``False``, returns three tensors of shapes
+        ``(n, ...)`` and ``(m, ...)`` corresponding to ``x1``, ``x2``, ``conditions`` reordered
         according to the optimal transport solution. If ``return_assignments`` is
         ``True``, the reordered tensors and the corresponding assignment indices
-        are returned.
+        are returned as a fourth element.
     """
 
     assignments = methods[method.lower()](x1, x2, conditions, **kwargs)

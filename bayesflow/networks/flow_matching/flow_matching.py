@@ -319,13 +319,12 @@ class FlowMatching(InferenceNetwork):
                 # since the data is possibly noisy and may contain outliers, it is better
                 # to possibly drop some samples from x1 than from x0
                 # in the marginal over multiple batches, this is not a problem
-                x0, x1, conditions, assignments = optimal_transport(
+                x0, x1, conditions = optimal_transport(
                     x0,
                     x1,
                     conditions=conditions,
                     seed=self.seed_generator,
                     **self.optimal_transport_kwargs,
-                    return_assignments=True,
                 )
 
             u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)

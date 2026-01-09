@@ -16,8 +16,8 @@ def classifier_two_sample_test(
     max_epochs: int = 1000,
     batch_size: int = 128,
     return_metric_only: bool = True,
-    validation_split: float = 0.5,
     cross_validation_splits: int = 5,
+    validation_split: float = 0.5,
     standardize: bool = True,
     mlp_widths: Sequence | Literal["auto"] = "auto",
     **kwargs,
@@ -50,10 +50,10 @@ def classifier_two_sample_test(
     return_metric_only : bool, optional
         If True, only the final validation metric is returned. Otherwise, a dictionary with the score, classifier, and
         full training history is returned. Default is True.
-    validation_split : float, optional
-        Fraction of the training data to be used as validation data. Default is 0.5.
     cross_validation_splits : int, optional
         Number of cross-validation splits to perform. Default is 5.
+    validation_split : float, optional
+        Fraction of the training data to be used as validation data, for single hold-out split. Default is 0.5.
     standardize : bool, optional
         If True, both estimates and targets will be standardized using the mean and standard deviation of estimates.
         Default is True.

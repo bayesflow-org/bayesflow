@@ -1,3 +1,4 @@
+from typing import Literal
 from math import pi
 
 import keras
@@ -52,7 +53,7 @@ class StableConsistencyModel(InferenceNetwork):
         sigma: float = 1.0,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
-        time_emb: keras.Layer = None,
+        time_emb: keras.Layer | Literal["identity"] = None,
         embedding_kwargs: dict[str, any] = None,
         **kwargs,
     ):
@@ -108,9 +109,12 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         embedding_kwargs = embedding_kwargs or {}
-        self.time_emb = time_emb or FourierEmbedding(**embedding_kwargs)
-
-        self.time_emb_dim = self.time_emb.embed_dim
+        if time_emb == "identity" or isinstance(time_emb, keras.layers.Identity):
+            self.time_emb = keras.layers.Identity()
+            self.time_emb_dim = 1
+        else:
+            self.time_emb = time_emb or FourierEmbedding(**embedding_kwargs)
+            self.time_emb_dim = self.time_emb.embed_dim
 
         self.sigma = sigma
         self.seed_generator = keras.random.SeedGenerator()

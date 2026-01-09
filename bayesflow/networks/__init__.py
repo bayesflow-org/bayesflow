@@ -11,7 +11,7 @@ from .diffusion_model import DiffusionModel, CompositionalDiffusionModel
 from .flow_matching import FlowMatching
 from .inference_network import InferenceNetwork
 from .point_inference_network import PointInferenceNetwork
-from .mlp import MLP
+from .mlp import MLP, TimeMLP
 from .fusion_network import FusionNetwork
 from .sequential import Sequential
 from .summary_network import SummaryNetwork

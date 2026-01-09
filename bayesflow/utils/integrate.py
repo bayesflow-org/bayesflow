@@ -3,7 +3,6 @@ from typing import Dict, Tuple, Optional
 from functools import partial
 
 import keras
-from keras import backend as K
 
 import numpy as np
 from typing import Literal, Union
@@ -1073,7 +1072,7 @@ def integrate_stochastic_adaptive(
     Performs adaptive-step SDE integration.
     """
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, state)
-    if K.backend() == "jax":
+    if keras.backend.backend() == "jax":
         seed = None  # not needed, noise is generated upfront
     else:
         seed_body = seed
@@ -1268,30 +1267,59 @@ def integrate_stochastic(
     **kwargs,
 ) -> StateDict:
     """
-    Integrates a stochastic differential equation from start_time to stop_time.
+    Integrate a stochastic differential equation from ``start_time`` to ``stop_time``.
 
-    Dispatches to fixed-step or adaptive-step integration logic.
+    This function dispatches to either fixed-step or adaptive-step integration logic,
+    depending on the selected integration ``method`` and the value of ``steps``.
 
-    Args:
-        drift_fn: Function that computes the drift term.
-        diffusion_fn: Function that computes the diffusion term.
-        state: Dictionary containing the initial state.
-        start_time: Starting time for integration.
-        stop_time: Ending time for integration. steps: Number of integration steps.
-        seed: Random seed for noise generation.
-        steps: Number of steps or 'adaptive' for adaptive step sizing. Only 'shark' method supports adaptive steps.
-        method: Integration method to use, e.g., 'euler_maruyama' or 'shark'.
-        min_steps: Minimum number of steps for adaptive integration.
-        max_steps: Maximum number of steps for adaptive integration. We pre-generate noise up to this many steps,
-            which may impact memory usage.
-        score_fn: Optional score function for predictor-corrector sampling.
-        corrector_steps: Number of corrector steps to take after each predictor step.
-        noise_schedule: Noise schedule object for computing alpha_t in corrector.
-        step_size_factor: Scaling factor for corrector step size.
-        **kwargs: Additional arguments to pass to the step function.
+    Parameters
+    ----------
+    drift_fn : callable
+        Function computing the drift term of the SDE. It should accept the current
+        state and time as inputs.
+    diffusion_fn : callable
+        Function computing the diffusion term of the SDE. It should accept the current
+        state and time as inputs.
+    state : StateDict
+        Dictionary containing the initial state of the system.
+    start_time : array-like
+        Starting time for integration.
+    stop_time : array-like
+        Ending time for integration.
+    seed : keras.random.SeedGenerator
+        Random seed generator used for noise generation.
+    steps : int or {'adaptive'}, optional
+        Number of integration steps for fixed-step integration, or ``'adaptive'``
+        to enable adaptive step sizing. Adaptive integration is only supported by
+        the ``'shark'`` method. Default is ``100``.
+    method : str, optional
+        Integration method to use (e.g., ``'euler_maruyama'`` or ``'shark'``).
+        Default is ``'euler_maruyama'``.
+    min_steps : int, optional
+        Minimum number of steps for adaptive integration. Default is ``50``.
+    max_steps : int, optional
+        Maximum number of steps for adaptive integration. Noise is pre-generated
+        up to this number of steps, which may increase memory usage. Default is
+        ``1000``.
+    score_fn : callable, optional
+        Optional score function used for predictor–corrector sampling. If ``None``,
+        no corrector step is applied.
+    corrector_steps : int, optional
+        Number of corrector steps applied after each predictor step. Default is ``0``.
+    noise_schedule : object, optional
+        Noise schedule object used to compute ``alpha_t`` during the corrector step.
+        Required if ``corrector_steps > 0``.
+    step_size_factor : array-like, optional
+        Scaling factor applied to the corrector step size. Default is ``0.01``.
+    **kwargs
+        Additional keyword arguments passed to the underlying step function.
 
-    Returns: Final state dictionary after integration.
+    Returns
+    -------
+    StateDict
+        Final state dictionary after integration.
     """
+
     is_adaptive = isinstance(steps, str) and steps in ["adaptive", "dynamic"]
 
     if is_adaptive:
@@ -1318,7 +1346,7 @@ def integrate_stochastic(
     if corrector_steps > 0:
         if score_fn is None or noise_schedule is None:
             raise ValueError("Please provide both score_fn and noise_schedule when using corrector_steps > 0.")
-        if K.backend() == "jax":
+        if keras.backend.backend() == "jax":
             corrector_noise_history = {}
             for key, val in state.items():
                 shape = keras.ops.shape(val)
@@ -1344,7 +1372,7 @@ def integrate_stochastic(
                 raise ValueError("Langevin sampling does not support adaptive steps.")
 
             z_history = None
-            if K.backend() == "jax":
+            if keras.backend.backend() == "jax":
                 warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
                 z_history = {}
                 for key, val in state.items():
@@ -1378,7 +1406,7 @@ def integrate_stochastic(
     # Pre-generate standard normals for the predictor step (up to max_steps)
     z_history = None
     z_extra_history = None if method not in ["sea", "shark"] else {}
-    if K.backend() == "jax":
+    if keras.backend.backend() == "jax":
         warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
         z_history = {}
         for key, val in state.items():

@@ -52,6 +52,7 @@ class StableConsistencyModel(InferenceNetwork):
         sigma: float = 1.0,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
+        time_emb: keras.Layer = None,
         embedding_kwargs: dict[str, any] = None,
         **kwargs,
     ):
@@ -71,8 +72,10 @@ class StableConsistencyModel(InferenceNetwork):
             Keyword arguments passed to the constructor of the chosen ``subnet``. For example, number of hidden units,
             activation functions, or dropout settings.
         weight_mlp_kwargs : dict[str, any], optional, default=None
-            Keyword arguments for an auxiliary MLP used to generate weights within the consistency model. Typically
+            Keyword arguments for an auxiliary MLP used to generate weights within the consistency model. Typically,
             includes depth, hidden sizes, and non-linearity choices.
+        time_emb : keras.Layer, optional, default=None
+            A custom time embedding layer. If None, a default ``FourierEmbedding`` will be used.
         embedding_kwargs : dict[str, any], optional, default=None
             Keyword arguments for the time embedding layer(s) used in the model
         concatenate_subnet_input: bool, optional
@@ -105,7 +108,8 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         embedding_kwargs = embedding_kwargs or {}
-        self.time_emb = FourierEmbedding(**embedding_kwargs)
+        self.time_emb = time_emb or FourierEmbedding(**embedding_kwargs)
+
         self.time_emb_dim = self.time_emb.embed_dim
 
         self.sigma = sigma

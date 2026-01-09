@@ -105,7 +105,7 @@ class FlowMatching(InferenceNetwork):
             Additional keyword arguments for the integration process. Default is None.
         optimal_transport_kwargs : dict[str, any], optional
             Additional keyword arguments for configuring optimal transport. Default is None.
-        subnet_kwargs: dict[str, any], optional, deprecated
+        subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated

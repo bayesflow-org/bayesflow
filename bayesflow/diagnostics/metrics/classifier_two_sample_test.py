@@ -1,4 +1,4 @@
-from typing import Sequence, Mapping, Any
+from typing import Sequence, Mapping, Any, Literal
 
 import numpy as np
 
@@ -19,7 +19,7 @@ def classifier_two_sample_test(
     validation_split: float = 0.5,
     cross_validation_splits: int = 5,
     standardize: bool = True,
-    mlp_widths: Sequence = (64, 64),
+    mlp_widths: Sequence | Literal["auto"] = "auto",
     **kwargs,
 ) -> float | Mapping[str, Any]:
     """
@@ -58,7 +58,9 @@ def classifier_two_sample_test(
         If True, both estimates and targets will be standardized using the mean and standard deviation of estimates.
         Default is True.
     mlp_widths : Sequence[int], optional
-        Sequence specifying the number of units in each hidden layer of the MLP classifier. Default is (256, 256).
+        Sequence specifying the number of units in each hidden layer of the MLP classifier.
+        If set to 'auto', defaults to two hidden layers with widths such that width is larger than 10 times
+        the number of variables and a power of two. Default is 'auto'.
     **kwargs
         Additional keyword arguments. Recognized keyword:
             mlp_kwargs : dict
@@ -72,7 +74,6 @@ def classifier_two_sample_test(
         is the final validation metric, "classifier" is the trained Keras model, and "history" contains the
         full training history.
     """
-
     # Error, if targets dim does not match estimates dim
     num_dims = estimates.shape[1]
     if not num_dims == targets.shape[1]:
@@ -81,6 +82,10 @@ def classifier_two_sample_test(
             f"but must have the same dimensionality (2nd dim)"
             f"found: estimates shape {estimates.shape[1]}, targets shape {targets.shape[1]}"
         )
+
+    if mlp_widths == "auto":
+        widths = 2 ** int(np.ceil(np.log2(10 * num_dims)))
+        mlp_widths = [widths, widths]
 
     # Standardize both estimates and targets relative to estimates mean and std
     if standardize:

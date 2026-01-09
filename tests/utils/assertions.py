@@ -1,4 +1,3 @@
-# Import Layer directly from keras.layers
 from keras.layers import Layer
 import keras
 
@@ -19,23 +18,20 @@ def assert_models_equal(model1: keras.Model, model2: keras.Model):
 
 
 def assert_layers_equal(layer1: Layer, layer2: Layer):
-    msg = f"Layers {layer1.name} and {layer2.name} have different types."
     if type(layer1) is not type(layer2):
-        raise ValueError(msg)
+        raise ValueError(f"Layers {layer1.name} and {layer2.name} have different types.")
 
-    msg = (
-        f"Layers {layer1.name} and {layer2.name} have a different number of variables "
-        f"({len(layer1.variables)}, {len(layer2.variables)})."
-    )
     if len(layer1.variables) != len(layer2.variables):
-        raise ValueError(msg)
+        raise ValueError(
+            f"Layers {layer1.name} and {layer2.name} have a different number of variables "
+            f"({len(layer1.variables)}, {len(layer2.variables)})."
+        )
 
-    msg = (
-        f"Layers {layer1.name} and {layer2.name} have different build status: "
-        f"{layer1.built} != {layer2.built}"
-    )
     if layer1.built != layer2.built:
-        raise ValueError(msg)
+        raise ValueError(
+            f"Layers {layer1.name} and {layer2.name} have different build status: "
+            f"{layer1.built} != {layer2.built}"
+        )
 
     for v1, v2 in zip(layer1.variables, layer2.variables):
         if v1.name == "seed_generator_state":
@@ -44,6 +40,12 @@ def assert_layers_equal(layer1: Layer, layer2: Layer):
 
         x1 = keras.ops.convert_to_numpy(v1)
         x2 = keras.ops.convert_to_numpy(v2)
-        msg = f"Variable '{v1.name}' for Layer '{layer1.name}' is not equal: {x1} != {x2}"
+
         if not keras.ops.all(keras.ops.isclose(x1, x2)):
-            raise ValueError(msg)
+            raise ValueError(
+                f"Variable '{v1.name}' for Layer '{layer1.name}' is not equal: "
+                f"{x1} != {x2}"
+            )
+
+    # Name equality intentionally disabled
+    # See: https://github.com/bayesflow-org/bayesflow/issues/412

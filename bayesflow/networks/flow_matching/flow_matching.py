@@ -57,7 +57,7 @@ class FlowMatching(InferenceNetwork):
         "max_steps": 100,
         "atol": 1e-5,
         "partial_ot_factor": 1.0,  # no partial OT
-        "conditional_ot_ratio": 0.01,  # only used if conditions are provided
+        "condition_ratio": 0.01,  # only used if conditions are provided
     }
 
     INTEGRATE_DEFAULT_CONFIG = {

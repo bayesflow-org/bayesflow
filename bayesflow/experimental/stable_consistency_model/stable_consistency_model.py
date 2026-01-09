@@ -115,6 +115,8 @@ class StableConsistencyModel(InferenceNetwork):
         else:
             self.time_emb = time_emb or FourierEmbedding(**embedding_kwargs)
             self.time_emb_dim = self.time_emb.embed_dim
+            if hasattr(self.time_emb, "include_identity") and self.time_emb.include_identity:
+                self.time_emb_dim += 1
 
         self.sigma = sigma
         self.seed_generator = keras.random.SeedGenerator()
@@ -162,7 +164,7 @@ class StableConsistencyModel(InferenceNetwork):
 
         if self._concatenate_subnet_input:
             # construct time vector
-            input_shape[-1] += self.time_emb_dim + 1
+            input_shape[-1] += self.time_emb_dim
             if conditions_shape is not None:
                 input_shape[-1] += conditions_shape[-1]
             input_shape = tuple(input_shape)
@@ -171,7 +173,7 @@ class StableConsistencyModel(InferenceNetwork):
             input_shape = self.subnet.compute_output_shape(input_shape)
         else:
             # Multiple separate inputs
-            time_shape = tuple(xz_shape[:-1]) + (self.time_emb_dim + 1,)  # same batch/sequence dims, 1 feature
+            time_shape = tuple(xz_shape[:-1]) + (self.time_emb_dim,)  # same batch/sequence dims, 1 feature
             self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
             input_shape = self.subnet.compute_output_shape(
                 x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape

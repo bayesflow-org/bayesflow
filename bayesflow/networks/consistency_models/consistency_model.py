@@ -79,11 +79,13 @@ class ConsistencyModel(InferenceNetwork):
 
         self.total_steps = float(total_steps)
 
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
-
+        elif subnet == "time_mlp":
+            subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+            self._concatenate_subnet_input = False
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(
             units=None, bias_initializer="zeros", kernel_initializer="zeros", name="output_projector"

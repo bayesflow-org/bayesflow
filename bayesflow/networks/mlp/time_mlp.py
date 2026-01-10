@@ -16,8 +16,7 @@ class TimeMLP(keras.Layer):
 
     The model processes three separate inputs: the state variable `x`, a scalar or vector-valued time input `t`,
     and a conditioning variable `conditions`. The input and condition are projected into a shared feature space,
-    merged, and passed through a deep residual MLP. A learned time embedding is injected via FiLM at every
-    hidden layer.
+    merged, and passed through a deep residual MLP. A learned time embedding is injected at every hidden layer.
 
     If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
         supports dropout for regularization and spectral normalization for stability in learning smooth functions.
@@ -89,6 +88,9 @@ class TimeMLP(keras.Layer):
             )
         else:
             self.time_emb = time_emb
+        self.time_proj = keras.layers.Dense(
+            self.widths[0], kernel_initializer=self.kernel_initializer, name="time_proj"
+        )
 
         # Projections for x and conditions into a shared space
         self.x_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="x_proj")
@@ -192,6 +194,7 @@ class TimeMLP(keras.Layer):
         if keras.ops.shape(t) == 1:
             t = keras.ops.expand_dims(t, axis=-1)
         t_emb = self.time_emb(t)
+        t_emb = self.time_proj(t_emb)
 
         for block in self.blocks:
             h = block((h, t_emb), training=training)

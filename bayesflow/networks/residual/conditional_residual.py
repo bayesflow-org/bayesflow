@@ -4,7 +4,6 @@ import keras
 
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-from ..embeddings import FiLM
 
 
 @serializable("bayesflow.networks")
@@ -61,9 +60,6 @@ class ConditionalResidual(keras.Layer):
         else:
             raise TypeError(f"Cannot infer norm from {norm!r} of type {type(norm)}.")
 
-        self.film = FiLM(
-            self.width, kernel_initializer=kernel_initializer, use_gamma=kwargs.get("film_use_gamma", True), name="film"
-        )
         self.projector = None
 
     @classmethod
@@ -95,9 +91,6 @@ class ConditionalResidual(keras.Layer):
         if self.dropout_layer is not None:
             self.dropout_layer.build(h_shape)
 
-        # FiLM expects (h, t_emb)
-        self.film.build((h_shape, cond_shape))
-
         if self.norm_layer is not None:
             self.norm_layer.build(h_shape)
 
@@ -127,8 +120,7 @@ class ConditionalResidual(keras.Layer):
         h = self.act(h)
         h = self.dense(h)
 
-        # Inject condition via FiLM at this hidden layer
-        h = self.film((h, cond))
+        h = h + cond
 
         if self.dropout_layer is not None:
             h = self.dropout_layer(h, training=training)

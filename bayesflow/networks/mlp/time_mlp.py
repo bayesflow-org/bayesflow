@@ -161,8 +161,6 @@ class TimeMLP(keras.Layer):
             block.build((h_shape, t_emb_shape))
             h_shape = block.compute_output_shape((h_shape, t_emb_shape))
 
-        super().build((x_shape, t_shape, conditions_shape))
-
     def compute_output_shape(self, x_shape, t_shape, conditions_shape=None):
         if self.merge == "add" and conditions_shape is not None:
             h_shape = self.x_proj.compute_output_shape(x_shape)

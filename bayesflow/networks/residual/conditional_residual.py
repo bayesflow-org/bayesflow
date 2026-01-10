@@ -105,8 +105,6 @@ class ConditionalResidual(keras.Layer):
             self.projector.units = h_shape[-1]
             self.projector.build(x_shape)
 
-        super().build(input_shape)
-
     def compute_output_shape(self, input_shape):
         x_shape, _ = input_shape
         if self.residual:

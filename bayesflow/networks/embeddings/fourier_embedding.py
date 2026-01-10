@@ -72,6 +72,12 @@ class FourierEmbedding(keras.Layer):
             emb = ops.concatenate([ops.sin(proj), ops.cos(proj)], axis=-1)
         return emb
 
+    def compute_output_shape(self, input_shape):
+        if self.include_identity:
+            return input_shape[:-1] + (self.embed_dim + 1,)
+        else:
+            return input_shape[:-1] + (self.embed_dim,)
+
     def get_config(self):
         base_config = super().get_config()
         base_config = layer_kwargs(base_config)

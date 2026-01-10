@@ -172,8 +172,7 @@ class TimeMLP(keras.Layer):
                 h_shape[-1] += int(conditions_shape[-1])
                 h_shape = tuple(h_shape)
 
-        t_emb_shape = self.time_embedding_dim + 1  # include_identity=True adds 1
-        t_emb_shape = (t_shape[:-1], t_emb_shape)
+        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
 
         for block in self.blocks:
             h_shape = block.compute_output_shape(h_shape, t_emb_shape)

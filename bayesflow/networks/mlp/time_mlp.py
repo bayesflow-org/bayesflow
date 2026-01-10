@@ -89,7 +89,7 @@ class TimeMLP(keras.Layer):
         else:
             self.time_emb = time_emb
         self.time_proj = keras.layers.Dense(
-            self.widths[0], kernel_initializer=self.kernel_initializer, name="time_proj"
+            self.widths[0] // 2, kernel_initializer=self.kernel_initializer, name="time_proj"
         )
 
         # Projections for x and conditions into a shared space

@@ -26,7 +26,7 @@ class TimeMLP(keras.Layer):
         self,
         widths: Sequence[int] = (256, 256),
         *,
-        time_embedding_dim: int = 8,
+        time_embedding_dim: int = 32,
         time_emb: keras.Layer | None = None,
         activation: str | Callable[[], keras.Layer] = "mish",
         kernel_initializer: str | keras.Initializer = "he_normal",
@@ -89,11 +89,11 @@ class TimeMLP(keras.Layer):
         else:
             self.time_emb = time_emb
         self.time_proj = keras.layers.Dense(
-            self.widths[0], kernel_initializer=self.kernel_initializer, name="time_proj"
+            self.widths[0] // 2, kernel_initializer=self.kernel_initializer, name="time_proj"
         )
 
         # Projections for x and conditions into a shared space
-        self.x_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="x_proj")
+        self.x_proj = keras.layers.Dense(self.widths[0] // 2, kernel_initializer=self.kernel_initializer, name="x_proj")
         self.c_proj = None
         if merge != "add" and merge != "concat":
             raise ValueError(f"Unknown merge mode: {merge!r} (expected 'add' or 'concat').")
@@ -147,11 +147,13 @@ class TimeMLP(keras.Layer):
         self.x_proj.build(x_shape)
         h_shape = self.x_proj.compute_output_shape(x_shape)
         if conditions_shape is not None:
-            self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="c_proj")
+            self.c_proj = keras.layers.Dense(
+                self.widths[0] // 2, kernel_initializer=self.kernel_initializer, name="c_proj"
+            )
             self.c_proj.build(conditions_shape)
             if self.merge == "concat":
                 h_shape = list(h_shape)
-                h_shape[-1] = h_shape[-1] + self.widths[0]
+                h_shape[-1] = h_shape[-1] + self.widths[0] // 2
                 h_shape = tuple(h_shape)
 
         # Conditional residual blocks
@@ -167,7 +169,7 @@ class TimeMLP(keras.Layer):
         if conditions_shape is not None:
             if self.merge == "concat":
                 h_shape = list(h_shape)
-                h_shape[-1] = h_shape[-1] + self.widths[0]
+                h_shape[-1] = h_shape[-1] + self.widths[0] // 2
                 h_shape = tuple(h_shape)
 
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)

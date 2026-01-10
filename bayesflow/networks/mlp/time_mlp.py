@@ -27,7 +27,7 @@ class TimeMLP(keras.Layer):
         self,
         widths: Sequence[int] = (256, 256),
         *,
-        time_embedding_dim: int = 32,
+        time_embedding_dim: int = 8,
         time_emb: keras.Layer | None = None,
         activation: str | Callable[[], keras.Layer] = "mish",
         kernel_initializer: str | keras.Initializer = "he_normal",

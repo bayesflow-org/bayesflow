@@ -62,7 +62,7 @@ class ConditionalResidual(keras.Layer):
             raise TypeError(f"Cannot infer norm from {norm!r} of type {type(norm)}.")
 
         self.film = FiLM(self.width, kernel_initializer=kernel_initializer, name="film")
-        self.projector = keras.layers.Dense(units=None, kernel_initializer=kernel_initializer, name="projector")
+        self.projector = None
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -101,8 +101,12 @@ class ConditionalResidual(keras.Layer):
 
         self.act.build(h_shape)
 
-        if self.residual:
-            self.projector.units = h_shape[-1]
+        if self.residual and x_shape[-1] != h_shape[-1]:
+            self.projector = keras.layers.Dense(
+                h_shape[-1],
+                kernel_initializer=self.kernel_initializer,
+                name="projector",
+            )
             self.projector.build(x_shape)
 
         super().build(input_shape)
@@ -114,7 +118,8 @@ class ConditionalResidual(keras.Layer):
     def call(self, inputs, training=None):
         x, cond = inputs
         h = x
-        if self.norm_layer is not None:  # pre-normalization
+
+        if self.norm_layer is not None:
             h = self.norm_layer(h, training=training)
 
         h = self.act(h)
@@ -127,5 +132,6 @@ class ConditionalResidual(keras.Layer):
             h = self.dropout_layer(h, training=training)
 
         if self.residual:
-            return self.projector(x) + h
+            skip = x if self.projector is None else self.projector(x)
+            return skip + h
         return h

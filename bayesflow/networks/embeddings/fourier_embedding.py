@@ -44,12 +44,12 @@ class FourierEmbedding(keras.Layer):
         if embed_dim % 2 != 0:
             raise ValueError(f"Embedding dimension must be even, but is {embed_dim}.")
 
-        self.w = self.add_weight(initializer=initializer, shape=(embed_dim // 2,), trainable=trainable)
         self.scale = scale
         self.embed_dim = embed_dim
         self.include_identity = include_identity
         self.initializer = initializer
         self.trainable = trainable
+        self.w = None
 
     def call(self, t: Tensor) -> Tensor:
         """Embeds the one-dimensional time scalar into a higher-dimensional Fourier embedding.
@@ -72,11 +72,25 @@ class FourierEmbedding(keras.Layer):
             emb = ops.concatenate([ops.sin(proj), ops.cos(proj)], axis=-1)
         return emb
 
+    def build(self, input_shape):
+        if self.built:
+            return
+
+        # Create the frequency weights
+        self.w = self.add_weight(
+            name="frequencies", shape=(self.embed_dim // 2,), initializer=self.initializer, trainable=self.trainable
+        )
+
+        super().build(input_shape)
+
     def compute_output_shape(self, input_shape):
+        batch_shape = input_shape[:-1]
+
         if self.include_identity:
-            return input_shape[:-1], self.embed_dim + 1
+            output_dim = self.embed_dim + 1
         else:
-            return input_shape[:-1], self.embed_dim
+            output_dim = self.embed_dim
+        return batch_shape + (output_dim,)
 
     def get_config(self):
         base_config = super().get_config()

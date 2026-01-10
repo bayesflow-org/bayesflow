@@ -143,6 +143,7 @@ class TimeMLP(keras.Layer):
 
         # Time embedding
         t_emb_shape = self.time_embedding_dim + 1  # include_identity=True adds 1
+        t_emb_shape = (t_shape[:-1], t_emb_shape)
 
         # Merge / input pathway
         if self.merge == "add" and conditions_shape is not None:
@@ -158,8 +159,8 @@ class TimeMLP(keras.Layer):
 
         # Conditional residual blocks
         for block in self.blocks:
-            block.build((h_shape, t_emb_shape))
-            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
+            block.build(h_shape, t_emb_shape)
+            h_shape = block.compute_output_shape(h_shape, t_emb_shape)
 
     def compute_output_shape(self, x_shape, t_shape, conditions_shape=None):
         if self.merge == "add" and conditions_shape is not None:
@@ -172,9 +173,10 @@ class TimeMLP(keras.Layer):
                 h_shape = tuple(h_shape)
 
         t_emb_shape = self.time_embedding_dim + 1  # include_identity=True adds 1
+        t_emb_shape = (t_shape[:-1], t_emb_shape)
 
         for block in self.blocks:
-            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
+            h_shape = block.compute_output_shape(h_shape, t_emb_shape)
 
         return h_shape
 
@@ -194,6 +196,6 @@ class TimeMLP(keras.Layer):
         t_emb = self.time_emb(t)
 
         for block in self.blocks:
-            h = block((h, t_emb), training=training, mask=mask)
+            h = block(x=h, cond=t_emb, training=training, mask=mask)
 
         return h

@@ -82,11 +82,10 @@ class ConditionalResidual(keras.Layer):
         }
         return base | serialize(cfg)
 
-    def build(self, input_shape):
+    def build(self, x_shape, cond_shape):
         if self.built:
             return
 
-        x_shape, cond_shape = input_shape
         self.dense.build(x_shape)
         h_shape = self.dense.compute_output_shape(x_shape)
 
@@ -105,15 +104,10 @@ class ConditionalResidual(keras.Layer):
             self.projector.units = h_shape[-1]
             self.projector.build(x_shape)
 
-    def compute_output_shape(self, input_shape):
-        x_shape, _ = input_shape
-        if self.residual:
-            return self.dense.compute_output_shape(x_shape)
+    def compute_output_shape(self, x_shape, cond_shape):
         return self.dense.compute_output_shape(x_shape)
 
-    def call(self, inputs, training=None, mask=None):
-        x, cond = inputs
-
+    def call(self, x, cond, training=None, mask=None):
         h = x
         if self.norm_layer is not None:  # pre-normalization
             h = self.norm_layer(h, training=training)

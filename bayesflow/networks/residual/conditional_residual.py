@@ -9,7 +9,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 @serializable("bayesflow.networks")
 class ConditionalResidual(keras.Layer):
     """
-    A single hidden block with optional residual connection and FiLM injection for conditional embedding.
+    A single hidden block with optional residual connection and conditional injection.
     """
 
     def __init__(
@@ -114,18 +114,14 @@ class ConditionalResidual(keras.Layer):
         x, cond = inputs
         h = x
 
-        if self.norm_layer is not None:
-            h = self.norm_layer(h, training=training)
-
-        h = self.act(h)
         h = self.dense(h)
-
-        h = h + cond
-
         if self.dropout_layer is not None:
             h = self.dropout_layer(h, training=training)
-
+        h = self.act(h)
+        h = h + cond
         if self.residual:
             skip = x if self.projector is None else self.projector(x)
-            return skip + h
+            h = skip + h
+        if self.norm_layer is not None:
+            h = self.norm_layer(h, training=training)
         return h

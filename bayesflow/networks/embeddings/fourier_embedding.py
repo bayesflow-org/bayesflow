@@ -14,8 +14,8 @@ class FourierEmbedding(keras.Layer):
 
     def __init__(
         self,
-        embed_dim: int = 8,
-        scale: float = 1.0,
+        embed_dim: int = 32,
+        scale: float = 30.0,
         initializer: str = "random_normal",
         trainable: bool = True,
         include_identity: bool = True,
@@ -29,7 +29,7 @@ class FourierEmbedding(keras.Layer):
         embed_dim        : int (even)
             Dimensionality of the Fourier projection. The resulting embedding
             has dimensionality `embed_dim + 1` if `include_identity` is set to True.
-        scale            : float, optional (default - 1.0)
+        scale            : float, optional (default - 30.0)
             Scaling factor for the frequencies.
         initializer      : str, optional (default - "random_normal")
             Method for initializing the projection weights.

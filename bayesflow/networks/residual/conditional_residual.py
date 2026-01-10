@@ -61,7 +61,9 @@ class ConditionalResidual(keras.Layer):
         else:
             raise TypeError(f"Cannot infer norm from {norm!r} of type {type(norm)}.")
 
-        self.film = FiLM(self.width, kernel_initializer=kernel_initializer, name="film")
+        self.film = FiLM(
+            self.width, kernel_initializer=kernel_initializer, use_gamma=kwargs.get("film_use_gamma", True), name="film"
+        )
         self.projector = None
 
     @classmethod

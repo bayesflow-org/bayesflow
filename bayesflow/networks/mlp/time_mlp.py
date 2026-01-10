@@ -90,15 +90,10 @@ class TimeMLP(keras.Layer):
         else:
             self.time_emb = time_emb
 
-        self.merge_proj = None
-        if merge == "add":
-            # Projections for x and conditions into a shared space
-            self.x_proj = keras.layers.Dense(self.widths[0], kernel_initializer=kernel_initializer, name="x_proj")
-            self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=kernel_initializer, name="c_proj")
-        elif merge == "concat":
-            self.x_proj = None
-            self.c_proj = None
-        else:
+        # Projections for x and conditions into a shared space
+        self.x_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="x_proj")
+        self.c_proj = None
+        if merge != "add" and merge != "concat":
             raise ValueError(f"Unknown merge mode: {merge!r} (expected 'add' or 'concat').")
 
         self.blocks = [
@@ -111,6 +106,7 @@ class TimeMLP(keras.Layer):
                 norm=norm,
                 spectral_normalization=spectral_normalization,
                 name=f"cond_block_{i}",
+                **kwargs,
             )
             for i, w in enumerate(self.widths)
         ]
@@ -145,17 +141,15 @@ class TimeMLP(keras.Layer):
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
 
         # Merge / input pathway
+        self.x_proj.build(x_shape)
+        h_shape = self.x_proj.compute_output_shape(x_shape)
         if conditions_shape is not None:
-            if self.merge == "add" and conditions_shape is not None:
-                self.x_proj.build(x_shape)
-                self.c_proj.build(conditions_shape)
-                h_shape = self.x_proj.compute_output_shape(x_shape)
-            else:
-                h_shape = list(x_shape)
-                h_shape[-1] += int(conditions_shape[-1])
+            self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="c_proj")
+            self.c_proj.build(conditions_shape)
+            if self.merge == "concat":
+                h_shape = list(h_shape)
+                h_shape[-1] = h_shape[-1] + self.widths[0]
                 h_shape = tuple(h_shape)
-        else:
-            h_shape = x_shape
 
         # Conditional residual blocks
         for block in self.blocks:
@@ -166,13 +160,11 @@ class TimeMLP(keras.Layer):
 
     def compute_output_shape(self, input_shape):
         x_shape, t_shape, conditions_shape = input_shape
-        if self.merge == "add" and conditions_shape is not None:
-            h_shape = self.x_proj.compute_output_shape(x_shape)
-        else:
-            h_shape = x_shape
-            if conditions_shape is not None:
+        h_shape = self.x_proj.compute_output_shape(x_shape)
+        if conditions_shape is not None:
+            if self.merge == "concat":
                 h_shape = list(h_shape)
-                h_shape[-1] += int(conditions_shape[-1])
+                h_shape[-1] = h_shape[-1] + self.widths[0]
                 h_shape = tuple(h_shape)
 
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
@@ -189,15 +181,13 @@ class TimeMLP(keras.Layer):
         mask=None,
     ) -> Tensor:
         x, t, conditions = inputs
-        if conditions is None:
-            h = x
-        else:
-            if self.merge == "add":
-                hx = self.x_proj(x)
-                hc = self.c_proj(conditions)
-                h = hx + hc
+        h = self.x_proj(x)
+        if conditions is not None:
+            hc = self.c_proj(conditions)
+            if self.merge == "concat":
+                h = concatenate_valid([h, hc], axis=-1)
             else:
-                h = concatenate_valid([x, conditions], axis=-1)
+                h = h + hc
 
         if keras.ops.shape(t) == 1:
             t = keras.ops.expand_dims(t, axis=-1)

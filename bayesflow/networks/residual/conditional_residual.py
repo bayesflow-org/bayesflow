@@ -94,7 +94,7 @@ class ConditionalResidual(keras.Layer):
             self.dropout_layer.build(h_shape)
 
         # FiLM expects (h, t_emb)
-        self.film.build((h_shape, cond_shape))
+        self.film.build(h_shape, cond_shape)
 
         if self.norm_layer is not None:
             self.norm_layer.build(h_shape)

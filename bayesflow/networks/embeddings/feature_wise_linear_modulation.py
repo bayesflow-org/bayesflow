@@ -26,6 +26,21 @@ class FiLM(keras.Layer):
         cfg = {"units": self.units, "kernel_initializer": self.kernel_initializer}
         return base | serialize(cfg)
 
+    def build(self, x_shape, t_emb_shape):
+        if self.built:
+            return
+
+        # Verify x has correct feature dimension
+        if x_shape[-1] != self.units:
+            raise ValueError(f"FiLM layer expects input with {self.units} features, but got {x_shape[-1]}")
+
+        # Build the projection from time embedding to gamma/beta
+        self.to_gamma_beta.build(t_emb_shape)
+
+    def compute_output_shape(self, input_shape):
+        x_shape, _ = input_shape
+        return x_shape
+
     def call(self, x, t_emb):
         gb = self.to_gamma_beta(t_emb)
         gamma, beta = keras.ops.split(gb, 2, axis=-1)

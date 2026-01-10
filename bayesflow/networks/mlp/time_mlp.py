@@ -141,6 +141,7 @@ class TimeMLP(keras.Layer):
         x_shape, t_shape, conditions_shape = input_shape
         self.time_emb.build(t_shape)
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
+        self.time_proj.build(t_emb_shape)
 
         # Merge / input pathway
         self.x_proj.build(x_shape)

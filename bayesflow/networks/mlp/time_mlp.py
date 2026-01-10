@@ -92,10 +92,9 @@ class TimeMLP(keras.Layer):
 
         self.merge_proj = None
         if merge == "add":
-            first_width = self.widths[0]
             # Projections for x and conditions into a shared space
-            self.x_proj = keras.layers.Dense(first_width, kernel_initializer=kernel_initializer, name="x_proj")
-            self.c_proj = keras.layers.Dense(first_width, kernel_initializer=kernel_initializer, name="c_proj")
+            self.x_proj = keras.layers.Dense(self.widths[0], kernel_initializer=kernel_initializer, name="x_proj")
+            self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=kernel_initializer, name="c_proj")
         elif merge == "concat":
             self.x_proj = None
             self.c_proj = None
@@ -142,19 +141,21 @@ class TimeMLP(keras.Layer):
             return
 
         x_shape, t_shape, conditions_shape = input_shape
+        self.time_emb.build(t_shape)
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
 
         # Merge / input pathway
-        if self.merge == "add" and conditions_shape is not None:
-            self.x_proj.build(x_shape)
-            self.c_proj.build(conditions_shape)
-            h_shape = self.x_proj.compute_output_shape(x_shape)
-        else:
-            h_shape = x_shape
-            if conditions_shape is not None:
-                h_shape = list(h_shape)
+        if conditions_shape is not None:
+            if self.merge == "add" and conditions_shape is not None:
+                self.x_proj.build(x_shape)
+                self.c_proj.build(conditions_shape)
+                h_shape = self.x_proj.compute_output_shape(x_shape)
+            else:
+                h_shape = list(x_shape)
                 h_shape[-1] += int(conditions_shape[-1])
                 h_shape = tuple(h_shape)
+        else:
+            h_shape = x_shape
 
         # Conditional residual blocks
         for block in self.blocks:
@@ -185,7 +186,7 @@ class TimeMLP(keras.Layer):
         self,
         inputs: tuple[Tensor, Tensor, Tensor] | tuple[Tensor, Tensor, None],
         training: bool = None,
-        mask: bool = None,
+        mask=None,
     ) -> Tensor:
         x, t, conditions = inputs
         if conditions is None:
@@ -198,9 +199,10 @@ class TimeMLP(keras.Layer):
             else:
                 h = concatenate_valid([x, conditions], axis=-1)
 
+        if keras.ops.shape(t) == 1:
+            t = keras.ops.expand_dims(t, axis=-1)
         t_emb = self.time_emb(t)
 
         for block in self.blocks:
-            h = block((h, t_emb), training=training, mask=mask)
-
+            h = block((h, t_emb), training=training)
         return h

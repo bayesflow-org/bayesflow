@@ -84,13 +84,11 @@ class FourierEmbedding(keras.Layer):
         super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
-        batch_shape = input_shape[:-1]
-
         if self.include_identity:
             output_dim = self.embed_dim + 1
         else:
             output_dim = self.embed_dim
-        return tuple(batch_shape) + (output_dim,)
+        return tuple(input_shape[:-1]) + (output_dim,)
 
     def get_config(self):
         base_config = super().get_config()

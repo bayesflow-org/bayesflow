@@ -111,8 +111,8 @@ class ConditionalResidual(keras.Layer):
         x_shape, _ = input_shape
         return self.dense.compute_output_shape(x_shape)
 
-    def call(self, input, training=None, mask=None):
-        x, cond = input
+    def call(self, inputs, training=None):
+        x, cond = inputs
         h = x
         if self.norm_layer is not None:  # pre-normalization
             h = self.norm_layer(h, training=training)

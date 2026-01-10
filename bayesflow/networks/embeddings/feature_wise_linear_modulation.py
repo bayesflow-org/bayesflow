@@ -23,8 +23,8 @@ class FiLM(keras.Layer):
     def get_config(self):
         base = super().get_config()
         base = layer_kwargs(base)
-        cfg = {"units": self.units, "kernel_initializer": self.kernel_initializer}
-        return base | serialize(cfg)
+        config = {"units": self.units, "kernel_initializer": self.kernel_initializer}
+        return base | serialize(config)
 
     def build(self, input_shape):
         if self.built:

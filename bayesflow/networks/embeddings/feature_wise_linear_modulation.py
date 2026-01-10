@@ -37,6 +37,7 @@ class FiLM(keras.Layer):
 
         # Build the projection from time embedding to gamma/beta
         self.to_gamma_beta.build(t_emb_shape)
+
         super().build(input_shape)
 
     def compute_output_shape(self, input_shape):

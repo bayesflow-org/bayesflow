@@ -82,9 +82,10 @@ class ConditionalResidual(keras.Layer):
         }
         return base | serialize(cfg)
 
-    def build(self, x_shape, cond_shape):
+    def build(self, input_shape):
         if self.built:
             return
+        x_shape, cond_shape = input_shape
 
         self.dense.build(x_shape)
         h_shape = self.dense.compute_output_shape(x_shape)
@@ -93,7 +94,7 @@ class ConditionalResidual(keras.Layer):
             self.dropout_layer.build(h_shape)
 
         # FiLM expects (h, t_emb)
-        self.film.build(h_shape, cond_shape)
+        self.film.build((h_shape, cond_shape))
 
         if self.norm_layer is not None:
             self.norm_layer.build(h_shape)
@@ -104,10 +105,12 @@ class ConditionalResidual(keras.Layer):
             self.projector.units = h_shape[-1]
             self.projector.build(x_shape)
 
-    def compute_output_shape(self, x_shape, cond_shape):
+    def compute_output_shape(self, input_shape):
+        x_shape, _ = input_shape
         return self.dense.compute_output_shape(x_shape)
 
-    def call(self, x, cond, training=None, mask=None):
+    def call(self, input, training=None, mask=None):
+        x, cond = input
         h = x
         if self.norm_layer is not None:  # pre-normalization
             h = self.norm_layer(h, training=training)
@@ -116,7 +119,7 @@ class ConditionalResidual(keras.Layer):
         h = self.dense(h)
 
         # Inject condition via FiLM at this hidden layer
-        h = self.film(h, cond)
+        h = self.film((h, cond))
 
         if self.dropout_layer is not None:
             h = self.dropout_layer(h, training=training)

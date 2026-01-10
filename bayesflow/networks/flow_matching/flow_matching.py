@@ -158,10 +158,8 @@ class FlowMatching(InferenceNetwork):
         else:
             # Multiple separate inputs
             time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
-            out_shape = self.subnet.compute_output_shape(
-                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
-            )
+            self.subnet.build((xz_shape, time_shape, conditions_shape))
+            out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)
 
@@ -217,7 +215,7 @@ class FlowMatching(InferenceNetwork):
         else:
             if training is False:
                 t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
-            return self.subnet(x=x, t=t, conditions=conditions, training=training)
+            return self.subnet((x, t, conditions), training=training)
 
     def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))

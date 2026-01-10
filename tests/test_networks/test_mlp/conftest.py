@@ -35,4 +35,4 @@ def build_shapes():
 
 @pytest.fixture()
 def build_shapes_time():
-    return {"x_shape": (32, 2), "t_shape": (32, 1), "conditions_shape": (32, 4)}
+    return {"input_shape": ((32, 2), (32, 1), (32, 4))}

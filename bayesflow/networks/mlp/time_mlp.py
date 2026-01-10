@@ -137,13 +137,12 @@ class TimeMLP(keras.Layer):
         }
         return base | serialize(cfg)
 
-    def build(self, x_shape, t_shape, conditions_shape=None):
+    def build(self, input_shape):
         if self.built:
             return
 
-        # Time embedding
-        t_emb_shape = self.time_embedding_dim + 1  # include_identity=True adds 1
-        t_emb_shape = (t_shape[:-1], t_emb_shape)
+        x_shape, t_shape, conditions_shape = input_shape
+        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
 
         # Merge / input pathway
         if self.merge == "add" and conditions_shape is not None:
@@ -159,10 +158,11 @@ class TimeMLP(keras.Layer):
 
         # Conditional residual blocks
         for block in self.blocks:
-            block.build(h_shape, t_emb_shape)
-            h_shape = block.compute_output_shape(h_shape, t_emb_shape)
+            block.build((h_shape, t_emb_shape))
+            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
 
-    def compute_output_shape(self, x_shape, t_shape, conditions_shape=None):
+    def compute_output_shape(self, input_shape):
+        x_shape, t_shape, conditions_shape = input_shape
         if self.merge == "add" and conditions_shape is not None:
             h_shape = self.x_proj.compute_output_shape(x_shape)
         else:
@@ -175,13 +175,17 @@ class TimeMLP(keras.Layer):
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
 
         for block in self.blocks:
-            h_shape = block.compute_output_shape(h_shape, t_emb_shape)
+            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
 
         return h_shape
 
     def call(
-        self, x: Tensor, t: Tensor, conditions: Tensor | None = None, training: bool = None, mask: bool = None
+        self,
+        inputs: tuple[Tensor, Tensor, Tensor] | tuple[Tensor, Tensor, None],
+        training: bool = None,
+        mask: bool = None,
     ) -> Tensor:
+        x, t, conditions = inputs
         if conditions is None:
             h = x
         else:
@@ -195,6 +199,6 @@ class TimeMLP(keras.Layer):
         t_emb = self.time_emb(t)
 
         for block in self.blocks:
-            h = block(x=h, cond=t_emb, training=training, mask=mask)
+            h = block((h, t_emb), training=training, mask=mask)
 
         return h

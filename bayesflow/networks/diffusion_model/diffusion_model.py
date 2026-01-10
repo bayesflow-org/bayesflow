@@ -148,10 +148,8 @@ class DiffusionModel(InferenceNetwork):
         else:
             # Multiple separate inputs
             time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
-            out_shape = self.subnet.compute_output_shape(
-                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
-            )
+            self.subnet.build((xz_shape, time_shape, conditions_shape))
+            out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)
 
@@ -244,7 +242,7 @@ class DiffusionModel(InferenceNetwork):
         if self._concatenate_subnet_input:
             xtc = tensor_utils.concatenate_valid([xz, log_snr, conditions], axis=-1)
             return self.subnet(xtc, training=training)
-        return self.subnet(x=xz, t=log_snr, conditions=conditions, training=training)
+        return self.subnet((xz, log_snr, conditions), training=training)
 
     def score(
         self,

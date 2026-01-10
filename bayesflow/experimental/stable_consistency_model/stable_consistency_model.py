@@ -158,10 +158,8 @@ class StableConsistencyModel(InferenceNetwork):
         else:
             # Multiple separate inputs
             time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
-            input_shape = self.subnet.compute_output_shape(
-                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
-            )
+            self.subnet.build((xz_shape, time_shape, conditions_shape))
+            input_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
         self.subnet_projector.build(input_shape)
 
         # input shape for weight function and projector
@@ -197,7 +195,7 @@ class StableConsistencyModel(InferenceNetwork):
             xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
             return self.subnet(xtc, training=training)
         else:
-            return self.subnet(x=x, t=t, conditions=conditions, training=training)
+            return self.subnet((x, t, conditions), training=training)
 
     def _forward(self, x: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
         # Consistency Models only learn the direction from noise distribution

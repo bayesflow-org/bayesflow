@@ -4,6 +4,7 @@ import keras
 
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.networks.embeddings import FiLM
 
 
 @serializable("bayesflow.networks")
@@ -47,6 +48,8 @@ class ConditionalResidual(keras.Layer):
             act = keras.layers.Activation(act)
         self.act = act
 
+        self.film = FiLM(self.width, use_gamma=kwargs.pop("use_gamma", False), name="film")
+
         if norm == "batch":
             self.norm_layer = keras.layers.BatchNormalization(name="norm")
         elif norm == "layer":
@@ -87,6 +90,8 @@ class ConditionalResidual(keras.Layer):
 
         self.dense.build(x_shape)
         h_shape = self.dense.compute_output_shape(x_shape)
+        print(h_shape, cond_shape)
+        self.film.build((h_shape, cond_shape))
 
         if self.dropout_layer is not None:
             self.dropout_layer.build(h_shape)
@@ -118,7 +123,7 @@ class ConditionalResidual(keras.Layer):
         if self.dropout_layer is not None:
             h = self.dropout_layer(h, training=training)
         h = self.act(h)
-        h = h + cond
+        h = self.film((h, cond))
         if self.residual:
             skip = x if self.projector is None else self.projector(x)
             h = skip + h

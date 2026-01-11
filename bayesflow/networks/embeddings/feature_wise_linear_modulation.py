@@ -47,7 +47,7 @@ class FiLM(keras.Layer):
         super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
-        x_shape, t_emb_shape = input_shape
+        x_shape, _ = input_shape
         return x_shape
 
     def call(self, inputs, training=None, mask=None):

@@ -34,6 +34,17 @@ class StableConsistencyModel(InferenceNetwork):
         "spectral_normalization": False,
     }
 
+    TIME_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+        "merge": "concat",
+        "norm": "layer",
+    }
+
     WEIGHT_MLP_DEFAULT_CONFIG = {
         "widths": (256,),
         "activation": "mish",
@@ -47,7 +58,7 @@ class StableConsistencyModel(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "time_mlp",
         sigma: float = 1.0,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
@@ -57,7 +68,7 @@ class StableConsistencyModel(InferenceNetwork):
 
         Parameters
         ----------
-        subnet : str, type, or keras.Layer, optional, default="mlp"
+        subnet : str, type, or keras.Layer, optional, default="time_mlp"
             The neural network architecture used for the consistency model.
             If a string is provided, it should be a registered name (e.g., "mlp").
             If a type or keras.Layer is provided, it will be directly instantiated
@@ -87,7 +98,7 @@ class StableConsistencyModel(InferenceNetwork):
         if subnet == "mlp":
             subnet_kwargs = StableConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
         elif subnet == "time_mlp":
-            subnet_kwargs = StableConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = StableConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = False
         self.subnet = find_network(subnet, **subnet_kwargs)
 
@@ -255,8 +266,6 @@ class StableConsistencyModel(InferenceNetwork):
             The conditioning vector
         training    : bool
             Flag to control whether the inner network operates in training or test mode
-        **kwargs    : dict, optional, default: {}
-            Additional keyword arguments passed to the inner network.
         """
         subnet_out = self._apply_subnet(x / self.sigma, t, conditions, training=training)
         f = self.subnet_projector(subnet_out)

@@ -96,9 +96,7 @@ class TimeMLP(keras.Layer):
         self.c_proj = None
         if merge != "add" and merge != "concat":
             raise ValueError(f"Unknown merge mode: {merge!r} (expected 'add' or 'concat').")
-        self.merge_proj = keras.layers.Dense(
-            self.widths[0], kernel_initializer=self.kernel_initializer, name="merge_proj"
-        )
+        self.merge_proj = None
         act = keras.activations.get(activation)
         if not isinstance(act, keras.Layer):
             act = keras.layers.Activation(act)
@@ -155,9 +153,15 @@ class TimeMLP(keras.Layer):
             self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="c_proj")
             self.c_proj.build(conditions_shape)
             if self.merge == "concat":
-                h_shape = list(h_shape)
-                h_shape[-1] = h_shape[-1] + self.widths[0]
-                h_shape = tuple(h_shape)
+                merge_shape = list(h_shape)
+                merge_shape[-1] = merge_shape[-1] + self.widths[0]
+                merge_shape = tuple(merge_shape)
+            else:
+                merge_shape = h_shape
+            self.merge_proj = keras.layers.Dense(
+                self.widths[0], kernel_initializer=self.kernel_initializer, name="merge_proj"
+            )
+            self.merge_proj.build(merge_shape)
 
         # Conditional residual blocks
         for block in self.blocks:
@@ -169,12 +173,6 @@ class TimeMLP(keras.Layer):
     def compute_output_shape(self, input_shape):
         x_shape, t_shape, conditions_shape = input_shape
         h_shape = self.x_proj.compute_output_shape(x_shape)
-        if conditions_shape is not None:
-            if self.merge == "concat":
-                h_shape = list(h_shape)
-                h_shape[-1] = h_shape[-1] + self.widths[0]
-                h_shape = tuple(h_shape)
-
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
 
         for block in self.blocks:
@@ -196,9 +194,8 @@ class TimeMLP(keras.Layer):
                 h = concatenate_valid([h, hc], axis=-1)
             else:
                 h = h + hc
-
-        h = self.merge_proj(self.act(h))
-        h = self.act(h)
+            h = self.merge_proj(self.act(h))
+            h = self.act(h)
 
         if keras.ops.shape(t) == 1:
             t = keras.ops.expand_dims(t, axis=-1)

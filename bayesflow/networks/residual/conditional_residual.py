@@ -90,7 +90,6 @@ class ConditionalResidual(keras.Layer):
 
         self.dense.build(x_shape)
         h_shape = self.dense.compute_output_shape(x_shape)
-        print(h_shape, cond_shape)
         self.film.build((h_shape, cond_shape))
 
         if self.dropout_layer is not None:

@@ -95,7 +95,7 @@ def test_film_modulation():
     # Time embedding (zeros will produce gamma=0, beta=0 with zero init)
     t_emb = keras.ops.zeros((batch_size, t_emb_dim), dtype="float32")
 
-    output = film_layer(x, t_emb)
+    output = film_layer((x, t_emb))
 
     # With zero-initialized Dense layer: gamma=0, beta=0
     # Expected: (1 + 0) * x + 0 = x

@@ -21,11 +21,11 @@ class ConditionalResidual(keras.Layer):
         kernel_initializer: str | keras.Initializer = "he_normal",
         residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
-        norm: Literal["batch", "layer"] | keras.Layer = None,
+        norm: Literal["batch", "layer"] | keras.Layer = "layer",
         spectral_normalization: bool = False,
         **kwargs,
     ):
-        super().__init__(**kwargs)
+        super().__init__(**layer_kwargs(kwargs))
         self.width = int(width)
         self.activation = activation
         self.kernel_initializer = kernel_initializer
@@ -48,7 +48,7 @@ class ConditionalResidual(keras.Layer):
             act = keras.layers.Activation(act)
         self.act = act
 
-        self.film = FiLM(self.width, use_gamma=kwargs.pop("use_gamma", False), name="film")
+        self.film = FiLM(self.width, use_gamma=kwargs.pop("film_use_gamma", False), name="film")
 
         if norm == "batch":
             self.norm_layer = keras.layers.BatchNormalization(name="norm")

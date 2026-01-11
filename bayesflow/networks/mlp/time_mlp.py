@@ -65,7 +65,7 @@ class TimeMLP(keras.Layer):
         **kwargs
             Additional keyword arguments passed to `keras.Model`.
         """
-        super().__init__(**kwargs)
+        super().__init__(**layer_kwargs(kwargs))
         self.widths = list(widths)
         self.time_embedding_dim = int(time_embedding_dim)
         self.activation = activation
@@ -85,7 +85,7 @@ class TimeMLP(keras.Layer):
         if time_emb is None:
             self.time_emb = FourierEmbedding(
                 embed_dim=self.time_embedding_dim,
-                scale=kwargs.get("fourier_scale", 30.0),
+                scale=kwargs.pop("fourier_scale", 30.0),
                 include_identity=True,
             )
         else:

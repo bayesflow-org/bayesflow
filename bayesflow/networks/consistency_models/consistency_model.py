@@ -33,10 +33,21 @@ class ConsistencyModel(InferenceNetwork):
         "spectral_normalization": False,
     }
 
+    TIME_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+        "merge": "concat",
+        "norm": "layer",
+    }
+
     def __init__(
         self,
         total_steps: int | float,
-        subnet: str | keras.Layer = "mlp",
+        subnet: str | keras.Layer = "time_mlp",
         max_time: int | float = 200,
         sigma2: float = 1.0,
         eps: float = 0.001,
@@ -52,7 +63,7 @@ class ConsistencyModel(InferenceNetwork):
         total_steps : int
             The total number of training steps, must be calculated as number of epochs * number of batches
             and cannot be inferred during construction time.
-        subnet      : str or type, optional, default: "mlp"
+        subnet      : str or type, optional, default: "time_mlp"
             A neural network type for the consistency model, will be
             instantiated using subnet_kwargs.
         max_time : int or float, optional, default: 200.0
@@ -84,7 +95,7 @@ class ConsistencyModel(InferenceNetwork):
         if subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
         elif subnet == "time_mlp":
-            subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = ConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = False
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.output_projector = keras.layers.Dense(

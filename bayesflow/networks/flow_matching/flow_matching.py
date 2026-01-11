@@ -51,6 +51,17 @@ class FlowMatching(InferenceNetwork):
         "spectral_normalization": False,
     }
 
+    TIME_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+        "merge": "concat",
+        "norm": "layer",
+    }
+
     OPTIMAL_TRANSPORT_DEFAULT_CONFIG = {
         "method": "log_sinkhorn",
         "regularization": 0.1,
@@ -67,7 +78,7 @@ class FlowMatching(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "time_mlp",
         base_distribution: str | Distribution = "normal",
         use_optimal_transport: bool = False,
         loss_fn: str | keras.Loss = "mse",
@@ -92,7 +103,7 @@ class FlowMatching(InferenceNetwork):
         ----------
         subnet : str or keras.Layer, optional
             Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
+            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "time_mlp".
         base_distribution : str, optional
             The base probability distribution from which samples are drawn, such as "normal".
             Default is "normal".
@@ -137,7 +148,7 @@ class FlowMatching(InferenceNetwork):
         if subnet == "mlp":
             subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
         elif subnet == "time_mlp":
-            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = FlowMatching.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = False
 
         self.subnet = find_network(subnet, **subnet_kwargs)

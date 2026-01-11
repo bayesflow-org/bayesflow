@@ -41,6 +41,17 @@ class DiffusionModel(InferenceNetwork):
         "spectral_normalization": False,
     }
 
+    TIME_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+        "merge": "concat",
+        "norm": "layer",
+    }
+
     INTEGRATE_DEFAULT_CONFIG = {
         "method": "two_step_adaptive",
         "steps": "adaptive",
@@ -49,7 +60,7 @@ class DiffusionModel(InferenceNetwork):
     def __init__(
         self,
         *,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "time_mlp",
         noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
         prediction_type: Literal["velocity", "noise", "F", "x"] = "F",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
@@ -69,7 +80,7 @@ class DiffusionModel(InferenceNetwork):
         ----------
         subnet : str, type or keras.Layer, optional
             Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
+            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "time_mlp".
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
             Noise schedule controlling the diffusion dynamics. Can be a string identifier,
             a schedule class, or a pre-initialized schedule instance. Default is "edm".
@@ -121,7 +132,7 @@ class DiffusionModel(InferenceNetwork):
         if subnet == "mlp":
             subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
         elif subnet == "time_mlp":
-            subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = DiffusionModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = False
         self.subnet = find_network(subnet, **subnet_kwargs)
 

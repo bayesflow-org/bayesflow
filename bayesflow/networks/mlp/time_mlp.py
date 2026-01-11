@@ -78,8 +78,6 @@ class TimeMLP(keras.Layer):
 
         if len(self.widths) == 0:
             raise ValueError("TimeMLP requires at least one hidden width.")
-        if not all(w == self.widths[0] for w in self.widths):
-            raise ValueError("All widths in TimeMLP must be the same.")
 
         # Time embedding
         if time_emb is None:
@@ -194,7 +192,7 @@ class TimeMLP(keras.Layer):
             else:
                 h = h + hc
             h = self.merge_proj(self.act(h))
-            h = self.act(h)
+        h = self.act(h)
 
         if keras.ops.shape(t) == 1:
             t = keras.ops.expand_dims(t, axis=-1)

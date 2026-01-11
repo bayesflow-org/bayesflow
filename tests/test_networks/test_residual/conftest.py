@@ -18,3 +18,8 @@ def cond_residual():
 @pytest.fixture()
 def build_shapes():
     return {"input_shape": (32, 2)}
+
+
+@pytest.fixture()
+def build_shapes_cond():
+    return {"input_shape": ((32, 2), (32, 1))}

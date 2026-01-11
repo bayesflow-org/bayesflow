@@ -24,8 +24,8 @@ def test_save_and_load(tmp_path, residual, build_shapes):
     assert_layers_equal(residual, loaded)
 
 
-def test_save_and_load_cond(tmp_path, cond_residual, build_shapes):
-    cond_residual.build(**build_shapes)
+def test_save_and_load_cond(tmp_path, cond_residual, build_shapes_cond):
+    cond_residual.build(**build_shapes_cond)
 
     keras.saving.save_model(cond_residual, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")

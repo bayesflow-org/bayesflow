@@ -1,11 +1,8 @@
 import pytest
 import keras
+import numpy as np
 
-from bayesflow.networks.embeddings import (
-    FourierEmbedding,
-    RecurrentEmbedding,
-    Time2Vec,
-)
+from bayesflow.networks.embeddings import FourierEmbedding, RecurrentEmbedding, Time2Vec, FiLM
 
 
 def test_fourier_embedding_output_shape_and_type():
@@ -83,3 +80,55 @@ def test_time2vec_shapes_and_output():
     # The last dimension should be dim + num_periodic_features + 1 (trend + periodic)
     expected_dim = dim + num_periodic_features + 1
     assert emb.shape == (batch_size, seq_len, expected_dim)
+
+
+def test_film_modulation():
+    """Test that FiLM correctly applies affine transformation."""
+    batch_size = 2
+    units = 4
+    t_emb_dim = 8
+
+    film_layer = FiLM(units=units, kernel_initializer="zeros")
+
+    # Input features
+    x = keras.ops.ones((batch_size, units), dtype="float32")
+    # Time embedding (zeros will produce gamma=0, beta=0 with zero init)
+    t_emb = keras.ops.zeros((batch_size, t_emb_dim), dtype="float32")
+
+    output = film_layer(x, t_emb)
+
+    # With zero-initialized Dense layer: gamma=0, beta=0
+    # Expected: (1 + 0) * x + 0 = x
+    np_output = keras.ops.convert_to_numpy(output)
+    np_x = keras.ops.convert_to_numpy(x)
+    np.testing.assert_allclose(np_output, np_x, rtol=1e-5)
+
+
+def test_film_integration_with_conditional_residual():
+    """Test FiLM works correctly when used in ConditionalResidual."""
+    from bayesflow.networks.residual import ConditionalResidual
+
+    width = 32
+    batch_size = 4
+    input_dim = 16
+    cond_dim = 64
+
+    block = ConditionalResidual(
+        width=width,
+        residual=True,
+        activation="relu",
+    )
+
+    x = keras.ops.zeros((batch_size, input_dim), dtype="float32")
+    cond = keras.ops.zeros((batch_size, cond_dim), dtype="float32")
+
+    # Build
+    block.build(((batch_size, input_dim), (batch_size, cond_dim)))
+
+    # Check FiLM was built correctly
+    assert block.film.built
+    assert block.film.units == width
+
+    # Forward pass
+    output = block((x, cond))
+    assert output.shape == (batch_size, width)

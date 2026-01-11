@@ -14,8 +14,8 @@ class FourierEmbedding(keras.Layer):
 
     def __init__(
         self,
-        embed_dim: int = 8,
-        scale: float = 1.0,
+        embed_dim: int = 32,
+        scale: float = 30.0,
         initializer: str = "random_normal",
         trainable: bool = True,
         include_identity: bool = True,
@@ -29,7 +29,7 @@ class FourierEmbedding(keras.Layer):
         embed_dim        : int (even)
             Dimensionality of the Fourier projection. The resulting embedding
             has dimensionality `embed_dim + 1` if `include_identity` is set to True.
-        scale            : float, optional (default - 1.0)
+        scale            : float, optional (default - 30.0)
             Scaling factor for the frequencies.
         initializer      : str, optional (default - "random_normal")
             Method for initializing the projection weights.
@@ -44,12 +44,12 @@ class FourierEmbedding(keras.Layer):
         if embed_dim % 2 != 0:
             raise ValueError(f"Embedding dimension must be even, but is {embed_dim}.")
 
-        self.w = self.add_weight(initializer=initializer, shape=(embed_dim // 2,), trainable=trainable)
         self.scale = scale
         self.embed_dim = embed_dim
         self.include_identity = include_identity
         self.initializer = initializer
         self.trainable = trainable
+        self.w = None
 
     def call(self, t: Tensor) -> Tensor:
         """Embeds the one-dimensional time scalar into a higher-dimensional Fourier embedding.
@@ -71,6 +71,24 @@ class FourierEmbedding(keras.Layer):
         else:
             emb = ops.concatenate([ops.sin(proj), ops.cos(proj)], axis=-1)
         return emb
+
+    def build(self, input_shape):
+        if self.built:
+            return
+
+        # Create the frequency weights
+        self.w = self.add_weight(
+            name="frequencies", shape=(self.embed_dim // 2,), initializer=self.initializer, trainable=self.trainable
+        )
+
+        super().build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+        if self.include_identity:
+            output_dim = self.embed_dim + 1
+        else:
+            output_dim = self.embed_dim
+        return tuple(input_shape[:-1]) + (output_dim,)
 
     def get_config(self):
         base_config = super().get_config()

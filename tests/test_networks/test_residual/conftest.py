@@ -1,6 +1,6 @@
 import pytest
 
-from bayesflow.networks.residual import Residual
+from bayesflow.networks.residual import Residual, ConditionalResidual
 
 
 @pytest.fixture()
@@ -8,6 +8,11 @@ def residual():
     import keras
 
     return Residual(keras.layers.Flatten(), keras.layers.Dense(2))
+
+
+@pytest.fixture()
+def cond_residual():
+    return ConditionalResidual(width=2)
 
 
 @pytest.fixture()

@@ -1,10 +1,11 @@
-from copy import deepcopy
 import inspect
+from copy import deepcopy
 from typing import Any, Callable, TypeAlias
 
 import networkx as nx
+import numpy as np
 
-from .utils import split_node, merge_root_nodes
+from .utils import merge_root_nodes, sort_nodes_topologically, split_node
 
 Node: TypeAlias = str
 SimulationNode: TypeAlias = str
@@ -87,7 +88,7 @@ class SimulationGraph(nx.DiGraph):
         """
         Returns a mapping from each node to the list of variable names it produces.
 
-        The graph is evaluated once in topological order o collect sample outputs.
+        The graph is evaluated once in topological order to collect sample outputs.
         This may be expensive; results are cached in `GraphicalApproximator`.
         """
 
@@ -117,6 +118,79 @@ class SimulationGraph(nx.DiGraph):
                 samples_by_node[node] = _call_sample_fn(sample_fn, sample_fn_input)
 
         return {k: list(v.keys()) for k, v in samples_by_node.items()}
+
+    def output_shapes(self, meta_dict: dict | None = None):
+        """
+        Returns the output shape of each simulated variable in the simulation graph.
+
+        The graph is evaluated once in topological order to collect sample outputs.
+        This may be expensive; results are cached in `GraphicalApproximator`.
+        _______
+        """
+        simulation_graph = deepcopy(self)
+        variable_names = self.variable_names()
+        output_dimensions = self.output_dimensions(meta_dict=meta_dict)
+
+        output_shapes = {}
+
+        for node in nx.lexicographical_topological_sort(simulation_graph):
+            ancestors = nx.ancestors(self, node)
+            sorted_ancestors = sort_nodes_topologically(self, [n for n in ancestors])
+
+            reps = [self.nodes[n]["reps"] for n in sorted_ancestors]
+            reps.append(self.nodes[node]["reps"])
+
+            for variable_name in variable_names[node]:
+                output_shapes[variable_name] = ["batch_size"]
+                for rep in reps:
+                    if rep != 1:
+                        output_shapes[variable_name].extend(rep)
+
+                output_shapes[variable_name].extend(output_dimensions[variable_name])
+
+        return output_shapes
+
+    def output_dimensions(self, meta_dict: dict | None = None):
+        """
+        Returns the output dimension of each simulated variable in the simulation graph.
+
+        The graph is evaluated once in topological order to collect sample outputs.
+        This may be expensive; results are cached in `GraphicalApproximator`.
+        _______
+        """
+
+        def _call_sample_fn(sample_fn: Callable[[], dict[str, Any]], args) -> dict[str, Any]:
+            signature = inspect.signature(sample_fn)
+            fn_args = signature.parameters
+            accepted_args = {k: v for k, v in args.items() if k in fn_args}
+
+            return sample_fn(**accepted_args)
+
+        simulation_graph = deepcopy(self)
+        if not meta_dict:
+            meta_dict = simulation_graph.meta_fn() if simulation_graph.meta_fn else {}
+        samples_by_node = {}
+
+        output_dimensions = {}
+
+        for node in nx.lexicographical_topological_sort(simulation_graph):
+            simulation_graph.nodes[node]["reps"] = 1  # settings reps to 1 for computational efficiency
+            parent_nodes = list(simulation_graph.predecessors(node))
+            sample_fn = simulation_graph.nodes[node]["sample_fn"]
+
+            if not parent_nodes:
+                samples_by_node[node] = _call_sample_fn(sample_fn, {})
+            else:
+                parent_samples = [samples_by_node[p] for p in parent_nodes]
+                merged_dict = {k: v for d in parent_samples for k, v in d.items()}
+
+                sample_fn_input = merged_dict | meta_dict
+                samples_by_node[node] = _call_sample_fn(sample_fn, sample_fn_input)
+
+            for variable_name, value in samples_by_node[node].items():
+                output_dimensions[variable_name] = np.shape(np.atleast_1d(value))
+
+        return output_dimensions
 
     def data_node(self) -> SimulationNode:
         """

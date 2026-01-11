@@ -8,15 +8,16 @@ from bayesflow.utils.serialization import serializable, serialize, deserialize
 class FiLM(keras.Layer):
     """Feature-wise Linear Modulation: y = (1 + gamma) * x + beta."""
 
-    def __init__(self, units: int, *, kernel_initializer="he_normal", use_gamma: bool = True, **kwargs):
+    def __init__(self, units: int, *, kernel_initializer: str = "he_normal", use_gamma: bool = True, **kwargs):
         super().__init__(**kwargs)
         self.units = int(units)
         self.kernel_initializer = kernel_initializer
         self.use_gamma = bool(use_gamma)
 
+        self.to_gamma = None
         if self.use_gamma:
-            units *= 2  # for both gamma and beta
-        self.to_gamma_beta = keras.layers.Dense(units, kernel_initializer=kernel_initializer, name="to_gamma_beta")
+            self.to_gamma = keras.layers.Dense(units, kernel_initializer=kernel_initializer, name="to_gamma")
+        self.to_beta = keras.layers.Dense(units, kernel_initializer=kernel_initializer, name="to_beta")
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -42,7 +43,9 @@ class FiLM(keras.Layer):
             raise ValueError(f"FiLM layer expects input with {self.units} features, but got {x_shape[-1]}")
 
         # Build the projection from time embedding to gamma/beta
-        self.to_gamma_beta.build(t_emb_shape)
+        if self.use_gamma:
+            self.to_gamma.build(t_emb_shape)
+        self.to_beta.build(t_emb_shape)
 
         super().build(input_shape)
 
@@ -52,9 +55,9 @@ class FiLM(keras.Layer):
 
     def call(self, inputs, training=None, mask=None):
         x, t_emb = inputs
-        gb = self.to_gamma_beta(t_emb)
+
+        beta = self.to_beta(t_emb)
         if self.use_gamma:
-            gamma, beta = keras.ops.split(gb, 2, axis=-1)
+            gamma = self.to_gamma(t_emb)
             return (1.0 + gamma) * x + beta
-        else:
-            return x + gb
+        return x + beta

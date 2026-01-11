@@ -111,7 +111,6 @@ class TimeMLP(keras.Layer):
                 dropout=dropout,
                 norm=norm,
                 spectral_normalization=spectral_normalization,
-                name=f"cond_block_{i}",
                 **kwargs,
             )
             for i, w in enumerate(self.widths)

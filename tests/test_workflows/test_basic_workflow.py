@@ -63,5 +63,21 @@ def test_basic_workflow_fusion(
     assert_models_equal(workflow.approximator, loaded_approximator)
 
     # Get samples
-    samples = loaded_approximator.sample(conditions=workflow.simulate(5), num_samples=3)
+    samples = loaded_approximator.sample(conditions=workflow.simulate((5,)), num_samples=3)
     assert samples["mean"].shape == (5, 3, 2)
+
+
+def test_batch_sample_workflow(tmp_path, inference_network, summary_network):
+    workflow = bf.BasicWorkflow(
+        inference_network=inference_network,
+        summary_network=summary_network,
+        inference_variables=["parameters"],
+        summary_variables=["observables"],
+        simulator=bf.simulators.SIR(subsample=None),
+        checkpoint_filepath=str(tmp_path),
+    )
+    workflow.fit_online(epochs=1, batch_size=8, num_batches_per_epoch=2, verbose=0)
+
+    samples = workflow.sample(num_samples=3, conditions=workflow.simulate((5,)))
+    batch_samples = workflow.sample(num_samples=3, conditions=workflow.simulate((5,)), batch_size=2)
+    assert samples["parameters"].shape == batch_samples["parameters"].shape

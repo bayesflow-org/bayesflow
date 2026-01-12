@@ -24,6 +24,7 @@ from .dict_utils import (
     split_tensors,
     split_arrays,
     squeeze_inner_estimates_dict,
+    vstack_samples,
 )
 
 from .dispatch import (
@@ -105,5 +106,7 @@ from .classification import calibration_curve, confusion_matrix
 from .validators import check_lengths_same
 
 from ._docs import _add_imports_to_all
+
+from .logging import format_duration
 
 _add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization", "tree"])

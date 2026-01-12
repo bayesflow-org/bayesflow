@@ -5,7 +5,14 @@ import numpy as np
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict, logging, concatenate_valid
+from bayesflow.utils import (
+    filter_kwargs,
+    split_arrays,
+    squeeze_inner_estimates_dict,
+    logging,
+    concatenate_valid,
+    vstack_samples,
+)
 from bayesflow.utils.serialization import serializable
 
 from .continuous_approximator import ContinuousApproximator
@@ -89,6 +96,7 @@ class PointApproximator(ContinuousApproximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
+        batch_size: int | None = None,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
         """
@@ -106,7 +114,10 @@ class PointApproximator(ContinuousApproximator):
             for the sampling process.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
-            Currently not supported for :py:class:`PointApproximator` .
+            Currently not supported for :py:class:`PointApproximator`.
+        batch_size : int or None, optional
+            If provided, the number of samples to generate per batch. If None, all samples are generated in a
+            single batch. Can help with memory management for large sample sizes.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
@@ -127,13 +138,22 @@ class PointApproximator(ContinuousApproximator):
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
         # Sample and undo optional standardization
-        samples = self._sample(num_samples, **conditions, **kwargs)
+        if batch_size is None or len(conditions) == 0:
+            samples = self._sample(num_samples, **conditions, **kwargs)
+            samples = self._post_process_samples(samples)
+        else:
+            n = self._infer_condition_size(conditions)
+            samples: Mapping[str, np.ndarray] = {}
+            for i in range(0, n, batch_size):
+                batch_conditions = {k: (v[i : i + batch_size]) for k, v in conditions.items()}
 
-        if "inference_variables" in self.standardize:
-            for score_key in samples.keys():
-                samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
+                batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
+                batch_samples = self._post_process_samples(batch_samples)
 
-        samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
+                if len(samples) == 0:
+                    samples = batch_samples
+                else:
+                    samples = vstack_samples(samples, batch_samples)
 
         if split:
             raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
@@ -141,6 +161,15 @@ class PointApproximator(ContinuousApproximator):
         # Squeeze sample dictionary if there's only one key-value pair.
         samples = self._squeeze_parametric_score_major_dict(samples)
 
+        return samples
+
+    def _post_process_samples(self, samples: Tensor | Mapping[str, np.ndarray], **kwargs) -> Mapping[str, np.ndarray]:
+        """Undo optional standardization and make dict of samples."""
+        if "inference_variables" in self.standardize:
+            for score_key in samples.keys():
+                samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
+
+        samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
         return samples
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:

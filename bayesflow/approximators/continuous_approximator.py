@@ -14,6 +14,7 @@ from bayesflow.utils import (
     squeeze_inner_estimates_dict,
     concatenate_valid,
     concatenate_valid_shapes,
+    vstack_samples,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -421,6 +422,7 @@ class ContinuousApproximator(Approximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
+        batch_size: int | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -436,6 +438,9 @@ class ContinuousApproximator(Approximator):
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one column vector per target variable
             samples.
+        batch_size : int or None, optional
+            If provided, the number of samples to generate per batch. If None, all samples are generated in a
+            single batch. Can help with memory management for large sample sizes.
         **kwargs : dict
             Additional keyword arguments for the adapter and sampling process.
 
@@ -450,14 +455,23 @@ class ContinuousApproximator(Approximator):
         # Remove any superfluous keys, just retain actual conditions
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
-        # Sample and undo optional standardization
-        samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
+        if batch_size is None or len(conditions) == 0:
+            # Sample and undo optional standardization
+            samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
+            samples = self._post_process_samples(samples)
+        else:
+            n = self._infer_condition_size(conditions)
+            samples: Mapping[str, np.ndarray] = {}
+            for i in range(0, n, batch_size):
+                batch_conditions = {k: (v[i : i + batch_size]) for k, v in conditions.items()}
 
-        if "inference_variables" in self.standardize:
-            samples = self.standardize_layers["inference_variables"](samples, forward=False)
+                batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
+                batch_samples = self._post_process_samples(batch_samples)
 
-        samples = {"inference_variables": samples}
-        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
+                if len(samples) == 0:
+                    samples = batch_samples
+                else:
+                    samples = vstack_samples(samples, batch_samples)
 
         # Back-transform quantities and samples
         samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
@@ -465,6 +479,25 @@ class ContinuousApproximator(Approximator):
         if split:
             samples = split_arrays(samples, axis=-1)
         return samples
+
+    def _post_process_samples(self, samples: Tensor | Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
+        """Undo optional standardization and make dict of samples."""
+        if "inference_variables" in self.standardize:
+            samples = self.standardize_layers["inference_variables"](samples, forward=False)
+
+        samples = {"inference_variables": samples}
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
+        return samples
+
+    def _infer_condition_size(self, conditions):
+        n = None
+        for k, v in conditions.items():
+            if hasattr(v, "__len__") and hasattr(v, "__getitem__"):
+                if n is None:
+                    n = len(v)
+                elif len(v) != n:
+                    raise ValueError("All batchable condition arrays must have the same leading dimension.")
+        return n
 
     def _prepare_data(
         self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs

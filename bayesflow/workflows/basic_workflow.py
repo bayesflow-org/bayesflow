@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import time
 
 import keras
 
@@ -978,9 +979,12 @@ class BasicWorkflow(Workflow):
             self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
 
         try:
+            start_time = time.perf_counter()
             self.history = self.approximator.fit(
                 dataset=dataset, epochs=epochs, validation_data=validation_data, **kwargs
             )
+            elapsed = time.perf_counter() - start_time
+            logging.info("Training completed in %.2f seconds", elapsed)
             self._on_training_finished()
             return self.history
         finally:

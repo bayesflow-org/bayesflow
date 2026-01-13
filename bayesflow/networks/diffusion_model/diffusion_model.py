@@ -16,6 +16,7 @@ from bayesflow.utils import (
     integrate_stochastic,
     logging,
     tensor_utils,
+    STOCHASTIC_METHODS,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -23,15 +24,12 @@ from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
 
 
-# disable module check, use potential module after moving from experimental
-@serializable("bayesflow.networks", disable_module_check=True)
+@serializable("bayesflow.networks")
 class DiffusionModel(InferenceNetwork):
-    """Diffusion Model as described in this overview paper [1].
+    """Score-based diffusion model for simulation-based inference as described in [1]:
 
-    [1] Variational Diffusion Models 2.0: Understanding Diffusion Model Objectives as the ELBO with Simple Data
-    Augmentation: Kingma et al. (2023)
-
-    [2] Score-Based Generative Modeling through Stochastic Differential Equations: Song et al. (2021)
+    [1] Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025).
+    Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.
     """
 
     MLP_DEFAULT_CONFIG = {
@@ -39,13 +37,13 @@ class DiffusionModel(InferenceNetwork):
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
-        "dropout": 0.0,
+        "dropout": 0.05,
         "spectral_normalization": False,
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": 100,
+        "method": "two_step_adaptive",
+        "steps": "adaptive",
     }
 
     def __init__(
@@ -199,20 +197,23 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             The reconstructed clean signal `x` from the model prediction.
         """
-        if self._prediction_type == "velocity":
-            return alpha_t * z - sigma_t * pred
-        elif self._prediction_type == "noise":
-            return (z - sigma_t * pred) / alpha_t
-        elif self._prediction_type == "F":
-            sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
-            x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
-            x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
-            return x1 * z + x2 * pred
-        elif self._prediction_type == "x":
-            return pred
-        elif self._prediction_type == "score":
-            return (z + sigma_t**2 * pred) / alpha_t
-        raise ValueError(f"Unknown prediction type {self._prediction_type}.")
+
+        match self._prediction_type:
+            case "velocity":
+                return alpha_t * z - sigma_t * pred
+            case "noise":
+                return (z - sigma_t * pred) / alpha_t
+            case "F":
+                sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
+                x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
+                x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
+                return x1 * z + x2 * pred
+            case "x":
+                return pred
+            case "score":
+                return (z + sigma_t**2 * pred) / alpha_t
+            case _:
+                raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
     def _apply_subnet(
         self, xz: Tensor, log_snr: Tensor, conditions: Tensor = None, training: bool = False
@@ -240,8 +241,56 @@ class DiffusionModel(InferenceNetwork):
         if self._concatenate_subnet_input:
             xtc = tensor_utils.concatenate_valid([xz, log_snr, conditions], axis=-1)
             return self.subnet(xtc, training=training)
-        else:
-            return self.subnet(x=xz, t=log_snr, conditions=conditions, training=training)
+        return self.subnet(x=xz, t=log_snr, conditions=conditions, training=training)
+
+    def score(
+        self,
+        xz: Tensor,
+        time: float | Tensor = None,
+        log_snr_t: Tensor = None,
+        conditions: Tensor = None,
+        training: bool = False,
+    ) -> Tensor:
+        """
+        Computes the score of the target or latent variable `xz`.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable `z`, typically of shape (..., D),
+            where D is the dimensionality of the latent space.
+        time : float or Tensor
+            Scalar or tensor representing the time (or noise level) at which the velocity
+            should be computed. Will be broadcasted to xz. If None, log_snr_t must be provided.
+        log_snr_t : Tensor
+            The log signal-to-noise ratio at time `t`. If None, time must be provided.
+        conditions : Tensor, optional
+            Conditional inputs to the network, such as conditioning variables
+            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
+        training : bool, optional
+            Whether the model is in training mode. Affects behavior of dropout, batch norm,
+            or other stochastic layers. Default is False.
+
+        Returns
+        -------
+        Tensor
+            The velocity tensor of the same shape as `xz`, representing the right-hand
+            side of the SDE or ODE at the given `time`.
+        """
+        if log_snr_t is None:
+            log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+            log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+
+        subnet_out = self._apply_subnet(
+            xz, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
+        )
+        pred = self.output_projector(subnet_out, training=training)
+
+        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
+
+        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+        return score
 
     def velocity(
         self,
@@ -279,19 +328,10 @@ class DiffusionModel(InferenceNetwork):
             The velocity tensor of the same shape as `xz`, representing the right-hand
             side of the SDE or ODE at the given `time`.
         """
-        # calculate the current noise level and transform into correct shape
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-        subnet_out = self._apply_subnet(
-            xz, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
-        )
-        pred = self.output_projector(subnet_out, training=training)
-
-        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
-
-        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+        score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training)
 
         # compute velocity f, g of the SDE or ODE
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
@@ -368,7 +408,7 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | self.integrate_kwargs
         integrate_kwargs = integrate_kwargs | kwargs
 
-        if integrate_kwargs["method"] == "euler_maruyama":
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
             raise ValueError("Stochastic methods are not supported for forward integration.")
 
         if density:
@@ -414,11 +454,10 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
-        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
-        integrate_kwargs = integrate_kwargs | kwargs
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
+
         if density:
-            if integrate_kwargs["method"] == "euler_maruyama":
+            if integrate_kwargs["method"] in STOCHASTIC_METHODS:
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
@@ -437,7 +476,7 @@ class DiffusionModel(InferenceNetwork):
             return x, log_density
 
         state = {"xz": z}
-        if integrate_kwargs["method"] == "euler_maruyama":
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
 
             def deltas(time, xz):
                 return {
@@ -447,9 +486,24 @@ class DiffusionModel(InferenceNetwork):
             def diffusion(time, xz):
                 return {"xz": self.diffusion_term(xz, time=time, training=training)}
 
+            score_fn = None
+            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
+
+                def score_fn(time, xz):
+                    return {
+                        "xz": self.score(
+                            xz,
+                            time=time,
+                            conditions=conditions,
+                            training=training,
+                        )
+                    }
+
             state = integrate_stochastic(
                 drift_fn=deltas,
                 diffusion_fn=diffusion,
+                score_fn=score_fn,
+                noise_schedule=self.noise_schedule,
                 state=state,
                 seed=self.seed_generator,
                 **integrate_kwargs,
@@ -514,28 +568,24 @@ class DiffusionModel(InferenceNetwork):
             pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
         )
 
-        if self._loss_type == "noise":
-            # convert x to epsilon prediction
-            noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
-            loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
-
-        elif self._loss_type == "velocity":
-            # convert x to velocity prediction
-            velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
-            v_t = alpha_t * eps_t - sigma_t * x
-            loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
-
-        elif self._loss_type == "F":
-            # convert x to F prediction
-            sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
-            x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
-            x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
-            f_pred = x1 * x_pred - x2 * diffused_x
-            f_t = x1 * x - x2 * diffused_x
-            loss = weights_for_snr * ops.mean((f_pred - f_t) ** 2, axis=-1)
-
-        else:
-            raise ValueError(f"Unknown loss type: {self._loss_type}")
+        # convert predicted target (x_pred) to corresponding diffusion prediction
+        match self._loss_type:
+            case "noise":
+                noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
+                loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
+            case "velocity":
+                velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
+                v_t = alpha_t * eps_t - sigma_t * x
+                loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
+            case "F":
+                sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
+                x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
+                x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
+                f_pred = x1 * x_pred - x2 * diffused_x
+                f_t = x1 * x - x2 * diffused_x
+                loss = weights_for_snr * ops.mean((f_pred - f_t) ** 2, axis=-1)
+            case _:
+                raise ValueError(f"Unknown loss type: {self._loss_type}")
 
         loss = weighted_mean(loss, sample_weight)
 

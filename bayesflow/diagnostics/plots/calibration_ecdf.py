@@ -15,13 +15,13 @@ def calibration_ecdf(
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     test_quantities: dict[str, Callable] = None,
-    difference: bool = False,
+    difference: bool = True,
     stacked: bool = False,
     rank_type: str | np.ndarray = "fractional",
     figsize: Sequence[float] = None,
     label_fontsize: int = 16,
     legend_fontsize: int = 14,
-    legend_location: str = "upper right",
+    legend_location: str = "lower right",
     title_fontsize: int = 18,
     tick_fontsize: int = 12,
     rank_ecdf_color: str = "#132a70",
@@ -59,7 +59,7 @@ def calibration_ecdf(
         The posterior draws obtained from n_data_sets
     targets     : np.ndarray of shape (n_data_sets, n_params)
         The prior draws obtained for generating n_data_sets
-    difference        : bool, optional, default: False
+    difference        : bool, optional, default: True
         If `True`, plots the ECDF difference.
         Enables a more dynamic visualization range.
     stacked           : bool, optional, default: False
@@ -98,7 +98,9 @@ def calibration_ecdf(
     label_fontsize    : int, optional, default: 16
         The font size of the y-label and y-label texts
     legend_fontsize   : int, optional, default: 14
-        The font size of the legend text
+        The font size of the legend text.
+    legend_location : str, optional, default: 'lower right
+        The location of the legend.
     title_fontsize    : int, optional, default: 18
         The font size of the title text.
         Only relevant if `stacked=False`
@@ -211,10 +213,12 @@ def calibration_ecdf(
     else:
         titles = ["Stacked ECDFs"]
 
-    for ax, title in zip(plot_data["axes"].flat, titles):
+    for i, (ax, title) in enumerate(zip(plot_data["axes"].flat, titles)):
         ax.fill_between(z, L, U, color=fill_color, alpha=0.2, label=rf"{int((1 - alpha) * 100)}$\%$ Confidence Bands")
-        ax.legend(fontsize=legend_fontsize, loc=legend_location)
         ax.set_title(title, fontsize=title_fontsize)
+
+        if i == 0:
+            ax.legend(fontsize=legend_fontsize, loc=legend_location)
 
     prettify_subplots(plot_data["axes"], num_subplots=plot_data["num_variables"], tick_fontsize=tick_fontsize)
 

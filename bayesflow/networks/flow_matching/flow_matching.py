@@ -53,8 +53,8 @@ class FlowMatching(InferenceNetwork):
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": 100,
+        "method": "tsit5",
+        "steps": "adaptive",
     }
 
     def __init__(
@@ -97,7 +97,7 @@ class FlowMatching(InferenceNetwork):
             Additional keyword arguments for the integration process. Default is None.
         optimal_transport_kwargs : dict[str, any], optional
             Additional keyword arguments for configuring optimal transport. Default is None.
-        subnet_kwargs: dict[str, any], optional, deprecated
+        subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
@@ -236,6 +236,7 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
 
             def deltas(time, xz):
@@ -243,7 +244,7 @@ class FlowMatching(InferenceNetwork):
                 return {"xz": v, "trace": trace}
 
             state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
-            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
+            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
 
             z = state["xz"]
             log_density = self.base_distribution.log_prob(z) + keras.ops.squeeze(state["trace"], axis=-1)
@@ -254,7 +255,7 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": x}
-        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
+        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
 
         z = state["xz"]
 
@@ -263,6 +264,7 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
 
             def deltas(time, xz):
@@ -270,7 +272,7 @@ class FlowMatching(InferenceNetwork):
                 return {"xz": v, "trace": trace}
 
             state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
-            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
+            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
 
             x = state["xz"]
             log_density = self.base_distribution.log_prob(z) - keras.ops.squeeze(state["trace"], axis=-1)
@@ -281,7 +283,7 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": z}
-        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
+        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
 
         x = state["xz"]
 

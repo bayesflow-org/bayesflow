@@ -1,6 +1,8 @@
 from typing import Sequence, Any, Mapping
 
 import numpy as np
+from scipy.stats import beta
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -91,6 +93,106 @@ def prepare_plot_data(
     plot_data["num_col"] = num_col
 
     return plot_data
+
+
+def compute_empirical_coverage(
+    estimates: np.ndarray,
+    targets: np.ndarray,
+    widths: np.ndarray,
+    prob: float = 0.95,
+    interval_type: str = "central",
+) -> dict:
+    """
+    Compute empirical coverage statistics for given interval widths.
+
+    Parameters
+    ----------
+    estimates : np.ndarray of shape (num_datasets, num_post_draws, num_params)
+        The posterior draws obtained from num_datasets
+    targets : np.ndarray of shape (num_datasets, num_params)
+        The true parameter values used for generating num_datasets
+    widths : np.ndarray
+        Array of interval widths to compute coverage for (values between 0 and 1)
+    prob : float, optional, default: 0.95
+        Confidence level for coverage confidence intervals
+    interval_type : str, optional, default: "central"
+        Type of credible interval. Either "central" or "leftmost"
+
+    Returns
+    -------
+    dict
+        Dictionary containing coverage statistics for each width and parameter
+    """
+    num_datasets, num_draws, num_params = estimates.shape
+    num_widths = len(widths)
+
+    # Initialize output arrays
+    coverage_estimates = np.zeros((num_widths, num_params))
+    coverage_lower = np.zeros((num_widths, num_params))
+    coverage_upper = np.zeros((num_widths, num_params))
+    width_represented = np.zeros((num_widths, num_params))
+
+    for w_idx, width in enumerate(widths):
+        # Number of ranks to cover for this width
+        n_ranks_covered = round((num_draws + 1) * width)
+
+        if interval_type == "central":
+            # Central interval: center around median
+            low_rank = round(num_draws / 2 - n_ranks_covered / 2)
+            high_rank = low_rank + n_ranks_covered - 1
+        elif interval_type == "leftmost":
+            # Leftmost interval: start from minimum
+            low_rank = 0
+            high_rank = n_ranks_covered - 1
+        else:
+            raise ValueError("interval_type must be 'central' or 'leftmost'")
+
+        # Ensure ranks are within valid bounds
+        low_rank = max(0, low_rank)
+        high_rank = min(num_draws - 1, high_rank)
+
+        # Actual width represented by these ranks
+        actual_width = (high_rank - low_rank + 1) / (num_draws + 1)
+
+        for p_idx in range(num_params):
+            # Sort posterior samples for each dataset and parameter
+            sorted_samples = np.sort(estimates[:, :, p_idx], axis=1)
+
+            # Check if true value falls within credible interval
+            is_covered = (targets[:, p_idx] >= sorted_samples[:, low_rank]) & (
+                targets[:, p_idx] <= sorted_samples[:, high_rank]
+            )
+
+            # Compute coverage estimate
+            num_covered = np.sum(is_covered)
+            coverage_est = num_covered / num_datasets
+
+            # Compute confidence intervals using beta distribution
+            # Using Bayesian credible interval for binomial proportion
+            alpha_post = num_covered + 1
+            beta_post = num_datasets - num_covered + 1
+
+            # Special handling for boundary cases
+            if actual_width == 0 or actual_width == 1:
+                # No variability possible
+                ci_low = actual_width
+                ci_high = actual_width
+            else:
+                ci_low = beta.ppf((1 - prob) / 2, alpha_post, beta_post)
+                ci_high = beta.ppf((1 + prob) / 2, alpha_post, beta_post)
+
+            coverage_estimates[w_idx, p_idx] = coverage_est
+            coverage_lower[w_idx, p_idx] = ci_low
+            coverage_upper[w_idx, p_idx] = ci_high
+            width_represented[w_idx, p_idx] = actual_width
+
+    return {
+        "coverage_estimates": coverage_estimates,
+        "coverage_lower": coverage_lower,
+        "coverage_upper": coverage_upper,
+        "width_represented": width_represented,
+        "widths": widths,
+    }
 
 
 def set_layout(num_total: int, num_row: int = None, num_col: int = None, stacked: bool = False):

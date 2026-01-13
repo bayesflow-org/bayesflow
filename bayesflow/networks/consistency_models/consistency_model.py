@@ -85,9 +85,8 @@ class ConsistencyModel(InferenceNetwork):
         self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self.output_projector = keras.layers.Dense(
-            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="output_projector"
-        )
+
+        self.output_projector = None
 
         self.sigma2 = ops.convert_to_tensor(sigma2)
         self.sigma = ops.sqrt(sigma2)
@@ -164,7 +163,12 @@ class ConsistencyModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.output_projector.units = xz_shape[-1]
+        self.output_projector = keras.layers.Dense(
+            units=xz_shape[-1],
+            kernel_initializer="zeros",
+            bias_initializer="zeros",
+            name="output_projector",
+        )
 
         input_shape = list(xz_shape)
 

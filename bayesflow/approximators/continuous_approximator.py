@@ -529,25 +529,30 @@ class ContinuousApproximator(Approximator):
             inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
 
         if inference_conditions is not None:
-            # conditions must always have shape (batch_size, ..., dims)
             batch_size = keras.ops.shape(inference_conditions)[0]
+
+            # Repeat conditions across a new sample dimension
             inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
             inference_conditions = keras.ops.broadcast_to(
                 inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
 
-            if hasattr(self.inference_network, "base_distribution"):
-                target_shape_len = len(self.inference_network.base_distribution.dims)
-            else:
-                # point approximator has no base_distribution
-                target_shape_len = 1
-            batch_shape = keras.ops.shape(inference_conditions)[:-target_shape_len]
+            # Flatten batch and sample dimensions into a new batch_size*num_samples batch dimension
+            inference_conditions = keras.ops.reshape(
+                inference_conditions, (batch_size * num_samples,) + keras.ops.shape(inference_conditions)[2:]
+            )
+
+            batch_shape = (batch_size * num_samples,)
         else:
             batch_shape = (num_samples,)
 
-        return self.inference_network.sample(
+        samples = self.inference_network.sample(
             batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
         )
+
+        # Unflatten batch dimension to retrieve the sample dimension as a separate one
+        samples = keras.ops.reshape(samples, (batch_size, num_samples) + keras.ops.shape(samples)[1:])
+        return samples
 
     def summarize(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """

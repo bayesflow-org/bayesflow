@@ -172,6 +172,38 @@ class PointApproximator(ContinuousApproximator):
         samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
         return samples
 
+    def _sample(
+        self,
+        num_samples: int,
+        inference_conditions: Tensor = None,
+        summary_variables: Tensor = None,
+        **kwargs,
+    ) -> Tensor:
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot use summary variables without a summary network.")
+        else:
+            if summary_variables is None:
+                raise ValueError("Summary variables are required when a summary network is present.")
+
+        if self.summary_network is not None:
+            summary_outputs = self.summary_network(
+                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+            )
+
+            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
+
+        if inference_conditions is not None:
+            batch_shape = (keras.ops.shape(inference_conditions)[0], num_samples)
+        else:
+            batch_shape = (num_samples,)
+
+        samples = self.inference_network.sample(
+            batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
+        )
+
+        return samples
+
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
         """
         Computes the log-probability of given data under the parametric distribution(s) for given input conditions.

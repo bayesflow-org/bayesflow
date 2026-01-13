@@ -122,7 +122,7 @@ class DiffusionModel(InferenceNetwork):
         self.subnet = find_network(subnet, **subnet_kwargs)
         self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
-        self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", name="output_projector")
+        self.output_projector = None
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -130,7 +130,12 @@ class DiffusionModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.output_projector.units = xz_shape[-1]
+        self.output_projector = keras.layers.Dense(
+            units=xz_shape[-1],
+            bias_initializer="zeros",
+            name="output_projector",
+        )
+
         input_shape = list(xz_shape)
 
         if self._concatenate_subnet_input:

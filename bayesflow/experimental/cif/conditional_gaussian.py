@@ -36,12 +36,12 @@ class ConditionalGaussian(keras.Layer):
         super().__init__(**layer_kwargs(kwargs))
         self.means = MLP([width] * depth, activation=activation)
         self.stds = MLP([width] * depth, activation=activation)
-        self.output_projector = keras.layers.Dense(None)
+        self.output_projector = None
 
     def build(self, input_shape: Shape) -> None:
         self.means.build(input_shape)
         self.stds.build(input_shape)
-        self.output_projector.units = input_shape[-1]
+        self.output_projector = keras.layers.Dense(units=input_shape[-1])
 
     def _diagonal_gaussian_log_prob(self, conditions: Tensor, means: Tensor, stds: Tensor) -> Tensor:
         batch_size = keras.ops.shape(conditions)[0]

@@ -165,8 +165,7 @@ class PointApproximator(ContinuousApproximator):
             inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
 
         if inference_conditions is not None:
-            batch_size = keras.ops.shape(inference_conditions)[0]
-            batch_shape = (batch_size, num_samples)
+            batch_shape = (keras.ops.shape(inference_conditions)[0], num_samples)
         else:
             batch_shape = (num_samples,)
 

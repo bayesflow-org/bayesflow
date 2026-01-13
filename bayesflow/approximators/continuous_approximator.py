@@ -1,6 +1,7 @@
 from collections.abc import Mapping, Sequence, Callable
 
 import numpy as np
+from tqdm import tqdm
 
 import keras
 
@@ -462,7 +463,7 @@ class ContinuousApproximator(Approximator):
         else:
             n = self._infer_condition_size(conditions)
             samples: Mapping[str, np.ndarray] = {}
-            for i in range(0, n, batch_size):
+            for i in tqdm(range(0, n, batch_size), desc="Sampling", unit="batch"):
                 batch_conditions = {k: (v[i : i + batch_size]) for k, v in conditions.items()}
 
                 batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
@@ -489,7 +490,8 @@ class ContinuousApproximator(Approximator):
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         return samples
 
-    def _infer_condition_size(self, conditions):
+    @staticmethod
+    def _infer_condition_size(conditions):
         n = None
         for k, v in conditions.items():
             if hasattr(v, "__len__") and hasattr(v, "__getitem__"):

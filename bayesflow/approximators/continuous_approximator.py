@@ -551,7 +551,8 @@ class ContinuousApproximator(Approximator):
         )
 
         # Unflatten batch dimension to retrieve the sample dimension as a separate one
-        samples = keras.ops.reshape(samples, (batch_size, num_samples) + keras.ops.shape(samples)[1:])
+        if inference_conditions is not None:
+            samples = keras.ops.reshape(samples, (-1, num_samples) + keras.ops.shape(samples)[1:])
         return samples
 
     def summarize(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:

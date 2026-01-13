@@ -94,9 +94,8 @@ class StableConsistencyModel(InferenceNetwork):
             subnet_kwargs = StableConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
 
-        self.subnet_projector = keras.layers.Dense(
-            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="subnet_projector"
-        )
+        self.subnet_projector = None
+
         self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         weight_mlp_kwargs = weight_mlp_kwargs or {}
@@ -151,7 +150,12 @@ class StableConsistencyModel(InferenceNetwork):
             return
 
         self.base_distribution.build(xz_shape)
-        self.subnet_projector.units = xz_shape[-1]
+
+        self.subnet_projector = keras.layers.Dense(
+            units=xz_shape[-1],
+            bias_initializer="zeros",
+            name="output_projector",
+        )
 
         # construct input shape for subnet and subnet projector
         input_shape = list(xz_shape)

@@ -116,7 +116,7 @@ class TimeSeriesNetwork(SummaryNetwork):
             dropout=dropout,
             name="recurrent",
         )
-        self.output_projector = keras.layers.Dense(summary_dim, name="output_projector")
+        self.output_projector = keras.layers.Dense(units=summary_dim, name="output_projector")
 
         self.summary_dim = summary_dim
 

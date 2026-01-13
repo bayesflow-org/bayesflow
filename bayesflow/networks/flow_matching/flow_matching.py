@@ -23,6 +23,9 @@ class FlowMatching(InferenceNetwork):
     """(IN) Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas
     incorporated from [1-5].
 
+    For optimal transport, the Sinkhorn algorithm is used to compute mini-batch optimal transport plans
+    between samples from the base distribution and the target distribution during training [6-8].
+
     [1] Liu et al. (2022). Flow straight and fast: Learning to generate and transfer data with rectified flow.
         arXiv preprint arXiv:2209.03003.
     [2] Lipman et al. (2022). Flow matching for generative modeling.
@@ -33,6 +36,10 @@ class FlowMatching(InferenceNetwork):
         Advances in Neural Information Processing Systems, 36, 16837-16864.
     [5] Orsini et al. (2025). Flow matching posterior estimation for simulation-based atmospheric retrieval of
         exoplanets. IEEE Access.
+    [6] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
+    [7] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
+        Conditional Flow-Based Generation"
+    [8] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
     """
 
     MLP_DEFAULT_CONFIG = {
@@ -49,12 +56,13 @@ class FlowMatching(InferenceNetwork):
         "regularization": 0.1,
         "max_steps": 100,
         "atol": 1e-5,
-        "rtol": 1e-4,
+        "partial_ot_factor": 1.0,  # no partial OT
+        "condition_ratio": 0.01,  # only used if conditions are provided
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
-        "method": "rk45",
-        "steps": 100,
+        "method": "tsit5",
+        "steps": "adaptive",
     }
 
     def __init__(
@@ -97,7 +105,7 @@ class FlowMatching(InferenceNetwork):
             Additional keyword arguments for the integration process. Default is None.
         optimal_transport_kwargs : dict[str, any], optional
             Additional keyword arguments for configuring optimal transport. Default is None.
-        subnet_kwargs: dict[str, any], optional, deprecated
+        subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
@@ -236,6 +244,7 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
 
             def deltas(time, xz):
@@ -243,7 +252,7 @@ class FlowMatching(InferenceNetwork):
                 return {"xz": v, "trace": trace}
 
             state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
-            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
+            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
 
             z = state["xz"]
             log_density = self.base_distribution.log_prob(z) + keras.ops.squeeze(state["trace"], axis=-1)
@@ -254,7 +263,7 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": x}
-        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **(self.integrate_kwargs | kwargs))
+        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
 
         z = state["xz"]
 
@@ -263,6 +272,7 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        integrate_kwargs = self.integrate_kwargs | kwargs
         if density:
 
             def deltas(time, xz):
@@ -270,7 +280,7 @@ class FlowMatching(InferenceNetwork):
                 return {"xz": v, "trace": trace}
 
             state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
-            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
+            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
 
             x = state["xz"]
             log_density = self.base_distribution.log_prob(z) - keras.ops.squeeze(state["trace"], axis=-1)
@@ -281,7 +291,7 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
 
         state = {"xz": z}
-        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **(self.integrate_kwargs | kwargs))
+        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
 
         x = state["xz"]
 
@@ -311,16 +321,13 @@ class FlowMatching(InferenceNetwork):
                 # since the data is possibly noisy and may contain outliers, it is better
                 # to possibly drop some samples from x1 than from x0
                 # in the marginal over multiple batches, this is not a problem
-                x0, x1, assignments = optimal_transport(
+                x0, x1, conditions = optimal_transport(
                     x0,
                     x1,
+                    conditions=conditions,
                     seed=self.seed_generator,
                     **self.optimal_transport_kwargs,
-                    return_assignments=True,
                 )
-                if conditions is not None:
-                    # conditions must be resampled along with x1
-                    conditions = keras.ops.take(conditions, assignments, axis=0)
 
             u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
             # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform

@@ -51,7 +51,7 @@ complex to be described analytically.
 
 ## Install
 
-We currently support Python 3.10 to 3.12. You can install the latest stable version from PyPI using:
+We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"

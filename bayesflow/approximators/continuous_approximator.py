@@ -535,7 +535,13 @@ class ContinuousApproximator(Approximator):
             inference_conditions = keras.ops.broadcast_to(
                 inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
-            batch_shape = keras.ops.shape(inference_conditions)[:-1]
+
+            if hasattr(self.inference_network, "base_distribution"):
+                target_shape_len = len(self.inference_network.base_distribution.dims)
+            else:
+                # point approximator has no base_distribution
+                target_shape_len = 1
+            batch_shape = keras.ops.shape(inference_conditions)[:-target_shape_len]
         else:
             batch_shape = (num_samples,)
 
@@ -564,11 +570,11 @@ class ContinuousApproximator(Approximator):
         if self.summary_network is None:
             raise ValueError("A summary network is required to compute summaries.")
 
-        data_adapted = self.adapter(data, strict=False, **kwargs)
+        data_adapted = self._prepare_data(data, **kwargs)
         if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
             raise ValueError("Summary variables are required to compute summaries.")
 
-        summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
+        summary_variables = data_adapted["summary_variables"]
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         summaries = keras.ops.convert_to_numpy(summaries)
 

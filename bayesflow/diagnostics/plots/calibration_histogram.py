@@ -1,4 +1,4 @@
-from collections.abc import Sequence, Mapping
+from collections.abc import Callable, Mapping, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,6 +8,7 @@ from scipy.stats import binom
 
 from bayesflow.utils import logging
 from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_subplots
+from bayesflow.utils.dict_utils import compute_test_quantities
 
 
 def calibration_histogram(
@@ -15,6 +16,7 @@ def calibration_histogram(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
+    test_quantities: dict[str, Callable] = None,
     figsize: Sequence[float] = None,
     num_bins: int = 10,
     binomial_interval: float = 0.99,
@@ -46,6 +48,18 @@ def calibration_histogram(
        By default, select all keys.
     variable_names    : list or None, optional, default: None
         The parameter names for nice plot titles. Inferred if None
+    test_quantities   : dict or None, optional, default: None
+        A dict that maps plot titles to functions that compute
+        test quantities based on estimate/target draws.
+
+        The dict keys are automatically added to ``variable_keys``
+        and ``variable_names``.
+        Test quantity functions are expected to accept a dict of draws with
+        shape ``(batch_size, ...)`` as the first (typically only)
+        positional argument and return an NumPy array of shape
+        ``(batch_size,)``.
+        The functions do not have to deal with an additional
+        sample dimension, as appropriate reshaping is done internally.
     figsize          : tuple or None, optional, default : None
         The figure size passed to the matplotlib constructor. Inferred if None
     num_bins          : int, optional, default: 10
@@ -74,6 +88,20 @@ def calibration_histogram(
     ShapeError
         If there is a deviation form the expected shapes of `estimates` and `targets`.
     """
+
+    # Optionally, compute and prepend test quantities from draws
+    if test_quantities is not None:
+        updated_data = compute_test_quantities(
+            targets=targets,
+            estimates=estimates,
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+        )
+        variable_names = updated_data["variable_names"]
+        variable_keys = updated_data["variable_keys"]
+        estimates = updated_data["estimates"]
+        targets = updated_data["targets"]
 
     plot_data = prepare_plot_data(
         estimates=estimates,

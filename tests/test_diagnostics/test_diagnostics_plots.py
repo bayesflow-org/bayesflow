@@ -85,6 +85,16 @@ def test_calibration_histogram(random_estimates, random_targets):
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[0].title._text == "beta_0"
 
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.plots.calibration_histogram(random_estimates, random_targets, test_quantities=test_quantities)
+    assert len(out.axes) == len(test_quantities) + num_variables(random_estimates)
+    assert out.axes[1].title._text == r"$\beta_1 \cdot \beta_2$"
+    assert out.axes[-1].title._text == r"sigma"
+
 
 def test_loss(history):
     out = bf.diagnostics.loss(history)
@@ -92,9 +102,30 @@ def test_loss(history):
     assert out.axes[0].title._text == "Loss Trajectory"
 
 
-def test_recovery(random_estimates, random_targets):
+def test_recovery_bounds(random_estimates, random_targets):
     # basic functionality: automatic variable names
-    out = bf.diagnostics.plots.recovery(random_estimates, random_targets, markersize=4)
+    from bayesflow.utils.numpy_utils import credible_interval
+
+    out = bf.diagnostics.plots.recovery(
+        random_estimates, random_targets, markersize=4, uncertainty_agg=credible_interval
+    )
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[2].title._text == "sigma"
+
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.plots.calibration_histogram(random_estimates, random_targets, test_quantities=test_quantities)
+    assert len(out.axes) == len(test_quantities) + num_variables(random_estimates)
+    assert out.axes[1].title._text == r"$\beta_1 \cdot \beta_2$"
+    assert out.axes[-1].title._text == r"sigma"
+
+
+def test_recovery_symmetric(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    out = bf.diagnostics.plots.recovery(random_estimates, random_targets, markersize=4, uncertainty_agg=np.std)
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[2].title._text == "sigma"
 
@@ -115,6 +146,16 @@ def test_z_score_contraction(random_estimates, random_targets):
     out = bf.diagnostics.plots.z_score_contraction(random_estimates, random_targets, markersize=4)
     assert len(out.axes) == num_variables(random_estimates)
     assert out.axes[1].title._text == "beta_1"
+
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.plots.z_score_contraction(random_estimates, random_targets, test_quantities=test_quantities)
+    assert len(out.axes) == len(test_quantities) + num_variables(random_estimates)
+    assert out.axes[1].title._text == r"$\beta_1 \cdot \beta_2$"
+    assert out.axes[-1].title._text == r"sigma"
 
 
 def test_pairs_samples(random_priors):
@@ -270,3 +311,31 @@ def test_mc_confusion_matrix(pred_models, true_models, model_names):
     assert out.axes[0].get_ylabel() == "True model"
     assert out.axes[0].get_xlabel() == "Predicted model"
     assert out.axes[0].get_title() == "Confusion Matrix"
+
+
+def test_coverage(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    out = bf.diagnostics.plots.coverage(random_estimates, random_targets)
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[1].title._text == "beta_1"
+    assert out.axes[0].get_xlabel() == "Central interval width"
+    assert out.axes[0].get_ylabel() == "Empirical coverage"
+
+    # test quantities
+    test_quantities = {
+        r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),
+        r"$\beta_1 \cdot \beta_2$": lambda data: np.prod(data["beta"], axis=-1),
+    }
+    out = bf.diagnostics.plots.coverage(random_estimates, random_targets, test_quantities=test_quantities)
+    assert len(out.axes) == len(test_quantities) + num_variables(random_estimates)
+    assert out.axes[1].title._text == r"$\beta_1 \cdot \beta_2$"
+    assert out.axes[-1].title._text == r"sigma"
+
+
+def test_coverage_diff(random_estimates, random_targets):
+    # basic functionality: automatic variable names
+    out = bf.diagnostics.plots.coverage(random_estimates, random_targets, difference=True)
+    assert len(out.axes) == num_variables(random_estimates)
+    assert out.axes[1].title._text == "beta_1"
+    assert out.axes[0].get_xlabel() == "Central interval width"
+    assert out.axes[0].get_ylabel() == "Empirical coverage difference"

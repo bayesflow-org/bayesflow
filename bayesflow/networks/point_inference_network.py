@@ -186,7 +186,7 @@ class PointInferenceNetwork(keras.Layer):
             conditions = keras.ops.ones(batch_shape, dtype="float32").reshape(1, -1, 1)
 
         # conditions are duplicated along axis 1 num_sample times
-        output = self.subnet(conditions[:, 0, :])
+        output = self.subnet(conditions)
         samples = {}
 
         for score_key, score in self.scores.items():

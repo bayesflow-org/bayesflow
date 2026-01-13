@@ -165,7 +165,6 @@ class ConsistencyModel(InferenceNetwork):
 
         self.output_projector = keras.layers.Dense(
             units=xz_shape[-1],
-            kernel_initializer="zeros",
             bias_initializer="zeros",
             name="output_projector",
         )

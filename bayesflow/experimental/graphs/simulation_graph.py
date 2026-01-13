@@ -141,12 +141,18 @@ class SimulationGraph(nx.DiGraph):
             reps.append(self.nodes[node]["reps"])
 
             for variable_name in variable_names[node]:
-                output_shapes[variable_name] = ["batch_size"]
+                output_shapes[variable_name] = ["B"]
                 for rep in reps:
                     if rep != 1:
-                        output_shapes[variable_name].extend(rep)
+                        output_shapes[variable_name].append(rep)
 
                 output_shapes[variable_name].extend(output_dimensions[variable_name])
+
+        for k, v in output_shapes.items():
+            if meta_dict:
+                v = [meta_dict.get(x, x) for x in v]
+
+            output_shapes[k] = tuple(v)
 
         return output_shapes
 
@@ -169,8 +175,8 @@ class SimulationGraph(nx.DiGraph):
         simulation_graph = deepcopy(self)
         if not meta_dict:
             meta_dict = simulation_graph.meta_fn() if simulation_graph.meta_fn else {}
-        samples_by_node = {}
 
+        samples_by_node = {}
         output_dimensions = {}
 
         for node in nx.lexicographical_topological_sort(simulation_graph):

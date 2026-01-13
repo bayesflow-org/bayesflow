@@ -16,6 +16,8 @@ from .utils import (
     inference_variable_shapes_by_network,
     inference_variables_by_network,
     prepare_inference_conditions,
+    prepare_inference_variables,
+    meta_dict_from_data_shapes,
     split_network_output,
     summary_input_shapes_by_network,
     summary_inputs_by_network,
@@ -73,7 +75,6 @@ class GraphicalApproximator(Approximator):
         self.adapter = adapter
         self.inference_networks = inference_networks
         self.summary_networks = summary_networks
-        self.data_shapes = None
 
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
@@ -109,7 +110,6 @@ class GraphicalApproximator(Approximator):
         for var in self.standardize:
             self.standardize_layers[var].build(data_shapes[var])
 
-        self.data_shapes = data_shapes
         self.built = True
 
     def compute_metrics(self, stage: str = "training", **kwargs):
@@ -165,7 +165,9 @@ class GraphicalApproximator(Approximator):
                 for k, v in metrics.items():
                     combined_metrics[f"{prefix}_{val}/{k}"] = v
 
-        return total_loss, combined_metrics
+        combined_metrics["loss"] = total_loss
+
+        return combined_metrics
 
     def fit(self, *args, **kwargs):
         """
@@ -252,6 +254,7 @@ class GraphicalApproximator(Approximator):
         batch_size = keras.ops.shape(summary_outputs[0])[0]
         data_node = self.graph.simulation_graph.data_node()
         variable_names = self.graph.simulation_graph.variable_names()
+        meta_dict = meta_dict_from_data_shapes(self, self._data_shapes(conditions))
 
         inference_conditions = {}
 
@@ -260,9 +263,21 @@ class GraphicalApproximator(Approximator):
             inference_conditions[name] = keras.ops.repeat(conditions[name], num_samples, axis=0)
 
         for i, inference_network in enumerate(self.inference_networks):
+            print(i)
             cond = prepare_inference_conditions(self, inference_conditions, i)
-            samples = inference_network.sample((batch_size * num_samples,), conditions=cond)
-            split_output = split_network_output(self, samples, i)
+            required_z_dim = [batch_size * num_samples]
+            required_z_dim.extend(np.shape(cond)[1:-1])
+            required_z_dim.append(inference_network.base_distribution.dims[-1])
+            required_z_dim = tuple(required_z_dim)
+
+            print(required_z_dim)
+
+            z = keras.random.normal(required_z_dim)
+            # z = inference_network.base_distribution.sample(batch_size * num_samples)
+            print(z.shape)
+            samples = inference_network(z, conditions=cond, inverse=True)
+            # samples = inference_network.sample((batch_size * num_samples,), conditions=cond)
+            split_output = split_network_output(self, samples, meta_dict, i)
 
             for k, v in split_output.items():
                 inference_conditions[k] = v
@@ -280,7 +295,7 @@ class GraphicalApproximator(Approximator):
         """
         Fetches the current batch size from an input dictionary.
         """
-        data_shapes = self.data_shapes(data)
+        data_shapes = self._data_shapes(data)
         batch_size = next(iter(data_shapes.values()))[0]
 
         return batch_size

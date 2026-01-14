@@ -280,7 +280,9 @@ class GraphicalApproximator(Approximator):
             required_z_dim.append(inference_network.base_distribution.dims[-1])
             required_z_dim = tuple(required_z_dim)
 
-            z = inference_network.base_distribution.sample(batch_size * num_samples)
+            # z = inference_network.base_distribution.sample(batch_size * num_samples)
+            z = keras.random.normal(required_z_dim)
+
             samples = inference_network(z, conditions=cond, inverse=True)
 
             # samples = inference_network.sample((batch_size * num_samples,), conditions=cond)

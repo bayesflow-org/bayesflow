@@ -19,7 +19,7 @@ def split_network_output(approximator: "GraphicalApproximator", output: Tensor, 
     """
     network_composition = approximator.graph.network_composition()
     variable_names = approximator.graph.simulation_graph.variable_names()
-    output_dims = approximator.graph.simulation_graph.output_dimensions(meta_dict=meta_dict)
+    output_shapes = approximator.graph.simulation_graph.output_shapes(meta_dict=meta_dict)
 
     samples = {}
 
@@ -28,7 +28,7 @@ def split_network_output(approximator: "GraphicalApproximator", output: Tensor, 
         if approximator.graph.allows_amortization(node):
             # network already outputs a group dimension if there is one
             for variable in variable_names[node]:
-                variable_dim = output_dims[variable][-1]
+                variable_dim = output_shapes[variable][-1]
 
                 sample = output[..., i : (i + variable_dim)]
                 samples[variable] = sample
@@ -36,8 +36,8 @@ def split_network_output(approximator: "GraphicalApproximator", output: Tensor, 
         else:
             # need to reshape so output has a group dimension
             for variable in variable_names[node]:
-                variable_dim = output_dims[variable][-1]
-                group_dim = output_dims[variable][-2]
+                variable_dim = output_shapes[variable][-1]
+                group_dim = output_shapes[variable][-2]
 
                 sample = output[..., i : (i + group_dim * variable_dim)]
                 samples[variable] = keras.ops.expand_dims(sample, axis=-1)

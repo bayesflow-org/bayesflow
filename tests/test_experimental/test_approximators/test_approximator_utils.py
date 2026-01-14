@@ -1527,14 +1527,15 @@ def test_split_network_output(request, simulator_fixture, approximator_fixture):
     simulator = request.getfixturevalue(simulator_fixture)
     approximator = request.getfixturevalue(approximator_fixture)
 
-    data = approximator.adapter(simulator.sample(2))
+    data = simulator.sample(2)
+    meta_data = data.meta
     data_shapes = approximator._data_shapes(data)
     approximator.build(data_shapes)
 
     variables = inference_variables_by_network(approximator, data)
     for network_idx, vars in variables.items():
         rep_vars = add_sample_dimension(vars, 5)
-        split_output = split_network_output(approximator, rep_vars, network_idx)
+        split_output = split_network_output(approximator, rep_vars, meta_data, network_idx)
 
         for k, v in split_output.items():
             assert keras.ops.all(v[:, 0, ...] == data[k])

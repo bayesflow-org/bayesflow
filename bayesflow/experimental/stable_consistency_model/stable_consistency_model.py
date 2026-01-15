@@ -101,9 +101,7 @@ class StableConsistencyModel(InferenceNetwork):
             subnet_kwargs = StableConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = False
         self.subnet = find_network(subnet, **subnet_kwargs)
-
         self.subnet_projector = None
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         weight_mlp_kwargs = weight_mlp_kwargs or {}
         weight_mlp_kwargs = StableConsistencyModel.WEIGHT_MLP_DEFAULT_CONFIG | weight_mlp_kwargs

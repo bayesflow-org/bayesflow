@@ -209,7 +209,7 @@ def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Ma
 
             # standardize conditions if required
             if name in approximator.standardize:
-                var = approximator.standardize_layers[name](var, staging="validation")
+                var = approximator.standardize_layers[name](var, stage="validation")
 
             # flatten group dimension if node is not amortizable
             if not approximator.graph.allows_amortization(node):

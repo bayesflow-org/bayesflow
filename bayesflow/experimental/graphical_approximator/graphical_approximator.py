@@ -159,7 +159,7 @@ class GraphicalApproximator(Approximator):
         combined_metrics = {}
 
         for i, metric_type in enumerate([summary_metrics, inference_metrics]):
-            prefix = "summary_metrics" if i == 0 else "infrence_metrics"
+            prefix = "summary_metrics" if i == 0 else "inference_metrics"
             for val, metrics in metric_type.items():
                 if "loss" in metrics:
                     total_loss += metrics["loss"]

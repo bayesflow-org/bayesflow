@@ -114,7 +114,12 @@ class EDMNoiseSchedule(NoiseSchedule):
         return 1 + ops.exp(-log_snr_t) / ops.square(self.sigma_data)
 
     def get_config(self):
-        config = {"sigma_data": self.sigma_data, "sigma_min": self.sigma_min, "sigma_max": self.sigma_max}
+        config = {
+            "sigma_data": self.sigma_data,
+            "sigma_min": self.sigma_min,
+            "sigma_max": self.sigma_max,
+            "variance_type": self._variance_type,
+        }
         return config
 
     @classmethod

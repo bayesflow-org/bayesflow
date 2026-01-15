@@ -98,7 +98,7 @@ class MLP(Sequential):
     def _make_block(width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization):
         layers = []
 
-        dense = keras.layers.Dense(width, kernel_initializer=kernel_initializer)
+        dense = keras.layers.Dense(units=width, kernel_initializer=kernel_initializer)
         if spectral_normalization:
             dense = keras.layers.SpectralNormalization(dense)
         layers.append(dense)

@@ -112,7 +112,7 @@ class DeepSet(SummaryNetwork):
         )
 
         # Output linear layer to project set representation down to "summary_dim" learned summary statistics
-        self.output_projector = keras.layers.Dense(summary_dim, activation="linear", name="output_projector")
+        self.output_projector = keras.layers.Dense(units=summary_dim, activation="linear", name="output_projector")
 
         self.summary_dim = summary_dim
 

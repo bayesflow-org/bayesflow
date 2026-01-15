@@ -194,8 +194,6 @@ class TimeMLP(keras.Layer):
             h = self.merge_proj(self.act(h))
         h = self.act(h)
 
-        if keras.ops.shape(t) == 1:
-            t = keras.ops.expand_dims(t, axis=-1)
         t_emb = self.time_emb(t)
 
         for block in self.blocks:

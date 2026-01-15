@@ -94,14 +94,10 @@ class FreeFormFlow(InferenceNetwork):
             decoder_subnet_kwargs = FreeFormFlow.DECODER_MLP_DEFAULT_CONFIG.copy() | decoder_subnet_kwargs
 
         self.encoder_subnet = find_network(encoder_subnet, **encoder_subnet_kwargs)
-        self.encoder_projector = keras.layers.Dense(
-            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="encoder_projector"
-        )
+        self.encoder_projector = None
 
         self.decoder_subnet = find_network(decoder_subnet, **decoder_subnet_kwargs)
-        self.decoder_projector = keras.layers.Dense(
-            units=None, bias_initializer="zeros", kernel_initializer="zeros", name="decoder_projector"
-        )
+        self.decoder_projector = None
 
         self.hutchinson_sampling = hutchinson_sampling
         self.beta = beta
@@ -117,8 +113,12 @@ class FreeFormFlow(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.encoder_projector.units = xz_shape[-1]
-        self.decoder_projector.units = xz_shape[-1]
+        self.encoder_projector = keras.layers.Dense(
+            units=xz_shape[-1], bias_initializer="zeros", kernel_initializer="zeros", name="encoder_projector"
+        )
+        self.decoder_projector = keras.layers.Dense(
+            units=xz_shape[-1], bias_initializer="zeros", kernel_initializer="zeros", name="decoder_projector"
+        )
 
         # construct input shape for subnet and subnet projector
         input_shape = list(xz_shape)

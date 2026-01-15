@@ -20,7 +20,7 @@ class Residual(Sequential):
         elif len(layers) == 1 and isinstance(layers[0], Sequence):
             layers = layers[0]
         super().__init__(list(layers), **sequential_kwargs(kwargs))
-        self.projector = keras.layers.Dense(units=None, name="projector")
+        self.projector = None
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -53,7 +53,7 @@ class Residual(Sequential):
             layer.build(output_shape)
             output_shape = layer.compute_output_shape(output_shape)
 
-        self.projector.units = output_shape[-1]
+        self.projector = keras.layers.Dense(units=output_shape[-1], name="projector")
         self.projector.build(input_shape)
 
     def call(self, x: Tensor, training: bool = None, mask: bool = None) -> Tensor:

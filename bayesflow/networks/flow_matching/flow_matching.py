@@ -23,6 +23,9 @@ class FlowMatching(InferenceNetwork):
     """(IN) Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas
     incorporated from [1-5].
 
+    For optimal transport, the Sinkhorn algorithm is used to compute mini-batch optimal transport plans
+    between samples from the base distribution and the target distribution during training [6-8].
+
     [1] Liu et al. (2022). Flow straight and fast: Learning to generate and transfer data with rectified flow.
         arXiv preprint arXiv:2209.03003.
     [2] Lipman et al. (2022). Flow matching for generative modeling.
@@ -33,6 +36,10 @@ class FlowMatching(InferenceNetwork):
         Advances in Neural Information Processing Systems, 36, 16837-16864.
     [5] Orsini et al. (2025). Flow matching posterior estimation for simulation-based atmospheric retrieval of
         exoplanets. IEEE Access.
+    [6] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
+    [7] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
+        Conditional Flow-Based Generation"
+    [8] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
     """
 
     MLP_DEFAULT_CONFIG = {
@@ -60,7 +67,8 @@ class FlowMatching(InferenceNetwork):
         "regularization": 0.1,
         "max_steps": 100,
         "atol": 1e-5,
-        "rtol": 1e-4,
+        "partial_ot_factor": 1.0,  # no partial OT
+        "condition_ratio": 0.01,  # only used if conditions are provided
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
@@ -144,7 +152,7 @@ class FlowMatching(InferenceNetwork):
             self._concatenate_subnet_input = False
 
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", name="output_projector")
+        self.output_projector = None
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -154,7 +162,11 @@ class FlowMatching(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.output_projector.units = xz_shape[-1]
+        self.output_projector = keras.layers.Dense(
+            units=xz_shape[-1],
+            bias_initializer="zeros",
+            name="output_projector",
+        )
 
         input_shape = list(xz_shape)
         if self._concatenate_subnet_input:
@@ -325,16 +337,13 @@ class FlowMatching(InferenceNetwork):
                 # since the data is possibly noisy and may contain outliers, it is better
                 # to possibly drop some samples from x1 than from x0
                 # in the marginal over multiple batches, this is not a problem
-                x0, x1, assignments = optimal_transport(
+                x0, x1, conditions = optimal_transport(
                     x0,
                     x1,
+                    conditions=conditions,
                     seed=self.seed_generator,
                     **self.optimal_transport_kwargs,
-                    return_assignments=True,
                 )
-                if conditions is not None:
-                    # conditions must be resampled along with x1
-                    conditions = keras.ops.take(conditions, assignments, axis=0)
 
             u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
             # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform

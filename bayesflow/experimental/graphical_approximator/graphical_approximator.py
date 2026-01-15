@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 
 import keras
 import numpy as np
-
+from ...distributions import DiagonalNormal
 from ...adapters import Adapter
 from ...approximators import Approximator
 from ...networks import InferenceNetwork, SummaryNetwork
@@ -15,6 +15,7 @@ from .utils import (
     inference_variable_shapes_by_network,
     inference_variables_by_network,
     prepare_inference_conditions,
+    prepare_inference_variables,
     meta_dict_from_data_shapes,
     split_network_output,
     summary_input_shapes_by_network,
@@ -299,6 +300,49 @@ class GraphicalApproximator(Approximator):
                 sample_dict[k] = keras.ops.convert_to_numpy(keras.ops.reshape(v, target_shape))
 
         return sample_dict
+
+    def log_prob(self, data):
+        # band-aid until updated base distribution PR is merged
+        def monkey_network_log_prob(inference_network, x, conditions):
+            z = x
+            base_dist = DiagonalNormal()
+            base_dist.build(keras.ops.shape(z))
+
+            log_det = keras.ops.zeros(keras.ops.shape(x)[:-1])
+            for layer in inference_network.invertible_layers:
+                z, det = layer(z, conditions=conditions, inverse=False, training=False)
+                log_det += det
+
+            log_density_latent = base_dist.log_prob(z)
+            log_density = log_density_latent + log_det
+
+            return log_density
+
+        variable_names = self.graph.simulation_graph.variable_names()
+        adapted, ldj_adapter = self.adapter(data, log_det_jac=True)
+        batch_size = self._batch_size_from_data(data)
+        log_prob = np.zeros(batch_size)
+
+        variables = inference_variables_by_network(self, adapted)
+        conditions = inference_conditions_by_network(self, adapted)
+
+        # log_probs
+        for i, inference_network in enumerate(self.inference_networks):
+            log_prob_i = monkey_network_log_prob(inference_network, variables[i], conditions[i])
+            log_prob += keras.ops.sum(keras.ops.reshape(log_prob_i, (batch_size, -1)), axis=-1)
+
+        # log_det_jac for standardization layers
+        for node, variable_names in variable_names.items():
+            for variable_name in variable_names:
+                if variable_name in self.standardize_layers:
+                    result, ldj = self.standardize_layers[variable_name](adapted[variable_name], log_det_jac=True)
+                    log_prob += keras.ops.sum(keras.ops.reshape(ldj, (batch_size, -1)), axis=-1)
+
+        # log_det_jac for adapter
+        for key in ldj_adapter:
+            log_prob += keras.ops.sum(keras.ops.reshape(ldj_adapter[key], (batch_size, -1)), axis=-1)
+
+        return keras.ops.convert_to_numpy(log_prob)
 
     def _batch_size_from_data(self, data):
         """

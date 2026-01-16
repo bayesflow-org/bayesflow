@@ -99,7 +99,7 @@ class DiffusionModel(InferenceNetwork):
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
             into a single vector or passed as separate arguments. If set to False, the subnet
             must accept three separate inputs: 'x' (noisy parameters), 't' (log signal-to-noise ratio),
-            and optional 'conditions'. Default is True.
+            and optional 'conditions'. Default is False.
 
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
@@ -128,13 +128,13 @@ class DiffusionModel(InferenceNetwork):
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
         subnet_kwargs = subnet_kwargs or {}
-        if subnet == "mlp":
-            subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
-        elif subnet == "time_mlp":
+        if subnet == "time_mlp":
             subnet_kwargs = DiffusionModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
-            self._concatenate_subnet_input = False
+        elif subnet == "mlp":
+            subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+            self._concatenate_subnet_input = True
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None

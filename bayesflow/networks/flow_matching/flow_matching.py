@@ -51,6 +51,18 @@ class FlowMatching(InferenceNetwork):
         "spectral_normalization": False,
     }
 
+    TIME_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+        "time_embedding_dim": 32,
+        "merge": "concat",
+        "norm": "layer",
+    }
+
     OPTIMAL_TRANSPORT_DEFAULT_CONFIG = {
         "method": "log_sinkhorn",
         "regularization": 0.1,
@@ -67,7 +79,7 @@ class FlowMatching(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "time_mlp",
         base_distribution: str | Distribution = "normal",
         use_optimal_transport: bool = False,
         loss_fn: str | keras.Loss = "mse",
@@ -92,7 +104,7 @@ class FlowMatching(InferenceNetwork):
         ----------
         subnet : str or keras.Layer, optional
             Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
+            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "time_mlp".
         base_distribution : str, optional
             The base probability distribution from which samples are drawn, such as "normal".
             Default is "normal".
@@ -109,9 +121,8 @@ class FlowMatching(InferenceNetwork):
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
-            and optional 'conditions'. Default is True.
+            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
+            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
         time_power_law_alpha: float, optional
             Changes the distribution of sampled times during training. Time is sampled from a power law distribution
              p(t) ∝ t^(1/(1+α)), where α is the provided value. Default is α=0, which corresponds to uniform sampling.
@@ -132,12 +143,15 @@ class FlowMatching(InferenceNetwork):
 
         self.seed_generator = keras.random.SeedGenerator()
 
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
         subnet_kwargs = subnet_kwargs or {}
-        if subnet == "mlp":
+        if subnet == "time_mlp":
+            subnet_kwargs = FlowMatching.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
+        elif subnet == "mlp":
             subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
-
+            self._concatenate_subnet_input = True
         self.subnet = find_network(subnet, **subnet_kwargs)
+
         self.output_projector = None
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
@@ -167,10 +181,8 @@ class FlowMatching(InferenceNetwork):
         else:
             # Multiple separate inputs
             time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
-            out_shape = self.subnet.compute_output_shape(
-                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
-            )
+            self.subnet.build((xz_shape, time_shape, conditions_shape))
+            out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)
 
@@ -226,7 +238,7 @@ class FlowMatching(InferenceNetwork):
         else:
             if training is False:
                 t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
-            return self.subnet(x=x, t=t, conditions=conditions, training=training)
+            return self.subnet((x, t, conditions), training=training)
 
     def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))

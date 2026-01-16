@@ -9,7 +9,6 @@ from bayesflow.utils import logging, jvp, find_network, expand_right_as, expand_
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from bayesflow.networks import InferenceNetwork
-from bayesflow.networks.embeddings import FourierEmbedding
 
 
 # disable module check, use potential module after moving from experimental
@@ -35,6 +34,18 @@ class StableConsistencyModel(InferenceNetwork):
         "spectral_normalization": False,
     }
 
+    TIME_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+        "time_embedding_dim": 32,
+        "merge": "concat",
+        "norm": "layer",
+    }
+
     WEIGHT_MLP_DEFAULT_CONFIG = {
         "widths": (256,),
         "activation": "mish",
@@ -48,19 +59,17 @@ class StableConsistencyModel(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "time_mlp",
         sigma: float = 1.0,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
-        time_emb: keras.Layer = None,
-        embedding_kwargs: dict[str, any] = None,
         **kwargs,
     ):
         """Creates an instance of an sCM to be used for consistency training (CT).
 
         Parameters
         ----------
-        subnet : str, type, or keras.Layer, optional, default="mlp"
+        subnet : str, type, or keras.Layer, optional, default="time_mlp"
             The neural network architecture used for the consistency model.
             If a string is provided, it should be a registered name (e.g., "mlp").
             If a type or keras.Layer is provided, it will be directly instantiated
@@ -74,29 +83,25 @@ class StableConsistencyModel(InferenceNetwork):
         weight_mlp_kwargs : dict[str, any], optional, default=None
             Keyword arguments for an auxiliary MLP used to generate weights within the consistency model. Typically,
             includes depth, hidden sizes, and non-linearity choices.
-        time_emb : keras.Layer, optional, default=None
-            A custom time embedding layer. If None, a default ``FourierEmbedding`` will be used.
-        embedding_kwargs : dict[str, any], optional, default=None
-            Keyword arguments for the time embedding layer(s) used in the model
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (log signal-to-noise ratio),
-            and optional 'conditions'. Default is True.
+            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
+            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
         **kwargs
             Additional keyword arguments passed to the parent ``InferenceNetwork`` initializer
             (e.g., ``name``, ``dtype``, or ``trainable``).
         """
         super().__init__(base_distribution="normal", **kwargs)
 
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
         subnet_kwargs = subnet_kwargs or {}
-        if subnet == "mlp":
+        if subnet == "time_mlp":
+            subnet_kwargs = StableConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
+        elif subnet == "mlp":
             subnet_kwargs = StableConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+            self._concatenate_subnet_input = True
         self.subnet = find_network(subnet, **subnet_kwargs)
-
         self.subnet_projector = None
-
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         weight_mlp_kwargs = weight_mlp_kwargs or {}
         weight_mlp_kwargs = StableConsistencyModel.WEIGHT_MLP_DEFAULT_CONFIG | weight_mlp_kwargs
@@ -105,11 +110,6 @@ class StableConsistencyModel(InferenceNetwork):
         self.weight_fn_projector = keras.layers.Dense(
             units=1, bias_initializer="zeros", kernel_initializer="zeros", name="weight_fn_projector"
         )
-
-        embedding_kwargs = embedding_kwargs or {}
-        self.time_emb = time_emb or FourierEmbedding(**embedding_kwargs)
-
-        self.time_emb_dim = self.time_emb.embed_dim
 
         self.sigma = sigma
         self.seed_generator = keras.random.SeedGenerator()
@@ -125,7 +125,6 @@ class StableConsistencyModel(InferenceNetwork):
         config = {
             "subnet": self.subnet,
             "sigma": self.sigma,
-            "time_emb": self.time_emb,
             "concatenate_subnet_input": self._concatenate_subnet_input,
         }
 
@@ -162,7 +161,7 @@ class StableConsistencyModel(InferenceNetwork):
 
         if self._concatenate_subnet_input:
             # construct time vector
-            input_shape[-1] += self.time_emb_dim + 1
+            input_shape[-1] += 1
             if conditions_shape is not None:
                 input_shape[-1] += conditions_shape[-1]
             input_shape = tuple(input_shape)
@@ -171,15 +170,10 @@ class StableConsistencyModel(InferenceNetwork):
             input_shape = self.subnet.compute_output_shape(input_shape)
         else:
             # Multiple separate inputs
-            time_shape = tuple(xz_shape[:-1]) + (self.time_emb_dim + 1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
-            input_shape = self.subnet.compute_output_shape(
-                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
-            )
+            time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+            self.subnet.build((xz_shape, time_shape, conditions_shape))
+            input_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
         self.subnet_projector.build(input_shape)
-
-        # input shape for time embedding
-        self.time_emb.build((xz_shape[0], 1))
 
         # input shape for weight function and projector
         input_shape = (xz_shape[0], 1)
@@ -214,7 +208,7 @@ class StableConsistencyModel(InferenceNetwork):
             xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
             return self.subnet(xtc, training=training)
         else:
-            return self.subnet(x=x, t=t, conditions=conditions, training=training)
+            return self.subnet((x, t, conditions), training=training)
 
     def _forward(self, x: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
         # Consistency Models only learn the direction from noise distribution
@@ -274,10 +268,8 @@ class StableConsistencyModel(InferenceNetwork):
             The conditioning vector
         training    : bool
             Flag to control whether the inner network operates in training or test mode
-        **kwargs    : dict, optional, default: {}
-            Additional keyword arguments passed to the inner network.
         """
-        subnet_out = self._apply_subnet(x / self.sigma, self.time_emb(t), conditions, training=training)
+        subnet_out = self._apply_subnet(x / self.sigma, t, conditions, training=training)
         f = self.subnet_projector(subnet_out)
         out = ops.cos(t) * x - ops.sin(t) * self.sigma * f
         return out
@@ -315,7 +307,7 @@ class StableConsistencyModel(InferenceNetwork):
         r = 1.0  # TODO: if consistency distillation training (not supported yet) is unstable, add schedule here
 
         def f_teacher(x, t):
-            o = self._apply_subnet(x, self.time_emb(t), conditions, training=stage == "training")
+            o = self._apply_subnet(x, t, conditions, training=stage == "training")
             return self.subnet_projector(o)
 
         primals = (xt / self.sigma, t)
@@ -329,7 +321,7 @@ class StableConsistencyModel(InferenceNetwork):
         cos_sin_dFdt = ops.stop_gradient(cos_sin_dFdt)
 
         # calculate output of the network
-        subnet_out = self._apply_subnet(xt / self.sigma, self.time_emb(t), conditions, training=stage == "training")
+        subnet_out = self._apply_subnet(xt / self.sigma, t, conditions, training=stage == "training")
         student_out = self.subnet_projector(subnet_out)
 
         # calculate the tangent

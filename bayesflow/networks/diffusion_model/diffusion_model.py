@@ -41,6 +41,18 @@ class DiffusionModel(InferenceNetwork):
         "spectral_normalization": False,
     }
 
+    TIME_MLP_DEFAULT_CONFIG = {
+        "widths": (256, 256, 256, 256, 256),
+        "activation": "mish",
+        "kernel_initializer": "he_normal",
+        "residual": True,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+        "time_embedding_dim": 32,
+        "merge": "concat",
+        "norm": "layer",
+    }
+
     INTEGRATE_DEFAULT_CONFIG = {
         "method": "two_step_adaptive",
         "steps": "adaptive",
@@ -49,7 +61,7 @@ class DiffusionModel(InferenceNetwork):
     def __init__(
         self,
         *,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "time_mlp",
         noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
         prediction_type: Literal["velocity", "noise", "F", "x"] = "F",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
@@ -69,7 +81,7 @@ class DiffusionModel(InferenceNetwork):
         ----------
         subnet : str, type or keras.Layer, optional
             Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
+            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "time_mlp".
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
             Noise schedule controlling the diffusion dynamics. Can be a string identifier,
             a schedule class, or a pre-initialized schedule instance. Default is "edm".
@@ -85,9 +97,8 @@ class DiffusionModel(InferenceNetwork):
             Configuration dictionary for integration during training or inference. Default is None.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (log signal-to-noise ratio),
-            and optional 'conditions'. Default is True.
+            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
+            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
 
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
@@ -116,11 +127,14 @@ class DiffusionModel(InferenceNetwork):
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
+        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
         subnet_kwargs = subnet_kwargs or {}
-        if subnet == "mlp":
+        if subnet == "time_mlp":
+            subnet_kwargs = DiffusionModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
+        elif subnet == "mlp":
             subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
+            self._concatenate_subnet_input = True
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
 
         self.output_projector = None
 
@@ -150,10 +164,8 @@ class DiffusionModel(InferenceNetwork):
         else:
             # Multiple separate inputs
             time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
-            out_shape = self.subnet.compute_output_shape(
-                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
-            )
+            self.subnet.build((xz_shape, time_shape, conditions_shape))
+            out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)
 
@@ -246,7 +258,7 @@ class DiffusionModel(InferenceNetwork):
         if self._concatenate_subnet_input:
             xtc = tensor_utils.concatenate_valid([xz, log_snr, conditions], axis=-1)
             return self.subnet(xtc, training=training)
-        return self.subnet(x=xz, t=log_snr, conditions=conditions, training=training)
+        return self.subnet((xz, log_snr, conditions), training=training)
 
     def score(
         self,

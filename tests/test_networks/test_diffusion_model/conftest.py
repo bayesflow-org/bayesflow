@@ -5,7 +5,7 @@ import pytest
 def cosine_noise_schedule():
     from bayesflow.networks.diffusion_model.schedules import CosineNoiseSchedule
 
-    return CosineNoiseSchedule(min_log_snr=-12, max_log_snr=12, shift=0.1, weighting="likelihood_weighting")
+    return CosineNoiseSchedule(min_log_snr=-12, max_log_snr=12, shift=0.1, weighting="sigmoid")
 
 
 @pytest.fixture()

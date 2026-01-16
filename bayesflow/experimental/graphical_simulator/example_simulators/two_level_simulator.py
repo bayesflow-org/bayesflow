@@ -3,6 +3,31 @@ import numpy as np
 from ..graphical_simulator import GraphicalSimulator
 
 
+def sample_hypers():
+    hyper_mean = np.random.normal()
+    hyper_std = np.abs(np.random.normal())
+
+    return {"hyper_mean": hyper_mean, "hyper_std": hyper_std}
+
+
+def sample_locals(hyper_mean, hyper_std):
+    local_mean = np.random.normal(hyper_mean, hyper_std)
+
+    return {"local_mean": local_mean}
+
+
+def sample_shared():
+    shared_std = np.abs(np.random.normal())
+
+    return {"shared_std": shared_std}
+
+
+def sample_y(local_mean, shared_std):
+    y = np.random.normal(local_mean, shared_std)
+
+    return {"y": y}
+
+
 def two_level_simulator(repeated_roots=False):
     r"""
     Simple hierarchical model with two levels of parameters: hyperparameters
@@ -20,28 +45,6 @@ def two_level_simulator(repeated_roots=False):
     repeated_roots : bool, default false.
 
     """
-
-    def sample_hypers():
-        hyper_mean = np.random.normal()
-        hyper_std = np.abs(np.random.normal())
-
-        return {"hyper_mean": hyper_mean, "hyper_std": hyper_std}
-
-    def sample_locals(hyper_mean, hyper_std):
-        local_mean = np.random.normal(hyper_mean, hyper_std)
-
-        return {"local_mean": local_mean}
-
-    def sample_shared():
-        shared_std = np.abs(np.random.normal())
-
-        return {"shared_std": shared_std}
-
-    def sample_y(local_mean, shared_std):
-        y = np.random.normal(local_mean, shared_std)
-
-        return {"y": y}
-
     simulator = GraphicalSimulator()
 
     if not repeated_roots:

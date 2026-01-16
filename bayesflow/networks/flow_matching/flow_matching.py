@@ -121,9 +121,8 @@ class FlowMatching(InferenceNetwork):
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
-            and optional 'conditions'. Default is False.
+            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
+            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
         time_power_law_alpha: float, optional
             Changes the distribution of sampled times during training. Time is sampled from a power law distribution
              p(t) ∝ t^(1/(1+α)), where α is the provided value. Default is α=0, which corresponds to uniform sampling.

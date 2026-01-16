@@ -81,9 +81,8 @@ class ConsistencyModel(InferenceNetwork):
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
-            and optional 'conditions'. Default is False.
+            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
+            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """

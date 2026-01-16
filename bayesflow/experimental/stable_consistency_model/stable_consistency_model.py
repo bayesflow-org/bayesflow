@@ -85,9 +85,8 @@ class StableConsistencyModel(InferenceNetwork):
             includes depth, hidden sizes, and non-linearity choices.
         concatenate_subnet_input: bool, optional
             Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (log signal-to-noise ratio),
-            and optional 'conditions'. Default is False.
+            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
+            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
         **kwargs
             Additional keyword arguments passed to the parent ``InferenceNetwork`` initializer
             (e.g., ``name``, ``dtype``, or ``trainable``).

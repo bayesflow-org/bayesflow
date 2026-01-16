@@ -16,7 +16,7 @@ class TimeMLP(keras.Layer):
 
     The model processes three separate inputs: the state variable `x`, a scalar or vector-valued time input `t`,
     and a conditioning variable `conditions`. The input and condition are projected into a shared feature space,
-    merged, and passed through a deep residual MLP. A learned time embedding is injected at every hidden layer.
+    merged, and passed through a deep residual MLP. A learned time embedding is injected via FiLM at every hidden layer.
 
     If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
         supports dropout for regularization and spectral normalization for stability in learning smooth functions.
@@ -45,7 +45,8 @@ class TimeMLP(keras.Layer):
         widths : Sequence[int], optional
             Defines the number of hidden units per layer, as well as the number of layers to be used.
         time_emb_dim : int
-            Dimensionality of the learned time embedding. Default is 32.
+            Dimensionality of the learned time embedding. Default is 32. If set to 1, no embedding is applied and
+            time is used directly.
         time_emb : keras.layers.Layer or None, optional
             Custom time embedding layer. If None, a random Fourier feature embedding is used.
         activation : str, optional
@@ -81,11 +82,14 @@ class TimeMLP(keras.Layer):
 
         # Time embedding
         if time_emb is None:
-            self.time_emb = FourierEmbedding(
-                embed_dim=self.time_embedding_dim,
-                scale=kwargs.pop("fourier_scale", 30.0),
-                include_identity=True,
-            )
+            if self.time_embedding_dim == 1:
+                self.time_emb = keras.layers.Identity()
+            else:
+                self.time_emb = FourierEmbedding(
+                    embed_dim=self.time_embedding_dim,
+                    scale=kwargs.pop("fourier_scale", 30.0),
+                    include_identity=True,
+                )
         else:
             self.time_emb = time_emb
 

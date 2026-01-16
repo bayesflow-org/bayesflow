@@ -10,7 +10,9 @@ from bayesflow.networks.embeddings import FiLM
 @serializable("bayesflow.networks")
 class ConditionalResidual(keras.Layer):
     """
-    A single hidden block with optional residual connection and conditional injection.
+    A single hidden block with optional residual connection and conditional injection via FiLM [1].
+
+    [1] Perez et al. (2018): Visual reasoning with a general conditioning layer
     """
 
     def __init__(

@@ -41,6 +41,7 @@ class StableConsistencyModel(InferenceNetwork):
         "residual": True,
         "dropout": 0.05,
         "spectral_normalization": False,
+        "time_embedding_dim": 32,
         "merge": "concat",
         "norm": "layer",
     }

@@ -6,7 +6,10 @@ from bayesflow.utils.serialization import serializable, serialize, deserialize
 
 @serializable("bayesflow.networks")
 class FiLM(keras.Layer):
-    """Feature-wise Linear Modulation: y = (1 + gamma) * x + beta."""
+    """Feature-wise Linear Modulation: y = (1 + gamma) * x + beta as introduced in [1].
+
+    [1] Perez et al. (2018): Visual reasoning with a general conditioning layer
+    """
 
     def __init__(self, units: int, *, kernel_initializer: str = "he_normal", use_gamma: bool = True, **kwargs):
         super().__init__(**kwargs)

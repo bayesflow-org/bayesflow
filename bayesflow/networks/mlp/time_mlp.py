@@ -44,7 +44,7 @@ class TimeMLP(keras.Layer):
         ----------
         widths : Sequence[int], optional
             Defines the number of hidden units per layer, as well as the number of layers to be used.
-        time_emb_dim : int
+        time_emb_dim : int, optional
             Dimensionality of the learned time embedding. Default is 32. If set to 1, no embedding is applied and
             time is used directly.
         time_emb : keras.layers.Layer or None, optional

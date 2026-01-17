@@ -42,19 +42,17 @@ def test_approximator_sample_with_integration_methods(
 
     # Create inference network based on type
     if inference_network_type == "flow_matching":
-        from bayesflow.networks import FlowMatching, MLP
+        from bayesflow.networks import FlowMatching
 
         inference_network = FlowMatching(
-            subnet=MLP(widths=[32, 32]),
-            concatenate_subnet_input=True,
+            subnet_kwargs=dict(widths=[8, 8]),
             integrate_kwargs={"steps": 10},  # Use fewer steps for faster tests
         )
     elif inference_network_type == "diffusion_model":
-        from bayesflow.networks import DiffusionModel, MLP
+        from bayesflow.networks import DiffusionModel
 
         inference_network = DiffusionModel(
-            subnet=MLP(widths=[32, 32]),
-            concatenate_subnet_input=True,
+            subnet_kwargs=dict(widths=[8, 8]),
             integrate_kwargs={"steps": 10},  # Use fewer steps for faster tests
         )
     else:

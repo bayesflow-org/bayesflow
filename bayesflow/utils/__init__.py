@@ -24,7 +24,6 @@ from .dict_utils import (
     split_tensors,
     split_arrays,
     squeeze_inner_estimates_dict,
-    vstack_samples,
 )
 
 from .dispatch import (

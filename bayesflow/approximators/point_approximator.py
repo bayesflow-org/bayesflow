@@ -1,18 +1,18 @@
 from collections.abc import Mapping
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import (
+    logging,
     filter_kwargs,
     split_arrays,
     squeeze_inner_estimates_dict,
-    logging,
     concatenate_valid,
-    vstack_samples,
+    tree_concatenate,
 )
 from bayesflow.utils.serialization import serializable
 
@@ -65,7 +65,7 @@ class PointApproximator(ContinuousApproximator):
         """
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
-        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
+        # Remove any superfluous keys, just retain actual conditions.
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
         estimates = self._estimate(**conditions, **kwargs)
@@ -86,7 +86,6 @@ class PointApproximator(ContinuousApproximator):
 
         # Reorder the nested dictionary so that original variable names are at the top.
         estimates = self._reorder_estimates(estimates)
-        # Remove unnecessary nesting.
         estimates = self._squeeze_estimates(estimates)
 
         return estimates
@@ -117,8 +116,8 @@ class PointApproximator(ContinuousApproximator):
             If True, the sampled arrays are split along the last axis, by default False.
             Currently not supported for :py:class:`PointApproximator`.
         batch_size : int or None, optional
-            If provided, the number of samples to generate per batch. If None, all samples are generated in a
-            single batch. Can help with memory management for large sample sizes.
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
@@ -133,31 +132,32 @@ class PointApproximator(ContinuousApproximator):
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, num_samples, variable_block_size).
         """
-        # Adapt, optionally standardize and convert conditions to tensor.
-        conditions = self._prepare_data(conditions, **kwargs)
-        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
-        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
-
-        # Sample and undo optional standardization
-        if batch_size is None or len(conditions) == 0:
-            samples = self._sample(num_samples, **conditions, **kwargs)
-            samples = self._post_process_samples(samples)
-        else:
-            n = self._infer_condition_size(conditions)
-            samples: Mapping[str, np.ndarray] = {}
-            for i in tqdm(range(0, n, batch_size), desc="Sampling", unit="batch"):
-                batch_conditions = {k: (v[i : i + batch_size]) for k, v in conditions.items()}
-
-                batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
-                batch_samples = self._post_process_samples(batch_samples)
-
-                if len(samples) == 0:
-                    samples = batch_samples
-                else:
-                    samples = vstack_samples(samples, batch_samples)
-
         if split:
             raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
+
+        conditions = self._prepare_data(conditions, **kwargs)
+        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
+
+        num_conditions = self._infer_condition_size(conditions) if len(conditions) > 0 else 1
+
+        # If no batching requested, pretend everything is one batch
+        if batch_size is None:
+            batch_size = num_conditions
+
+        samples = []
+        for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
+            if len(conditions) == 0:
+                batch_conditions = {}
+            else:
+                batch_conditions = {k: v[i : i + batch_size] for k, v in conditions.items()}
+
+            batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
+            samples.append(batch_samples)
+
+        samples = tree_concatenate(samples, axis=0)
+
+        # Optionally unstandardize and back-transform samples via adapter
+        samples = self._post_process_samples(samples)
 
         # Squeeze sample dictionary if there's only one key-value pair.
         samples = self._squeeze_parametric_score_major_dict(samples)

@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence, Callable
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import keras
 
@@ -9,13 +9,13 @@ from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
-    filter_kwargs,
     logging,
+    filter_kwargs,
     split_arrays,
     squeeze_inner_estimates_dict,
     concatenate_valid,
     concatenate_valid_shapes,
-    vstack_samples,
+    tree_concatenate,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -347,6 +347,7 @@ class ContinuousApproximator(Approximator):
         split: bool = False,
         estimators: Mapping[str, Callable] = None,
         num_samples: int = 1000,
+        batch_size: int = None,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
         """
@@ -376,6 +377,9 @@ class ContinuousApproximator(Approximator):
                   then rearranges the axes for convenience.
         num_samples : int, optional
             The number of samples to generate for each variable. The default is 1000.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs
             Additional keyword arguments passed to the ``sample`` method.
 
@@ -397,7 +401,9 @@ class ContinuousApproximator(Approximator):
             | estimators
         )
 
-        samples = self.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+        samples = self.sample(
+            num_samples=num_samples, conditions=conditions, split=split, batch_size=batch_size, **kwargs
+        )
 
         estimates = {
             variable_name: {
@@ -437,11 +443,10 @@ class ContinuousApproximator(Approximator):
         conditions : dict[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
         split : bool, default=False
-            Whether to split the output arrays along the last axis and return one column vector per target variable
-            samples.
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
         batch_size : int or None, optional
-            If provided, the number of samples to generate per batch. If None, all samples are generated in a
-            single batch. Can help with memory management for large sample sizes.
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs : dict
             Additional keyword arguments for the adapter and sampling process.
 
@@ -450,31 +455,29 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        # Adapt, optionally standardize and convert conditions to tensor
         conditions = self._prepare_data(conditions, **kwargs)
-
-        # Remove any superfluous keys, just retain actual conditions
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
-        if batch_size is None or len(conditions) == 0:
-            # Sample and undo optional standardization
-            samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
-            samples = self._post_process_samples(samples)
-        else:
-            n = self._infer_condition_size(conditions)
-            samples: Mapping[str, np.ndarray] = {}
-            for i in tqdm(range(0, n, batch_size), desc="Sampling", unit="batch"):
-                batch_conditions = {k: (v[i : i + batch_size]) for k, v in conditions.items()}
+        num_conditions = self._infer_condition_size(conditions) if len(conditions) > 0 else 1
 
-                batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
-                batch_samples = self._post_process_samples(batch_samples)
+        # If no batching requested, pretend everything is one batch
+        if batch_size is None:
+            batch_size = num_conditions
 
-                if len(samples) == 0:
-                    samples = batch_samples
-                else:
-                    samples = vstack_samples(samples, batch_samples)
+        samples = []
+        for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
+            if len(conditions) == 0:
+                batch_conditions = {}
+            else:
+                batch_conditions = {k: v[i : i + batch_size] for k, v in conditions.items()}
 
-        # Back-transform quantities and samples
+            batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
+            samples.append(batch_samples)
+
+        samples = tree_concatenate(samples, axis=0)
+
+        # Optionally unstandardize and back-transform samples via adapter
+        samples = self._post_process_samples(samples)
         samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
 
         if split:
@@ -491,14 +494,16 @@ class ContinuousApproximator(Approximator):
         return samples
 
     @staticmethod
-    def _infer_condition_size(conditions):
+    def _infer_condition_size(conditions: Mapping[str, any]):
         n = None
         for k, v in conditions.items():
             if hasattr(v, "__len__") and hasattr(v, "__getitem__"):
                 if n is None:
                     n = len(v)
                 elif len(v) != n:
-                    raise ValueError("All batchable condition arrays must have the same leading dimension.")
+                    raise ValueError(
+                        f"All batchable conditions must have the same leading dimension, but {k} has {len(v)}."
+                    )
         return n
 
     def _prepare_data(

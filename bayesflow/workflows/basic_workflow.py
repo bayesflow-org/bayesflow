@@ -278,8 +278,8 @@ class BasicWorkflow(Workflow):
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
         batch_size : int or None, optional
-            If provided, the number of samples to generate per batch. If None, all samples are generated in a
-            single batch. Can help with memory management for large sample sizes.
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs : dict, optional
             Additional keyword arguments passed to the approximator's sampling function.
 

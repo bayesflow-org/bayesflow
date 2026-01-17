@@ -139,17 +139,6 @@ def split_arrays(data: Mapping[str, np.ndarray], axis: int = -1) -> Mapping[str,
     return result
 
 
-def vstack_samples(a: Mapping[str, np.ndarray], b: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
-    """Takes two Dicts and stacks the values for each key. Assumes first axis is the batch axis for each entry."""
-    out = dict(a)
-    for k, v in b.items():
-        if k not in out:
-            out[k] = v
-        else:
-            out[k] = np.vstack([out[k], v])
-    return out
-
-
 class VariableArray(np.ndarray):
     """
     An enriched numpy array with information on variable keys and names

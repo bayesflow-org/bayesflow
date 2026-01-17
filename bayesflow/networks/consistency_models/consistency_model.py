@@ -1,7 +1,7 @@
+import numpy as np
+
 import keras
 from keras import ops
-
-import numpy as np
 
 from bayesflow.types import Tensor
 from bayesflow.utils import find_network, layer_kwargs, weighted_mean, tensor_utils, expand_right_as

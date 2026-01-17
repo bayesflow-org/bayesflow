@@ -7,11 +7,10 @@ from bayesflow.types import Tensor
 from bayesflow.utils import logging, jvp, find_network, expand_right_as, expand_right_to, layer_kwargs, tensor_utils
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
-from bayesflow.networks import InferenceNetwork
+from ..inference_network import InferenceNetwork
 
 
-# disable module check, use potential module after moving from experimental
-@serializable("bayesflow.networks", disable_module_check=True)
+@serializable("bayesflow.networks")
 class StableConsistencyModel(InferenceNetwork):
     """(IN) Implements an sCM (simple, stable, and scalable Consistency Model) with continuous-time Consistency Training
     (CT) as described in [1]. The sampling procedure is taken from [2].

@@ -79,10 +79,6 @@ class ConsistencyModel(InferenceNetwork):
             Final number of discretization steps
         subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
-        concatenate_subnet_input: bool, optional
-            Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
-            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
@@ -91,12 +87,14 @@ class ConsistencyModel(InferenceNetwork):
         self.total_steps = float(total_steps)
 
         self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
+
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = ConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
         elif subnet == "mlp":
             subnet_kwargs = ConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = True
+
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None

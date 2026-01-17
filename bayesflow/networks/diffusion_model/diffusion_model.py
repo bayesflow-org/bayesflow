@@ -95,10 +95,6 @@ class DiffusionModel(InferenceNetwork):
             Additional keyword arguments passed to the noise schedule constructor. Default is None.
         integrate_kwargs : dict[str, any], optional
             Configuration dictionary for integration during training or inference. Default is None.
-        concatenate_subnet_input: bool, optional
-            Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as a tuple. If set to False, the subnet must accept a tuple of inputs:
-            'x' (noisy parameters), 't' (time), and optional 'conditions'. Default is False.
 
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
@@ -128,12 +124,14 @@ class DiffusionModel(InferenceNetwork):
         self.seed_generator = keras.random.SeedGenerator()
 
         self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
+
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = DiffusionModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
         elif subnet == "mlp":
             subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = True
+
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None

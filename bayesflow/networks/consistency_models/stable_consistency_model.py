@@ -3,7 +3,6 @@ from math import pi
 import keras
 from keras import ops
 
-from bayesflow.networks import MLP
 from bayesflow.types import Tensor
 from bayesflow.utils import logging, jvp, find_network, expand_right_as, expand_right_to, layer_kwargs, tensor_utils
 from bayesflow.utils.serialization import deserialize, serializable, serialize
@@ -94,18 +93,21 @@ class StableConsistencyModel(InferenceNetwork):
         super().__init__(base_distribution="normal", **kwargs)
 
         self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
+
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = StableConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
         elif subnet == "mlp":
             subnet_kwargs = StableConsistencyModel.MLP_DEFAULT_CONFIG | subnet_kwargs
             self._concatenate_subnet_input = True
+
         self.subnet = find_network(subnet, **subnet_kwargs)
+
         self.subnet_projector = None
 
         weight_mlp_kwargs = weight_mlp_kwargs or {}
         weight_mlp_kwargs = StableConsistencyModel.WEIGHT_MLP_DEFAULT_CONFIG | weight_mlp_kwargs
-        self.weight_fn = MLP(**weight_mlp_kwargs)
+        self.weight_fn = find_network("mlp", **weight_mlp_kwargs)
 
         self.weight_fn_projector = keras.layers.Dense(
             units=1, bias_initializer="zeros", kernel_initializer="zeros", name="weight_fn_projector"

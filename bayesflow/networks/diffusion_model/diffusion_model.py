@@ -31,15 +31,6 @@ class DiffusionModel(InferenceNetwork):
     Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.
     """
 
-    MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-    }
-
     TIME_MLP_DEFAULT_CONFIG = {
         "widths": (256, 256, 256, 256, 256),
         "activation": "mish",
@@ -82,7 +73,7 @@ class DiffusionModel(InferenceNetwork):
             A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
             If a string is provided, it should be a registered name (e.g., "time_mlp").
             If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. The subnet must take as input a tuple of tensors (x, t, conditions).
+            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
             Noise schedule controlling the diffusion dynamics. Can be a string identifier,
             a schedule class, or a pre-initialized schedule instance. Default is "edm".
@@ -248,6 +239,7 @@ class DiffusionModel(InferenceNetwork):
         if log_snr_t is None:
             log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
             log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         subnet_out = self.subnet((xz, self._transform_log_snr(log_snr_t), conditions), training=training)

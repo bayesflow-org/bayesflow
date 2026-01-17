@@ -41,15 +41,6 @@ class FlowMatching(InferenceNetwork):
     [8] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
     """
 
-    MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-    }
-
     TIME_MLP_DEFAULT_CONFIG = {
         "widths": (256, 256, 256, 256, 256),
         "activation": "mish",
@@ -67,7 +58,7 @@ class FlowMatching(InferenceNetwork):
         "regularization": 0.1,
         "max_steps": 100,
         "atol": 1e-5,
-        "partial_ot_factor": 1.0,  # no partial OT
+        "partial_factor": 1.0,  # no partial OT
         "condition_ratio": 0.01,  # only used if conditions are provided
     }
 
@@ -105,7 +96,7 @@ class FlowMatching(InferenceNetwork):
             A neural network type for the flow matching model, will be instantiated using subnet_kwargs.
             If a string is provided, it should be a registered name (e.g., "time_mlp").
             If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. The subnet must take as input a tuple of tensors (x, t, conditions).
+            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
         base_distribution : str, optional
             The base probability distribution from which samples are drawn, such as "normal".
             Default is "normal".

@@ -59,7 +59,7 @@ class ConsistencyModel(InferenceNetwork):
             A neural network type for the consistency model, will be instantiated using subnet_kwargs.
             If a string is provided, it should be a registered name (e.g., "time_mlp").
             If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. The subnet must take as input a tuple of tensors (x, t, conditions).
+            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
         max_time : int or float, optional, default: 200.0
             The maximum time of the diffusion
         sigma2      : float or Tensor of dimension (input_dim, 1), optional, default: 1.0

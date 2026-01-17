@@ -62,7 +62,7 @@ class StableConsistencyModel(InferenceNetwork):
             The neural network architecture used for the consistency model.
             If a string is provided, it should be a registered name (e.g., "time_mlp").
             If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. The subnet must take as input a tuple of tensors (x, t, conditions).
+            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
         sigma : float, optional, default=1.0
             Standard deviation of the target distribution for the consistency loss.
             Controls the scale of the noise injected during training.

@@ -1,17 +1,20 @@
+from copy import deepcopy
 from typing import TypeAlias
 
 import networkx as nx
+from networkx.readwrite import json_graph
+
+from bayesflow.utils.serialization import serializable, serialize
 
 from .simulation_graph import SimulationGraph
 from .utils import has_open_path, merge_root_nodes
-
-from copy import deepcopy
 
 Node: TypeAlias = str
 SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
 
 
+@serializable("bayesflow.experimental")
 class ExpandedGraph(nx.DiGraph):
     """
     Directed graph with a similar structure as the graph defined in `SimulationGraph`,
@@ -21,9 +24,15 @@ class ExpandedGraph(nx.DiGraph):
     group-wise (enabling amortization over groups).
     """
 
-    def __init__(self, graph_data=None, *, simulation_graph: SimulationGraph):
-        super().__init__(graph_data)  # optionally initializing with existing data
+    def __init__(self, *, simulation_graph: SimulationGraph, graph_data=None, **kwargs):
+        super().__init__(**kwargs)  # optionally initializing with existing data
         self.simulation_graph = deepcopy(simulation_graph)
+
+        if graph_data is not None:
+            g = json_graph.node_link_graph(graph_data, directed=True, multigraph=False)
+
+            self.add_nodes_from(g.nodes(data=True))
+            self.add_edges_from(g.edges(data=True))
 
     def invert(self, merge_roots: bool = True):
         """
@@ -66,3 +75,20 @@ class ExpandedGraph(nx.DiGraph):
                     inverse.add_edge(node, x_j)
 
         return inverse
+
+    def get_config(self):
+        graph_data = json_graph.node_link_data(self)
+
+        config = {
+            "graph_data": graph_data,
+            "simulation_graph": self.simulation_graph,
+        }
+
+        return serialize(config)
+
+    @classmethod
+    def from_config(cls, config):
+        graph_data = config["graph_data"]
+        simulation_graph = SimulationGraph.from_config(config["simulation_graph"]["config"])
+
+        return cls(simulation_graph=simulation_graph, graph_data=graph_data)

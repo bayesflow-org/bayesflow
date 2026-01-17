@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
 from typing import TypeAlias
-
+import importlib
 import networkx as nx
 
 Node: TypeAlias = str
@@ -200,3 +200,29 @@ def merge_nodes(graph: nx.DiGraph, nodes: list[Node]):
     graph.nodes[new_name]["merged_from"] = nodes
 
     return graph
+
+
+def _retrieve_function_reference(fn) -> str:
+    """
+    Returns a string reference to a given (top-level) function. This is used to support serialization of graphs.
+    """
+    module = fn.__module__
+    qualified_name = fn.__qualname__
+
+    if "<locals>" in qualified_name:
+        raise ValueError(
+            f"Cannot serialize nested/closure functions. Please use a top-level function for '{qualified_name}'"
+        )
+
+    return f"{module}:{qualified_name}"
+
+
+def _import_function_from_reference(ref: str):
+    module_string, qualified_name = ref.split(":")
+    module = importlib.import_module(module_string)
+
+    obj = module
+    for part in qualified_name.split("."):
+        obj = getattr(obj, part)
+
+    return obj

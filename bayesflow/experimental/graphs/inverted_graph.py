@@ -2,7 +2,11 @@ from copy import deepcopy
 from typing import TypeAlias
 
 import networkx as nx
+from networkx.readwrite import json_graph
 
+from bayesflow.utils.serialization import serializable, serialize
+
+from .simulation_graph import SimulationGraph
 from .expanded_graph import ExpandedGraph
 from .utils import merge_root_nodes, sort_nodes_topologically
 
@@ -11,6 +15,7 @@ SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
 
 
+@serializable("bayesflow.experimental")
 class InvertedGraph(nx.DiGraph):
     """
     Directed graph representing the factorization of the joint posterior of a
@@ -20,11 +25,17 @@ class InvertedGraph(nx.DiGraph):
     dependency structure between variables.
     """
 
-    def __init__(self, graph_data=None, *, expanded_graph: ExpandedGraph):
-        super().__init__(graph_data=None)  # optionally initializing with existing data
+    def __init__(self, *, expanded_graph: ExpandedGraph, graph_data=None, **kwargs):
+        super().__init__(**kwargs)  # optionally initializing with existing data
 
         self.simulation_graph = deepcopy(expanded_graph.simulation_graph)
         self.expanded_graph = deepcopy(expanded_graph)
+
+        if graph_data is not None:
+            g = json_graph.node_link_graph(graph_data, directed=True, multigraph=False)
+
+            self.add_nodes_from(g.nodes(data=True))
+            self.add_edges_from(g.edges(data=True))
 
     def network_conditions(self) -> dict[int, list[SimulationNode]]:
         """
@@ -221,3 +232,20 @@ class InvertedGraph(nx.DiGraph):
             conditions[node] = list(self.predecessors(node))
 
         return conditions
+
+    def get_config(self):
+        graph_data = json_graph.node_link_data(self)
+
+        config = {
+            "graph_data": graph_data,
+            "expanded_graph": self.expanded_graph,
+        }
+
+        return serialize(config)
+
+    @classmethod
+    def from_config(cls, config):
+        graph_data = config["graph_data"]
+        expanded_graph = ExpandedGraph.from_config(config["expanded_graph"]["config"])
+
+        return cls(expanded_graph=expanded_graph, graph_data=graph_data)

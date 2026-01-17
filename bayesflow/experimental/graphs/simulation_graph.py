@@ -3,15 +3,25 @@ from copy import deepcopy
 from typing import Any, Callable, TypeAlias
 
 import networkx as nx
+from networkx.readwrite import json_graph
 import numpy as np
 
-from .utils import merge_root_nodes, sort_nodes_topologically, split_node
+from bayesflow.utils.serialization import serializable, serialize
+
+from .utils import (
+    merge_root_nodes,
+    sort_nodes_topologically,
+    split_node,
+    _retrieve_function_reference,
+    _import_function_from_reference,
+)
 
 Node: TypeAlias = str
 SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
 
 
+@serializable("bayesflow.experimental")
 class SimulationGraph(nx.DiGraph):
     """
     Directed acyclic graph defining a simulation composed of sampling nodes.
@@ -33,9 +43,15 @@ class SimulationGraph(nx.DiGraph):
         for nodes added via `add_node`.
     """
 
-    def __init__(self, meta_fn: Callable | None = None):
-        super().__init__()
+    def __init__(self, meta_fn: Callable | None = None, graph_data=None, **kwargs):
+        super().__init__(**kwargs)
         self.meta_fn = meta_fn
+
+        if graph_data is not None:
+            g = json_graph.node_link_graph(graph_data, directed=True, multigraph=False)
+
+            self.add_nodes_from(g.nodes(data=True))
+            self.add_edges_from(g.edges(data=True))
 
     def expand(self, merge_roots: bool = True):
         """
@@ -63,7 +79,7 @@ class SimulationGraph(nx.DiGraph):
                 if key not in graph.nodes[node]:
                     graph.nodes[node][key] = []
 
-        return ExpandedGraph(graph, simulation_graph=self)
+        return ExpandedGraph(simulation_graph=self, graph_data=json_graph.node_link_data(graph))
 
     def invert(self, merge_roots: bool = True):
         """
@@ -210,3 +226,35 @@ class SimulationGraph(nx.DiGraph):
         leaf_nodes = [n for n, d in self.out_degree() if d == 0]
 
         return leaf_nodes[0]
+
+    def get_config(self):
+        graph_data = json_graph.node_link_data(self)
+
+        for node in graph_data["nodes"]:
+            if "sample_fn" in node and node["sample_fn"] is not None:
+                node["sample_fn_ref"] = _retrieve_function_reference(node["sample_fn"])
+                del node["sample_fn"]
+
+        if self.meta_fn is not None:
+            meta_fn_ref = _retrieve_function_reference(self.meta_fn)
+        else:
+            meta_fn_ref = None
+
+        config = {"graph_data": graph_data, "meta_fn_ref": meta_fn_ref}
+        return serialize(config)
+
+    @classmethod
+    def from_config(cls, config):
+        graph_data = config["graph_data"]
+
+        for node in graph_data["nodes"]:
+            if "sample_fn_ref" in node and node["sample_fn_ref"] is not None:
+                node["sample_fn"] = _import_function_from_reference(node["sample_fn_ref"])
+                del node["sample_fn_ref"]
+
+        if config["meta_fn_ref"] is not None:
+            meta_fn = _import_function_from_reference(config["meta_fn_ref"])
+        else:
+            meta_fn = None
+
+        return cls(meta_fn=meta_fn, graph_data=graph_data)

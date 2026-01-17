@@ -113,6 +113,27 @@ def split_tensors(data: Mapping[any, Tensor], axis: int = -1) -> Mapping[any, Te
     return result
 
 
+def dim_maybe_nested(obj: Mapping | Tensor, axis: int = 0):
+    if isinstance(obj, dict):
+        sizes = [dim_maybe_nested(v) for v in obj.values()]
+        first = sizes[0]
+        for s in sizes[1:]:
+            if s != first:
+                raise ValueError(f"All array conditions must have same leading dimension, got {sizes}")
+        return first
+    else:
+        return obj.shape[axis]
+
+
+def slice_maybe_nested(obj: Mapping | Tensor, start: int, end: int):
+    """Slices a possibly nested dictionary of arrays along the first axis."""
+    if isinstance(obj, dict):
+        return {k: slice_maybe_nested(v, start, end) for k, v in obj.items()}
+    else:
+        # Assume sliceable
+        return obj[start:end]
+
+
 def split_arrays(data: Mapping[str, np.ndarray], axis: int = -1) -> Mapping[str, np.ndarray]:
     """Split tensors in the dictionary along the given axis."""
     result = {}

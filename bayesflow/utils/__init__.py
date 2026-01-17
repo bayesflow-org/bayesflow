@@ -24,6 +24,8 @@ from .dict_utils import (
     split_tensors,
     split_arrays,
     squeeze_inner_estimates_dict,
+    slice_maybe_nested,
+    dim_maybe_nested,
 )
 
 from .dispatch import (

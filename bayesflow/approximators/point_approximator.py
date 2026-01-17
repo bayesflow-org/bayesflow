@@ -10,6 +10,8 @@ from bayesflow.utils import (
     logging,
     filter_kwargs,
     split_arrays,
+    slice_maybe_nested,
+    dim_maybe_nested,
     squeeze_inner_estimates_dict,
     concatenate_valid,
     tree_concatenate,
@@ -138,7 +140,7 @@ class PointApproximator(ContinuousApproximator):
         conditions = self._prepare_data(conditions, **kwargs)
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
-        num_conditions = self._infer_condition_size(conditions) if len(conditions) > 0 else 1
+        num_conditions = dim_maybe_nested(conditions, axis=0) if len(conditions) > 0 else 1
 
         # If no batching requested, pretend everything is one batch
         if batch_size is None:
@@ -149,7 +151,7 @@ class PointApproximator(ContinuousApproximator):
             if len(conditions) == 0:
                 batch_conditions = {}
             else:
-                batch_conditions = {k: v[i : i + batch_size] for k, v in conditions.items()}
+                batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
 
             batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
             samples.append(batch_samples)
@@ -312,7 +314,7 @@ class PointApproximator(ContinuousApproximator):
         return squeezed
 
     @staticmethod
-    def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
+    def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray | dict[str, np.ndarray]:
         """Squeezes the dictionary to just the value if there is only one key-value pair."""
         if len(samples) == 1:
             # Extract and return the only item's value

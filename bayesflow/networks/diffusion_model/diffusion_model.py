@@ -15,7 +15,6 @@ from bayesflow.utils import (
     integrate,
     integrate_stochastic,
     logging,
-    tensor_utils,
     STOCHASTIC_METHODS,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
@@ -31,15 +30,6 @@ class DiffusionModel(InferenceNetwork):
     [1] Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025).
     Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.
     """
-
-    MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-    }
 
     TIME_MLP_DEFAULT_CONFIG = {
         "widths": (256, 256, 256, 256, 256),
@@ -80,8 +70,10 @@ class DiffusionModel(InferenceNetwork):
         Parameters
         ----------
         subnet : str, type or keras.Layer, optional
-            Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "time_mlp".
+            A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
+            If a string is provided, it should be a registered name (e.g., "time_mlp").
+            If a type or keras.Layer is provided, it will be directly instantiated
+            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
             Noise schedule controlling the diffusion dynamics. Can be a string identifier,
             a schedule class, or a pre-initialized schedule instance. Default is "edm".
@@ -95,7 +87,6 @@ class DiffusionModel(InferenceNetwork):
             Additional keyword arguments passed to the noise schedule constructor. Default is None.
         integrate_kwargs : dict[str, any], optional
             Configuration dictionary for integration during training or inference. Default is None.
-
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
         """
@@ -123,15 +114,9 @@ class DiffusionModel(InferenceNetwork):
         self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", False)
-
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = DiffusionModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
-        elif subnet == "mlp":
-            subnet_kwargs = DiffusionModel.MLP_DEFAULT_CONFIG | subnet_kwargs
-            self._concatenate_subnet_input = True
-
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None
@@ -148,22 +133,10 @@ class DiffusionModel(InferenceNetwork):
             name="output_projector",
         )
 
-        input_shape = list(xz_shape)
-
-        if self._concatenate_subnet_input:
-            # construct time vector
-            input_shape[-1] += 1
-            if conditions_shape is not None:
-                input_shape[-1] += conditions_shape[-1]
-            input_shape = tuple(input_shape)
-
-            self.subnet.build(input_shape)
-            out_shape = self.subnet.compute_output_shape(input_shape)
-        else:
-            # Multiple separate inputs
-            time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build((xz_shape, time_shape, conditions_shape))
-            out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
+        # construct input shape for subnet and subnet projector
+        time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+        self.subnet.build((xz_shape, time_shape, conditions_shape))
+        out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)
 
@@ -177,7 +150,6 @@ class DiffusionModel(InferenceNetwork):
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
-            "concatenate_subnet_input": self._concatenate_subnet_input,
             # we do not need to store subnet_kwargs
         }
         return base_config | serialize(config)
@@ -230,34 +202,6 @@ class DiffusionModel(InferenceNetwork):
             case _:
                 raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
-    def _apply_subnet(
-        self, xz: Tensor, log_snr: Tensor, conditions: Tensor = None, training: bool = False
-    ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
-        """
-        Prepares and passes the input to the subnet either by concatenating the latent variable `xz`,
-        the signal-to-noise ratio `log_snr`, and optional conditions or by returning them separately.
-
-        Parameters
-        ----------
-        xz : Tensor
-            The noisy input tensor for the diffusion model, typically of shape (..., D), but can vary.
-        log_snr : Tensor
-            The log signal-to-noise ratio tensor, typically of shape (..., 1).
-        conditions : Tensor, optional
-            The optional conditioning tensor (e.g. parameters).
-        training : bool, optional
-            The training mode flag, which can be used to control behavior during training.
-
-        Returns
-        -------
-        Tensor
-            The output tensor from the subnet.
-        """
-        if self._concatenate_subnet_input:
-            xtc = tensor_utils.concatenate_valid([xz, log_snr, conditions], axis=-1)
-            return self.subnet(xtc, training=training)
-        return self.subnet((xz, log_snr, conditions), training=training)
-
     def score(
         self,
         xz: Tensor,
@@ -295,11 +239,10 @@ class DiffusionModel(InferenceNetwork):
         if log_snr_t is None:
             log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
             log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
-        subnet_out = self._apply_subnet(
-            xz, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
-        )
+        subnet_out = self.subnet((xz, self._transform_log_snr(log_snr_t), conditions), training=training)
         pred = self.output_projector(subnet_out, training=training)
 
         x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
@@ -574,9 +517,7 @@ class DiffusionModel(InferenceNetwork):
         diffused_x = alpha_t * x + sigma_t * eps_t
 
         # calculate output of the network
-        subnet_out = self._apply_subnet(
-            diffused_x, self._transform_log_snr(log_snr_t), conditions=conditions, training=training
-        )
+        subnet_out = self.subnet((diffused_x, self._transform_log_snr(log_snr_t), conditions), training=training)
         pred = self.output_projector(subnet_out, training=training)
 
         x_pred = self.convert_prediction_to_x(

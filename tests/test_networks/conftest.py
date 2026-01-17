@@ -8,21 +8,8 @@ def diffusion_model_edm_F():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        concatenate_subnet_input=True,
+        subnet_kwargs=dict(widths=[8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 250},
-        noise_schedule="edm",
-        prediction_type="F",
-    )
-
-
-@pytest.fixture()
-def diffusion_model_edm_F_subnet_separate_inputs():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet="time_mlp",
-        integrate_kwargs={"method": "rk45", "steps": 4},
         noise_schedule="edm",
         prediction_type="F",
     )
@@ -33,8 +20,7 @@ def diffusion_model_edm_velocity():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        concatenate_subnet_input=True,
+        subnet_kwargs=dict(widths=[8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="edm",
         prediction_type="velocity",
@@ -46,8 +32,7 @@ def diffusion_model_edm_noise():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        concatenate_subnet_input=True,
+        subnet_kwargs=dict(widths=[8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="edm",
         prediction_type="noise",
@@ -59,8 +44,7 @@ def diffusion_model_cosine_F():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        concatenate_subnet_input=True,
+        subnet_kwargs=dict(widths=[8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="cosine",
         prediction_type="F",
@@ -72,8 +56,7 @@ def diffusion_model_cosine_velocity():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        concatenate_subnet_input=True,
+        subnet_kwargs=dict(widths=[8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="cosine",
         prediction_type="velocity",
@@ -85,8 +68,7 @@ def diffusion_model_cosine_noise():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        concatenate_subnet_input=True,
+        subnet_kwargs=dict(widths=[8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 250},
         noise_schedule="cosine",
         prediction_type="noise",
@@ -98,31 +80,19 @@ def flow_matching():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
-        subnet=MLP([8, 8]),
-        concatenate_subnet_input=True,
+        subnet_kwargs=dict(widths=[8, 8]),
         integrate_kwargs={"method": "rk45", "steps": 100},
     )
-
-
-@pytest.fixture()
-def flow_matching_subnet_separate_inputs():
-    from bayesflow.networks import FlowMatching
-
-    return FlowMatching(subnet="time_mlp", integrate_kwargs={"method": "rk45", "steps": 4})
 
 
 @pytest.fixture()
 def consistency_model():
     from bayesflow.networks import ConsistencyModel
 
-    return ConsistencyModel(total_steps=100, subnet=MLP([8, 8]), concatenate_subnet_input=True)
-
-
-@pytest.fixture()
-def consistency_model_subnet_separate_inputs():
-    from bayesflow.networks import ConsistencyModel
-
-    return ConsistencyModel(total_steps=4, subnet="time_mlp")
+    return ConsistencyModel(
+        total_steps=100,
+        subnet_kwargs=dict(widths=[8, 8]),
+    )
 
 
 @pytest.fixture()
@@ -258,18 +228,6 @@ def inference_network_subnet(request):
     scope="function",
 )
 def generative_inference_network(request):
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(
-    params=[
-        pytest.param("flow_matching_subnet_separate_inputs"),
-        pytest.param("consistency_model_subnet_separate_inputs"),
-        pytest.param("diffusion_model_edm_F_subnet_separate_inputs"),
-    ],
-    scope="function",
-)
-def inference_network_subnet_separate_inputs(request):
     return request.getfixturevalue(request.param)
 
 

@@ -592,8 +592,12 @@ class ContinuousApproximator(Approximator):
         # Deal with trailing structural dimensions
         if sample_shape == "infer":
             if inference_conditions is None:
-                raise ValueError("sample_shape='infer' requires inference_conditions to be provided.")
-            sample_shape = keras.ops.shape(inference_conditions)[1:-1]
+                logging.warn(
+                    "No conditions to infer sample_shape from. Assuming no structural dimensions (e.g., time, etc.)"
+                )
+                sample_shape = ()
+            else:
+                sample_shape = keras.ops.shape(inference_conditions)[1:-1]
 
         elif isinstance(sample_shape, int):
             sample_shape = (sample_shape,)

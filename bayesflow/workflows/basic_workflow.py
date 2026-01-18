@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence, Callable
+from typing import Literal, Tuple
 
 import os
 
@@ -263,7 +264,9 @@ class BasicWorkflow(Workflow):
         *,
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
+        split: bool = False,
         batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -277,9 +280,20 @@ class BasicWorkflow(Workflow):
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
         batch_size : int or None, optional
             If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
             sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
         **kwargs : dict, optional
             Additional keyword arguments passed to the approximator's sampling function.
 
@@ -289,7 +303,14 @@ class BasicWorkflow(Workflow):
             A dictionary where keys correspond to variable names and
             values are arrays containing the generated samples.
         """
-        return self.approximator.sample(num_samples=num_samples, conditions=conditions, batch_size=batch_size, **kwargs)
+        return self.approximator.sample(
+            num_samples=num_samples,
+            conditions=conditions,
+            split=split,
+            batch_size=batch_size,
+            sample_shape=sample_shape,
+            **kwargs,
+        )
 
     def estimate(
         self,

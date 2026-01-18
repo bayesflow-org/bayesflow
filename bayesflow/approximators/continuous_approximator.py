@@ -592,7 +592,7 @@ class ContinuousApproximator(Approximator):
         # Deal with trailing structural dimensions
         if sample_shape == "infer":
             if inference_conditions is None:
-                logging.warn(
+                logging.warning(
                     "No conditions to infer sample_shape from. Assuming no structural dimensions (e.g., time, etc.)"
                 )
                 sample_shape = ()

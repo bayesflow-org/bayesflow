@@ -63,7 +63,7 @@ class DiagonalStudentT(Distribution):
 
         self.seed_generator = seed_generator or keras.random.SeedGenerator()
 
-        self.dims = None
+        self.dim = None
         self._loc = None
         self._scale = None
 
@@ -71,11 +71,11 @@ class DiagonalStudentT(Distribution):
         if self.built:
             return
 
-        self.dims = tuple(input_shape[1:])
+        self.dim = input_shape[-1]
 
         # convert to tensor and broadcast if necessary
-        self.loc = ops.cast(ops.broadcast_to(self.loc, self.dims), "float32")
-        self.scale = ops.cast(ops.broadcast_to(self.scale, self.dims), "float32")
+        self.loc = ops.cast(ops.broadcast_to(self.loc, self.dim), "float32")
+        self.scale = ops.cast(ops.broadcast_to(self.scale, self.dim), "float32")
 
         if self.trainable_parameters:
             self._loc = self.add_weight(
@@ -96,14 +96,14 @@ class DiagonalStudentT(Distribution):
 
     def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
         mahalanobis_term = ops.sum((samples - self._loc) ** 2 / self._scale**2, axis=-1)
-        result = -0.5 * (self.df + sum(self.dims)) * ops.log1p(mahalanobis_term / self.df)
+        result = -0.5 * (self.df + self.dim) * ops.log1p(mahalanobis_term / self.df)
 
         if normalize:
             log_normalization_constant = (
-                -0.5 * sum(self.dims) * math.log(self.df)
-                - 0.5 * sum(self.dims) * math.log(math.pi)
+                -0.5 * sum(self.dim) * math.log(self.df)
+                - 0.5 * sum(self.dim) * math.log(math.pi)
                 - math.lgamma(0.5 * self.df)
-                + math.lgamma(0.5 * (self.df + sum(self.dims)))
+                + math.lgamma(0.5 * (self.df + self.dim))
                 - ops.sum(keras.ops.log(self._scale))
             )
             result += log_normalization_constant
@@ -119,10 +119,10 @@ class DiagonalStudentT(Distribution):
 
         # The chi-quare samples need to be repeated across self.dim
         # since for each element of batch_shape only one sample is created.
-        chi2_samples = expand_tile(chi2_samples, n=sum(self.dims), axis=-1)
-        chi2_samples = keras.ops.reshape(chi2_samples, batch_shape + self.dims)
+        chi2_samples = expand_tile(chi2_samples, n=self.dim, axis=-1)
+        chi2_samples = keras.ops.reshape(chi2_samples, batch_shape + (self.dim,))
 
-        normal_samples = keras.random.normal(batch_shape + self.dims, seed=self.seed_generator)
+        normal_samples = keras.random.normal(batch_shape + (self.dim,), seed=self.seed_generator)
 
         return self._loc + self._scale * normal_samples * ops.sqrt(self.df / chi2_samples)
 

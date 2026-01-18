@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence, Callable
+from typing import Literal, Tuple
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -432,6 +433,7 @@ class ContinuousApproximator(Approximator):
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
         batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -449,6 +451,15 @@ class ContinuousApproximator(Approximator):
         batch_size : int or None, optional
             If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
             sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
         **kwargs : dict
             Additional keyword arguments for the adapter and sampling process.
 
@@ -473,7 +484,9 @@ class ContinuousApproximator(Approximator):
             else:
                 batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
 
-            batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
+            batch_samples = self._sample(
+                num_samples=num_samples, **batch_conditions, sample_shape=sample_shape, **kwargs
+            )
             samples.append(batch_samples)
 
         samples = tree_concatenate(samples, axis=0)
@@ -541,6 +554,7 @@ class ContinuousApproximator(Approximator):
         num_samples: int,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        sample_shape: Literal["infer"] | Sequence[int] = "infer",
         **kwargs,
     ) -> Tensor:
         if self.summary_network is None:
@@ -574,6 +588,25 @@ class ContinuousApproximator(Approximator):
             batch_shape = (batch_size * num_samples,)
         else:
             batch_shape = (num_samples,)
+
+        # Deal with trailing structural dimensions
+        if sample_shape == "infer":
+            if inference_conditions is None:
+                raise ValueError("sample_shape='infer' requires inference_conditions to be provided.")
+            sample_shape = keras.ops.shape(inference_conditions)[1:-1]
+
+        elif isinstance(sample_shape, int):
+            sample_shape = (sample_shape,)
+
+        elif isinstance(sample_shape, (tuple, list)):
+            sample_shape = tuple(sample_shape)
+
+        else:
+            raise ValueError(
+                f"sample_shape must be 'infer', an int, or a tuple/list of ints, but got {type(sample_shape)}."
+            )
+
+        batch_shape += sample_shape
 
         samples = self.inference_network.sample(
             batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)

@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import time
 
 import keras
 
@@ -14,7 +15,7 @@ from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ContinuousApproximator, PointApproximator
 from bayesflow.types import Shape
-from bayesflow.utils import find_inference_network, find_summary_network, logging
+from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration
 from bayesflow.diagnostics import metrics as bf_metrics
 from bayesflow.diagnostics import plots as bf_plots
 
@@ -262,6 +263,7 @@ class BasicWorkflow(Workflow):
         *,
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
+        batch_size: int | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -275,6 +277,9 @@ class BasicWorkflow(Workflow):
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs : dict, optional
             Additional keyword arguments passed to the approximator's sampling function.
 
@@ -284,7 +289,7 @@ class BasicWorkflow(Workflow):
             A dictionary where keys correspond to variable names and
             values are arrays containing the generated samples.
         """
-        return self.approximator.sample(num_samples=num_samples, conditions=conditions, **kwargs)
+        return self.approximator.sample(num_samples=num_samples, conditions=conditions, batch_size=batch_size, **kwargs)
 
     def estimate(
         self,
@@ -978,9 +983,12 @@ class BasicWorkflow(Workflow):
             self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
 
         try:
+            start_time = time.perf_counter()
             self.history = self.approximator.fit(
                 dataset=dataset, epochs=epochs, validation_data=validation_data, **kwargs
             )
+            elapsed = time.perf_counter() - start_time
+            logging.info(f"Training completed in {format_duration(elapsed)}.")
             self._on_training_finished()
             return self.history
         finally:

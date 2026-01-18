@@ -1,6 +1,7 @@
 from collections.abc import Mapping, Sequence, Callable
 
 import numpy as np
+from tqdm.auto import tqdm
 
 import keras
 
@@ -8,12 +9,15 @@ from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
-    filter_kwargs,
     logging,
+    filter_kwargs,
     split_arrays,
+    slice_maybe_nested,
+    dim_maybe_nested,
     squeeze_inner_estimates_dict,
     concatenate_valid,
     concatenate_valid_shapes,
+    tree_concatenate,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -345,6 +349,7 @@ class ContinuousApproximator(Approximator):
         split: bool = False,
         estimators: Mapping[str, Callable] = None,
         num_samples: int = 1000,
+        batch_size: int = None,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
         """
@@ -374,6 +379,9 @@ class ContinuousApproximator(Approximator):
                   then rearranges the axes for convenience.
         num_samples : int, optional
             The number of samples to generate for each variable. The default is 1000.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs
             Additional keyword arguments passed to the ``sample`` method.
 
@@ -395,7 +403,9 @@ class ContinuousApproximator(Approximator):
             | estimators
         )
 
-        samples = self.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+        samples = self.sample(
+            num_samples=num_samples, conditions=conditions, split=split, batch_size=batch_size, **kwargs
+        )
 
         estimates = {
             variable_name: {
@@ -421,6 +431,7 @@ class ContinuousApproximator(Approximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
+        batch_size: int | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -434,8 +445,10 @@ class ContinuousApproximator(Approximator):
         conditions : dict[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
         split : bool, default=False
-            Whether to split the output arrays along the last axis and return one column vector per target variable
-            samples.
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs : dict
             Additional keyword arguments for the adapter and sampling process.
 
@@ -444,26 +457,42 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        # Adapt, optionally standardize and convert conditions to tensor
         conditions = self._prepare_data(conditions, **kwargs)
-
-        # Remove any superfluous keys, just retain actual conditions
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
-        # Sample and undo optional standardization
-        samples = self._sample(num_samples=num_samples, **conditions, **kwargs)
+        num_conditions = dim_maybe_nested(conditions, axis=0) if len(conditions) > 0 else 1
 
+        # If no batching requested, pretend everything is one batch
+        if batch_size is None:
+            batch_size = num_conditions
+
+        samples = []
+        for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
+            if len(conditions) == 0:
+                batch_conditions = {}
+            else:
+                batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
+
+            batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
+            samples.append(batch_samples)
+
+        samples = tree_concatenate(samples, axis=0)
+
+        # Optionally unstandardize and back-transform samples via adapter
+        samples = self._post_process_samples(samples)
+        samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
+
+        if split:
+            samples = split_arrays(samples, axis=-1)
+        return samples
+
+    def _post_process_samples(self, samples: Tensor | Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
+        """Undo optional standardization and make dict of samples."""
         if "inference_variables" in self.standardize:
             samples = self.standardize_layers["inference_variables"](samples, forward=False)
 
         samples = {"inference_variables": samples}
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
-
-        # Back-transform quantities and samples
-        samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
-
-        if split:
-            samples = split_arrays(samples, axis=-1)
         return samples
 
     def _prepare_data(

@@ -67,8 +67,8 @@ class DiagonalNormal(Distribution):
 
         self.dim = input_shape[-1]
 
-        self.mean = ops.cast(ops.broadcast_to(self.mean, self.dim), "float32")
-        self.std = ops.cast(ops.broadcast_to(self.std, self.dim), "float32")
+        self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), "float32")
+        self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), "float32")
 
         if self.trainable_parameters:
             self._mean = self.add_weight(

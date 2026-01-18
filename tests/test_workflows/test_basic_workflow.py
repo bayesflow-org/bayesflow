@@ -69,5 +69,5 @@ def test_basic_workflow_fusion(
     test_conditions = workflow.simulate(3)
     samples = loaded_approximator.sample(conditions=test_conditions, num_samples=4)
     batched_samples = loaded_approximator.sample(conditions=test_conditions, num_samples=4, batch_size=2)
-    assert samples["parameters"].shape == (3, 4, 2)
-    assert batched_samples["parameters"].shape == samples["parameters"].shape
+    assert samples["mean"].shape == (3, 4, 2)
+    assert batched_samples["mean"].shape == samples["mean"].shape

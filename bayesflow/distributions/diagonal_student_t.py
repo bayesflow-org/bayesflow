@@ -100,8 +100,8 @@ class DiagonalStudentT(Distribution):
 
         if normalize:
             log_normalization_constant = (
-                -0.5 * sum(self.dim) * math.log(self.df)
-                - 0.5 * sum(self.dim) * math.log(math.pi)
+                -0.5 * self.dim * math.log(self.df)
+                - 0.5 * self.dim * math.log(math.pi)
                 - math.lgamma(0.5 * self.df)
                 + math.lgamma(0.5 * (self.df + self.dim))
                 - ops.sum(keras.ops.log(self._scale))

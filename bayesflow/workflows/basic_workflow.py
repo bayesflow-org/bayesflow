@@ -214,8 +214,8 @@ class BasicWorkflow(Workflow):
         Parameters
         ----------
         batch_shape : Shape
-            The shape of the batch to be simulated. Typically an integer for simple simulators.
-        **kwargs : dict, optional
+            The shape of the batch to be simulated. Typically, an integer for simple simulators.
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the simulator's sample method.
 
         Returns
@@ -240,8 +240,8 @@ class BasicWorkflow(Workflow):
         Parameters
         ----------
         batch_shape : Shape
-            The shape of the batch to be simulated. Typically an integer for simple simulators.
-        **kwargs : dict, optional
+            The shape of the batch to be simulated. Typically, an integer for simple simulators.
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the simulator's sample method.
 
         Returns
@@ -294,7 +294,7 @@ class BasicWorkflow(Workflow):
             dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
             then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
             `(num_conditions, num_samples, time, target_dim)`.
-        **kwargs : dict, optional
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the approximator's sampling function.
 
         Returns
@@ -329,7 +329,7 @@ class BasicWorkflow(Workflow):
         ----------
         conditions : Mapping[str, np.ndarray]
             A dictionary mapping variable names to arrays representing the conditions for the estimation process.
-        **kwargs
+        **kwargs : dict | str
             Additional keyword arguments passed to underlying processing functions.
 
         Returns
@@ -359,7 +359,7 @@ class BasicWorkflow(Workflow):
         data : Mapping[str, np.ndarray]
             A dictionary where keys represent variable names and values are arrays corresponding to the variables'
             realizations.
-        **kwargs : dict, optional
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the approximator's log probability function.
 
         Returns

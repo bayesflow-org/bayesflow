@@ -108,15 +108,15 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     from bayesflow.utils import jacobian
 
     try:
+        if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
+            # jax backend does not support adaptive solvers for jacobian computation yet
+            if generative_inference_network.integrate_kwargs["steps"] == "adaptive":
+                generative_inference_network.integrate_kwargs.update({"steps": 250})
+
         output, log_density = generative_inference_network(random_samples, conditions=random_conditions, density=True)
     except NotImplementedError:
         # network does not support density estimation
         return
-
-    if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
-        # jax backend does not support adaptive solvers for jacobian computation yet
-        if generative_inference_network.integrate_kwargs.steps == "adaptive":
-            generative_inference_network.integrate_kwargs.update({"steps": 250})
 
     def f(x):
         return generative_inference_network(x, conditions=random_conditions)

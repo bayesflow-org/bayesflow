@@ -188,17 +188,22 @@ class DiffusionModel(InferenceNetwork):
         match self._prediction_type:
             case "velocity":
                 return alpha_t * z - sigma_t * pred
+
             case "noise":
                 return (z - sigma_t * pred) / alpha_t
+
             case "F":
                 sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
                 x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
                 x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
                 return x1 * z + x2 * pred
+
             case "x":
                 return pred
+
             case "score":
                 return (z + sigma_t**2 * pred) / alpha_t
+
             case _:
                 raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
@@ -231,42 +236,51 @@ class DiffusionModel(InferenceNetwork):
             Whether the model is in training mode. Affects behavior of dropout, batch norm,
             or other stochastic layers. Default is False.
         **kwargs
-            Additional keyword arguments for custom guidance.
+            Additional keyword arguments for custom guidance. The following dicts can be provided:
+
+            guidance_constraints, containing any of the following keys:
+
+            - constraints: Required constraint functions or a single function of xz
+            - guidance_strength (float, optional): Strength of the constraint guidance.
+            Defaults to 1.0.
+            - scaling_function (callable, optional): Optional function to scale constraint
+            values. Defaults to None.
+            - reduce (str or callable, optional): Reduction method applied to constraints.
+            Defaults to "sum".
+
+            guidance_function: a function that takes x and time as keyword arguments and
+            returns a guidance signal.
 
         Returns
         -------
         Tensor
             The velocity tensor of the same shape as `xz`, representing the right-hand
-            side of the SDE or ODE at the given `time`.
+            side of the probability-flow SDE or ODE at the given `time`.
         """
         if log_snr_t is None:
             log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
             log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
         if time is None:
             time = self.noise_schedule.get_t_from_log_snr(log_snr_t, training=training)
 
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         subnet_out = self.subnet((xz, self._transform_log_snr(log_snr_t), conditions), training=training)
-        pred = self.output_projector(subnet_out, training=training)
+        pred = self.output_projector(subnet_out)
 
         x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
 
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
-        constraint_guidance = kwargs.get("constraint_guidance", None)
-        if constraint_guidance is not None:
-            guidance = self.constraint_guidance_term(
-                x=x_pred,
-                time=time,
-                constraints=constraint_guidance["constraints"],
-                guidance_strength=constraint_guidance.get("guidance_strength", 1.0),
-                scaling_function=constraint_guidance.get("scaling_function", None),
-                reduce=constraint_guidance.get("reduce", "sum"),
-            )
+        # Optional constraints for guidance
+        guidance_constraints = kwargs.get("guidance_constraints", None)
+        if guidance_constraints is not None:
+            guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
             score = score + guidance
 
-        guidance_function: Callable | None = kwargs.get("guidance_function", None)
+        # Optional guidance function
+        guidance_function = kwargs.get("guidance_function", None)
         if guidance_function is not None:
             guidance = guidance_function(x=x_pred, time=time)
             score = score + guidance
@@ -540,7 +554,7 @@ class DiffusionModel(InferenceNetwork):
 
         # calculate output of the network
         subnet_out = self.subnet((diffused_x, self._transform_log_snr(log_snr_t), conditions), training=training)
-        pred = self.output_projector(subnet_out, training=training)
+        pred = self.output_projector(subnet_out)
 
         x_pred = self.convert_prediction_to_x(
             pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
@@ -551,10 +565,12 @@ class DiffusionModel(InferenceNetwork):
             case "noise":
                 noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
                 loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
+
             case "velocity":
                 velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
                 v_t = alpha_t * eps_t - sigma_t * x
                 loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
+
             case "F":
                 sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
                 x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
@@ -562,6 +578,7 @@ class DiffusionModel(InferenceNetwork):
                 f_pred = x1 * x_pred - x2 * diffused_x
                 f_t = x1 * x - x2 * diffused_x
                 loss = weights_for_snr * ops.mean((f_pred - f_t) ** 2, axis=-1)
+
             case _:
                 raise ValueError(f"Unknown loss type: {self._loss_type}")
 
@@ -570,30 +587,30 @@ class DiffusionModel(InferenceNetwork):
         base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
         return base_metrics | {"loss": loss}
 
-    def constraint_guidance_term(
+    def guidance_constraint_term(
         self,
         x: Tensor,
         time: Tensor,
-        constraints: Callable | list[Callable],
-        guidance_strength: float,
+        constraints: Callable | Sequence[Callable],
+        guidance_strength: float = 1.0,
         scaling_function: Callable | None = None,
         reduce: Literal["sum", "mean"] = "sum",
     ) -> Tensor:
         """
         Backend-agnostic implementation of:
-            ∇_x Σ_k log sigmoid( -s(t) * c_k(x) )
+            `∇_x Σ_k log sigmoid( -s(t) * c_k(x) )`
 
         Parameters
         ----------
         x : Tensor
-            The denoised data at time t.
+            The denoised target at time t.
         time : Tensor
             The time corresponding to x.
-        constraints : Callable or list[Callable]
-            A single constraint function or a list of constraint functions.
+        constraints : Callable or Sequence[Callable]
+            A single constraint function or a list/tuple of constraint functions.
             Each function should take x as input and return a tensor of constraint values.
-        guidance_strength : float
-            A scaling factor for the guidance term.
+        guidance_strength : float, optional
+            A positive scaling factor for the guidance term. Default is 1.0.
         scaling_function : Callable, optional
             A function that takes time t as input and returns a scaling factor s(t).
             If None, a default scaling based on the noise schedule is used. Default is None.
@@ -605,10 +622,8 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             The computed guidance term of the same shape as zt.
         """
-        if guidance_strength <= 0:
-            return keras.ops.zeros_like(x)
 
-        if not isinstance(constraints, list):
+        if not isinstance(constraints, Sequence):
             constraints = [constraints]
 
         if scaling_function is None:
@@ -628,34 +643,32 @@ class DiffusionModel(InferenceNetwork):
 
         backend = keras.backend.backend()
 
-        if backend == "jax":
-            import jax
+        match backend:
+            case "jax":
+                import jax
 
-            grad = jax.grad(objective_fn)(x)
+                grad = jax.grad(objective_fn)(x)
 
-        elif backend == "tensorflow":
-            import tensorflow as tf
+            case "tensorflow":
+                import tensorflow as tf
 
-            with tf.GradientTape() as tape:
-                tape.watch(x)
-                objective = objective_fn(x)
-            grad = tape.gradient(objective, x)
+                with tf.GradientTape() as tape:
+                    tape.watch(x)
+                    objective = objective_fn(x)
+                grad = tape.gradient(objective, x)
 
-        elif backend == "torch":
-            import torch
+            case "torch":
+                import torch
 
-            with torch.enable_grad():
-                x_grad = x.clone().detach().requires_grad_(True)
+                with torch.enable_grad():
+                    x_grad = x.clone().detach().requires_grad_(True)
+                    objective = objective_fn(x_grad)
+                    grad = torch.autograd.grad(
+                        outputs=objective,
+                        inputs=x_grad,
+                    )[0]
 
-                objective = objective_fn(x_grad)
-
-                # Compute gradient
-                grad = torch.autograd.grad(
-                    outputs=objective,
-                    inputs=x_grad,
-                )[0]
-
-        else:
-            raise NotImplementedError(f"Unsupported backend: {backend}")
+            case _:
+                raise NotImplementedError(f"Unsupported backend: {backend}")
 
         return guidance_strength * grad

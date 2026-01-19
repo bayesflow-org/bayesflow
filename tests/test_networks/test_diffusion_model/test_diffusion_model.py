@@ -31,15 +31,15 @@ def test_diffusion_guidance():
     from bayesflow.simulators import TwoMoons
 
     workflow = BasicWorkflow(
-        inference_network=DiffusionModel(subnet_kwargs=dict(widths={8, 8})),
+        inference_network=DiffusionModel(subnet_kwargs=dict(widths=(8, 8))),
         inference_variables=["parameters"],
         inference_conditions=["observables"],
         simulator=TwoMoons(),
     )
 
-    workflow.fit_online(epochs=2, batch_size=3, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=2, batch_size=2, num_batches_per_epoch=2, verbose=0)
     test_conditions = workflow.simulate(5)
-    samples = workflow.sample(num_samples=10, conditions=test_conditions)["parameters"]
+    samples = workflow.sample(num_samples=2, conditions=test_conditions)["parameters"]
 
     def constraint(z):
         params = workflow.approximator.standardize_layers["inference_variables"](z, forward=False)
@@ -47,7 +47,7 @@ def test_diffusion_guidance():
         return a1  # a1 < 0, pick one moon
 
     samples_guided = workflow.sample(
-        num_samples=10, conditions=test_conditions, constraint_guidance=dict(constraints=constraint)
+        num_samples=10, conditions=test_conditions, guidance_constraints=dict(constraints=constraint)
     )["parameters"]
     assert samples_guided.shape == samples.shape
     assert (samples_guided[..., 0] < 0).all()
@@ -56,6 +56,6 @@ def test_diffusion_guidance():
         return x * 0  # dummy function
 
     samples_guided_func = workflow.sample(
-        num_samples=10, conditions=test_conditions, guidance_function=guidance_function
+        num_samples=2, conditions=test_conditions, guidance_function=guidance_function
     )["parameters"]
     assert samples_guided_func.shape == samples.shape

@@ -2,9 +2,12 @@ from collections.abc import Mapping, Sequence
 
 import keras
 import numpy as np
-from ...distributions import DiagonalNormal
+
+from bayesflow.utils.serialization import deserialize, serializable, serialize
+
 from ...adapters import Adapter
 from ...approximators import Approximator
+from ...distributions import DiagonalNormal
 from ...networks import InferenceNetwork, SummaryNetwork
 from ...networks.standardization import Standardization
 from ..graphical_simulator import SimulationOutput
@@ -14,9 +17,8 @@ from .utils import (
     inference_conditions_by_network,
     inference_variable_shapes_by_network,
     inference_variables_by_network,
-    prepare_inference_conditions,
-    prepare_inference_variables,
     meta_dict_from_data_shapes,
+    prepare_inference_conditions,
     split_network_output,
     summary_input_shapes_by_network,
     summary_inputs_by_network,
@@ -24,6 +26,7 @@ from .utils import (
 )
 
 
+@serializable("bayesflow.experimental")
 class GraphicalApproximator(Approximator):
     """
     Amortized inference for probabilistic models defined by directed acyclic graphs.
@@ -85,6 +88,22 @@ class GraphicalApproximator(Approximator):
             self.standardize_layers = None
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**deserialize(config))
+
+    def get_config(self):
+        base_config = super().get_config()
+        config = {
+            "graph": self.graph,
+            "adapter": self.adapter,
+            "inference_networks": self.inference_networks,
+            "summary_networks": self.summary_networks,
+            "standardize": self.standardize,
+        }
+
+        return base_config | serialize(config)
 
     def build(self, data_shapes: dict[str, tuple[int]]) -> None:
         # build summary networks

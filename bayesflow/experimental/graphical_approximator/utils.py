@@ -240,7 +240,7 @@ def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Ma
 
 def add_node_reps_to_conditions(conditions, repetitions: Mapping[str, int]):
     """
-    Appends node repetition features to a conditions tensor.
+    Appends node repetition features (sqrt of node repetitons) to a conditions tensor.
     """
     rep_values = keras.ops.convert_to_tensor(list(repetitions.values()))
     squared = keras.ops.sqrt(rep_values)
@@ -435,9 +435,8 @@ def repetitions_from_data_shape(approximator: "GraphicalApproximator", data_shap
 
     repetitions = {}
 
-    # looping in reverse for easier indexing
     for i, variable in enumerate(shape_order):
-        repetitions[variable] = summary_input_shape[i - len(shape_order) - 1]
+        repetitions[variable] = summary_input_shape[1:-1][i]  # skip batch and and variable dimension
 
     return repetitions
 

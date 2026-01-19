@@ -369,9 +369,9 @@ class DiffusionModel(InferenceNetwork):
 
         if integrate_kwargs["method"] in STOCHASTIC_METHODS:
             logging.warning(
-                "Stochastic methods are not supported for forward integration."
-                " Falling back to ODE solver."
-                " Use one of the deterministic methods: " + DETERMINISTIC_METHODS + "."
+                "Stochastic methods are not supported for density evaluation."
+                " Falling back to tsit5 ODE solver."
+                " To suppress this warning, explicitly pass a method from" + DETERMINISTIC_METHODS + "."
             )
             integrate_kwargs["method"] = "tsit5"
 

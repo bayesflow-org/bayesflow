@@ -16,6 +16,7 @@ from bayesflow.utils import (
     integrate_stochastic,
     logging,
     STOCHASTIC_METHODS,
+    DETERMINISTIC_METHODS,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
@@ -367,7 +368,12 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs = integrate_kwargs | kwargs
 
         if integrate_kwargs["method"] in STOCHASTIC_METHODS:
-            raise ValueError("Stochastic methods are not supported for forward integration.")
+            logging.warning(
+                "Stochastic methods are not supported for density evaluation."
+                " Falling back to tsit5 ODE solver."
+                " To suppress this warning, explicitly pass a method from" + DETERMINISTIC_METHODS + "."
+            )
+            integrate_kwargs["method"] = "tsit5"
 
         if density:
 
@@ -416,7 +422,12 @@ class DiffusionModel(InferenceNetwork):
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
-                raise ValueError("Stochastic methods are not supported for density computation.")
+                logging.warning(
+                    "Stochastic methods are not supported for density computation."
+                    " Falling back to ODE solver."
+                    " Use one of the deterministic methods: " + DETERMINISTIC_METHODS + "."
+                )
+                integrate_kwargs["method"] = "tsit5"
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)

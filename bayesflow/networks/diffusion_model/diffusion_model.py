@@ -620,7 +620,7 @@ class DiffusionModel(InferenceNetwork):
 
         def objective_fn(z):
             st = scaling_function(time)
-            logp = 0.0
+            logp = keras.ops.zeros((), dtype=z.dtype)
             for c in constraints:
                 ck = c(z)
                 logp = logp - keras.ops.softplus(st * ck)
@@ -642,10 +642,18 @@ class DiffusionModel(InferenceNetwork):
             grad = tape.gradient(objective, x)
 
         elif backend == "torch":
-            z = x.detach().requires_grad_(True)
-            objective = objective_fn(z)
-            objective.backward()
-            grad = z.grad
+            import torch
+
+            with torch.enable_grad():
+                x_grad = x.clone().detach().requires_grad_(True)
+
+                objective = objective_fn(x_grad)
+
+                # Compute gradient
+                grad = torch.autograd.grad(
+                    outputs=objective,
+                    inputs=x_grad,
+                )[0]
 
         else:
             raise NotImplementedError(f"Unsupported backend: {backend}")

@@ -303,7 +303,8 @@ class BasicWorkflow(Workflow):
             A dictionary where keys correspond to variable names and
             values are arrays containing the generated samples.
         """
-        return self.approximator.sample(
+        start_time = time.perf_counter()
+        samples = self.approximator.sample(
             num_samples=num_samples,
             conditions=conditions,
             split=split,
@@ -311,6 +312,9 @@ class BasicWorkflow(Workflow):
             sample_shape=sample_shape,
             **kwargs,
         )
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Sampling completed in {format_duration(elapsed)}.")
+        return samples
 
     def estimate(
         self,
@@ -340,7 +344,11 @@ class BasicWorkflow(Workflow):
             Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, point_estimate_size, variable_block_size).
         """
-        return self.approximator.estimate(conditions=conditions, **kwargs)
+        start_time = time.perf_counter()
+        estimates = self.approximator.estimate(conditions=conditions, **kwargs)
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Estimating completed in {format_duration(elapsed)}.")
+        return estimates
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
@@ -359,7 +367,11 @@ class BasicWorkflow(Workflow):
         np.ndarray
             An array containing the log probabilities computed from the provided variables.
         """
-        return self.approximator.log_prob(data=data, **kwargs)
+        start_time = time.perf_counter()
+        log_prob = self.approximator.log_prob(data=data, **kwargs)
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Computing log probability completed in {format_duration(elapsed)}.")
+        return log_prob
 
     def plot_default_diagnostics(
         self,

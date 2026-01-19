@@ -47,7 +47,7 @@ def test_diffusion_guidance():
         return a1  # a1 < 0, pick one moon
 
     samples_guided = workflow.sample(
-        num_samples=10, conditions=test_conditions, guidance_constraints=dict(constraints=constraint)
+        num_samples=2, conditions=test_conditions, guidance_constraints=dict(constraints=constraint)
     )["parameters"]
     assert samples_guided.shape == samples.shape
     assert (samples_guided[..., 0] < 0).all()

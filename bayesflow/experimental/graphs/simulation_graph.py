@@ -3,17 +3,17 @@ from copy import deepcopy
 from typing import Any, Callable, TypeAlias
 
 import networkx as nx
-from networkx.readwrite import json_graph
 import numpy as np
+from networkx.readwrite import json_graph
 
 from bayesflow.utils.serialization import serializable, serialize
 
 from .utils import (
+    _import_function_from_reference,
+    _retrieve_function_reference,
     merge_root_nodes,
     sort_nodes_topologically,
     split_node,
-    _retrieve_function_reference,
-    _import_function_from_reference,
 )
 
 Node: TypeAlias = str

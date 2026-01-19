@@ -6,7 +6,6 @@ from networkx.readwrite import json_graph
 
 from bayesflow.utils.serialization import serializable, serialize
 
-from .simulation_graph import SimulationGraph
 from .expanded_graph import ExpandedGraph
 from .utils import merge_root_nodes, sort_nodes_topologically
 

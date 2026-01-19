@@ -185,7 +185,7 @@ class FlowMatching(InferenceNetwork):
         time = expand_right_as(time, xz)
         time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
         subnet_out = self.subnet((xz, time, conditions), training=training)
-        return self.output_projector(subnet_out, training=training)
+        return self.output_projector(subnet_out)
 
     def _velocity_trace(
         self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False

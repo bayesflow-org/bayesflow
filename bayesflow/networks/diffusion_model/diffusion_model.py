@@ -412,7 +412,7 @@ class DiffusionModel(InferenceNetwork):
             logging.warning(
                 "Stochastic methods are not supported for density evaluation."
                 " Falling back to tsit5 ODE solver."
-                " To suppress this warning, explicitly pass a method from" + DETERMINISTIC_METHODS + "."
+                " To suppress this warning, explicitly pass a method from " + str(DETERMINISTIC_METHODS) + "."
             )
             integrate_kwargs["method"] = "tsit5"
 

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Literal
+from typing import Literal, Callable
 
 import keras
 from keras import ops
@@ -209,6 +209,7 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t: Tensor = None,
         conditions: Tensor = None,
         training: bool = False,
+        **kwargs,
     ) -> Tensor:
         """
         Computes the score of the target or latent variable `xz`.
@@ -229,6 +230,8 @@ class DiffusionModel(InferenceNetwork):
         training : bool, optional
             Whether the model is in training mode. Affects behavior of dropout, batch norm,
             or other stochastic layers. Default is False.
+        **kwargs
+            Additional keyword arguments for custom guidance.
 
         Returns
         -------
@@ -239,6 +242,8 @@ class DiffusionModel(InferenceNetwork):
         if log_snr_t is None:
             log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
             log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        if time is None:
+            time = self.noise_schedule.get_t_from_log_snr(log_snr_t, training=training)
 
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
@@ -248,6 +253,24 @@ class DiffusionModel(InferenceNetwork):
         x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
 
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+
+        constraint_guidance = kwargs.get("constraint_guidance", None)
+        if constraint_guidance is not None:
+            guidance = self.constraint_guidance_term(
+                x=x_pred,
+                time=time,
+                constraints=constraint_guidance["constraints"],
+                guidance_strength=constraint_guidance.get("guidance_strength", 1.0),
+                scaling_function=constraint_guidance.get("scaling_function", None),
+                reduce=constraint_guidance.get("reduce", "sum"),
+            )
+            score = score + guidance
+
+        guidance_function: Callable | None = kwargs.get("guidance_function", None)
+        if guidance_function is not None:
+            guidance = guidance_function(x=x_pred, time=time)
+            score = score + guidance
+
         return score
 
     def velocity(
@@ -257,6 +280,7 @@ class DiffusionModel(InferenceNetwork):
         stochastic_solver: bool,
         conditions: Tensor = None,
         training: bool = False,
+        **kwargs,
     ) -> Tensor:
         """
         Computes the velocity (i.e., time derivative) of the target or latent variable `xz` for either
@@ -289,7 +313,7 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
 
-        score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training)
+        score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training, **kwargs)
 
         # compute velocity f, g of the SDE or ODE
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
@@ -338,9 +362,12 @@ class DiffusionModel(InferenceNetwork):
         conditions: Tensor = None,
         max_steps: int = None,
         training: bool = False,
+        **kwargs,
     ) -> (Tensor, Tensor):
         def f(x):
-            return self.velocity(x, time=time, stochastic_solver=False, conditions=conditions, training=training)
+            return self.velocity(
+                x, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+            )
 
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
@@ -419,7 +446,7 @@ class DiffusionModel(InferenceNetwork):
                 raise ValueError("Stochastic methods are not supported for density computation.")
 
             def deltas(time, xz):
-                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training, **kwargs)
                 return {"xz": v, "trace": trace}
 
             state = {
@@ -438,7 +465,9 @@ class DiffusionModel(InferenceNetwork):
 
             def deltas(time, xz):
                 return {
-                    "xz": self.velocity(xz, time=time, stochastic_solver=True, conditions=conditions, training=training)
+                    "xz": self.velocity(
+                        xz, time=time, stochastic_solver=True, conditions=conditions, training=training, **kwargs
+                    )
                 }
 
             def diffusion(time, xz):
@@ -448,14 +477,7 @@ class DiffusionModel(InferenceNetwork):
             if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
 
                 def score_fn(time, xz):
-                    return {
-                        "xz": self.score(
-                            xz,
-                            time=time,
-                            conditions=conditions,
-                            training=training,
-                        )
-                    }
+                    return {"xz": self.score(xz, time=time, conditions=conditions, training=training, **kwargs)}
 
             state = integrate_stochastic(
                 drift_fn=deltas,
@@ -471,7 +493,7 @@ class DiffusionModel(InferenceNetwork):
             def deltas(time, xz):
                 return {
                     "xz": self.velocity(
-                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training
+                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
                     )
                 }
 
@@ -547,3 +569,85 @@ class DiffusionModel(InferenceNetwork):
 
         base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
         return base_metrics | {"loss": loss}
+
+    def constraint_guidance_term(
+        self,
+        x: Tensor,
+        time: Tensor,
+        constraints: Callable | list[Callable],
+        guidance_strength: float,
+        scaling_function: Callable | None = None,
+        reduce: Literal["sum", "mean"] = "sum",
+    ) -> Tensor:
+        """
+        Backend-agnostic implementation of:
+            ∇_x Σ_k log sigmoid( -s(t) * c_k(x) )
+
+        Parameters
+        ----------
+        x : Tensor
+            The denoised data at time t.
+        time : Tensor
+            The time corresponding to x.
+        constraints : Callable or list[Callable]
+            A single constraint function or a list of constraint functions.
+            Each function should take x as input and return a tensor of constraint values.
+        guidance_strength : float
+            A scaling factor for the guidance term.
+        scaling_function : Callable, optional
+            A function that takes time t as input and returns a scaling factor s(t).
+            If None, a default scaling based on the noise schedule is used. Default is None.
+        reduce : {'sum', 'mean'}, optional
+            Method to reduce the log-probabilities from multiple constraints. Default is 'sum'.
+
+        Returns
+        -------
+        Tensor
+            The computed guidance term of the same shape as zt.
+        """
+        if guidance_strength <= 0:
+            return keras.ops.zeros_like(x)
+
+        if not isinstance(constraints, list):
+            constraints = [constraints]
+
+        if scaling_function is None:
+
+            def scaling_function(t: Tensor):
+                log_snr = self.noise_schedule.get_log_snr(t, training=False)
+                alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr)
+                return ops.square(alpha_t) / ops.square(sigma_t)
+
+        def objective_fn(z):
+            st = scaling_function(time)
+            logp = 0.0
+            for c in constraints:
+                ck = c(z)
+                logp = logp - keras.ops.softplus(st * ck)
+            return keras.ops.sum(logp) if reduce == "sum" else keras.ops.mean(logp)
+
+        backend = keras.backend.backend()
+
+        if backend == "jax":
+            import jax
+
+            grad = jax.grad(objective_fn)(x)
+
+        elif backend == "tensorflow":
+            import tensorflow as tf
+
+            with tf.GradientTape() as tape:
+                tape.watch(x)
+                objective = objective_fn(x)
+            grad = tape.gradient(objective, x)
+
+        elif backend == "torch":
+            z = x.detach().requires_grad_(True)
+            objective = objective_fn(z)
+            objective.backward()
+            grad = z.grad
+
+        else:
+            raise NotImplementedError(f"Unsupported backend: {backend}")
+
+        return guidance_strength * grad

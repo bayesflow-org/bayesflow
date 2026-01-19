@@ -355,7 +355,13 @@ def integrate_adaptive(
         )
 
         # New step size suggestion
-        scale = atol + rtol * keras.ops.max([keras.ops.abs(v) for v in _state.values()])
+        max_abs = None
+        for k, v in _state.items():
+            if k == "trace":  # we do not want to include the trace in our adaptive step size
+                continue
+            m = keras.ops.max(keras.ops.abs(v))
+            max_abs = m if max_abs is None else keras.ops.maximum(max_abs, m)
+        scale = atol + rtol * max_abs
         error_ratio = err / scale
         new_step_size = h * keras.ops.clip(0.9 * (1.0 / (error_ratio + 1e-12)) ** 0.2, 0.2, 5.0)
         new_step_size = keras.ops.sign(new_step_size) * keras.ops.clip(

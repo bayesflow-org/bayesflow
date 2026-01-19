@@ -9,7 +9,7 @@ def diffusion_model_edm_F():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=[8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="edm",
         prediction_type="F",
     )
@@ -21,7 +21,7 @@ def diffusion_model_edm_velocity():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=[8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="edm",
         prediction_type="velocity",
     )
@@ -33,7 +33,7 @@ def diffusion_model_edm_noise():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=[8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="edm",
         prediction_type="noise",
     )
@@ -45,7 +45,7 @@ def diffusion_model_cosine_F():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=[8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="cosine",
         prediction_type="F",
     )
@@ -57,7 +57,7 @@ def diffusion_model_cosine_velocity():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=[8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="cosine",
         prediction_type="velocity",
     )
@@ -69,7 +69,7 @@ def diffusion_model_cosine_noise():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=[8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="cosine",
         prediction_type="noise",
     )
@@ -81,7 +81,6 @@ def flow_matching():
 
     return FlowMatching(
         subnet_kwargs=dict(widths=[8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 100},
     )
 
 

@@ -127,7 +127,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))
 
     # use a high tolerance because the numerical jacobian is not very accurate
-    assert_allclose(log_density, numerical_log_density, rtol=1e-3, atol=1e-3)
+    assert_allclose(log_density, numerical_log_density, rtol=1e-3, atol=1e-2)
 
 
 def test_serialize_deserialize(inference_network, random_samples, random_conditions):

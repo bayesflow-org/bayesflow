@@ -56,6 +56,7 @@ all = [
     "sphinxcontrib-bibtex ~= 2.6",
     "snowballstemmer ~= 2.2.0",
     # test
+    "nox",
     "pytest",
     "pytest-cov",
     "pytest-rerunfailures",
@@ -83,6 +84,7 @@ test = [
     "nbconvert",
     "ipython",
     "ipykernel",
+    "nox",
     "pytest",
     "pytest-cov",
     "pytest-rerunfailures",

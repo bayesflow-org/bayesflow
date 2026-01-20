@@ -109,7 +109,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
 
     try:
         if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
-            # jax backend does not support adaptive solvers for jacobian computation yet
+            # jax backend does not support adaptive solvers for numerical jacobian computation yet
             if generative_inference_network.integrate_kwargs["steps"] == "adaptive":
                 generative_inference_network.integrate_kwargs.update({"steps": 250})
 

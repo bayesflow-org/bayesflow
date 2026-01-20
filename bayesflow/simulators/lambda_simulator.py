@@ -17,7 +17,7 @@ class LambdaSimulator(Simulator):
         Parameters
         ----------
         sample_fn : Callable[[Sequence[int]], dict[str, any]]
-            A function that generates samples. It should accept `batch_shape` as its first argument
+            A function that generates samples. It should accept `batch_size` as its first argument
             (if `is_batched=True`), followed by keyword arguments.
         is_batched : bool, optional
             Whether the `sample_fn` is implemented to handle batched sampling directly.
@@ -35,12 +35,8 @@ class LambdaSimulator(Simulator):
         ----------
         batch_size : int
             The number of samples to generate.
-        sample_shape : tuple of int or int, optional
-            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
-            dimension. For example, if batch_size is `batch_size` and sample_shape is `(time, channels)`, the final
-            output will be `(batch_size, time, channels, target_dim)`, where target_dim is the intrinsic dimension of
-            the output.
-
+        sample_shape: tuple[int]
+            Optional structural dimensions between batch_size and the simulator output's dimension
         **kwargs
             Additional keyword arguments passed to the sampling function. Only valid arguments
             (as determined by the function's signature) are used.

@@ -1,8 +1,8 @@
 from collections.abc import Callable
+
 import numpy as np
-from bayesflow.types import Shape
+
 from bayesflow.utils import tree_concatenate
-from bayesflow.utils.decorators import allow_batch_size
 
 
 class Simulator:
@@ -45,7 +45,8 @@ class Simulator:
 
             if accept.shape != (iteration_batch_shape[axis],):
                 raise RuntimeError(
-                    f"Predicate return array must have shape {(iteration_batch_shape[axis],)}. Received: {accept.shape}."
+                    f"Predicate return array must have shape {(iteration_batch_shape[axis],)}. "
+                    f"Received: {accept.shape}."
                 )
 
             if not accept.dtype == "bool":
@@ -84,8 +85,10 @@ class Simulator:
 
         Parameters
         ----------
-        batch_shape : Shape
+        batch_size : int
             The desired output shape, as in :py:meth:`sample`. Will be rounded up to the next complete batch.
+        sample_shape: tuple[int]
+            Optional structural dimensions between batch_size and the simulator output's dimension
         sample_size : int
             The number of samples in each simulated batch.
         kwargs

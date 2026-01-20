@@ -1,15 +1,12 @@
 from collections.abc import Callable, Sequence
-import numpy as np
-
-from bayesflow.types import Shape
-from bayesflow.utils import tree_concatenate
-from bayesflow.utils.decorators import allow_batch_size
-
-from bayesflow.utils import numpy_utils as npu
-from bayesflow.utils import logging
-
 from types import FunctionType
 from typing import Literal
+
+import numpy as np
+
+from bayesflow.utils import tree_concatenate
+from bayesflow.utils import numpy_utils as npu
+from bayesflow.utils import logging
 
 from .simulator import Simulator
 from .lambda_simulator import LambdaSimulator
@@ -92,9 +89,11 @@ class ModelComparisonSimulator(Simulator):
 
         Parameters
         ----------
-        batch_shape : Shape
+        batch_size : int
             The shape of the batch to sample. Typically, a tuple indicating the number of samples,
             but the user can also supply an int.
+        sample_shape: tuple[int]
+            Optional structural dimensions between batch_size and the simulator output's dimension
         **kwargs
             Additional keyword arguments passed to each simulator. These may include outputs from
             the shared simulator.

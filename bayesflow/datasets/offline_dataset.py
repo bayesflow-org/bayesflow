@@ -95,34 +95,42 @@ class OfflineDataset(keras.utils.PyDataset):
         if not 0 <= item < self.num_batches:
             raise IndexError(f"Index {item} is out of bounds for dataset with {self.num_batches} batches.")
 
-        item = slice(item * self.batch_size, (item + 1) * self.batch_size)
-        item = self.indices[item]
+        start = item * self.batch_size
+        stop = min((item + 1) * self.batch_size, self.num_samples)
+        idx = self.indices[start:stop]
 
+        return self.get_batch_by_sample_indices(idx)
+
+    def get_batch_by_sample_indices(self, indices: np.ndarray) -> dict[str, np.ndarray]:
         batch = {
-            key: np.take(value, item, axis=0) if isinstance(value, np.ndarray) else value
+            key: np.take(value, indices, axis=0) if isinstance(value, np.ndarray) else value
             for key, value in self.data.items()
         }
 
-        if self.augmentations is None:
-            pass
-        elif isinstance(self.augmentations, Mapping):
-            for key, fn in self.augmentations.items():
-                batch[key] = fn(batch[key])
-        elif isinstance(self.augmentations, Sequence):
-            for fn in self.augmentations:
-                batch = fn(batch)
-        elif isinstance(self.augmentations, Callable):
-            batch = self.augmentations(batch)
-        else:
-            raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
+        batch = self._apply_augmentations(batch)
 
         if self.adapter is not None:
             batch = self.adapter(batch)
 
         return batch
 
+    def _apply_augmentations(self, batch: dict[str, object]) -> dict[str, object]:
+        if self.augmentations is None:
+            return batch
+        if isinstance(self.augmentations, Mapping):
+            for key, fn in self.augmentations.items():
+                batch[key] = fn(batch[key])
+            return batch
+        if isinstance(self.augmentations, Sequence):
+            for fn in self.augmentations:
+                batch = fn(batch)
+            return batch
+        if isinstance(self.augmentations, Callable):
+            return self.augmentations(batch)
+        raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
+
     @property
-    def num_batches(self) -> int | None:
+    def num_batches(self) -> int:
         return int(np.ceil(self.num_samples / self.batch_size))
 
     def __len__(self) -> int:

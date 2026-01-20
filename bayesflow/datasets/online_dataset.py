@@ -71,7 +71,7 @@ class OnlineDataset(keras.utils.PyDataset):
         dict of str to np.ndarray
             A batch of simulated (and optionally augmented/adapted) data.
         """
-        batch = self.simulator.sample((self.batch_size,))
+        batch = self.simulator.sample(self.batch_size)
 
         if self.augmentations is None:
             pass

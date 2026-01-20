@@ -466,7 +466,7 @@ class DiffusionModel(InferenceNetwork):
                 logging.warning(
                     "Stochastic methods are not supported for density computation."
                     " Falling back to ODE solver."
-                    " Use one of the deterministic methods: " + DETERMINISTIC_METHODS + "."
+                    " Use one of the deterministic methods: " + str(DETERMINISTIC_METHODS) + "."
                 )
                 integrate_kwargs["method"] = "tsit5"
 

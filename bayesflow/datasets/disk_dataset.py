@@ -119,5 +119,8 @@ class DiskDataset(keras.utils.PyDataset):
     def num_batches(self):
         return int(np.ceil(len(self.files) / self.batch_size))
 
+    def __len__(self) -> int:
+        return self.num_batches
+
     def shuffle(self):
         np.random.shuffle(self.files)

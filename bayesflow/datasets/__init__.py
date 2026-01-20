@@ -6,6 +6,7 @@ effective training strategy (e.g., online or offline).
 
 from .offline_dataset import OfflineDataset
 from .offline_ensemble_dataset import OfflineEnsembleDataset
+from .ensemble_dataset_wrapper import EnsembleDatasetWrapper
 from .online_dataset import OnlineDataset
 from .disk_dataset import DiskDataset
 

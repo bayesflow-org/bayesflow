@@ -94,3 +94,6 @@ class OnlineDataset(keras.utils.PyDataset):
     @property
     def num_batches(self) -> int:
         return self._num_batches
+
+    def __len__(self) -> int:
+        return self.num_batches

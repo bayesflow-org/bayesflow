@@ -13,6 +13,11 @@ def num_batches():
     return 4
 
 
+@pytest.fixture()
+def num_ensemble():
+    return 3
+
+
 @pytest.fixture(params=["online_dataset", "offline_dataset", "offline_ensemble_dataset"])
 def dataset(request, online_dataset, offline_dataset):
     return request.getfixturevalue(request.param)
@@ -44,6 +49,13 @@ def offline_dataset(simulator, batch_size, num_batches, workers, use_multiproces
     return OfflineDataset(
         data, batch_size=batch_size, workers=workers, use_multiprocessing=use_multiprocessing, adapter=None
     )
+
+
+@pytest.fixture()
+def ensemble_dataset_wrapper(dataset, batch_size, num_ensemble):
+    from bayesflow import EnsembleDatasetWrapper
+
+    return EnsembleDatasetWrapper(dataset, batch_size, num_ensemble)
 
 
 @pytest.fixture()

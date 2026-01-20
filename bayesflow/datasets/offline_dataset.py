@@ -125,6 +125,9 @@ class OfflineDataset(keras.utils.PyDataset):
     def num_batches(self) -> int | None:
         return int(np.ceil(self.num_samples / self.batch_size))
 
+    def __len__(self) -> int:
+        return self.num_batches
+
     def on_epoch_end(self) -> None:
         if self._shuffle:
             self.shuffle()

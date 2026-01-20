@@ -1,8 +1,7 @@
 import numpy as np
 
 from bayesflow.simulators import Simulator
-from bayesflow.types import Shape, Tensor
-from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.types import Tensor
 
 
 class NormalSimulator(Simulator):

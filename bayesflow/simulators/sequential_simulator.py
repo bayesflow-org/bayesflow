@@ -1,9 +1,6 @@
 from collections.abc import Sequence
 import numpy as np
 
-from bayesflow.types import Shape
-from bayesflow.utils.decorators import allow_batch_size
-
 from .simulator import Simulator
 
 
@@ -74,12 +71,14 @@ class SequentialSimulator(Simulator):
 
         return data
 
-    def _single_sample(self, batch_shape_ext, **kwargs) -> dict[str, np.ndarray]:
+    def _single_sample(self, sample_shape: tuple[int], **kwargs) -> dict[str, np.ndarray]:
         """
         For single sample used by parallel sampling.
 
         Parameters
         ----------
+        sample_shape: tuple[int]
+            Optional structural dimensions between batch_size and the simulator output's dimension
         **kwargs
             Keyword arguments passed to simulators.
 
@@ -88,7 +87,7 @@ class SequentialSimulator(Simulator):
         dict
             Single sample result.
         """
-        return self.sample(batch_size=1, sample_shape=(batch_shape_ext), **kwargs)
+        return self.sample(batch_size=1, sample_shape=sample_shape, **kwargs)
 
     def sample_parallel(
         self, batch_size: int, sample_shape: tuple[int] | None = None, n_jobs: int = -1, verbose: int = 0, **kwargs
@@ -127,12 +126,8 @@ class SequentialSimulator(Simulator):
                 "joblib is required for parallel sampling. Please install it via 'pip install joblib'."
             ) from e
 
-        batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
-        if len(batch_shape) == 0:
-            raise ValueError("batch_shape must be a positive integer or a nonempty tuple")
-
         results = Parallel(n_jobs=n_jobs, verbose=verbose)(
-            delayed(self._single_sample)(batch_shape_ext=batch_shape[1:], **kwargs) for _ in range(batch_shape[0])
+            delayed(self._single_sample)(sample_shape=sample_shape, **kwargs) for _ in range(batch_size)
         )
         return self._combine_results(results)
 

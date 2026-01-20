@@ -30,16 +30,19 @@ class SequentialSimulator(Simulator):
         self.expand_outputs = expand_outputs
         self.replace_inputs = replace_inputs
 
-    @allow_batch_size
-    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+    def sample(self, batch_size: int, sample_shape: tuple[int] | None = None, **kwargs) -> dict[str, np.ndarray]:
         """
         Sample sequentially from the internal simulator.
 
         Parameters
         ----------
-        batch_shape : Shape
-            The shape of the batch to sample. Typically, a tuple indicating the number of samples,
-            but it also accepts an int.
+        batch_size : int
+            The number of samples to generate.
+        sample_shape : tuple of int or int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, if batch_size is `batch_size` and sample_shape is `(time, channels)`, the final
+            output will be `(batch_size, time, channels, target_dim)`, where target_dim is the intrinsic dimension of
+            the output.
         **kwargs
             Additional keyword arguments passed to each simulator. These may include previously
             sampled outputs used as inputs for subsequent simulators.
@@ -54,7 +57,7 @@ class SequentialSimulator(Simulator):
 
         data = {}
         for simulator in self.simulators:
-            data |= simulator.sample(batch_shape, **(kwargs | data))
+            data |= simulator.sample(batch_size, sample_shape=sample_shape, **(kwargs | data))
 
             if self.replace_inputs:
                 common_keys = set(data.keys()) & set(kwargs.keys())
@@ -85,19 +88,23 @@ class SequentialSimulator(Simulator):
         dict
             Single sample result.
         """
-        return self.sample(batch_shape=(1, *tuple(batch_shape_ext)), **kwargs)
+        return self.sample(batch_size=1, sample_shape=(batch_shape_ext), **kwargs)
 
     def sample_parallel(
-        self, batch_shape: Shape, n_jobs: int = -1, verbose: int = 0, **kwargs
+        self, batch_size: int, sample_shape: tuple[int] | None = None, n_jobs: int = -1, verbose: int = 0, **kwargs
     ) -> dict[str, np.ndarray]:
         """
         Sample in parallel from the sequential simulator.
 
         Parameters
         ----------
-        batch_shape : Shape
-            The shape of the batch to sample. Typically, a tuple indicating the number of samples,
-            but it also accepts an int.
+        batch_size : int
+            The number of samples to generate.
+        sample_shape : tuple of int or int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, if batch_size is `batch_size` and sample_shape is `(time, channels)`, the final
+            output will be `(batch_size, time, channels, target_dim)`, where target_dim is the intrinsic dimension of
+            the output.
         n_jobs : int, optional
             Number of parallel jobs. -1 uses all available cores. Default is -1.
         verbose : int, optional
@@ -120,16 +127,12 @@ class SequentialSimulator(Simulator):
                 "joblib is required for parallel sampling. Please install it via 'pip install joblib'."
             ) from e
 
-        # normalize batch shape to a tuple
-        if isinstance(batch_shape, int):
-            bs = (batch_shape,)
-        else:
-            bs = tuple(batch_shape)
-        if len(bs) == 0:
+        batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
+        if len(batch_shape) == 0:
             raise ValueError("batch_shape must be a positive integer or a nonempty tuple")
 
         results = Parallel(n_jobs=n_jobs, verbose=verbose)(
-            delayed(self._single_sample)(batch_shape_ext=bs[1:], **kwargs) for _ in range(bs[0])
+            delayed(self._single_sample)(batch_shape_ext=batch_shape[1:], **kwargs) for _ in range(batch_shape[0])
         )
         return self._combine_results(results)
 

@@ -40,7 +40,7 @@ def offline_dataset(simulator, batch_size, num_batches, workers, use_multiproces
     # TODO: there is a bug in keras where if len(dataset) == 1 batch
     #  fit will error because no logs are generated
     #  the single batch is then skipped entirely
-    data = simulator.sample((batch_size * num_batches,))
+    data = simulator.sample(batch_size * num_batches)
     return OfflineDataset(
         data, batch_size=batch_size, workers=workers, use_multiprocessing=use_multiprocessing, adapter=None
     )
@@ -64,8 +64,8 @@ def online_dataset(simulator, batch_size, num_batches, workers, use_multiprocess
 
 
 class Simulator:
-    def sample(self, batch_shape):
-        return dict(x=np.random.standard_normal(size=batch_shape + (2,)).astype("float32"))
+    def sample(self, batch_size):
+        return dict(x=np.random.standard_normal(size=(batch_size,) + (2,)).astype("float32"))
 
 
 def sample_contexts_unbatched(**kwargs):
@@ -80,16 +80,16 @@ def sample_observables_unbatched(r, alpha, theta, **kwargs):
     return dict(x=np.random.standard_normal(size=2))
 
 
-def sample_contexts_batched(shape, **kwargs):
-    return dict(r=np.random.standard_normal(size=shape), alpha=np.random.standard_normal(size=shape))
+def sample_contexts_batched(size, **kwargs):
+    return dict(r=np.random.standard_normal(size=size), alpha=np.random.standard_normal(size=size))
 
 
-def sample_parameters_batched(shape, **kwargs):
-    return dict(theta=np.random.standard_normal(size=shape + (2,)))
+def sample_parameters_batched(size, **kwargs):
+    return dict(theta=np.random.standard_normal(size=(size,) + (2,)))
 
 
-def sample_observables_batched(shape, r, alpha, theta, **kwargs):
-    return dict(x=np.random.standard_normal(size=shape + (2,)))
+def sample_observables_batched(size, r, alpha, theta, **kwargs):
+    return dict(x=np.random.standard_normal(size=(size,) + (2,)))
 
 
 @pytest.fixture(params=["class", "unbatched_composite"])

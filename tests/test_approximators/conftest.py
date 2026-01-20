@@ -178,7 +178,7 @@ def train_dataset(batch_size, adapter, simulator):
     from bayesflow import OfflineDataset
 
     num_batches = 4
-    data = simulator.sample((num_batches * batch_size,))
+    data = simulator.sample(num_batches * batch_size)
     return OfflineDataset(data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches)
 
 
@@ -187,7 +187,7 @@ def validation_dataset(batch_size, adapter, simulator):
     from bayesflow import OfflineDataset
 
     num_batches = 2
-    data = simulator.sample((num_batches * batch_size,))
+    data = simulator.sample(num_batches * batch_size)
     return OfflineDataset(data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches)
 
 

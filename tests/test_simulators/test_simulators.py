@@ -4,7 +4,7 @@ import numpy as np
 
 
 def test_two_moons(two_moons_simulator, batch_size):
-    samples = two_moons_simulator.sample((batch_size,))
+    samples = two_moons_simulator.sample(batch_size)
 
     assert isinstance(samples, dict)
     assert list(samples.keys()) == ["parameters", "observables"]
@@ -15,7 +15,7 @@ def test_two_moons(two_moons_simulator, batch_size):
 
 
 def test_gaussian_linear(gaussian_linear_simulator, batch_size):
-    samples = gaussian_linear_simulator.sample((batch_size,))
+    samples = gaussian_linear_simulator.sample(batch_size)
 
     # test n_obs respected if applicable
     if hasattr(gaussian_linear_simulator, "n_obs") and isinstance(gaussian_linear_simulator.n_obs, int):
@@ -23,7 +23,7 @@ def test_gaussian_linear(gaussian_linear_simulator, batch_size):
 
 
 def test_sample(simulator, batch_size):
-    samples = simulator.sample((batch_size,))
+    samples = simulator.sample(batch_size)
 
     # test output structure
     assert isinstance(samples, dict)
@@ -43,7 +43,7 @@ def test_sample(simulator, batch_size):
 
 def test_sample_batched(simulator, batch_size):
     sample_size = 2
-    samples = simulator.sample_batched((batch_size,), sample_size=sample_size)
+    samples = simulator.sample_batched(batch_size, sample_size=sample_size)
 
     # test output structure
     assert isinstance(samples, dict)
@@ -62,7 +62,7 @@ def test_sample_batched(simulator, batch_size):
 
 
 def test_fixed_sample(composite_gaussian, batch_size, fixed_n, fixed_mu):
-    samples = composite_gaussian.sample((batch_size,), n=fixed_n, mu=fixed_mu)
+    samples = composite_gaussian.sample(batch_size, n=fixed_n, mu=fixed_mu)
 
     assert samples["n"] == fixed_n
     assert samples["mu"].shape == (batch_size, 1)

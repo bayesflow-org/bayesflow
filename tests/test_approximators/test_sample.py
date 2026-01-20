@@ -7,7 +7,7 @@ def test_approximator_sample(approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
-    data = simulator.sample((num_batches * batch_size,))
+    data = simulator.sample(num_batches * batch_size)
 
     batch = adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
@@ -93,7 +93,7 @@ def test_approximator_sample_with_integration_methods(
 
     # Generate test data
     num_batches = 2  # Use fewer batches for faster tests
-    data = simulator.sample((num_batches * batch_size,))
+    data = simulator.sample(num_batches * batch_size)
 
     # Build approximator
     batch = adapter(data)

@@ -86,8 +86,7 @@ class ModelComparisonSimulator(Simulator):
         self.fill_value = fill_value
         self._key_conflicts_warning = True
 
-    @allow_batch_size
-    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+    def sample(self, batch_size: int, sample_shape: tuple[int] | None = None, **kwargs) -> dict[str, np.ndarray]:
         """
         Sample from the model comparison simulator.
 
@@ -108,19 +107,23 @@ class ModelComparisonSimulator(Simulator):
               - optionally, outputs from the shared simulator
               - "model_indices": a one-hot encoded array indicating the model origin of each sample
         """
+
+        batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
         data = {}
         if self.shared_simulator:
-            data |= self.shared_simulator.sample(batch_shape, **kwargs)
+            data |= self.shared_simulator.sample(batch_size, sample_shape=sample_shape, **kwargs)
 
         softmax_logits = npu.softmax(self.logits)
         num_models = len(self.simulators)
 
         # generate data randomly from each model (slower)
         if self.use_mixed_batches:
-            model_counts = np.random.multinomial(n=batch_shape[0], pvals=softmax_logits)
+            model_counts = np.random.multinomial(n=batch_size, pvals=softmax_logits)
 
             sims = [
-                simulator.sample(n, **(kwargs | data)) for simulator, n in zip(self.simulators, model_counts) if n > 0
+                simulator.sample(n, sample_shape=sample_shape, **(kwargs | data))
+                for simulator, n in zip(self.simulators, model_counts)
+                if n > 0
             ]
             sims = self._handle_key_conflicts(sims, model_counts)
             sims = tree_concatenate(sims, numpy=True)
@@ -132,7 +135,7 @@ class ModelComparisonSimulator(Simulator):
         else:
             model_index = np.random.choice(num_models, p=softmax_logits)
 
-            data = self.simulators[model_index].sample(batch_shape, **(kwargs | data))
+            data = self.simulators[model_index].sample(batch_size, sample_shape=sample_shape, **(kwargs | data))
             model_indices = npu.one_hot(np.full(batch_shape, model_index, dtype="int32"), num_models)
 
         return data | {"model_indices": model_indices}

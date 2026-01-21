@@ -4,11 +4,14 @@ wrap your data-generating process (i.e., your :py:class:`~bayesflow.simulators.S
 effective training strategy (e.g., online or offline).
 """
 
-from .offline_dataset import OfflineDataset
-from .offline_ensemble_dataset import OfflineEnsembleDataset
-from .ensemble_dataset_wrapper import EnsembleDatasetWrapper
 from .online_dataset import OnlineDataset
+from .offline_dataset import OfflineDataset
 from .disk_dataset import DiskDataset
+
+from .ensemble_dataset import EnsembleDataset
+from .ensemble_online_dataset import EnsembleOnlineDataset
+from .ensemble_indexed_dataset import EnsembleIndexedDataset
+
 
 from ..utils._docs import _add_imports_to_all
 

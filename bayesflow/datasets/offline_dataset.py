@@ -102,6 +102,25 @@ class OfflineDataset(keras.utils.PyDataset):
         return self.get_batch_by_sample_indices(idx)
 
     def get_batch_by_sample_indices(self, indices: np.ndarray) -> dict[str, np.ndarray]:
+        """
+        Return a batch for explicit sample indices.
+
+        This method is the index-based access primitive used by ensemble dataset wrappers.
+        It selects samples from the underlying in-memory arrays, then applies augmentations
+        and the adapter just like in :meth:`__getitem__`.
+
+        Parameters
+        ----------
+        indices : np.ndarray
+            1D integer array of sample indices in the range ``[0, num_samples)``.
+            The returned batch will have leading dimension ``len(indices)``.
+
+        Returns
+        -------
+        dict of str to np.ndarray
+            A batch dictionary where each NumPy array has shape ``(len(indices), ...)``.
+            Non-array entries are passed through unchanged.
+        """
         batch = {
             key: np.take(value, indices, axis=0) if isinstance(value, np.ndarray) else value
             for key, value in self.data.items()

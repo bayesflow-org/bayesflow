@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import keras
 import pickle
@@ -41,3 +42,18 @@ def test_ensemble_batch_shape_and_type(ensemble_dataset, num_ensemble, batch_siz
     assert x.shape[1] == num_ensemble
     assert x.shape[0] <= batch_size
     assert x.shape[2] == 2
+
+
+def test_data_reuse_one_means_identical_members(ensemble_dataset, data_reuse):
+    if data_reuse != 1.0:
+        pytest.skip("Only checks the data_reuse=1 case.")
+    x = ensemble_dataset[0]["x"]
+    # member 0 and 1 identical
+    assert np.allclose(x[:, 0, :], x[:, 1, :])
+
+
+def test_data_reuse_zero_means_not_identical_members(ensemble_dataset, data_reuse):
+    if data_reuse != 0.0:
+        pytest.skip("Only checks the data_reuse=0 case.")
+    x = ensemble_dataset[0]["x"]
+    assert not np.allclose(x[:, 0, :], x[:, 1, :])

@@ -57,3 +57,22 @@ def test_data_reuse_zero_means_not_identical_members(ensemble_dataset, data_reus
         pytest.skip("Only checks the data_reuse=0 case.")
     x = ensemble_dataset[0]["x"]
     assert not np.allclose(x[:, 0, :], x[:, 1, :])
+
+
+def overlap(a, b):
+    return len(set(a.tolist()).intersection(b.tolist())) / len(a)
+
+
+def test_offline_overlap_monotonic(offline_dataset, num_ensemble):
+    from bayesflow import EnsembleDataset
+
+    ds0 = EnsembleDataset(offline_dataset, num_ensemble=num_ensemble, data_reuse=0.0)
+    ds05 = EnsembleDataset(offline_dataset, num_ensemble=num_ensemble, data_reuse=0.5)
+    ds1 = EnsembleDataset(offline_dataset, num_ensemble=num_ensemble, data_reuse=1.0)
+
+    # assuming indexed impl
+    a0, b0 = ds0._impl.member_indices[0], ds0._impl.member_indices[1]
+    a05, b05 = ds05._impl.member_indices[0], ds05._impl.member_indices[1]
+    a1, b1 = ds1._impl.member_indices[0], ds1._impl.member_indices[1]
+
+    assert overlap(a0, b0) <= overlap(a05, b05) <= overlap(a1, b1)

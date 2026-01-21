@@ -1,11 +1,21 @@
 from collections.abc import Mapping
 
 import numpy as np
+from tqdm.auto import tqdm
 
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict, logging, concatenate_valid
+from bayesflow.utils import (
+    logging,
+    filter_kwargs,
+    split_arrays,
+    slice_maybe_nested,
+    dim_maybe_nested,
+    squeeze_inner_estimates_dict,
+    concatenate_valid,
+    tree_concatenate,
+)
 from bayesflow.utils.serialization import serializable
 
 from .continuous_approximator import ContinuousApproximator
@@ -57,7 +67,7 @@ class PointApproximator(ContinuousApproximator):
         """
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
-        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
+        # Remove any superfluous keys, just retain actual conditions.
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
         estimates = self._estimate(**conditions, **kwargs)
@@ -78,7 +88,6 @@ class PointApproximator(ContinuousApproximator):
 
         # Reorder the nested dictionary so that original variable names are at the top.
         estimates = self._reorder_estimates(estimates)
-        # Remove unnecessary nesting.
         estimates = self._squeeze_estimates(estimates)
 
         return estimates
@@ -89,6 +98,7 @@ class PointApproximator(ContinuousApproximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
+        batch_size: int | None = None,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
         """
@@ -106,7 +116,10 @@ class PointApproximator(ContinuousApproximator):
             for the sampling process.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
-            Currently not supported for :py:class:`PointApproximator` .
+            Currently not supported for :py:class:`PointApproximator`.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
@@ -121,25 +134,76 @@ class PointApproximator(ContinuousApproximator):
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, num_samples, variable_block_size).
         """
-        # Adapt, optionally standardize and convert conditions to tensor.
+        if split:
+            raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
+
         conditions = self._prepare_data(conditions, **kwargs)
-        # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
-        # Sample and undo optional standardization
-        samples = self._sample(num_samples, **conditions, **kwargs)
+        num_conditions = dim_maybe_nested(conditions, axis=0) if len(conditions) > 0 else 1
 
+        # If no batching requested, pretend everything is one batch
+        if batch_size is None:
+            batch_size = num_conditions
+
+        samples = []
+        for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
+            if len(conditions) == 0:
+                batch_conditions = {}
+            else:
+                batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
+
+            batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
+            samples.append(batch_samples)
+
+        samples = tree_concatenate(samples, axis=0)
+
+        # Optionally unstandardize and back-transform samples via adapter
+        samples = self._post_process_samples(samples)
+
+        # Squeeze sample dictionary if there's only one key-value pair.
+        samples = self._squeeze_parametric_score_major_dict(samples)
+
+        return samples
+
+    def _post_process_samples(self, samples: Tensor | Mapping[str, np.ndarray], **kwargs) -> Mapping[str, np.ndarray]:
+        """Undo optional standardization and make dict of samples."""
         if "inference_variables" in self.standardize:
             for score_key in samples.keys():
                 samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
 
         samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
+        return samples
 
-        if split:
-            raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
+    def _sample(
+        self,
+        num_samples: int,
+        inference_conditions: Tensor = None,
+        summary_variables: Tensor = None,
+        **kwargs,
+    ) -> Tensor:
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot use summary variables without a summary network.")
+        else:
+            if summary_variables is None:
+                raise ValueError("Summary variables are required when a summary network is present.")
 
-        # Squeeze sample dictionary if there's only one key-value pair.
-        samples = self._squeeze_parametric_score_major_dict(samples)
+        if self.summary_network is not None:
+            summary_outputs = self.summary_network(
+                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+            )
+
+            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
+
+        if inference_conditions is not None:
+            batch_shape = (keras.ops.shape(inference_conditions)[0], num_samples)
+        else:
+            batch_shape = (num_samples,)
+
+        samples = self.inference_network.sample(
+            batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
+        )
 
         return samples
 
@@ -250,7 +314,7 @@ class PointApproximator(ContinuousApproximator):
         return squeezed
 
     @staticmethod
-    def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
+    def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray | dict[str, np.ndarray]:
         """Squeezes the dictionary to just the value if there is only one key-value pair."""
         if len(samples) == 1:
             # Extract and return the only item's value

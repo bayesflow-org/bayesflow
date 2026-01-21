@@ -1,9 +1,6 @@
 import pytest
-from collections.abc import Sequence
 
-from bayesflow.networks import MLP, Sequential
-from bayesflow.utils.tensor_utils import concatenate_valid
-from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.networks import MLP
 
 
 @pytest.fixture()
@@ -11,65 +8,10 @@ def diffusion_model_edm_F():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        subnet_kwargs=dict(widths=[8, 8]),
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="edm",
         prediction_type="F",
-    )
-
-
-@serializable("test", disable_module_check=True)
-class ConcatenateMLP(Sequential):
-    def __init__(
-        self,
-        widths: Sequence[int] = (256, 256),
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.widths = widths
-        self.mlp = MLP(widths)
-
-    def call(self, x, t, conditions=None, training=False):
-        con = concatenate_valid([x, t, conditions], axis=-1)
-        return self.mlp(con)
-
-    def compute_output_shape(self, x_shape, t_shape, conditions_shape=None):
-        concatenate_input_shapes = tuple(
-            (
-                x_shape[0],
-                x_shape[-1] + t_shape[-1] + (conditions_shape[-1] if conditions_shape is not None else 0),
-            )
-        )
-        return self.mlp.compute_output_shape(concatenate_input_shapes)
-
-    def build(self, x_shape, t_shape, conditions_shape=None):
-        if self.built:
-            return
-
-        concatenate_input_shapes = tuple(
-            (
-                x_shape[0],
-                x_shape[-1] + t_shape[-1] + (conditions_shape[-1] if conditions_shape is not None else 0),
-            )
-        )
-        self.mlp.build(concatenate_input_shapes)
-
-    def get_config(self):
-        config = {"widths": self.widths}
-
-        return serialize(config)
-
-
-@pytest.fixture()
-def diffusion_model_edm_F_subnet_separate_inputs():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet=ConcatenateMLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 4},
-        noise_schedule="edm",
-        prediction_type="F",
-        concatenate_subnet_input=False,
     )
 
 
@@ -78,8 +20,8 @@ def diffusion_model_edm_velocity():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        subnet_kwargs=dict(widths=[8, 8]),
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="edm",
         prediction_type="velocity",
     )
@@ -90,8 +32,8 @@ def diffusion_model_edm_noise():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        subnet_kwargs=dict(widths=[8, 8]),
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="edm",
         prediction_type="noise",
     )
@@ -102,8 +44,8 @@ def diffusion_model_cosine_F():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        subnet_kwargs=dict(widths=[8, 8]),
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="cosine",
         prediction_type="F",
     )
@@ -114,8 +56,8 @@ def diffusion_model_cosine_velocity():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        subnet_kwargs=dict(widths=[8, 8]),
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="cosine",
         prediction_type="velocity",
     )
@@ -126,8 +68,8 @@ def diffusion_model_cosine_noise():
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
-        subnet=MLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 250},
+        subnet_kwargs=dict(widths=[8, 8]),
+        integrate_kwargs={"method": "tsit5", "steps": "adaptive"},  # ODE solver, since we check density as well
         noise_schedule="cosine",
         prediction_type="noise",
     )
@@ -138,17 +80,7 @@ def flow_matching():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
-        subnet=MLP([8, 8]),
-        integrate_kwargs={"method": "rk45", "steps": 100},
-    )
-
-
-@pytest.fixture()
-def flow_matching_subnet_separate_inputs():
-    from bayesflow.networks import FlowMatching
-
-    return FlowMatching(
-        subnet=ConcatenateMLP([8, 8]), integrate_kwargs={"method": "rk45", "steps": 4}, concatenate_subnet_input=False
+        subnet_kwargs=dict(widths=[8, 8]),
     )
 
 
@@ -156,14 +88,10 @@ def flow_matching_subnet_separate_inputs():
 def consistency_model():
     from bayesflow.networks import ConsistencyModel
 
-    return ConsistencyModel(total_steps=100, subnet=MLP([8, 8]))
-
-
-@pytest.fixture()
-def consistency_model_subnet_separate_inputs():
-    from bayesflow.networks import ConsistencyModel
-
-    return ConsistencyModel(total_steps=4, subnet=ConcatenateMLP([8, 8]), concatenate_subnet_input=False)
+    return ConsistencyModel(
+        total_steps=100,
+        subnet_kwargs=dict(widths=[8, 8]),
+    )
 
 
 @pytest.fixture()
@@ -299,18 +227,6 @@ def inference_network_subnet(request):
     scope="function",
 )
 def generative_inference_network(request):
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(
-    params=[
-        pytest.param("flow_matching_subnet_separate_inputs"),
-        pytest.param("consistency_model_subnet_separate_inputs"),
-        pytest.param("diffusion_model_edm_F_subnet_separate_inputs"),
-    ],
-    scope="function",
-)
-def inference_network_subnet_separate_inputs(request):
     return request.getfixturevalue(request.param)
 
 

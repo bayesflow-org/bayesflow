@@ -7,7 +7,7 @@ def test_approximator_sample(approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
-    data = simulator.sample((num_batches * batch_size,))
+    data = simulator.sample(num_batches * batch_size)
 
     batch = adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
@@ -42,17 +42,17 @@ def test_approximator_sample_with_integration_methods(
 
     # Create inference network based on type
     if inference_network_type == "flow_matching":
-        from bayesflow.networks import FlowMatching, MLP
+        from bayesflow.networks import FlowMatching
 
         inference_network = FlowMatching(
-            subnet=MLP(widths=[32, 32]),
+            subnet_kwargs=dict(widths=[8, 8]),
             integrate_kwargs={"steps": 10},  # Use fewer steps for faster tests
         )
     elif inference_network_type == "diffusion_model":
-        from bayesflow.networks import DiffusionModel, MLP
+        from bayesflow.networks import DiffusionModel
 
         inference_network = DiffusionModel(
-            subnet=MLP(widths=[32, 32]),
+            subnet_kwargs=dict(widths=[8, 8]),
             integrate_kwargs={"steps": 10},  # Use fewer steps for faster tests
         )
     else:
@@ -93,7 +93,7 @@ def test_approximator_sample_with_integration_methods(
 
     # Generate test data
     num_batches = 2  # Use fewer batches for faster tests
-    data = simulator.sample((num_batches * batch_size,))
+    data = simulator.sample(num_batches * batch_size)
 
     # Build approximator
     batch = adapter(data)

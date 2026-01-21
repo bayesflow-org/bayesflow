@@ -1,4 +1,4 @@
-from typing import Sequence, Mapping, Any
+from typing import Sequence, Mapping, Any, Literal
 
 import numpy as np
 
@@ -16,9 +16,10 @@ def classifier_two_sample_test(
     max_epochs: int = 1000,
     batch_size: int = 128,
     return_metric_only: bool = True,
+    cross_validation_splits: int = 5,
     validation_split: float = 0.5,
     standardize: bool = True,
-    mlp_widths: Sequence = (64, 64),
+    mlp_widths: Sequence | Literal["auto"] = "auto",
     **kwargs,
 ) -> float | Mapping[str, Any]:
     """
@@ -49,13 +50,17 @@ def classifier_two_sample_test(
     return_metric_only : bool, optional
         If True, only the final validation metric is returned. Otherwise, a dictionary with the score, classifier, and
         full training history is returned. Default is True.
+    cross_validation_splits : int, optional
+        Number of cross-validation splits to perform. Default is 5.
     validation_split : float, optional
-        Fraction of the training data to be used as validation data. Default is 0.5.
+        Fraction of the training data to be used as validation data, for single hold-out split. Default is 0.5.
     standardize : bool, optional
         If True, both estimates and targets will be standardized using the mean and standard deviation of estimates.
         Default is True.
     mlp_widths : Sequence[int], optional
-        Sequence specifying the number of units in each hidden layer of the MLP classifier. Default is (256, 256).
+        Sequence specifying the number of units in each hidden layer of the MLP classifier.
+        If set to 'auto', defaults to two hidden layers with widths such that width is larger than 10 times
+        the number of variables and a power of two. Default is 'auto'.
     **kwargs
         Additional keyword arguments. Recognized keyword:
             mlp_kwargs : dict
@@ -69,7 +74,6 @@ def classifier_two_sample_test(
         is the final validation metric, "classifier" is the trained Keras model, and "history" contains the
         full training history.
     """
-
     # Error, if targets dim does not match estimates dim
     num_dims = estimates.shape[1]
     if not num_dims == targets.shape[1]:
@@ -78,6 +82,10 @@ def classifier_two_sample_test(
             f"but must have the same dimensionality (2nd dim)"
             f"found: estimates shape {estimates.shape[1]}, targets shape {targets.shape[1]}"
         )
+
+    if mlp_widths == "auto":
+        widths = 2 ** int(np.ceil(np.log2(10 * num_dims)))
+        mlp_widths = [widths, widths]
 
     # Standardize both estimates and targets relative to estimates mean and std
     if standardize:
@@ -96,41 +104,79 @@ def classifier_two_sample_test(
     labels = labels[shuffle_idx]
 
     # Create and train classifier with optional stopping
-    classifier = keras.Sequential(
-        [MLP(widths=mlp_widths, **kwargs.get("mlp_kwargs", {})), keras.layers.Dense(1, activation="sigmoid")]
-    )
+    def build_classifier():
+        classifier = keras.Sequential(
+            [MLP(widths=mlp_widths, **kwargs.get("mlp_kwargs", {})), keras.layers.Dense(units=1, activation="sigmoid")]
+        )
+        classifier.compile(optimizer="adam", loss="binary_crossentropy", metrics=[metric])
+        return classifier
 
-    classifier.compile(optimizer="adam", loss="binary_crossentropy", metrics=[metric])
+    if cross_validation_splits > 1:
+        # Create permuted indices for each class separately to ensure stratification
+        perm_est = np.random.permutation(len(estimates))
+        perm_tar = np.random.permutation(len(targets)) + len(estimates)  # Offset indices
 
-    early_stopping = keras.callbacks.EarlyStopping(
-        monitor=f"val_{metric}", patience=patience, restore_best_weights=True
-    )
+        # Split indices into k folds
+        est_folds = np.array_split(perm_est, cross_validation_splits)
+        tar_folds = np.array_split(perm_tar, cross_validation_splits)
 
-    # For now, we need to enable grads, since we turn them off by default
-    if keras.backend.backend() == "torch":
-        import torch
+        splits = []
+        for i in range(cross_validation_splits):
+            val_idx = np.concatenate([est_folds[i], tar_folds[i]])
+            # Create boolean mask to efficiently select training data (everything not in val)
+            mask = np.ones(len(data), dtype=bool)
+            mask[val_idx] = False
+            train_idx = np.where(mask)[0]
+            splits.append((train_idx, val_idx))
+    else:
+        # Single Split (Hold-out)
+        perm = np.random.permutation(len(data))
+        n_val = int(len(data) * validation_split)
+        splits = [(perm[n_val:], perm[:n_val])]
 
-        with torch.enable_grad():
+    scores = []
+    histories = []
+    classifiers = []
+    for train_idx, val_idx in splits:
+        data_train, data_val = data[train_idx], data[val_idx]
+        labels_train, labels_val = labels[train_idx], labels[val_idx]
+
+        classifier = build_classifier()
+        early_stopping = keras.callbacks.EarlyStopping(
+            monitor=f"val_{metric}", patience=patience, restore_best_weights=True
+        )
+
+        # For now, we need to enable grads, since we turn them off by default
+        if keras.backend.backend() == "torch":
+            import torch
+
+            with torch.enable_grad():
+                history = classifier.fit(
+                    x=data_train,
+                    y=labels_train,
+                    epochs=max_epochs,
+                    batch_size=batch_size,
+                    verbose=0,
+                    callbacks=[early_stopping],
+                    validation_data=(data_val, labels_val),
+                )
+        else:
             history = classifier.fit(
-                x=data,
-                y=labels,
+                x=data_train,
+                y=labels_train,
                 epochs=max_epochs,
                 batch_size=batch_size,
                 verbose=0,
                 callbacks=[early_stopping],
-                validation_split=validation_split,
+                validation_data=(data_val, labels_val),
             )
-    else:
-        history = classifier.fit(
-            x=data,
-            y=labels,
-            epochs=max_epochs,
-            batch_size=batch_size,
-            verbose=0,
-            callbacks=[early_stopping],
-            validation_split=validation_split,
-        )
 
+        scores.append(history.history[f"val_{metric}"][-1])
+        if not return_metric_only:
+            histories.append(history.history)
+            classifiers.append(classifier)
+
+    mean_score = float(np.mean(scores))
     if return_metric_only:
-        return history.history[f"val_{metric}"][-1]
-    return {"score": history.history[f"val_{metric}"][-1], "classifier": classifier, "history": history.history}
+        return mean_score
+    return {"score": mean_score, "scores": scores, "classifiers": classifiers, "histories": histories}

@@ -1,10 +1,12 @@
 from collections.abc import Mapping, Sequence, Callable
+from typing import Literal, Tuple
 
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import time
 
 import keras
 
@@ -14,7 +16,7 @@ from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ContinuousApproximator, PointApproximator
 from bayesflow.types import Shape
-from bayesflow.utils import find_inference_network, find_summary_network, logging
+from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration
 from bayesflow.diagnostics import metrics as bf_metrics
 from bayesflow.diagnostics import plots as bf_plots
 
@@ -212,8 +214,8 @@ class BasicWorkflow(Workflow):
         Parameters
         ----------
         batch_shape : Shape
-            The shape of the batch to be simulated. Typically an integer for simple simulators.
-        **kwargs : dict, optional
+            The shape of the batch to be simulated. Typically, an integer for simple simulators.
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the simulator's sample method.
 
         Returns
@@ -238,8 +240,8 @@ class BasicWorkflow(Workflow):
         Parameters
         ----------
         batch_shape : Shape
-            The shape of the batch to be simulated. Typically an integer for simple simulators.
-        **kwargs : dict, optional
+            The shape of the batch to be simulated. Typically, an integer for simple simulators.
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the simulator's sample method.
 
         Returns
@@ -262,6 +264,9 @@ class BasicWorkflow(Workflow):
         *,
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -275,7 +280,21 @@ class BasicWorkflow(Workflow):
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
-        **kwargs : dict, optional
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the approximator's sampling function.
 
         Returns
@@ -284,7 +303,18 @@ class BasicWorkflow(Workflow):
             A dictionary where keys correspond to variable names and
             values are arrays containing the generated samples.
         """
-        return self.approximator.sample(num_samples=num_samples, conditions=conditions, **kwargs)
+        start_time = time.perf_counter()
+        samples = self.approximator.sample(
+            num_samples=num_samples,
+            conditions=conditions,
+            split=split,
+            batch_size=batch_size,
+            sample_shape=sample_shape,
+            **kwargs,
+        )
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Sampling completed in {format_duration(elapsed)}.")
+        return samples
 
     def estimate(
         self,
@@ -299,7 +329,7 @@ class BasicWorkflow(Workflow):
         ----------
         conditions : Mapping[str, np.ndarray]
             A dictionary mapping variable names to arrays representing the conditions for the estimation process.
-        **kwargs
+        **kwargs : dict | str
             Additional keyword arguments passed to underlying processing functions.
 
         Returns
@@ -314,7 +344,11 @@ class BasicWorkflow(Workflow):
             Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, point_estimate_size, variable_block_size).
         """
-        return self.approximator.estimate(conditions=conditions, **kwargs)
+        start_time = time.perf_counter()
+        estimates = self.approximator.estimate(conditions=conditions, **kwargs)
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Estimating completed in {format_duration(elapsed)}.")
+        return estimates
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
@@ -325,7 +359,7 @@ class BasicWorkflow(Workflow):
         data : Mapping[str, np.ndarray]
             A dictionary where keys represent variable names and values are arrays corresponding to the variables'
             realizations.
-        **kwargs : dict, optional
+        **kwargs : dict | str, optional
             Additional keyword arguments passed to the approximator's log probability function.
 
         Returns
@@ -333,7 +367,11 @@ class BasicWorkflow(Workflow):
         np.ndarray
             An array containing the log probabilities computed from the provided variables.
         """
-        return self.approximator.log_prob(data=data, **kwargs)
+        start_time = time.perf_counter()
+        log_prob = self.approximator.log_prob(data=data, **kwargs)
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Computing log probability completed in {format_duration(elapsed)}.")
+        return log_prob
 
     def plot_default_diagnostics(
         self,
@@ -978,9 +1016,12 @@ class BasicWorkflow(Workflow):
             self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
 
         try:
+            start_time = time.perf_counter()
             self.history = self.approximator.fit(
                 dataset=dataset, epochs=epochs, validation_data=validation_data, **kwargs
             )
+            elapsed = time.perf_counter() - start_time
+            logging.info(f"Training completed in {format_duration(elapsed)}.")
             self._on_training_finished()
             return self.history
         finally:

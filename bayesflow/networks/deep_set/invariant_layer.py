@@ -74,7 +74,7 @@ class InvariantLayer(keras.Layer):
             kernel_initializer=kernel_initializer,
             spectral_normalization=spectral_normalization,
         )
-        self.inner_projector = keras.layers.Dense(mlp_widths_inner[-1], kernel_initializer=kernel_initializer)
+        self.inner_projector = keras.layers.Dense(units=mlp_widths_inner[-1], kernel_initializer=kernel_initializer)
 
         self.outer_fc = MLP(
             mlp_widths_outer,
@@ -83,7 +83,7 @@ class InvariantLayer(keras.Layer):
             kernel_initializer=kernel_initializer,
             spectral_normalization=spectral_normalization,
         )
-        self.outer_projector = keras.layers.Dense(mlp_widths_outer[-1], kernel_initializer=kernel_initializer)
+        self.outer_projector = keras.layers.Dense(units=mlp_widths_outer[-1], kernel_initializer=kernel_initializer)
 
         # Pooling function as keras layer for sum decomposition: inner( pooling( inner(set) ) )
         if pooling_kwargs is None:

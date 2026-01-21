@@ -55,7 +55,9 @@ class HierarchicalSimulator(Simulator):
             # query the simulator flat at the current level
             simulator = self.hierarchy[level]
             query_shape = (np.prod(batch_shape[: level + 1]),)
-            data = simulator.sample(query_shape, **(kwargs | input_data))
+            query_batch_size = query_shape[0]
+            query_sample_shape = query_shape[1:]
+            data = simulator.sample(query_batch_size, sample_shape=query_sample_shape, **(kwargs | input_data))
 
             # input data needs to have a flat batch shape
             input_data |= data

@@ -1,12 +1,10 @@
 from collections.abc import Callable, Sequence
 
 import numpy as np
-
+import keras
 from bayesflow.utils import batched_call, filter_kwargs, tree_stack
-from bayesflow.utils.decorators import allow_batch_size
 
 from .simulator import Simulator
-from ..types import Shape
 
 
 class LambdaSimulator(Simulator):
@@ -19,7 +17,7 @@ class LambdaSimulator(Simulator):
         Parameters
         ----------
         sample_fn : Callable[[Sequence[int]], dict[str, any]]
-            A function that generates samples. It should accept `batch_shape` as its first argument
+            A function that generates samples. It should accept `batch_size` as its first argument
             (if `is_batched=True`), followed by keyword arguments.
         is_batched : bool, optional
             Whether the `sample_fn` is implemented to handle batched sampling directly.
@@ -29,16 +27,16 @@ class LambdaSimulator(Simulator):
         self.sample_fn = sample_fn
         self.is_batched = is_batched
 
-    @allow_batch_size
-    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
+    def sample(self, batch_size: int, sample_shape: tuple[int] | None = None, **kwargs) -> dict[str, np.ndarray]:
         """
         Sample using the wrapped sampling function.
 
         Parameters
         ----------
-        batch_shape : Shape
-            The shape of the batch to sample. Typically, a tuple indicating the number of samples,
-            but an int can also be passed.
+        batch_size : int
+            The number of samples to generate.
+        sample_shape: tuple[int]
+            Optional structural dimensions between batch_size and the simulator output's dimension
         **kwargs
             Additional keyword arguments passed to the sampling function. Only valid arguments
             (as determined by the function's signature) are used.
@@ -53,10 +51,12 @@ class LambdaSimulator(Simulator):
         # try to use only valid keyword-arguments
         kwargs = filter_kwargs(kwargs, self.sample_fn)
 
+        batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
         if self.is_batched:
             return self.sample_fn(batch_shape, **kwargs)
 
         data = batched_call(self.sample_fn, batch_shape, kwargs=kwargs, flatten=True)
         data = tree_stack(data, axis=0, numpy=True)
+        data = keras.tree.map_structure(lambda x: x.reshape(*batch_shape, -1), data)
 
         return data

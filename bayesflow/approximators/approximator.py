@@ -37,7 +37,7 @@ class Approximator(BackendApproximator):
         **kwargs,
     ) -> OnlineDataset:
         if batch_size == "auto":
-            batch_size = find_batch_size(memory_budget=memory_budget, sample=simulator.sample((1,)))
+            batch_size = find_batch_size(memory_budget=memory_budget, sample=simulator.sample(1))
             logging.info(f"Using a batch size of {batch_size}.")
 
         if adapter == "auto":

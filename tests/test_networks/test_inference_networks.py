@@ -108,6 +108,11 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     from bayesflow.utils import jacobian
 
     try:
+        if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
+            # jax backend does not support adaptive solvers for jacobian computation yet
+            if generative_inference_network.integrate_kwargs["steps"] == "adaptive":
+                generative_inference_network.integrate_kwargs.update({"steps": 250})
+
         output, log_density = generative_inference_network(random_samples, conditions=random_conditions, density=True)
     except NotImplementedError:
         # network does not support density estimation
@@ -162,16 +167,3 @@ def test_compute_metrics(inference_network, random_samples, random_conditions):
 
     metrics = inference_network.compute_metrics(random_samples, conditions=random_conditions)
     assert "loss" in metrics
-
-
-def test_subnet_separate_inputs(inference_network_subnet_separate_inputs, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    inference_network_subnet_separate_inputs.build(xz_shape, conditions_shape)
-
-    assert inference_network_subnet_separate_inputs.built is True
-
-    # check the model has variables
-    assert inference_network_subnet_separate_inputs.variables, "Model has no variables."
-
-    inference_network_subnet_separate_inputs(random_samples, random_conditions, inverse=True)

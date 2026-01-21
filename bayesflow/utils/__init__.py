@@ -24,6 +24,8 @@ from .dict_utils import (
     split_tensors,
     split_arrays,
     squeeze_inner_estimates_dict,
+    slice_maybe_nested,
+    dim_maybe_nested,
 )
 
 from .dispatch import (
@@ -47,7 +49,7 @@ from .git import (
 )
 
 from .hparam_utils import find_batch_size, find_memory_budget
-from .integrate import integrate, integrate_stochastic
+from .integrate import integrate, integrate_stochastic, DETERMINISTIC_METHODS, STOCHASTIC_METHODS
 
 from .io import (
     pickle_load,
@@ -105,5 +107,7 @@ from .classification import calibration_curve, confusion_matrix
 from .validators import check_lengths_same
 
 from ._docs import _add_imports_to_all
+
+from .logging import format_duration
 
 _add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization", "tree"])

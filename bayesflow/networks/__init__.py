@@ -4,14 +4,14 @@ A rich collection of neural network architectures for use in :py:class:`~bayesfl
 The module features inference networks (IN), summary networks (SN), as well as general purpose networks.
 """
 
-from .consistency_models import ConsistencyModel
+from .consistency_models import ConsistencyModel, StableConsistencyModel
 from .coupling_flow import CouplingFlow
 from .deep_set import DeepSet
 from .diffusion_model import DiffusionModel
 from .flow_matching import FlowMatching
 from .inference_network import InferenceNetwork
 from .point_inference_network import PointInferenceNetwork
-from .mlp import MLP
+from .mlp import MLP, TimeMLP
 from .fusion_network import FusionNetwork
 from .sequential import Sequential
 from .summary_network import SummaryNetwork

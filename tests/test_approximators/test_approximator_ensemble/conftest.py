@@ -7,12 +7,13 @@ from tests.utils import check_combination_simulator_adapter
 def train_dataset_for_ensemble(batch_size, adapter, simulator):
     check_combination_simulator_adapter(simulator, adapter)
 
-    from bayesflow import OfflineEnsembleDataset
+    from bayesflow import OfflineDataset, EnsembleDataset
 
     num_batches = 4
     data = simulator.sample((num_batches * batch_size,))
-    return OfflineEnsembleDataset(
-        num_ensemble=2, data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches
+    return EnsembleDataset(
+        OfflineDataset(data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches),
+        num_ensemble=2,
     )
 
 

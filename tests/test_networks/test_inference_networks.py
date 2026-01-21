@@ -124,7 +124,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_output, numerical_jacobian = jacobian(f, random_samples, return_output=True)
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
-    assert_allclose(output, numerical_output)
+    assert_allclose(output, numerical_output, msg="Outputs of numerical jacobian and network do not match.")
 
     log_prob = generative_inference_network.base_distribution.log_prob(output)
 
@@ -132,7 +132,13 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))
 
     # use a high tolerance because the numerical jacobian is not very accurate
-    assert_allclose(log_density, numerical_log_density, rtol=1e-3, atol=1e-3)
+    assert_allclose(
+        log_density,
+        numerical_log_density,
+        rtol=1e-3,
+        atol=1e-3,
+        msg="Density of numerical jacobian and network do not match.",
+    )
 
 
 def test_serialize_deserialize(inference_network, random_samples, random_conditions):

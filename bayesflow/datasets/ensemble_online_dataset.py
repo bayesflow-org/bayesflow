@@ -61,9 +61,7 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
 
         pool = self.dataset.simulator.sample((self.pool_size,))
 
-        pool = self._apply_augmentations(pool)
-        if self.dataset.adapter is not None:
-            batch = self.dataset.adapter(batch)
+        pool = self._postprocess(pool)
 
         starts = ring_starts(self.pool_size, self.num_ensemble)
         idx2d = ring_window_indices(self.pool_size, self.batch_size, starts)
@@ -73,6 +71,12 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
             member_batches.append(self._take(pool, idx2d[m]))
 
         return self._stack(member_batches)
+
+    def _postprocess(self, batch: dict[str, object]) -> dict[str, object]:
+        batch = self._apply_augmentations(batch)
+        if self.dataset.adapter is not None:
+            batch = self.dataset.adapter(batch)
+        return batch
 
     def _apply_augmentations(self, batch: dict[str, object]) -> dict[str, object]:
         aug = self.dataset.augmentations

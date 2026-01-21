@@ -82,7 +82,9 @@ class GraphicalSimulator(Simulator):
         """
         self.graph.add_edge(from_node, to_node)
 
-    def sample(self, batch_size: int, sample_shape: tuple[int] | None = None, **kwargs) -> dict[str, np.ndarray]:
+    def sample(
+        self, batch_size: int, sample_shape: tuple[int] | None = None, meta: dict | None = None, **kwargs
+    ) -> dict[str, np.ndarray]:
         """
         Generates samples by topologically traversing the DAG.
         For each node, the sampling function is called based on parent values.
@@ -104,6 +106,9 @@ class GraphicalSimulator(Simulator):
         """
         _ = kwargs  # Simulator class requires **kwargs, which are unused here
         meta_dict = self.meta_fn() if self.meta_fn else {}
+        if meta:
+            meta_dict = meta_dict | meta
+
         samples_by_node = {}
         batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
 

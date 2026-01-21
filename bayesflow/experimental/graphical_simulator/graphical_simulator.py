@@ -7,8 +7,6 @@ import networkx as nx
 import numpy as np
 
 from ...simulators import Simulator
-from ...types import Shape
-from ...utils.decorators import allow_batch_size
 from ..graphs import SimulationGraph
 
 
@@ -84,17 +82,17 @@ class GraphicalSimulator(Simulator):
         """
         self.graph.add_edge(from_node, to_node)
 
-    @allow_batch_size
-    def sample(self, batch_shape: Shape | int, **kwargs) -> dict[str, np.ndarray]:
+    def sample(self, batch_size: int, sample_shape: tuple[int] | None = None, **kwargs) -> dict[str, np.ndarray]:
         """
         Generates samples by topologically traversing the DAG.
         For each node, the sampling function is called based on parent values.
 
         Parameters
         ----------
-        batch_shape : Shape
-            The shape of the batch to sample. Typically, a tuple indicating the number of samples,
-            but an int can also be passed.
+        batch_size : int
+            The number of samples to generate.
+        sample_shape: tuple[int]
+            Optional structural dimensions between batch_size and the simulator output's dimension
         **kwargs
             Currently unused
 
@@ -107,6 +105,7 @@ class GraphicalSimulator(Simulator):
         _ = kwargs  # Simulator class requires **kwargs, which are unused here
         meta_dict = self.meta_fn() if self.meta_fn else {}
         samples_by_node = {}
+        batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
 
         # Initialize samples container for each node
         for node in self.graph.nodes:
@@ -123,8 +122,6 @@ class GraphicalSimulator(Simulator):
 
                 if not parent_nodes:
                     # root node: generate independent samples
-                    # TODO: check if _call_sample_fn returns something with reserved name
-                    # TODO: maybe remove double underscore reservation?
                     node_samples = [
                         {"__batch_idx": batch_idx, f"__{node}_idx": i} | self._call_sample_fn(sampling_fn, {})
                         for i in range(reps)

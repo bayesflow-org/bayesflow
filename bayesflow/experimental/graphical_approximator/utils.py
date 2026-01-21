@@ -121,13 +121,14 @@ def prepare_data_conditions(approximator: "GraphicalApproximator", data: Mapping
     Returns the data conditions for the inference network denoted by `network_idx`.
     """
     conditions = approximator.graph.network_conditions()[network_idx]
+    variable_shapes = inference_variable_shapes_by_network(approximator, approximator._data_shapes(data))
     data_node = approximator.graph.simulation_graph.data_node()
 
     if data_node not in conditions:
         return None
 
     summary_outputs = summary_outputs_by_network(approximator, data)
-    required_dim = len(approximator.inference_networks[network_idx].base_distribution.dims) + 1
+    required_dim = len(variable_shapes[network_idx])
     summary_by_dim = {len(keras.ops.shape(s)): s for s in summary_outputs.values()}
 
     return summary_by_dim[required_dim]

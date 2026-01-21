@@ -1,4 +1,5 @@
 import keras
+import numpy as np
 import pytest
 
 from bayesflow.experimental.graphical_approximator.utils import (
@@ -1489,7 +1490,8 @@ def test_summary_input_two_level(two_level_simulator, two_level_approximator):
     approximator.build(data_shapes)
 
     expected_output = data["y"]
-    assert keras.ops.all(summary_input(approximator, data) == expected_output)
+    observed = summary_input(approximator, data)
+    assert keras.ops.all(keras.ops.isclose(observed, expected_output))
 
 
 def test_summary_input_three_level(three_level_simulator, three_level_approximator):
@@ -1500,7 +1502,8 @@ def test_summary_input_three_level(three_level_simulator, three_level_approximat
     approximator.build(data_shapes)
 
     expected_output = data["y"]
-    assert keras.ops.all(summary_input(approximator, data) == expected_output)
+    observed = summary_input(approximator, data)
+    assert keras.ops.all(keras.ops.isclose(observed, expected_output))
 
 
 def test_summary_input_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
@@ -1511,7 +1514,8 @@ def test_summary_input_crossed_design_irt(crossed_design_irt_simulator, crossed_
     approximator.build(data_shapes)
 
     expected_output = keras.ops.transpose(data["obs"], (0, 2, 1, 3))
-    assert keras.ops.all(summary_input(approximator, data) == expected_output)
+    observed = summary_input(approximator, data)
+    assert keras.ops.all(keras.ops.isclose(observed, expected_output))
 
 
 @pytest.mark.parametrize(
@@ -1538,4 +1542,4 @@ def test_split_network_output(request, simulator_fixture, approximator_fixture):
         split_output = split_network_output(approximator, rep_vars, meta_data, network_idx)
 
         for k, v in split_output.items():
-            assert keras.ops.all(v[:, 0, ...] == data[k])
+            assert keras.ops.all(keras.ops.isclose(v[:, 0, ...], data[k]))

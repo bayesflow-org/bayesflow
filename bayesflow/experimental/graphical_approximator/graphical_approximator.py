@@ -293,19 +293,8 @@ class GraphicalApproximator(Approximator):
             inference_conditions[name] = keras.ops.repeat(conditions[name], num_samples, axis=0)
 
         for i, inference_network in enumerate(self.inference_networks):
-            # band-aid until updated base distribution PR is merged
             cond = prepare_inference_conditions(self, inference_conditions, i)
-            required_z_dim = [batch_size * num_samples]
-            required_z_dim.extend(np.shape(cond)[1:-1])
-            required_z_dim.append(inference_network.base_distribution.dims[-1])
-            required_z_dim = tuple(required_z_dim)
-
-            # z = inference_network.base_distribution.sample(batch_size * num_samples)
-            z = keras.random.normal(required_z_dim)
-
-            samples = inference_network(z, conditions=cond, inverse=True)
-
-            # samples = inference_network.sample((batch_size * num_samples,), conditions=cond)
+            samples = inference_network.sample(batch_size * num_samples, conditions=cond)
             split_output = split_network_output(self, samples, meta_dict, i)
 
             for k, v in split_output.items():
@@ -321,33 +310,17 @@ class GraphicalApproximator(Approximator):
         return sample_dict
 
     def log_prob(self, data):
-        # band-aid until updated base distribution PR is merged
-        def monkey_network_log_prob(inference_network, x, conditions):
-            z = x
-            base_dist = DiagonalNormal()
-            base_dist.build(keras.ops.shape(z))
-
-            log_det = keras.ops.zeros(keras.ops.shape(x)[:-1])
-            for layer in inference_network.invertible_layers:
-                z, det = layer(z, conditions=conditions, inverse=False, training=False)
-                log_det += det
-
-            log_density_latent = base_dist.log_prob(z)
-            log_density = log_density_latent + log_det
-
-            return log_density
-
         variable_names = self.graph.simulation_graph.variable_names()
         adapted, ldj_adapter = self.adapter(data, log_det_jac=True)
         batch_size = self._batch_size_from_data(data)
-        log_prob = np.zeros(batch_size)
+        log_prob = keras.ops.zeros(batch_size)
 
         variables = inference_variables_by_network(self, adapted)
         conditions = inference_conditions_by_network(self, adapted)
 
         # log_probs
         for i, inference_network in enumerate(self.inference_networks):
-            log_prob_i = monkey_network_log_prob(inference_network, variables[i], conditions[i])
+            log_prob_i = inference_network.log_prob(variables[i], conditions[i])
             log_prob += keras.ops.sum(keras.ops.reshape(log_prob_i, (batch_size, -1)), axis=-1)
 
         # log_det_jac for standardization layers
@@ -361,7 +334,7 @@ class GraphicalApproximator(Approximator):
         for key in ldj_adapter:
             log_prob += keras.ops.sum(keras.ops.reshape(ldj_adapter[key], (batch_size, -1)), axis=-1)
 
-        return keras.ops.convert_to_numpy(log_prob)
+        return log_prob
 
     def _batch_size_from_data(self, data):
         """

@@ -105,14 +105,13 @@ Using the high-level interface is easy, as demonstrated by the minimal working e
 import bayesflow as bf
 
 workflow = bf.BasicWorkflow(
-    inference_network=bf.networks.CouplingFlow(),
-    summary_network=bf.networks.TimeSeriesNetwork(),
+    inference_network=bf.networks.FlowMatching(),
     inference_variables=["parameters"],
-    summary_variables=["observables"],
+    inference_conditions=["observables"],
     simulator=bf.simulators.SIR()
 )
 
-history = workflow.fit_online(epochs=15, batch_size=32, num_batches_per_epoch=200)
+history = workflow.fit_online(epochs=20, batch_size=32, num_batches_per_epoch=200)
 
 diagnostics = workflow.plot_default_diagnostics(test_data=300)
 ```

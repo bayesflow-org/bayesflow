@@ -37,15 +37,6 @@ class Mixture(Distribution):
             Default is `False`.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
-
-        Attributes
-        ----------
-        distributions : Sequence[Distribution]
-            The list of component distributions.
-        mixture_logits : Tensor
-            Trainable or fixed logits representing the mixture weights.
-        dim : int or None
-            Dimensionality of the output samples; set when first sampling.
         """
 
         super().__init__(**kwargs)
@@ -59,7 +50,7 @@ class Mixture(Distribution):
 
         self.trainable_mixture = trainable_mixture
 
-        self.dims = None
+        self.dim = None
         self._mixture_logits = None
 
     @allow_batch_size
@@ -87,7 +78,7 @@ class Mixture(Distribution):
         cat_samples = cat_samples.argmax(axis=-1)
 
         # Prepare array to fill and dtype to infer
-        samples = np.zeros(batch_shape + self.dims)
+        samples = np.zeros(batch_shape + (self.dim,))
         dtype = None
 
         # Fill in array with vectorized sampling per component
@@ -137,7 +128,7 @@ class Mixture(Distribution):
         if self.built:
             return
 
-        self.dims = tuple(input_shape[1:])
+        self.dim = input_shape[-1]
 
         for distribution in self.distributions:
             distribution.build(input_shape)

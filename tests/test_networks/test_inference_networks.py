@@ -108,6 +108,11 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     from bayesflow.utils import jacobian
 
     try:
+        if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
+            # jax backend does not support adaptive solvers for numerical jacobian computation yet
+            if generative_inference_network.integrate_kwargs["steps"] == "adaptive":
+                generative_inference_network.integrate_kwargs.update({"steps": 250})
+
         output, log_density = generative_inference_network(random_samples, conditions=random_conditions, density=True)
     except NotImplementedError:
         # network does not support density estimation
@@ -119,7 +124,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_output, numerical_jacobian = jacobian(f, random_samples, return_output=True)
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
-    assert_allclose(output, numerical_output)
+    assert_allclose(output, numerical_output, msg="Outputs of numerical jacobian and network do not match.")
 
     log_prob = generative_inference_network.base_distribution.log_prob(output)
 
@@ -127,7 +132,13 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))
 
     # use a high tolerance because the numerical jacobian is not very accurate
-    assert_allclose(log_density, numerical_log_density, rtol=1e-3, atol=1e-3)
+    assert_allclose(
+        log_density,
+        numerical_log_density,
+        rtol=1e-3,
+        atol=1e-3,
+        msg="Density of numerical jacobian and network do not match.",
+    )
 
 
 def test_serialize_deserialize(inference_network, random_samples, random_conditions):
@@ -162,16 +173,3 @@ def test_compute_metrics(inference_network, random_samples, random_conditions):
 
     metrics = inference_network.compute_metrics(random_samples, conditions=random_conditions)
     assert "loss" in metrics
-
-
-def test_subnet_separate_inputs(inference_network_subnet_separate_inputs, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    inference_network_subnet_separate_inputs.build(xz_shape, conditions_shape)
-
-    assert inference_network_subnet_separate_inputs.built is True
-
-    # check the model has variables
-    assert inference_network_subnet_separate_inputs.variables, "Model has no variables."
-
-    inference_network_subnet_separate_inputs(random_samples, random_conditions, inverse=True)

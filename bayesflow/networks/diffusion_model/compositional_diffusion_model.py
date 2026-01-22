@@ -5,7 +5,14 @@ import numpy as np
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils import expand_right_as, integrate, integrate_stochastic, STOCHASTIC_METHODS
+from bayesflow.utils import (
+    expand_right_as,
+    logging,
+    integrate,
+    integrate_stochastic,
+    STOCHASTIC_METHODS,
+    DETERMINISTIC_METHODS,
+)
 from bayesflow.utils.serialization import serializable
 from .diffusion_model import DiffusionModel
 from .schedules.noise_schedule import NoiseSchedule
@@ -23,15 +30,6 @@ class CompositionalDiffusionModel(DiffusionModel):
     [3] Compositional amortized inference for large-scale hierarchical Bayesian models: Arruda et al. (2025)
     """
 
-    MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-    }
-
     TIME_MLP_DEFAULT_CONFIG = {
         "widths": (256, 256, 256, 256, 256),
         "activation": "mish",
@@ -39,6 +37,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         "residual": True,
         "dropout": 0.05,
         "spectral_normalization": False,
+        "time_embedding_dim": 32,
         "merge": "concat",
         "norm": "layer",
     }
@@ -52,8 +51,8 @@ class CompositionalDiffusionModel(DiffusionModel):
         self,
         *,
         subnet: str | type | keras.Layer = "time_mlp",
-        noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
-        prediction_type: Literal["velocity", "noise", "F", "x"] = "F",
+        noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "cosine",
+        prediction_type: Literal["velocity", "noise", "F", "x"] = "velocity",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
         subnet_kwargs: dict[str, any] = None,
         schedule_kwargs: dict[str, any] = None,
@@ -61,7 +60,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         **kwargs,
     ):
         """
-        Initializes a diffusion model with configurable subnet architecture, noise schedule,
+        Initializes a compositional diffusion model with configurable subnet architecture, noise schedule,
         and prediction/loss types for amortized Bayesian inference.
 
         Note, that score-based diffusion is the most sluggish of all available samplers,
@@ -70,8 +69,10 @@ class CompositionalDiffusionModel(DiffusionModel):
         Parameters
         ----------
         subnet : str, type or keras.Layer, optional
-            Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "time_mlp".
+            A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
+            If a string is provided, it should be a registered name (e.g., "time_mlp").
+            If a type or keras.Layer is provided, it will be directly instantiated
+            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
             Noise schedule controlling the diffusion dynamics. Can be a string identifier,
             a schedule class, or a pre-initialized schedule instance. Default is "edm".
@@ -85,12 +86,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             Additional keyword arguments passed to the noise schedule constructor. Default is None.
         integrate_kwargs : dict[str, any], optional
             Configuration dictionary for integration during training or inference. Default is None.
-        concatenate_subnet_input: bool, optional
-            Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (log signal-to-noise ratio),
-            and optional 'conditions'. Default is True.
-
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
         """
@@ -132,6 +127,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         compute_prior_score: Callable[[Tensor], Tensor],
         mini_batch_size: int | None = None,
         training: bool = False,
+        **kwargs,
     ) -> Tensor:
         """
         Computes the compositional velocity for multiple datasets using the formula:
@@ -153,6 +149,8 @@ class CompositionalDiffusionModel(DiffusionModel):
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
             Whether in training mode
+        **kwargs
+            Additional keyword arguments passed to the individual score computation.
 
         Returns
         -------
@@ -170,6 +168,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             compute_prior_score=compute_prior_score,
             mini_batch_size=mini_batch_size,
             training=training,
+            **kwargs,
         )
 
         # Compute velocity using standard drift-diffusion formulation
@@ -192,6 +191,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         compute_prior_score: Callable[[Tensor], Tensor],
         mini_batch_size: int | None = None,
         training: bool = False,
+        **kwargs,
     ) -> Tensor:
         """
         Computes the compositional score for multiple datasets using the formula:
@@ -211,6 +211,8 @@ class CompositionalDiffusionModel(DiffusionModel):
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
             Whether in training mode
+        **kwargs
+            Additional keyword arguments passed to the individual score computation
 
         Returns
         -------
@@ -235,7 +237,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             conditions_batch = ops.take(conditions, mini_batch_idx, axis=1)
         else:
             conditions_batch = conditions
-        individual_scores = self._compute_individual_scores(xz, log_snr_t, conditions_batch, training)
+        individual_scores = self._compute_individual_scores(xz, log_snr_t, conditions_batch, training, **kwargs)
 
         # Compute prior score component
         prior_score = compute_prior_score(xz)
@@ -250,11 +252,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         return compositional_score
 
     def _compute_individual_scores(
-        self,
-        xz: Tensor,
-        log_snr_t: Tensor,
-        conditions: Tensor,
-        training: bool,
+        self, xz: Tensor, log_snr_t: Tensor, conditions: Tensor, training: bool, **kwargs
     ) -> Tensor:
         """
         Compute individual dataset scores s_ψ(θ,t,yᵢ) for each compositional condition.
@@ -286,7 +284,9 @@ class CompositionalDiffusionModel(DiffusionModel):
         conditions_flat = ops.reshape(conditions, (n_datasets * n_compositional, num_samples) + conditions_dims)
 
         # Use standard score function
-        scores_flat = self.score(xz_flat, log_snr_t=log_snr_flat, conditions=conditions_flat, training=training)
+        scores_flat = self.score(
+            xz_flat, log_snr_t=log_snr_flat, conditions=conditions_flat, training=training, **kwargs
+        )
 
         # Reshape back to compositional structure
         scores = ops.reshape(scores_flat, (n_datasets, n_compositional, num_samples) + dims)
@@ -305,9 +305,8 @@ class CompositionalDiffusionModel(DiffusionModel):
         Inverse pass for compositional diffusion sampling.
         """
         n_compositional = ops.shape(conditions)[1]
-        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
-        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
-        integrate_kwargs = integrate_kwargs | kwargs
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
+
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
         if mini_batch_size is None:
             mini_batch_size = n_compositional
@@ -321,7 +320,12 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
-                raise ValueError("Stochastic methods are not supported for density computation.")
+                logging.warning(
+                    "Stochastic methods are not supported for density computation."
+                    " Falling back to ODE solver."
+                    " Use one of the deterministic methods: " + str(DETERMINISTIC_METHODS) + "."
+                )
+                integrate_kwargs["method"] = "tsit5"
 
             def deltas(time, xz):
                 v = self.compositional_velocity(
@@ -332,6 +336,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                     compute_prior_score=compute_prior_score,
                     mini_batch_size=mini_batch_size,
                     training=training,
+                    **kwargs,
                 )
                 trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
                 return {"xz": v, "trace": trace}
@@ -360,6 +365,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                         compute_prior_score=compute_prior_score,
                         mini_batch_size=mini_batch_size,
                         training=training,
+                        **kwargs,
                     )
                 }
 
@@ -378,6 +384,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                             compute_prior_score=compute_prior_score,
                             mini_batch_size=mini_batch_size,
                             training=training,
+                            **kwargs,
                         )
                     }
 
@@ -402,6 +409,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                         compute_prior_score=compute_prior_score,
                         mini_batch_size=mini_batch_size,
                         training=training,
+                        **kwargs,
                     )
                 }
 

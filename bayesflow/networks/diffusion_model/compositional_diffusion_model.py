@@ -308,6 +308,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
 
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
+        kwargs.pop("mini_batch_size")
         if mini_batch_size is None:
             mini_batch_size = n_compositional
         mini_batch_size = max(mini_batch_size, 1)

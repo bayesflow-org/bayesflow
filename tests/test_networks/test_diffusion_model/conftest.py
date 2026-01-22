@@ -6,7 +6,7 @@ import keras
 def cosine_noise_schedule():
     from bayesflow.networks.diffusion_model.schedules import CosineNoiseSchedule
 
-    return CosineNoiseSchedule(min_log_snr=-12, max_log_snr=12, shift=0.1, weighting="sigmoid")
+    return CosineNoiseSchedule(min_log_snr=-12, max_log_snr=12, shift=0.1)
 
 
 @pytest.fixture()
@@ -28,10 +28,9 @@ def noise_schedule(request):
 def simple_diffusion_model():
     """Create a simple diffusion model for testing compositional sampling."""
     from bayesflow.networks.diffusion_model import DiffusionModel
-    from bayesflow.networks import MLP
 
     return DiffusionModel(
-        subnet=MLP(widths=[32, 32]),
+        subnet_kwargs={"widths": (32, 32)},
         noise_schedule="cosine",
         prediction_type="noise",
         loss_type="noise",
@@ -42,10 +41,9 @@ def simple_diffusion_model():
 def simple_compositional_diffusion_model():
     """Create a simple diffusion model for testing compositional sampling."""
     from bayesflow.networks.diffusion_model import CompositionalDiffusionModel
-    from bayesflow.networks import MLP
 
     return CompositionalDiffusionModel(
-        subnet=MLP(widths=[32, 32]),
+        subnet_kwargs={"widths": (32, 32)},
         noise_schedule="cosine",
         prediction_type="noise",
         loss_type="noise",

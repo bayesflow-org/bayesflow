@@ -43,7 +43,7 @@ def split_network_output(approximator: "GraphicalApproximator", output: Tensor, 
                 samples[variable] = keras.ops.expand_dims(sample, axis=-1)
                 i += group_dim * variable_dim
 
-    return samples
+    return keras.ops.convert_to_numpy(samples)
 
 
 def summary_input(approximator: "GraphicalApproximator", data: Mapping):
@@ -63,7 +63,7 @@ def summary_input(approximator: "GraphicalApproximator", data: Mapping):
     # indices does not refer to batch and data dimensions, so they have to be added
     indices = [0] + [idx + 1 for idx in indices] + list(range(len(indices) + 1, len(keras.ops.shape(summary_input))))
 
-    return keras.ops.transpose(summary_input, axes=indices)
+    return keras.ops.convert_to_numpy(keras.ops.transpose(summary_input, axes=indices))
 
 
 def summary_outputs_by_network(approximator: "GraphicalApproximator", data: Mapping):
@@ -80,6 +80,9 @@ def summary_outputs_by_network(approximator: "GraphicalApproximator", data: Mapp
         result[i] = output_tensor
 
         input_tensor = output_tensor
+
+    for k, v in result.items():
+        result[k] = keras.ops.convert_to_numpy(v)
 
     return result
 
@@ -100,6 +103,9 @@ def summary_inputs_by_network(approximator: "GraphicalApproximator", data: Mappi
         # next summary network uses previous output as input
         input_tensor = output_tensor
 
+    for k, v in result.items():
+        result[k] = keras.ops.convert_to_numpy(v)
+
     return result
 
 
@@ -112,6 +118,9 @@ def data_conditions_by_network(approximator: "GraphicalApproximator", data: Mapp
 
     for i, _ in enumerate(approximator.inference_networks):
         result[i] = prepare_data_conditions(approximator, data, i)
+
+    for k, v in result.items():
+        result[k] = keras.ops.convert_to_numpy(v)
 
     return result
 
@@ -131,7 +140,7 @@ def prepare_data_conditions(approximator: "GraphicalApproximator", data: Mapping
     required_dim = len(variable_shapes[network_idx])
     summary_by_dim = {len(keras.ops.shape(s)): s for s in summary_outputs.values()}
 
-    return summary_by_dim[required_dim]
+    return keras.ops.convert_to_numpy(summary_by_dim[required_dim])
 
 
 def inference_variables_by_network(approximator: "GraphicalApproximator", data: Mapping):
@@ -143,6 +152,9 @@ def inference_variables_by_network(approximator: "GraphicalApproximator", data: 
 
     for i, _ in enumerate(approximator.inference_networks):
         result[i] = prepare_inference_variables(approximator, data, i)
+
+    for k, v in result.items():
+        result[k] = keras.ops.convert_to_numpy(v)
 
     return result
 
@@ -175,7 +187,7 @@ def prepare_inference_variables(approximator: "GraphicalApproximator", data: Map
 
             vars.append(var)
 
-    return concatenate(vars)
+    return keras.ops.convert_to_numpy(concatenate(vars))
 
 
 def inference_conditions_by_network(approximator: "GraphicalApproximator", data: Mapping):
@@ -187,6 +199,9 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", data:
 
     for i, _ in enumerate(approximator.inference_networks):
         result[i] = prepare_inference_conditions(approximator, data, i)
+
+    for k, v in result.items():
+        result[k] = keras.ops.convert_to_numpy(v)
 
     return result
 
@@ -236,7 +251,7 @@ def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Ma
     if repetitions != {}:
         conditions = add_node_reps_to_conditions(conditions, repetitions)
 
-    return conditions
+    return keras.ops.convert_to_numpy(conditions)
 
 
 def add_node_reps_to_conditions(conditions, repetitions: Mapping[str, int]):
@@ -247,7 +262,7 @@ def add_node_reps_to_conditions(conditions, repetitions: Mapping[str, int]):
     squared = keras.ops.sqrt(rep_values)
     expanded = keras.ops.expand_dims(squared, axis=0)
 
-    return concatenate([conditions, expanded])
+    return keras.ops.convert_to_numpy(concatenate([conditions, expanded]))
 
 
 def summary_input_shape(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]) -> Shape:
@@ -487,7 +502,7 @@ def concatenate(tensors, batch_dims=1):
     original_batch_shape = keras.ops.shape(tensors[0])[:batch_dims]
     final_shape = (*original_batch_shape, *keras.ops.shape(concatenated)[1:])
 
-    return keras.ops.reshape(concatenated, final_shape)
+    return keras.ops.convert_to_numpy(keras.ops.reshape(concatenated, final_shape))
 
 
 def add_sample_dimension(tensor, num_samples, batch_dims=1):
@@ -505,7 +520,7 @@ def add_sample_dimension(tensor, num_samples, batch_dims=1):
     expanded = keras.ops.expand_dims(tensor, axis=batch_dims)
     stacked = keras.ops.broadcast_to(expanded, target_shape)
 
-    return stacked
+    return keras.ops.convert_to_numpy(stacked)
 
 
 # TENSORFLOW

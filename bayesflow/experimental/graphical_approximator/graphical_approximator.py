@@ -1,15 +1,17 @@
 import multiprocessing as mp
+import warnings
 from collections.abc import Mapping, Sequence
 from typing import Literal
 
 import keras
 import numpy as np
 
-from bayesflow.utils import find_batch_size, logging
+from bayesflow.utils import logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-from .dataset import GraphicalDataset
+
 from ...adapters import Adapter
 from ...approximators import Approximator
+from ...datasets import OfflineDataset, OnlineDataset
 from ...networks import InferenceNetwork, SummaryNetwork
 from ...networks.standardization import Standardization
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
@@ -26,6 +28,22 @@ from .utils import (
     summary_inputs_by_network,
     summary_outputs_by_network,
 )
+
+
+def is_keras_tensorish(x):
+    # Covers KerasTensor and backend tensors; ints will fail these.
+    return hasattr(x, "shape") and hasattr(x, "dtype")
+
+
+def stop_grad_tree(x):
+    if is_keras_tensorish(x):
+        return keras.ops.stop_gradient(x)
+    if isinstance(x, dict):
+        return {k: stop_grad_tree(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        out = [stop_grad_tree(v) for v in x]
+        return tuple(out) if isinstance(x, tuple) else out
+    return x
 
 
 @serializable("bayesflow.experimental")
@@ -91,6 +109,7 @@ class GraphicalApproximator(Approximator):
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
+    # This classmethod can be removed once find_batch_size can handle SimulationOutput
     @classmethod
     def build_dataset(
         cls,
@@ -104,9 +123,9 @@ class GraphicalApproximator(Approximator):
         use_multiprocessing: bool = False,
         max_queue_size: int = 32,
         **kwargs,
-    ) -> GraphicalDataset:
+    ) -> OnlineDataset:
         if batch_size == "auto":
-            batch_size = find_batch_size(memory_budget=str(memory_budget), sample=dict(simulator.sample(1)))
+            batch_size = 32  # find_batch_size(memory_budget=str(memory_budget), sample=dict(simulator.sample(1)))
             logging.info(f"Using a batch size of {batch_size}.")
 
         if workers == "auto":
@@ -115,11 +134,12 @@ class GraphicalApproximator(Approximator):
 
         workers = workers or 1
 
-        return GraphicalDataset(
+        return OnlineDataset(
             simulator=simulator,
             batch_size=batch_size,
             num_batches=num_batches,
             adapter=adapter,
+            augmentations=lambda x: dict(x),  # because OnlineDataset does not work with SimulationOutput yet
             workers=workers,
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,
@@ -286,6 +306,14 @@ class GraphicalApproximator(Approximator):
             mock_data_shapes = self._data_shapes(mock_data)
             self.build(mock_data_shapes)
 
+        if "dataset" in kwargs:
+            kwargs["dataset"] = OfflineDataset(
+                kwargs["dataset"],
+                batch_size=kwargs["batch_size"],
+                adapter=self.adapter,
+                augmentations=self.subset_data,
+            )
+
         return super(GraphicalApproximator, self).fit(*args, **kwargs, adapter=self.adapter)
 
     def sample(self, *, num_samples: int, conditions: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
@@ -366,6 +394,34 @@ class GraphicalApproximator(Approximator):
             log_prob += keras.ops.sum(keras.ops.reshape(ldj_adapter[key], (batch_size, -1)), axis=-1)
 
         return log_prob
+
+    def subset_data(self, data, meta_fn=None):
+        output_shapes = self.graph.simulation_graph.output_shapes()
+
+        if not meta_fn:
+            meta_fn = self.graph.simulation_graph.meta_fn
+
+        output_shapes = self.graph.simulation_graph.output_shapes(meta_fn())
+        output = {}
+
+        for k, v in data.items():
+            if k not in output_shapes:
+                raise KeyError(f"Unexpected entry data entry: {k}")
+
+            begin = (0,) * len(keras.ops.shape(v))
+
+            output_shape = list(output_shapes[k])
+            output_shape[0] = keras.ops.shape(v)[0]  # replace batch size placeholder
+            output_shape = tuple(output_shape)
+
+            # current keras version throws a deprecation warning when using keras.ops.slice even if
+            # called approriately
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Using a non-tuple sequence")
+                output[k] = keras.ops.slice(v, begin, output_shape)
+                output[k] = keras.ops.convert_to_numpy(output[k])
+
+        return output
 
     def _batch_size_from_data(self, data):
         """

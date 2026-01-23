@@ -38,9 +38,9 @@ highlights how concepts and classes relate between the two versions.
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./img/bayesflow_landing_dark.jpg">
-  <source media="(prefers-color-scheme: light)" srcset="./img/bayesflow_landing_light.jpg">
-  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Choose your backend: BayesFlow is based on Keras, so you can choose PyTorch, TensorFlow or JAX. 2. Define your simulator: You specify your simulator in Python, and use it to generate simulated data. 3. Choose your algorithm: You define a generative neural network that you can use for estimation after training." src="./img/bayesflow_landing_dark.jpg">
+  <source media="(prefers-color-scheme: dark)" srcset="./img/bf_landing_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="./img/bf_landing_light.png">
+  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the gold-standard toolkit for simulation intelligence." src="./img/bf_landing_light.png">
 </picture>
 </div>
 

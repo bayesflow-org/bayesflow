@@ -1,6 +1,7 @@
+import copy
 import inspect
 import itertools
-from collections.abc import Callable, MutableMapping
+from collections.abc import Callable
 from typing import Any
 
 import networkx as nx
@@ -10,28 +11,28 @@ from ...simulators import Simulator
 from ..graphs import SimulationGraph
 
 
-class SimulationOutput(MutableMapping):
-    def __init__(self, data, meta):
-        self.data = data
-        self.meta = meta
+class SimulationOutput(dict):
+    def __init__(self, data: dict, meta: dict | None = None, **kwargs):
+        super().__init__(data, **kwargs)
+        self.meta = dict(meta) if meta else {}
 
-    def copy(self):
-        return SimulationOutput(self.data.copy(), self.meta.copy())
+    def copy(self) -> "SimulationOutput":
+        return SimulationOutput(self, meta=self.meta.copy())
 
-    def __getitem__(self, key):
-        return self.data[key]
+    def __copy__(self) -> "SimulationOutput":
+        return self.copy()
 
-    def __setitem__(self, key, value):
-        self.data[key] = value
+    def __deepcopy__(self, memo) -> "SimulationOutput":
+        data = copy.deepcopy(dict(self), memo)
+        meta = copy.deepcopy(dict(self.meta), memo)
+        return SimulationOutput(data, meta)
 
-    def __delitem__(self, key):
-        del self.data[key]
+    @classmethod
+    def fromkeys(cls, iterable, value=None, *, meta: dict | None = None) -> "SimulationOutput":
+        return cls(dict.fromkeys(iterable, value), meta=meta)
 
-    def __iter__(self):
-        return iter(self.data)
-
-    def __len__(self):
-        return len(self.data)
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({dict.__repr__(self)}, meta={self.meta!r})"
 
 
 class GraphicalSimulator(Simulator):
@@ -84,7 +85,7 @@ class GraphicalSimulator(Simulator):
 
     def sample(
         self, batch_size: int, sample_shape: tuple[int] | None = None, meta: dict | None = None, **kwargs
-    ) -> dict[str, np.ndarray]:
+    ) -> SimulationOutput:
         """
         Generates samples by topologically traversing the DAG.
         For each node, the sampling function is called based on parent values.

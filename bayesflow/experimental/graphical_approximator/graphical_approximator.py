@@ -1,16 +1,18 @@
+import multiprocessing as mp
 from collections.abc import Mapping, Sequence
+from typing import Literal
 
 import keras
 import numpy as np
 
+from bayesflow.utils import find_batch_size, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-
+from .dataset import GraphicalDataset
 from ...adapters import Adapter
 from ...approximators import Approximator
-from ...distributions import DiagonalNormal
 from ...networks import InferenceNetwork, SummaryNetwork
 from ...networks.standardization import Standardization
-from ..graphical_simulator import SimulationOutput
+from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .utils import (
     inference_condition_shapes_by_network,
@@ -90,6 +92,40 @@ class GraphicalApproximator(Approximator):
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
     @classmethod
+    def build_dataset(
+        cls,
+        *,
+        batch_size: Literal["auto"] | int = "auto",
+        num_batches: int,
+        adapter: Adapter,
+        memory_budget: Literal["auto"] | int = "auto",
+        simulator: GraphicalSimulator,
+        workers: Literal["auto"] | int = "auto",
+        use_multiprocessing: bool = False,
+        max_queue_size: int = 32,
+        **kwargs,
+    ) -> GraphicalDataset:
+        if batch_size == "auto":
+            batch_size = find_batch_size(memory_budget=str(memory_budget), sample=dict(simulator.sample(1)))
+            logging.info(f"Using a batch size of {batch_size}.")
+
+        if workers == "auto":
+            workers = mp.cpu_count()
+            logging.info(f"Using {workers} data loading workers.")
+
+        workers = workers or 1
+
+        return GraphicalDataset(
+            simulator=simulator,
+            batch_size=batch_size,
+            num_batches=num_batches,
+            adapter=adapter,
+            workers=workers,
+            use_multiprocessing=use_multiprocessing,
+            max_queue_size=max_queue_size,
+        )
+
+    @classmethod
     def from_config(cls, config):
         return cls(**deserialize(config))
 
@@ -154,7 +190,6 @@ class GraphicalApproximator(Approximator):
             metrics for the inference and summary networks. Each metric key is prefixed with
             "inference_" or "summary_" to indicate its source.
         """
-
         # compute summary metrics
         summary_inputs = summary_inputs_by_network(self, kwargs)
         summary_metrics = {}
@@ -251,10 +286,6 @@ class GraphicalApproximator(Approximator):
             mock_data_shapes = self._data_shapes(mock_data)
             self.build(mock_data_shapes)
 
-        if "dataset" in kwargs.keys():
-            if isinstance(kwargs["dataset"], SimulationOutput):
-                kwargs["dataset"] = kwargs["dataset"].data
-
         return super(GraphicalApproximator, self).fit(*args, **kwargs, adapter=self.adapter)
 
     def sample(self, *, num_samples: int, conditions: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
@@ -346,9 +377,4 @@ class GraphicalApproximator(Approximator):
         return batch_size
 
     def _data_shapes(self, adapted_data: SimulationOutput | Mapping) -> dict[str, tuple[int]]:
-        if isinstance(adapted_data, dict):
-            return keras.tree.map_structure(keras.ops.shape, adapted_data)
-        elif isinstance(adapted_data, SimulationOutput):
-            return keras.tree.map_structure(keras.ops.shape, adapted_data.data)
-
-        return {}
+        return keras.tree.map_structure(keras.ops.shape, dict(adapted_data))

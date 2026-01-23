@@ -27,7 +27,7 @@ SRC_DIR = BASE_DIR / "bayesflow"
 OUTPUT_DIR = BASE_DIR / "llm_context"
 
 EXCLUDED_DIR_NAMES = ["experimental"]
-EXCLUDED_FILE_NAMES = ["From_BayesFlow_1.1_to_2.0.ipynb"]
+EXCLUDED_FILE_NAMES = ["From_BayesFlow_1.1_to_2.0.ipynb"]  # Weakens adherence to BF 2+ API by introducing BF 1.x code.
 
 
 def convert_notebooks_to_md(src_dir: Path, dst_dir: Path, exclude_files: Sequence[str] = ()) -> List[Path]:

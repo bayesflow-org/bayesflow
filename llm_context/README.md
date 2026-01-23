@@ -17,11 +17,11 @@ This folder contains Markdown context files to improve LLM assistance for BayesF
 
 ## Prompt Tip
 ### Compact File
-You are answering questions about BayesFlow using the provided context .md file containing all BayesFlow tutorials. If needed, additionally look up the latest source code from the BayesFlow documentation.
+You are answering questions about the BayesFlow Python library using the provided context .md file containing all BayesFlow tutorials. If needed, additionally look up the latest source code from the BayesFlow documentation.
 QUESTION: <user question here>
 
 ### Full File
-You are answering questions about BayesFlow using only the provided context .md file containing all BayesFlow tutorials as well as the BayesFlow source code.
+You are answering questions about the BayesFlow Python library using only the provided context .md file containing all BayesFlow tutorials as well as the BayesFlow source code.
 QUESTION: <user question here>
 
 ## Disclaimer

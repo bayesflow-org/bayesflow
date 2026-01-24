@@ -30,22 +30,6 @@ from .utils import (
 )
 
 
-def is_keras_tensorish(x):
-    # Covers KerasTensor and backend tensors; ints will fail these.
-    return hasattr(x, "shape") and hasattr(x, "dtype")
-
-
-def stop_grad_tree(x):
-    if is_keras_tensorish(x):
-        return keras.ops.stop_gradient(x)
-    if isinstance(x, dict):
-        return {k: stop_grad_tree(v) for k, v in x.items()}
-    if isinstance(x, (list, tuple)):
-        out = [stop_grad_tree(v) for v in x]
-        return tuple(out) if isinstance(x, tuple) else out
-    return x
-
-
 @serializable("bayesflow.experimental")
 class GraphicalApproximator(Approximator):
     """

@@ -9,6 +9,7 @@ import numpy as np
 from bayesflow.utils import logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
+from .dataset import GraphicalDataset
 from ...adapters import Adapter
 from ...approximators import Approximator
 from ...datasets import OfflineDataset, OnlineDataset
@@ -93,42 +94,6 @@ class GraphicalApproximator(Approximator):
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
-    # This classmethod can be removed once find_batch_size can handle SimulationOutput
-    @classmethod
-    def build_dataset(
-        cls,
-        *,
-        batch_size: Literal["auto"] | int = "auto",
-        num_batches: int,
-        adapter: Adapter,
-        memory_budget: Literal["auto"] | int = "auto",
-        simulator: GraphicalSimulator,
-        workers: Literal["auto"] | int = "auto",
-        use_multiprocessing: bool = False,
-        max_queue_size: int = 32,
-        **kwargs,
-    ) -> OnlineDataset:
-        if batch_size == "auto":
-            batch_size = 32  # find_batch_size(memory_budget=str(memory_budget), sample=dict(simulator.sample(1)))
-            logging.info(f"Using a batch size of {batch_size}.")
-
-        if workers == "auto":
-            workers = mp.cpu_count()
-            logging.info(f"Using {workers} data loading workers.")
-
-        workers = workers or 1
-
-        return OnlineDataset(
-            simulator=simulator,
-            batch_size=batch_size,
-            num_batches=num_batches,
-            adapter=adapter,
-            augmentations=lambda x: dict(x),  # because OnlineDataset does not work with SimulationOutput yet
-            workers=workers,
-            use_multiprocessing=use_multiprocessing,
-            max_queue_size=max_queue_size,
-        )
-
     @classmethod
     def from_config(cls, config):
         return cls(**deserialize(config))
@@ -195,21 +160,17 @@ class GraphicalApproximator(Approximator):
             "inference_" or "summary_" to indicate its source.
         """
         # compute summary metrics
-        summary_inputs = summary_inputs_by_network(self, kwargs)
         summary_metrics = {}
 
         for i, summary_network in enumerate(self.summary_networks or []):
-            summary_metrics[i] = summary_network.compute_metrics(summary_inputs[i], stage=stage)
+            summary_metrics[i] = summary_network.compute_metrics(kwargs["summary_inputs"][i], stage=stage)
             summary_metrics[i].pop("outputs")
 
-        # compute inference metrics
-        inference_conditions = inference_conditions_by_network(self, kwargs)
-        inference_variables = inference_variables_by_network(self, kwargs)
-
+        # # compute inference metrics
         inference_metrics = {}
         for i, inference_network in enumerate(self.inference_networks):
             inference_metrics[i] = inference_network.compute_metrics(
-                inference_variables[i], conditions=inference_conditions[i], stage=stage
+                kwargs["inference_variables"][i], conditions=kwargs["inference_conditions"][i], stage=stage
             )
 
         # combine metrics
@@ -282,23 +243,63 @@ class GraphicalApproximator(Approximator):
         """
 
         if not self.built and "dataset" in kwargs:
-            data_shapes = self._data_shapes(kwargs["dataset"])
+            data_shapes = self._data_shapes(self.adapter(kwargs["dataset"]))
             self.build(data_shapes)
 
         if not self.built and "simulator" in kwargs:
             mock_data = kwargs["simulator"].sample(1)
-            mock_data_shapes = self._data_shapes(mock_data)
-            self.build(mock_data_shapes)
+            data_shapes = self._data_shapes(self.adapter(mock_data))
+            self.build(data_shapes)
 
-        if "dataset" in kwargs:
-            kwargs["dataset"] = OfflineDataset(
-                kwargs["dataset"],
+        if "simulator" in kwargs:
+            data_shapes = self._data_shapes(kwargs["simulator"].sample(1))
+            kwargs["dataset"] = GraphicalDataset(
+                dataset=None,
+                simulator=kwargs["simulator"],
+                approximator=self,
                 batch_size=kwargs["batch_size"],
+                num_batches=kwargs["num_batches"] if "num_batches" in kwargs else 32,
+                adapter=self.adapter,
+            )
+            del kwargs["simulator"]
+            num_batches = kwargs["num_batches"]
+
+        elif "dataset" in kwargs:
+            data_shapes = self._data_shapes(kwargs["dataset"])
+            kwargs["dataset"] = GraphicalDataset(
+                dataset=kwargs["dataset"],
+                simulator=None,
+                approximator=self,
+                batch_size=kwargs["batch_size"],
+                num_samples=kwargs["num_samples"] if "num_samples" in kwargs else None,
                 adapter=self.adapter,
                 augmentations=self.subset_data,
             )
+            num_batches = kwargs["dataset"].num_batches
 
-        return super(GraphicalApproximator, self).fit(*args, **kwargs, adapter=self.adapter)
+        if keras.backend.backend() == "tensorflow":
+            import tensorflow as tf
+
+            shapes = {
+                "summary_inputs": summary_input_shapes_by_network(self, data_shapes),
+                "inference_variables": inference_variable_shapes_by_network(self, data_shapes),
+                "inference_conditions": inference_condition_shapes_by_network(self, data_shapes),
+            }
+
+            signature = {}
+            for element in ["summary_inputs", "inference_variables", "inference_conditions"]:
+                signature[element] = {}
+                for k, v in shapes[element].items():
+                    shape = [None] * (len(v) - 1) + [v[-1]]
+                    signature[element][k] = tf.TensorSpec(shape=shape, dtype=tf.float32)
+
+            ds = kwargs["dataset"]
+            num_batches = kwargs["dataset"].num_batches
+            kwargs["dataset"] = tf.data.Dataset.from_generator(
+                lambda: (ds[i] for i in range(num_batches)), output_signature=signature
+            ).repeat()
+
+        return super(GraphicalApproximator, self).fit(*args, **kwargs, steps_per_epoch=num_batches)
 
     def sample(self, *, num_samples: int, conditions: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
         """
@@ -337,7 +338,9 @@ class GraphicalApproximator(Approximator):
 
         for i, inference_network in enumerate(self.inference_networks):
             cond = prepare_inference_conditions(self, inference_conditions, i)
-            samples = inference_network.sample(batch_size * num_samples, conditions=cond)
+            variable_shape = list(inference_network._build_shapes_dict["xz_shape"])
+            variable_shape[0] = batch_size * num_samples
+            samples = inference_network.sample(tuple(variable_shape[0][:-1]), conditions=cond)
             split_output = split_network_output(self, samples, meta_dict, i)
 
             for k, v in split_output.items():
@@ -402,8 +405,7 @@ class GraphicalApproximator(Approximator):
             # called approriately
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", message="Using a non-tuple sequence")
-                output[k] = keras.ops.slice(v, begin, output_shape)
-                output[k] = keras.ops.convert_to_numpy(output[k])
+                output[k] = keras.ops.convert_to_numpy(keras.ops.slice(v, begin, output_shape))
 
         return output
 
@@ -411,10 +413,9 @@ class GraphicalApproximator(Approximator):
         """
         Fetches the current batch size from an input dictionary.
         """
-        data_shapes = self._data_shapes(data)
-        batch_size = next(iter(data_shapes.values()))[0]
-
-        return batch_size
+        for key, value in data.items():
+            if hasattr(value, "shape"):
+                return keras.ops.shape(value)[0]
 
     def _data_shapes(self, adapted_data: SimulationOutput | Mapping) -> dict[str, tuple[int]]:
         return keras.tree.map_structure(keras.ops.shape, dict(adapted_data))

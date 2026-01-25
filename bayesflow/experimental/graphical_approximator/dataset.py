@@ -16,14 +16,14 @@ class GraphicalDataset(keras.utils.PyDataset):
 
     def __init__(
         self,
-        dataset,
-        simulator: GraphicalSimulator | None,
-        approximator,
-        batch_size: int,
-        num_batches: int,
-        adapter: Adapter | None,
-        num_samples=None,
         *,
+        dataset=None,
+        simulator=None,
+        approximator=None,
+        batch_size=None,
+        num_batches=None,
+        num_samples=None,
+        adapter=None,
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] | None = None,
         **kwargs,
     ):
@@ -60,16 +60,20 @@ class GraphicalDataset(keras.utils.PyDataset):
         self.simulator = simulator
         self.approximator = approximator
         self.batch_size = batch_size
-        self._num_batches = num_batches
         self.adapter = adapter
         self.augmentations = augmentations or []
-        self.num_samples = None
 
-        if dataset and not self.num_samples:
-            self.num_samples = self._get_num_samples_from_data(dataset)
-            logging.debug(f"Automatically determined {self.num_samples} samples in data.")
-        elif not dataset:
-            self.num_samples = 10
+        # case offline training
+        if dataset is not None:
+            if num_samples:
+                self.num_samples = num_samples
+            else:
+                self.num_samples = self._get_num_samples_from_data(dataset)
+                logging.debug(f"Automatically determined {self.num_samples} samples in data.")
+
+            self._num_batches = int(np.ceil(self.num_samples / self.batch_size))
+        elif simulator is not None:
+            self._num_batches = num_batches
 
     def __getitem__(self, index) -> dict[str, np.ndarray]:
         """
@@ -89,9 +93,8 @@ class GraphicalDataset(keras.utils.PyDataset):
             batch = self.simulator.sample(self.batch_size)
 
         if self.dataset:
-            num_samples = self._get_num_samples_from_data(self.dataset)
             index = slice(index * self.batch_size, (index + 1) * self.batch_size)
-            index = np.arange(num_samples, dtype="int64")[index]
+            index = np.arange(self.num_samples, dtype="int64")[index]
 
             batch = {
                 key: np.take(value, index, axis=0) if isinstance(value, np.ndarray) else value
@@ -120,11 +123,18 @@ class GraphicalDataset(keras.utils.PyDataset):
             "inference_conditions": inference_conditions_by_network(self.approximator, dict(batch)),
         }
 
+        for k, v in output.items():
+            for network_idx, tensor in output[k].items():
+                output[k][network_idx] = keras.ops.convert_to_numpy(keras.ops.stop_gradient(tensor))
+
         return output
 
+    def __len__(self):
+        return self._num_batches
+
     @property
-    def num_batches(self) -> int | None:
-        return int(np.ceil(self.num_samples / self.batch_size))
+    def num_batches(self):
+        return self._num_batches
 
     @staticmethod
     def _get_num_samples_from_data(data: Mapping) -> int:

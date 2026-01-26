@@ -94,6 +94,23 @@ def point_approximator_with_multiple_parametric_scores(
     )
 
 
+@pytest.fixture()
+def ensemble_approximator(
+    continuous_approximator,
+    point_approximator_with_single_parametric_score,
+    point_approximator_with_multiple_parametric_scores,
+):
+    from bayesflow import EnsembleApproximator
+
+    return EnsembleApproximator(
+        dict(
+            continuous_1=continuous_approximator,
+            point_1=point_approximator_with_single_parametric_score,
+            point_2=point_approximator_with_multiple_parametric_scores,
+        )
+    )
+
+
 @pytest.fixture(
     params=["point_approximator_with_single_parametric_score", "point_approximator_with_multiple_parametric_scores"]
 )
@@ -104,6 +121,7 @@ def point_approximator(request):
 @pytest.fixture(
     params=[
         "continuous_approximator",
+        "ensemble_approximator",
         "point_approximator_with_single_parametric_score",
         "point_approximator_with_multiple_parametric_scores",
     ],

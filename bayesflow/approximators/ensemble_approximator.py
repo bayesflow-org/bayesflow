@@ -258,6 +258,8 @@ class EnsembleApproximator(Approximator):
 
     def estimate(
         self,
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
         **kwargs,
     ):
         raise NotImplementedError(

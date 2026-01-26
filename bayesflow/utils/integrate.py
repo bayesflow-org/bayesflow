@@ -33,7 +33,6 @@ def euler_step(
     state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
-    **kwargs,
 ) -> Tuple[StateDict, ArrayLike, None, ArrayLike]:
     k1 = fn(time, **filter_kwargs(state, fn))
 
@@ -229,17 +228,16 @@ def integrate_fixed(
 
     match method:
         case "euler":
-            step_fn = euler_step
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
-            step_fn = rk45_step
+            step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = tsit5_step
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
     step_size = (stop_time - start_time) / steps
 
     def body(_loop_var, _loop_state):
@@ -265,17 +263,15 @@ def integrate_scheduled(
 ) -> StateDict:
     match method:
         case "euler":
-            step_fn = euler_step
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
-            step_fn = rk45_step
+            step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = tsit5_step
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
-
-    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
 
     def body(_loop_var, _loop_state):
         _time = steps[_loop_var]
@@ -319,7 +315,7 @@ def integrate_adaptive(
 
     atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype="float32")
     rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4), dtype="float32")
-    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=True)
+    step_fn = partial(step_fn, fn, **filter_kwargs(kwargs, step_fn), use_adaptive_step_size=True)
     initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype="float32")
     step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
     count_not_accepted = 0
@@ -654,7 +650,6 @@ def two_step_adaptive_step(
         e_abs: Absolute error tolerance. Default assumes standardized targets.
         r: Order of the method for step size adaptation.
         adapt_safety: Safety factor for step size adaptation.
-        **kwargs: Additional arguments passed to drift_fn and diffusion_fn.
 
     Returns:
         new_state: Updated state after one adaptive step.
@@ -1306,7 +1301,7 @@ def integrate_stochastic(
         up to this number of steps, which may increase memory usage. Default is
         ``1000``.
     score_fn : callable, optional
-        Optional score function used for predictor–corrector sampling. If ``None``,
+        Score function used for predictor–corrector sampling. If ``None``,
         no corrector step is applied.
     corrector_steps : int, optional
         Number of corrector steps applied after each predictor step. Default is ``0``.
@@ -1404,7 +1399,7 @@ def integrate_stochastic(
         step_fn_raw,
         drift_fn=drift_fn,
         diffusion_fn=diffusion_fn,
-        **kwargs,
+        **filter_kwargs(kwargs, step_fn_raw),
     )
 
     # Pre-generate standard normals for the predictor step (up to max_steps)

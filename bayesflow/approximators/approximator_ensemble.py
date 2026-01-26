@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 
@@ -83,21 +83,50 @@ class ApproximatorEnsemble(Approximator):
 
         return metrics
 
+    def sample_separate(
+        self,
+        *,
+        num_samples: int | Sequence,
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, dict[str, np.ndarray]]:
+        samples = {}
+        if isinstance(num_samples, int):
+            num_samples = num_samples * np.ones(len(self.approximators), dtype="int64")
+        for i, (approx_name, approximator) in enumerate(self.approximators.items()):
+            if self._has_obj_method(approximator, "sample"):
+                samples[approx_name] = approximator.sample(
+                    num_samples=num_samples[i], conditions=conditions, split=split, **kwargs
+                )
+        return samples
+
     def sample(
         self,
         *,
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
+        member_weights: Sequence[float] | None = None,
         **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
-        samples = {}
-        for approx_name, approximator in self.approximators.items():
-            if self._has_obj_method(approximator, "sample"):
-                samples[approx_name] = approximator.sample(
-                    num_samples=num_samples, conditions=conditions, split=split, **kwargs
-                )
-        return samples
+    ) -> dict[str, np.ndarray]:
+        # Sample from each approximator according to member_weights (uniform by default)
+        if member_weights is None:
+            member_weights = np.ones(len(self.approximators)) / len(self.approximators)
+        num_samples_per_member = np.random.multinomial(num_samples, member_weights)
+        samples = self.sample_separate(num_samples=num_samples_per_member)
+
+        # Concatenate samples from all approximators along batch dimension
+        samples_list = [samples[approx_name] for approx_name in self.approximators.keys()]
+        concatenated = keras.tree.map_structure(
+            lambda *arrays: np.concatenate(arrays, axis=0),  # zip & concat across approximators
+            *samples_list,  # unpack: apply lambda to corresponding leaves from each dict
+        )
+
+        # Shuffle along batch dimension
+        shuffle_idx = np.random.permutation(num_samples)
+        shuffled = keras.tree.map_structure(lambda arr: arr[shuffle_idx], concatenated)
+        return shuffled
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
         log_prob = {}

@@ -18,23 +18,23 @@ def train_dataset_for_ensemble(batch_size, adapter, simulator):
 
 
 @pytest.fixture()
-def continuous_and_point_approximator_ensemble(
+def continuous_and_point_ensemble_approximator(
     continuous_approximator, point_approximator_with_single_parametric_score
 ):
-    from bayesflow import ApproximatorEnsemble
+    from bayesflow import EnsembleApproximator
 
-    return ApproximatorEnsemble(
+    return EnsembleApproximator(
         dict(cont_approx=continuous_approximator, point_approx=point_approximator_with_single_parametric_score)
     )
 
 
 @pytest.fixture(
     params=[
-        "continuous_and_point_approximator_ensemble",
+        "continuous_and_point_ensemble_approximator",
     ],
     scope="function",
 )
-def continuous_approximator_ensemble(request):
+def continuous_ensemble_approximator(request):
     return request.getfixturevalue(request.param)
 
 
@@ -99,7 +99,7 @@ def model_comparison_adapter():
 
 @pytest.fixture()
 def basic_model_comparison_ensemble(model_comparison_adapter):
-    from bayesflow.approximators import ModelComparisonApproximator, ApproximatorEnsemble
+    from bayesflow.approximators import ModelComparisonApproximator, EnsembleApproximator
     from bayesflow.networks import DeepSet, MLP
 
     classifier_network = MLP(widths=[32, 32])
@@ -119,7 +119,7 @@ def basic_model_comparison_ensemble(model_comparison_adapter):
         summary_network=summary_network,
     )
 
-    return ApproximatorEnsemble(dict(approx_1=approx_1, approx_2=approx_2))
+    return EnsembleApproximator(dict(approx_1=approx_1, approx_2=approx_2))
 
 
 @pytest.fixture(
@@ -128,16 +128,16 @@ def basic_model_comparison_ensemble(model_comparison_adapter):
     ],
     scope="function",
 )
-def model_comparison_approximator_ensemble(request):
+def model_comparison_ensemble_approximator(request):
     return request.getfixturevalue(request.param)
 
 
 @pytest.fixture(
     params=[
-        "continuous_and_point_approximator_ensemble",
+        "continuous_and_point_ensemble_approximator",
         "basic_model_comparison_ensemble",
     ],
     scope="function",
 )
-def approximator_ensemble(request):
+def ensemble_approximator(request):
     return request.getfixturevalue(request.param)

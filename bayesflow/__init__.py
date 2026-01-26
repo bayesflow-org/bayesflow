@@ -115,7 +115,7 @@ from . import (
 )
 
 from .adapters import Adapter
-from .approximators import ContinuousApproximator, PointApproximator, ApproximatorEnsemble
+from .approximators import ContinuousApproximator, PointApproximator, EnsembleApproximator
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
 from .simulators import make_simulator
 from .workflows import BasicWorkflow

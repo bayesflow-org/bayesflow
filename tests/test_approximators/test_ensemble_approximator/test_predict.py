@@ -3,15 +3,15 @@ import numpy as np
 from tests.utils import check_combination_simulator_adapter
 
 
-# def test_predict(model_comparison_approximator_ensemble, model_comparison_train_dataset_for_ensemble, simulator):
-#     approximator_ensemble = model_comparison_approximator_ensemble
+# def test_predict(model_comparison_ensemble_approximator, model_comparison_train_dataset_for_ensemble, simulator):
+#     ensemble_approximator = model_comparison_ensemble_approximator
 #     data_shapes = keras.tree.map_structure(keras.ops.shape, model_comparison_train_dataset_for_ensemble[0])
-#     approximator_ensemble.build(data_shapes)
-#     approximator_ensemble.compute_metrics(**model_comparison_train_dataset_for_ensemble[0])
+#     ensemble_approximator.build(data_shapes)
+#     ensemble_approximator.compute_metrics(**model_comparison_train_dataset_for_ensemble[0])
 #
 #     num_conditions = 2
 #     conditions = simulator.sample(num_conditions)
-#     predictions = approximator_ensemble.predict(conditions=conditions)
+#     predictions = ensemble_approximator.predict(conditions=conditions)
 #
 #     for predictions_value in predictions.values():
 #         assert isinstance(predictions_value, np.ndarray)
@@ -19,7 +19,7 @@ from tests.utils import check_combination_simulator_adapter
 
 
 def test_predict_model_comparison(
-    model_comparison_approximator_ensemble, model_comparison_simulator, batch_size, model_comparison_adapter
+    model_comparison_ensemble_approximator, model_comparison_simulator, batch_size, model_comparison_adapter
 ):
     check_combination_simulator_adapter(model_comparison_simulator, model_comparison_adapter)
 
@@ -29,12 +29,12 @@ def test_predict_model_comparison(
     batch = model_comparison_adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    model_comparison_approximator_ensemble.build(batch_shapes)
+    model_comparison_ensemble_approximator.build(batch_shapes)
 
     num_conditions = 2
     conditions = model_comparison_simulator.sample(num_conditions)
     print(conditions)
-    predictions = model_comparison_approximator_ensemble.predict(conditions=conditions)
+    predictions = model_comparison_ensemble_approximator.predict(conditions=conditions)
 
     for predictions_value in predictions.values():
         assert isinstance(predictions_value, np.ndarray)

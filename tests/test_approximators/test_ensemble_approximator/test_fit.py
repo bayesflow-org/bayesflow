@@ -4,14 +4,14 @@ import io
 from contextlib import redirect_stdout
 
 
-def test_loss_progress(continuous_approximator_ensemble, train_dataset_for_ensemble, validation_dataset):
-    continuous_approximator_ensemble.compile(optimizer="AdamW")
+def test_loss_progress(continuous_ensemble_approximator, train_dataset_for_ensemble, validation_dataset):
+    continuous_ensemble_approximator.compile(optimizer="AdamW")
     num_epochs = 3
 
     # Capture ostream and train model
     with io.StringIO() as stream:
         with redirect_stdout(stream):
-            continuous_approximator_ensemble.fit(
+            continuous_ensemble_approximator.fit(
                 dataset=train_dataset_for_ensemble, validation_data=validation_dataset, epochs=num_epochs
             )
 

@@ -2,7 +2,7 @@ import keras
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_build_continuous(continuous_approximator_ensemble, simulator, batch_size, adapter):
+def test_build_continuous(continuous_ensemble_approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
@@ -12,9 +12,9 @@ def test_build_continuous(continuous_approximator_ensemble, simulator, batch_siz
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
     print(batch_shapes)
-    continuous_approximator_ensemble.build(batch_shapes)
+    continuous_ensemble_approximator.build(batch_shapes)
 
-    for member in continuous_approximator_ensemble.approximators.values():
+    for member in continuous_ensemble_approximator.approximators.values():
         for layer in member.standardize_layers.values():
             assert layer.built
             for count in layer.count:
@@ -22,7 +22,7 @@ def test_build_continuous(continuous_approximator_ensemble, simulator, batch_siz
 
 
 def test_build_model_comparison(
-    model_comparison_approximator_ensemble, model_comparison_simulator, batch_size, model_comparison_adapter
+    model_comparison_ensemble_approximator, model_comparison_simulator, batch_size, model_comparison_adapter
 ):
     check_combination_simulator_adapter(model_comparison_simulator, model_comparison_adapter)
 
@@ -32,9 +32,9 @@ def test_build_model_comparison(
     batch = model_comparison_adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    model_comparison_approximator_ensemble.build(batch_shapes)
+    model_comparison_ensemble_approximator.build(batch_shapes)
 
-    for member in model_comparison_approximator_ensemble.approximators.values():
+    for member in model_comparison_ensemble_approximator.approximators.values():
         for layer in member.standardize_layers.values():
             assert layer.built
             for count in layer.count:

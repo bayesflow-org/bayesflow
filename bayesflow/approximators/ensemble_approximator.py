@@ -13,7 +13,7 @@ from .model_comparison_approximator import ModelComparisonApproximator
 
 
 @serializable("bayesflow.approximators")
-class ApproximatorEnsemble(Approximator):
+class EnsembleApproximator(Approximator):
     def __init__(self, approximators: dict[str, Approximator], **kwargs):
         super().__init__(**kwargs)
 

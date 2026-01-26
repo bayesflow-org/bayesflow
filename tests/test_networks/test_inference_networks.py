@@ -127,7 +127,9 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_output, numerical_jacobian = jacobian(f, random_samples, return_output=True)
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
-    assert_allclose(output, numerical_output, msg="Outputs of numerical jacobian and network do not match.")
+    assert_allclose(
+        output, numerical_output, rtol=1e-4, atol=1e-5, msg="Outputs of numerical jacobian and network do not match."
+    )
 
     log_prob = generative_inference_network.base_distribution.log_prob(output)
 

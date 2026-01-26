@@ -19,8 +19,6 @@ class EnsembleApproximator(Approximator):
 
         self.approximators = approximators
 
-        self.num_approximators = len(self.approximators)
-
     def build_from_data(self, adapted_data: dict[str, any]):
         data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
         if len(data_shapes["inference_variables"]) > 2:
@@ -32,6 +30,10 @@ class EnsembleApproximator(Approximator):
     def build(self, input_shape: dict[str, tuple[int] | dict[str, dict]]) -> None:
         for approximator in self.approximators.values():
             approximator.build(input_shape)
+
+        self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
+        # Update attribute to mark whether it has at least one score that represents a distribution
+        self.has_distribution = len(self.distribution_keys) > 0
 
     def compute_metrics(
         self,
@@ -113,12 +115,11 @@ class EnsembleApproximator(Approximator):
         """
         samples = {}
         if isinstance(num_samples, int):
-            num_samples = num_samples * np.ones(len(self.approximators), dtype="int64")
-        for i, (approx_name, approximator) in enumerate(self.approximators.items()):
-            if approximator.has_distribution:
-                samples[approx_name] = approximator.sample(
-                    num_samples=num_samples[i], conditions=conditions, split=split, **kwargs
-                )
+            num_samples = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
+        for i, approx_name in enumerate(self.distribution_keys):
+            samples[approx_name] = self.approximators[approx_name].sample(
+                num_samples=num_samples[i], conditions=conditions, split=split, **kwargs
+            )
         return samples
 
     def sample(
@@ -160,7 +161,7 @@ class EnsembleApproximator(Approximator):
         samples = self.sample_separate(num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs)
 
         # Concatenate samples from all approximators along sample dimension (axis 1)
-        samples_list = [samples[approx_name] for approx_name in self.approximators.keys()]
+        samples_list = [samples[approx_name] for approx_name in self.distribution_keys]
         concatenated = keras.tree.map_structure(
             lambda *arrays: np.concatenate(arrays, axis=1),  # zip & concat across approximators
             *samples_list,  # unpack: apply lambda to corresponding leaves from each dict
@@ -220,9 +221,16 @@ class EnsembleApproximator(Approximator):
         log_probs = self.log_prob_separate(data=data, **kwargs)
 
         # log p = log_sum_exp(log(w_i) + log p_i)
-        log_probs = np.stack([log_probs[approx_name] for approx_name in self.approximators.keys()], axis=-1)
+        stacked = np.stack(list(log_probs.values()), axis=-1)
         log_weights = np.log(member_weights)
-        return keras.ops.logsumexp(log_probs + log_weights, axis=-1)
+
+        # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
+        z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
+
+        # stable logsumexp over last axis
+        m = np.max(z, axis=-1, keepdims=True)
+        out = np.squeeze(m, axis=-1) + np.log(np.sum(np.exp(z - m), axis=-1))
+        return out
 
     def estimate_separate(
         self,
@@ -266,7 +274,7 @@ class EnsembleApproximator(Approximator):
 
     def _resolve_member_weights(self, member_weights: Sequence[float] | None) -> Sequence[float]:
         if member_weights is None:
-            member_weights = np.ones(len(self.approximators)) / len(self.approximators)
+            member_weights = np.ones(len(self.distribution_keys)) / len(self.distribution_keys)
         else:
             total = np.sum(member_weights)
             if not np.isclose(total, 1.0, atol=1e-8):

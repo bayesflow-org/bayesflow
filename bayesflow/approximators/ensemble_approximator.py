@@ -153,23 +153,22 @@ class EnsembleApproximator(Approximator):
         Returns
         -------
         dict[str, np.ndarray]
-            Samples with shape (num_samples, ...) for each variable.
+            Samples with shape (batch_size, num_samples, ...) for each variable.
         """
-        if member_weights is None:
-            member_weights = np.ones(len(self.approximators)) / len(self.approximators)
+        member_weights = self._resolve_member_weights(member_weights)
         num_samples_per_member = np.random.multinomial(num_samples, member_weights)
         samples = self.sample_separate(num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs)
 
-        # Concatenate samples from all approximators along batch dimension
+        # Concatenate samples from all approximators along sample dimension (axis 1)
         samples_list = [samples[approx_name] for approx_name in self.approximators.keys()]
         concatenated = keras.tree.map_structure(
-            lambda *arrays: np.concatenate(arrays, axis=0),  # zip & concat across approximators
+            lambda *arrays: np.concatenate(arrays, axis=1),  # zip & concat across approximators
             *samples_list,  # unpack: apply lambda to corresponding leaves from each dict
         )
 
-        # Shuffle along batch dimension
+        # Shuffle along sample dimension (axis 1)
         shuffle_idx = np.random.permutation(num_samples)
-        shuffled = keras.tree.map_structure(lambda arr: arr[shuffle_idx], concatenated)
+        shuffled = keras.tree.map_structure(lambda arr: arr[:, shuffle_idx], concatenated)
         return shuffled
 
     def log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
@@ -217,9 +216,7 @@ class EnsembleApproximator(Approximator):
         np.ndarray
             Marginalized log probabilities with shape (batch_size,).
         """
-        if member_weights is None:
-            member_weights = np.ones(len(self.approximators)) / len(self.approximators)
-
+        member_weights = self._resolve_member_weights(member_weights)
         log_probs = self.log_prob_separate(data=data, **kwargs)
 
         # log p = log_sum_exp(log(w_i) + log p_i)
@@ -266,6 +263,15 @@ class EnsembleApproximator(Approximator):
             "Automatically aggregating estimates across ensemble members is not supported. "
             "Use estimate_separate() to get estimates from each approximator."
         )
+
+    def _resolve_member_weights(self, member_weights: Sequence[float] | None) -> Sequence[float]:
+        if member_weights is None:
+            member_weights = np.ones(len(self.approximators)) / len(self.approximators)
+        else:
+            total = np.sum(member_weights)
+            if not np.isclose(total, 1.0, atol=1e-8):
+                raise ValueError(f"member_weights must sum to 1: {member_weights} -> {total}.")
+        return member_weights
 
     def predict(
         self,

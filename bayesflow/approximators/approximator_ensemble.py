@@ -91,6 +91,26 @@ class ApproximatorEnsemble(Approximator):
         split: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
+        """
+        Draw samples from each approximator separately.
+
+        Parameters
+        ----------
+        num_samples : int or Sequence
+            Number of samples to draw from each approximator. If int, all approximators
+            draw the same number of samples. If sequence, specifies samples per approximator.
+        conditions : Mapping[str, np.ndarray]
+            Conditions for sampling.
+        split : bool, optional
+            Whether to split output arrays, by default False.
+        **kwargs
+            Additional arguments passed to approximator.sample().
+
+        Returns
+        -------
+        dict[str, dict[str, np.ndarray]]
+            Samples keyed by approximator name, then by variable name.
+        """
         samples = {}
         if isinstance(num_samples, int):
             num_samples = num_samples * np.ones(len(self.approximators), dtype="int64")
@@ -110,18 +130,35 @@ class ApproximatorEnsemble(Approximator):
         member_weights: Sequence[float] | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
-        """Samples from the marginal distribution over ensemble members.
+        """
+        Draw samples from the marginalized distribution over ensemble members.
 
-        Marginalize over approximators according to member_weights (uniform by default).
+        Samples are allocated to approximators via multinomial sampling using member_weights,
+        then concatenated and shuffled to produce the marginal distribution.
 
         Parameters
         ----------
+        num_samples : int
+            Total number of samples to draw.
+        conditions : Mapping[str, np.ndarray]
+            Conditions for sampling.
+        split : bool, optional
+            Whether to split output arrays, by default False.
+        member_weights : Sequence[float] or None, optional
+            Probability weights for each approximator. If None, uses uniform weights.
+            Must sum to 1.
+        **kwargs
+            Additional arguments passed to approximator.sample().
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Samples with shape (num_samples, ...) for each variable.
         """
-        # Sample from each approximator according to member_weights (uniform by default)
         if member_weights is None:
             member_weights = np.ones(len(self.approximators)) / len(self.approximators)
         num_samples_per_member = np.random.multinomial(num_samples, member_weights)
-        samples = self.sample_separate(num_samples=num_samples_per_member)
+        samples = self.sample_separate(num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs)
 
         # Concatenate samples from all approximators along batch dimension
         samples_list = [samples[approx_name] for approx_name in self.approximators.keys()]
@@ -136,6 +173,21 @@ class ApproximatorEnsemble(Approximator):
         return shuffled
 
     def log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+        """
+        Compute log probabilities from each approximator separately.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Data containing inference variables and conditions.
+        **kwargs
+            Additional arguments passed to approximator.log_prob().
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Log probabilities keyed by approximator name, each with shape (batch_size,).
+        """
         log_prob = {}
         for approx_name, approximator in self.approximators.items():
             if self._has_obj_method(approximator, "log_prob"):
@@ -145,9 +197,26 @@ class ApproximatorEnsemble(Approximator):
     def log_prob(
         self, data: Mapping[str, np.ndarray], member_weights: Sequence[float] | None = None, **kwargs
     ) -> np.ndarray:
-        """Computes the marginal log prob over ensemble members.
+        """
+        Compute the marginalized log probability over ensemble members.
 
-        Marginalize over approximators according to member_weights (uniform by default)."""
+        Uses log-sum-exp trick to compute log p(x) = log(sum_i w_i * p_i(x)).
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Data containing inference variables and conditions.
+        member_weights : Sequence[float] or None, optional
+            Probability weights for each approximator. If None, uses uniform weights.
+            Must sum to 1.
+        **kwargs
+            Additional arguments passed to approximator.log_prob().
+
+        Returns
+        -------
+        np.ndarray
+            Marginalized log probabilities with shape (batch_size,).
+        """
         if member_weights is None:
             member_weights = np.ones(len(self.approximators)) / len(self.approximators)
 
@@ -158,17 +227,43 @@ class ApproximatorEnsemble(Approximator):
         log_weights = np.log(member_weights)
         return keras.ops.logsumexp(log_probs + log_weights, axis=-1)
 
-    def estimate(
+    def estimate_separate(
         self,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
+        """
+        Compute point estimates from each approximator separately.
+
+        Parameters
+        ----------
+        conditions : Mapping[str, np.ndarray]
+            Conditions for estimation.
+        split : bool, optional
+            Whether to split output arrays, by default False.
+        **kwargs
+            Additional arguments passed to approximator.estimate().
+
+        Returns
+        -------
+        dict[str, dict[str, dict[str, np.ndarray]]]
+            Estimates keyed by approximator name, then by variable and score names.
+        """
         estimates = {}
         for approx_name, approximator in self.approximators.items():
             if self._has_obj_method(approximator, "estimate"):
                 estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
         return estimates
+
+    def estimate(
+        self,
+        **kwargs,
+    ):
+        raise NotImplementedError(
+            "Automatically aggregating estimates across ensemble members is not supported. "
+            "Use estimate_separate() to get estimates from each approximator."
+        )
 
     def predict(
         self,

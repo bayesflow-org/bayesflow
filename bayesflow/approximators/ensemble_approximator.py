@@ -115,7 +115,7 @@ class EnsembleApproximator(Approximator):
         if isinstance(num_samples, int):
             num_samples = num_samples * np.ones(len(self.approximators), dtype="int64")
         for i, (approx_name, approximator) in enumerate(self.approximators.items()):
-            if self._has_obj_method(approximator, "sample"):
+            if approximator.has_distribution:
                 samples[approx_name] = approximator.sample(
                     num_samples=num_samples[i], conditions=conditions, split=split, **kwargs
                 )
@@ -189,7 +189,7 @@ class EnsembleApproximator(Approximator):
         """
         log_prob = {}
         for approx_name, approximator in self.approximators.items():
-            if self._has_obj_method(approximator, "log_prob"):
+            if approximator.has_distribution:
                 log_prob[approx_name] = approximator.log_prob(data=data, **kwargs)
         return log_prob
 
@@ -249,7 +249,7 @@ class EnsembleApproximator(Approximator):
         """
         estimates = {}
         for approx_name, approximator in self.approximators.items():
-            if self._has_obj_method(approximator, "estimate"):
+            if hasattr(approximator, "estimate"):
                 estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
         return estimates
 
@@ -285,10 +285,6 @@ class EnsembleApproximator(Approximator):
             if isinstance(approximator, ModelComparisonApproximator):
                 predictions[approx_name] = approximator.predict(conditions=conditions, probs=probs, **kwargs)
         return predictions
-
-    def _has_obj_method(self, obj, name):
-        method = getattr(obj, name, None)
-        return callable(method)
 
     def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
         """

@@ -71,6 +71,9 @@ class ContinuousApproximator(Approximator):
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
+        # set attribute to mark that sample and log_prob are valid methods
+        self.has_distribution = True
+
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
         # Build summary network and get output shape if present
         summary_outputs_shape = None

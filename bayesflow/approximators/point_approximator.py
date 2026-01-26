@@ -1,9 +1,10 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 
 import keras
 
+from bayesflow.networks.point_inference_network import PointInferenceNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, split_arrays, squeeze_inner_estimates_dict, logging, concatenate_valid
 from bayesflow.utils.serialization import serializable
@@ -21,17 +22,36 @@ class PointApproximator(ContinuousApproximator):
     (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.
     """
 
-    def estimate(
+    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+        super().build(data_shapes)
+
+        assert isinstance(self.inference_network, PointInferenceNetwork)
+
+        # Infer which scoring rules induce distributions
+        dist_keys = []
+        for score_key, score in self.inference_network.scores.items():
+            has_sample = callable(getattr(score, "sample", None))
+            has_log_prob = callable(getattr(score, "log_prob", None))
+            if has_sample and has_log_prob:
+                dist_keys.append(score_key)
+        self.distribution_keys = dist_keys
+
+        # Update attribute to mark whether it has at least one score that represents a distribution
+        if len(self.distribution_keys) == 0:
+            self.has_distribution = False
+
+    def estimate_separate(
         self,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
         **kwargs,
-    ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
+    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         """
-        Estimates point summaries of inference variables based on specified conditions.
+        Estimates point summaries of inference variables for each parametric scoring rule separately.
 
         This method processes input conditions, computes estimates, applies necessary adapter transformations,
-        and optionally splits the resulting arrays along the last axis.
+        and optionally splits the resulting arrays along the last axis. Estimates are grouped by scoring rule,
+        then estimation head, then inference variable.
 
         Parameters
         ----------
@@ -45,15 +65,10 @@ class PointApproximator(ContinuousApproximator):
 
         Returns
         -------
-        estimates : dict[str, dict[str, np.ndarray or dict[str, np.ndarray]]]
-            The estimates of inference variables in a nested dictionary.
-
-            1. Each first-level key is the name of an inference variable.
-            2. Each second-level key is the name of a scoring rule.
-            3. (If the scoring rule comprises multiple estimators, each third-level key is the name of an estimator.)
-
-            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
-            of shape (num_datasets, point_estimate_size, variable_block_size).
+        dict[str, dict[str, dict[str, np.ndarray]]]
+            Nested dictionary where keys follow ``score -> estimator head -> inference variable`` ordering.
+            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array of shape
+            ``(num_datasets, point_estimate_size, ...)``.
         """
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
@@ -76,6 +91,38 @@ class PointApproximator(ContinuousApproximator):
         if split:
             estimates = split_arrays(estimates, axis=-1)
 
+        return estimates
+
+    def estimate(
+        self,
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
+        """
+        Estimates point summaries of inference variables based on specified conditions.
+
+        This method delegates to :meth:`estimate_separate`, then reorders and squeezes the
+        resulting dictionary so that inference variable names become the top-level keys.
+
+        Parameters
+        ----------
+        conditions : Mapping[str, np.ndarray]
+            A dictionary mapping variable names to arrays representing the conditions
+            for the estimation process.
+        split : bool, optional
+            If True, the estimated arrays are split along the last axis, by default False.
+        **kwargs
+            Additional keyword arguments passed to underlying processing functions.
+
+        Returns
+        -------
+        dict[str, dict[str, np.ndarray or dict[str, np.ndarray]]]
+            Nested dictionary ordered by ``inference variable -> scoring rule``.
+            Entries have shape (num_datasets, ...).
+        """
+        estimates = self.estimate_separate(conditions=conditions, split=split, **kwargs)
+
         # Reorder the nested dictionary so that original variable names are at the top.
         estimates = self._reorder_estimates(estimates)
         # Remove unnecessary nesting.
@@ -92,10 +139,10 @@ class PointApproximator(ContinuousApproximator):
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray]]:
         """
-        Draws samples from a parametric distribution based on point estimates for given input conditions.
+        Draws samples from parametric distributions based on parameter estimates for given input conditions.
 
-        These samples will generally not correspond to samples from the fully Bayesian posterior, since
-        they will assume some parametric form (e.g., multivariate normal when using the MultivariateNormalScore).
+        These samples generally do not correspond to samples from the fully Bayesian posterior, since
+        they assume some parametric form (e.g., multivariate normal when using the MultivariateNormalScore).
 
         Parameters
         ----------
@@ -119,8 +166,10 @@ class PointApproximator(ContinuousApproximator):
             2. Each second-level key is the name of a parametric score.
 
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
-            of shape (num_datasets, num_samples, variable_block_size).
+            of shape (num_datasets, num_samples, ...).
         """
+        self._check_has_distribution()
+
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
         # Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?
@@ -140,6 +189,72 @@ class PointApproximator(ContinuousApproximator):
 
         return samples
 
+    def sample(
+        self,
+        *,
+        num_samples: int,
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        score_weights: Sequence[float] | Mapping[str, float] | None = None,
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Draws samples from the mixture induced by all parametric scoring rules.
+
+        Samples are allocated to scoring rules via multinomial sampling using score_weights,
+        then drawn efficiently by sampling only max(num_samples_per_score) per score, cropping
+        to the allocated counts, concatenating along the sample axis, and finally shuffling.
+
+        Parameters
+        ----------
+        num_samples : int
+            Total number of samples to draw.
+        conditions : Mapping[str, np.ndarray]
+            Conditions for sampling.
+        split : bool, optional
+            Whether to split the output arrays along the last axis. Delegated to :meth:`sample_separate`.
+        score_weights : Sequence[float] or Mapping[str, float], optional
+            Probability weights for each scoring rule. If ``None``, uniform weights are assumed. The weights must
+            sum to 1 and are ordered according to the scoring rule keys returned by :meth:`sample_separate` unless
+            provided as a mapping.
+        **kwargs
+            Additional keyword arguments forwarded to :meth:`sample_separate`.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Samples aggregated across all scoring rules, keyed by inference variable names.
+            Entries have shape (num_datasets, num_samples, ...).
+        """
+        self._check_has_distribution()
+
+        score_weights = self._resolve_score_weights(score_weights)
+
+        # Allocate samples per score and draw only as many as needed (max over scores).
+        num_samples_per_score = np.random.multinomial(num_samples, score_weights)
+        max_k = int(np.max(num_samples_per_score))
+
+        samples_by_score = self.sample_separate(num_samples=max_k, conditions=conditions, split=split, **kwargs)
+
+        # Crop each score's samples down to its allocated k
+        cropped_list = []
+        for score_key, k in zip(self.distribution_keys, num_samples_per_score):
+            if k == 0:
+                continue
+            cropped = keras.tree.map_structure(lambda arr: arr[:, :k], samples_by_score[score_key])
+            cropped_list.append(cropped)
+
+        # Concatenate across scores along the sample axis.
+        concatenated = keras.tree.map_structure(
+            lambda *arrays: np.concatenate(arrays, axis=1),
+            *cropped_list,
+        )
+
+        # Shuffle along the sample axis (1) to form the mixture samples.
+        shuffle_idx = np.random.permutation(num_samples)
+        shuffled = keras.tree.map_structure(lambda arr: np.take(arr, shuffle_idx, axis=1), concatenated)
+        return shuffled
+
     def log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
         """
         Computes the log-probability of given data under the parametric distribution(s) for given input conditions.
@@ -158,6 +273,8 @@ class PointApproximator(ContinuousApproximator):
             `p(inference_variables | inference_conditions, h(summary_conditions))` for all parametric scoring rules.
             Each has shape (num_datasets,).
         """
+        self._check_has_distribution()
+
         # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac
         data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
 
@@ -170,6 +287,78 @@ class PointApproximator(ContinuousApproximator):
             log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
 
         return log_prob
+
+    def log_prob(
+        self,
+        data: Mapping[str, np.ndarray],
+        score_weights: Sequence[float] | Mapping[str, float] | None = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """
+        Computes the marginalized log-probability across all parametric scoring rules.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Dictionary containing inference variables and conditions.
+        score_weights : Sequence[float] or Mapping[str, float], optional
+            Probability weights for each scoring rule. If ``None``, uniform weights are assumed. The weights must sum
+            to 1 and are ordered by the scoring rule keys produced by :meth:`log_prob_separate` unless provided as a
+            mapping.
+        **kwargs
+            Additional keyword arguments forwarded to :meth:`log_prob_separate`.
+
+        Returns
+        -------
+        np.ndarray, shape (num_datasets,)
+            Marginalized log-probabilities with the same leading dimensions as the inputs.
+        """
+        log_probs = self.log_prob_separate(data=data, **kwargs)
+
+        score_weights = self._resolve_score_weights(score_weights)
+
+        stacked = np.stack([np.asarray(log_probs[score_key]) for score_key in self.distribution_keys], axis=-1)
+        log_weights = np.log(score_weights)
+
+        # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
+        z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
+
+        # stable logsumexp over last axis
+        m = np.max(z, axis=-1, keepdims=True)
+        out = np.squeeze(m, axis=-1) + np.log(np.sum(np.exp(z - m), axis=-1))
+        return out
+
+    def _check_has_distribution(self):
+        if not self.has_distribution:
+            raise ValueError("No parametric distribution scores available for sample/log_prob.")
+
+    def _resolve_score_weights(
+        self,
+        score_weights: Sequence[float] | Mapping[str, float] | None,
+    ) -> np.ndarray:
+        if score_weights is None:
+            return np.ones(len(self.distribution_keys), dtype=np.float64) / len(self.distribution_keys)
+
+        if isinstance(score_weights, Mapping):
+            missing = set(self.distribution_keys) - set(score_weights.keys())
+            if missing:
+                raise ValueError(f"score_weights is missing entries for scoring rules: {sorted(missing)}")
+            extra = set(score_weights.keys()) - set(self.distribution_keys)
+            if extra:
+                raise ValueError(f"score_weights contains unknown scoring rules: {sorted(extra)}")
+            weights = np.asarray([score_weights[key] for key in self.distribution_keys], dtype=np.float64)
+        else:
+            weights = np.asarray(score_weights, dtype=np.float64)
+            if weights.ndim != 1 or weights.shape[0] != len(self.distribution_keys):
+                raise ValueError(
+                    f"score_weights must be a 1D array with length {len(self.distribution_keys)}; "
+                    f"received shape {weights.shape}."
+                )
+        total = np.sum(weights)
+        if not np.isclose(total, 1.0, atol=1e-8):
+            raise ValueError(f"score_weights must sum to 1: {weights} -> {total}.")
+
+        return weights
 
     def _apply_inverse_adapter_to_estimates(
         self, estimates: Mapping[str, Mapping[str, Tensor]], **kwargs
@@ -237,14 +426,6 @@ class PointApproximator(ContinuousApproximator):
                 for score_key, inner_estimate in variable_estimates.items()
             }
         return squeezed
-
-    @staticmethod
-    def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray or dict[str, np.ndarray]:
-        """Squeezes the dictionary to just the value if there is only one key-value pair."""
-        if len(samples) == 1:
-            # Extract and return the only item's value
-            return next(iter(samples.values()))
-        return samples
 
     def _estimate(
         self,

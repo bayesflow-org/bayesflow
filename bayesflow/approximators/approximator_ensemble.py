@@ -110,6 +110,13 @@ class ApproximatorEnsemble(Approximator):
         member_weights: Sequence[float] | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
+        """Samples from the marginal distribution over ensemble members.
+
+        Marginalize over approximators according to member_weights (uniform by default).
+
+        Parameters
+        ----------
+        """
         # Sample from each approximator according to member_weights (uniform by default)
         if member_weights is None:
             member_weights = np.ones(len(self.approximators)) / len(self.approximators)
@@ -128,12 +135,28 @@ class ApproximatorEnsemble(Approximator):
         shuffled = keras.tree.map_structure(lambda arr: arr[shuffle_idx], concatenated)
         return shuffled
 
-    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
         log_prob = {}
         for approx_name, approximator in self.approximators.items():
             if self._has_obj_method(approximator, "log_prob"):
                 log_prob[approx_name] = approximator.log_prob(data=data, **kwargs)
         return log_prob
+
+    def log_prob(
+        self, data: Mapping[str, np.ndarray], member_weights: Sequence[float] | None = None, **kwargs
+    ) -> np.ndarray:
+        """Computes the marginal log prob over ensemble members.
+
+        Marginalize over approximators according to member_weights (uniform by default)."""
+        if member_weights is None:
+            member_weights = np.ones(len(self.approximators)) / len(self.approximators)
+
+        log_probs = self.log_prob_separate(data=data, **kwargs)
+
+        # log p = log_sum_exp(log(w_i) + log p_i)
+        log_probs = np.stack([log_probs[approx_name] for approx_name in self.approximators.keys()], axis=-1)
+        log_weights = np.log(member_weights)
+        return keras.ops.logsumexp(log_probs + log_weights, axis=-1)
 
     def estimate(
         self,

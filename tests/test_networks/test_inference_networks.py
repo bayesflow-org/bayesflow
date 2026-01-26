@@ -107,6 +107,7 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
 def test_density_numerically(generative_inference_network, random_samples, random_conditions):
     from bayesflow.utils import jacobian
 
+    keras.utils.set_random_seed(1234)
     try:
         if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
             # jax backend does not support adaptive solvers for numerical jacobian computation yet
@@ -117,6 +118,8 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     except NotImplementedError:
         # network does not support density estimation
         return
+
+    keras.utils.set_random_seed(1234)
 
     def f(x):
         return generative_inference_network(x, conditions=random_conditions)

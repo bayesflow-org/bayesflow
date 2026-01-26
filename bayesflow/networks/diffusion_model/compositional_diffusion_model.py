@@ -157,10 +157,6 @@ class CompositionalDiffusionModel(DiffusionModel):
         Tensor
             Compositional velocity of same shape as input xz
         """
-        # Calculate standard noise schedule components
-        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-
         compositional_score = self.compositional_score(
             xz=xz,
             time=time,
@@ -170,6 +166,10 @@ class CompositionalDiffusionModel(DiffusionModel):
             training=training,
             **kwargs,
         )
+
+        # Calculate standard noise schedule components
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
 
         # Compute velocity using standard drift-diffusion formulation
         f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
@@ -223,7 +223,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             raise ValueError("Conditions are required for compositional sampling")
 
         # Get shapes for compositional structure
-        n_compositional = ops.shape(conditions)[1]
+        batch_size, n_compositional = ops.shape(conditions)[:2]
 
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
@@ -237,7 +237,21 @@ class CompositionalDiffusionModel(DiffusionModel):
             conditions_batch = ops.take(conditions, mini_batch_idx, axis=1)
         else:
             conditions_batch = conditions
-        individual_scores = self._compute_individual_scores(xz, log_snr_t, conditions_batch, training, **kwargs)
+            mini_batch_size = n_compositional
+
+        # expand and flatten compositional dimension for score computation
+        dims = tuple(ops.shape(xz)[1:])
+        snr_dims = tuple(ops.shape(log_snr_t)[1:])
+        conditions_dims = tuple(ops.shape(conditions_batch)[2:])
+        xz_reshaped = ops.broadcast_to(ops.expand_dims(xz, 1), (batch_size, mini_batch_size) + dims)
+        log_snr_reshaped = ops.broadcast_to(ops.expand_dims(log_snr_t, 1), (batch_size, mini_batch_size) + snr_dims)
+        xz_reshaped = ops.reshape(xz_reshaped, (batch_size * mini_batch_size,) + dims)
+        log_snr_reshaped = ops.reshape(log_snr_reshaped, (batch_size * mini_batch_size,) + snr_dims)
+        conditions_flat = ops.reshape(conditions_batch, (batch_size * mini_batch_size,) + conditions_dims)
+        scores_flat = self.score(
+            xz_reshaped, log_snr_t=log_snr_reshaped, conditions=conditions_flat, training=training, **kwargs
+        )
+        individual_scores = ops.reshape(scores_flat, (batch_size, mini_batch_size) + dims)
 
         # Compute prior score component
         prior_score = compute_prior_score(xz)
@@ -250,47 +264,6 @@ class CompositionalDiffusionModel(DiffusionModel):
         time_tensor = ops.cast(time, dtype=ops.dtype(xz))
         compositional_score = self.compositional_bridge(time_tensor) * (weighted_prior_score + summed_individual_scores)
         return compositional_score
-
-    def _compute_individual_scores(
-        self, xz: Tensor, log_snr_t: Tensor, conditions: Tensor, training: bool, **kwargs
-    ) -> Tensor:
-        """
-        Compute individual dataset scores s_ψ(θ,t,yᵢ) for each compositional condition.
-
-        Returns
-        -------
-        Tensor
-            Individual scores with shape (n_datasets, n_compositional, ...)
-        """
-        # Get shapes
-        xz_shape = ops.shape(xz)  # (n_datasets, num_samples, ..., dims)
-        conditions_shape = ops.shape(conditions)  # (n_datasets, n_compositional, num_samples, ..., dims)
-        n_datasets, n_compositional = conditions_shape[0], conditions_shape[1]
-        conditions_dims = tuple(conditions_shape[3:])
-        num_samples = xz_shape[1]
-        dims = tuple(xz_shape[2:])
-
-        # Expand xz to match compositional structure
-        xz_expanded = ops.expand_dims(xz, axis=1)  # (n_datasets, 1, num_samples, ..., dims)
-        xz_expanded = ops.broadcast_to(xz_expanded, (n_datasets, n_compositional, num_samples) + dims)
-
-        # Expand log_snr_t to match compositional structure
-        log_snr_expanded = ops.expand_dims(log_snr_t, axis=1)
-        log_snr_expanded = ops.broadcast_to(log_snr_expanded, (n_datasets, n_compositional, num_samples, 1))
-
-        # Flatten for score computation: (n_datasets * n_compositional, num_samples, ..., dims)
-        xz_flat = ops.reshape(xz_expanded, (n_datasets * n_compositional, num_samples) + dims)
-        log_snr_flat = ops.reshape(log_snr_expanded, (n_datasets * n_compositional, num_samples, 1))
-        conditions_flat = ops.reshape(conditions, (n_datasets * n_compositional, num_samples) + conditions_dims)
-
-        # Use standard score function
-        scores_flat = self.score(
-            xz_flat, log_snr_t=log_snr_flat, conditions=conditions_flat, training=training, **kwargs
-        )
-
-        # Reshape back to compositional structure
-        scores = ops.reshape(scores_flat, (n_datasets, n_compositional, num_samples) + dims)
-        return scores
 
     def _inverse_compositional(
         self,
@@ -308,7 +281,8 @@ class CompositionalDiffusionModel(DiffusionModel):
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
 
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
-        kwargs.pop("mini_batch_size")
+        if "mini_batch_size" in kwargs:
+            kwargs.pop("mini_batch_size")
         if mini_batch_size is None:
             mini_batch_size = n_compositional
         mini_batch_size = max(mini_batch_size, 1)

@@ -32,12 +32,10 @@ def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, co
     approximator.build_from_data(adapted_data)
 
     # Test compositional sampling
-    n_datasets, n_compositional = 3, 5
+    n_datasets, n_compositional = 8, 5
     conditions = {"conditions": np.random.normal(0.0, 1.0, (n_datasets, n_compositional, 3)).astype("float32")}
     samples = approximator.compositional_sample(
-        num_samples=10,
-        conditions=conditions,
-        compute_prior_score=mock_prior_score_original_space,
+        num_samples=10, conditions=conditions, compute_prior_score=mock_prior_score_original_space, batch_size=4
     )
 
     assert "loc" in samples

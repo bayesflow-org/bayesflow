@@ -721,6 +721,8 @@ class ContinuousApproximator(Approximator):
         conditions: Mapping[str, np.ndarray],
         compute_prior_score: Callable[[Mapping[str, np.ndarray]], np.ndarray],
         split: bool = False,
+        batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -737,8 +739,19 @@ class ContinuousApproximator(Approximator):
         compute_prior_score : Callable[[Mapping[str, np.ndarray]], np.ndarray]
             A function that computes the score of the log prior distribution.
         split : bool, default=False
-            Whether to split the output arrays along the last axis and return one column vector per target variable
-            samples.
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
         **kwargs : dict
             Additional keyword arguments for the adapter and sampling process.
 
@@ -759,11 +772,26 @@ class ContinuousApproximator(Approximator):
             flattened_conditions[key] = value.reshape(flattened_shape)
         n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
 
+        if n_comp <= 1:
+            raise ValueError(
+                "At least two conditioning variables are required for compositional sampling, got "
+                f"{n_comp}. Use 'sample' instead."
+            )
+
         # Prepare data using existing method (handles adaptation and standardization)
-        prepared_conditions = self._prepare_data(flattened_conditions, **kwargs)
+        adapted_conditions = self._prepare_data(flattened_conditions, **kwargs)
 
         # Remove any superfluous keys, just retain actual conditions
-        prepared_conditions = {k: v for k, v in prepared_conditions.items() if k in self.CONDITION_KEYS}
+        adapted_conditions = {k: v for k, v in adapted_conditions.items() if k in self.CONDITION_KEYS}
+
+        # Reshape conditions back to (n_datasets, n_compositional, ...)
+        prepared_conditions = {}
+        for key, value in adapted_conditions.items():
+            expanded_shape = (
+                n_datasets,
+                n_comp,
+            ) + value.shape[1:]
+            prepared_conditions[key] = keras.ops.reshape(value, expanded_shape)
 
         def compute_prior_score_pre(_samples: Tensor) -> Tensor:
             if "inference_variables" in self.standardize:
@@ -806,32 +834,32 @@ class ContinuousApproximator(Approximator):
                     std = keras.ops.concatenate(std_components, axis=-1)
 
                 # Expand std to match batch dimension of out
-                std_expanded = keras.ops.expand_dims(std, (0, 1))  # Add batch, sample dimensions
-                std_expanded = keras.ops.tile(std_expanded, [n_datasets, num_samples, 1])
+                std_expanded = keras.ops.expand_dims(std, 0)  # Add batch dimensions
 
                 # Apply the jacobian: score_z = score_x * std
                 out = out * std_expanded
             return out
 
-        # Test prior score function, useful for debugging
-        test = self.inference_network.base_distribution.sample((n_datasets, num_samples))
-        test = compute_prior_score_pre(test)
-        if test.shape[:2] != (n_datasets, num_samples):
-            raise ValueError(
-                "The provided compute_prior_score function does not return the correct shape. "
-                f"Expected ({n_datasets}, {num_samples}, ...), got {test.shape}."
-            )
-        del test
+        # If no batching requested, process everything as one batch
+        if batch_size is None:
+            batch_size = n_datasets
 
-        # Sample using compositional sampling
-        samples = self._compositional_sample(
-            num_samples=num_samples,
-            n_datasets=n_datasets,
-            n_compositional=n_comp,
-            compute_prior_score=compute_prior_score_pre,
-            **prepared_conditions,
-            **kwargs,
-        )
+        samples = []
+        for i in tqdm(range(0, n_datasets, batch_size), desc="Compositional Sampling", unit="batch"):
+            batch_conditions = slice_maybe_nested(prepared_conditions, i, i + batch_size)
+
+            batch_samples = self._compositional_sample(
+                num_samples=num_samples,
+                n_datasets=batch_size,
+                n_compositional=n_comp,
+                compute_prior_score=compute_prior_score_pre,
+                **batch_conditions,
+                sample_shape=sample_shape,
+                **kwargs,
+            )
+            samples.append(batch_samples)
+
+        samples = tree_concatenate(samples, axis=0)
 
         if "inference_variables" in self.standardize:
             samples = self.standardize_layers["inference_variables"](samples, forward=False)
@@ -849,11 +877,11 @@ class ContinuousApproximator(Approximator):
     def _compositional_sample(
         self,
         num_samples: int,
-        n_datasets: int,
         n_compositional: int,
         compute_prior_score: Callable[[Tensor], Tensor],
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        sample_shape: Literal["infer"] | Sequence[int] = "infer",
         **kwargs,
     ) -> Tensor:
         """
@@ -867,32 +895,62 @@ class ContinuousApproximator(Approximator):
                 raise ValueError("Summary variables are required when a summary network is present.")
 
         if self.summary_network is not None:
+            # remove compositional dimension for summary network
+            # From (n_datasets, n_comp, ...., dims) to (n_datasets * n_comp, ...., dims)
+            condition_dims = keras.ops.shape(summary_variables)[2:]
+            batch_size = keras.ops.shape(summary_variables)[0]
+            summary_variables = keras.ops.reshape(summary_variables, (batch_size * n_compositional, *condition_dims))
+
             summary_outputs = self.summary_network(
                 summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
             )
+            condition_out_dims = keras.ops.shape(summary_outputs)[1:]
+            summary_outputs = keras.ops.reshape(summary_outputs, (batch_size, n_compositional, *condition_out_dims))
+
             inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
 
         if inference_conditions is not None:
-            # Reshape conditions for compositional sampling
-            # From (n_datasets * n_comp, ...., dims) to (n_datasets, n_comp, ...., dims)
-            condition_dims = keras.ops.shape(inference_conditions)[1:]
-            inference_conditions = keras.ops.reshape(
-                inference_conditions, (n_datasets, n_compositional, *condition_dims)
-            )
+            batch_size = keras.ops.shape(inference_conditions)[0]
 
-            # Expand for num_samples: (n_datasets, n_comp, dims) -> (n_datasets, n_comp, num_samples, dims)
-            inference_conditions = keras.ops.expand_dims(inference_conditions, axis=2)
+            # Repeat conditions across a new sample dimension
+            inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
             inference_conditions = keras.ops.broadcast_to(
-                inference_conditions, (n_datasets, n_compositional, num_samples, *condition_dims)
+                inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
             )
 
-            batch_shape = (n_datasets, num_samples)
+            # Flatten batch and sample dimensions into a new batch_size*num_samples batch dimension
+            inference_conditions = keras.ops.reshape(
+                inference_conditions, (batch_size * num_samples,) + keras.ops.shape(inference_conditions)[2:]
+            )
+
+            batch_shape = (batch_size * num_samples,)
         else:
             raise ValueError("Cannot perform compositional sampling without inference conditions.")
 
-        return self.inference_network.sample(
+        # Deal with trailing structural dimensions, do not include compositional dimension
+        if sample_shape == "infer":
+            sample_shape = keras.ops.shape(inference_conditions)[2:-1]
+
+        elif isinstance(sample_shape, int):
+            sample_shape = (sample_shape,)
+
+        elif isinstance(sample_shape, (tuple, list)):
+            sample_shape = tuple(sample_shape)
+
+        else:
+            raise ValueError(
+                f"sample_shape must be 'infer', an int, or a tuple/list of ints, but got {type(sample_shape)}."
+            )
+
+        batch_shape += sample_shape
+
+        samples = self.inference_network.sample(
             batch_shape,
             conditions=inference_conditions,
             compute_prior_score=compute_prior_score,
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
+
+        # Unflatten batch dimension to retrieve the sample dimension as a separate one
+        samples = keras.ops.reshape(samples, (-1, num_samples) + keras.ops.shape(samples)[1:])
+        return samples

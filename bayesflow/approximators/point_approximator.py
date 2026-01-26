@@ -83,7 +83,7 @@ class PointApproximator(ContinuousApproximator):
 
         return estimates
 
-    def sample(
+    def sample_separate(
         self,
         *,
         num_samples: int,
@@ -116,7 +116,7 @@ class PointApproximator(ContinuousApproximator):
             Samples for all inference variables and all parametric scoring rules in a nested dictionary.
 
             1. Each first-level key is the name of an inference variable.
-            2. (If there are multiple parametric scores, each second-level key is the name of such a score.)
+            2. Each second-level key is the name of a parametric score.
 
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, num_samples, variable_block_size).
@@ -138,12 +138,9 @@ class PointApproximator(ContinuousApproximator):
         if split:
             raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
 
-        # Squeeze sample dictionary if there's only one key-value pair.
-        samples = self._squeeze_parametric_score_major_dict(samples)
-
         return samples
 
-    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
+    def log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
         """
         Computes the log-probability of given data under the parametric distribution(s) for given input conditions.
 
@@ -156,16 +153,10 @@ class PointApproximator(ContinuousApproximator):
 
         Returns
         -------
-        log_prob : np.ndarray or dict[str, np.ndarray]
+        log_prob : dict[str, np.ndarray]
             Log-probabilities of the distribution
             `p(inference_variables | inference_conditions, h(summary_conditions))` for all parametric scoring rules.
-
-            If only one parametric score is available, output is an array of log-probabilities.
-
-            Output is a dictionary if multiple parametric scores are available.
-            Then, each key is the name of a score and values are corresponding log-probabilities.
-
-            Log-probabilities have shape (num_datasets,).
+            Each has shape (num_datasets,).
         """
         # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac
         data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
@@ -177,8 +168,6 @@ class PointApproximator(ContinuousApproximator):
         # Change of variables formula, respecting log_prob to be a dictionary
         if log_det_jac is not None:
             log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
-
-        log_prob = self._squeeze_parametric_score_major_dict(log_prob)
 
         return log_prob
 

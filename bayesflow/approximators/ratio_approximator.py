@@ -1,5 +1,7 @@
+from collections.abc import Sequence
 import keras
 
+from bayesflow.adapters import Adapter
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 from .approximator import Approximator
 
@@ -38,6 +40,7 @@ class RatioApproximator(Approximator):
     @classmethod
     def nre_b(cls, summary_network, classifier_network, K=5, **kwargs):
         """Initialize the approximator to run NRE-B."""
+        raise NotImplementedError("NRE-B is not yet supported.")
         return cls(summary_network, classifier_network, gamma=float("inf"), K=K, **kwargs)
 
     @classmethod
@@ -126,3 +129,24 @@ class RatioApproximator(Approximator):
         }
 
         return base_config | serialize(config)
+
+    def build(self, data_shapes):
+        self.log_ratio(keras.ops.zeros(data_shapes["parameters"]), keras.ops.zeros(data_shapes["observables"]))
+        self.built = True
+
+    @classmethod
+    def build_adapter(cls, parameter_names: str | Sequence[str], observables_names: str | Sequence[str]):
+        if isinstance(parameter_names, str):
+            parameter_names = [parameter_names]
+        if isinstance(observables_names, str):
+            observables_names = [observables_names]
+
+        adapter = Adapter()
+        adapter.to_array()
+        adapter.convert_dtype("float64", "float32")
+        adapter.concatenate(parameter_names, into="parameters")
+        adapter.concatenate(observables_names, into="observables")
+        return adapter
+
+    def _batch_size_from_data(self, data: any) -> int:
+        return keras.ops.shape(data["parameters"])[0]

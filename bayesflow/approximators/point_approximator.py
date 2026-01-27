@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 
 import numpy as np
-
+from scipy.special import logsumexp
 import keras
 
 from bayesflow.networks.point_inference_network import PointInferenceNetwork
@@ -324,9 +324,7 @@ class PointApproximator(ContinuousApproximator):
         z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
 
         # stable logsumexp over last axis
-        m = np.max(z, axis=-1, keepdims=True)
-        out = np.squeeze(m, axis=-1) + np.log(np.sum(np.exp(z - m), axis=-1))
-        return out
+        return logsumexp(z)
 
     def _check_has_distribution(self):
         if not self.has_distribution:

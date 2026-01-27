@@ -4,12 +4,13 @@ import numpy as np
 
 import keras
 
+from bayesflow.adapters import Adapter
+from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
 from .approximator import Approximator
-from .model_comparison_approximator import ModelComparisonApproximator
 
 
 @serializable("bayesflow.approximators")
@@ -19,12 +20,55 @@ class EnsembleApproximator(Approximator):
 
         self.approximators = approximators
 
+    @property
+    def adapter(self) -> Adapter:
+        # Defer to any adapter of the approximators,
+        # assuming all are the same, which is not enforced at the moment.
+        # self.adapter will only be used when super().fit calls build_dataset(..., adapter=self.adapter).
+        # The attribute would not be necessary if the dataset wouldn't need an adapter.
+        return next(iter(self.approximators.values())).adapter
+        # TODO: enforce identical adapters
+
+    @classmethod
+    def build_dataset(
+        cls,
+        *,
+        batch_size: int = "auto",
+        num_batches: int,
+        adapter: Adapter = "auto",
+        memory_budget: str | int = "auto",
+        simulator: Simulator,
+        workers: int = "auto",
+        use_multiprocessing: bool = False,
+        max_queue_size: int = 32,
+        **kwargs,
+    ):
+        raise NotImplementedError("Automatic construction of an EnsembleDataset from a simulator is not yet supported.")
+
+    # the lines below WOULD take care of automatic EnsembleDataset construction, were this not a class method.
+    # len(self.approximators) cannot be called since self is not availalbe.
+    # ) -> EnsembleDataset:
+    #     # Build the underlying OnlineDataset using the base implementation.
+    #     base_ds = super().build_dataset(
+    #         batch_size=batch_size,
+    #         num_batches=num_batches,
+    #         adapter=adapter,
+    #         memory_budget=memory_budget,
+    #         simulator=simulator,
+    #         workers=workers,
+    #         use_multiprocessing=use_multiprocessing,
+    #         max_queue_size=max_queue_size,
+    #         **kwargs,
+    #     )
+    #
+    #     # Wrap it into an EnsembleDataset
+    #     return EnsembleDataset(base_ds, num_ensemble=len(self.approximators), **kwargs)
+
     def build_from_data(self, adapted_data: dict[str, any]):
         data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
-        if len(data_shapes["inference_variables"]) > 2:
-            # Remove the ensemble dimension from data_shapes. This expects data_shapes are the shapes of a
-            # batch of training data, where the second axis corresponds to different approximators.
-            data_shapes = keras.tree.map_shape_structure(lambda shape: shape[:1] + shape[2:], data_shapes)
+        # Remove the ensemble dimension from data_shapes. This expects data_shapes are the shapes of a
+        # batch of training data, where the second axis corresponds to different approximators.
+        data_shapes = keras.tree.map_shape_structure(lambda shape: shape[:1] + shape[2:], data_shapes)
         self.build(data_shapes)
 
     def build(self, input_shape: dict[str, tuple[int] | dict[str, dict]]) -> None:
@@ -34,6 +78,66 @@ class EnsembleApproximator(Approximator):
         self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
         # Update attribute to mark whether it has at least one score that represents a distribution
         self.has_distribution = len(self.distribution_keys) > 0
+
+    def fit(self, *args, **kwargs):
+        """
+        Trains the ensemble of approximators on the provided dataset or on-demand data generated
+        from the given simulator.
+        If `dataset` is not provided, a dataset is built from the `simulator`.
+        If the model has not been built, it will be built using a batch from the dataset.
+
+        If `dataset` is `OnlineDataset`, `OfflineDataset` or `DiskDataset`,
+        it will be wrapped into an `EnsembleDataset`.
+
+        Parameters
+        ----------
+        dataset : keras.utils.PyDataset, optional
+            A dataset containing simulations for training. If provided, `simulator` must be None.
+        simulator : Simulator, optional
+            A simulator used to generate a dataset. If provided, `dataset` must be None.
+            NOTE: CURRENTLY PASSING A simulator DIRECTLY TO fit IS NOT SUPPORTED.
+            PASS A EnsembleDataset instead.
+        **kwargs
+            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
+
+            batch_size : int or None, default='auto'
+                Number of samples per gradient update. Do not specify if `dataset` is provided as a
+                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
+            epochs : int, default=1
+                Number of epochs to train the model.
+            verbose : {"auto", 0, 1, 2}, default="auto"
+                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+            callbacks : list of keras.callbacks.Callback, optional
+                List of callbacks to apply during training.
+            validation_split : float, optional
+                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
+                or tensors).
+            validation_data : tuple or dataset, optional
+                Data for validation, overriding `validation_split`.
+            shuffle : bool, default=True
+                Whether to shuffle the training data before each epoch (ignored for dataset generators).
+            initial_epoch : int, default=0
+                Epoch at which to start training (useful for resuming training).
+            steps_per_epoch : int or None, optional
+                Number of steps (batches) before declaring an epoch finished.
+            validation_steps : int or None, optional
+                Number of validation steps per validation epoch.
+            validation_batch_size : int or None, optional
+                Number of samples per validation batch (defaults to `batch_size`).
+            validation_freq : int, default=1
+                Specifies how many training epochs to run before performing validation.
+
+        Returns
+        -------
+        keras.callbacks.History
+            A history object containing the training loss and metrics values.
+
+        Raises
+        ------
+        ValueError
+            If both `dataset` and `simulator` are provided or neither is provided.
+        """
+        return super().fit(*args, **kwargs, adapter=self.adapter)
 
     def compute_metrics(
         self,
@@ -53,8 +157,8 @@ class EnsembleApproximator(Approximator):
         _sample_weight = sample_weight
 
         for i, (approx_name, approximator) in enumerate(self.approximators.items()):
-            # During training each approximator receives its own separate slice
-            if stage == "training" and inference_variables.ndim > 2:
+            # During training each approximator receives its own separate slice from an EnsembleDataset
+            if stage == "training":
                 # Pick out the correct slice for each ensemble member
                 _inference_variables = inference_variables[:, i]
                 if inference_conditions is not None:
@@ -145,7 +249,7 @@ class EnsembleApproximator(Approximator):
             Conditions for sampling.
         split : bool, optional
             Whether to split output arrays, by default False.
-        member_weights : Sequence[float] or None, optional
+        member_weights : dict[str, float] or None, optional
             Probability weights for each approximator. If None, uses uniform weights.
             Must sum to 1.
         **kwargs
@@ -156,7 +260,7 @@ class EnsembleApproximator(Approximator):
         dict[str, np.ndarray]
             Samples with shape (batch_size, num_samples, ...) for each variable.
         """
-        member_weights = self._resolve_member_weights(member_weights)
+        member_weights = self._resolve_member_weights(member_weights)  # TODO: dictionary
         num_samples_per_member = np.random.multinomial(num_samples, member_weights)
         samples = self.sample_separate(num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs)
 
@@ -279,20 +383,8 @@ class EnsembleApproximator(Approximator):
             total = np.sum(member_weights)
             if not np.isclose(total, 1.0, atol=1e-8):
                 raise ValueError(f"member_weights must sum to 1: {member_weights} -> {total}.")
+                # TODO: make sure not negative and normalize
         return member_weights
-
-    def predict(
-        self,
-        *,
-        conditions: Mapping[str, np.ndarray],
-        probs: bool = True,
-        **kwargs,
-    ) -> dict[str, np.ndarray]:
-        predictions = {}
-        for approx_name, approximator in self.approximators.items():
-            if isinstance(approximator, ModelComparisonApproximator):
-                predictions[approx_name] = approximator.predict(conditions=conditions, probs=probs, **kwargs)
-        return predictions
 
     def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
         """

@@ -441,46 +441,72 @@ def repetitions_from_data_shape(approximator: "GraphicalApproximator", data_shap
 
 
 def concatenate(tensors, batch_dims=1):
-    """
-    Concatenates tensors of possibly unequal ranks by expanding and
-    tiling missing dimensions.
-
-    >>> x = keras.random.normal((20, 5))
-    >>> y = keras.random.normal((20, 15, 3)
-    >>> z = concatenate([x, y])
-    >>> keras.ops.shape(z)
-    (20, 15, 8)
-    """
-    max_rank = max([len(keras.ops.shape(t)) for t in tensors])
+    max_rank = max(len(t.shape) for t in tensors)
 
     expanded = []
     for t in tensors:
-        while len(keras.ops.shape(t)) < max_rank:
+        while len(t.shape) < max_rank:
             t = keras.ops.expand_dims(t, axis=batch_dims)
         expanded.append(t)
 
-    max_shape_per_dim = keras.ops.convert_to_tensor(
-        [keras.ops.max(s) for s in zip(*[keras.ops.shape(t) for t in expanded])]
-    )
+    # compute max shape
+    max_shape = list(expanded[0].shape)
+    for t in expanded[1:]:
+        for i in range(batch_dims, max_rank - 1):
+            max_shape[i] = max(max_shape[i], t.shape[i])
 
-    # broadcast tensors to match max shape
-    target_shapes = [
-        keras.ops.concatenate([max_shape_per_dim[:-1], keras.ops.convert_to_tensor(keras.ops.shape(t)[-1:])], axis=0)
-        for t in expanded
-    ]
-    if keras.backend.backend() == "tensorflow":
-        broadcasted = [keras.ops.broadcast_to(t, s) for t, s in zip(expanded, target_shapes)]
-    else:
-        broadcasted = [keras.ops.broadcast_to(t, tuple(s)) for t, s in zip(expanded, target_shapes)]
+    broadcasted = []
+    for t in expanded:
+        # keep last dimension unique
+        target = tuple(max_shape[:-1] + [t.shape[-1]])
+        broadcasted.append(keras.ops.broadcast_to(t, target))
 
-    # concatenate along last dimension
-    concatenated = keras.ops.concatenate(broadcasted, axis=-1)
+    return keras.ops.concatenate(broadcasted, axis=-1)
 
-    # restore original batch dimensions
-    original_batch_shape = keras.ops.shape(tensors[0])[:batch_dims]
-    final_shape = (*original_batch_shape, *keras.ops.shape(concatenated)[1:])
 
-    return keras.ops.reshape(concatenated, final_shape)
+# def concatenate(tensors, batch_dims=1):
+#     """
+#     Concatenates tensors of possibly unequal ranks by expanding and
+#     tiling missing dimensions.
+#
+#     >>> x = keras.random.normal((20, 5))
+#     >>> y = keras.random.normal((20, 15, 3)
+#     >>> z = concatenate([x, y])
+#     >>> keras.ops.shape(z)
+#     (20, 15, 8)
+#     """
+#     max_rank = max([len(t.shape) for t in tensors])
+#
+#     expanded = []
+#     for t in tensors:
+#         while len(keras.ops.shape(t)) < max_rank:
+#             t = keras.ops.expand_dims(t, axis=batch_dims)
+#         expanded.append(t)
+#
+#     max_shape_per_dim = keras.ops.convert_to_tensor(
+#         [keras.ops.max(s) for s in zip(*[keras.ops.shape(t) for t in expanded])]
+#     )
+#
+#     # broadcast tensors to match max shape
+#     target_shapes = [
+#         keras.ops.concatenate([max_shape_per_dim[:-1], keras.ops.convert_to_tensor(keras.ops.shape(t)[-1:])], axis=0)
+#         for t in expanded
+#     ]
+#     # if keras.backend.backend() == "tensorflow":
+#     #     broadcasted = [keras.ops.broadcast_to(t, s) for t, s in zip(expanded, target_shapes)]
+#     # else:
+#     #     broadcasted = [keras.ops.broadcast_to(t, tuple(s)) for t, s in zip(expanded, target_shapes)]
+#
+#     # concatenate along last dimension
+#     # concatenated = keras.ops.concatenate(broadcasted, axis=-1)
+#
+#     concatenated = keras.ops.concatenate(expanded, axis=-1)
+#
+#     # restore original batch dimensions
+#     original_batch_shape = keras.ops.shape(tensors[0])[:batch_dims]
+#     final_shape = (*original_batch_shape, *keras.ops.shape(concatenated)[1:])
+#
+#     return keras.ops.reshape(concatenated, final_shape)
 
 
 # def concatenate(tensors, batch_dims=1):

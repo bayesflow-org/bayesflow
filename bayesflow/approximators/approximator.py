@@ -62,7 +62,7 @@ class Approximator(BackendApproximator):
     def call(self, *args, **kwargs):
         return self.compute_metrics(*args, **kwargs)
 
-    def fit(self, *, dataset: keras.utils.PyDataset = None, simulator: Simulator = None, **kwargs):
+    def fit(self, *, dataset: keras.utils.PyDataset | None = None, simulator: Simulator | None = None, **kwargs):
         """
         Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
         If `dataset` is not provided, a dataset is built from the `simulator`.

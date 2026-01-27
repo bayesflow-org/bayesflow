@@ -155,11 +155,14 @@ def typical_point_inference_network_subnet():
         "free_form_flow",
         "consistency_model",
         pytest.param("diffusion_model_edm_F"),
-        pytest.param("diffusion_model_edm_noise", marks=pytest.mark.slow),
+        pytest.param(
+            "diffusion_model_edm_noise", marks=[pytest.mark.slow, pytest.mark.skip("skip to reduce load on CI.")]
+        ),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
-        pytest.param("diffusion_model_cosine_F", marks=pytest.mark.slow),
+        pytest.param(
+            "diffusion_model_cosine_F", marks=[pytest.mark.slow, pytest.mark.skip("skip to reduce load on CI.")]
+        ),
         pytest.param("diffusion_model_cosine_noise", marks=pytest.mark.slow),
-        pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
     ],
     scope="function",
 )
@@ -195,7 +198,6 @@ def inference_network_subnet(request):
                 pytest.mark.skip("noise prediction not testable without prior training for numerical reasons."),
             ],
         ),
-        pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param(
             "diffusion_model_cosine_F",
             marks=[

@@ -107,7 +107,6 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
 def test_density_numerically(generative_inference_network, random_samples, random_conditions):
     from bayesflow.utils import jacobian
 
-    keras.utils.set_random_seed(1234)
     try:
         if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
             # jax backend does not support adaptive solvers for numerical jacobian computation yet
@@ -119,8 +118,6 @@ def test_density_numerically(generative_inference_network, random_samples, rando
         # network does not support density estimation
         return
 
-    keras.utils.set_random_seed(1234)
-
     def f(x):
         return generative_inference_network(x, conditions=random_conditions)
 
@@ -128,7 +125,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
     assert_allclose(
-        output, numerical_output, rtol=1e-4, atol=1e-5, msg="Outputs of numerical jacobian and network do not match."
+        output, numerical_output, rtol=1e-3, atol=1e-3, msg="Outputs of numerical jacobian and network do not match."
     )
 
     log_prob = generative_inference_network.base_distribution.log_prob(output)

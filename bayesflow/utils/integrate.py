@@ -33,7 +33,6 @@ def euler_step(
     state: StateDict,
     time: ArrayLike,
     step_size: ArrayLike,
-    **kwargs,
 ) -> Tuple[StateDict, ArrayLike, None, ArrayLike]:
     k1 = fn(time, **filter_kwargs(state, fn))
 
@@ -229,17 +228,16 @@ def integrate_fixed(
 
     match method:
         case "euler":
-            step_fn = euler_step
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
         case "rk45":
-            step_fn = rk45_step
+            step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = tsit5_step
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
     step_size = (stop_time - start_time) / steps
 
     def body(_loop_var, _loop_state):
@@ -265,17 +263,15 @@ def integrate_scheduled(
 ) -> StateDict:
     match method:
         case "euler":
-            step_fn = euler_step
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
         case "rk45":
-            step_fn = rk45_step
+            step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = tsit5_step
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
-
-    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=False)
 
     def body(_loop_var, _loop_state):
         _time = steps[_loop_var]
@@ -307,9 +303,9 @@ def integrate_adaptive(
 
     match method:
         case "rk45":
-            step_fn = rk45_step
+            step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
         case "tsit5":
-            step_fn = tsit5_step
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
         case "euler":
             raise ValueError("Adaptive step sizing is not supported for the 'euler' method.")
         case str() as name:
@@ -319,7 +315,6 @@ def integrate_adaptive(
 
     atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype="float32")
     rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4), dtype="float32")
-    step_fn = partial(step_fn, fn, **kwargs, use_adaptive_step_size=True)
     initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype="float32")
     step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
     count_not_accepted = 0
@@ -417,7 +412,6 @@ def integrate_scipy(
     start_time: ArrayLike,
     stop_time: ArrayLike,
     scipy_kwargs: dict | None = None,
-    **kwargs,
 ) -> StateDict:
     import scipy.integrate
 
@@ -480,7 +474,7 @@ def integrate(
                 warning("Setting min_steps has no effect for method 'scipy'")
             if max_steps != 10_000:
                 warning("Setting max_steps has no effect for method 'scipy'")
-            return integrate_scipy(fn, state, start_time, stop_time, **kwargs)
+            return integrate_scipy(fn, state, start_time, stop_time)
         return integrate_adaptive(fn, state, start_time, stop_time, min_steps, max_steps, method, **kwargs)
     elif isinstance(steps, int):
         if start_time is None or stop_time is None:
@@ -553,7 +547,6 @@ def euler_maruyama_step(
     use_adaptive_step_size: bool = False,
     min_step_size: float = -float("inf"),
     max_step_size: float = float("inf"),
-    **kwargs,
 ) -> Union[Tuple[StateDict, ArrayLike, ArrayLike], Tuple[StateDict, ArrayLike, ArrayLike, StateDict]]:
     """
     Performs a single Euler-Maruyama step for stochastic differential equations.
@@ -618,7 +611,6 @@ def two_step_adaptive_step(
     e_abs: float = None,
     r: float = 0.9,
     adapt_safety: float = 0.9,
-    **kwargs,
 ) -> Union[
     Tuple[StateDict, ArrayLike, ArrayLike],
     Tuple[StateDict, ArrayLike, ArrayLike, StateDict],
@@ -654,7 +646,6 @@ def two_step_adaptive_step(
         e_abs: Absolute error tolerance. Default assumes standardized targets.
         r: Order of the method for step size adaptation.
         adapt_safety: Safety factor for step size adaptation.
-        **kwargs: Additional arguments passed to drift_fn and diffusion_fn.
 
     Returns:
         new_state: Updated state after one adaptive step.
@@ -779,7 +770,6 @@ def sea_step(
     step_size: ArrayLike,
     noise: StateDict,  # standard normals
     noise_aux: StateDict,  # standard normals
-    **kwargs,
 ) -> Tuple[StateDict, ArrayLike, ArrayLike]:
     """
     Performs a single shifted Euler step for SDEs with additive noise [1].
@@ -840,7 +830,6 @@ def shark_step(
     step_size: ArrayLike,
     noise: StateDict,
     noise_aux: StateDict,
-    **kwargs,
 ) -> Tuple[StateDict, ArrayLike, ArrayLike]:
     """
     Shifted Additive noise Runge Kutta (SHARK) for additive SDEs [1]. Makes two evaluations of the drift and diffusion
@@ -1018,15 +1007,18 @@ def integrate_stochastic_fixed(
             else:
                 _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
 
+        step_fn_additional_args = dict(
+            noise_aux=_noise_extra_i,
+            min_step_size=min_step_size,
+            max_step_size=keras.ops.minimum(max_step_size, remaining),
+            use_adaptive_step_size=False,
+        )
         new_state, new_time, new_step = step_fn(
             state=_current_state,
             time=_current_time,
             step_size=dt,
-            min_step_size=min_step_size,
-            max_step_size=keras.ops.minimum(max_step_size, remaining),
             noise=_noise_i,
-            noise_aux=_noise_extra_i,
-            use_adaptive_step_size=False,
+            **filter_kwargs(step_fn_additional_args, step_fn),
         )
 
         if corrector_steps > 0:
@@ -1107,16 +1099,19 @@ def integrate_stochastic_adaptive(
             else:
                 _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
 
+        step_fn_additional_args = dict(
+            last_state=_last_state,
+            noise_aux=_noise_extra_i,
+        )
         new_state, new_time, new_step, _new_current_state = step_fn(
             state=_current_state,
-            last_state=_last_state,
             time=_current_time,
             step_size=dt,
             min_step_size=min_step_size,
             max_step_size=keras.ops.minimum(max_step_size, remaining),
             noise=_noise_i,
-            noise_aux=_noise_extra_i,
             use_adaptive_step_size=True,
+            **filter_kwargs(step_fn_additional_args, step_fn),
         )
 
         if corrector_steps > 0:
@@ -1149,16 +1144,19 @@ def integrate_stochastic_adaptive(
         if z_extra_history is not None and len(z_extra_history) > 0:
             noise_extra_final = generate_noise(final_state, seed=seed)
 
+        step_fn_additional_args_final = dict(
+            noise_aux=noise_extra_final,
+            last_state=final_k1,
+        )
         final_state, _, _ = step_fn(
             state=final_state,
             time=final_time,
             step_size=time_diff,
-            last_state=final_k1,
             min_step_size=min_step_size,
             max_step_size=time_remaining,
             noise=noise_final,
-            noise_aux=noise_extra_final,
             use_adaptive_step_size=False,
+            **filter_kwargs(step_fn_additional_args_final, step_fn),
         )
         final_counter = final_counter + 1
 
@@ -1306,7 +1304,7 @@ def integrate_stochastic(
         up to this number of steps, which may increase memory usage. Default is
         ``1000``.
     score_fn : callable, optional
-        Optional score function used for predictor–corrector sampling. If ``None``,
+        Score function used for predictor–corrector sampling. If ``None``,
         no corrector step is applied.
     corrector_steps : int, optional
         Number of corrector steps applied after each predictor step. Default is ``0``.
@@ -1400,12 +1398,7 @@ def integrate_stochastic(
             raise TypeError(f"Invalid integration method: {other!r}")
 
     # Partial the step function with common arguments
-    step_fn = partial(
-        step_fn_raw,
-        drift_fn=drift_fn,
-        diffusion_fn=diffusion_fn,
-        **kwargs,
-    )
+    step_fn = partial(step_fn_raw, drift_fn=drift_fn, diffusion_fn=diffusion_fn, **filter_kwargs(kwargs, step_fn_raw))
 
     # Pre-generate standard normals for the predictor step (up to max_steps)
     z_history = None

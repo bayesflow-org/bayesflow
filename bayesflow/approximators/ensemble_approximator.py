@@ -331,7 +331,7 @@ class EnsembleApproximator(Approximator):
         z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
 
         # stable logsumexp over last axis
-        return logsumexp(z)
+        return logsumexp(z, axis=-1)
 
     def estimate_separate(
         self,

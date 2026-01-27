@@ -2,12 +2,18 @@ import pytest
 import numpy as np
 from tests.utils import check_combination_simulator_adapter
 
+from bayesflow import OnlineDataset, EnsembleDataset, EnsembleApproximator
+
 
 def test_approximator_log_prob(approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     data = simulator.sample((batch_size,))
-    batch = adapter(data)
+
+    train_dataset = OnlineDataset(simulator=simulator, adapter=adapter, num_batches=4, batch_size=batch_size)
+    if isinstance(approximator, EnsembleApproximator):
+        train_dataset = EnsembleDataset(train_dataset, num_ensemble=len(approximator.approximators))
+    batch = train_dataset[0]
 
     approximator.build_from_data(batch)
 

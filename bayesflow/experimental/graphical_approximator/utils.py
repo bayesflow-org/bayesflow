@@ -455,6 +455,7 @@ def concatenate(tensors, batch_dims=1):
         for i in range(batch_dims, max_rank - 1):
             max_shape[i] = max(max_shape[i], t.shape[i])
 
+    max_shape[0] = keras.ops.shape(tensors[0])[0]
     broadcasted = []
     for t in expanded:
         # keep last dimension unique
@@ -464,6 +465,8 @@ def concatenate(tensors, batch_dims=1):
     return keras.ops.concatenate(broadcasted, axis=-1)
 
 
+#
+#
 # def concatenate(tensors, batch_dims=1):
 #     """
 #     Concatenates tensors of possibly unequal ranks by expanding and

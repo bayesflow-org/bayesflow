@@ -1,8 +1,9 @@
 import keras
+import numpy as np
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_approximator_sample(continuous_ensemble_approximator, simulator, batch_size, adapter):
+def test_approximator_sample(ensemble_approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
@@ -11,11 +12,11 @@ def test_approximator_sample(continuous_ensemble_approximator, simulator, batch_
     batch = adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    continuous_ensemble_approximator.build(batch_shapes)
+    ensemble_approximator.build(batch_shapes)
 
-    samples = continuous_ensemble_approximator.sample(num_samples=2, conditions=data)
+    samples = ensemble_approximator.sample(num_samples=2, conditions=data)
 
     assert isinstance(samples, dict)
 
     for samples_value in samples.values():
-        assert isinstance(samples_value, dict)
+        assert isinstance(samples_value, np.ndarray)

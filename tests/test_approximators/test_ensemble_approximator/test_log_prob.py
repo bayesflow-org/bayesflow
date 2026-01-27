@@ -3,7 +3,7 @@ import numpy as np
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_approximator_log_prob(continuous_ensemble_approximator, simulator, batch_size, adapter):
+def test_approximator_log_prob(ensemble_approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
@@ -12,10 +12,7 @@ def test_approximator_log_prob(continuous_ensemble_approximator, simulator, batc
     batch = adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    continuous_ensemble_approximator.build(batch_shapes)
+    ensemble_approximator.build(batch_shapes)
 
-    log_prob = continuous_ensemble_approximator.log_prob(data=data)
-    assert isinstance(log_prob, dict)
-
-    for log_prob_value in log_prob.values():
-        assert isinstance(log_prob_value, (np.ndarray, dict))
+    log_prob = ensemble_approximator.log_prob(data=data)
+    assert isinstance(log_prob, np.ndarray)

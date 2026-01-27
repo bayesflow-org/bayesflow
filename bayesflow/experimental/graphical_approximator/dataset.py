@@ -117,17 +117,17 @@ class GraphicalDataset(keras.utils.PyDataset):
         if self.adapter is not None:
             batch = self.adapter(batch)
 
-        output = {
-            "summary_inputs": summary_inputs_by_network(self.approximator, dict(batch)),
-            "inference_variables": inference_variables_by_network(self.approximator, dict(batch)),
-            "inference_conditions": inference_conditions_by_network(self.approximator, dict(batch)),
-        }
+        # output = {
+        #     "summary_inputs": summary_inputs_by_network(self.approximator, dict(batch)),
+        #     "inference_variables": inference_variables_by_network(self.approximator, dict(batch)),
+        #     "inference_conditions": inference_conditions_by_network(self.approximator, dict(batch)),
+        # }
+        #
+        # for k, v in output.items():
+        #     for network_idx, tensor in output[k].items():
+        #         output[k][network_idx] = keras.ops.convert_to_numpy(keras.ops.stop_gradient(tensor))
 
-        for k, v in output.items():
-            for network_idx, tensor in output[k].items():
-                output[k][network_idx] = keras.ops.convert_to_numpy(keras.ops.stop_gradient(tensor))
-
-        return output
+        return dict(batch)
 
     def __len__(self):
         return self._num_batches

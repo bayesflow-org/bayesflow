@@ -1,3 +1,4 @@
+import copy
 import multiprocessing as mp
 import warnings
 from collections.abc import Mapping, Sequence
@@ -9,7 +10,6 @@ import numpy as np
 from bayesflow.utils import logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
-from .dataset import GraphicalDataset
 from ...adapters import Adapter
 from ...approximators import Approximator
 from ...datasets import OfflineDataset, OnlineDataset
@@ -17,6 +17,7 @@ from ...networks import InferenceNetwork, SummaryNetwork
 from ...networks.standardization import Standardization
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
+from .dataset import GraphicalDataset
 from .utils import (
     inference_condition_shapes_by_network,
     inference_conditions_by_network,
@@ -113,13 +114,21 @@ class GraphicalApproximator(Approximator):
     def build(self, data_shapes: dict[str, tuple[int]]) -> None:
         # build summary networks
         input_shapes = summary_input_shapes_by_network(self, data_shapes)
+        for k, v in input_shapes.items():
+            input_shapes[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
+
         for i, summary_network in enumerate(self.summary_networks or []):
             if not summary_network.built:
                 summary_network.build(input_shapes[i])
 
         # build inference networks
         variable_shapes = inference_variable_shapes_by_network(self, data_shapes)
+        for k, v in variable_shapes.items():
+            variable_shapes[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
+
         condition_shapes = inference_condition_shapes_by_network(self, data_shapes)
+        for k, v in condition_shapes.items():
+            condition_shapes[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
 
         for i, inference_network in enumerate(self.inference_networks or []):
             if not inference_network.built:
@@ -162,17 +171,23 @@ class GraphicalApproximator(Approximator):
         # compute summary metrics
         summary_metrics = {}
 
+        summary_inputs = summary_inputs_by_network(self, kwargs)
+        # for k, v in summary_inputs.items():
+        #     summary_inputs[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
+
         for i, summary_network in enumerate(self.summary_networks or []):
-            summary_metrics[i] = summary_network.compute_metrics(kwargs["summary_inputs"][i], stage=stage)
+            summary_metrics[i] = summary_network.compute_metrics(summary_inputs[i], stage=stage)
             summary_metrics[i].pop("outputs")
 
-        # # compute inference metrics
+        # compute inference metrics
+        inference_variables = inference_variables_by_network(self, kwargs)
+        inference_conditions = inference_conditions_by_network(self, kwargs)
+
         inference_metrics = {}
         for i, inference_network in enumerate(self.inference_networks):
             inference_metrics[i] = inference_network.compute_metrics(
-                kwargs["inference_variables"][i], conditions=kwargs["inference_conditions"][i], stage=stage
+                inference_variables[i], conditions=inference_conditions[i], stage=stage
             )
-
         # combine metrics
         total_loss = 0
         combined_metrics = {}
@@ -252,7 +267,7 @@ class GraphicalApproximator(Approximator):
             self.build(data_shapes)
 
         if "simulator" in kwargs:
-            data_shapes = self._data_shapes(kwargs["simulator"].sample(1))
+            data_shapes = self._data_shapes(self.adapter(kwargs["simulator"].sample(1)))
             kwargs["dataset"] = GraphicalDataset(
                 dataset=None,
                 simulator=kwargs["simulator"],
@@ -277,27 +292,27 @@ class GraphicalApproximator(Approximator):
             )
             num_batches = kwargs["dataset"].num_batches
 
-        if keras.backend.backend() == "tensorflow":
-            import tensorflow as tf
-
-            shapes = {
-                "summary_inputs": summary_input_shapes_by_network(self, data_shapes),
-                "inference_variables": inference_variable_shapes_by_network(self, data_shapes),
-                "inference_conditions": inference_condition_shapes_by_network(self, data_shapes),
-            }
-
-            signature = {}
-            for element in ["summary_inputs", "inference_variables", "inference_conditions"]:
-                signature[element] = {}
-                for k, v in shapes[element].items():
-                    shape = [None] * (len(v) - 1) + [v[-1]]
-                    signature[element][k] = tf.TensorSpec(shape=shape, dtype=tf.float32)
-
-            ds = kwargs["dataset"]
-            num_batches = kwargs["dataset"].num_batches
-            kwargs["dataset"] = tf.data.Dataset.from_generator(
-                lambda: (ds[i] for i in range(num_batches)), output_signature=signature
-            ).repeat()
+        # if keras.backend.backend() == "tensorflow":
+        #     import tensorflow as tf
+        #
+        #     shapes = {
+        #         "summary_inputs": summary_input_shapes_by_network(self, data_shapes),
+        #         "inference_variables": inference_variable_shapes_by_network(self, data_shapes),
+        #         "inference_conditions": inference_condition_shapes_by_network(self, data_shapes),
+        #     }
+        #
+        #     signature = {}
+        #     for element in ["summary_inputs", "inference_variables", "inference_conditions"]:
+        #         signature[element] = {}
+        #         for k, v in shapes[element].items():
+        #             shape = [None] * (len(v) - 1) + [v[-1]]
+        #             signature[element][k] = tf.TensorSpec(shape=shape, dtype=tf.float32)
+        #
+        #     ds = kwargs["dataset"]
+        #     num_batches = kwargs["dataset"].num_batches
+        #     kwargs["dataset"] = tf.data.Dataset.from_generator(
+        #         lambda: (ds[i] for i in range(num_batches)), output_signature=signature
+        #     ).repeat()
 
         return super(GraphicalApproximator, self).fit(*args, **kwargs, steps_per_epoch=num_batches)
 
@@ -340,7 +355,7 @@ class GraphicalApproximator(Approximator):
             cond = prepare_inference_conditions(self, inference_conditions, i)
             variable_shape = list(inference_network._build_shapes_dict["xz_shape"])
             variable_shape[0] = batch_size * num_samples
-            samples = inference_network.sample(tuple(variable_shape[0][:-1]), conditions=cond)
+            samples = inference_network.sample(tuple(variable_shape[:-1]), conditions=cond)
             split_output = split_network_output(self, samples, meta_dict, i)
 
             for k, v in split_output.items():

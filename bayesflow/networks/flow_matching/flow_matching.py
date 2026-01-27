@@ -12,7 +12,6 @@ from bayesflow.utils import (
     layer_kwargs,
     optimal_transport,
     weighted_mean,
-    tensor_utils,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 from ..inference_network import InferenceNetwork
@@ -22,6 +21,9 @@ from ..inference_network import InferenceNetwork
 class FlowMatching(InferenceNetwork):
     """(IN) Implements Optimal Transport Flow Matching, originally introduced as Rectified Flow, with ideas
     incorporated from [1-5].
+
+    For optimal transport, the Sinkhorn algorithm is used to compute mini-batch optimal transport plans
+    between samples from the base distribution and the target distribution during training [6-8].
 
     [1] Liu et al. (2022). Flow straight and fast: Learning to generate and transfer data with rectified flow.
         arXiv preprint arXiv:2209.03003.
@@ -33,15 +35,22 @@ class FlowMatching(InferenceNetwork):
         Advances in Neural Information Processing Systems, 36, 16837-16864.
     [5] Orsini et al. (2025). Flow matching posterior estimation for simulation-based atmospheric retrieval of
         exoplanets. IEEE Access.
+    [6] Nguyen et al. (2022) "Improving Mini-batch Optimal Transport via Partial Transportation"
+    [7] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
+        Conditional Flow-Based Generation"
+    [8] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
     """
 
-    MLP_DEFAULT_CONFIG = {
+    TIME_MLP_DEFAULT_CONFIG = {
         "widths": (256, 256, 256, 256, 256),
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
         "dropout": 0.05,
         "spectral_normalization": False,
+        "time_embedding_dim": 32,
+        "merge": "concat",
+        "norm": "layer",
     }
 
     OPTIMAL_TRANSPORT_DEFAULT_CONFIG = {
@@ -49,7 +58,8 @@ class FlowMatching(InferenceNetwork):
         "regularization": 0.1,
         "max_steps": 100,
         "atol": 1e-5,
-        "rtol": 1e-4,
+        "partial_factor": 1.0,  # no partial OT
+        "condition_ratio": 0.01,  # only used if conditions are provided
     }
 
     INTEGRATE_DEFAULT_CONFIG = {
@@ -59,7 +69,7 @@ class FlowMatching(InferenceNetwork):
 
     def __init__(
         self,
-        subnet: str | type | keras.Layer = "mlp",
+        subnet: str | type | keras.Layer = "time_mlp",
         base_distribution: str | Distribution = "normal",
         use_optimal_transport: bool = False,
         loss_fn: str | keras.Loss = "mse",
@@ -83,8 +93,10 @@ class FlowMatching(InferenceNetwork):
         Parameters
         ----------
         subnet : str or keras.Layer, optional
-            Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
+            A neural network type for the flow matching model, will be instantiated using subnet_kwargs.
+            If a string is provided, it should be a registered name (e.g., "time_mlp").
+            If a type or keras.Layer is provided, it will be directly instantiated
+            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
         base_distribution : str, optional
             The base probability distribution from which samples are drawn, such as "normal".
             Default is "normal".
@@ -99,11 +111,6 @@ class FlowMatching(InferenceNetwork):
             Additional keyword arguments for configuring optimal transport. Default is None.
         subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
-        concatenate_subnet_input: bool, optional
-            Flag for advanced users to control whether all inputs to the subnet should be concatenated
-            into a single vector or passed as separate arguments. If set to False, the subnet
-            must accept three separate inputs: 'x' (noisy parameters), 't' (time),
-            and optional 'conditions'. Default is True.
         time_power_law_alpha: float, optional
             Changes the distribution of sampled times during training. Time is sampled from a power law distribution
              p(t) ∝ t^(1/(1+α)), where α is the provided value. Default is α=0, which corresponds to uniform sampling.
@@ -125,12 +132,11 @@ class FlowMatching(InferenceNetwork):
         self.seed_generator = keras.random.SeedGenerator()
 
         subnet_kwargs = subnet_kwargs or {}
-        if subnet == "mlp":
-            subnet_kwargs = FlowMatching.MLP_DEFAULT_CONFIG | subnet_kwargs
-        self._concatenate_subnet_input = kwargs.get("concatenate_subnet_input", True)
-
+        if subnet == "time_mlp":
+            subnet_kwargs = FlowMatching.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self.output_projector = keras.layers.Dense(units=None, bias_initializer="zeros", name="output_projector")
+
+        self.output_projector = None
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -140,25 +146,16 @@ class FlowMatching(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.output_projector.units = xz_shape[-1]
+        self.output_projector = keras.layers.Dense(
+            units=xz_shape[-1],
+            bias_initializer="zeros",
+            name="output_projector",
+        )
 
-        input_shape = list(xz_shape)
-        if self._concatenate_subnet_input:
-            # construct time vector
-            input_shape[-1] += 1
-            if conditions_shape is not None:
-                input_shape[-1] += conditions_shape[-1]
-            input_shape = tuple(input_shape)
-
-            self.subnet.build(input_shape)
-            out_shape = self.subnet.compute_output_shape(input_shape)
-        else:
-            # Multiple separate inputs
-            time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
-            self.subnet.build(x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape)
-            out_shape = self.subnet.compute_output_shape(
-                x_shape=xz_shape, t_shape=time_shape, conditions_shape=conditions_shape
-            )
+        # construct input shape for subnet and subnet projector
+        time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+        self.subnet.build((xz_shape, time_shape, conditions_shape))
+        out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)
 
@@ -177,51 +174,18 @@ class FlowMatching(InferenceNetwork):
             "loss_fn": self.loss_fn,
             "integrate_kwargs": self.integrate_kwargs,
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
-            "concatenate_subnet_input": self._concatenate_subnet_input,
             "time_power_law_alpha": self.time_power_law_alpha,
             # we do not need to store subnet_kwargs
         }
 
         return base_config | serialize(config)
 
-    def _apply_subnet(
-        self, x: Tensor, t: Tensor, conditions: Tensor = None, training: bool = False
-    ) -> Tensor | tuple[Tensor, Tensor, Tensor]:
-        """
-        Prepares and passes the input to the subnet either by concatenating the latent variable `x`,
-        the time `t`, and optional conditions or by returning them separately.
-
-        Parameters
-        ----------
-        x : Tensor
-            The parameter tensor, typically of shape (..., D), but can vary.
-        t : Tensor
-            The time tensor, typically of shape (..., 1).
-        conditions : Tensor, optional
-            The optional conditioning tensor (e.g. parameters).
-        training : bool, optional
-            The training mode flag, which can be used to control behavior during training.
-
-        Returns
-        -------
-        Tensor
-            The output tensor from the subnet.
-        """
-        if self._concatenate_subnet_input:
-            t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
-            xtc = tensor_utils.concatenate_valid([x, t, conditions], axis=-1)
-            return self.subnet(xtc, training=training)
-        else:
-            if training is False:
-                t = keras.ops.broadcast_to(t, keras.ops.shape(x)[:-1] + (1,))
-            return self.subnet(x=x, t=t, conditions=conditions, training=training)
-
     def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
         time = expand_right_as(time, xz)
-
-        subnet_out = self._apply_subnet(xz, time, conditions, training=training)
-        return self.output_projector(subnet_out, training=training)
+        time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
+        subnet_out = self.subnet((xz, time, conditions), training=training)
+        return self.output_projector(subnet_out)
 
     def _velocity_trace(
         self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
@@ -313,16 +277,13 @@ class FlowMatching(InferenceNetwork):
                 # since the data is possibly noisy and may contain outliers, it is better
                 # to possibly drop some samples from x1 than from x0
                 # in the marginal over multiple batches, this is not a problem
-                x0, x1, assignments = optimal_transport(
+                x0, x1, conditions = optimal_transport(
                     x0,
                     x1,
+                    conditions=conditions,
                     seed=self.seed_generator,
                     **self.optimal_transport_kwargs,
-                    return_assignments=True,
                 )
-                if conditions is not None:
-                    # conditions must be resampled along with x1
-                    conditions = keras.ops.take(conditions, assignments, axis=0)
 
             u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
             # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform

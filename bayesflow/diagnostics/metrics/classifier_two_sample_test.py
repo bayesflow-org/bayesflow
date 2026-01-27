@@ -106,7 +106,7 @@ def classifier_two_sample_test(
     # Create and train classifier with optional stopping
     def build_classifier():
         classifier = keras.Sequential(
-            [MLP(widths=mlp_widths, **kwargs.get("mlp_kwargs", {})), keras.layers.Dense(1, activation="sigmoid")]
+            [MLP(widths=mlp_widths, **kwargs.get("mlp_kwargs", {})), keras.layers.Dense(units=1, activation="sigmoid")]
         )
         classifier.compile(optimizer="adam", loss="binary_crossentropy", metrics=[metric])
         return classifier

@@ -67,7 +67,7 @@ class MultiHeadAttentionBlock(keras.Layer):
 
         super().__init__(**layer_kwargs(kwargs))
 
-        self.input_projector = layers.Dense(embed_dim, name="input_projector")
+        self.input_projector = layers.Dense(units=embed_dim, name="input_projector")
         self.attention = layers.MultiHeadAttention(
             key_dim=embed_dim,
             num_heads=num_heads,
@@ -83,7 +83,7 @@ class MultiHeadAttentionBlock(keras.Layer):
             kernel_initializer=kernel_initializer,
             dropout=dropout,
         )
-        self.output_projector = layers.Dense(embed_dim, name="output_projector")
+        self.output_projector = layers.Dense(units=embed_dim, name="output_projector")
         self.ln_post = layers.LayerNormalization(name="layer_norm_post") if layer_norm else None
 
     def call(self, seq_x: Tensor, seq_y: Tensor, training: bool = False, **kwargs) -> Tensor:

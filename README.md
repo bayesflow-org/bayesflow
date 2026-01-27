@@ -1,46 +1,25 @@
 # BayesFlow <img src="img/bayesflow_hex.png" style="float: right; width: 20%; height: 20%;" align="right" alt="BayesFlow Logo" />
+
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/bayesflow-org/bayesflow/tests.yaml?style=for-the-badge&label=Tests)
 ![Codecov](https://img.shields.io/codecov/c/github/bayesflow-org/bayesflow?style=for-the-badge&link=https%3A%2F%2Fapp.codecov.io%2Fgh%2Fbayesflow-org%2Fbayesflow%2Ftree%2Fmain)
 [![DOI](https://img.shields.io/badge/DOI-10.21105%2Fjoss.05702-blue?style=for-the-badge)](https://doi.org/10.21105/joss.05702)
 ![PyPI - License](https://img.shields.io/pypi/l/bayesflow?style=for-the-badge)
 ![NumFOCUS Affiliated Project](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange?style=for-the-badge)
 
-BayesFlow is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
-It provides users and researchers with:
+BayesFlow is a Python library for efficient Bayesian inference with deep learning.
+It provides users with:
 
-- A user-friendly API for rapid Bayesian workflows
-- A rich collection of neural network architectures
+- A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2409.04332)
+- A rich collection of [neural network architectures](https://arxiv.org/abs/2512.20685)
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
-
-BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
-fueled by continuous progress in generative AI and Bayesian inference.
-
-> [!IMPORTANT]
-> As the 2.0 version introduced many new features, we still have to make breaking changes from time to time.
-> This especially concerns **saving and loading** of models. We aim to stabilize this from the 2.1 release onwards.
-> Until then, consider pinning your BayesFlow 2.0 installation to an exact version, or re-training after an update
-> for less costly models.
-
-## Important Note for Existing Users
-
-You are currently looking at BayesFlow 2.0+, which is a complete rewrite of the library.
-While it shares the same overall goals with the 1.x versions, the API is not compatible.
-
-> [!CAUTION]
-> A few features, most notably hierarchical models, have not been ported to BayesFlow 2.0+
-> yet. We are working on those features and plan to add them soon. You can find the complete
-> list in the [FAQ](#faq) below.
-
-The [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb) guide
-highlights how concepts and classes relate between the two versions.
 
 ## Conceptual Overview
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./img/bayesflow_landing_dark.jpg">
-  <source media="(prefers-color-scheme: light)" srcset="./img/bayesflow_landing_light.jpg">
-  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Choose your backend: BayesFlow is based on Keras, so you can choose PyTorch, TensorFlow or JAX. 2. Define your simulator: You specify your simulator in Python, and use it to generate simulated data. 3. Choose your algorithm: You define a generative neural network that you can use for estimation after training." src="./img/bayesflow_landing_dark.jpg">
+  <source media="(prefers-color-scheme: dark)" srcset="./img/bf_landing_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="./img/bf_landing_light.png">
+  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the gold-standard toolkit for simulation intelligence." src="./img/bf_landing_light.png">
 </picture>
 </div>
 
@@ -105,14 +84,13 @@ Using the high-level interface is easy, as demonstrated by the minimal working e
 import bayesflow as bf
 
 workflow = bf.BasicWorkflow(
-    inference_network=bf.networks.CouplingFlow(),
-    summary_network=bf.networks.TimeSeriesNetwork(),
+    inference_network=bf.networks.FlowMatching(),
     inference_variables=["parameters"],
-    summary_variables=["observables"],
+    inference_conditions=["observables"],
     simulator=bf.simulators.SIR()
 )
 
-history = workflow.fit_online(epochs=15, batch_size=32, num_batches_per_epoch=200)
+history = workflow.fit_online(epochs=20, batch_size=32, num_batches_per_epoch=200)
 
 diagnostics = workflow.plot_default_diagnostics(test_data=300)
 ```

@@ -43,10 +43,7 @@ class SingleCoupling(InvertibleLayer):
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.transform = find_transform(transform, **transform_kwargs)
-
-        self.output_projector = keras.layers.Dense(
-            units=None, kernel_initializer="zeros", bias_initializer="zeros", name="output_projector"
-        )
+        self.output_projector = None
 
     def get_config(self):
         base_config = super().get_config()
@@ -66,7 +63,12 @@ class SingleCoupling(InvertibleLayer):
 
     # noinspection PyMethodOverriding
     def build(self, x1_shape, x2_shape, conditions_shape=None):
-        self.output_projector.units = self.transform.params_per_dim * x2_shape[-1]
+        self.output_projector = keras.layers.Dense(
+            units=self.transform.params_per_dim * x2_shape[-1],
+            kernel_initializer="zeros",
+            bias_initializer="zeros",
+            name="output_projector",
+        )
 
         x1 = keras.ops.zeros(x1_shape)
         x2 = keras.ops.zeros(x2_shape)

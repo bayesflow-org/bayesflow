@@ -14,6 +14,10 @@ def _(name: str, *args, **kwargs):
             from bayesflow.networks import MLP
 
             network = MLP(*args, **kwargs)
+        case "time_mlp":
+            from bayesflow.networks import TimeMLP
+
+            network = TimeMLP(*args, **kwargs)
         case other:
             raise ValueError(f"Unsupported network name: '{other}'.")
 

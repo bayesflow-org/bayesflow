@@ -86,7 +86,7 @@ class EquivariantLayer(keras.Layer):
         )
 
         # Fully connected net + residual connection for an equivariant transform applied to each set member
-        self.input_projector = layers.Dense(mlp_widths_equivariant[-1])
+        self.input_projector = layers.Dense(units=mlp_widths_equivariant[-1])
         self.equivariant_fc = MLP(
             mlp_widths_equivariant,
             dropout=dropout,
@@ -94,7 +94,9 @@ class EquivariantLayer(keras.Layer):
             kernel_initializer=kernel_initializer,
             spectral_normalization=spectral_normalization,
         )
-        self.out_fc_projector = keras.layers.Dense(mlp_widths_equivariant[-1], kernel_initializer=kernel_initializer)
+        self.out_fc_projector = keras.layers.Dense(
+            units=mlp_widths_equivariant[-1], kernel_initializer=kernel_initializer
+        )
 
         self.layer_norm = layers.LayerNormalization() if layer_norm else None
 

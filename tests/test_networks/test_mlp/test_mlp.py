@@ -22,3 +22,12 @@ def test_save_and_load(tmp_path, mlp, build_shapes):
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
     assert_layers_equal(mlp, loaded)
+
+
+def test_save_and_load_time_mlp(tmp_path, time_mlp, build_shapes_time):
+    time_mlp.build(**build_shapes_time)
+
+    keras.saving.save_model(time_mlp, tmp_path / "model.keras")
+    loaded = keras.saving.load_model(tmp_path / "model.keras")
+
+    assert_layers_equal(time_mlp, loaded)

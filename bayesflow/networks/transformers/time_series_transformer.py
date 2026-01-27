@@ -102,7 +102,7 @@ class TimeSeriesTransformer(SummaryNetwork):
 
         # Pooling will be applied as a final step to the abstract representations obtained from set attention
         self.pooling = keras.layers.GlobalAvgPool1D()
-        self.output_projector = keras.layers.Dense(summary_dim)
+        self.output_projector = keras.layers.Dense(units=summary_dim)
 
         self.summary_dim = summary_dim
         self.time_axis = time_axis

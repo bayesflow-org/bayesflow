@@ -57,7 +57,7 @@ class ModelComparisonApproximator(Approximator):
         self.adapter = adapter
         self.summary_network = summary_network
         self.num_models = num_models
-        self.logits_projector = keras.layers.Dense(num_models)
+        self.logits_projector = keras.layers.Dense(units=num_models)
 
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]

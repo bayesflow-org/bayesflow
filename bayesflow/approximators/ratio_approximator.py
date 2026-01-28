@@ -10,7 +10,7 @@ from .approximator import Approximator
 class RatioApproximator(Approximator):
     """
     Implements all three Neural Ratio Estimation procedures as detailed in https://arxiv.org/pdf/2210.06170
-    NRE-A and NRE-B are implemented as a generalization from NRE-C, by setting:
+    NRE-A and NRE-B are implemented as a special case of NRE-C, by setting:
     NRE-A: gamma = 1, K = 1
     NRE-B: gamma = infinity
     """
@@ -23,6 +23,8 @@ class RatioApproximator(Approximator):
 
         if gamma <= 0:
             raise ValueError(f"Gamma must be positive, got {gamma}.")
+        if gamma == float("inf"):
+            raise NotImplementedError("NRE-B is not yet supported.")
 
         if K <= 0:
             raise ValueError(f"K must be positive, got {K}.")
@@ -40,7 +42,6 @@ class RatioApproximator(Approximator):
     @classmethod
     def nre_b(cls, summary_network, classifier_network, K=5, **kwargs):
         """Initialize the approximator to run NRE-B."""
-        raise NotImplementedError("NRE-B is not yet supported.")
         return cls(summary_network, classifier_network, gamma=float("inf"), K=K, **kwargs)
 
     @classmethod
@@ -66,6 +67,7 @@ class RatioApproximator(Approximator):
         marginal_observables = observables
         marginal_log_ratio = self.log_ratio(marginal_parameters, marginal_observables)
 
+        # FIXME: NRE-B may need its own implementation
         log_gamma = keras.ops.broadcast_to(keras.ops.log(self.gamma), (batch_size,))
         log_K = keras.ops.broadcast_to(keras.ops.log(self.K), (batch_size,))
 

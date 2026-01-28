@@ -5,6 +5,7 @@ import keras
 from bayesflow.distributions import Distribution
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
+    logging,
     expand_right_as,
     find_network,
     integrate,
@@ -212,6 +213,7 @@ class FlowMatching(InferenceNetwork):
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         if density:
 
@@ -244,6 +246,7 @@ class FlowMatching(InferenceNetwork):
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         if density:
 

@@ -426,6 +426,7 @@ class DiffusionModel(InferenceNetwork):
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         if density:
 
@@ -474,6 +475,7 @@ class DiffusionModel(InferenceNetwork):
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:

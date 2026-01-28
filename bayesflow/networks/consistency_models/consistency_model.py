@@ -4,7 +4,7 @@ import keras
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, layer_kwargs, weighted_mean, expand_right_as
+from bayesflow.utils import find_network, layer_kwargs, weighted_mean, expand_right_as, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -255,6 +255,7 @@ class ConsistencyModel(InferenceNetwork):
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         x = self.consistency_function(x, t, conditions=conditions, training=training)
 

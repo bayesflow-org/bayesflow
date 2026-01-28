@@ -186,6 +186,7 @@ class StableConsistencyModel(InferenceNetwork):
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         # noise distribution has variance sigma
         x = keras.ops.copy(z) * self.sigma

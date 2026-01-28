@@ -60,6 +60,7 @@ class DiffusionModel(InferenceNetwork):
         schedule_kwargs: dict[str, any] = None,
         integrate_kwargs: dict[str, any] = None,
         drop_cond_prob: float = 0.0,
+        drop_target_prob: float = 0.0,
         **kwargs,
     ):
         """
@@ -93,6 +94,10 @@ class DiffusionModel(InferenceNetwork):
             Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
             and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
             model during inference, set `unconditional_mode` to True.
+        drop_target_prob : float, optional
+            Probability of dropping the target during training. Default is 0.0. This can be used to train a model that
+            can be conditioned on partial targets. During inference, pass a `target_mask` and `targets_fixed` to specify
+            which parts of the target should be kept fixed to the values in `targets_fixed`.
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
         """
@@ -128,6 +133,7 @@ class DiffusionModel(InferenceNetwork):
         self.output_projector = None
         self.drop_cond_prob = drop_cond_prob
         self.unconditional_mode = False
+        self.drop_target_prob = drop_target_prob
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -159,6 +165,7 @@ class DiffusionModel(InferenceNetwork):
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
             "drop_cond_prob": self.drop_cond_prob,
+            "drop_target_prob": self.drop_target_prob,
             # we do not need to store subnet_kwargs
         }
         return base_config | serialize(config)
@@ -348,6 +355,10 @@ class DiffusionModel(InferenceNetwork):
             # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
             out = f - 0.5 * g_squared * score
 
+        if self.drop_target_prob > 0 and not training:
+            target_mask = kwargs.get("target_mask", None)
+            if target_mask is not None:
+                out = target_mask * out  # velocity is zero where target is fixed
         return out
 
     def diffusion_term(
@@ -355,6 +366,7 @@ class DiffusionModel(InferenceNetwork):
         xz: Tensor,
         time: float | Tensor,
         training: bool = False,
+        **kwargs,
     ) -> Tensor:
         """
         Compute the diffusion term (standard deviation of the noise) at a given time.
@@ -376,7 +388,13 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t)
-        return ops.sqrt(g_squared)
+        g = ops.sqrt(g_squared)
+
+        if self.drop_target_prob > 0 and not training:
+            target_mask = kwargs.get("target_mask", None)
+            if target_mask is not None:
+                g = target_mask * g
+        return g
 
     def _velocity_trace(
         self,
@@ -424,6 +442,13 @@ class DiffusionModel(InferenceNetwork):
             )
             integrate_kwargs["method"] = "tsit5"
 
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
+            x = target_mask * x + (1 - target_mask) * targets_fixed
+
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
             logging.info("Condition masking is applied: conditions are set to zero.")
@@ -431,7 +456,7 @@ class DiffusionModel(InferenceNetwork):
         if density:
 
             def deltas(time, xz):
-                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training, **kwargs)
                 return {"xz": v, "trace": trace}
 
             state = {
@@ -451,7 +476,9 @@ class DiffusionModel(InferenceNetwork):
 
         def deltas(time, xz):
             return {
-                "xz": self.velocity(xz, time=time, stochastic_solver=False, conditions=conditions, training=training)
+                "xz": self.velocity(
+                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+                )
             }
 
         state = {"xz": x}
@@ -472,6 +499,13 @@ class DiffusionModel(InferenceNetwork):
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
+
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
+            z = target_mask * z + (1 - target_mask) * targets_fixed
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
@@ -512,7 +546,7 @@ class DiffusionModel(InferenceNetwork):
                 }
 
             def diffusion(time, xz):
-                return {"xz": self.diffusion_term(xz, time=time, training=training)}
+                return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
 
             score_fn = None
             if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
@@ -592,6 +626,13 @@ class DiffusionModel(InferenceNetwork):
 
         # diffuse x
         diffused_x = alpha_t * x + sigma_t * eps_t
+        if self.drop_target_prob > 0:
+            # generate random mask for every entry
+            mask_x = keras.random.uniform(shape=ops.shape(x), dtype=ops.dtype(x), seed=self.seed_generator)
+            mask_x = ops.cast(mask_x > self.drop_target_prob, dtype=ops.dtype(x))
+            diffused_x = mask_x * diffused_x + (1 - mask_x) * x
+        else:
+            mask_x = 1.0
 
         # calculate output of the network
         subnet_out = self.subnet((diffused_x, self._transform_log_snr(log_snr_t), conditions), training=training)
@@ -605,12 +646,12 @@ class DiffusionModel(InferenceNetwork):
         match self._loss_type:
             case "noise":
                 noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
-                loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(mask_x * (noise_pred - eps_t) ** 2, axis=-1)
 
             case "velocity":
                 velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
                 v_t = alpha_t * eps_t - sigma_t * x
-                loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(mask_x * (velocity_pred - v_t) ** 2, axis=-1)
 
             case "F":
                 sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
@@ -618,7 +659,7 @@ class DiffusionModel(InferenceNetwork):
                 x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
                 f_pred = x1 * x_pred - x2 * diffused_x
                 f_t = x1 * x - x2 * diffused_x
-                loss = weights_for_snr * ops.mean((f_pred - f_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(mask_x * (f_pred - f_t) ** 2, axis=-1)
 
             case _:
                 raise ValueError(f"Unknown loss type: {self._loss_type}")

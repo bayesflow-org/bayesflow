@@ -40,6 +40,9 @@ class FlowMatching(InferenceNetwork):
     [7] Cheng et al. (2025) "The Curse of Conditions: Analyzing and Improving Optimal Transport for
         Conditional Flow-Based Generation"
     [8] Fluri et al. (2024) "Improving Flow Matching for Simulation-Based Inference"
+
+    For a review see Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025).
+    Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.
     """
 
     TIME_MLP_DEFAULT_CONFIG = {

@@ -52,6 +52,7 @@ class StableConsistencyModel(InferenceNetwork):
         sigma: float = 1.0,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
+        drop_cond_prob: float = 0.0,
         **kwargs,
     ):
         """Creates an instance of an sCM to be used for consistency training (CT).
@@ -72,6 +73,10 @@ class StableConsistencyModel(InferenceNetwork):
         weight_mlp_kwargs : dict[str, any], optional, default=None
             Keyword arguments for an auxiliary MLP used to generate weights within the consistency model. Typically,
             includes depth, hidden sizes, and non-linearity choices.
+        drop_cond_prob : float, optional
+            Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
+            and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
+            model during inference, set `unconditional_mode` to True.
         **kwargs
             Additional keyword arguments passed to the parent ``InferenceNetwork`` initializer
             (e.g., ``name``, ``dtype``, or ``trainable``).
@@ -95,6 +100,8 @@ class StableConsistencyModel(InferenceNetwork):
 
         self.sigma = sigma
         self.seed_generator = keras.random.SeedGenerator()
+        self.drop_cond_prob = drop_cond_prob
+        self.unconditional_mode = False
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -107,6 +114,7 @@ class StableConsistencyModel(InferenceNetwork):
         config = {
             "subnet": self.subnet,
             "sigma": self.sigma,
+            "drop_cond_prob": self.drop_cond_prob,
         }
 
         return base_config | serialize(config)
@@ -176,6 +184,9 @@ class StableConsistencyModel(InferenceNetwork):
         steps = kwargs.get("steps", 15)
         rho = kwargs.get("rho", 3.5)
 
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+
         # noise distribution has variance sigma
         x = keras.ops.copy(z) * self.sigma
         discretized_time = keras.ops.flip(self._discretize_time(steps, rho=rho), axis=-1)
@@ -216,9 +227,21 @@ class StableConsistencyModel(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
-        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
-
         # $# Implements Algorithm 1 from [1]
+
+        if self.drop_cond_prob > 0 and conditions is not None:
+            # generate random masks for every batch of the condition
+            cond_shape = ops.shape(conditions)
+            batch = cond_shape[0]
+            rank = ops.ndim(conditions)
+            mask_conditions = keras.random.uniform(shape=batch, dtype=ops.dtype(conditions), seed=self.seed_generator)
+            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
+
+            mask_shape = (batch,) + (1,) * (rank - 1)
+            mask_conditions = ops.reshape(mask_conditions, mask_shape)
+            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
+
+            conditions = mask_conditions * conditions
 
         # training parameters
         p_mean = -1.0
@@ -284,4 +307,5 @@ class StableConsistencyModel(InferenceNetwork):
             - w
         )
 
+        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
         return base_metrics | {"loss": loss}

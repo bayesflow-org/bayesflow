@@ -77,6 +77,7 @@ class FlowMatching(InferenceNetwork):
         optimal_transport_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
         time_power_law_alpha: float = 0.0,
+        drop_cond_prob: float = 0.0,
         **kwargs,
     ):
         """
@@ -114,6 +115,10 @@ class FlowMatching(InferenceNetwork):
         time_power_law_alpha: float, optional
             Changes the distribution of sampled times during training. Time is sampled from a power law distribution
              p(t) ∝ t^(1/(1+α)), where α is the provided value. Default is α=0, which corresponds to uniform sampling.
+        drop_cond_prob : float, optional
+            Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
+            and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
+            model during inference, set `unconditional_mode` to True.
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
@@ -137,6 +142,8 @@ class FlowMatching(InferenceNetwork):
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None
+        self.drop_cond_prob = drop_cond_prob
+        self.unconditional_mode = False
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -175,6 +182,7 @@ class FlowMatching(InferenceNetwork):
             "integrate_kwargs": self.integrate_kwargs,
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
             "time_power_law_alpha": self.time_power_law_alpha,
+            "drop_cond_prob": self.drop_cond_prob,
             # we do not need to store subnet_kwargs
         }
 
@@ -201,6 +209,10 @@ class FlowMatching(InferenceNetwork):
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = self.integrate_kwargs | kwargs
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+
         if density:
 
             def deltas(time, xz):
@@ -229,6 +241,10 @@ class FlowMatching(InferenceNetwork):
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = self.integrate_kwargs | kwargs
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+
         if density:
 
             def deltas(time, xz):
@@ -293,11 +309,26 @@ class FlowMatching(InferenceNetwork):
             x = t * x1 + (1 - t) * x0
             target_velocity = x1 - x0
 
-        base_metrics = super().compute_metrics(x1, conditions=conditions, stage=stage)
+        if self.drop_cond_prob > 0 and conditions is not None:
+            # generate random masks for every batch of the condition
+            cond_shape = keras.ops.shape(conditions)
+            batch = cond_shape[0]
+            rank = keras.ops.ndim(conditions)
+            mask_conditions = keras.random.uniform(
+                shape=batch, dtype=keras.ops.dtype(conditions), seed=self.seed_generator
+            )
+            mask_conditions = keras.ops.cast(mask_conditions > self.drop_cond_prob, dtype=keras.ops.dtype(conditions))
+
+            mask_shape = (batch,) + (1,) * (rank - 1)
+            mask_conditions = keras.ops.reshape(mask_conditions, mask_shape)
+            mask_conditions = keras.ops.broadcast_to(mask_conditions, cond_shape)
+
+            conditions = mask_conditions * conditions
 
         predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training")
 
         loss = self.loss_fn(target_velocity, predicted_velocity)
         loss = weighted_mean(loss, sample_weight)
 
+        base_metrics = super().compute_metrics(x1, conditions=conditions, stage=stage)
         return base_metrics | {"loss": loss}

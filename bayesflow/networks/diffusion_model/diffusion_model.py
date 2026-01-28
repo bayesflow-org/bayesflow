@@ -59,6 +59,7 @@ class DiffusionModel(InferenceNetwork):
         subnet_kwargs: dict[str, any] = None,
         schedule_kwargs: dict[str, any] = None,
         integrate_kwargs: dict[str, any] = None,
+        drop_cond_prob: float = 0.0,
         **kwargs,
     ):
         """
@@ -88,6 +89,10 @@ class DiffusionModel(InferenceNetwork):
             Additional keyword arguments passed to the noise schedule constructor. Default is None.
         integrate_kwargs : dict[str, any], optional
             Configuration dictionary for integration during training or inference. Default is None.
+        drop_cond_prob : float, optional
+            Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
+            and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
+            model during inference, set `unconditional_mode` to True.
         **kwargs
             Additional keyword arguments passed to the base class and internal components.
         """
@@ -121,6 +126,8 @@ class DiffusionModel(InferenceNetwork):
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None
+        self.drop_cond_prob = drop_cond_prob
+        self.unconditional_mode = False
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -151,6 +158,7 @@ class DiffusionModel(InferenceNetwork):
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
+            "drop_cond_prob": self.drop_cond_prob,
             # we do not need to store subnet_kwargs
         }
         return base_config | serialize(config)
@@ -416,6 +424,9 @@ class DiffusionModel(InferenceNetwork):
             )
             integrate_kwargs["method"] = "tsit5"
 
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+
         if density:
 
             def deltas(time, xz):
@@ -460,6 +471,9 @@ class DiffusionModel(InferenceNetwork):
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
@@ -545,6 +559,20 @@ class DiffusionModel(InferenceNetwork):
             xz_shape = ops.shape(x)
             conditions_shape = None if conditions is None else ops.shape(conditions)
             self.build(xz_shape, conditions_shape)
+
+        if self.drop_cond_prob > 0 and conditions is not None:
+            # generate random masks for every batch of the condition
+            cond_shape = ops.shape(conditions)
+            batch = cond_shape[0]
+            rank = ops.ndim(conditions)
+            mask_conditions = keras.random.uniform(shape=batch, dtype=ops.dtype(conditions), seed=self.seed_generator)
+            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
+
+            mask_shape = (batch,) + (1,) * (rank - 1)
+            mask_conditions = ops.reshape(mask_conditions, mask_shape)
+            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
+
+            conditions = mask_conditions * conditions
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
         u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)

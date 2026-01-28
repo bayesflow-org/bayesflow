@@ -850,7 +850,6 @@ class ContinuousApproximator(Approximator):
 
             batch_samples = self._compositional_sample(
                 num_samples=num_samples,
-                n_datasets=batch_size,
                 n_compositional=n_comp,
                 compute_prior_score=compute_prior_score_pre,
                 **batch_conditions,

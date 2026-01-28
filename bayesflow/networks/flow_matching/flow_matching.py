@@ -321,7 +321,7 @@ class FlowMatching(InferenceNetwork):
             batch = cond_shape[0]
             rank = keras.ops.ndim(conditions)
             mask_conditions = keras.random.uniform(
-                shape=batch, dtype=keras.ops.dtype(conditions), seed=self.seed_generator
+                shape=(batch,), dtype=keras.ops.dtype(conditions), seed=self.seed_generator
             )
             mask_conditions = keras.ops.cast(mask_conditions > self.drop_cond_prob, dtype=keras.ops.dtype(conditions))
 

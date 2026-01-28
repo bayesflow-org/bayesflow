@@ -601,7 +601,9 @@ class DiffusionModel(InferenceNetwork):
             cond_shape = ops.shape(conditions)
             batch = cond_shape[0]
             rank = ops.ndim(conditions)
-            mask_conditions = keras.random.uniform(shape=batch, dtype=ops.dtype(conditions), seed=self.seed_generator)
+            mask_conditions = keras.random.uniform(
+                shape=(batch,), dtype=ops.dtype(conditions), seed=self.seed_generator
+            )
             mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
 
             mask_shape = (batch,) + (1,) * (rank - 1)

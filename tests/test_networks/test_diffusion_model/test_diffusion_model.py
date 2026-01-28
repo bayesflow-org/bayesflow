@@ -1,3 +1,7 @@
+import keras
+import numpy as np
+
+
 def test_serialize_deserialize_noise_schedule(noise_schedule):
     from bayesflow.utils.serialization import serialize, deserialize
 
@@ -59,3 +63,43 @@ def test_diffusion_guidance():
         num_samples=2, conditions=test_conditions, guidance_function=guidance_function
     )["parameters"]
     assert samples_guided_func.shape == samples.shape
+
+
+def test_masking():
+    from bayesflow.networks import DiffusionModel
+    from bayesflow import BasicWorkflow
+    from bayesflow.simulators import TwoMoons
+
+    workflow = BasicWorkflow(
+        inference_network=DiffusionModel(subnet_kwargs=dict(widths=(8, 8)), drop_cond_prob=0.1, drop_target_prob=0.5),
+        inference_variables=["parameters"],
+        inference_conditions=["observables"],
+        simulator=TwoMoons(),
+    )
+
+    workflow.fit_online(epochs=2, batch_size=2, num_batches_per_epoch=2, verbose=0)
+    test_conditions = workflow.simulate(5)
+    samples = workflow.sample(num_samples=2, conditions=test_conditions)["parameters"]
+
+    workflow.approximator.inference_network.unconditional_mode = True
+    unconditional_samples = workflow.sample(num_samples=2, conditions=test_conditions)["parameters"]
+    assert samples.shape == unconditional_samples.shape
+    workflow.approximator.inference_network.unconditional_mode = False
+
+    test_conditions_adapted = workflow.adapter(test_conditions)
+    target_mask = keras.ops.concatenate(
+        (
+            keras.ops.ones(1),  # param 1 is inferred
+            keras.ops.zeros(1),  # param 2 is fixed
+        )
+    )
+    targets_fixed = test_conditions_adapted["inference_variables"][0]  # one set of parameters
+    if "inference_variables" in workflow.approximator.standardize:
+        targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
+
+    fixed_samples = workflow.sample(
+        conditions=test_conditions, num_samples=2, targets_fixed=targets_fixed, target_mask=target_mask
+    )["parameters"]
+    assert samples.shape == fixed_samples.shape
+    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][0, 1]) < 1e-6).all()
+    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][0, 0]) > 0.1).any()  # should vary

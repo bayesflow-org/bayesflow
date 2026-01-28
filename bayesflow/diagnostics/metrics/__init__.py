@@ -5,3 +5,4 @@ from .expected_calibration_error import expected_calibration_error
 from .classifier_two_sample_test import classifier_two_sample_test
 from .model_misspecification import bootstrap_comparison, summary_space_comparison
 from .calibration_log_gamma import calibration_log_gamma, gamma_null_distribution, gamma_discrepancy
+from .posterior_z_score import posterior_z_score

@@ -37,15 +37,6 @@ class Mixture(Distribution):
             Default is `False`.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
-
-        Attributes
-        ----------
-        distributions : Sequence[Distribution]
-            The list of component distributions.
-        mixture_logits : Tensor
-            Trainable or fixed logits representing the mixture weights.
-        dim : int or None
-            Dimensionality of the output samples; set when first sampling.
         """
 
         super().__init__(**kwargs)
@@ -78,7 +69,7 @@ class Mixture(Distribution):
         Returns
         -------
         samples: Tensor
-            A tensor of shape `batch_shape + (dim,)` containing samples drawn
+            A tensor of shape `batch_shape + dims` containing samples drawn
             from the mixture.
         """
         # Will use numpy until keras adds support for N-D categorical sampling

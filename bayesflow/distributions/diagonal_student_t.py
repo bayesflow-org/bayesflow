@@ -71,7 +71,7 @@ class DiagonalStudentT(Distribution):
         if self.built:
             return
 
-        self.dim = int(input_shape[-1])
+        self.dim = input_shape[-1]
 
         # convert to tensor and broadcast if necessary
         self.loc = ops.cast(ops.broadcast_to(self.loc, (self.dim,)), "float32")
@@ -120,6 +120,7 @@ class DiagonalStudentT(Distribution):
         # The chi-quare samples need to be repeated across self.dim
         # since for each element of batch_shape only one sample is created.
         chi2_samples = expand_tile(chi2_samples, n=self.dim, axis=-1)
+        chi2_samples = keras.ops.reshape(chi2_samples, batch_shape + (self.dim,))
 
         normal_samples = keras.random.normal(batch_shape + (self.dim,), seed=self.seed_generator)
 

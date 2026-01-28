@@ -5,7 +5,7 @@ import numpy as np
 from ...utils.dict_utils import dicts_to_arrays, compute_test_quantities
 
 
-def posterior_contraction(
+def posterior_z_score(
     estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
@@ -14,7 +14,18 @@ def posterior_contraction(
     aggregation: Callable | None = np.median,
 ) -> dict[str, any]:
     """
-    Computes the posterior contraction (PC) from prior to posterior for the given samples.
+    Computes the posterior z-score from prior to posterior for the given samples according to [1]:
+
+    post_z_score = (posterior_mean - true_parameters) / posterior_std
+
+    The score is adequate if it centers around zero and spreads roughly
+    in the interval [-3, 3]
+
+    [1] Schad, D. J., Betancourt, M., & Vasishth, S. (2021).
+    Toward a principled Bayesian workflow in cognitive science.
+    Psychological methods, 26(1), 103.
+
+    Paper also available at https://arxiv.org/abs/1904.12765
 
     Parameters
     ----------
@@ -50,17 +61,20 @@ def posterior_contraction(
         Dictionary containing:
 
         - "values" : float or np.ndarray
-            The (optionally aggregated) posterior contraction per variable
+            The (optionally aggregated) posterior z-score per variable
         - "metric_name" : str
-            The name of the metric ("Posterior Contraction").
+            The name of the metric ("Posterior z-score").
         - "variable_names" : str
             The (inferred) variable names.
 
     Notes
     -----
-    Posterior contraction measures the reduction in uncertainty from the prior to the posterior.
-    Values close to 1 indicate strong contraction (high reduction in uncertainty), while values close to 0
-    indicate low contraction.
+    Posterior z-score quantifies how far the posterior mean lies from
+    the true generating parameter, in standard-error units. Values near 0
+    (in absolute terms) mean the posterior mean is close to the truth;
+    large absolute values indicate substantial deviation.
+    The sign shows the direction of the bias.
+
     """
 
     # Optionally, compute and prepend test quantities from draws
@@ -85,9 +99,10 @@ def posterior_contraction(
     )
 
     post_vars = samples["estimates"].var(axis=1, ddof=1)
-    prior_vars = samples["targets"].var(axis=0, keepdims=True, ddof=1)
-    contraction = np.clip(1 - (post_vars / prior_vars), 0, 1)
+    post_means = samples["estimates"].mean(axis=1)
+    post_stds = np.sqrt(post_vars)
+    z_score = (post_means - samples["targets"]) / post_stds
     if aggregation is not None:
-        contraction = aggregation(contraction, axis=0)
+        z_score = aggregation(z_score, axis=0)
     variable_names = samples["estimates"].variable_names
-    return {"values": contraction, "metric_name": "Posterior Contraction", "variable_names": variable_names}
+    return {"values": z_score, "metric_name": "Posterior z-score", "variable_names": variable_names}

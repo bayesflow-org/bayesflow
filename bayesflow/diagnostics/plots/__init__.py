@@ -1,6 +1,7 @@
 from .calibration_ecdf import calibration_ecdf
 from .calibration_ecdf_from_quantiles import calibration_ecdf_from_quantiles
 from .calibration_histogram import calibration_histogram
+from .coverage import coverage
 from .loss import loss
 from .mc_calibration import mc_calibration
 from .mc_confusion_matrix import mc_confusion_matrix

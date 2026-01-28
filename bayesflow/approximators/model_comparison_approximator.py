@@ -57,7 +57,7 @@ class ModelComparisonApproximator(Approximator):
         self.adapter = adapter
         self.summary_network = summary_network
         self.num_models = num_models
-        self.logits_projector = keras.layers.Dense(num_models)
+        self.logits_projector = keras.layers.Dense(units=num_models)
 
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
@@ -433,6 +433,10 @@ class ModelComparisonApproximator(Approximator):
             raise ValueError("Summary variables are required to compute summaries.")
 
         summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
+
+        if "summary_variables" in self.standardize:
+            summary_variables = self.standardize_layers["summary_variables"](summary_variables)
+
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         summaries = keras.ops.convert_to_numpy(summaries)
 

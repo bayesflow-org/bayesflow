@@ -213,7 +213,12 @@ def _prepare_values(
 
     if estimates is not None:
         if is_values_callable:
-            values = values(estimates=estimates, targets=targets, **filter_kwargs({"aggregation": None}, values))
+            values = values(
+                estimates=estimates,
+                targets=targets,
+                variable_keys=variable_keys,
+                **filter_kwargs({"aggregation": None}, values),
+            )
 
         data = dicts_to_arrays(
             estimates=estimates,

@@ -18,7 +18,7 @@ class DoubleLinear(keras.Sequential):
     ):
         layers = []
 
-        layers.append(keras.layers.Dense(width))
+        layers.append(keras.layers.Dense(units=width))
 
         activation = keras.activations.get(activation)
         if not isinstance(activation, keras.Layer):
@@ -34,7 +34,7 @@ class DoubleLinear(keras.Sequential):
         if dropout is not None and dropout > 0:
             layers.append(keras.layers.Dropout(dropout))
 
-        layers.append(keras.layers.Dense(width))
+        layers.append(keras.layers.Dense(units=width))
 
         if use_batchnorm:
             layers.append(keras.layers.BatchNormalization())

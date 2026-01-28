@@ -5,17 +5,27 @@ import keras
 from bayesflow.utils.serialization import serializable
 
 
-@pytest.fixture(params=["coupling_flow", "flow_matching"])
+@pytest.fixture(params=["coupling_flow", "flow_matching", "diffusion_model", "consistency_model"])
 def inference_network(request):
     if request.param == "coupling_flow":
         from bayesflow.networks import CouplingFlow
 
-        return CouplingFlow(depth=2)
+        return CouplingFlow(depth=2, subnet_kwargs=dict(widths=(16, 16)))
 
     elif request.param == "flow_matching":
         from bayesflow.networks import FlowMatching
 
-        return FlowMatching(subnet_kwargs=dict(widths=(32, 32)), use_optimal_transport=False)
+        return FlowMatching(subnet_kwargs=dict(widths=(16, 16)), use_optimal_transport=False)
+
+    elif request.param == "diffusion_model":
+        from bayesflow.networks import DiffusionModel
+
+        return DiffusionModel(subnet_kwargs=dict(widths=(16, 16)))
+
+    elif request.param == "consistency_model":
+        from bayesflow.networks import ConsistencyModel
+
+        return ConsistencyModel(subnet_kwargs=dict(widths=(16, 16)), total_steps=4)
 
 
 @pytest.fixture(params=["time_series_transformer", "fusion_transformer", "time_series_network", "custom"])

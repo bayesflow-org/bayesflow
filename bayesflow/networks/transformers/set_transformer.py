@@ -124,7 +124,7 @@ class SetTransformer(SummaryNetwork):
             num_seeds=num_seeds,
         )
         self.pooling_by_attention = PoolingByMultiHeadAttention(**(global_attention_settings | pooling_settings))
-        self.output_projector = keras.layers.Dense(summary_dim)
+        self.output_projector = keras.layers.Dense(units=summary_dim)
 
         self.summary_dim = summary_dim
 
@@ -147,7 +147,7 @@ class SetTransformer(SummaryNetwork):
         out : Tensor
             Output of shape (batch_size, set_size, output_dim)
         """
-        summary = self.attention_blocks(input_set, training=training, **kwargs)
+        summary = self.attention_blocks(input_set, training=training)
         summary = self.pooling_by_attention(summary, training=training, **kwargs)
         summary = self.output_projector(summary)
         return summary

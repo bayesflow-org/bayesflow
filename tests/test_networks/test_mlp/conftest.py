@@ -1,6 +1,6 @@
 import pytest
 
-from bayesflow.networks import MLP
+from bayesflow.networks import MLP, TimeMLP
 
 
 @pytest.fixture(params=[None, 0.0, 0.1])
@@ -24,5 +24,15 @@ def mlp(dropout, norm, residual):
 
 
 @pytest.fixture()
+def time_mlp(dropout, norm, residual):
+    return TimeMLP(widths=[64, 64], dropout=dropout, norm=norm, residual=residual)
+
+
+@pytest.fixture()
 def build_shapes():
     return {"input_shape": (32, 2)}
+
+
+@pytest.fixture()
+def build_shapes_time():
+    return {"input_shape": ((32, 2), (32, 1), (32, 4))}

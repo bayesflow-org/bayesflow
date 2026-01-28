@@ -81,7 +81,7 @@ class Mamba(SummaryNetwork):
 
         self.pooling_layer = keras.layers.GlobalAveragePooling1D()
         self.dropout = keras.layers.Dropout(dropout)
-        self.summary_stats = keras.layers.Dense(summary_dim)
+        self.summary_stats = keras.layers.Dense(units=summary_dim)
 
     def call(self, time_series: Tensor, training: bool = False, **kwargs) -> Tensor:
         """

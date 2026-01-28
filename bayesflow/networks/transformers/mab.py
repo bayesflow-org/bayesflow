@@ -3,7 +3,7 @@ from keras import layers
 
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs
+from bayesflow.utils import layer_kwargs, filter_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
@@ -67,7 +67,7 @@ class MultiHeadAttentionBlock(keras.Layer):
 
         super().__init__(**layer_kwargs(kwargs))
 
-        self.input_projector = layers.Dense(embed_dim, name="input_projector")
+        self.input_projector = layers.Dense(units=embed_dim, name="input_projector")
         self.attention = layers.MultiHeadAttention(
             key_dim=embed_dim,
             num_heads=num_heads,
@@ -83,7 +83,7 @@ class MultiHeadAttentionBlock(keras.Layer):
             kernel_initializer=kernel_initializer,
             dropout=dropout,
         )
-        self.output_projector = layers.Dense(embed_dim, name="output_projector")
+        self.output_projector = layers.Dense(units=embed_dim, name="output_projector")
         self.ln_post = layers.LayerNormalization(name="layer_norm_post") if layer_norm else None
 
     def call(self, seq_x: Tensor, seq_y: Tensor, training: bool = False, **kwargs) -> Tensor:
@@ -111,7 +111,7 @@ class MultiHeadAttentionBlock(keras.Layer):
         """
 
         h = self.input_projector(seq_x) + self.attention(
-            query=seq_x, key=seq_y, value=seq_y, training=training, **kwargs
+            query=seq_x, key=seq_y, value=seq_y, training=training, **filter_kwargs(kwargs, self.attention.call)
         )
         if self.ln_pre is not None:
             h = self.ln_pre(h, training=training)

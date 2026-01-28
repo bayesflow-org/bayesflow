@@ -1,9 +1,9 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 
 import numpy as np
 from scipy.stats import binom
 
-from ...utils.dict_utils import dicts_to_arrays
+from ...utils.dict_utils import dicts_to_arrays, compute_test_quantities
 
 
 def calibration_log_gamma(
@@ -11,6 +11,7 @@ def calibration_log_gamma(
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
+    test_quantities: dict[str, Callable] = None,
     num_null_draws: int = 1000,
     quantile: float = 0.05,
 ):
@@ -41,6 +42,18 @@ def calibration_log_gamma(
        By default, select all keys.
     variable_names : Sequence[str], optional (default = None)
         Optional variable names to show in the output.
+    test_quantities   : dict or None, optional, default: None
+        A dict that maps plot titles to functions that compute
+        test quantities based on estimate/target draws.
+
+        The dict keys are automatically added to ``variable_keys``
+        and ``variable_names``.
+        Test quantity functions are expected to accept a dict of draws with
+        shape ``(batch_size, ...)`` as the first (typically only)
+        positional argument and return an NumPy array of shape
+        ``(batch_size,)``.
+        The functions do not have to deal with an additional
+        sample dimension, as appropriate reshaping is done internally.
     quantile : float in (0, 1), optional, default 0.05
         The quantile from the null distribution to be used as a threshold.
         A lower quantile increases sensitivity to deviations from uniformity.
@@ -57,6 +70,21 @@ def calibration_log_gamma(
         - "variable_names" : str
             The (inferred) variable names.
     """
+
+    # Optionally, compute and prepend test quantities from draws
+    if test_quantities is not None:
+        updated_data = compute_test_quantities(
+            targets=targets,
+            estimates=estimates,
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+        )
+        variable_names = updated_data["variable_names"]
+        variable_keys = updated_data["variable_keys"]
+        estimates = updated_data["estimates"]
+        targets = updated_data["targets"]
+
     samples = dicts_to_arrays(
         estimates=estimates,
         targets=targets,

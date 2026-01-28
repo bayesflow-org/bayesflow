@@ -65,7 +65,7 @@ class DiagonalNormal(Distribution):
         if self.built:
             return
 
-        self.dim = int(input_shape[-1])
+        self.dim = input_shape[-1]
 
         self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), "float32")
         self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), "float32")
@@ -98,7 +98,9 @@ class DiagonalNormal(Distribution):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape) -> Tensor:
-        return self._mean + self._std * keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)
+        z = keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)
+        z = self._mean + self._std * z
+        return z
 
     def get_config(self):
         base_config = super().get_config()

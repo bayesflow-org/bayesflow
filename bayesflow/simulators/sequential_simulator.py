@@ -71,14 +71,12 @@ class SequentialSimulator(Simulator):
 
         return data
 
-    def _single_sample(self, sample_shape: tuple[int], **kwargs) -> dict[str, np.ndarray]:
+    def _single_sample(self, batch_shape_ext, **kwargs) -> dict[str, np.ndarray]:
         """
         For single sample used by parallel sampling.
 
         Parameters
         ----------
-        sample_shape: tuple[int]
-            Optional structural dimensions between batch_size and the simulator output's dimension
         **kwargs
             Keyword arguments passed to simulators.
 
@@ -87,23 +85,19 @@ class SequentialSimulator(Simulator):
         dict
             Single sample result.
         """
-        return self.sample(batch_size=1, sample_shape=sample_shape, **kwargs)
+        return self.sample(batch_shape=(1, *tuple(batch_shape_ext)), **kwargs)
 
     def sample_parallel(
-        self, batch_size: int, sample_shape: tuple[int] | None = None, n_jobs: int = -1, verbose: int = 0, **kwargs
+        self, batch_shape: Shape, n_jobs: int = -1, verbose: int = 0, **kwargs
     ) -> dict[str, np.ndarray]:
         """
         Sample in parallel from the sequential simulator.
 
         Parameters
         ----------
-        batch_size : int
-            The number of samples to generate.
-        sample_shape : tuple of int or int, optional
-            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
-            dimension. For example, if batch_size is `batch_size` and sample_shape is `(time, channels)`, the final
-            output will be `(batch_size, time, channels, target_dim)`, where target_dim is the intrinsic dimension of
-            the output.
+        batch_shape : Shape
+            The shape of the batch to sample. Typically, a tuple indicating the number of samples,
+            but it also accepts an int.
         n_jobs : int, optional
             Number of parallel jobs. -1 uses all available cores. Default is -1.
         verbose : int, optional
@@ -126,8 +120,16 @@ class SequentialSimulator(Simulator):
                 "joblib is required for parallel sampling. Please install it via 'pip install joblib'."
             ) from e
 
+        # normalize batch shape to a tuple
+        if isinstance(batch_shape, int):
+            bs = (batch_shape,)
+        else:
+            bs = tuple(batch_shape)
+        if len(bs) == 0:
+            raise ValueError("batch_shape must be a positive integer or a nonempty tuple")
+
         results = Parallel(n_jobs=n_jobs, verbose=verbose)(
-            delayed(self._single_sample)(sample_shape=sample_shape, **kwargs) for _ in range(batch_size)
+            delayed(self._single_sample)(batch_shape_ext=bs[1:], **kwargs) for _ in range(bs[0])
         )
         return self._combine_results(results)
 

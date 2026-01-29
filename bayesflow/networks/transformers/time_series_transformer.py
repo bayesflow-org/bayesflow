@@ -135,12 +135,13 @@ class TimeSeriesTransformer(Transformer):
             prevent tokens from attending to future tokens.
         **kwargs        : dict, optional (default - {})
             Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
+            such as ``return_attention_scores``
 
         Returns
         -------
         out : Tensor
-            Output of shape (batch_size, set_size, output_dim)
+            Output of shape (batch_size, summary_dim) if `many_to_one=True`, otherwise
+            a new sequence of shape (batch_size, sequence_length, summary_dim).
         """
 
         if self.time_axis is not None:

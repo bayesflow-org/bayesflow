@@ -145,9 +145,9 @@ class MultiHeadAttention(keras.Layer):
 
     # noinspection PyMethodOverriding
     @sanitize_input_shape
-    def build(self, seq_x_shape, seq_y_shape):
-        self.call(keras.ops.zeros(seq_x_shape), keras.ops.zeros(seq_y_shape))
+    def build(self, x_shape, y_shape):
+        self.call(keras.ops.zeros(x_shape), keras.ops.zeros(y_shape))
 
     @sanitize_input_shape
-    def compute_output_shape(self, seq_x_shape, seq_y_shape):
-        return keras.ops.shape(self.call(keras.ops.zeros(seq_x_shape), keras.ops.zeros(seq_y_shape)))
+    def compute_output_shape(self, x_shape, y_shape):
+        return keras.ops.shape(self.call(keras.ops.zeros(x_shape), keras.ops.zeros(y_shape)))

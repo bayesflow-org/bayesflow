@@ -146,7 +146,7 @@ class SetTransformer(Transformer):
         Returns
         -------
         out : Tensor
-            Output of shape (batch_size, set_size, output_dim)
+            Output of shape (batch_size, summary_dim)
         """
         summary = self.attention_blocks(x, training=training, attention_mask=attention_mask, **kwargs)
         summary = self.pooling_by_attention(summary, training=training)

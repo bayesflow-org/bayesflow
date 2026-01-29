@@ -149,7 +149,7 @@ class FusionTransformer(SummaryNetwork):
         Returns
         -------
         out : Tensor
-            Output of shape (batch_size, set_size, output_dim)
+            Output of shape (batch_size, summary_dim)
         """
 
         template = self.template_net(x, training=training)

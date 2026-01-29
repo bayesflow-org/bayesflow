@@ -51,5 +51,5 @@ class SetAttention(MultiHeadAttention):
 
     # noinspection PyMethodOverriding
     @sanitize_input_shape
-    def compute_output_shape(self, input_set_shape):
-        return keras.ops.shape(self.call(keras.ops.zeros(input_set_shape)))
+    def compute_output_shape(self, input_shape):
+        return keras.ops.shape(self.call(keras.ops.zeros(input_shape)))

@@ -82,12 +82,12 @@ class InducedSetAttention(keras.Layer):
         self.mab0 = MultiHeadAttention(**mab_kwargs)
         self.mab1 = MultiHeadAttention(**mab_kwargs)
 
-    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass through the self-attention layer.
 
         Parameters
         ----------
-        input_set  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
+        x          : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
             Since this is self-attention, the input set is used
             as a query (Q), key (K), and value (V)
@@ -104,8 +104,8 @@ class InducedSetAttention(keras.Layer):
             Output of shape (batch_size, set_size, input_dim)
         """
 
-        batch_size = keras.ops.shape(input_set)[0]
+        batch_size = keras.ops.shape(x)[0]
         inducing_points_expanded = keras.ops.expand_dims(self.inducing_points, axis=0)
         inducing_points_tiled = keras.ops.tile(inducing_points_expanded, [batch_size, 1, 1])
-        h = self.mab0(inducing_points_tiled, input_set, training=training, **kwargs)
-        return self.mab1(input_set, h, training=training, **kwargs)
+        h = self.mab0(inducing_points_tiled, x, training=training, **kwargs)
+        return self.mab1(x, h, training=training, **kwargs)

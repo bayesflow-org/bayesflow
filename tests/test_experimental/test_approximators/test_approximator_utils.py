@@ -1,5 +1,4 @@
 import keras
-import numpy as np
 import pytest
 
 from bayesflow.experimental.graphical_approximator.utils import (

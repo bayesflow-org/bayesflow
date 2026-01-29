@@ -1,13 +1,9 @@
-import copy
-import multiprocessing as mp
 import warnings
 from collections.abc import Mapping, Sequence
-from typing import Literal
 
 import keras
 import numpy as np
 
-from bayesflow.utils import filter_kwargs, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter

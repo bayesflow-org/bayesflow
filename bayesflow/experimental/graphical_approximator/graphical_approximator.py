@@ -7,7 +7,7 @@ from typing import Literal
 import keras
 import numpy as np
 
-from bayesflow.utils import logging
+from bayesflow.utils import filter_kwargs, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter
@@ -15,9 +15,8 @@ from ...approximators import Approximator
 from ...datasets import OfflineDataset, OnlineDataset
 from ...networks import InferenceNetwork, SummaryNetwork
 from ...networks.standardization import Standardization
-from ..graphical_simulator import GraphicalSimulator, SimulationOutput
+from ..graphical_simulator import SimulationOutput
 from ..graphs import InvertedGraph
-from .dataset import GraphicalDataset
 from .utils import (
     inference_condition_shapes_by_network,
     inference_conditions_by_network,
@@ -165,8 +164,6 @@ class GraphicalApproximator(Approximator):
         summary_metrics = {}
 
         summary_inputs = summary_inputs_by_network(self, kwargs)
-        # for k, v in summary_inputs.items():
-        #     summary_inputs[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
 
         for i, summary_network in enumerate(self.summary_networks or []):
             summary_metrics[i] = summary_network.compute_metrics(summary_inputs[i], stage=stage)
@@ -251,63 +248,40 @@ class GraphicalApproximator(Approximator):
         """
 
         if not self.built and "dataset" in kwargs:
-            data_shapes = self._data_shapes(self.adapter(kwargs["dataset"]))
+            data = self.adapter(kwargs["dataset"]) if self.adapter else kwargs["dataset"]
+            data_shapes = self._data_shapes(data)
             self.build(data_shapes)
 
         if not self.built and "simulator" in kwargs:
             mock_data = kwargs["simulator"].sample(1)
-            data_shapes = self._data_shapes(self.adapter(mock_data))
+            mock_data = self.adapter(mock_data) if self.adapter else mock_data
+            data_shapes = self._data_shapes(mock_data)
             self.build(data_shapes)
 
+        # online training
         if "simulator" in kwargs:
-            data_shapes = self._data_shapes(self.adapter(kwargs["simulator"].sample(1)))
-            kwargs["dataset"] = GraphicalDataset(
-                dataset=None,
-                simulator=kwargs["simulator"],
-                approximator=self,
-                batch_size=kwargs["batch_size"],
-                num_batches=kwargs["num_batches"] if "num_batches" in kwargs else 32,
-                adapter=self.adapter,
+            simulator = kwargs.pop("simulator")
+            batch_size = kwargs.pop("batch_size")
+            num_batches = kwargs.pop("num_batches")
+
+            kwargs["dataset"] = OnlineDataset(
+                simulator, batch_size, num_batches, self.adapter, augmentations=lambda x: dict(x)
             )
-            del kwargs["simulator"]
-            num_batches = kwargs["num_batches"]
 
         elif "dataset" in kwargs:
-            data_shapes = self._data_shapes(kwargs["dataset"])
-            kwargs["dataset"] = GraphicalDataset(
-                dataset=kwargs["dataset"],
-                simulator=None,
-                approximator=self,
-                batch_size=kwargs["batch_size"],
-                num_samples=kwargs["num_samples"] if "num_samples" in kwargs else None,
+            batch_size = kwargs.pop("batch_size")
+            num_samples = kwargs.pop("num_samples")
+
+            kwargs["dataset"] = OfflineDataset(
+                kwargs["dataset"],
+                batch_size=batch_size,
+                num_samples=num_samples,
                 adapter=self.adapter,
                 augmentations=self.subset_data,
             )
             num_batches = kwargs["dataset"].num_batches
 
-        # if keras.backend.backend() == "tensorflow":
-        #     import tensorflow as tf
-        #
-        #     shapes = {
-        #         "summary_inputs": summary_input_shapes_by_network(self, data_shapes),
-        #         "inference_variables": inference_variable_shapes_by_network(self, data_shapes),
-        #         "inference_conditions": inference_condition_shapes_by_network(self, data_shapes),
-        #     }
-        #
-        #     signature = {}
-        #     for element in ["summary_inputs", "inference_variables", "inference_conditions"]:
-        #         signature[element] = {}
-        #         for k, v in shapes[element].items():
-        #             shape = [None] * (len(v) - 1) + [v[-1]]
-        #             signature[element][k] = tf.TensorSpec(shape=shape, dtype=tf.float32)
-        #
-        #     ds = kwargs["dataset"]
-        #     num_batches = kwargs["dataset"].num_batches
-        #     kwargs["dataset"] = tf.data.Dataset.from_generator(
-        #         lambda: (ds[i] for i in range(num_batches)), output_signature=signature
-        #     ).repeat()
-
-        return super(GraphicalApproximator, self).fit(*args, **kwargs, steps_per_epoch=num_batches)
+        return super(GraphicalApproximator, self).fit(*args, **kwargs)
 
     def sample(self, *, num_samples: int, conditions: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
         """
@@ -401,7 +375,7 @@ class GraphicalApproximator(Approximator):
 
         for k, v in data.items():
             if k not in output_shapes:
-                raise KeyError(f"Unexpected entry data entry: {k}")
+                raise KeyError(f"Unexpected data entry: {k}")
 
             begin = (0,) * len(keras.ops.shape(v))
 

@@ -38,8 +38,10 @@ class MLP(Sequential):
         This MLP can be used as a general-purpose feature extractor or function approximator, supporting configurable
         depth, width, activation functions, and weight initializations.
 
-        If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
+        If `residual` is enabled, each layer includes a skip connection for improved gradient flow [1]. The model also
         supports dropout for regularization and spectral normalization for stability in learning smooth functions.
+
+        [1] He et al. (2016), Deep Residual Learning for Image Recognition
 
         Parameters
         ----------

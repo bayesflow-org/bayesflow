@@ -10,7 +10,10 @@ from bayesflow.utils.serialization import serializable, serialize, deserialize
 
 @serializable("bayesflow.networks")
 class FourierEmbedding(keras.Layer):
-    """Implements a Fourier projection with normally distributed frequencies."""
+    """Implements a Fourier projection with normally distributed frequencies [1].
+
+    [1] Tancik et al. (2020), Fourier features let networks learn high frequency functions in low dimensional domains
+    """
 
     def __init__(
         self,

@@ -114,8 +114,6 @@ class GraphicalApproximator(Approximator):
     def build(self, data_shapes: dict[str, tuple[int]]) -> None:
         # build summary networks
         input_shapes = summary_input_shapes_by_network(self, data_shapes)
-        for k, v in input_shapes.items():
-            input_shapes[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
 
         for i, summary_network in enumerate(self.summary_networks or []):
             if not summary_network.built:
@@ -123,12 +121,7 @@ class GraphicalApproximator(Approximator):
 
         # build inference networks
         variable_shapes = inference_variable_shapes_by_network(self, data_shapes)
-        for k, v in variable_shapes.items():
-            variable_shapes[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
-
         condition_shapes = inference_condition_shapes_by_network(self, data_shapes)
-        for k, v in condition_shapes.items():
-            condition_shapes[k] = tuple(int(i) for i in keras.ops.convert_to_numpy(v))
 
         for i, inference_network in enumerate(self.inference_networks or []):
             if not inference_network.built:

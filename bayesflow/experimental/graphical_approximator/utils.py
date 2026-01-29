@@ -300,7 +300,7 @@ def summary_input_shapes_by_network(approximator: "GraphicalApproximator", data_
 
     for i, summary_network in enumerate(approximator.summary_networks or []):
         shape = input_shape + (1,) if len(input_shape) == 2 else input_shape
-        result[i] = keras.ops.convert_to_tensor(input_shape)
+        result[i] = tuple(int(i) for i in keras.ops.convert_to_tensor(tuple(shape)))
 
         output_shape = summary_network.compute_output_shape(tuple(shape))
 
@@ -359,7 +359,7 @@ def inference_variable_shapes_by_network(approximator: "GraphicalApproximator", 
 
                 variable_shapes.append(tuple(shape))
 
-        result[i] = tuple(concatenate_shapes(variable_shapes))
+        result[i] = tuple(int(i) for i in concatenate_shapes(variable_shapes))
 
     return result
 
@@ -402,7 +402,7 @@ def inference_condition_shapes_by_network(approximator: "GraphicalApproximator",
         # For some nodes, the number of conditions could be further reduced, but this would
         # require additional logic.
         concatenated[-1] += len(repetitions)
-        result[i] = tuple(concatenated)
+        result[i] = tuple(int(i) for i in concatenated)
 
     return result
 

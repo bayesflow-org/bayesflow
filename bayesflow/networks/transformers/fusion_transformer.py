@@ -5,16 +5,18 @@ from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
 from bayesflow.utils.serialization import serializable
 
-from ..summary_network import SummaryNetwork
-
+from .transformer import Transformer
 from .attention import MultiHeadAttention
 
 
 @serializable("bayesflow.networks")
-class FusionTransformer(SummaryNetwork):
+class FusionTransformer(Transformer):
     """
     (SN) Implements a more flexible version of the TimeSeriesTransformer that applies a series of self-attention layers
-    followed by cross-attention between the representation and a learnable template summarized via a recurrent net."""
+    followed by cross-attention between the representation and a learnable template summarized via a recurrent net.
+
+    Note: This network does not need time embeddings, as the sequence itself is used as a learnable embedding.
+    """
 
     def __init__(
         self,
@@ -75,8 +77,6 @@ class FusionTransformer(SummaryNetwork):
         template_dim         : int, optional (default - 128)
             Only used if ``template_type`` in ['lstm', 'gru']. The number of hidden
             units (equiv. output dimensions) of the recurrent network.
-        time_axis     : int, optional (default - None)
-            The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into t2v.
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """

@@ -36,6 +36,14 @@ class InvertedGraph(nx.DiGraph):
             self.add_nodes_from(g.nodes(data=True))
             self.add_edges_from(g.edges(data=True))
 
+    def num_summary_networks(self) -> int:
+        """
+        Returns the number of required summary networks to perform amortized posterior
+        inference of the joint posterior implied by the corresponding forward model
+        of the graph.
+        """
+        return max(1, len(self.data_shape_order()))
+
     def network_conditions(self) -> dict[int, list[SimulationNode]]:
         """
         Returns a dictionary where the keys are integer network indices and the values

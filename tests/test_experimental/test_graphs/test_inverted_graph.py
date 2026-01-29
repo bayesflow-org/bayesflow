@@ -1,6 +1,13 @@
 import pytest
 
 
+def test_num_summary_networks(single_level_graph, two_level_graph, three_level_graph, crossed_design_irt_graph):
+    assert single_level_graph.num_summary_networks() == 1
+    assert two_level_graph.num_summary_networks() == 2
+    assert three_level_graph.num_summary_networks() == 3
+    assert crossed_design_irt_graph.num_summary_networks() == 2
+
+
 def test_network_conditions(single_level_graph, two_level_graph, three_level_graph, crossed_design_irt_graph):
     assert single_level_graph.network_conditions() == {0: ["likelihood"]}
 

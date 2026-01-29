@@ -1,41 +1,39 @@
 from collections.abc import Callable
-
 import numpy as np
 
+from bayesflow.types import Shape
 from bayesflow.utils import tree_concatenate
+from bayesflow.utils.decorators import allow_batch_size
 
 
 class Simulator:
-    def sample(self, batch_size: int, sample_shape: tuple[int] | None = None, **kwargs) -> dict[str, np.ndarray]:
+    @allow_batch_size
+    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         raise NotImplementedError
 
+    @allow_batch_size
     def rejection_sample(
         self,
-        batch_size: int,
+        batch_shape: Shape,
         predicate: Callable[[dict[str, np.ndarray]], np.ndarray],
         *,
-        sample_shape: tuple[int] | None = None,
         axis: int = 0,
-        sample_size: int | None = None,
+        sample_size: int = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
-        batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
-
         if sample_size is None:
-            iteration_batch_shape = batch_shape
+            sample_shape = batch_shape
         else:
-            iteration_batch_shape = list(batch_shape)
-            iteration_batch_shape[axis] = sample_size
+            sample_shape = list(batch_shape)
+            sample_shape[axis] = sample_size
 
-            iteration_batch_shape = tuple(iteration_batch_shape)
+            sample_shape = tuple(sample_shape)
 
         result = {}
 
         while not result or next(iter(result.values())).shape[axis] < batch_shape[axis]:
             # get a batch of samples
-            iteration_batch_size = iteration_batch_shape[0]
-            iteration_sample_shape = iteration_batch_shape[1:] if len(iteration_batch_shape) > 1 else None
-            samples = self.sample(iteration_batch_size, sample_shape=iteration_sample_shape, **kwargs)
+            samples = self.sample(sample_shape, **kwargs)
 
             # get acceptance mask and turn into indices
             accept = predicate(samples)
@@ -43,10 +41,9 @@ class Simulator:
             if not isinstance(accept, np.ndarray):
                 raise RuntimeError("Predicate must return a numpy array.")
 
-            if accept.shape != (iteration_batch_shape[axis],):
+            if accept.shape != (sample_shape[axis],):
                 raise RuntimeError(
-                    f"Predicate return array must have shape {(iteration_batch_shape[axis],)}. "
-                    f"Received: {accept.shape}."
+                    f"Predicate return array must have shape {(sample_shape[axis],)}. Received: {accept.shape}."
                 )
 
             if not accept.dtype == "bool":
@@ -70,11 +67,11 @@ class Simulator:
 
         return result
 
+    @allow_batch_size
     def sample_batched(
         self,
-        batch_size: int,
+        batch_shape: Shape,
         *,
-        sample_shape: tuple[int] | None = None,
         sample_size: int,
         **kwargs,
     ):
@@ -85,10 +82,8 @@ class Simulator:
 
         Parameters
         ----------
-        batch_size : int
+        batch_shape : Shape
             The desired output shape, as in :py:meth:`sample`. Will be rounded up to the next complete batch.
-        sample_shape: tuple[int]
-            Optional structural dimensions between batch_size and the simulator output's dimension
         sample_size : int
             The number of samples in each simulated batch.
         kwargs
@@ -99,6 +94,4 @@ class Simulator:
         def accept_all_predicate(x):
             return np.full((sample_size,), True)
 
-        return self.rejection_sample(
-            batch_size, sample_shape=sample_shape, predicate=accept_all_predicate, sample_size=sample_size, **kwargs
-        )
+        return self.rejection_sample(batch_shape, predicate=accept_all_predicate, sample_size=sample_size, **kwargs)

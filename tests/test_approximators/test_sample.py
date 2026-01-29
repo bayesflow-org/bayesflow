@@ -93,7 +93,7 @@ def test_approximator_sample_with_integration_methods(
 
     # Generate test data
     num_batches = 2  # Use fewer batches for faster tests
-    data = simulator.sample(num_batches * batch_size)
+    data = simulator.sample((num_batches * batch_size,))
 
     # Build approximator
     batch = adapter(data)

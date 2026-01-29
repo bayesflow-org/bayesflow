@@ -1,6 +1,9 @@
 from collections.abc import Sequence
 import numpy as np
 
+from bayesflow.types import Shape
+from bayesflow.utils.decorators import allow_batch_size
+
 from .simulator import Simulator
 
 
@@ -27,19 +30,16 @@ class SequentialSimulator(Simulator):
         self.expand_outputs = expand_outputs
         self.replace_inputs = replace_inputs
 
-    def sample(self, batch_size: int, sample_shape: tuple[int] | None = None, **kwargs) -> dict[str, np.ndarray]:
+    @allow_batch_size
+    def sample(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         """
         Sample sequentially from the internal simulator.
 
         Parameters
         ----------
-        batch_size : int
-            The number of samples to generate.
-        sample_shape : tuple of int or int, optional
-            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
-            dimension. For example, if batch_size is `batch_size` and sample_shape is `(time, channels)`, the final
-            output will be `(batch_size, time, channels, target_dim)`, where target_dim is the intrinsic dimension of
-            the output.
+        batch_shape : Shape
+            The shape of the batch to sample. Typically, a tuple indicating the number of samples,
+            but it also accepts an int.
         **kwargs
             Additional keyword arguments passed to each simulator. These may include previously
             sampled outputs used as inputs for subsequent simulators.
@@ -54,7 +54,7 @@ class SequentialSimulator(Simulator):
 
         data = {}
         for simulator in self.simulators:
-            data |= simulator.sample(batch_size, sample_shape=sample_shape, **(kwargs | data))
+            data |= simulator.sample(batch_shape, **(kwargs | data))
 
             if self.replace_inputs:
                 common_keys = set(data.keys()) & set(kwargs.keys())

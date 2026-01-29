@@ -4,14 +4,14 @@ from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
 from bayesflow.utils.serialization import serializable
 
-from ..embeddings import Time2Vec, RecurrentEmbedding
-from ..summary_network import SummaryNetwork
+from .attention import MultiHeadAttention
+from .transformer import Transformer
 
-from .mab import MultiHeadAttentionBlock
+from ..embeddings import Time2Vec, RecurrentEmbedding
 
 
 @serializable("bayesflow.networks")
-class TimeSeriesTransformer(SummaryNetwork):
+class TimeSeriesTransformer(Transformer):
     def __init__(
         self,
         summary_dim: int = 16,
@@ -27,6 +27,7 @@ class TimeSeriesTransformer(SummaryNetwork):
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
         time_axis: int = None,
+        many_to_one: bool = True,
         **kwargs,
     ):
         """(SN) Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time
@@ -63,16 +64,18 @@ class TimeSeriesTransformer(SummaryNetwork):
             The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into the embedding.
             If an embedding is provided and time_axis is None, a uniform time interval between [0, sequence_len]
             will be assumed.
+        many_to_one   : bool, optional (default - True)
+            If True, acts as a many-to-one embedding network (to be used for compression tasks).
+            If False, acts as a many-to-many encoder (to be used for time-varying tasks).
+            In that case, the `summary_dim` argument denotes the dimension of the output sequence.
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
 
         super().__init__(**kwargs)
 
-        # Ensure all tuple-settings have the same length
         check_lengths_same(embed_dims, num_heads, mlp_depths, mlp_widths)
 
-        # Initialize Time2Vec embedding layer
         if time_embedding is None:
             self.time_embedding = None
         elif time_embedding == "time2vec":
@@ -80,9 +83,10 @@ class TimeSeriesTransformer(SummaryNetwork):
         elif time_embedding in ["lstm", "gru"]:
             self.time_embedding = RecurrentEmbedding(time_embed_dim, time_embedding)
         else:
-            raise ValueError("Embedding not found!")
+            raise ValueError(
+                f"Invalid time embedding type: {time_embedding}. Expected one of ['time2vec', 'lstm', 'gru']."
+            )
 
-        # Construct a series of set-attention blocks
         self.attention_blocks = []
         for i in range(len(embed_dims)):
             layer_attention_settings = dict(
@@ -97,26 +101,38 @@ class TimeSeriesTransformer(SummaryNetwork):
                 mlp_width=mlp_widths[i],
             )
 
-            block = MultiHeadAttentionBlock(**layer_attention_settings)
+            block = MultiHeadAttention(**layer_attention_settings)
             self.attention_blocks.append(block)
 
-        # Pooling will be applied as a final step to the abstract representations obtained from set attention
-        self.pooling = keras.layers.GlobalAvgPool1D()
+        if many_to_one:
+            self.pooling = keras.layers.GlobalAvgPool1D()
+        else:
+            self.pooling = keras.layers.Identity()
+
         self.output_projector = keras.layers.Dense(units=summary_dim)
 
         self.summary_dim = summary_dim
         self.time_axis = time_axis
 
-    def call(self, input_sequence: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(
+        self, x: Tensor, training: bool = False, attention_mask: Tensor = None, use_causal_mask: bool = False, **kwargs
+    ) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
 
         Parameters
         ----------
-        input_sequence  : Tensor
+        x               : Tensor
             Input of shape (batch_size, sequence_length, input_dim)
         training        : boolean, optional (default - False)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
+        attention_mask  : a boolean mask of shape `(B, T, T)`, that prevents
+            attention to certain positions. The boolean mask specifies which
+            query elements can attend to which key elements, 1 indicates
+            attention and 0 indicates no attention. Broadcasting can happen for
+            the missing batch dimensions and the head dimension.
+        use_causal_mask : A boolean to indicate whether to apply a causal mask to
+            prevent tokens from attending to future tokens.
         **kwargs        : dict, optional (default - {})
             Additional keyword arguments passed to the internal attention layer,
             such as ``attention_mask`` or ``return_attention_scores``
@@ -128,20 +144,22 @@ class TimeSeriesTransformer(SummaryNetwork):
         """
 
         if self.time_axis is not None:
-            t = input_sequence[..., self.time_axis]
-            indices = list(range(keras.ops.shape(input_sequence)[-1]))
+            t = x[..., self.time_axis]
+            indices = list(range(keras.ops.shape(x)[-1]))
             indices.pop(self.time_axis)
-            inp = keras.ops.take(input_sequence, indices, axis=-1)
+            inp = keras.ops.take(x, indices, axis=-1)
         else:
             t = None
-            inp = input_sequence
+            inp = x
 
         if self.time_embedding:
             inp = self.time_embedding(inp, t=t)
 
         # Apply self-attention blocks
         for layer in self.attention_blocks:
-            inp = layer(inp, inp, training=training, **kwargs)
+            inp = layer(
+                inp, inp, training=training, attention_mask=attention_mask, use_causal_mask=use_causal_mask, **kwargs
+            )
 
         # Global average pooling and output projection
         summary = self.pooling(inp)

@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable
 
 from ..summary_network import SummaryNetwork
 
-from .mab import MultiHeadAttentionBlock
+from .attention import MultiHeadAttention
 
 
 @serializable("bayesflow.networks")
@@ -38,7 +38,7 @@ class FusionTransformer(SummaryNetwork):
         your simulator also returns a "time" vector appended to the simulator outputs.
 
         Important: This network needs at least 2 transformer blocks and will generally be slower than the
-        corresponding TimeSeriesTransformer.
+        corresponding TimeSeriesTransformer. It also always acts as a many-to-one transform.
 
         Parameters
         ----------
@@ -101,7 +101,7 @@ class FusionTransformer(SummaryNetwork):
                 mlp_width=mlp_widths[i],
             )
 
-            block = MultiHeadAttentionBlock(**layer_attention_settings)
+            block = MultiHeadAttention(**layer_attention_settings)
             self.attention_blocks.append(block)
 
         # A recurrent network will learn a dynamic many-to-one template
@@ -123,16 +123,25 @@ class FusionTransformer(SummaryNetwork):
         self.output_projector = keras.layers.Dense(units=summary_dim)
         self.summary_dim = summary_dim
 
-    def call(self, input_sequence: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(
+        self, x: Tensor, training: bool = False, attention_mask: Tensor = None, use_causal_mask: bool = False, **kwargs
+    ) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
 
         Parameters
         ----------
-        input_sequence  : Tensor
+        x               : Tensor
             Input of shape (batch_size, sequence_length, input_dim)
         training        : boolean, optional (default - False)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
+        attention_mask  : a boolean mask of shape `(B, T, T)`, that prevents
+            attention to certain positions. The boolean mask specifies which
+            query elements can attend to which key elements, 1 indicates
+            attention and 0 indicates no attention. Broadcasting can happen for
+            the missing batch dimensions and the head dimension.
+        use_causal_mask : A boolean to indicate whether to apply a causal mask to
+            prevent tokens from attending to future tokens.
         **kwargs        : dict, optional (default - {})
             Additional keyword arguments passed to the internal attention layer,
             such as ``attention_mask`` or ``return_attention_scores``
@@ -143,11 +152,13 @@ class FusionTransformer(SummaryNetwork):
             Output of shape (batch_size, set_size, output_dim)
         """
 
-        template = self.template_net(input_sequence, training=training)
+        template = self.template_net(x, training=training)
 
-        rep = input_sequence
+        rep = x
         for layer in self.attention_blocks[:-1]:
-            rep = layer(rep, rep, training=training, **kwargs)
+            rep = layer(
+                rep, rep, training=training, attention_mask=attention_mask, use_causal_mask=use_causal_mask, **kwargs
+            )
 
         summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training, **kwargs)
         summary = self.output_projector(keras.ops.squeeze(summary, axis=1))

@@ -364,6 +364,39 @@ def inference_variable_shapes_by_network(approximator: "GraphicalApproximator", 
     return result
 
 
+def inference_variable_shapes_from_meta(approximator: "GraphicalApproximator", meta: dict):
+    """
+    Returns a dictionary where the keys are integers denoting network indices
+    and the values are output shapes of that inference network.
+    The first index (batch_size) of the output shapes is always 1.
+    """
+    network_composition = approximator.graph.network_composition()
+    variable_names = approximator.graph.simulation_graph.variable_names()
+    output_shapes = approximator.graph.simulation_graph.output_shapes(meta)
+
+    result = {}
+
+    # add batch size to output_shapes
+    for k, v in output_shapes.items():
+        output_shapes[k] = (1,) + v[1:]
+
+    for i, _ in enumerate(approximator.inference_networks):
+        variable_shapes = []
+        for node in network_composition[i]:
+            for variable in variable_names[node]:
+                shape = output_shapes[variable]
+
+                # flatten group dimension if node is not amortizable
+                if not approximator.graph.allows_amortization(node):
+                    shape = shape[:-2] + (int(keras.ops.prod(shape[-2:])),)
+
+                variable_shapes.append(tuple(shape))
+
+        result[i] = tuple(int(i) for i in concatenate_shapes(variable_shapes))
+
+    return result
+
+
 def inference_condition_shapes_by_network(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
     """
     Returns the required inference condition shapes for each network.
@@ -465,102 +498,6 @@ def concatenate(tensors, batch_dims=1):
     return keras.ops.concatenate(broadcasted, axis=-1)
 
 
-# def concatenate_2(tensors, batch_dims=1):
-#     """
-#     Concatenates tensors of possibly unequal ranks by expanding and
-#     tiling missing dimensions.
-#
-#     >>> x = keras.random.normal((20, 5))
-#     >>> y = keras.random.normal((20, 15, 3)
-#     >>> z = concatenate([x, y])
-#     >>> keras.ops.shape(z)
-#     (20, 15, 8)
-#     """
-#     max_rank = max([len(t.shape) for t in tensors])
-#
-#     expanded = []
-#     for t in tensors:
-#         while len(keras.ops.shape(t)) < max_rank:
-#             t = keras.ops.expand_dims(t, axis=batch_dims)
-#         expanded.append(t)
-#
-#     max_shape_per_dim = keras.ops.convert_to_tensor(
-#         [keras.ops.max(s) for s in zip(*[keras.ops.shape(t) for t in expanded])]
-#     )
-#
-#     # broadcast tensors to match max shape
-#     target_shapes = [
-#         keras.ops.concatenate([max_shape_per_dim[:-1], keras.ops.convert_to_tensor(keras.ops.shape(t)[-1:])], axis=0)
-#         for t in expanded
-#     ]
-#     # if keras.backend.backend() == "tensorflow":
-#     #     broadcasted = [keras.ops.broadcast_to(t, s) for t, s in zip(expanded, target_shapes)]
-#     # else:
-#     #     broadcasted = [keras.ops.broadcast_to(t, tuple(s)) for t, s in zip(expanded, target_shapes)]
-#
-#     # concatenate along last dimension
-#     # concatenated = keras.ops.concatenate(broadcasted, axis=-1)
-#
-#     concatenated = keras.ops.concatenate(expanded, axis=-1)
-#
-#     # restore original batch dimensions
-#     original_batch_shape = keras.ops.shape(tensors[0])[:batch_dims]
-#     final_shape = (*original_batch_shape, *keras.ops.shape(concatenated)[1:])
-#
-#     return keras.ops.reshape(concatenated, final_shape)
-#
-#
-# def concatenate_3(tensors, batch_dims=1):
-#     """
-#     Concatenates tensors of possibly unequal ranks by expanding and
-#     tiling missing dimensions.
-#
-#     >>> x = keras.random.normal((20, 5))
-#     >>> y = keras.random.normal((20, 15, 3)
-#     >>> z = concatenate([x, y])
-#     >>> keras.ops.shape(z)
-#     (20, 15, 8)
-#     """
-#     max_rank = max([len(keras.ops.shape(t)) for t in tensors])
-#
-#     # expand tensors so each tensor has rank max_rank
-#     expanded = []
-#
-#     for t in tensors:
-#         flat_shape = (-1, *keras.ops.shape(t)[batch_dims:])
-#         flat = keras.ops.reshape(t, flat_shape)
-#
-#         expanded_shape = expand_shape_rank(keras.ops.shape(flat), max_rank)
-#         flat_shape = (-1, *keras.ops.shape(t)[batch_dims:])
-#         flat = keras.ops.reshape(t, flat_shape)
-#
-#         expanded.append(keras.ops.reshape(flat, expanded_shape))
-#
-#     # compute max size along each dimension
-#     expanded_shapes = [keras.ops.shape(t) for t in expanded]
-#
-#     # max_shape_per_dim = [max(s) for s in zip(*expanded_shapes)]
-#     max_shape_per_dim = keras.ops.max(keras.ops.stack(expanded_shapes, axis=0), axis=0)
-#
-#     # broadcast tensors to match max_shape
-#     target_shapes = [
-#         keras.ops.concatenate([max_shape_per_dim[:-1], keras.ops.convert_to_tensor(keras.ops.shape(t)[-1:])], axis=0)
-#         for t in expanded
-#     ]  #
-#
-#     # target_shapes = [(*max_shape_per_dim[:-1], keras.ops.shape(t)[-1]) for t in expanded]
-#     broadcasted = [keras.ops.broadcast_to(t, s) for t, s in zip(expanded, target_shapes)]
-#
-#     # concatenate along last dimension
-#     concatenated = keras.ops.concatenate(broadcasted, axis=-1)
-#
-#     # restore original batch dimensions
-#     original_batch_shape = keras.ops.shape(tensors[0])[:batch_dims]
-#     final_shape = (*original_batch_shape, *keras.ops.shape(concatenated)[1:])
-#
-#     return keras.ops.reshape(concatenated, final_shape)
-
-
 def add_sample_dimension(tensor, num_samples, batch_dims=1):
     """
     Introduces a sample dimension right after batch_dims dimensions.
@@ -586,19 +523,6 @@ def concatenate_shapes(shapes):
     return reduce(stack_shapes, expanded)
 
 
-# def concatenate_shapes(shapes):
-#     """
-#     Concatenate shapes by expanding them to the same rank and then
-#     summing sizes along the last axis.
-#     >>> concatenate_shapes([(7, 5, 2), (3, 20)])
-#     (7, 5, 22)
-#     """
-#     max_rank = max(len(tuple(s)) for s in shapes)
-#     expanded = [expand_shape_rank(tuple(s), max_rank) for s in shapes]
-#
-#     return reduce(stack_shapes, expanded)
-
-
 def stack_shapes(a, b, axis=-1):
     rank = max(keras.ops.shape(a)[0], keras.ops.shape(b)[0])
     a = expand_shape_rank(a, rank)
@@ -619,30 +543,6 @@ def stack_shapes(a, b, axis=-1):
     return shape
 
 
-# def stack_shapes(a, b, axis=-1):
-#     """
-#     Compute the resulting shape of stacking two tensors along a given axis.
-#     >>> stack_shapes((10, 2, 3), (32, 1))
-#     (32, 2, 4)
-#     """
-#     a, b = tuple(a), tuple(b)
-#
-#     # make ranks equal
-#     rank = max(len(a), len(b))
-#     a = expand_shape_rank(a, rank)
-#     b = expand_shape_rank(b, rank)
-#
-#     # normalize axis
-#     if axis < 0:
-#         axis += rank
-#
-#     # stack shapes
-#     stacked_shape = tuple((a[i] + b[i]) if i == axis else max(a[i], b[i]) for i in range(rank))
-#
-#     return stacked_shape
-#
-
-
 def expand_shape_rank(shape, target_rank):
     """
     Expand a tensor shape to a desired rank by inserting singleton (1)
@@ -659,11 +559,3 @@ def expand_shape_rank(shape, target_rank):
     shape_rank = keras.ops.cast(shape_rank, "int")
 
     return shape_rank
-
-
-# def expand_shape_rank(shape, target_rank):
-#     s = list(tuple(shape))
-#     while len(s) < target_rank:
-#         s.insert(-1, 1)
-#
-#     return tuple(s)

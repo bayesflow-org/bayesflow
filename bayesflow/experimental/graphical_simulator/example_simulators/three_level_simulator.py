@@ -44,9 +44,9 @@ def sample_scores(
 
 
 def meta_fn():
-    N_classrooms = np.random.randint(5, 30)
-    N_students = np.random.randint(5, 30)
-    N_scores = np.random.randint(20, 50)
+    N_classrooms = np.random.randint(5, 10)
+    N_students = np.random.randint(5, 10)
+    N_scores = np.random.randint(10, 20)
 
     return {"N_classrooms": N_classrooms, "N_students": N_students, "N_scores": N_scores}
 

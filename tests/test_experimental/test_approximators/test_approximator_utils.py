@@ -31,22 +31,22 @@ from bayesflow.experimental.graphical_approximator.utils import (
 def test_expand_shape_rank():
     x = (10, 2, 3)
 
-    assert keras.ops.all(expand_shape_rank(x, 4) == (10, 2, 1, 3))
-    assert keras.ops.all(expand_shape_rank(x, 5) == (10, 2, 1, 1, 3))
+    assert keras.ops.all(tuple(int(i) for i in expand_shape_rank(x, 4)) == (10, 2, 1, 3))
+    assert keras.ops.all(tuple(int(i) for i in expand_shape_rank(x, 5)) == (10, 2, 1, 1, 3))
 
 
 def test_stack_shapes():
-    a = (10, 2, 3)
-    b = (32, 1)
+    a = keras.ops.convert_to_tensor((10, 2, 3))
+    b = keras.ops.convert_to_tensor((32, 1))
 
-    assert keras.ops.all(stack_shapes(a, b, axis=-1) == (32, 2, 4))
-    assert keras.ops.all(stack_shapes(a, b, axis=0) == (42, 2, 3))
-    assert keras.ops.all(stack_shapes(a, b, axis=1) == (32, 3, 3))
+    assert tuple(int(i) for i in stack_shapes(a, b, axis=-1)) == (32, 2, 4)
+    assert tuple(int(i) for i in stack_shapes(a, b, axis=0)) == (42, 2, 3)
+    assert tuple(int(i) for i in stack_shapes(a, b, axis=1)) == (32, 3, 3)
 
 
 def test_concatenate_shapes():
-    assert keras.ops.all(concatenate_shapes([(7, 5, 2), (3, 20)]) == (7, 5, 22))
-    assert keras.ops.all(concatenate_shapes([(3, 20), (7, 5, 2)]) == (7, 5, 22))
+    assert keras.ops.all(tuple(int(i) for i in concatenate_shapes([(7, 5, 2), (3, 20)])) == (7, 5, 22))
+    assert keras.ops.all(tuple(int(i) for i in concatenate_shapes([(3, 20), (7, 5, 2)])) == (7, 5, 22))
 
 
 def test_add_sample_dimension():
@@ -333,8 +333,10 @@ def test_data_condition_shapes_by_network_single_level(single_level_simulator, s
     # {0: (2, 10)}
     data_shapes = single_level_approximator._data_shapes(single_level_simulator.sample(2))
     expected_shapes = {0: (2, 10)}
+    condition_shapes = data_condition_shapes_by_network(single_level_approximator, data_shapes)
 
-    assert data_condition_shapes_by_network(single_level_approximator, data_shapes) == expected_shapes
+    for k, v in condition_shapes.items():
+        assert tuple(int(i) for i in condition_shapes[k]) == expected_shapes[k]
 
 
 def test_data_condition_shapes_by_network_two_level(two_level_simulator, two_level_approximator):
@@ -357,8 +359,10 @@ def test_data_condition_shapes_by_network_two_level(two_level_simulator, two_lev
         0: (2, 20),  # 20 summary dimensions
         1: (2, 6, 10),  # 10 summary dimensons
     }
+    condition_shapes = data_condition_shapes_by_network(two_level_approximator, data_shapes)
 
-    assert data_condition_shapes_by_network(two_level_approximator, data_shapes) == expected_shapes
+    for k, v in condition_shapes.items():
+        assert tuple(int(i) for i in condition_shapes[k]) == expected_shapes[k]
 
 
 def test_data_condition_shapes_by_network_three_level(three_level_simulator, three_level_approximator):
@@ -391,8 +395,10 @@ def test_data_condition_shapes_by_network_three_level(three_level_simulator, thr
             10,
         ),  # 10 summary dimensions
     }
+    condition_shapes = data_condition_shapes_by_network(three_level_approximator, data_shapes)
 
-    assert data_condition_shapes_by_network(three_level_approximator, data_shapes) == expected_shapes
+    for k, v in condition_shapes.items():
+        assert tuple(int(i) for i in condition_shapes[k]) == expected_shapes[k]
 
 
 def test_data_condition_shapes_by_network_crossed_design_irt(
@@ -427,8 +433,10 @@ def test_data_condition_shapes_by_network_crossed_design_irt(
             10,
         ),  # 10 summary dimensions
     }
+    condition_shapes = data_condition_shapes_by_network(crossed_design_irt_approximator, data_shapes)
 
-    assert data_condition_shapes_by_network(crossed_design_irt_approximator, data_shapes) == expected_shapes
+    for k, v in condition_shapes.items():
+        assert tuple(int(i) for i in condition_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_input_shapes_by_network_single_level(single_level_simulator, single_level_approximator):
@@ -448,8 +456,10 @@ def test_summary_input_shapes_by_network_single_level(single_level_simulator, si
     data = single_level_simulator.sample(2)
     data_shapes = single_level_approximator._data_shapes(data)
     expected_shapes = {0: (2, data.meta["N"], 2)}
+    input_shapes = summary_input_shapes_by_network(single_level_approximator, data_shapes)
 
-    assert summary_input_shapes_by_network(single_level_approximator, data_shapes) == expected_shapes
+    for k, v in input_shapes.items():
+        assert tuple(int(i) for i in input_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_input_shapes_by_network_two_level(two_level_simulator, two_level_approximator):
@@ -472,8 +482,10 @@ def test_summary_input_shapes_by_network_two_level(two_level_simulator, two_leve
         0: (2, 6, 10, 1),
         1: (2, 6, 10),
     }
+    input_shapes = summary_input_shapes_by_network(two_level_approximator, data_shapes)
 
-    assert summary_input_shapes_by_network(two_level_approximator, data_shapes) == expected_shapes
+    for k, v in input_shapes.items():
+        assert tuple(int(i) for i in input_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_input_shapes_by_network_three_level(three_level_simulator, three_level_approximator):
@@ -501,8 +513,10 @@ def test_summary_input_shapes_by_network_three_level(three_level_simulator, thre
         1: (2, data.meta["N_classrooms"], data.meta["N_students"], 10),
         2: (2, data.meta["N_classrooms"], 20),
     }
+    input_shapes = summary_input_shapes_by_network(three_level_approximator, data_shapes)
 
-    assert summary_input_shapes_by_network(three_level_approximator, data_shapes) == expected_shapes
+    for k, v in input_shapes.items():
+        assert tuple(int(i) for i in input_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_input_shapes_by_network_crossed_design_irt(
@@ -537,8 +551,10 @@ def test_summary_input_shapes_by_network_crossed_design_irt(
         ),  # num_questions and num_students swapped because questions are not amortizable
         1: (2, data.meta["num_students"], 10),
     }
+    input_shapes = summary_input_shapes_by_network(crossed_design_irt_approximator, data_shapes)
 
-    assert summary_input_shapes_by_network(crossed_design_irt_approximator, data_shapes) == expected_shapes
+    for k, v in input_shapes.items():
+        assert tuple(int(i) for i in input_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_output_shapes_by_network_single_level(single_level_simulator, single_level_approximator):
@@ -558,7 +574,9 @@ def test_summary_output_shapes_by_network_single_level(single_level_simulator, s
     data_shapes = single_level_approximator._data_shapes(single_level_simulator.sample(2))
     expected_shapes = {0: (2, 10)}  # 10 summary dimensions
 
-    assert summary_output_shapes_by_network(single_level_approximator, data_shapes) == expected_shapes
+    output_shapes = summary_output_shapes_by_network(single_level_approximator, data_shapes)
+    for k, v in output_shapes.items():
+        assert tuple(int(i) for i in output_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_output_shapes_by_network_two_level(two_level_simulator, two_level_approximator):
@@ -582,7 +600,9 @@ def test_summary_output_shapes_by_network_two_level(two_level_simulator, two_lev
         1: (2, 20),
     }
 
-    assert summary_output_shapes_by_network(two_level_approximator, data_shapes) == expected_shapes
+    output_shapes = summary_output_shapes_by_network(two_level_approximator, data_shapes)
+    for k, v in output_shapes.items():
+        assert tuple(int(i) for i in output_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_output_shapes_by_network_three_level(three_level_simulator, three_level_approximator):
@@ -611,7 +631,9 @@ def test_summary_output_shapes_by_network_three_level(three_level_simulator, thr
         2: (2, 30),
     }
 
-    assert summary_output_shapes_by_network(three_level_approximator, data_shapes) == expected_shapes
+    output_shapes = summary_output_shapes_by_network(three_level_approximator, data_shapes)
+    for k, v in output_shapes.items():
+        assert tuple(int(i) for i in output_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_output_shapes_by_network_crossed_design_irt(
@@ -642,7 +664,9 @@ def test_summary_output_shapes_by_network_crossed_design_irt(
         1: (2, 20),
     }
 
-    assert summary_output_shapes_by_network(crossed_design_irt_approximator, data_shapes) == expected_shapes
+    output_shapes = summary_output_shapes_by_network(crossed_design_irt_approximator, data_shapes)
+    for k, v in output_shapes.items():
+        assert tuple(int(i) for i in output_shapes[k]) == expected_shapes[k]
 
 
 def test_summary_input_shape_single_level(single_level_simulator, single_level_approximator):
@@ -663,7 +687,7 @@ def test_summary_input_shape_single_level(single_level_simulator, single_level_a
     data_shapes = single_level_approximator._data_shapes(data)
     expected_shape = (2, data.meta["N"], 2)
 
-    assert summary_input_shape(single_level_approximator, data_shapes) == expected_shape
+    assert tuple(int(i) for i in summary_input_shape(single_level_approximator, data_shapes)) == expected_shape
 
 
 def test_summary_input_shape_two_level(two_level_simulator, two_level_approximator):
@@ -684,7 +708,7 @@ def test_summary_input_shape_two_level(two_level_simulator, two_level_approximat
     data_shapes = two_level_approximator._data_shapes(two_level_simulator.sample(2))
     expected_shape = (2, 6, 10, 1)
 
-    assert summary_input_shape(two_level_approximator, data_shapes) == expected_shape
+    assert tuple(int(i) for i in summary_input_shape(two_level_approximator, data_shapes)) == expected_shape
 
 
 def test_summary_input_shape_three_level(three_level_simulator, three_level_approximator):
@@ -709,7 +733,7 @@ def test_summary_input_shape_three_level(three_level_simulator, three_level_appr
     data_shapes = three_level_approximator._data_shapes(data)
     expected_shape = (2, data.meta["N_classrooms"], data.meta["N_students"], data.meta["N_scores"], 1)
 
-    assert summary_input_shape(three_level_approximator, data_shapes) == expected_shape
+    assert tuple(int(i) for i in summary_input_shape(three_level_approximator, data_shapes)) == expected_shape
 
 
 def test_summary_input_shape_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
@@ -740,7 +764,7 @@ def test_summary_input_shape_crossed_design_irt(crossed_design_irt_simulator, cr
         1,
     )
 
-    assert summary_input_shape(crossed_design_irt_approximator, data_shapes) == expected_shape
+    assert tuple(int(i) for i in summary_input_shape(crossed_design_irt_approximator, data_shapes)) == expected_shape
 
 
 def test_add_node_reps_to_conditions():
@@ -1174,9 +1198,10 @@ def test_inference_variables_by_network_single_level(single_level_simulator, sin
     approximator = single_level_approximator
     approximator.build(data_shapes)
 
-    expected_shape_0 = concatenate_shapes([data_shapes["beta"], data_shapes["sigma"]])
+    expected_shape_0 = tuple(int(i) for i in concatenate_shapes([data_shapes["beta"], data_shapes["sigma"]]))
+    observed_shape_0 = keras.ops.shape(inference_variables_by_network(approximator, data)[0])
 
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
+    assert observed_shape_0 == expected_shape_0
 
 
 def test_inference_variables_by_network_two_level(two_level_simulator, two_level_approximator):
@@ -1186,13 +1211,17 @@ def test_inference_variables_by_network_two_level(two_level_simulator, two_level
     approximator = two_level_approximator
     approximator.build(data_shapes)
 
-    expected_shape_0 = concatenate_shapes(
-        [data_shapes["hyper_mean"], data_shapes["hyper_std"], data_shapes["shared_std"]]
+    expected_shape_0 = tuple(
+        int(i)
+        for i in concatenate_shapes([data_shapes["hyper_mean"], data_shapes["hyper_std"], data_shapes["shared_std"]])
     )
-    expected_shape_1 = data_shapes["local_mean"]
+    observed_shape_0 = keras.ops.shape(inference_variables_by_network(approximator, data)[0])
 
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1)
+    expected_shape_1 = tuple(int(i) for i in data_shapes["local_mean"])
+    observed_shape_1 = keras.ops.shape(inference_variables_by_network(approximator, data)[1])
+
+    assert observed_shape_0 == expected_shape_0
+    assert observed_shape_1 == expected_shape_1
 
 
 def test_inference_variables_by_network_three_level(three_level_simulator, three_level_approximator):
@@ -1202,15 +1231,27 @@ def test_inference_variables_by_network_three_level(three_level_simulator, three
     approximator = three_level_approximator
     approximator.build(data_shapes)
 
-    expected_shape_0 = concatenate_shapes(
-        [data_shapes["school_mu"], data_shapes["school_sigma"], data_shapes["shared_sigma"]]
+    expected_shape_0 = tuple(
+        int(i)
+        for i in concatenate_shapes(
+            [data_shapes["school_mu"], data_shapes["school_sigma"], data_shapes["shared_sigma"]]
+        )
     )
-    expected_shape_1 = concatenate_shapes([data_shapes["classroom_mu"], data_shapes["classroom_sigma"]])
-    expected_shape_2 = concatenate_shapes([data_shapes["student_mu"], data_shapes["student_sigma"]])
+    observed_shape_0 = keras.ops.shape(inference_variables_by_network(approximator, data)[0])
 
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1)
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2)
+    expected_shape_1 = tuple(
+        int(i) for i in concatenate_shapes([data_shapes["classroom_mu"], data_shapes["classroom_sigma"]])
+    )
+    observed_shape_1 = keras.ops.shape(inference_variables_by_network(approximator, data)[1])
+
+    expected_shape_2 = tuple(
+        int(i) for i in concatenate_shapes([data_shapes["student_mu"], data_shapes["student_sigma"]])
+    )
+    observed_shape_2 = keras.ops.shape(inference_variables_by_network(approximator, data)[2])
+
+    assert observed_shape_0 == expected_shape_0
+    assert observed_shape_1 == expected_shape_1
+    assert observed_shape_2 == expected_shape_2
 
 
 def test_inference_variables_by_network_crossed_design_irt(
@@ -1222,20 +1263,28 @@ def test_inference_variables_by_network_crossed_design_irt(
     approximator = crossed_design_irt_approximator
     approximator.build(data_shapes)
 
-    expected_shape_0 = concatenate_shapes(
-        [
-            data_shapes["mu_question_mean"],
-            data_shapes["sigma_question_mean"],
-            data_shapes["mu_question_std"],
-            data_shapes["sigma_question_std"],
-        ]
+    expected_shape_0 = tuple(
+        int(i)
+        for i in concatenate_shapes(
+            [
+                data_shapes["mu_question_mean"],
+                data_shapes["sigma_question_mean"],
+                data_shapes["mu_question_std"],
+                data_shapes["sigma_question_std"],
+            ]
+        )
     )
-    expected_shape_1 = (2, data.meta["num_questions"] * 3)
-    expected_shape_2 = (2, data.meta["num_students"], 1)
+    observed_shape_0 = keras.ops.shape(inference_variables_by_network(approximator, data)[0])
 
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[0]) == expected_shape_0)
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[1]) == expected_shape_1)
-    assert keras.ops.all(keras.ops.shape(inference_variables_by_network(approximator, data)[2]) == expected_shape_2)
+    expected_shape_1 = tuple(int(i) for i in (2, data.meta["num_questions"] * 3))
+    observed_shape_1 = keras.ops.shape(inference_variables_by_network(approximator, data)[1])
+
+    expected_shape_2 = tuple(int(i) for i in (2, data.meta["num_students"], 1))
+    observed_shape_2 = keras.ops.shape(inference_variables_by_network(approximator, data)[2])
+
+    assert observed_shape_0 == expected_shape_0
+    assert observed_shape_1 == expected_shape_1
+    assert observed_shape_2 == expected_shape_2
 
 
 def test_prepare_data_conditions_single_level(single_level_simulator, single_level_approximator):

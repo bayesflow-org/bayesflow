@@ -12,6 +12,7 @@ from bayesflow.experimental.graphical_approximator.utils import (
     inference_condition_shapes_by_network,
     inference_conditions_by_network,
     inference_variable_shapes_by_network,
+    inference_variable_shapes_from_meta,
     inference_variables_by_network,
     prepare_data_conditions,
     prepare_inference_conditions,
@@ -238,6 +239,24 @@ def test_inference_variable_shapes_by_network_single_level(single_level_simulato
     assert inference_variable_shapes_by_network(single_level_approximator, data_shapes) == expected_shapes
 
 
+def test_inference_variable_shapes_from_meta_single_level(single_level_simulator, single_level_approximator):
+    # network composition:
+    # {0: ["prior"]}
+    # network conditions:
+    # {1: ["likelihood"]}
+    # data shapes:
+    # {
+    #   "beta": (2, 2),
+    #   "sigma": (2, 1),
+    #   "x": (2, 12, 1),
+    #   "y": (2, 12, 1),
+    # }
+    data = single_level_simulator.sample(2)
+    expected_shapes = {0: (1, 3)}  # 3 variables (beta, sigma)
+
+    assert inference_variable_shapes_from_meta(single_level_approximator, data.meta) == expected_shapes
+
+
 def test_inference_variable_shapes_by_network_two_level(two_level_simulator, two_level_approximator):
     # network composition:
     # {0: ["hypers", "shared"], 1: ["locals"]}
@@ -258,6 +277,28 @@ def test_inference_variable_shapes_by_network_two_level(two_level_simulator, two
     }
 
     assert inference_variable_shapes_by_network(two_level_approximator, data_shapes) == expected_shapes
+
+
+def test_inference_variable_shapes_from_meta_two_level(two_level_simulator, two_level_approximator):
+    # network composition:
+    # {0: ["hypers", "shared"], 1: ["locals"]}
+    # network conditions:
+    # {0: ["y"], 1: ["hypers", "shared", "y"]}
+    # data shapes:
+    # {
+    #   'hyper_mean': (2, 1),
+    #   'hyper_std': (2, 1),
+    #   'local_mean': (2, 6, 1),
+    #   'shared_std': (2, 1),
+    #   'y': (2, 6, 10, 1)
+    # }
+    data = two_level_simulator.sample(2)
+    expected_shapes = {
+        0: (1, 3),  # 3 variables (hyper_mean, hyper_std, shared_std)
+        1: (1, 6, 1),  # 1 variable (local_mean)
+    }
+
+    assert inference_variable_shapes_from_meta(two_level_approximator, data.meta) == expected_shapes
 
 
 def test_inference_variable_shapes_by_network_three_level(three_level_simulator, three_level_approximator):
@@ -285,6 +326,32 @@ def test_inference_variable_shapes_by_network_three_level(three_level_simulator,
     }
 
     assert inference_variable_shapes_by_network(three_level_approximator, data_shapes) == expected_shapes
+
+
+def test_inference_variable_shapes_from_meta_three_level(three_level_simulator, three_level_approximator):
+    # network composition:
+    # {0: ["schools, "shared"], 1: ["classrooms"], 2: ["students"]}
+    # network conditions:
+    # {0: ["scores"], 1: ["schools", "shared", "scores"], 2: ["schools", "classrooms", "shared", "scores"]}
+    # data shapes:
+    # {
+    #   'school_mu': (2, 1),
+    #   'school_sigma': (2, 1),
+    #   'classroom_mu': (2, N_classrooms, 1),
+    #   'classroom_sigma': (2, N_classrooms, 1),
+    #   'shared_sigma': (2, 1),
+    #   'student_mu': (2, N_classrooms, N_students, 1),
+    #   'student_sigma': (2, N_classrooms, N_students, 1),
+    #   'y': (2, N_classrooms, N_students, N_scores, 1)
+    # }
+    data = three_level_simulator.sample(2)
+    expected_shapes = {
+        0: (1, 3),  # 3 variables (school_mu, school_sigma, shared_sigma)
+        1: (1, data.meta["N_classrooms"], 2),  # 2 variables (classroom_mu, classroom_sigma)
+        2: (1, data.meta["N_classrooms"], data.meta["N_students"], 2),  # 2 variables (student_mu, student_sigma)
+    }
+
+    assert inference_variable_shapes_from_meta(three_level_approximator, data.meta) == expected_shapes
 
 
 def test_inference_variable_shapes_by_network_crossed_design_irt(
@@ -315,6 +382,35 @@ def test_inference_variable_shapes_by_network_crossed_design_irt(
     }
 
     assert inference_variable_shapes_by_network(crossed_design_irt_approximator, data_shapes) == expected_shapes
+
+
+def test_inference_variable_shapes_from_meta_network_crossed_design_irt(
+    crossed_design_irt_simulator, crossed_design_irt_approximator
+):
+    # network composition:
+    # {0: ["schools"], 1: ["questions"], 2: ["students"]}
+    # network conditions:
+    # {0: ["observations"], 1: ["schools", "observations"], 2: ["schools", "questions", "observations"]}
+    # data shapes:
+    # {
+    #   'mu_question_mean': (2, 1),
+    #   'sigma_question_mean': (2, 1),
+    #   'mu_question_std': (2, 1),
+    #   'sigma_question_std': (2, 1),
+    #   'question_mean': (2, num_questions, 1),
+    #   'question_std': (2, num_questions, 1),
+    #   'question_difficulty': (2, num_questions, 1),
+    #   'student_ability': (2, num_students, 1),
+    #   'obs': (2, num_questions, num_students, 1)
+    # }
+    data = crossed_design_irt_simulator.sample(2)
+    expected_shapes = {
+        0: (1, 4),  # 4 variables (mu_question_mean, sigma_question_mean, mu_question_std, sigma_question_std)
+        1: (1, data.meta["num_questions"] * 3),  # 3 variables (question_mean, question_std, question_difficulty)
+        2: (1, data.meta["num_students"], 1),  # 1 variable (student_ability)
+    }
+
+    assert inference_variable_shapes_from_meta(crossed_design_irt_approximator, data.meta) == expected_shapes
 
 
 def test_data_condition_shapes_by_network_single_level(single_level_simulator, single_level_approximator):

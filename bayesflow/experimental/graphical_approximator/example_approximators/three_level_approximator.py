@@ -10,7 +10,7 @@ def three_level_approximator():
     adapter = Adapter()
     adapter.convert_dtype("float64", "float32")
 
-    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20), DeepSet(summary_dim=5)]
+    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20), DeepSet(summary_dim=30)]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 
     inverted_graph = simulator.graph.invert()

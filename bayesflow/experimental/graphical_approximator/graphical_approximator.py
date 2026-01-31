@@ -6,7 +6,7 @@ from typing import Literal
 import keras
 import numpy as np
 
-from bayesflow.utils import filter_kwargs, find_batch_size, logging
+from bayesflow.utils import find_batch_size, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter

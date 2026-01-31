@@ -1,9 +1,12 @@
+import multiprocessing as mp
 import warnings
 from collections.abc import Mapping, Sequence
+from typing import Literal
 
 import keras
 import numpy as np
 
+from bayesflow.utils import filter_kwargs, find_batch_size, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter
@@ -11,12 +14,13 @@ from ...approximators import Approximator
 from ...datasets import OfflineDataset, OnlineDataset
 from ...networks import InferenceNetwork, SummaryNetwork
 from ...networks.standardization import Standardization
-from ..graphical_simulator import SimulationOutput
+from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .utils import (
     inference_condition_shapes_by_network,
     inference_conditions_by_network,
     inference_variable_shapes_by_network,
+    inference_variable_shapes_from_meta,
     inference_variables_by_network,
     meta_dict_from_data_shapes,
     prepare_inference_conditions,
@@ -27,7 +31,7 @@ from .utils import (
 )
 
 
-@serializable("bayesflow.experimental")
+@serializable("bayesflow.experimental")  # ty:ignore[missing-argument]
 class GraphicalApproximator(Approximator):
     """
     Amortized inference for probabilistic models defined by directed acyclic graphs.
@@ -89,6 +93,46 @@ class GraphicalApproximator(Approximator):
             self.standardize_layers = None
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+    @classmethod
+    def build_dataset(
+        cls,
+        *,
+        batch_size: Literal["auto"] | int = "auto",
+        num_batches: int,
+        adapter: Literal["auto"] | Adapter = "auto",
+        memory_budget: str = "auto",
+        simulator: GraphicalSimulator,
+        workers: Literal["auto"] | int = "auto",
+        use_multiprocessing: bool = False,
+        max_queue_size: int = 32,
+        **kwargs,
+    ) -> OnlineDataset:
+        if batch_size == "auto":
+            # using 4 GiB by default until "auto" works properly
+            memory_budget = "4 GiB" if memory_budget == "auto" else memory_budget
+            batch_size = find_batch_size(memory_budget=memory_budget, sample=dict(simulator.sample((1,))))
+            logging.info(f"Using a batch size of {batch_size}.")
+
+        if adapter == "auto":
+            adapter = cls.build_adapter(**filter_kwargs(kwargs, cls.build_adapter))
+
+        if workers == "auto":
+            workers = mp.cpu_count()
+            logging.info(f"Using {workers} data loading workers.")
+
+        workers = workers or 1
+
+        return OnlineDataset(
+            simulator=simulator,
+            batch_size=batch_size,
+            num_batches=num_batches,
+            adapter=adapter,
+            workers=workers,
+            use_multiprocessing=use_multiprocessing,
+            max_queue_size=max_queue_size,
+            augmentations=lambda x: dict(x),
+        )
 
     @classmethod
     def from_config(cls, config):
@@ -242,42 +286,16 @@ class GraphicalApproximator(Approximator):
         ValueError
             If both `dataset` and `simulator` are provided or neither is provided.
         """
-
-        if not self.built and "dataset" in kwargs:
-            data = self.adapter(kwargs["dataset"]) if self.adapter else kwargs["dataset"]
-            data_shapes = self._data_shapes(data)
-            self.build(data_shapes)
-
-        if not self.built and "simulator" in kwargs:
-            mock_data = kwargs["simulator"].sample(1)
-            mock_data = self.adapter(mock_data) if self.adapter else mock_data
-            data_shapes = self._data_shapes(mock_data)
-            self.build(data_shapes)
-
-        # online training
-        if "simulator" in kwargs:
-            simulator = kwargs.pop("simulator")
-            batch_size = kwargs.pop("batch_size")
-            num_batches = kwargs.pop("num_batches")
-
-            kwargs["dataset"] = OnlineDataset(
-                simulator, batch_size, num_batches, self.adapter, augmentations=lambda x: dict(x)
-            )
-
-        elif "dataset" in kwargs:
-            batch_size = kwargs.pop("batch_size")
-            num_samples = kwargs.pop("num_samples")
-
-            kwargs["dataset"] = OfflineDataset(
-                kwargs["dataset"],
-                batch_size=batch_size,
-                num_samples=num_samples,
-                adapter=self.adapter,
-                augmentations=self.subset_data,
-            )
-            num_batches = kwargs["dataset"].num_batches
-
-        return super(GraphicalApproximator, self).fit(*args, **kwargs)
+        if "dataset" in kwargs:
+            if isinstance(kwargs["dataset"], dict) or isinstance(kwargs["dataset"], SimulationOutput):
+                kwargs["dataset"] = OfflineDataset(
+                    kwargs["dataset"],
+                    batch_size=kwargs.get("batch_size"),  # ty:ignore[invalid-argument-type]
+                    num_samples=kwargs.get("num_samples"),  # ty:ignore[invalid-argument-type]
+                    adapter=self.adapter,
+                    augmentations=self.subset_data,
+                )
+        return super().fit(*args, **kwargs, adapter=self.adapter)
 
     def sample(self, *, num_samples: int, conditions: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
         """
@@ -306,7 +324,13 @@ class GraphicalApproximator(Approximator):
         batch_size = keras.ops.shape(summary_outputs[0])[0]
         data_node = self.graph.simulation_graph.data_node()
         variable_names = self.graph.simulation_graph.variable_names()
-        meta_dict = meta_dict_from_data_shapes(self, self._data_shapes(conditions))
+
+        if hasattr(conditions, "meta"):
+            meta_dict = conditions.meta | meta_dict_from_data_shapes(self, self._data_shapes(conditions))
+        else:
+            meta_dict = meta_dict_from_data_shapes(self, self._data_shapes(conditions))
+
+        variable_shapes = inference_variable_shapes_from_meta(self, meta_dict)
 
         inference_conditions = {}
 
@@ -316,8 +340,9 @@ class GraphicalApproximator(Approximator):
 
         for i, inference_network in enumerate(self.inference_networks):
             cond = prepare_inference_conditions(self, inference_conditions, i)
-            variable_shape = list(inference_network._build_shapes_dict["xz_shape"])
+            variable_shape = list(variable_shapes[i])
             variable_shape[0] = batch_size * num_samples
+
             samples = inference_network.sample(tuple(variable_shape[:-1]), conditions=cond)
             split_output = split_network_output(self, samples, meta_dict, i)
 
@@ -365,8 +390,9 @@ class GraphicalApproximator(Approximator):
 
         if not meta_fn:
             meta_fn = self.graph.simulation_graph.meta_fn
+            if meta_fn:
+                output_shapes = self.graph.simulation_graph.output_shapes(meta_fn())
 
-        output_shapes = self.graph.simulation_graph.output_shapes(meta_fn())
         output = {}
 
         for k, v in data.items():

@@ -91,7 +91,7 @@ class InvariantLayer(keras.Layer):
 
         self.pooling_layer = find_pooling(pooling, **pooling_kwargs)
 
-    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, input_set: Tensor, training: bool = False) -> Tensor:
         """Performs the forward pass of a learnable invariant transform.
 
         Parameters

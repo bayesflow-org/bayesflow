@@ -61,7 +61,7 @@ class FusionNetwork(SummaryNetwork):
             output_shape = self.head.compute_output_shape(output_shape)
         return output_shape
 
-    def call(self, inputs: Mapping[str, Tensor], training=False):
+    def call(self, inputs: Mapping[str, Tensor], training: bool = False):
         """
         Parameters
         ----------

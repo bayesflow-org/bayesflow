@@ -5,6 +5,7 @@ from keras.src.callbacks.history import History
 
 @pytest.mark.parametrize("mode", ["online", "offline"])
 def test_graphical_approximator_single_level(mode, single_level_simulator, single_level_approximator):
+    # fitting models with dynamic output shapes fails in tensorflow
     data = single_level_simulator.sample(1)
     adapted_data = single_level_approximator.adapter(data)
     data_shapes = single_level_approximator._data_shapes(adapted_data)
@@ -192,7 +193,7 @@ def test_custom_standardize(crossed_design_irt_simulator, crossed_design_irt_app
     approximator.build(data_shapes)
     approximator.compile()
 
-    fit = approximator.fit(simulator=crossed_design_irt_simulator, batch_size="auto", num_batches=1, epochs=1)
+    fit = approximator.fit(simulator=crossed_design_irt_simulator, batch_size=2, num_batches=1, epochs=1)
     assert isinstance(fit, History)
 
 
@@ -220,7 +221,7 @@ def test_default_adapter(crossed_design_irt_simulator, crossed_design_irt_approx
     approximator.build(data_shapes)
     approximator.compile()
 
-    fit = approximator.fit(simulator=crossed_design_irt_simulator, batch_size="auto", num_batches=1, epochs=1)
+    fit = approximator.fit(simulator=crossed_design_irt_simulator, batch_size=2, num_batches=1, epochs=1)
     assert isinstance(fit, History)
 
     assert isinstance(GraphicalApproximator.build_adapter(), Adapter)

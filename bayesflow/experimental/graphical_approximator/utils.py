@@ -123,12 +123,6 @@ def prepare_data_conditions(
     """
     Returns the data conditions for the inference network denoted by `network_idx`.
     """
-    conditions = approximator.graph.network_conditions()[network_idx]
-    data_node = approximator.graph.simulation_graph.data_node()
-
-    if data_node not in conditions:
-        return None  # ty:ignore[invalid-return-type]
-
     summary_outputs = summary_outputs_by_network(approximator, data)
     required_dim = len(approximator.inference_networks[network_idx]._build_shapes_dict["xz_shape"])
     summary_by_dim = {len(keras.ops.shape(s)): s for s in summary_outputs.values()}
@@ -343,8 +337,6 @@ def data_condition_shapes_by_network(
         # only add data conditions if data node is in network conditions
         if data_node in conditions[i]:
             result[i] = summary_by_dim[dim]
-        else:
-            result[i] = None
 
     return result
 
@@ -493,32 +485,34 @@ def repetitions_from_data_shape(
     return repetitions
 
 
-def _shape_tensor(t):
-    """
-    Return the shape of `t` as an int tensor, even if keras.ops.shape(t)
-    returns a Python tuple (TF eager case).
-    """
-    s = keras.ops.shape(t)
-
-    # In eager TF, keras.ops.shape can return a tuple instead of a tensor
-    if isinstance(s, tuple):
-        return keras.ops.convert_to_tensor(s, dtype="int32")
-
-    return keras.ops.cast(s, "int32")
-
-
 def concatenate(tensors, batch_dims=1):
+    if keras.backend.backend() == "tensorflow":
+        return concatenate_tf(tensors, batch_dims=batch_dims)
+    else:
+        return concatenate_(tensors, batch_dims=batch_dims)
+
+
+def concatenate_tf(tensors, batch_dims=1):
+    def _shape_tensor(t):
+        """
+        Special case for tensorflow, because keras.ops.shape(t) returns a Python tuple.
+        """
+        s = keras.ops.shape(t)
+
+        if isinstance(s, tuple):
+            return keras.ops.convert_to_tensor(s, dtype="int32")
+
+        return keras.ops.cast(s, "int32")
+
     max_rank = max(len(t.shape) for t in tensors)
 
     expanded = []
     for t in tensors:
         while len(t.shape) < max_rank:
-            # Insert singleton axis before last dim
             t = keras.ops.expand_dims(t, axis=-2)
         expanded.append(t)
 
     shapes = [_shape_tensor(t) for t in expanded]
-
     base = shapes[0]
 
     if max_rank - 1 > batch_dims:
@@ -528,13 +522,8 @@ def concatenate(tensors, batch_dims=1):
         )
 
         mids_max = keras.ops.max(mids, axis=0)
-
         max_shape = keras.ops.concatenate(
-            [
-                base[:batch_dims],  # keep batch dims
-                mids_max,  # max over middle dims
-                base[max_rank - 1 : max_rank],  # placeholder last dim
-            ],
+            [base[:batch_dims], mids_max, base[max_rank - 1 : max_rank]],
             axis=0,
         )
     else:
@@ -544,8 +533,8 @@ def concatenate(tensors, batch_dims=1):
     for t, s in zip(expanded, shapes):
         target = keras.ops.concatenate(
             [
-                max_shape[: max_rank - 1],  # broadcast dims
-                s[max_rank - 1 : max_rank],  # keep original last dim
+                max_shape[: max_rank - 1],
+                s[max_rank - 1 : max_rank],
             ],
             axis=0,
         )
@@ -555,54 +544,29 @@ def concatenate(tensors, batch_dims=1):
     return keras.ops.concatenate(broadcasted, axis=-1)
 
 
-# def concatenate(tensors, batch_dims=1):
-#     max_rank = max(len(t.shape) for t in tensors)
-#
-#     expanded = []
-#     for t in tensors:
-#         while len(t.shape) < max_rank:
-#             t = keras.ops.expand_dims(t, axis=batch_dims)
-#         expanded.append(t)
-#
-#     # compute max shape
-#     max_shape = list(expanded[0].shape)
-#     for t in expanded[1:]:
-#         for i in range(batch_dims, max_rank - 1):
-#             max_shape[i] = max(max_shape[i], t.shape[i])
-#
-#     max_shape[0] = keras.ops.shape(tensors[0])[0]
-#     broadcasted = []
-#     for t in expanded:
-#         # keep last dimension unique
-#         target = tuple(max_shape[:-1] + [t.shape[-1]])
-#         broadcasted.append(keras.ops.broadcast_to(t, target))
-#
-#     return keras.ops.concatenate(broadcasted, axis=-1)
+def concatenate_(tensors, batch_dims=1) -> Tensor:
+    max_rank = max(len(t.shape) for t in tensors)
 
+    expanded = []
+    for t in tensors:
+        while len(t.shape) < max_rank:
+            t = keras.ops.expand_dims(t, axis=-2)
+        expanded.append(t)
 
-# def concatenate(tensors, batch_dims=1) -> Tensor:
-#     max_rank = max(len(t.shape) for t in tensors)
-#
-#     expanded = []
-#     for t in tensors:
-#         while len(t.shape) < max_rank:
-#             t = keras.ops.expand_dims(t, axis=-2)
-#         expanded.append(t)
-#
-#     # compute max shape
-#     max_shape = list(expanded[0].shape)
-#     for t in expanded[1:]:
-#         for i in range(batch_dims, max_rank - 1):
-#             max_shape[i] = max(max_shape[i], t.shape[i])
-#
-#     max_shape[0] = keras.ops.shape(tensors[0])[0]
-#     broadcasted = []
-#     for t in expanded:
-#         # keep last dimension unique
-#         target = tuple(max_shape[:-1] + [keras.ops.shape(t)[-1]])  # [t.shape[-1]])
-#         broadcasted.append(keras.ops.broadcast_to(t, target))
-#
-#     return keras.ops.concatenate(broadcasted, axis=-1)
+    # compute max shape
+    max_shape = list(expanded[0].shape)
+    for t in expanded[1:]:
+        for i in range(batch_dims, max_rank - 1):
+            max_shape[i] = max(max_shape[i], t.shape[i])
+
+    max_shape[0] = keras.ops.shape(tensors[0])[0]
+    broadcasted = []
+    for t in expanded:
+        # keep last dimension unique
+        target = tuple(max_shape[:-1] + [t.shape[-1]])
+        broadcasted.append(keras.ops.broadcast_to(t, target))
+
+    return keras.ops.concatenate(broadcasted, axis=-1)
 
 
 def add_sample_dimension(tensor: Tensor, num_samples: int, batch_dims: int = 1) -> Tensor:

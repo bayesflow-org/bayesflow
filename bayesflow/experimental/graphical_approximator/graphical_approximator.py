@@ -47,7 +47,7 @@ class GraphicalApproximator(Approximator):
         self,
         graph: InvertedGraph,
         *,
-        adapter: Adapter,
+        adapter: Adapter | Literal["auto"] = "auto",
         inference_networks: Sequence[InferenceNetwork],
         summary_networks: Sequence[SummaryNetwork] | None = None,
         standardize: str | Sequence[str] | None = "all",
@@ -94,13 +94,16 @@ class GraphicalApproximator(Approximator):
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
 
+        if adapter == "auto":
+            self.adapter = GraphicalApproximator.build_adapter()
+
     @classmethod
     def build_dataset(
         cls,
         *,
         batch_size: Literal["auto"] | int = "auto",
         num_batches: int,
-        adapter: Literal["auto"] | Adapter = "auto",
+        adapter: Adapter | None = None,
         memory_budget: str = "auto",
         simulator: GraphicalSimulator,
         workers: Literal["auto"] | int = "auto",
@@ -113,9 +116,6 @@ class GraphicalApproximator(Approximator):
             memory_budget = "4 GiB" if memory_budget == "auto" else memory_budget
             batch_size = find_batch_size(memory_budget=memory_budget, sample=dict(simulator.sample((1,))))
             logging.info(f"Using a batch size of {batch_size}.")
-
-        if adapter == "auto":
-            adapter = cls.build_adapter(**filter_kwargs(kwargs, cls.build_adapter))
 
         if workers == "auto":
             workers = mp.cpu_count()
@@ -133,6 +133,18 @@ class GraphicalApproximator(Approximator):
             max_queue_size=max_queue_size,
             augmentations=lambda x: dict(x),
         )
+
+    @classmethod
+    def build_adapter(
+        cls,
+    ) -> Adapter:
+        """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator."""
+
+        adapter = Adapter()
+        adapter.to_array()
+        adapter.convert_dtype("float64", "float32")
+
+        return adapter
 
     @classmethod
     def from_config(cls, config):

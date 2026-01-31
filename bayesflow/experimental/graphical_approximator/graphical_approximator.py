@@ -15,6 +15,7 @@ from ...datasets import OfflineDataset, OnlineDataset
 from ...networks import InferenceNetwork, SummaryNetwork
 from ...networks.standardization import Standardization
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
+from .graphical_dataset import GraphicalDataset
 from ..graphs import InvertedGraph
 from .utils import (
     inference_condition_shapes_by_network,
@@ -299,14 +300,51 @@ class GraphicalApproximator(Approximator):
             If both `dataset` and `simulator` are provided or neither is provided.
         """
         if "dataset" in kwargs:
-            if isinstance(kwargs["dataset"], dict) or isinstance(kwargs["dataset"], SimulationOutput):
-                kwargs["dataset"] = OfflineDataset(
-                    kwargs["dataset"],
-                    batch_size=kwargs.get("batch_size"),  # ty:ignore[invalid-argument-type]
-                    num_samples=kwargs.get("num_samples"),  # ty:ignore[invalid-argument-type]
-                    adapter=self.adapter,
-                    augmentations=self.subset_data,
-                )
+            # if isinstance(kwargs["dataset"], dict) or isinstance(kwargs["dataset"], SimulationOutput):
+            #     kwargs["dataset"] = OfflineDataset(
+            #         kwargs["dataset"],
+            #         batch_size=kwargs.get("batch_size"),  # ty:ignore[invalid-argument-type]
+            #         num_samples=kwargs.get("num_samples"),  # ty:ignore[invalid-argument-type]
+            #         adapter=self.adapter,
+            #         augmentations=self.subset_data,
+            #     )
+            #
+            data_shapes = self._data_shapes(self.adapter(kwargs["dataset"]))
+            kwargs["dataset"] = OfflineDataset(
+                kwargs["dataset"],
+                batch_size=kwargs.get("batch_size"),  # ty:ignore[invalid-argument-type]
+                num_samples=kwargs.get("num_samples"),  # ty:ignore[invalid-argument-type]
+                adapter=self.adapter,
+                augmentations=self.subset_data,
+            )
+
+            # kwargs["dataset"] = GraphicalDataset(
+            #     dataset=kwargs["dataset"],
+            #     simulator=None,
+            #     approximator=self,
+            #     batch_size=kwargs["batch_size"],
+            #     num_samples=kwargs["num_samples"] if "num_samples" in kwargs else None,
+            #     adapter=self.adapter,
+            #     augmentations=self.subset_data,
+            # )
+            num_batches = kwargs["dataset"].num_batches
+
+            if keras.backend.backend() == "tensorflow":
+                import tensorflow as tf
+
+                signature = {}
+                for element in data_shapes.keys():
+                    shape = [None] * (len(data_shapes[element]) - 1) + [data_shapes[element][-1]]
+                    signature[element] = tf.TensorSpec(shape=shape, dtype=tf.float32)
+
+                ds = kwargs["dataset"]
+                num_batches = kwargs["dataset"].num_batches
+                kwargs["dataset"] = tf.data.Dataset.from_generator(
+                    lambda: (ds[i] for i in range(num_batches)), output_signature=signature
+                ).repeat()
+
+                return super(GraphicalApproximator, self).fit(*args, **kwargs, steps_per_epoch=num_batches)
+
         return super().fit(*args, **kwargs, adapter=self.adapter)
 
     def sample(self, *, num_samples: int, conditions: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:

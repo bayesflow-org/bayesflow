@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 
 from ...simulators import Simulator
+from ...types import Shape
 from ..graphs import SimulationGraph
 
 
@@ -84,7 +85,7 @@ class GraphicalSimulator(Simulator):
         self.graph.add_edge(from_node, to_node)
 
     def sample(
-        self, batch_size: int, sample_shape: tuple[int] | None = None, meta: dict | None = None, **kwargs
+        self, batch_shape: Shape, sample_shape: tuple[int] | None = None, meta: dict | None = None, **kwargs
     ) -> SimulationOutput:
         """
         Generates samples by topologically traversing the DAG.
@@ -111,7 +112,12 @@ class GraphicalSimulator(Simulator):
             meta_dict = meta_dict | meta
 
         samples_by_node = {}
-        batch_shape = (batch_size, *sample_shape) if sample_shape else (batch_size,)
+
+        if isinstance(batch_shape, int):
+            batch_shape = (batch_shape,)
+
+        if sample_shape:
+            batch_shape = (*batch_shape, *sample_shape)
 
         # Initialize samples container for each node
         for node in self.graph.nodes:

@@ -14,7 +14,7 @@ SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
 
 
-@serializable("bayesflow.experimental")
+@serializable("bayesflow.experimental")  # type: ignore[missing-argument]
 class InvertedGraph(nx.DiGraph):
     """
     Directed graph representing the factorization of the joint posterior of a

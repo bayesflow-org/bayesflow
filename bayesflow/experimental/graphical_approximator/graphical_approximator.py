@@ -321,9 +321,6 @@ class GraphicalApproximator(Approximator):
                 output_signature=signature,
             ).repeat()
 
-            if not self.built:
-                self.build(data_shapes)
-
             return super(GraphicalApproximator, self).fit(*args, **kwargs, steps_per_epoch=num_batches)
         else:
             if "dataset" in kwargs:

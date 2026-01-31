@@ -498,11 +498,7 @@ def concatenate_tf(tensors, batch_dims=1):
         Special case for tensorflow, because keras.ops.shape(t) returns a Python tuple.
         """
         s = keras.ops.shape(t)
-
-        if isinstance(s, tuple):
-            return keras.ops.convert_to_tensor(s, dtype="int32")
-
-        return keras.ops.cast(s, "int32")
+        return keras.ops.convert_to_tensor(s, dtype="int32")
 
     max_rank = max(len(t.shape) for t in tensors)
 

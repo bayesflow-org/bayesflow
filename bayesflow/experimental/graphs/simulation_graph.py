@@ -21,7 +21,7 @@ SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
 
 
-@serializable("bayesflow.experimental")
+@serializable("bayesflow.experimental")  # type: ignore[missing-argument]
 class SimulationGraph(nx.DiGraph):
     """
     Directed acyclic graph defining a simulation composed of sampling nodes.

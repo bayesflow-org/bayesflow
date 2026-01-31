@@ -14,7 +14,7 @@ SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
 
 
-@serializable("bayesflow.experimental")
+@serializable("bayesflow.experimental")  # type: ignore[missing-argument]
 class ExpandedGraph(nx.DiGraph):
     """
     Directed graph with a similar structure as the graph defined in `SimulationGraph`,

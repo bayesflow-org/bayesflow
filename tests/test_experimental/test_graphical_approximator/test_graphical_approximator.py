@@ -29,6 +29,7 @@ def test_graphical_approximator_single_level(mode, single_level_simulator, singl
 
     assert approximator._batch_size_from_data(new_data) == 3
     assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)
 
 
 @pytest.mark.parametrize("mode", ["online", "offline"])
@@ -60,6 +61,7 @@ def test_graphical_approximator_two_level(mode, two_level_simulator, two_level_a
 
     assert approximator._batch_size_from_data(new_data) == 3
     assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)
 
 
 @pytest.mark.parametrize("mode", ["online", "offline"])
@@ -91,6 +93,7 @@ def test_graphical_approximator_three_level(mode, three_level_simulator, three_l
 
     assert approximator._batch_size_from_data(new_data) == 3
     assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)
 
 
 @pytest.mark.parametrize("mode", ["online", "offline"])
@@ -122,3 +125,4 @@ def test_graphical_approximator_crossed_design_irt(mode, crossed_design_irt_simu
 
     assert approximator._batch_size_from_data(new_data) == 3
     assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)

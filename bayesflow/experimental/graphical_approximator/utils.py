@@ -11,7 +11,9 @@ import keras
 from ...types import Shape, Tensor
 
 
-def split_network_output(approximator: "GraphicalApproximator", output: Tensor, meta_dict: dict, network_idx: int):
+def split_network_output(
+    approximator: "GraphicalApproximator", output: Tensor, meta_dict: dict, network_idx: int
+) -> dict[str, Tensor]:
     """
     Given the output of an inference network and its network index,
     splits the tensor into a dictionary where each key is a variable name
@@ -46,7 +48,7 @@ def split_network_output(approximator: "GraphicalApproximator", output: Tensor, 
     return samples
 
 
-def summary_input(approximator: "GraphicalApproximator", data: Mapping):
+def summary_input(approximator: "GraphicalApproximator", data: Mapping) -> Tensor:
     """
     Returns the input for the first summary network.
     """
@@ -66,7 +68,7 @@ def summary_input(approximator: "GraphicalApproximator", data: Mapping):
     return keras.ops.transpose(summary_input, axes=indices)
 
 
-def summary_outputs_by_network(approximator: "GraphicalApproximator", data: Mapping):
+def summary_outputs_by_network(approximator: "GraphicalApproximator", data: Mapping) -> dict[int, Tensor]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are the outputs of that summary network.
@@ -84,7 +86,7 @@ def summary_outputs_by_network(approximator: "GraphicalApproximator", data: Mapp
     return result
 
 
-def summary_inputs_by_network(approximator: "GraphicalApproximator", data: Mapping):
+def summary_inputs_by_network(approximator: "GraphicalApproximator", data: Mapping) -> dict[int, Tensor]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are the inputs of that summary network.
@@ -102,7 +104,7 @@ def summary_inputs_by_network(approximator: "GraphicalApproximator", data: Mappi
     return result
 
 
-def data_conditions_by_network(approximator: "GraphicalApproximator", data: Mapping):
+def data_conditions_by_network(approximator: "GraphicalApproximator", data: Mapping) -> dict[int, Tensor]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are data conditions of that inference network.
@@ -115,7 +117,9 @@ def data_conditions_by_network(approximator: "GraphicalApproximator", data: Mapp
     return result
 
 
-def prepare_data_conditions(approximator: "GraphicalApproximator", data: Mapping, network_idx: int):
+def prepare_data_conditions(
+    approximator: "GraphicalApproximator", data: Mapping, network_idx: int
+) -> dict[int, Tensor]:
     """
     Returns the data conditions for the inference network denoted by `network_idx`.
     """
@@ -126,7 +130,7 @@ def prepare_data_conditions(approximator: "GraphicalApproximator", data: Mapping
     return summary_by_dim[required_dim]
 
 
-def inference_variables_by_network(approximator: "GraphicalApproximator", data: Mapping):
+def inference_variables_by_network(approximator: "GraphicalApproximator", data: Mapping) -> dict[int, Tensor]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are inference variables of that inference network.
@@ -139,7 +143,7 @@ def inference_variables_by_network(approximator: "GraphicalApproximator", data: 
     return result
 
 
-def prepare_inference_variables(approximator: "GraphicalApproximator", data: Mapping, network_idx: int):
+def prepare_inference_variables(approximator: "GraphicalApproximator", data: Mapping, network_idx: int) -> Tensor:
     """
     Returns the inference variables for the inference network denoted by `network_idx`.
     """
@@ -170,7 +174,7 @@ def prepare_inference_variables(approximator: "GraphicalApproximator", data: Map
     return concatenate(vars)
 
 
-def inference_conditions_by_network(approximator: "GraphicalApproximator", data: Mapping):
+def inference_conditions_by_network(approximator: "GraphicalApproximator", data: Mapping) -> dict[int, Tensor]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are inference conditions of that inference network.
@@ -183,7 +187,9 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", data:
     return result
 
 
-def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Mapping, network_idx: int):
+def prepare_inference_conditions(
+    approximator: "GraphicalApproximator", data: Mapping, network_idx: int
+) -> dict[int, Tensor]:
     """
     Returns the inference conditions for the inference network denoted by `network_idx`.
     """
@@ -231,7 +237,7 @@ def prepare_inference_conditions(approximator: "GraphicalApproximator", data: Ma
     return conditions
 
 
-def add_node_reps_to_conditions(conditions, repetitions: Mapping[str, int]):
+def add_node_reps_to_conditions(conditions, repetitions: Mapping[str, int]) -> Tensor:
     """
     Appends node repetition features (sqrt of node repetitons) to a conditions tensor.
     """
@@ -263,7 +269,9 @@ def summary_input_shape(approximator: "GraphicalApproximator", data_shapes: Mapp
     return input_shape
 
 
-def summary_output_shapes_by_network(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
+def summary_output_shapes_by_network(
+    approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]
+) -> dict[int, Shape]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are output shapes of that summary network.
@@ -283,7 +291,9 @@ def summary_output_shapes_by_network(approximator: "GraphicalApproximator", data
     return result
 
 
-def summary_input_shapes_by_network(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
+def summary_input_shapes_by_network(
+    approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]
+) -> dict[int, Shape]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are input shapes of that summary network.
@@ -304,7 +314,9 @@ def summary_input_shapes_by_network(approximator: "GraphicalApproximator", data_
     return result
 
 
-def data_condition_shapes_by_network(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
+def data_condition_shapes_by_network(
+    approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]
+) -> dict[int, Shape]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are data condition shapes of that inference network.
@@ -329,7 +341,9 @@ def data_condition_shapes_by_network(approximator: "GraphicalApproximator", data
     return result
 
 
-def inference_variable_shapes_by_network(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
+def inference_variable_shapes_by_network(
+    approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]
+) -> dict[int, Shape]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are output shapes of that inference network.
@@ -356,7 +370,7 @@ def inference_variable_shapes_by_network(approximator: "GraphicalApproximator", 
     return result
 
 
-def inference_variable_shapes_from_meta(approximator: "GraphicalApproximator", meta: dict):
+def inference_variable_shapes_from_meta(approximator: "GraphicalApproximator", meta: dict) -> dict[int, Shape]:
     """
     Returns a dictionary where the keys are integers denoting network indices
     and the values are output shapes of that inference network.
@@ -389,7 +403,9 @@ def inference_variable_shapes_from_meta(approximator: "GraphicalApproximator", m
     return result
 
 
-def inference_condition_shapes_by_network(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
+def inference_condition_shapes_by_network(
+    approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]
+) -> dict[int, Shape]:
     """
     Returns the required inference condition shapes for each network.
     """
@@ -432,7 +448,9 @@ def inference_condition_shapes_by_network(approximator: "GraphicalApproximator",
     return result
 
 
-def meta_dict_from_data_shapes(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
+def meta_dict_from_data_shapes(
+    approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]
+) -> dict[str, ...]:
     """
     Infers meta information from data shapes.
     """
@@ -447,7 +465,9 @@ def meta_dict_from_data_shapes(approximator: "GraphicalApproximator", data_shape
     return meta_dict
 
 
-def repetitions_from_data_shape(approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]):
+def repetitions_from_data_shape(
+    approximator: "GraphicalApproximator", data_shapes: Mapping[str, Shape]
+) -> dict[str, int]:
     """
     Infers repetition counts for each node from data shapes.
     """
@@ -465,7 +485,7 @@ def repetitions_from_data_shape(approximator: "GraphicalApproximator", data_shap
     return repetitions
 
 
-def concatenate(tensors, batch_dims=1):
+def concatenate(tensors, batch_dims=1) -> Tensor:
     max_rank = max(len(t.shape) for t in tensors)
 
     expanded = []
@@ -490,7 +510,7 @@ def concatenate(tensors, batch_dims=1):
     return keras.ops.concatenate(broadcasted, axis=-1)
 
 
-def add_sample_dimension(tensor, num_samples, batch_dims=1):
+def add_sample_dimension(tensor: Tensor, num_samples: int, batch_dims: int = 1) -> Tensor:
     """
     Introduces a sample dimension right after batch_dims dimensions.
 
@@ -508,14 +528,14 @@ def add_sample_dimension(tensor, num_samples, batch_dims=1):
     return stacked
 
 
-def concatenate_shapes(shapes):
+def concatenate_shapes(shapes) -> Tensor:
     max_rank = max(len(s) for s in shapes)
     expanded = [expand_shape_rank(s, max_rank) for s in shapes]
 
     return reduce(stack_shapes, expanded)
 
 
-def stack_shapes(a, b, axis=-1):
+def stack_shapes(a, b, axis=-1) -> Tensor:
     rank = max(keras.ops.shape(a)[0], keras.ops.shape(b)[0])
     a = expand_shape_rank(a, rank)
     a = keras.ops.convert_to_tensor(a)
@@ -535,7 +555,7 @@ def stack_shapes(a, b, axis=-1):
     return shape
 
 
-def expand_shape_rank(shape, target_rank):
+def expand_shape_rank(shape, target_rank) -> Tensor:
     """
     Expand a tensor shape to a desired rank by inserting singleton (1)
     dimensions immediately before the last dimension.

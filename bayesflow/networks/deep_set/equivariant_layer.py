@@ -114,8 +114,6 @@ class EquivariantLayer(keras.Layer):
             (batch_size, ..., set_size, input_dim).
         training : bool, optional
             A flag indicating whether the model is in training mode. Default is False.
-        **kwargs : dict
-            Additional keyword arguments for compatibility with other functions.
 
         Returns
         -------

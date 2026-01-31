@@ -27,7 +27,7 @@ class SummaryNetwork(keras.Layer):
     def call(self, x: Tensor, **kwargs) -> Tensor:
         raise NotImplementedError
 
-    def compute_metrics(self, x: Tensor, stage: str = "training", masks: str[dict, Tensor] = None) -> dict[str, Tensor]:
+    def compute_metrics(self, x: Tensor, stage: str = "training", masks: dict[str, Tensor] = None) -> dict[str, Tensor]:
         masks = filter_kwargs(masks, self.call) if masks is not None else {}
         outputs = self(x, training=stage == "training", **masks)
 

@@ -123,7 +123,7 @@ class SetTransformer(Transformer):
 
         self.summary_dim = summary_dim
 
-    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`. Note, that
         this network should not use causal mask as it assumes no order in the `x` sequence.
 
@@ -139,16 +139,13 @@ class SetTransformer(Transformer):
             query elements can attend to which key elements, 1 indicates
             attention and 0 indicates no attention. Broadcasting can happen for
             the missing batch dimensions and the head dimension.
-        **kwargs        : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
         out : Tensor
             Output of shape (batch_size, summary_dim)
         """
-        summary = self.attention_blocks(x, training=training, attention_mask=attention_mask, **kwargs)
+        summary = self.attention_blocks(x, training=training, attention_mask=attention_mask)
         summary = self.pooling_by_attention(summary, training=training)
         summary = self.output_projector(summary)
         return summary

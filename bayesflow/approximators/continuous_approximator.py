@@ -183,6 +183,8 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         sample_weight: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -206,6 +208,13 @@ class ContinuousApproximator(Approximator):
             a summary network is present.
         sample_weight : Tensor, optional
             Weighting tensor for metric computation (default is None).
+        mask : Tensor, optional (default is None).
+            Boolean tensor encoding masked timesteps in the input (used e.g. in RNN layers).
+        attention_mask: Tensor, optional (default is None)
+            A boolean mask of shape (batch_size, query_len, key_len), that prevents attention to
+            certain positions. The  mask specifies which query elements can attend to which key
+            elements, 1 indicates attention and 0 indicates no attention. Broadcasting can happen
+            for the missing batch dimensions.
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").
@@ -218,7 +227,8 @@ class ContinuousApproximator(Approximator):
             "inference_" or "summary_" to indicate its source.
         """
 
-        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
+        masks = {"mask": mask, "attention_mask": attention_mask}
+        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage, masks=masks)
 
         if "inference_conditions" in self.standardize:
             inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
@@ -227,7 +237,11 @@ class ContinuousApproximator(Approximator):
         inference_variables = self._prepare_inference_variables(inference_variables, stage=stage)
 
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
+            inference_variables,
+            conditions=inference_conditions,
+            sample_weight=sample_weight,
+            stage=stage,
+            **filter_kwargs(masks, self.inference_network.compute_metrics),
         )
 
         if "loss" in summary_metrics:
@@ -241,7 +255,9 @@ class ContinuousApproximator(Approximator):
         metrics = {"loss": loss} | inference_metrics | summary_metrics
         return metrics
 
-    def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:
+    def _compute_summary_metrics(
+        self, summary_variables: Tensor | None, stage: str, masks: dict[str, Tensor] = None
+    ) -> tuple[dict, Tensor | None]:
         """Helper function to compute summary metrics and outputs."""
         if self.summary_network is None:
             if summary_variables is not None:
@@ -254,7 +270,7 @@ class ContinuousApproximator(Approximator):
         if "summary_variables" in self.standardize:
             summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
 
-        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
+        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage, masks=masks)
         summary_outputs = summary_metrics.pop("outputs")
         return summary_metrics, summary_outputs
 

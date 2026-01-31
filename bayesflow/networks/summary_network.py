@@ -2,7 +2,7 @@ import keras
 
 from bayesflow.metrics.functional import maximum_mean_discrepancy
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, find_distribution
+from bayesflow.utils import layer_kwargs, filter_kwargs, find_distribution
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import deserialize
 
@@ -25,17 +25,11 @@ class SummaryNetwork(keras.Layer):
         return keras.ops.shape(self.call(keras.ops.zeros(input_shape)))
 
     def call(self, x: Tensor, **kwargs) -> Tensor:
-        """
-        :param x: Tensor of shape (batch_size, set_size, input_dim)
-
-        :param kwargs: Additional keyword arguments.
-
-        :return: Tensor of shape (batch_size, output_dim)
-        """
         raise NotImplementedError
 
-    def compute_metrics(self, x: Tensor, stage: str = "training", **kwargs) -> dict[str, Tensor]:
-        outputs = self(x, training=stage == "training")
+    def compute_metrics(self, x: Tensor, stage: str = "training", masks: str[dict, Tensor] = None) -> dict[str, Tensor]:
+        masks = filter_kwargs(masks, self.call) if masks is not None else {}
+        outputs = self(x, training=stage == "training", **masks)
 
         metrics = {"outputs": outputs}
 

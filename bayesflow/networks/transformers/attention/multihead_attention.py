@@ -3,7 +3,7 @@ from keras import layers
 
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, filter_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
@@ -92,8 +92,6 @@ class MultiHeadAttention(keras.Layer):
         y: Tensor,
         training: bool = False,
         attention_mask: Tensor = None,
-        use_causal_mask=False,
-        **kwargs,
     ) -> Tensor:
         """Performs the forward pass through the attention layer.
 
@@ -113,11 +111,6 @@ class MultiHeadAttention(keras.Layer):
             query elements can attend to which key elements, 1 indicates
             attention and 0 indicates no attention. Broadcasting can happen for
             the missing batch dimensions and the head dimension.
-        use_causal_mask: A boolean to indicate whether to apply a causal mask to
-            prevent tokens from attending to future tokens.
-        **kwargs : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``return_attention_scores``
 
         Returns
         -------
@@ -131,8 +124,6 @@ class MultiHeadAttention(keras.Layer):
             value=y,
             training=training,
             attention_mask=attention_mask,
-            use_causal_mask=use_causal_mask,
-            **filter_kwargs(kwargs, self.attention.call),
         )
         if self.ln_pre is not None:
             h = self.ln_pre(h, training=training)

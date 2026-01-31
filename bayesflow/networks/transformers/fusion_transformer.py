@@ -123,9 +123,7 @@ class FusionTransformer(Transformer):
         self.output_projector = keras.layers.Dense(units=summary_dim)
         self.summary_dim = summary_dim
 
-    def call(
-        self, x: Tensor, training: bool = False, attention_mask: Tensor = None, use_causal_mask: bool = False, **kwargs
-    ) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
 
         Parameters
@@ -140,11 +138,6 @@ class FusionTransformer(Transformer):
             query elements can attend to which key elements, 1 indicates
             attention and 0 indicates no attention. Broadcasting can happen for
             the missing batch dimensions and the head dimension.
-        use_causal_mask : A boolean to indicate whether to apply a causal mask to
-            prevent tokens from attending to future tokens.
-        **kwargs        : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
@@ -156,10 +149,8 @@ class FusionTransformer(Transformer):
 
         rep = x
         for layer in self.attention_blocks[:-1]:
-            rep = layer(
-                rep, rep, training=training, attention_mask=attention_mask, use_causal_mask=use_causal_mask, **kwargs
-            )
+            rep = layer(rep, rep, training=training, attention_mask=attention_mask)
 
-        summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training, **kwargs)
+        summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training)
         summary = self.output_projector(keras.ops.squeeze(summary, axis=1))
         return summary

@@ -114,9 +114,7 @@ class TimeSeriesTransformer(Transformer):
         self.summary_dim = summary_dim
         self.time_axis = time_axis
 
-    def call(
-        self, x: Tensor, training: bool = False, attention_mask: Tensor = None, use_causal_mask: bool = False, **kwargs
-    ) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
 
         Parameters
@@ -131,11 +129,6 @@ class TimeSeriesTransformer(Transformer):
             query elements can attend to which key elements, 1 indicates
             attention and 0 indicates no attention. Broadcasting can happen for
             the missing batch dimensions and the head dimension.
-        use_causal_mask : A boolean to indicate whether to apply a causal mask to
-            prevent tokens from attending to future tokens.
-        **kwargs        : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``return_attention_scores``
 
         Returns
         -------
@@ -158,9 +151,7 @@ class TimeSeriesTransformer(Transformer):
 
         # Apply self-attention blocks
         for layer in self.attention_blocks:
-            inp = layer(
-                inp, inp, training=training, attention_mask=attention_mask, use_causal_mask=use_causal_mask, **kwargs
-            )
+            inp = layer(inp, inp, training=training, attention_mask=attention_mask)
 
         # Global average pooling and output projection
         summary = self.pooling(inp)

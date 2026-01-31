@@ -96,7 +96,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
             dropout=dropout,
         )
 
-    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False) -> Tensor:
         """Performs the forward pass through the PMA block.
 
         Parameters
@@ -108,9 +108,6 @@ class PoolingByMultiHeadAttention(keras.Layer):
         training   : boolean, optional (default - True)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
-        **kwargs   : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
@@ -122,7 +119,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
         batch_size = keras.ops.shape(x)[0]
         seed_vector_expanded = keras.ops.expand_dims(self.seed_vector, axis=0)
         seed_tiled = keras.ops.tile(seed_vector_expanded, [batch_size, 1, 1])
-        summaries = self.mab(seed_tiled, set_x_transformed, training=training, **kwargs)
+        summaries = self.mab(seed_tiled, set_x_transformed, training=training)
         return keras.ops.reshape(summaries, (keras.ops.shape(summaries)[0], -1))
 
     @sanitize_input_shape

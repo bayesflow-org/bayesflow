@@ -82,7 +82,7 @@ class InducedSetAttention(keras.Layer):
         self.mab0 = MultiHeadAttention(**mab_kwargs)
         self.mab1 = MultiHeadAttention(**mab_kwargs)
 
-    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False) -> Tensor:
         """Performs the forward pass through the self-attention layer.
 
         Parameters
@@ -94,9 +94,6 @@ class InducedSetAttention(keras.Layer):
         training   : boolean, optional (default - True)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
-        **kwargs   : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
@@ -107,5 +104,5 @@ class InducedSetAttention(keras.Layer):
         batch_size = keras.ops.shape(x)[0]
         inducing_points_expanded = keras.ops.expand_dims(self.inducing_points, axis=0)
         inducing_points_tiled = keras.ops.tile(inducing_points_expanded, [batch_size, 1, 1])
-        h = self.mab0(inducing_points_tiled, x, training=training, **kwargs)
-        return self.mab1(x, h, training=training, **kwargs)
+        h = self.mab0(inducing_points_tiled, x, training=training)
+        return self.mab1(x, h, training=training)

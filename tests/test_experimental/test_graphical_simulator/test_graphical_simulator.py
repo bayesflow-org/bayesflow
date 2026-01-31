@@ -10,6 +10,7 @@ def test_single_level_simulator(single_level_simulator):
     simulator = single_level_simulator
     assert isinstance(simulator, GraphicalSimulator)
     assert isinstance(simulator.sample(5), SimulationOutput)
+    assert isinstance(simulator.sample(5, sample_shape=(2, 3)), SimulationOutput)
 
     samples = simulator.sample(12)
     expected_keys = ["beta", "sigma", "x", "y"]
@@ -40,6 +41,7 @@ def test_two_level_simulator(two_level_simulator):
     simulator = two_level_simulator
     assert isinstance(simulator, GraphicalSimulator)
     assert isinstance(simulator.sample(5), SimulationOutput)
+    assert isinstance(simulator.sample(5, sample_shape=(2, 3)), SimulationOutput)
 
     samples = simulator.sample(15)
     expected_keys = ["hyper_mean", "hyper_std", "local_mean", "shared_std", "y"]
@@ -79,6 +81,7 @@ def test_two_level_repeated_roots_simulator(two_level_repeated_roots_simulator):
     simulator = two_level_repeated_roots_simulator
     assert isinstance(simulator, GraphicalSimulator)
     assert isinstance(simulator.sample(5), SimulationOutput)
+    assert isinstance(simulator.sample(5, sample_shape=(2, 3)), SimulationOutput)
 
     samples = simulator.sample(15)
     expected_keys = ["hyper_mean", "hyper_std", "local_mean", "shared_std", "y"]
@@ -122,6 +125,7 @@ def test_three_level_simulator(three_level_simulator):
     simulator = three_level_simulator
     assert isinstance(simulator, GraphicalSimulator)
     assert isinstance(simulator.sample(5), SimulationOutput)
+    assert isinstance(simulator.sample(5, sample_shape=(2, 3)), SimulationOutput)
 
     samples = simulator.sample(15)
     expected_keys = [
@@ -185,6 +189,7 @@ def test_crossed_design_irt_simulator(crossed_design_irt_simulator):
     simulator = crossed_design_irt_simulator
     assert isinstance(simulator, GraphicalSimulator)
     assert isinstance(simulator.sample(5), SimulationOutput)
+    assert isinstance(simulator.sample(5, sample_shape=(2, 3)), SimulationOutput)
 
     samples = simulator.sample(22)
     expected_keys = [
@@ -255,6 +260,14 @@ def test_simulation_output():
     assert copied == output
     assert copied is not output
 
+    copied = output.__copy__()
+    assert copied == output
+    assert copied is not output
+
+    copied = output.__deepcopy__({})
+    assert copied == output
+    assert copied is not output
+
     # __getitem__
     assert output["a"] == 1
     with pytest.raises(KeyError):
@@ -276,3 +289,6 @@ def test_simulation_output():
 
     # __len__
     assert len(output) == 3
+
+    assert isinstance(output.__repr__(), str)
+    assert isinstance(SimulationOutput.fromkeys(test_data), SimulationOutput)

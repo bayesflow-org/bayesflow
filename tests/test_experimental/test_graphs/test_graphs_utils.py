@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 import networkx as nx
-
+import pytest
 from bayesflow.experimental.graphs.utils import (
     add_previous_names_metadata,
     add_split_by_metadata,
@@ -12,6 +12,7 @@ from bayesflow.experimental.graphs.utils import (
     merge_root_nodes,
     sort_nodes_topologically,
     split_node,
+    _retrieve_function_reference,
 )
 
 
@@ -303,3 +304,11 @@ def test_merge_nodes():
 
     assert nx.is_isomorphic(merged, expected)
     assert nx.is_isomorphic(g, g2)  # merge_nodes is not mutating
+
+
+def test__retrieve_function_reference():
+    def test_fn():
+        return 3
+
+    with pytest.raises(ValueError):
+        _retrieve_function_reference(test_fn)

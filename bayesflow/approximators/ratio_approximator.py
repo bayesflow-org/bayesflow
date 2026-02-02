@@ -120,8 +120,8 @@ class RatioApproximator(Approximator):
 
         batch_size = keras.ops.shape(inference_variables)[0]
 
-        log_gamma = keras.ops.broadcast_to(keras.ops.log(self.gamma), (batch_size, self.K))
-        log_K = keras.ops.broadcast_to(keras.ops.log(self.K), (batch_size, self.K))
+        log_gamma = keras.ops.broadcast_to(keras.ops.log(self.gamma), (batch_size,))
+        log_K = keras.ops.broadcast_to(keras.ops.log(self.K), (batch_size,))
 
         marginal_weight = 1 / (1 + self.gamma)
         joint_weight = self.gamma / (1 + self.gamma)
@@ -143,12 +143,15 @@ class RatioApproximator(Approximator):
         # Eq. 7 (https://arxiv.org/abs/2210.06170) - we use a trick for numerical stability:
         # log(K + gamma * sum_{i=1}^{K} exp(h_i)) = log(exp(log K) + sum_{i=1}^{K} exp(h_i + log gamma))
         # so if we absorb log gamma into the network outputs and concatenate log K, we can use logsumexp
+
         log_numerator_joint = log_gamma + joint_logits[:, 0]
-        log_denominator_joint = keras.ops.stack([log_gamma + joint_logits, log_K], axis=-1)
+        log_denominator_joint = keras.ops.concatenate([log_gamma[:, None] + joint_logits, log_K[:, None]], axis=-1)
         log_denominator_joint = keras.ops.logsumexp(log_denominator_joint, axis=-1)
 
         log_numerator_marginal = log_K
-        log_denominator_marginal = keras.ops.stack([log_gamma + marginal_logits, log_K], axis=-1)
+        log_denominator_marginal = keras.ops.concatenate(
+            [log_gamma[:, None] + marginal_logits, log_K[:, None]], axis=-1
+        )
         log_denominator_marginal = keras.ops.logsumexp(log_denominator_marginal, axis=-1)
 
         joint_loss = log_denominator_joint - log_numerator_joint

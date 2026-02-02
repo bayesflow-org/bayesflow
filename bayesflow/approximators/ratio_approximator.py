@@ -8,6 +8,7 @@ from bayesflow.utils import expand_tile, concatenate_valid_shapes
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
+from ..networks.standardization import Standardization
 
 
 @serializable("bayesflow.approximators")
@@ -42,6 +43,7 @@ class RatioApproximator(Approximator):
         summary_network: keras.Layer = None,
         gamma: float = 1.0,
         K: int = 5,
+        standardize: str | Sequence[str] | None = "all",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -57,6 +59,17 @@ class RatioApproximator(Approximator):
         if K <= 0:
             raise ValueError(f"K must be positive, got {K}.")
 
+        if isinstance(standardize, str) and standardize != "all":
+            self.standardize = [standardize]
+        else:
+            self.standardize = standardize or []
+
+        if self.standardize == "all":
+            # we have to lazily initialize these
+            self.standardize_layers = None
+        else:
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
         self.gamma = gamma
         self.K = K
 
@@ -65,6 +78,12 @@ class RatioApproximator(Approximator):
 
     def compute_metrics(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str = "training"):
         """Computes loss following https://arxiv.org/pdf/2210.06170"""
+
+        if "inference_variables" in self.standardize:
+            inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
+
+        if "inference_conditions" in self.standardize:
+            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
 
         batch_size = keras.ops.shape(inference_variables)[0]
 
@@ -128,6 +147,12 @@ class RatioApproximator(Approximator):
         inference_variables = adapted.get("inference_variables")
         inference_conditions = adapted.get("inference_conditions")
 
+        if "inference_variables" in self.standardize:
+            inference_variables = self.standardize_layers["inference_variables"](inference_variables)
+
+        if "inference_conditions" in self.standardize:
+            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions)
+
         if self.summary_network is not None:
             inference_conditions = self.summary_network(inference_conditions, training=False)
 
@@ -154,6 +179,7 @@ class RatioApproximator(Approximator):
             "classifier_network": self.classifier_network,
             "gamma": self.gamma,
             "K": self.K,
+            "standardize": self.standardize,
         }
 
         return base_config | serialize(config)
@@ -196,6 +222,16 @@ class RatioApproximator(Approximator):
 
         if not self.projector.built:
             self.projector.build(classifier_outputs_shape)
+
+        # Set up standardization layers if requested
+        if self.standardize == "all":
+            # Only include variables present in data_shapes
+            self.standardize = [var for var in ["inference_variables", "inference_conditions"] if var in data_shapes]
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+        # Build all standardization layers
+        for var, layer in self.standardize_layers.items():
+            layer.build(data_shapes[var])
 
         self.built = True
 

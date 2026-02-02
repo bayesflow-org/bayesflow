@@ -16,6 +16,7 @@ class RatioApproximator(Approximator):
 
     def __init__(
         self,
+        adapter: Adapter,
         classifier_network: keras.Layer,
         summary_network: keras.Layer = None,
         gamma: float = 1.0,
@@ -24,6 +25,7 @@ class RatioApproximator(Approximator):
     ):
         super().__init__(**kwargs)
 
+        self.adapter = adapter
         self.classifier_network = classifier_network
         self.summary_network = summary_network
 
@@ -84,9 +86,10 @@ class RatioApproximator(Approximator):
 
         return {"loss": loss}
 
-    def log_ratio(self, inputs: dict[str, Tensor]):
-        inference_variables = inputs.get("inference_variables")
-        inference_conditions = inputs.get("inference_conditions")
+    def log_ratio(self, data: dict[str, Tensor], **kwargs):
+        adapted = self.adapter(data, strict=False, **kwargs)
+        inference_variables = adapted.get("inference_variables")
+        inference_conditions = adapted.get("inference_conditions")
 
         if self.summary_network is not None:
             inference_conditions = self.summary_network(inference_conditions, training=False)
@@ -109,6 +112,7 @@ class RatioApproximator(Approximator):
     def get_config(self):
         base_config = super().get_config()
         config = {
+            "adapter": self.adapter,
             "summary_network": self.summary_network,
             "classifier_network": self.classifier_network,
             "gamma": self.gamma,
@@ -157,6 +161,60 @@ class RatioApproximator(Approximator):
             self.projector.build(classifier_outputs_shape)
 
         self.built = True
+
+    def fit(self, *args, **kwargs):
+        """
+        Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
+        If `dataset` is not provided, a dataset is built from the `simulator`.
+        If the model has not been built, it will be built using a batch from the dataset.
+
+        Parameters
+        ----------
+        dataset : keras.utils.PyDataset, optional
+            A dataset containing simulations for training. If provided, `simulator` must be None.
+        simulator : Simulator, optional
+            A simulator used to generate a dataset. If provided, `dataset` must be None.
+        **kwargs
+            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
+
+            batch_size : int or None, default='auto'
+                Number of samples per gradient update. Do not specify if `dataset` is provided as a
+                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
+            epochs : int, default=1
+                Number of epochs to train the model.
+            verbose : {"auto", 0, 1, 2}, default="auto"
+                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+            callbacks : list of keras.callbacks.Callback, optional
+                List of callbacks to apply during training.
+            validation_split : float, optional
+                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
+                or tensors).
+            validation_data : tuple or dataset, optional
+                Data for validation, overriding `validation_split`.
+            shuffle : bool, default=True
+                Whether to shuffle the training data before each epoch (ignored for dataset generators).
+            initial_epoch : int, default=0
+                Epoch at which to start training (useful for resuming training).
+            steps_per_epoch : int or None, optional
+                Number of steps (batches) before declaring an epoch finished.
+            validation_steps : int or None, optional
+                Number of validation steps per validation epoch.
+            validation_batch_size : int or None, optional
+                Number of samples per validation batch (defaults to `batch_size`).
+            validation_freq : int, default=1
+                Specifies how many training epochs to run before performing validation.
+
+        Returns
+        -------
+        keras.callbacks.History
+            A history object containing the training loss and metrics values.
+
+        Raises
+        ------
+        ValueError
+            If both `dataset` and `simulator` are provided or neither is provided.
+        """
+        return super().fit(*args, **kwargs, adapter=self.adapter)
 
     @classmethod
     def build_adapter(

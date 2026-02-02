@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 
 import numpy as np
 from scipy.special import logsumexp
@@ -259,7 +259,7 @@ class PointApproximator(ContinuousApproximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
-        score_weights: Sequence[float] | Mapping[str, float] | None = None,
+        score_weights: Mapping[str, float] | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -277,10 +277,9 @@ class PointApproximator(ContinuousApproximator):
             Conditions for sampling.
         split : bool, optional
             Whether to split the output arrays along the last axis. Delegated to :meth:`sample_separate`.
-        score_weights : Sequence[float] or Mapping[str, float], optional
-            Probability weights for each scoring rule. If ``None``, uniform weights are assumed. The weights must
-            sum to 1 and are ordered according to the scoring rule keys returned by :meth:`sample_separate` unless
-            provided as a mapping.
+        score_weights : Mapping[str, float] or None, default None
+            Probability weights for each scoring rule. If ``None``, uniform weights are assumed.
+            Must be positive, will be normalized to sum to 1.
         **kwargs
             Additional keyword arguments forwarded to :meth:`sample_separate`.
 
@@ -292,17 +291,18 @@ class PointApproximator(ContinuousApproximator):
         """
         self._check_has_distribution()
 
-        score_weights = self._resolve_score_weights(score_weights)
+        score_weights: Mapping[str, float] = self._resolve_score_weights(score_weights)
 
         # Allocate samples per score and draw only as many as needed (max over scores).
-        num_samples_per_score = np.random.multinomial(num_samples, score_weights)
+        num_samples_per_score = np.random.multinomial(num_samples, list(score_weights.values()))
         max_k = int(np.max(num_samples_per_score))
+        num_samples_per_score = {k: num_samples_per_score[i] for i, k in enumerate(score_weights.keys())}
 
         samples_by_score = self.sample_separate(num_samples=max_k, conditions=conditions, split=split, **kwargs)
 
         # Crop each score's samples down to its allocated k
         cropped_list = []
-        for score_key, k in zip(self.distribution_keys, num_samples_per_score):
+        for score_key, k in num_samples_per_score.items():
             if k == 0:
                 continue
             cropped = keras.tree.map_structure(lambda arr: arr[:, :k], samples_by_score[score_key])
@@ -355,7 +355,7 @@ class PointApproximator(ContinuousApproximator):
     def log_prob(
         self,
         data: Mapping[str, np.ndarray],
-        score_weights: Sequence[float] | Mapping[str, float] | None = None,
+        score_weights: Mapping[str, float] | None = None,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -365,10 +365,10 @@ class PointApproximator(ContinuousApproximator):
         ----------
         data : Mapping[str, np.ndarray]
             Dictionary containing inference variables and conditions.
-        score_weights : Sequence[float] or Mapping[str, float], optional
-            Probability weights for each scoring rule. If ``None``, uniform weights are assumed. The weights must sum
-            to 1 and are ordered by the scoring rule keys produced by :meth:`log_prob_separate` unless provided as a
-            mapping.
+        score_weights : Mapping[str, float] or None, default None
+            Probability weights for each scoring rule. If ``None``, uniform weights are assumed.
+            Must be positive, will be normalized to sum to 1.
+
         **kwargs
             Additional keyword arguments forwarded to :meth:`log_prob_separate`.
 
@@ -382,7 +382,7 @@ class PointApproximator(ContinuousApproximator):
         score_weights = self._resolve_score_weights(score_weights)
 
         stacked = np.stack([np.asarray(log_probs[score_key]) for score_key in self.distribution_keys], axis=-1)
-        log_weights = np.log(score_weights)
+        log_weights = np.log(list(score_weights.values()))
 
         # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
         z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
@@ -396,31 +396,24 @@ class PointApproximator(ContinuousApproximator):
 
     def _resolve_score_weights(
         self,
-        score_weights: Sequence[float] | Mapping[str, float] | None,
+        score_weights: Mapping[str, float] | None,
     ) -> np.ndarray:
         if score_weights is None:
-            return np.ones(len(self.distribution_keys), dtype=np.float64) / len(self.distribution_keys)
+            score_weights = {k: 1.0 for k in self.distribution_keys}
 
-        if isinstance(score_weights, Mapping):
-            missing = set(self.distribution_keys) - set(score_weights.keys())
-            if missing:
-                raise ValueError(f"score_weights is missing entries for scoring rules: {sorted(missing)}")
-            extra = set(score_weights.keys()) - set(self.distribution_keys)
-            if extra:
-                raise ValueError(f"score_weights contains unknown scoring rules: {sorted(extra)}")
-            weights = np.asarray([score_weights[key] for key in self.distribution_keys], dtype=np.float64)
-        else:
-            weights = np.asarray(score_weights, dtype=np.float64)
-            if weights.ndim != 1 or weights.shape[0] != len(self.distribution_keys):
+        for key, weight in score_weights.items():
+            if key not in self.distribution_keys:
                 raise ValueError(
-                    f"score_weights must be a 1D array with length {len(self.distribution_keys)}; "
-                    f"received shape {weights.shape}."
+                    "Score weights must be subset of self.distribution_keys. "
+                    f"Unknown keys: {set(score_weights) - set(self.distribution_keys)}"
                 )
-        total = np.sum(weights)
-        if not np.isclose(total, 1.0, atol=1e-8):
-            raise ValueError(f"score_weights must sum to 1: {weights} -> {total}.")
+            if weight < 0:
+                raise ValueError(f"All score_weights must be positive. Received {key}: {weight}.")
 
-        return weights
+        # Normalize weights to 1
+        sum = np.sum(list(score_weights.values()))
+        score_weights = {k: v / sum for k, v in score_weights.items()}
+        return score_weights
 
     def _apply_inverse_adapter_to_estimates(
         self, estimates: Mapping[str, Mapping[str, Tensor]], **kwargs

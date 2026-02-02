@@ -82,6 +82,7 @@ class FlowMatching(InferenceNetwork):
         subnet_kwargs: dict[str, any] = None,
         time_power_law_alpha: float = 0.0,
         drop_cond_prob: float = 0.0,
+        drop_target_prob: float = 0.0,
         **kwargs,
     ):
         """
@@ -123,6 +124,10 @@ class FlowMatching(InferenceNetwork):
             Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
             and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
             model during inference, set `unconditional_mode` to True.
+        drop_target_prob : float, optional
+            Probability of dropping the target during training. Default is 0.0. This can be used to train a model that
+            can be conditioned on partial targets. During inference, pass a `target_mask` and `targets_fixed` to specify
+            which parts of the target should be kept fixed to the values in `targets_fixed`.
         **kwargs
             Additional keyword arguments passed to the subnet and other components.
         """
@@ -148,6 +153,7 @@ class FlowMatching(InferenceNetwork):
         self.output_projector = None
         self.drop_cond_prob = drop_cond_prob
         self.unconditional_mode = False
+        self.drop_target_prob = drop_target_prob
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -187,23 +193,38 @@ class FlowMatching(InferenceNetwork):
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
             "time_power_law_alpha": self.time_power_law_alpha,
             "drop_cond_prob": self.drop_cond_prob,
+            "drop_target_prob": self.drop_target_prob,
             # we do not need to store subnet_kwargs
         }
 
         return base_config | serialize(config)
 
-    def velocity(self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False) -> Tensor:
+    def velocity(
+        self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False, **kwargs
+    ) -> Tensor:
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
         time = expand_right_as(time, xz)
         time = keras.ops.broadcast_to(time, keras.ops.shape(xz)[:-1] + (1,))
         subnet_out = self.subnet((xz, time, conditions), training=training)
-        return self.output_projector(subnet_out)
+        out = self.output_projector(subnet_out)
+
+        if self.drop_target_prob > 0 and not training:
+            target_mask = kwargs.get("target_mask", None)
+            if target_mask is not None:
+                out = target_mask * out  # velocity is zero where target is fixed
+        return out
 
     def _velocity_trace(
-        self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
+        self,
+        xz: Tensor,
+        time: Tensor,
+        conditions: Tensor = None,
+        max_steps: int = None,
+        training: bool = False,
+        **kwargs,
     ) -> (Tensor, Tensor):
         def f(x):
-            return self.velocity(x, time=time, conditions=conditions, training=training)
+            return self.velocity(x, time=time, conditions=conditions, training=training, **kwargs)
 
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
@@ -214,6 +235,13 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = self.integrate_kwargs | kwargs
 
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
+            x = target_mask * x + (1 - target_mask) * targets_fixed
+
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
             logging.info("Condition masking is applied: conditions are set to zero.")
@@ -221,7 +249,7 @@ class FlowMatching(InferenceNetwork):
         if density:
 
             def deltas(time, xz):
-                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training, **kwargs)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": x, "trace": keras.ops.zeros(keras.ops.shape(x)[:-1] + (1,), dtype=keras.ops.dtype(x))}
@@ -233,7 +261,7 @@ class FlowMatching(InferenceNetwork):
             return z, log_density
 
         def deltas(time, xz):
-            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
+            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training, **kwargs)}
 
         state = {"xz": x}
         state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
@@ -247,6 +275,13 @@ class FlowMatching(InferenceNetwork):
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = self.integrate_kwargs | kwargs
 
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
+            z = target_mask * z + (1 - target_mask) * targets_fixed
+
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
             logging.info("Condition masking is applied: conditions are set to zero.")
@@ -254,7 +289,7 @@ class FlowMatching(InferenceNetwork):
         if density:
 
             def deltas(time, xz):
-                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training, **kwargs)
                 return {"xz": v, "trace": trace}
 
             state = {"xz": z, "trace": keras.ops.zeros(keras.ops.shape(z)[:-1] + (1,), dtype=keras.ops.dtype(z))}
@@ -266,7 +301,7 @@ class FlowMatching(InferenceNetwork):
             return x, log_density
 
         def deltas(time, xz):
-            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training)}
+            return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training, **kwargs)}
 
         state = {"xz": z}
         state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
@@ -331,9 +366,17 @@ class FlowMatching(InferenceNetwork):
 
             conditions = mask_conditions * conditions
 
+        if self.drop_target_prob > 0:
+            # generate random mask for every entry
+            mask_x = keras.random.uniform(shape=keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
+            mask_x = keras.ops.cast(mask_x > self.drop_target_prob, dtype=keras.ops.dtype(x))
+            x = mask_x * x + (1 - mask_x) * x1
+        else:
+            mask_x = 1.0
+
         predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training")
 
-        loss = self.loss_fn(target_velocity, predicted_velocity)
+        loss = self.loss_fn(mask_x * target_velocity, mask_x * predicted_velocity)
         loss = weighted_mean(loss, sample_weight)
 
         base_metrics = super().compute_metrics(x1, conditions=conditions, stage=stage)

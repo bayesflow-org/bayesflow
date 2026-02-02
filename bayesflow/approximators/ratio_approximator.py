@@ -76,6 +76,39 @@ class RatioApproximator(Approximator):
         self.projector = keras.layers.Dense(units=1)
         self.seed_generator = keras.random.SeedGenerator()
 
+    def build(self, data_shapes):
+        if self.summary_network is not None:
+            if not self.summary_network.built:
+                self.summary_network.build(data_shapes["inference_conditions"])
+            inference_conditions_shape = self.summary_network.compute_output_shape(data_shapes["inference_conditions"])
+        else:
+            inference_conditions_shape = data_shapes["inference_conditions"]
+
+        # Compute inference_conditions_shape by combining original and summary outputs
+        classifier_inputs_shape = concatenate_valid_shapes(
+            [data_shapes["inference_variables"], inference_conditions_shape], axis=-1
+        )
+
+        # Build inference network if needed
+        if not self.classifier_network.built:
+            self.classifier_network.build(classifier_inputs_shape)
+        classifier_outputs_shape = self.classifier_network.compute_output_shape(classifier_inputs_shape)
+
+        if not self.projector.built:
+            self.projector.build(classifier_outputs_shape)
+
+        # Set up standardization layers if requested
+        if self.standardize == "all":
+            # Only include variables present in data_shapes
+            self.standardize = [var for var in ["inference_variables", "inference_conditions"] if var in data_shapes]
+            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+        # Build all standardization layers
+        for var, layer in self.standardize_layers.items():
+            layer.build(data_shapes[var])
+
+        self.built = True
+
     def compute_metrics(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str = "training"):
         """Computes loss following https://arxiv.org/pdf/2210.06170"""
 
@@ -125,6 +158,78 @@ class RatioApproximator(Approximator):
         loss = keras.ops.mean(loss)
 
         return {"loss": loss}
+
+    def sample_from_batch(self, inference_variables: Tensor, seed=None):
+        """Samples K batches of inference variables with replacement. Ensures
+        that no self-sampling occurs (i.e., all samples are negative examples)."""
+        B = keras.ops.shape(inference_variables)[0]
+
+        r = keras.random.randint(
+            shape=(B, self.K),
+            minval=0,
+            maxval=B - 1,
+            dtype="int32",
+            seed=self.seed_generator,
+        )
+
+        i = keras.ops.expand_dims(keras.ops.arange(B, dtype="int32"), axis=1)
+        idx = r + keras.ops.cast(r >= i, "int32")
+
+        return keras.ops.take(inference_variables, idx, axis=0)
+
+    def fit(self, *args, **kwargs):
+        """
+        Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
+        If `dataset` is not provided, a dataset is built from the `simulator`.
+        If the model has not been built, it will be built using a batch from the dataset.
+
+        Parameters
+        ----------
+        dataset : keras.utils.PyDataset, optional
+            A dataset containing simulations for training. If provided, `simulator` must be None.
+        simulator : Simulator, optional
+            A simulator used to generate a dataset. If provided, `dataset` must be None.
+        **kwargs
+            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
+
+            batch_size : int or None, default='auto'
+                Number of samples per gradient update. Do not specify if `dataset` is provided as a
+                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
+            epochs : int, default=1
+                Number of epochs to train the model.
+            verbose : {"auto", 0, 1, 2}, default="auto"
+                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+            callbacks : list of keras.callbacks.Callback, optional
+                List of callbacks to apply during training.
+            validation_split : float, optional
+                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
+                or tensors).
+            validation_data : tuple or dataset, optional
+                Data for validation, overriding `validation_split`.
+            shuffle : bool, default=True
+                Whether to shuffle the training data before each epoch (ignored for dataset generators).
+            initial_epoch : int, default=0
+                Epoch at which to start training (useful for resuming training).
+            steps_per_epoch : int or None, optional
+                Number of steps (batches) before declaring an epoch finished.
+            validation_steps : int or None, optional
+                Number of validation steps per validation epoch.
+            validation_batch_size : int or None, optional
+                Number of samples per validation batch (defaults to `batch_size`).
+            validation_freq : int, default=1
+                Specifies how many training epochs to run before performing validation.
+
+        Returns
+        -------
+        keras.callbacks.History
+            A history object containing the training loss and metrics values.
+
+        Raises
+        ------
+        ValueError
+            If both `dataset` and `simulator` are provided or neither is provided.
+        """
+        return super().fit(*args, **kwargs, adapter=self.adapter)
 
     def log_ratio(self, data: dict[str, Tensor], **kwargs):
         """
@@ -183,111 +288,6 @@ class RatioApproximator(Approximator):
         }
 
         return base_config | serialize(config)
-
-    def sample_from_batch(self, inference_variables: Tensor, seed=None):
-        """Samples K batches of inference variables with replacement. Ensures
-        that no self-sampling occurs (i.e., all samples are negative examples)."""
-        B = keras.ops.shape(inference_variables)[0]
-
-        r = keras.random.randint(
-            shape=(B, self.K),
-            minval=0,
-            maxval=B - 1,
-            dtype="int32",
-            seed=self.seed_generator,
-        )
-
-        i = keras.ops.expand_dims(keras.ops.arange(B, dtype="int32"), axis=1)
-        idx = r + keras.ops.cast(r >= i, "int32")
-
-        return keras.ops.take(inference_variables, idx, axis=0)
-
-    def build(self, data_shapes):
-        if self.summary_network is not None:
-            if not self.summary_network.built:
-                self.summary_network.build(data_shapes["inference_conditions"])
-            inference_conditions_shape = self.summary_network.compute_output_shape(data_shapes["inference_conditions"])
-        else:
-            inference_conditions_shape = data_shapes["inference_conditions"]
-
-        # Compute inference_conditions_shape by combining original and summary outputs
-        classifier_inputs_shape = concatenate_valid_shapes(
-            [data_shapes["inference_variables"], inference_conditions_shape], axis=-1
-        )
-
-        # Build inference network if needed
-        if not self.classifier_network.built:
-            self.classifier_network.build(classifier_inputs_shape)
-        classifier_outputs_shape = self.classifier_network.compute_output_shape(classifier_inputs_shape)
-
-        if not self.projector.built:
-            self.projector.build(classifier_outputs_shape)
-
-        # Set up standardization layers if requested
-        if self.standardize == "all":
-            # Only include variables present in data_shapes
-            self.standardize = [var for var in ["inference_variables", "inference_conditions"] if var in data_shapes]
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-
-        # Build all standardization layers
-        for var, layer in self.standardize_layers.items():
-            layer.build(data_shapes[var])
-
-        self.built = True
-
-    def fit(self, *args, **kwargs):
-        """
-        Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
-        If `dataset` is not provided, a dataset is built from the `simulator`.
-        If the model has not been built, it will be built using a batch from the dataset.
-
-        Parameters
-        ----------
-        dataset : keras.utils.PyDataset, optional
-            A dataset containing simulations for training. If provided, `simulator` must be None.
-        simulator : Simulator, optional
-            A simulator used to generate a dataset. If provided, `dataset` must be None.
-        **kwargs
-            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
-
-            batch_size : int or None, default='auto'
-                Number of samples per gradient update. Do not specify if `dataset` is provided as a
-                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
-            epochs : int, default=1
-                Number of epochs to train the model.
-            verbose : {"auto", 0, 1, 2}, default="auto"
-                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
-            callbacks : list of keras.callbacks.Callback, optional
-                List of callbacks to apply during training.
-            validation_split : float, optional
-                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
-                or tensors).
-            validation_data : tuple or dataset, optional
-                Data for validation, overriding `validation_split`.
-            shuffle : bool, default=True
-                Whether to shuffle the training data before each epoch (ignored for dataset generators).
-            initial_epoch : int, default=0
-                Epoch at which to start training (useful for resuming training).
-            steps_per_epoch : int or None, optional
-                Number of steps (batches) before declaring an epoch finished.
-            validation_steps : int or None, optional
-                Number of validation steps per validation epoch.
-            validation_batch_size : int or None, optional
-                Number of samples per validation batch (defaults to `batch_size`).
-            validation_freq : int, default=1
-                Specifies how many training epochs to run before performing validation.
-
-        Returns
-        -------
-        keras.callbacks.History
-            A history object containing the training loss and metrics values.
-
-        Raises
-        ------
-        ValueError
-            If both `dataset` and `simulator` are provided or neither is provided.
-        """
-        return super().fit(*args, **kwargs, adapter=self.adapter)
 
     @classmethod
     def build_adapter(

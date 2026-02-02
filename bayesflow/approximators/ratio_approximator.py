@@ -12,7 +12,24 @@ from .approximator import Approximator
 
 @serializable("bayesflow.approximators")
 class RatioApproximator(Approximator):
-    """Implements NRE-C as described in https://arxiv.org/pdf/2210.06170."""
+    """
+    Implements contrastive neural likelihood-to-evidence ratio estimation  (NRE-C)
+    as described in https://arxiv.org/pdf/2210.06170.
+    The estimation target is the ratio of likelihood and evidence: p(x | theta) / p(x).
+
+    Parameters
+    ----------
+    adapter : bayesflow.adapters.Adapter
+        Adapter for data processing. You can use :py:meth:`build_adapter`
+        to create it.
+    classifier_network : A classification network to perform contrastive learning.
+    summary_network : SummaryNetwork, optional
+        The summary network used for data summarization (default is None).
+    gamma: TODO
+    K: TODO
+    **kwargs : dict, optional
+        Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
+    """
 
     def __init__(
         self,
@@ -43,7 +60,7 @@ class RatioApproximator(Approximator):
         self.seed_generator = keras.random.SeedGenerator()
 
     def compute_metrics(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str = "training"):
-        """TODO"""
+        """Computes loss following https://arxiv.org/pdf/2210.06170"""
 
         batch_size = keras.ops.shape(inference_variables)[0]
 
@@ -87,6 +104,22 @@ class RatioApproximator(Approximator):
         return {"loss": loss}
 
     def log_ratio(self, data: dict[str, Tensor], **kwargs):
+        """
+        Computes the log likelihood-to-evidence ratio.
+        The `data` dictionary is preprocessed using the `adapter`.
+        Log-ratios are returned as NumPy arrays.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Dictionary of observed data as NumPy arrays.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and log-probability computation.
+
+        Returns
+        -------
+        np.ndarray
+        """
         adapted = self.adapter(data, strict=False, **kwargs)
         inference_variables = adapted.get("inference_variables")
         inference_conditions = adapted.get("inference_conditions")

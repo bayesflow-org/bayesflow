@@ -59,6 +59,12 @@ class RatioApproximator(Approximator):
         if K <= 0:
             raise ValueError(f"K must be positive, got {K}.")
 
+        self.gamma = gamma
+        self.K = K
+
+        self.projector = keras.layers.Dense(units=1)
+        self.seed_generator = keras.random.SeedGenerator()
+
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
         else:
@@ -69,12 +75,6 @@ class RatioApproximator(Approximator):
             self.standardize_layers = None
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-
-        self.gamma = gamma
-        self.K = K
-
-        self.projector = keras.layers.Dense(units=1)
-        self.seed_generator = keras.random.SeedGenerator()
 
     def build(self, data_shapes):
         if self.summary_network is not None:
@@ -127,7 +127,7 @@ class RatioApproximator(Approximator):
         joint_weight = self.gamma / (1 + self.gamma)
 
         # Get (batch_size, K+1, dim) inference variables (theta)
-        bootstrap_inference_variables = self.sample_from_batch(inference_variables)
+        bootstrap_inference_variables = self._sample_from_batch(inference_variables)
         bootstrap_inference_variables = keras.ops.concatenate(
             [inference_variables[:, None, :], bootstrap_inference_variables], axis=1
         )
@@ -162,7 +162,7 @@ class RatioApproximator(Approximator):
 
         return {"loss": loss}
 
-    def sample_from_batch(self, inference_variables: Tensor, seed=None):
+    def _sample_from_batch(self, inference_variables: Tensor, seed=None):
         """Samples K batches of inference variables with replacement. Ensures
         that no self-sampling occurs (i.e., all samples are negative examples)."""
         B = keras.ops.shape(inference_variables)[0]
@@ -252,7 +252,7 @@ class RatioApproximator(Approximator):
         np.ndarray
         """
         adapted = self.adapter(data, strict=False, **kwargs)
-        inference_variables = adapted.get("inference_variables")
+        inference_variables = adapted["inference_variables"]
         inference_conditions = adapted.get("inference_conditions")
 
         if "inference_variables" in self.standardize:

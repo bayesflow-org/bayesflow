@@ -191,7 +191,7 @@ class EnsembleApproximator(Approximator):
     def sample_separate(
         self,
         *,
-        num_samples: int | Sequence,
+        num_samples: int | Mapping[str, int],
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
         **kwargs,
@@ -201,9 +201,9 @@ class EnsembleApproximator(Approximator):
 
         Parameters
         ----------
-        num_samples : int or Sequence
+        num_samples : int or Mapping[str, int]
             Number of samples to draw from each approximator. If int, all approximators
-            draw the same number of samples. If sequence, specifies samples per approximator.
+            draw the same number of samples. If dict, specifies samples per approximator.
         conditions : Mapping[str, np.ndarray]
             Conditions for sampling.
         split : bool, optional
@@ -217,12 +217,17 @@ class EnsembleApproximator(Approximator):
             Samples keyed by approximator name, then by variable name.
         """
         samples = {}
+        # if num_samples is int, sample that many for each distribution approximator.
         if isinstance(num_samples, int):
-            num_samples = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
-        for i, approx_name in enumerate(self.distribution_keys):
-            samples[approx_name] = self.approximators[approx_name].sample(
-                num_samples=num_samples[i], conditions=conditions, split=split, **kwargs
-            )
+            num_samples: np.ndarray = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
+            num_samples: dict[str, int] = {k: num_samples[i] for i, k in enumerate(self.distribution_keys)}
+        for approx_name in num_samples.keys():
+            if num_samples[approx_name] < 1:
+                samples[approx_name] = None
+            else:
+                samples[approx_name] = self.approximators[approx_name].sample(
+                    num_samples=num_samples[approx_name], conditions=conditions, split=split, **kwargs
+                )
         return samples
 
     def sample(
@@ -231,7 +236,7 @@ class EnsembleApproximator(Approximator):
         num_samples: int,
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
-        member_weights: Sequence[float] | None = None,
+        member_weights: Mapping[str, float] | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -248,9 +253,9 @@ class EnsembleApproximator(Approximator):
             Conditions for sampling.
         split : bool, optional
             Whether to split output arrays, by default False.
-        member_weights : dict[str, float] or None, optional
+        member_weights : Mapping[str, float] or None, optional
             Probability weights for each approximator. If None, uses uniform weights.
-            Must sum to 1.
+            Must be positive, will be normalized to sum to 1.
         **kwargs
             Additional arguments passed to approximator.sample().
 
@@ -259,12 +264,16 @@ class EnsembleApproximator(Approximator):
         dict[str, np.ndarray]
             Samples with shape (batch_size, num_samples, ...) for each variable.
         """
-        member_weights = self._resolve_member_weights(member_weights)  # TODO: dictionary
-        num_samples_per_member = np.random.multinomial(num_samples, member_weights)
+        member_weights: Mapping[str, float] = self._resolve_member_weights(member_weights)
+        # Sample members from multinomial and convert to dict
+        num_samples_per_member = np.random.multinomial(num_samples, list(member_weights.values()))
+        num_samples_per_member = {k: num_samples_per_member[i] for i, k in enumerate(member_weights.keys())}
         samples = self.sample_separate(num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs)
 
         # Concatenate samples from all approximators along sample dimension (axis 1)
-        samples_list = [samples[approx_name] for approx_name in self.distribution_keys]
+        samples_list = [
+            samples[approx_name] for approx_name in self.distribution_keys if samples[approx_name] is not None
+        ]
         concatenated = keras.tree.map_structure(
             lambda *arrays: np.concatenate(arrays, axis=1),  # zip & concat across approximators
             *samples_list,  # unpack: apply lambda to corresponding leaves from each dict
@@ -275,7 +284,9 @@ class EnsembleApproximator(Approximator):
         shuffled = keras.tree.map_structure(lambda arr: arr[:, shuffle_idx], concatenated)
         return shuffled
 
-    def log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def log_prob_separate(
+        self, data: Mapping[str, np.ndarray], members: Sequence[str] | None = None, **kwargs
+    ) -> dict[str, np.ndarray]:
         """
         Compute log probabilities from each approximator separately.
 
@@ -283,6 +294,9 @@ class EnsembleApproximator(Approximator):
         ----------
         data : Mapping[str, np.ndarray]
             Data containing inference variables and conditions.
+        members: Sequence[str] | None, default None
+            Ensemble members to evaluate log prob for.
+            If None, will evaluate all distribution members.
         **kwargs
             Additional arguments passed to approximator.log_prob().
 
@@ -292,13 +306,14 @@ class EnsembleApproximator(Approximator):
             Log probabilities keyed by approximator name, each with shape (batch_size,).
         """
         log_prob = {}
+        members = self.distribution_keys if members is None else members
         for approx_name, approximator in self.approximators.items():
-            if approximator.has_distribution:
+            if approx_name in members:
                 log_prob[approx_name] = approximator.log_prob(data=data, **kwargs)
         return log_prob
 
     def log_prob(
-        self, data: Mapping[str, np.ndarray], member_weights: Sequence[float] | None = None, **kwargs
+        self, data: Mapping[str, np.ndarray], member_weights: Mapping[str, float] | None = None, **kwargs
     ) -> np.ndarray:
         """
         Compute the marginalized log probability over ensemble members.
@@ -309,7 +324,7 @@ class EnsembleApproximator(Approximator):
         ----------
         data : Mapping[str, np.ndarray]
             Data containing inference variables and conditions.
-        member_weights : Sequence[float] or None, optional
+        member_weights : Mapping[str, float] or None, optional
             Probability weights for each approximator. If None, uses uniform weights.
             Must sum to 1.
         **kwargs
@@ -321,11 +336,11 @@ class EnsembleApproximator(Approximator):
             Marginalized log probabilities with shape (batch_size,).
         """
         member_weights = self._resolve_member_weights(member_weights)
-        log_probs = self.log_prob_separate(data=data, **kwargs)
+        log_probs = self.log_prob_separate(data=data, members=list(member_weights.keys()), **kwargs)
 
         # log p = log_sum_exp(log(w_i) + log p_i)
         stacked = np.stack(list(log_probs.values()), axis=-1)
-        log_weights = np.log(member_weights)
+        log_weights = np.log(list(member_weights.values()))
 
         # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
         z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
@@ -336,6 +351,7 @@ class EnsembleApproximator(Approximator):
     def estimate_separate(
         self,
         conditions: Mapping[str, np.ndarray],
+        members: Sequence[str] | None = None,
         split: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
@@ -346,6 +362,9 @@ class EnsembleApproximator(Approximator):
         ----------
         conditions : Mapping[str, np.ndarray]
             Conditions for estimation.
+        members: Sequence[str] | None, default None
+            Ensemble members to estimate with.
+            If None, will estimate with all members that have an `estimate` method.
         split : bool, optional
             Whether to split output arrays, by default False.
         **kwargs
@@ -357,14 +376,16 @@ class EnsembleApproximator(Approximator):
             Estimates keyed by approximator name, then by variable and score names.
         """
         estimates = {}
+        members = list(self.approximators.keys()) if members is None else members
         for approx_name, approximator in self.approximators.items():
-            if hasattr(approximator, "estimate"):
+            if approx_name in members and hasattr(approximator, "estimate"):
                 estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
         return estimates
 
     def estimate(
         self,
         conditions: Mapping[str, np.ndarray],
+        members: Sequence[str] | None = None,
         split: bool = False,
         **kwargs,
     ):
@@ -373,14 +394,21 @@ class EnsembleApproximator(Approximator):
             "Use estimate_separate() to get estimates from each approximator."
         )
 
-    def _resolve_member_weights(self, member_weights: Sequence[float] | None) -> Sequence[float]:
+    def _resolve_member_weights(self, member_weights: Mapping[str, float] | None) -> Mapping[str, float]:
         if member_weights is None:
-            member_weights = np.ones(len(self.distribution_keys)) / len(self.distribution_keys)
-        else:
-            total = np.sum(member_weights)
-            if not np.isclose(total, 1.0, atol=1e-8):
-                raise ValueError(f"member_weights must sum to 1: {member_weights} -> {total}.")
-                # TODO: make sure not negative and normalize
+            member_weights = {k: 1.0 for k in self.distribution_keys}
+        for key, weight in member_weights.items():
+            if key not in self.distribution_keys:
+                raise ValueError(
+                    "Must be subset of self.distribution_keys. "
+                    f"Unknown keys: {set(member_weights) - set(self.distribution_keys)}"
+                )
+            if weight < 0:
+                raise ValueError(f"All member_weights must be positive. Received {key}: {weight}.")
+
+        # Normalize weights to 1
+        sum = np.sum(list(member_weights.values()))
+        member_weights = {k: v / sum for k, v in member_weights.items()}
         return member_weights
 
     def _batch_size_from_data(self, data: Mapping[str, any]) -> int:

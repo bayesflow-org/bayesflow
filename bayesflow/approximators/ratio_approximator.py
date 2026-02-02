@@ -29,7 +29,7 @@ class RatioApproximator(Approximator):
         Odds or of any pair being drawn dependently to completely independently.
         Default is 1.
     K: int, optional
-        Number of parameter candidates used for contrastive learning. 
+        Number of parameter candidates used for contrastive learning.
         Default is 5.
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.

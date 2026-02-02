@@ -294,7 +294,7 @@ class EnsembleApproximator(Approximator):
         ----------
         data : Mapping[str, np.ndarray]
             Data containing inference variables and conditions.
-        members: Sequence[str] | None, default None
+        members: Sequence[str] or None, default None
             Ensemble members to evaluate log prob for.
             If None, will evaluate all distribution members.
         **kwargs
@@ -324,7 +324,7 @@ class EnsembleApproximator(Approximator):
         ----------
         data : Mapping[str, np.ndarray]
             Data containing inference variables and conditions.
-        member_weights : Mapping[str, float] or None, optional
+        member_weights : Mapping[str, float] or None, default None
             Probability weights for each approximator. If None, uses uniform weights.
             Must sum to 1.
         **kwargs
@@ -362,7 +362,7 @@ class EnsembleApproximator(Approximator):
         ----------
         conditions : Mapping[str, np.ndarray]
             Conditions for estimation.
-        members: Sequence[str] | None, default None
+        members: Sequence[str] or None, default None
             Ensemble members to estimate with.
             If None, will estimate with all members that have an `estimate` method.
         split : bool, optional
@@ -400,7 +400,7 @@ class EnsembleApproximator(Approximator):
         for key, weight in member_weights.items():
             if key not in self.distribution_keys:
                 raise ValueError(
-                    "Must be subset of self.distribution_keys. "
+                    "Member weights must be subset of self.distribution_keys. "
                     f"Unknown keys: {set(member_weights) - set(self.distribution_keys)}"
                 )
             if weight < 0:

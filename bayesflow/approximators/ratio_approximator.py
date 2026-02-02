@@ -65,6 +65,7 @@ class RatioApproximator(Approximator):
         self.projector = keras.layers.Dense(units=1)
         self.seed_generator = keras.random.SeedGenerator()
 
+        # standardization has to come last in the constructor
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
         else:

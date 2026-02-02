@@ -25,8 +25,12 @@ class RatioApproximator(Approximator):
     classifier_network : A classification network to perform contrastive learning.
     summary_network : SummaryNetwork, optional
         The summary network used for data summarization (default is None).
-    gamma: TODO
-    K: TODO
+    gamma: float, optional
+        Odds or of any pair being drawn dependently to completely independently.
+        Default is 1.
+    K: int, optional
+        Number of parameter candidates used for contrastive learning. 
+        Default is 5.
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """

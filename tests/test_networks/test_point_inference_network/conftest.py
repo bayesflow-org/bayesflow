@@ -59,19 +59,19 @@ def scoring_rule(request):
 
 
 @pytest.fixture(scope="function")
-def point_inference_network(scoring_rule):
-    from bayesflow.networks import PointInferenceNetwork
+def scoring_rule_inference_network(scoring_rule):
+    from bayesflow.networks import ScoringRuleInferenceNetwork
 
-    return PointInferenceNetwork(
+    return ScoringRuleInferenceNetwork(
         scores=dict(dummy_name=scoring_rule),
     )
 
 
 @pytest.fixture(scope="function")
-def quantile_point_inference_network():
-    from bayesflow.networks import PointInferenceNetwork
+def quantile_scoring_rule_inference_network():
+    from bayesflow.networks import ScoringRuleInferenceNetwork
     from bayesflow.scores import QuantileScore
 
-    return PointInferenceNetwork(
+    return ScoringRuleInferenceNetwork(
         scores=dict(quantiles=QuantileScore(q=np.array([0.1, 0.4, 0.5, 0.7]), subnets=dict(value="mlp"))),
     )

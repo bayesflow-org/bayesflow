@@ -5,7 +5,7 @@ neural network components used to perform it.
 
 from .approximator import Approximator
 from .continuous_approximator import ContinuousApproximator
-from .point_approximator import PointApproximator
+from .scoring_rule_approximator import ScoringRuleApproximator
 from .model_comparison_approximator import ModelComparisonApproximator
 
 from ..utils._docs import _add_imports_to_all

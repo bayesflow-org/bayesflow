@@ -22,13 +22,14 @@ from .continuous_approximator import ContinuousApproximator
 
 
 @serializable("bayesflow.approximators")
-class PointApproximator(ContinuousApproximator):
+class ScoringRuleApproximator(ContinuousApproximator):
     """
-    A workflow for fast amortized point estimation of a conditional distribution.
+    A workflow for fast amortized Bayes risk minimization for arbitrary scoring rules.
 
-    The distribution is approximated by point estimators, parameterized by a feed-forward
-    :py:class:`~bayesflow.networks.PointInferenceNetwork`. Conditions can be compressed by an optional summary network
-    (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.
+    The distribution is approximated by point or variational distribution estimators, parameterized by a feed-forward
+    :py:class:`~bayesflow.networks.ScoringRuleInferenceNetwork`. Conditions can be compressed by an optional
+    summary network (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`)
+    or used directly as input to the inference network.
     """
 
     def estimate(

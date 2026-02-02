@@ -10,7 +10,7 @@ from .deep_set import DeepSet
 from .diffusion_model import DiffusionModel
 from .flow_matching import FlowMatching
 from .inference_network import InferenceNetwork
-from .point_inference_network import PointInferenceNetwork
+from .scoring_rule_inference_network import ScoringRuleInferenceNetwork
 from .mlp import MLP, TimeMLP
 from .fusion_network import FusionNetwork
 from .sequential import Sequential

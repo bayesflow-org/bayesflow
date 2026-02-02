@@ -143,7 +143,7 @@ class RatioApproximator(Approximator):
         # Eq. 7 (https://arxiv.org/abs/2210.06170) - we use a trick for numerical stability:
         # log(K + gamma * sum_{i=1}^{K} exp(h_i)) = log(exp(log K) + sum_{i=1}^{K} exp(h_i + log gamma))
         # so if we absorb log gamma into the network outputs and concatenate log K, we can use logsumexp
-        log_numerator_joint = log_gamma + joint_logits
+        log_numerator_joint = log_gamma + joint_logits[:, 0]
         log_denominator_joint = keras.ops.stack([log_gamma + joint_logits, log_K], axis=-1)
         log_denominator_joint = keras.ops.logsumexp(log_denominator_joint, axis=-1)
 

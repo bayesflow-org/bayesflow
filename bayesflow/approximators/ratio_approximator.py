@@ -7,7 +7,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.utils import expand_tile, concatenate_valid_shapes
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
-from .approximators import Approximator
+from .approximator import Approximator
 
 
 @serializable("bayesflow.approximators")

@@ -117,7 +117,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
             for the sampling process.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
-            Currently not supported for :py:class:`PointApproximator`.
+            Currently not supported for :py:class:`ScoringRuleApproximator`.
         batch_size : int or None, optional
             If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
             sequentially. Can help with memory management for large sample sizes.
@@ -136,7 +136,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
             of shape (num_datasets, num_samples, variable_block_size).
         """
         if split:
-            raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
+            raise NotImplementedError("split=True is currently not supported for `ScoringRuleApproximator`.")
 
         conditions = self._prepare_data(conditions, **kwargs)
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}

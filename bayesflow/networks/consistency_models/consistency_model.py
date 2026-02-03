@@ -4,7 +4,7 @@ import keras
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, layer_kwargs, weighted_mean, expand_right_as
+from bayesflow.utils import find_network, layer_kwargs, weighted_mean, expand_right_as, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -40,11 +40,11 @@ class ConsistencyModel(InferenceNetwork):
         self,
         total_steps: int | float,
         subnet: str | keras.Layer = "time_mlp",
-        max_time: int | float = 200,
+        max_time: int | float = 80,
         sigma2: float = 1.0,
         eps: float = 0.001,
         s0: int | float = 10,
-        s1: int | float = 50,
+        s1: int | float = 150,
         subnet_kwargs: dict[str, any] = None,
         **kwargs,
     ):
@@ -60,15 +60,15 @@ class ConsistencyModel(InferenceNetwork):
             If a string is provided, it should be a registered name (e.g., "time_mlp").
             If a type or keras.Layer is provided, it will be directly instantiated
             with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
-        max_time : int or float, optional, default: 200.0
-            The maximum time of the diffusion
+        max_time : int or float, optional, default: 80
+            The maximum time of the diffusion, equivalent to the maximum noise level (x_1=z*max_time).
         sigma2      : float or Tensor of dimension (input_dim, 1), optional, default: 1.0
             Controls the shape of the skip-function
         eps         : float, optional, default: 0.001
             The minimum time
         s0          : int or float, optional, default: 10
             Initial number of discretization steps
-        s1          : int or float, optional, default: 50
+        s1          : int or float, optional, default: 70
             Final number of discretization steps
         subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
@@ -90,8 +90,9 @@ class ConsistencyModel(InferenceNetwork):
         self.sigma = ops.sqrt(sigma2)
         self.eps = eps
         self.max_time = max_time
-        self.c_huber = None
-        self.c_huber2 = None
+        self.rho = float(kwargs.get("rho", 7.0))
+        self.p_mean = float(kwargs.get("p_mean", -1.1))
+        self.p_std = float(kwargs.get("p_std", 2.0))
 
         self.s0 = float(s0)
         self.s1 = float(s1)
@@ -101,6 +102,11 @@ class ConsistencyModel(InferenceNetwork):
         self.current_step.assign(0)
 
         self.seed_generator = keras.random.SeedGenerator()
+        self.discretized_times = None
+        self.discretization_map = None
+        self.c_huber = None
+        self.c_huber2 = None
+        self.unique_n = None
 
     @property
     def student(self):
@@ -122,34 +128,36 @@ class ConsistencyModel(InferenceNetwork):
             "eps": self.eps,
             "s0": self.s0,
             "s1": self.s1,
+            "rho": self.rho,
+            "p_mean": self.p_mean,
+            "p_std": self.p_std,
             # we do not need to store subnet_kwargs
         }
 
         return base_config | serialize(config)
 
     def _schedule_discretization(self, step) -> float:
-        """Schedule function for adjusting the discretization level `N` during
+        """Schedule function for adjusting the discretization level `N(k)` during
         the course of training.
 
         Implements the function N(k) from [2], Section 3.4.
         """
-
-        k_ = ops.floor(self.total_steps / (ops.log(self.s1 / self.s0) / ops.log(2.0) + 1.0))
+        k_ = ops.floor(self.total_steps / (ops.log(ops.floor(self.s1 / self.s0)) / ops.log(2.0) + 1.0))
         out = ops.minimum(self.s0 * ops.power(2.0, ops.floor(step / k_)), self.s1) + 1.0
         return out
 
-    def _discretize_time(self, num_steps, rho=7.0):
+    def _discretize_time(self, n_k: int) -> Tensor:
         """Function for obtaining the discretized time according to [2],
         Section 2, bottom of page 2.
         """
-
-        N = num_steps + 1
-        indices = ops.arange(1, N + 1, dtype="float32")
-        one_over_rho = 1.0 / rho
+        indices = ops.arange(1, n_k + 1, dtype="float32")
+        one_over_rho = 1.0 / self.rho
         discretized_time = (
             self.eps**one_over_rho
-            + (indices - 1.0) / (ops.cast(N, "float32") - 1.0) * (self.max_time**one_over_rho - self.eps**one_over_rho)
-        ) ** rho
+            + (indices - 1.0)
+            / (ops.cast(n_k, "float32") - 1.0)
+            * (self.max_time**one_over_rho - self.eps**one_over_rho)
+        ) ** self.rho
         return discretized_time
 
     def build(self, xz_shape, conditions_shape=None):
@@ -183,21 +191,20 @@ class ConsistencyModel(InferenceNetwork):
 
         # First, we calculate all unique numbers of discretization steps n
         # in a loop, as self.total_steps might be large
-        self.max_n = int(self._schedule_discretization(self.total_steps))
-
-        if self.max_n != self.s1 + 1:
+        max_n = int(self._schedule_discretization(self.total_steps))
+        if max_n != self.s1 + 1:
             raise ValueError("The maximum number of discretization steps must be equal to s1 + 1.")
 
         unique_n = set()
         for step in range(int(self.total_steps)):
             unique_n.add(int(self._schedule_discretization(step)))
-        unique_n = sorted(list(unique_n))
+        self.unique_n = sorted(list(unique_n))
 
         # Next, we calculate the discretized times for each n
         # and establish a mapping between n and the position i of the
         # discretized times in the vector
-        discretized_times = np.zeros((len(unique_n), self.max_n + 1))
-        discretization_map = np.zeros((self.max_n + 1,), dtype=np.int32)
+        discretized_times = np.zeros((len(unique_n), max_n + 1))
+        discretization_map = np.zeros((max_n + 1,), dtype=np.int32)
         for i, n in enumerate(unique_n):
             disc = ops.convert_to_numpy(self._discretize_time(n))
             discretized_times[i, : len(disc)] = disc
@@ -232,7 +239,7 @@ class ConsistencyModel(InferenceNetwork):
         training    : bool, optional, default: True
             Whether internal layers (e.g., dropout) should behave in train or inference mode.
         **kwargs    : dict, optional, default: {}
-            Additional keyword arguments. Include `steps` (default: 10) to
+            Additional keyword arguments. Include `steps` (default: s0+1) to
             adjust the number of sampling steps.
 
         Returns
@@ -240,7 +247,12 @@ class ConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
-        steps = kwargs.get("steps", 10)
+        steps = int(kwargs.get("steps", self.s0 + 1))
+        if steps not in self.unique_n:
+            logging.warning(
+                "The number of discretization steps is not equal to the number of unique steps used during training. "
+                "This might lead to suboptimal sample quality."
+            )
         x = keras.ops.copy(z) * self.max_time
         discretized_time = keras.ops.flip(self._discretize_time(steps), axis=-1)
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
@@ -298,12 +310,10 @@ class ConsistencyModel(InferenceNetwork):
 
         # Randomly sample t_n and t_[n+1] and reshape to (batch_size, 1)
         # adapted noise schedule from [2], Section 3.5
-        p_mean = -1.1
-        p_std = 2.0
         p = ops.where(
             discretized_time[1:] > 0.0,
-            ops.erf((ops.log(discretized_time[1:]) - p_mean) / (ops.sqrt(2.0) * p_std))
-            - ops.erf((ops.log(discretized_time[:-1]) - p_mean) / (ops.sqrt(2.0) * p_std)),
+            ops.erf((ops.log(discretized_time[1:]) - self.p_mean) / (ops.sqrt(2.0) * self.p_std))
+            - ops.erf((ops.log(discretized_time[:-1]) - self.p_mean) / (ops.sqrt(2.0) * self.p_std)),
             0.0,
         )
 
@@ -316,8 +326,7 @@ class ConsistencyModel(InferenceNetwork):
         noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
 
         teacher_out = self._forward_train(x, noise, t1, conditions=conditions, training=stage == "training")
-        # difference between teacher and student: different time,
-        # and no gradient for the teacher
+        # difference between teacher and student: different time, and no gradient for the teacher
         teacher_out = ops.stop_gradient(teacher_out)
         student_out = self._forward_train(x, noise, t2, conditions=conditions, training=stage == "training")
 

@@ -283,7 +283,7 @@ class ConsistencyModel(InferenceNetwork):
         training    : bool, optional, default: True
             Whether internal layers (e.g., dropout) should behave in train or inference mode.
         """
-        subnet_out = self.subnet((x, t, conditions), training=training)
+        subnet_out = self.subnet((x, t / self.max_time, conditions), training=training)
         f = self.output_projector(subnet_out)
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)

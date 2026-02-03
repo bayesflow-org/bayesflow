@@ -65,6 +65,7 @@ class ContinuousApproximator(Approximator):
         self.inference_network = inference_network
         self.summary_network = summary_network
 
+        # standardization has to come last in the constructor
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
         else:

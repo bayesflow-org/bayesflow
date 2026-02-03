@@ -59,6 +59,7 @@ class ModelComparisonApproximator(Approximator):
         self.num_models = num_models
         self.logits_projector = keras.layers.Dense(units=num_models)
 
+        # standardization has to come last in the constructor
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
         else:

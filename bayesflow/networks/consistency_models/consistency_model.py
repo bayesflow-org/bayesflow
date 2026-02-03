@@ -97,6 +97,9 @@ class ConsistencyModel(InferenceNetwork):
         self.s0 = float(s0)
         self.s1 = float(s1)
 
+        if self.total_steps < self.s0:
+            raise ValueError(f"total_steps={self.total_steps} must be greater than or equal to s0={self.s0}.")
+
         # create variable that works with JIT compilation
         self.current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
         self.current_step.assign(0)

@@ -5,8 +5,9 @@ neural network components used to perform it.
 
 from .approximator import Approximator
 from .continuous_approximator import ContinuousApproximator
-from .point_approximator import PointApproximator
 from .model_comparison_approximator import ModelComparisonApproximator
+from .point_approximator import PointApproximator
+from .ratio_approximator import RatioApproximator
 
 from ..utils._docs import _add_imports_to_all
 

@@ -31,7 +31,7 @@ def test_loss_progress_offline(approximator, train_dataset, validation_dataset):
     num_epochs = 3
 
     if isinstance(approximator, EnsembleApproximator):
-        train_dataset = EnsembleDataset(train_dataset, num_ensemble=len(approximator.approximators))
+        train_dataset = EnsembleDataset(train_dataset, ensemble_size=len(approximator.approximators))
 
     # Capture ostream and train model
     with io.StringIO() as stream:
@@ -68,7 +68,7 @@ def test_loss_progress_online(approximator, simulator, adapter, validation_datas
 
     train_dataset = OnlineDataset(simulator=simulator, adapter=adapter, num_batches=4, batch_size=16)
     if isinstance(approximator, EnsembleApproximator):
-        train_dataset = EnsembleDataset(train_dataset, num_ensemble=len(approximator.approximators))
+        train_dataset = EnsembleDataset(train_dataset, ensemble_size=len(approximator.approximators))
 
     # Capture ostream and train model
     with io.StringIO() as stream:

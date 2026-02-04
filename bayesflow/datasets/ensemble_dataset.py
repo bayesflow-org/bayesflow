@@ -42,7 +42,7 @@ class EnsembleDataset(keras.utils.PyDataset):
     ----------
     dataset : keras.utils.PyDataset
         A BayesFlow dataset (OnlineDataset, OfflineDataset, DiskDataset).
-    num_ensemble : int
+    ensemble_size : int
         Number of ensemble members.
     data_reuse : float, default=1.0
         Degree of independence between ensemble members in ``[0, 1]``.
@@ -52,7 +52,7 @@ class EnsembleDataset(keras.utils.PyDataset):
     def __init__(
         self,
         dataset: keras.utils.PyDataset,
-        num_ensemble: int,
+        ensemble_size: int,
         data_reuse: float = 1.0,
         **kwargs,
     ):
@@ -60,15 +60,15 @@ class EnsembleDataset(keras.utils.PyDataset):
 
         # Dispatch based on capabilities (duck typing)
         if hasattr(dataset, "simulator") and hasattr(dataset, "num_batches"):
-            self._impl = EnsembleOnlineDataset(
+            self._wrapped = EnsembleOnlineDataset(
                 dataset,
-                num_ensemble=num_ensemble,
+                ensemble_size=ensemble_size,
                 data_reuse=data_reuse,
             )
         elif hasattr(dataset, "get_batch_by_sample_indices") and hasattr(dataset, "num_samples"):
-            self._impl = EnsembleIndexedDataset(
+            self._wrapped = EnsembleIndexedDataset(
                 dataset,
-                num_ensemble=num_ensemble,
+                ensemble_size=ensemble_size,
                 data_reuse=data_reuse,
             )
         else:
@@ -77,17 +77,17 @@ class EnsembleDataset(keras.utils.PyDataset):
                 "or Offline/Disk-like (has `num_samples` and `get_batch_by_sample_indices`)."
             )
 
-    def __len__(self) -> int:
-        return len(self._impl)
-
-    def __getitem__(self, item: int) -> dict[str, object]:
-        return self._impl[item]
-
-    def on_epoch_end(self):
-        if hasattr(self._impl, "on_epoch_end"):
-            self._impl.on_epoch_end()
-
     @property
     def num_batches(self) -> int:
         # provide a consistent attribute if the impl has it, else fall back to __len__
-        return int(getattr(self._impl, "num_batches", len(self._impl)))
+        return int(getattr(self._wrapped, "num_batches", len(self._wrapped)))
+
+    def __len__(self) -> int:
+        return len(self._wrapped)
+
+    def __getitem__(self, item: int) -> dict[str, object]:
+        return self._wrapped[item]
+
+    def on_epoch_end(self):
+        if hasattr(self._wrapped, "on_epoch_end"):
+            self._wrapped.on_epoch_end()

@@ -12,7 +12,7 @@ def train_dataset_for_ensemble(batch_size, adapter, simulator):
     data = simulator.sample((num_batches * batch_size,))
     return EnsembleDataset(
         OfflineDataset(data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches),
-        num_ensemble=2,
+        ensemble_size=2,
     )
 
 

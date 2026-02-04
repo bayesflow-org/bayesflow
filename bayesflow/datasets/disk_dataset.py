@@ -4,7 +4,6 @@ import os
 import pathlib as pl
 
 import numpy as np
-
 import keras
 
 from bayesflow.adapters import Adapter

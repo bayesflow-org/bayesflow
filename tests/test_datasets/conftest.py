@@ -14,7 +14,7 @@ def num_batches():
 
 
 @pytest.fixture()
-def num_ensemble():
+def ensemble_size():
     return 3
 
 
@@ -39,10 +39,10 @@ def individual_dataset(request, online_dataset, offline_dataset):
 
 
 @pytest.fixture()
-def ensemble_dataset(individual_dataset, num_ensemble, data_reuse):
+def ensemble_dataset(individual_dataset, ensemble_size, data_reuse):
     from bayesflow import EnsembleDataset
 
-    return EnsembleDataset(individual_dataset, num_ensemble=num_ensemble, data_reuse=data_reuse)
+    return EnsembleDataset(individual_dataset, ensemble_size=ensemble_size, data_reuse=data_reuse)
 
 
 @pytest.fixture()
@@ -80,8 +80,8 @@ def ensemble_offline_dataset(simulator, batch_size, num_batches, workers, use_mu
     # TODO: there is a bug in keras where if len(dataset) == 1 batch
     #  fit will error because no logs are generated
     #  the single batch is then skipped entirely
-    num_ensemble = 3
-    data = simulator.sample((batch_size * num_batches * num_ensemble,))
+    ensemble_size = 3
+    data = simulator.sample((batch_size * num_batches * ensemble_size,))
     return EnsembleDataset(
         OfflineDataset(
             data=data,
@@ -90,7 +90,7 @@ def ensemble_offline_dataset(simulator, batch_size, num_batches, workers, use_mu
             use_multiprocessing=use_multiprocessing,
             adapter=None,
         ),
-        num_ensemble=num_ensemble,
+        ensemble_size=ensemble_size,
     )
 
 

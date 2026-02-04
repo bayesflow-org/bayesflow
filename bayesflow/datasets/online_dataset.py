@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping, Sequence
 
-import keras
 import numpy as np
+import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.simulators.simulator import Simulator
@@ -71,25 +71,35 @@ class OnlineDataset(keras.utils.PyDataset):
         dict of str to np.ndarray
             A batch of simulated (and optionally augmented/adapted) data.
         """
-        batch = self.simulator.sample((self.batch_size,))
+        batch = self.simulator.sample(self.batch_size)
 
-        if self.augmentations is None:
-            pass
-        elif isinstance(self.augmentations, Mapping):
-            for key, fn in self.augmentations.items():
-                batch[key] = fn(batch[key])
-        elif isinstance(self.augmentations, Sequence):
-            for fn in self.augmentations:
-                batch = fn(batch)
-        elif isinstance(self.augmentations, Callable):
-            batch = self.augmentations(batch)
-        else:
-            raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
+        batch = self._apply_augmentations(batch)
 
         if self.adapter is not None:
             batch = self.adapter(batch)
 
         return batch
+
+    def _apply_augmentations(self, batch: dict[str, object]) -> dict[str, object]:
+        match self.augmentations:
+            case None:
+                return batch
+
+            case Mapping() as aug:
+                for key, fn in aug.items():
+                    batch[key] = fn(batch[key])
+                return batch
+
+            case Sequence() as augs if not isinstance(augs, (str, bytes)):
+                for fn in augs:
+                    batch = fn(batch)
+                return batch
+
+            case Callable() as fn:
+                return fn(batch)
+
+            case _:
+                raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
     @property
     def num_batches(self) -> int:

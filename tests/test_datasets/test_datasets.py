@@ -32,14 +32,14 @@ def test_dataset_returns_batch(any_dataset, batch_size):
     assert keras.ops.shape(samples)[0] == batch_size
 
 
-def test_ensemble_batch_shape_and_type(ensemble_dataset, num_ensemble, batch_size):
+def test_ensemble_batch_shape_and_type(ensemble_dataset, ensemble_size, batch_size):
     batch = ensemble_dataset[0]
     assert "x" in batch
     x = batch["x"]
 
     assert isinstance(x, np.ndarray)
     assert x.ndim == 3
-    assert x.shape[1] == num_ensemble
+    assert x.shape[1] == ensemble_size
     assert x.shape[0] <= batch_size
     assert x.shape[2] == 2
 
@@ -63,16 +63,16 @@ def overlap(a, b):
     return len(set(a.tolist()).intersection(b.tolist())) / len(a)
 
 
-def test_offline_overlap_monotonic(offline_dataset, num_ensemble):
+def test_offline_overlap_monotonic(offline_dataset, ensemble_size):
     from bayesflow import EnsembleDataset
 
-    ds0 = EnsembleDataset(offline_dataset, num_ensemble=num_ensemble, data_reuse=0.0)
-    ds05 = EnsembleDataset(offline_dataset, num_ensemble=num_ensemble, data_reuse=0.5)
-    ds1 = EnsembleDataset(offline_dataset, num_ensemble=num_ensemble, data_reuse=1.0)
+    ds0 = EnsembleDataset(offline_dataset, ensemble_size=ensemble_size, data_reuse=0.0)
+    ds05 = EnsembleDataset(offline_dataset, ensemble_size=ensemble_size, data_reuse=0.5)
+    ds1 = EnsembleDataset(offline_dataset, ensemble_size=ensemble_size, data_reuse=1.0)
 
     # assuming indexed impl
-    a0, b0 = ds0._impl.member_indices[0], ds0._impl.member_indices[1]
-    a05, b05 = ds05._impl.member_indices[0], ds05._impl.member_indices[1]
-    a1, b1 = ds1._impl.member_indices[0], ds1._impl.member_indices[1]
+    a0, b0 = ds0._wrapped.member_indices[0], ds0._wrapped.member_indices[1]
+    a05, b05 = ds05._wrapped.member_indices[0], ds05._wrapped.member_indices[1]
+    a1, b1 = ds1._wrapped.member_indices[0], ds1._wrapped.member_indices[1]
 
     assert overlap(a0, b0) <= overlap(a05, b05) <= overlap(a1, b1)

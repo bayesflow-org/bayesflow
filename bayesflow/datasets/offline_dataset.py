@@ -1,7 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 
 import numpy as np
-
 import keras
 
 from bayesflow.adapters import Adapter
@@ -73,6 +72,10 @@ class OfflineDataset(keras.utils.PyDataset):
         if self._shuffle:
             self.shuffle()
 
+    @property
+    def num_batches(self) -> int:
+        return int(np.ceil(self.num_samples / self.batch_size))
+
     def __getitem__(self, item: int) -> dict[str, np.ndarray]:
         """
         Load a batch of data from disk.
@@ -134,23 +137,25 @@ class OfflineDataset(keras.utils.PyDataset):
         return batch
 
     def _apply_augmentations(self, batch: dict[str, object]) -> dict[str, object]:
-        if self.augmentations is None:
-            return batch
-        if isinstance(self.augmentations, Mapping):
-            for key, fn in self.augmentations.items():
-                batch[key] = fn(batch[key])
-            return batch
-        if isinstance(self.augmentations, Sequence):
-            for fn in self.augmentations:
-                batch = fn(batch)
-            return batch
-        if isinstance(self.augmentations, Callable):
-            return self.augmentations(batch)
-        raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
+        match self.augmentations:
+            case None:
+                return batch
 
-    @property
-    def num_batches(self) -> int:
-        return int(np.ceil(self.num_samples / self.batch_size))
+            case Mapping() as aug:
+                for key, fn in aug.items():
+                    batch[key] = fn(batch[key])
+                return batch
+
+            case Sequence() as augs if not isinstance(augs, (str, bytes)):
+                for fn in augs:
+                    batch = fn(batch)
+                return batch
+
+            case Callable() as fn:
+                return fn(batch)
+
+            case _:
+                raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
     def __len__(self) -> int:
         return self.num_batches

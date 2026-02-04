@@ -16,7 +16,6 @@ from .approximator import Approximator
 class EnsembleApproximator(Approximator):
     def __init__(self, approximators: dict[str, Approximator], **kwargs):
         super().__init__(**kwargs)
-
         self.approximators = approximators
 
     @property
@@ -26,7 +25,6 @@ class EnsembleApproximator(Approximator):
         # self.adapter will only be used when super().fit calls build_dataset(..., adapter=self.adapter).
         # The attribute would not be necessary if the dataset wouldn't need an adapter.
         return next(iter(self.approximators.values())).adapter
-        # TODO: enforce identical adapters
 
     @classmethod
     def build_dataset(
@@ -61,7 +59,7 @@ class EnsembleApproximator(Approximator):
     #     )
     #
     #     # Wrap it into an EnsembleDataset
-    #     return EnsembleDataset(base_ds, num_ensemble=len(self.approximators), **kwargs)
+    #     return EnsembleDataset(base_ds, ensemble_size=len(self.approximators), **kwargs)
 
     def build_from_data(self, adapted_data: dict[str, any]):
         data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
@@ -75,7 +73,6 @@ class EnsembleApproximator(Approximator):
             approximator.build(input_shape)
 
         self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
-        # Update attribute to mark whether it has at least one score that represents a distribution
         self.has_distribution = len(self.distribution_keys) > 0
 
     def fit(self, *args, **kwargs):
@@ -146,7 +143,6 @@ class EnsembleApproximator(Approximator):
         sample_weight: Tensor = None,
         stage: str = "training",
     ) -> dict[str, dict[str, Tensor]]:
-        # Prepare empty dict for metrics
         metrics = {}
 
         # Define the variable slices as None (default) or respective input
@@ -175,14 +171,12 @@ class EnsembleApproximator(Approximator):
                 stage=stage,
             )
 
-        # Flatten metrics dict
-        joint_metrics = {}
-        for approx_name in metrics.keys():
-            for metric_key, value in metrics[approx_name].items():
-                joint_metrics[f"{approx_name}/{metric_key}"] = value
-        metrics = joint_metrics
+        metrics = {
+            f"{approx_name}/{metric_key}": value
+            for approx_name, approx_metrics in metrics.items()
+            for metric_key, value in approx_metrics.items()
+        }
 
-        # Sum over losses
         losses = [v for k, v in metrics.items() if "loss" in k]
         metrics["loss"] = keras.ops.sum(losses)
 
@@ -217,17 +211,14 @@ class EnsembleApproximator(Approximator):
             Samples keyed by approximator name, then by variable name.
         """
         samples = {}
-        # if num_samples is int, sample that many for each distribution approximator.
         if isinstance(num_samples, int):
-            num_samples: np.ndarray = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
-            num_samples: dict[str, int] = {k: num_samples[i] for i, k in enumerate(self.distribution_keys)}
-        for approx_name in num_samples.keys():
-            if num_samples[approx_name] < 1:
-                samples[approx_name] = None
-            else:
-                samples[approx_name] = self.approximators[approx_name].sample(
-                    num_samples=num_samples[approx_name], conditions=conditions, split=split, **kwargs
-                )
+            num_samples = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
+            num_samples = {k: num_samples[i] for i, k in enumerate(self.distribution_keys)}
+
+        for approx_name, _num_samples in num_samples.items():
+            samples[approx_name] = self.approximators[approx_name].sample(
+                num_samples=_num_samples, conditions=conditions, split=split, **kwargs
+            )
         return samples
 
     def sample(
@@ -265,6 +256,7 @@ class EnsembleApproximator(Approximator):
             Samples with shape (batch_size, num_samples, ...) for each variable.
         """
         member_weights: Mapping[str, float] = self._resolve_member_weights(member_weights)
+
         # Sample members from multinomial and convert to dict
         num_samples_per_member = np.random.multinomial(num_samples, list(member_weights.values()))
         num_samples_per_member = {k: num_samples_per_member[i] for i, k in enumerate(member_weights.keys())}
@@ -382,13 +374,7 @@ class EnsembleApproximator(Approximator):
                 estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
         return estimates
 
-    def estimate(
-        self,
-        conditions: Mapping[str, np.ndarray],
-        members: Sequence[str] | None = None,
-        split: bool = False,
-        **kwargs,
-    ):
+    def estimate(*args, **kwargs):
         raise NotImplementedError(
             "Automatically aggregating estimates across ensemble members is not supported. "
             "Use estimate_separate() to get estimates from each approximator."

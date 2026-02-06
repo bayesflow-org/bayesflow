@@ -281,6 +281,47 @@ class ContinuousApproximator(Approximator):
 
         return inference_variables
 
+    def _prepare_data(
+        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
+        """
+        Adapts, (optionally) standardizes, and converts data to tensors for inference.
+
+        Handles inputs containing only conditions, only inference_variables, or both.
+        Optionally tracks log-determinant Jacobian (ldj) of transformations.
+        """
+        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
+
+        if log_det_jac:
+            data, ldj = adapted
+            ldj_inference = ldj.get("inference_variables", 0.0)
+        else:
+            data = adapted
+            ldj_inference = None
+
+        # Standardize conditions
+        for key in self.CONDITION_KEYS:
+            if key in self.standardize and key in data:
+                data[key] = self.standardize_layers[key](data[key])
+
+        # Standardize inference variables
+        if "inference_variables" in data and "inference_variables" in self.standardize:
+            result = self.standardize_layers["inference_variables"](
+                data["inference_variables"], log_det_jac=log_det_jac
+            )
+            if log_det_jac:
+                data["inference_variables"], ldj_std = result
+                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
+            else:
+                data["inference_variables"] = result
+
+        # Convert all data to tensors
+        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+
+        if log_det_jac:
+            return data, ldj_inference
+        return data
+
     def fit(self, *args, **kwargs):
         """
         Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
@@ -524,52 +565,13 @@ class ContinuousApproximator(Approximator):
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         return samples
 
-    def _prepare_data(
-        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
-    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
-        """
-        Adapts, (optionally) standardizes, and converts data to tensors for inference.
-
-        Handles inputs containing only conditions, only inference_variables, or both.
-        Optionally tracks log-determinant Jacobian (ldj) of transformations.
-        """
-        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
-
-        if log_det_jac:
-            data, ldj = adapted
-            ldj_inference = ldj.get("inference_variables", 0.0)
-        else:
-            data = adapted
-            ldj_inference = None
-
-        # Standardize conditions
-        for key in self.CONDITION_KEYS:
-            if key in self.standardize and key in data:
-                data[key] = self.standardize_layers[key](data[key])
-
-        # Standardize inference variables
-        if "inference_variables" in data and "inference_variables" in self.standardize:
-            result = self.standardize_layers["inference_variables"](
-                data["inference_variables"], log_det_jac=log_det_jac
-            )
-            if log_det_jac:
-                data["inference_variables"], ldj_std = result
-                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
-            else:
-                data["inference_variables"] = result
-
-        # Convert all data to tensors
-        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
-
-        if log_det_jac:
-            return data, ldj_inference
-        return data
-
     def _sample(
         self,
         num_samples: int,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         sample_shape: Literal["infer"] | Sequence[int] = "infer",
         **kwargs,
     ) -> Tensor:
@@ -582,7 +584,8 @@ class ContinuousApproximator(Approximator):
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
             )
 
             inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
@@ -702,6 +705,8 @@ class ContinuousApproximator(Approximator):
         inference_variables: Tensor,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         **kwargs,
     ) -> Tensor:
         if self.summary_network is None:
@@ -713,7 +718,8 @@ class ContinuousApproximator(Approximator):
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
             )
             inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 

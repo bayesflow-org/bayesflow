@@ -19,7 +19,7 @@ from bayesflow.utils.serialization import serialize, deserialize, serializable
 from .approximator import Approximator
 from ..networks.standardization import Standardization
 
-from _runtime import Sampler, ConditionBuilder
+from ._runtime import Sampler, ConditionBuilder
 
 
 @serializable("bayesflow.approximators")
@@ -65,6 +65,7 @@ class ContinuousApproximator(Approximator):
         self.sampler = Sampler()
         self.standardizer = Standardization(standardize)
         self.condition_builder = ConditionBuilder()
+        self.standardize = standardize
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
         if self.summary_network is not None and not self.summary_network.built:
@@ -195,16 +196,17 @@ class ContinuousApproximator(Approximator):
             "inference_" or "summary_" to indicate its source.
         """
 
-        inference_variables = self.standardizer.standardize(inference_variables, key="inference_variables", stage=stage)
-        inference_conditions = self.standardizer.standardize(
+        inference_variables = self.standardizer.maybe_standardize(
+            inference_variables, key="inference_variables", stage=stage
+        )
+        inference_conditions = self.standardizer.maybe_standardize(
             inference_conditions, key="inference_conditions", stage=stage
         )
-        summary_variables = self.standardizer.standardize(summary_variables, key="summary_variables", stage=stage)
+        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
 
         summary_metrics, resolved_conditions = self.condition_builder.resolve(
             self.summary_network, inference_conditions, summary_variables, stage=stage, purpose="metrics"
         )
-
         inference_metrics = self.inference_network.compute_metrics(
             inference_variables, conditions=resolved_conditions, sample_weight=sample_weight, stage=stage
         )
@@ -284,6 +286,7 @@ class ContinuousApproximator(Approximator):
             "adapter": self.adapter,
             "inference_network": self.inference_network,
             "summary_network": self.summary_network,
+            "standardize": self.standardize,
         }
 
         return base_config | serialize(config)

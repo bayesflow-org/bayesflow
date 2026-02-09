@@ -4,13 +4,13 @@ from tqdm.auto import tqdm
 
 import keras
 
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils.logging import warning
 from bayesflow.utils import slice_maybe_nested, dim_maybe_nested, tree_concatenate
 from bayesflow.types import Tensor
 
 
-@serializable("bayesflow.samplers")
+@serializable("bayesflow.approximators")
 class Sampler:
     def infer_sample_shape(
         self,
@@ -113,3 +113,10 @@ class Sampler:
         if conditions is not None:
             samples = self.unflatten_samples(samples, num_samples)
         return samples
+
+    def get_config(self) -> dict:
+        return {}
+
+    @classmethod
+    def from_config(cls, config: dict, custom_objects=None) -> "Sampler":
+        return cls(**deserialize(config, custom_objects=custom_objects))

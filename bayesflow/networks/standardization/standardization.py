@@ -2,9 +2,9 @@ from collections.abc import Sequence
 
 import keras
 
-from bayesflow.types import Tensor
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, serialize, deserialize
 from bayesflow.utils import layer_kwargs
+from bayesflow.types import Tensor
 
 from .standardize import Standardize
 
@@ -68,3 +68,13 @@ class Standardization(keras.Layer):
             layer.build(data_shapes[var])
 
         self.built = True
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = layer_kwargs(base_config)
+        config = {"standardize": self.standardize}
+        return base_config | serialize(config)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))

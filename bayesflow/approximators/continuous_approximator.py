@@ -201,12 +201,12 @@ class ContinuousApproximator(Approximator):
         )
         summary_variables = self.standardizer.standardize(summary_variables, key="summary_variables", stage=stage)
 
-        summary_metrics, conditions = self.condition_builder.resolve(
+        summary_metrics, resolved_conditions = self.condition_builder.resolve(
             self.summary_network, inference_conditions, summary_variables, stage=stage, purpose="metrics"
         )
 
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=conditions, sample_weight=sample_weight, stage=stage
+            inference_variables, conditions=resolved_conditions, sample_weight=sample_weight, stage=stage
         )
 
         if "loss" in summary_metrics:
@@ -345,41 +345,42 @@ class ContinuousApproximator(Approximator):
             Dictionary containing generated samples with the same keys as `conditions`.
         """
 
-        adapted_data = self.adapter(conditions, strict=False)
-        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
-
-        inference_conditions = adapted_data.get("inference_conditions")
-        summary_variables = adapted_data.get("summary_variables")
+        adapted_conditions = self.adapter(conditions, strict=False)
+        adapted_conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_conditions)
 
         inference_conditions = self.standardizer.maybe_standardize(
-            inference_conditions, key="inference_conditions", stage="inference"
+            adapted_conditions.get("inference_conditions"), key="inference_conditions", stage="inference"
         )
         summary_variables = self.standardizer.maybe_standardize(
-            summary_variables, key="summary_variables", stage="inference"
+            adapted_conditions.get("summary_variables"), key="summary_variables", stage="inference"
         )
 
-        conditions, summaries = self.condition_builder.resolve(
-            self.summary_network, inference_conditions, summary_variables, stage="inference", purpose="call"
+        summary_outputs, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
         )
 
         samples = self.sampler.sample(
             inference_network=self.inference_network,
             num_samples=num_samples,
-            conditions=conditions,
+            conditions=resolved_conditions,
             batch_size=batch_size,
             sample_shape=sample_shape,
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
 
         samples = self.standardizer.maybe_standardize(
-            samples, key="inference_conditions", stage="inference", forward=False
+            samples, key="inference_variables", stage="inference", forward=False
         )
 
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": samples})
         samples = self.adapter(samples, inverse=True, strict=False)
 
-        if return_summaries and summaries is not None:
-            samples["summaries"] = summaries
+        if return_summaries and summary_outputs is not None:
+            samples["summaries"] = summary_outputs
 
         if split:
             samples = split_arrays(samples, axis=-1)
@@ -407,30 +408,30 @@ class ContinuousApproximator(Approximator):
         adapted_data, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
         adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
 
-        inference_conditions = adapted_data.get("inference_conditions")
-        summary_variables = adapted_data.get("summary_variables")
-        inference_variables = adapted_data.get("inference_variables")
-
         inference_conditions = self.standardizer.maybe_standardize(
-            inference_conditions, key="inference_conditions", stage="inference"
+            adapted_data.get("inference_conditions"), key="inference_conditions", stage="inference"
         )
         summary_variables = self.standardizer.maybe_standardize(
-            summary_variables, key="summary_variables", stage="inference"
+            adapted_data.get("summary_variables"), key="summary_variables", stage="inference"
         )
         inference_variables, log_det_jac_std = self.standardizer.maybe_standardize(
-            inference_variables, key="inference_variables", stage="inference", log_det_jac=True
+            adapted_data.get("inference_variables"), key="inference_variables", stage="inference", log_det_jac=True
         )
 
         log_det_jac = log_det_jac.get("inference_variables", 0.0)
         log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
 
-        conditions, _ = self.condition_builder.resolve(
-            self.summary_network, inference_conditions, summary_variables, stage="inference", purpose="call"
+        _, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
         )
 
         log_prob = self.inference_network.log_prob(
             inference_variables,
-            conditions=conditions,
+            conditions=resolved_conditions,
             **filter_kwargs(kwargs, self.inference_network.log_prob),
         )
 
@@ -458,22 +459,21 @@ class ContinuousApproximator(Approximator):
         summaries : np.ndarray
             The learned summary statistics.
         """
-        if self.summary_network is None:
-            raise ValueError("A summary network is required to compute summaries.")
-
         adapted_data = self.adapter(conditions, strict=False)
-        summary_variables = adapted_data.get("summary_variables")
+        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
+
         summary_variables = self.standardizer.maybe_standardize(
-            summary_variables, key="summary_variables", stage="inference"
+            adapted_data.get("summary_variables"), key="summary_variables", stage="inference"
         )
 
-        if summary_variables is None:
-            raise ValueError("Summary variables are required to compute summaries.")
-
-        summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
-        summaries = keras.ops.convert_to_numpy(summaries)
-
-        return summaries
+        summary_outputs, _ = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=None,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
+        )
+        return keras.ops.convert_to_numpy(summary_outputs)
 
     def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
         """

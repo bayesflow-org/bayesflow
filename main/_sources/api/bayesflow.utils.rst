@@ -42,6 +42,7 @@ utils
     calibration_curve
     check_estimates_prior_shapes
     check_lengths_same
+    compute_empirical_coverage
     concatenate_valid
     concatenate_valid_shapes
     confusion_matrix
@@ -50,6 +51,7 @@ utils
     deserialize_value_or_type
     detailed_loss_callback
     devices
+    dim_maybe_nested
     expand
     expand_as
     expand_left
@@ -72,6 +74,7 @@ utils
     find_recurrent_net
     find_summary_network
     format_bytes
+    format_duration
     integrate
     integrate_stochastic
     jacobian
@@ -92,6 +95,7 @@ utils
     serialize_value_or_type
     simultaneous_ecdf_bands
     size_of
+    slice_maybe_nested
     split_arrays
     split_tensors
     squeeze_inner_estimates_dict

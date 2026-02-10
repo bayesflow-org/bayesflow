@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,11 +42,11 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Linear_Regression_Starter';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -581,7 +581,7 @@
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(3,)
-[1.65244189 2.02170528 0.17565005]
+[1.47871691 1.98283522 2.87658279]
 </pre></div>
 </div>
 </div>
@@ -609,7 +609,7 @@
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(2,)
-[-6.548108    0.69250753]
+[-0.5259126  -1.68161681]
 </pre></div>
 </div>
 </div>
@@ -633,7 +633,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>14
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>10
 </pre></div>
 </div>
 </div>
@@ -662,11 +662,11 @@ that the number of observations <code class="docutils literal notranslate"><span
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>13
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>10
 (500, 2)
 (500, 1)
-(500, 13)
-(500, 13)
+(500, 10)
+(500, 10)
 </pre></div>
 </div>
 </div>
@@ -691,7 +691,7 @@ that the number of observations <code class="docutils literal notranslate"><span
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8295ed0f4b99b64245b9aace0ab1779a441ee396b92eee25ea404a6d243cb9d5.png" src="../_images/8295ed0f4b99b64245b9aace0ab1779a441ee396b92eee25ea404a6d243cb9d5.png" />
+<img alt="../_images/36e2be8904d9b6f03fcc9d0c7eb12a0ea859322cc6be5c7fb6bc9734236ec72b.png" src="../_images/36e2be8904d9b6f03fcc9d0c7eb12a0ea859322cc6be5c7fb6bc9734236ec72b.png" />
 </div>
 </div>
 </section>
@@ -731,7 +731,7 @@ that the number of observations <code class="docutils literal notranslate"><span
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(500, 13, 2)
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(500, 10, 2)
 (500, 1)
 (500, 3)
 </pre></div>
@@ -765,7 +765,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 <p>To actually approximate the posterior distribution, we need to define a generative neural network. Here we choose a simple coupling flow network. For more complicated models and corresponding posteriors, we may need to choose a different, more flexible generative network, for example <code class="docutils literal notranslate"><span class="pre">bf.networks.FlowMatching()</span></code>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -795,6 +795,114 @@ At a high level, our architecture consists of a summary network <span class="mat
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OnlineDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">35s</span> 50ms/step - loss: 2.6087
+Epoch 2/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 55ms/step - loss: 1.4402
+Epoch 3/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 57ms/step - loss: 1.0645
+Epoch 4/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 56ms/step - loss: 0.6592
+Epoch 5/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 57ms/step - loss: 0.4623
+Epoch 6/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: 0.2985
+Epoch 7/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 62ms/step - loss: 0.2013
+Epoch 8/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: 0.0674
+Epoch 9/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 56ms/step - loss: 0.0066
+Epoch 10/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 57ms/step - loss: -0.0032
+Epoch 11/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.0811
+Epoch 12/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.0604
+Epoch 13/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.1603
+Epoch 14/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">13s</span> 63ms/step - loss: -0.2205
+Epoch 15/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">13s</span> 64ms/step - loss: -0.1351
+Epoch 16/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">13s</span> 64ms/step - loss: -0.2672
+Epoch 17/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 62ms/step - loss: -0.2118
+Epoch 18/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.2116
+Epoch 19/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 61ms/step - loss: -0.3582
+Epoch 20/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">13s</span> 63ms/step - loss: -0.3634
+Epoch 21/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 55ms/step - loss: -0.3865
+Epoch 22/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.4023
+Epoch 23/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.4019
+Epoch 24/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 60ms/step - loss: -0.4600
+Epoch 25/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 61ms/step - loss: -0.4990
+Epoch 26/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.4880
+Epoch 27/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.5177
+Epoch 28/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.5574
+Epoch 29/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.5610
+Epoch 30/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.5873
+Epoch 31/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.6450
+Epoch 32/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">13s</span> 63ms/step - loss: -0.6801
+Epoch 33/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">13s</span> 63ms/step - loss: -0.6861
+Epoch 34/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 60ms/step - loss: -0.7473
+Epoch 35/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 60ms/step - loss: -0.7308
+Epoch 36/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 60ms/step - loss: -0.7707
+Epoch 37/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 62ms/step - loss: -0.7844
+Epoch 38/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.8192
+Epoch 39/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 61ms/step - loss: -0.8380
+Epoch 40/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 60ms/step - loss: -0.8412
+Epoch 41/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">13s</span> 64ms/step - loss: -0.8807
+Epoch 42/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 60ms/step - loss: -0.8611
+Epoch 43/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 57ms/step - loss: -0.8980
+Epoch 44/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.9102
+Epoch 45/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.8669
+Epoch 46/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.9216
+Epoch 47/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.9203
+Epoch 48/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 59ms/step - loss: -0.9381
+Epoch 49/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">12s</span> 58ms/step - loss: -0.9042
+Epoch 50/50
+<span class=" -Color -Color-Bold">200/200</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">11s</span> 57ms/step - loss: -0.9118
+</pre></div>
+</div>
+</div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -803,7 +911,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/c1109800d94d31cba922d34dbf1f08b8a1fa0aaef75fe764684c1076e85d38a0.png" src="../_images/c1109800d94d31cba922d34dbf1f08b8a1fa0aaef75fe764684c1076e85d38a0.png" />
+<img alt="../_images/480e1b4c1e88d4bc5d344f219621a59e232771370b5b02fbbea85b315d74ff13.png" src="../_images/480e1b4c1e88d4bc5d344f219621a59e232771370b5b02fbbea85b315d74ff13.png" />
 </div>
 </div>
 </section>
@@ -858,7 +966,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2.1633461717777691e-07
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>5.0977684069041934e-05
 </pre></div>
 </div>
 </div>
@@ -877,7 +985,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/4b4b09c8f8c85f435af933ff729b918e3bfe92189e58703902704db590a7146c.png" src="../_images/4b4b09c8f8c85f435af933ff729b918e3bfe92189e58703902704db590a7146c.png" />
+<img alt="../_images/3f30c97186deee1be936dcd14587b1f337762c25109bc0c61e918339457a4cc5.png" src="../_images/3f30c97186deee1be936dcd14587b1f337762c25109bc0c61e918339457a4cc5.png" />
 </div>
 </div>
 <p>The true parameter values of the first dataset are indeed well covered by the posterior. Let’s check this more systematically for all validation datasets:</p>
@@ -893,7 +1001,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/cdde2b8a6fefc1af2a8942d82074eb67cd789312147f4e6c868a567e105724fe.png" src="../_images/cdde2b8a6fefc1af2a8942d82074eb67cd789312147f4e6c868a567e105724fe.png" />
+<img alt="../_images/ddde6ed24194f97305fc3f66217949816b8a4d4dc9d7ac722727a518134bf3e5.png" src="../_images/ddde6ed24194f97305fc3f66217949816b8a4d4dc9d7ac722727a518134bf3e5.png" />
 </div>
 </div>
 <p>Accuracy looks good for most datasets There is some more variation especially for <span class="math notranslate nohighlight">\(\beta_1\)</span> and <span class="math notranslate nohighlight">\(\sigma\)</span> but this is not necessarily a reason for concern. Keep in mind that perfect accuracy is not the goal of bayesflow inference. Rather, the goal is to estimate the correct posterior as close as possible. And this correct posterior might very well be far away from the true value for some datasets. In fact, we would fully expect the true value to sometimes be at the tail of the posterior.</p>
@@ -913,7 +1021,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:The ratio of simulations / posterior draws should be &gt; 20 for reliable variance reduction, but your ratio is 0. Confidence intervals might be unreliable!
 </pre></div>
 </div>
-<img alt="../_images/c092fe463224225418db5d48eb1e0522f7033542658c6c7faa66c5a348908dde.png" src="../_images/c092fe463224225418db5d48eb1e0522f7033542658c6c7faa66c5a348908dde.png" />
+<img alt="../_images/424c3cb59895095e6e3d322b2f89902ea7c7db6569d6acc634578bd6fe05bd98.png" src="../_images/424c3cb59895095e6e3d322b2f89902ea7c7db6569d6acc634578bd6fe05bd98.png" />
 </div>
 </div>
 <p>The histograms look quite good overall, but could be a bit more uniform. That said, the SBC histograms have some drawbacks on how the confidence bands are computed, so we recommend using another kind of plot that is based on the empirical cumulative distribution function (ECDF). For the ECDF, we can compute better confidence bands than for histograms, so the SBC ECDF plot is usually preferable. <a class="reference external" href="https://hyunjimoon.github.io/SBC/articles/rank_visualizations.html">This SBC interpretation guide by Martin Modrák</a> gives further background information and also practical examples of how to interpret the SBC plots.</p>
@@ -930,10 +1038,109 @@ At a high level, our architecture consists of a summary network <span class="mat
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a3e1f32ad6db8c2e3bc6cc14ecea53480bd64874e2a7a89382808ed948498e51.png" src="../_images/a3e1f32ad6db8c2e3bc6cc14ecea53480bd64874e2a7a89382808ed948498e51.png" />
+<img alt="../_images/1aa0fa905ed6839032e85ed47b4130a84a3e7f59aaeb8f0b2523e2dfde6234cc.png" src="../_images/1aa0fa905ed6839032e85ed47b4130a84a3e7f59aaeb8f0b2523e2dfde6234cc.png" />
 </div>
 </div>
-<p>The plot confirms that the approximate posteriors are well calibrated, except for the small issues that we had already seen in the histograms. Likely, for fully well calibrated inference, we would have to train the approximator a little longer, but that’s okay. After all, we can effort a little more training time since afterwards, inference on any number of new (real or simulated) datasets is very fast due to amortization.</p>
+<section id="custom-test-quantities-for-sbc">
+<h3><span class="section-number">1.5.1. </span>Custom Test Quantities for SBC<a class="headerlink" href="#custom-test-quantities-for-sbc" title="Link to this heading">#</a></h3>
+<p>By default, Bayesflow’s SBC diagnostics are only checking the calibration of the parameters directly.
+However, in principle, we can check every univariate quantity that is a function of parameters. This
+even includes data-dependent quantities. Checking SBC for data-dependent quantities is recommended
+because it can uncover many problems with the posterior approximation that purely parameter SBC cannot.</p>
+<p>One powerful data-dependent test quantity is the joint log likelihood. Of course, it is only available
+in models that emit an analytic likelihood. But since we are performing ABI for linear regression here,
+we can use it in this case study. For other models without an anlytic likelihood, alternative test quantities
+can be considered, for example, predictive RMSEs or something more specific to the model at hand.
+Regardless of which quantity is encoded, the correponding function always follows the same logic:
+We input a input dictionary with numpy array elements that each have the same (first) batch dimension.
+As output, the function needs to supply a one-dimensional array of batch size length.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">joint_log_likelihood</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">]</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[:,</span><span class="mi">0</span><span class="p">][:,</span><span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">beta</span><span class="p">[:,</span><span class="mi">1</span><span class="p">][:,</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span>
+    <span class="n">log_lik</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">sigma</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">log_lik</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">joint_log_likelihood</span><span class="p">(</span><span class="n">val_sims</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(200,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>We sampled <code class="docutils literal notranslate"><span class="pre">num_samples</span></code> samples from the posterior for each condition (data). Since we want to pass posterior samples and conditions to a test quantity function that depends on both of them, we will repeat the conditions to adhere to the same shape.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">val_sims_conditions</span> <span class="o">=</span> <span class="n">val_sims</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">val_sims_conditions</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;beta&quot;</span><span class="p">)</span>
+<span class="n">val_sims_conditions</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">)</span>
+<span class="c1"># N is only necessary for simulating data. It is not necessary to keep it for our test quantity.</span>
+<span class="n">val_sims_conditions</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;N&quot;</span><span class="p">)</span>
+<span class="n">val_sims_conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> 
+    <span class="n">val_sims_conditions</span>
+<span class="p">)</span>
+<span class="n">post_draws_conditions</span> <span class="o">=</span> <span class="n">post_draws</span> <span class="o">|</span> <span class="n">val_sims_conditions</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">post_draws_conditions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;beta&#39;: (200, 1000, 2),
+ &#39;sigma&#39;: (200, 1000, 1),
+ &#39;y&#39;: (200, 1000, 10),
+ &#39;x&#39;: (200, 1000, 10)}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now that we have a batched function for the test quantity, as well as samples in the correct shapes to apply to them to, we can make an extended calibration checking plot. In addition to the <code class="docutils literal notranslate"><span class="pre">joint_log_likelihood</span></code> as test quantity, we will also use the sum of <span class="math notranslate nohighlight">\(\beta_0\)</span> and <span class="math notranslate nohighlight">\(\beta_1\)</span> as an
+additional (non-data dependent) test quantity just to showcase the flexibility of the feature.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws_conditions</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span>
+    <span class="n">test_quantities</span><span class="o">=</span><span class="p">{</span>  <span class="c1"># this argument is new</span>
+        <span class="sa">r</span><span class="s2">&quot;$\beta_0 + \beta_1$&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="sa">r</span><span class="s2">&quot;$\log p(x|\beta,\sigma)$&quot;</span><span class="p">:</span> <span class="n">joint_log_likelihood</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="p">[],</span>  <span class="c1"># we just want to show SBC for the custom test quantities</span>
+    <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">rank_type</span><span class="o">=</span><span class="s2">&quot;distance&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/aab7cbcc055f7eb5d73b6dbaca0f0d24bcd69778f35b3312f875ed1f844976cf.png" src="../_images/aab7cbcc055f7eb5d73b6dbaca0f0d24bcd69778f35b3312f875ed1f844976cf.png" />
+</div>
+</div>
+<p>The plots confirm that the approximate posteriors are overall well calibrated, even the joint log likelihood almost is.
+In fact, posterior approximations have to be highly accurate to ensure good calibration of the joint log likelihood.
+If, for example, we would have used an affine flow as inference network instead of a spline flow, we would
+have seen stronger miscalibration in the joint log likelihood but not in the parameters. Try it out as an exercise.</p>
+</section>
+<section id="checking-posterior-concentration">
+<h3><span class="section-number">1.5.2. </span>Checking Posterior Concentration<a class="headerlink" href="#checking-posterior-concentration" title="Link to this heading">#</a></h3>
 <p>After having convinced us that the posterior approximation are overall reasonable, we can check how much and what kind of information in the data we encode in the posterior. Specifically, we might want to look at two interesting scores: (a) The posterior contraction, which measures how much smaller the posterior variance is relative to the prior variance (higher values indicate more contraction relative to the prior). (b) The posterior z-score which indicates the standardized difference between the posterior mean and the true parameter value. Since the posterior z-score requires the true parameter values, it can only be computed in simulated data settings. Here, we show the results for the <span class="math notranslate nohighlight">\(\beta\)</span> coefficients only to illustrate the use of the <code class="docutils literal notranslate"><span class="pre">variable_keys</span></code> argument.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -947,13 +1154,14 @@ At a high level, our architecture consists of a summary network <span class="mat
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/418b1b0f59c58091c83f63ade811da01da50e92a4ffa4c857a324d1780951f9f.png" src="../_images/418b1b0f59c58091c83f63ade811da01da50e92a4ffa4c857a324d1780951f9f.png" />
+<img alt="../_images/196aa005d627a1260a54d029a1ce892af855248a9587178ec3c39a40a2615bc1.png" src="../_images/196aa005d627a1260a54d029a1ce892af855248a9587178ec3c39a40a2615bc1.png" />
 </div>
 </div>
 <p>We clearly see strong posterior contraction in almost all posteriors of <span class="math notranslate nohighlight">\(\beta_0\)</span> and in most posteriors of <span class="math notranslate nohighlight">\(\beta_1\)</span>. In the latter case, there are some notable exceptions where little learning from prior to posterior has taken place. Most likely this is because the variance of the sample predictor value <span class="math notranslate nohighlight">\(x\)</span> was small, leading to reduced information about the slope <span class="math notranslate nohighlight">\(\beta_1\)</span>.</p>
 <p>In terms of posterior z-score, most estimates are between -2 and 2, which makes sense if our posterior is approximately normal and well calibrated. However, again, there are some notable exceptions with quite large posterior z-scores over greater than 3 in absolute values. These may be cases, where the learned posterior approximation was not yet fully accurate. So likely, these extreme cases would vanish if we trained our approximator a little longer.</p>
+</section>
 <section id="saving-and-loading-the-trained-networks">
-<h3><span class="section-number">1.5.1. </span>Saving and Loading the Trained Networks<a class="headerlink" href="#saving-and-loading-the-trained-networks" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">1.5.3. </span>Saving and Loading the Trained Networks<a class="headerlink" href="#saving-and-loading-the-trained-networks" title="Link to this heading">#</a></h3>
 <p>For saving and later on reloading bayesflow approximators, we provide some convenient functionalities. For saving, we use:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -992,7 +1200,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/f42cc221c3206c899d39d6ba7d81322ef0e6e6c255593b9da4fe8510f55e2b96.png" src="../_images/f42cc221c3206c899d39d6ba7d81322ef0e6e6c255593b9da4fe8510f55e2b96.png" />
+<img alt="../_images/17f4bf473922fd73f0d9891b5a9fd6379c18b7023e4b6a5a78402afa254e4511.png" src="../_images/17f4bf473922fd73f0d9891b5a9fd6379c18b7023e4b6a5a78402afa254e4511.png" />
 </div>
 </div>
 </section>
@@ -1056,7 +1264,9 @@ At a high level, our architecture consists of a summary network <span class="mat
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#diagnostics">1.5. Diagnostics</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-loading-the-trained-networks">1.5.1. Saving and Loading the Trained Networks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-test-quantities-for-sbc">1.5.1. Custom Test Quantities for SBC</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#checking-posterior-concentration">1.5.2. Checking Posterior Concentration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-loading-the-trained-networks">1.5.3. Saving and Loading the Trained Networks</a></li>
 </ul>
 </li>
 </ul>
@@ -1103,7 +1313,7 @@ At a high level, our architecture consists of a summary network <span class="mat
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1112,7 +1322,7 @@ At a high level, our architecture consists of a summary network <span class="mat
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

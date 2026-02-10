@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,11 +42,11 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.computational_utilities';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -518,7 +518,7 @@
 <span id="bayesflow-computational-utilities-module"></span><h1>bayesflow.computational_utilities module<a class="headerlink" href="#module-bayesflow.computational_utilities" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="bayesflow.computational_utilities.aggregated_error">
-<span class="sig-prename descclassname"><span class="pre">bayesflow.computational_utilities.</span></span><span class="sig-name descname"><span class="pre">aggregated_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inner_error_fun=&lt;function</span> <span class="pre">root_mean_squared_error&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outer_aggregation_fun=&lt;function</span> <span class="pre">mean&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/computational_utilities.html#aggregated_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.computational_utilities.aggregated_error" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">bayesflow.computational_utilities.</span></span><span class="sig-name descname"><span class="pre">aggregated_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inner_error_fun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">root_mean_squared_error&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outer_aggregation_fun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">mean&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/computational_utilities.html#aggregated_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.computational_utilities.aggregated_error" title="Link to this definition">#</a></dt>
 <dd><p>Computes the aggregated error between a vector of N true values and M estimates of each true value.</p>
 <p>x_true      : np.ndarray
 true values, shape (N)</p>
@@ -821,7 +821,7 @@ Maximum Mean Discrepancy (MMD) is a distance-measure between the samples of the 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="bayesflow.computational_utilities.posterior_calibration_error">
-<span class="sig-prename descclassname"><span class="pre">bayesflow.computational_utilities.</span></span><span class="sig-name descname"><span class="pre">posterior_calibration_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">posterior_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_resolution=20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregator_fun=&lt;function</span> <span class="pre">median&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_quantile=0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_quantile=0.995</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/computational_utilities.html#posterior_calibration_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.computational_utilities.posterior_calibration_error" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">bayesflow.computational_utilities.</span></span><span class="sig-name descname"><span class="pre">posterior_calibration_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">posterior_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregator_fun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">median&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_quantile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_quantile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.995</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/computational_utilities.html#posterior_calibration_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.computational_utilities.posterior_calibration_error" title="Link to this definition">#</a></dt>
 <dd><p>Computes an aggregate score for the marginal calibration error over an ensemble of approximate
 posteriors. The calibration error is given as the aggregate (e.g., median) of the absolute deviation
 between an alpha-CI and the relative number of inliers from <code class="docutils literal notranslate"><span class="pre">prior_samples</span></code> over multiple alphas in
@@ -1026,7 +1026,7 @@ to avoid edge artefacts. No need to touch this.</p>
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1035,7 +1035,7 @@ to avoid edge artefacts. No need to touch this.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

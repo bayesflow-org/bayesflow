@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/mc_calibration';</script>
     <script>
@@ -505,6 +505,7 @@
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
     <span class="n">num_col</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">num_row</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots the calibration curves, the ECEs and the marginal histograms of predicted posterior model probabilities</span>
 <span class="sd">    for a model comparison problem. The marginal histograms inform about the fraction of predictions in each bin.</span>
@@ -538,6 +539,8 @@
 <span class="sd">        The number of rows for the subplots. Dynamically determined if None.</span>
 <span class="sd">    num_col             : int, optional, default: None</span>
 <span class="sd">        The number of columns for the subplots. Dynamically determined if None.</span>
+<span class="sd">    markersize          : float, optional, default: None</span>
+<span class="sd">        The marker size in points.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -566,7 +569,7 @@
 
     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">):</span>
         <span class="c1"># Plot calibration curve</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ece</span><span class="p">[</span><span class="s2">&quot;probs_pred&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">ece</span><span class="p">[</span><span class="s2">&quot;probs_true&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ece</span><span class="p">[</span><span class="s2">&quot;probs_pred&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">ece</span><span class="p">[</span><span class="s2">&quot;probs_true&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="n">markersize</span><span class="p">)</span>
 
         <span class="c1"># Plot PMP distribution over bins</span>
         <span class="n">uniform_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">num_bins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
@@ -648,7 +651,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -657,7 +660,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

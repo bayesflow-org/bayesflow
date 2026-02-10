@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.default_settings';</script>
     <script>
@@ -516,7 +516,7 @@
 <span id="bayesflow-default-settings-module"></span><h1>bayesflow.default_settings module<a class="headerlink" href="#module-bayesflow.default_settings" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.default_settings.MetaDictSetting">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.default_settings.</span></span><span class="sig-name descname"><span class="pre">MetaDictSetting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mandatory_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/default_settings.html#MetaDictSetting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.default_settings.MetaDictSetting" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.default_settings.</span></span><span class="sig-name descname"><span class="pre">MetaDictSetting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mandatory_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/default_settings.html#MetaDictSetting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.default_settings.MetaDictSetting" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bayesflow.default_settings.Setting" title="bayesflow.default_settings.Setting"><code class="xref py py-class docutils literal notranslate"><span class="pre">Setting</span></code></a></p>
 <p>Implements an interface for a default meta_dict with optional mandatory fields.</p>
 <dl class="field-list simple">
@@ -533,8 +533,8 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.default_settings.Setting">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.default_settings.</span></span><span class="sig-name descname"><span class="pre">Setting</span></span><a class="reference internal" href="../_modules/bayesflow/default_settings.html#Setting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.default_settings.Setting" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.default_settings.</span></span><span class="sig-name descname"><span class="pre">Setting</span></span><a class="reference internal" href="../_modules/bayesflow/default_settings.html#Setting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.default_settings.Setting" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
 <p>Abstract base class for settings. It’s here to potentially extend the setting functionality in future.</p>
 </dd></dl>
 
@@ -637,7 +637,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -646,7 +646,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

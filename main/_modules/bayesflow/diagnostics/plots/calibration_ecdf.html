@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/calibration_ecdf';</script>
     <script>
@@ -477,9 +477,9 @@
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">...utils.dict_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_test_quantities</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...utils.plot_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_plot_data</span><span class="p">,</span> <span class="n">add_titles_and_labels</span><span class="p">,</span> <span class="n">prettify_subplots</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...utils.ecdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">simultaneous_ecdf_bands</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...utils.ecdf.ranks</span><span class="w"> </span><span class="kn">import</span> <span class="n">fractional_ranks</span><span class="p">,</span> <span class="n">distance_ranks</span>
@@ -493,13 +493,13 @@
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">test_quantities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">difference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">difference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">stacked</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">rank_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="s2">&quot;fractional&quot;</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">label_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
     <span class="n">legend_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
-    <span class="n">legend_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;upper right&quot;</span><span class="p">,</span>
+    <span class="n">legend_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lower right&quot;</span><span class="p">,</span>
     <span class="n">title_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">18</span><span class="p">,</span>
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
     <span class="n">rank_ecdf_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
@@ -537,7 +537,7 @@
 <span class="sd">        The posterior draws obtained from n_data_sets</span>
 <span class="sd">    targets     : np.ndarray of shape (n_data_sets, n_params)</span>
 <span class="sd">        The prior draws obtained for generating n_data_sets</span>
-<span class="sd">    difference        : bool, optional, default: False</span>
+<span class="sd">    difference        : bool, optional, default: True</span>
 <span class="sd">        If `True`, plots the ECDF difference.</span>
 <span class="sd">        Enables a more dynamic visualization range.</span>
 <span class="sd">    stacked           : bool, optional, default: False</span>
@@ -576,7 +576,9 @@
 <span class="sd">    label_fontsize    : int, optional, default: 16</span>
 <span class="sd">        The font size of the y-label and y-label texts</span>
 <span class="sd">    legend_fontsize   : int, optional, default: 14</span>
-<span class="sd">        The font size of the legend text</span>
+<span class="sd">        The font size of the legend text.</span>
+<span class="sd">    legend_location : str, optional, default: &#39;lower right</span>
+<span class="sd">        The location of the legend.</span>
 <span class="sd">    title_fontsize    : int, optional, default: 18</span>
 <span class="sd">        The font size of the title text.</span>
 <span class="sd">        Only relevant if `stacked=False`</span>
@@ -614,33 +616,17 @@
 
     <span class="c1"># Optionally, compute and prepend test quantities from draws</span>
     <span class="k">if</span> <span class="n">test_quantities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">test_quantities_estimates</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">test_quantities_targets</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">test_quantity_fn</span> <span class="ow">in</span> <span class="n">test_quantities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># Apply test_quantity_func to ground-truths</span>
-            <span class="n">tq_targets</span> <span class="o">=</span> <span class="n">test_quantity_fn</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">targets</span><span class="p">)</span>
-            <span class="n">test_quantities_targets</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">tq_targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="c1"># # Flatten estimates for batch processing in test_quantity_fn, apply function, and restore shape</span>
-            <span class="n">num_conditions</span><span class="p">,</span> <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
-            <span class="n">flattened_estimates</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])),</span> <span class="n">estimates</span><span class="p">)</span>
-            <span class="n">flat_tq_estimates</span> <span class="o">=</span> <span class="n">test_quantity_fn</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">flattened_estimates</span><span class="p">)</span>
-            <span class="n">test_quantities_estimates</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_tq_estimates</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-        <span class="c1"># Add custom test quantities to variable keys and names for plotting</span>
-        <span class="c1"># keys and names are set to the test_quantities dict keys</span>
-        <span class="n">test_quantities_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">test_quantities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-
-        <span class="k">if</span> <span class="n">variable_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">variable_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">variable_names</span> <span class="o">=</span> <span class="n">test_quantities_names</span> <span class="o">+</span> <span class="n">variable_names</span>
-
-        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">test_quantities_names</span> <span class="o">+</span> <span class="n">variable_keys</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">test_quantities_estimates</span> <span class="o">|</span> <span class="n">estimates</span>
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">test_quantities_targets</span> <span class="o">|</span> <span class="n">targets</span>
+        <span class="n">updated_data</span> <span class="o">=</span> <span class="n">compute_test_quantities</span><span class="p">(</span>
+            <span class="n">targets</span><span class="o">=</span><span class="n">targets</span><span class="p">,</span>
+            <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>
+            <span class="n">variable_keys</span><span class="o">=</span><span class="n">variable_keys</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">test_quantities</span><span class="o">=</span><span class="n">test_quantities</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">]</span>
+        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_keys&quot;</span><span class="p">]</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">]</span>
 
     <span class="n">plot_data</span> <span class="o">=</span> <span class="n">prepare_plot_data</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>
@@ -705,10 +691,12 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Stacked ECDFs&quot;</span><span class="p">]</span>
 
-    <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">title</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> <span class="n">titles</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> <span class="n">titles</span><span class="p">)):</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">fill_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">alpha</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">$\%$ Confidence Bands&quot;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="n">legend_fontsize</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">legend_location</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">title_fontsize</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="n">legend_fontsize</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">legend_location</span><span class="p">)</span>
 
     <span class="n">prettify_subplots</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">],</span> <span class="n">num_subplots</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_variables&quot;</span><span class="p">],</span> <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
 
@@ -765,7 +753,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -774,7 +762,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

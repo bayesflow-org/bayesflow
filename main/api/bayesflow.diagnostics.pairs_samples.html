@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.diagnostics.pairs_samples';</script>
     <script>
@@ -58,8 +58,8 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="posterior_contraction" href="bayesflow.diagnostics.posterior_contraction.html" />
-    <link rel="prev" title="pairs_posterior" href="bayesflow.diagnostics.pairs_posterior.html" />
+    <link rel="next" title="plot_quantity" href="bayesflow.diagnostics.plot_quantity.html" />
+    <link rel="prev" title="pairs_quantity" href="bayesflow.diagnostics.pairs_quantity.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -493,13 +493,17 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_ecdf_from_quantiles.html">calibration_ecdf_from_quantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_error.html">calibration_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_histogram.html">calibration_histogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_log_gamma.html">calibration_log_gamma</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.loss.html">loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_calibration.html">mc_calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_confusion_matrix.html">mc_confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mmd_hypothesis_test.html">mmd_hypothesis_test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_posterior.html">pairs_posterior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_quantity.html">pairs_quantity</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">pairs_samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.plot_quantity.html">plot_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_contraction.html">posterior_contraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_z_score.html">posterior_z_score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery.html">recovery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery_from_estimates.html">recovery_from_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.summary_space_comparison.html">summary_space_comparison</a></li>
@@ -514,9 +518,6 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -558,7 +559,9 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.StableConsistencyModel.html">StableConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeMLP.html">TimeMLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesTransformer.html">TimeSeriesTransformer</a></li>
 </ul>
@@ -606,6 +609,7 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.debug.html">debug</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.error.html">error</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.exception.html">exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.format_duration.html">format_duration</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.info.html">info</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.log.html">log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.warn_once.html">warn_once</a></li>
@@ -613,6 +617,7 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.numpy_utils.html">numpy_utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.credible_interval.html">credible_interval</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_shifted_softplus.html">inverse_shifted_softplus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_sigmoid.html">inverse_sigmoid</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_softplus.html">inverse_softplus</a></li>
@@ -639,6 +644,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.calibration_curve.html">calibration_curve</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.compute_empirical_coverage.html">compute_empirical_coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
@@ -647,6 +653,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html">deserialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html">detailed_loss_callback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.devices.html">devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.dim_maybe_nested.html">dim_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand.html">expand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_as.html">expand_as</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_left.html">expand_left</a></li>
@@ -669,6 +676,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html">find_recurrent_net</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_duration.html">format_duration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
@@ -689,6 +697,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html">serialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html">simultaneous_ecdf_bands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.size_of.html">size_of</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.slice_maybe_nested.html">slice_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_arrays.html">split_arrays</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_tensors.html">split_tensors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html">squeeze_inner_estimates_dict</a></li>
@@ -785,13 +794,15 @@
 <h1>pairs_samples<a class="headerlink" href="#pairs-samples" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="bayesflow.diagnostics.pairs_samples">
-<span class="sig-prename descclassname"><span class="pre">bayesflow.diagnostics.</span></span><span class="sig-name descname"><span class="pre">pairs_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.13)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'#132a70'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Posterior'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_fontsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tick_fontsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_single_legend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://seaborn.pydata.org/generated/seaborn.PairGrid.html#seaborn.PairGrid" title="(in seaborn v0.13.2)"><span class="pre">PairGrid</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/diagnostics/plots/pairs_samples.html#pairs_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.diagnostics.pairs_samples" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">bayesflow.diagnostics.</span></span><span class="sig-name descname"><span class="pre">pairs_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'#132a70'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Posterior'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_fontsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tick_fontsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_single_legend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markersize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://seaborn.pydata.org/generated/seaborn.PairGrid.html#seaborn.PairGrid" title="(in seaborn v0.13.2)"><span class="pre">PairGrid</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/diagnostics/plots/pairs_samples.html#pairs_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.diagnostics.pairs_samples" title="Link to this definition">#</a></dt>
 <dd><p>A more flexible pair plot function for multiple distributions based upon
 collected samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>samples</strong><span class="classifier">dict[str, Tensor], default: None</span></dt><dd><p>Sample draws from any dataset</p>
+</dd>
+<dt><strong>dataset_id: Optional ID of the dataset for whose posterior the pair plots shall be generated.</strong></dt><dd><p>Should only be specified if estimates contain posterior draws from multiple datasets.</p>
 </dd>
 <dt><strong>variable_keys</strong><span class="classifier">list or None, optional, default: None</span></dt><dd><p>Select keys from the dictionary provided in samples.
 By default, select all keys.</p>
@@ -813,6 +824,8 @@ By default, select all keys.</p>
 <dt><strong>show_single_legend</strong><span class="classifier">bool, optional, default: False</span></dt><dd><p>Optional toggle for the user to choose whether a single dataset
 should also display legend</p>
 </dd>
+<dt><strong>markersize</strong><span class="classifier">float, optional, default: 40</span></dt><dd><p>Marker size in points**2 of the scatter plot.</p>
+</dd>
 <dt><strong>**kwargs</strong><span class="classifier">dict, optional</span></dt><dd><p>Additional keyword arguments passed to the sns.PairGrid constructor</p>
 </dd>
 </dl>
@@ -833,20 +846,20 @@ should also display legend</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="bayesflow.diagnostics.pairs_posterior.html"
+       href="bayesflow.diagnostics.pairs_quantity.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pairs_posterior</p>
+        <p class="prev-next-title">pairs_quantity</p>
       </div>
     </a>
     <a class="right-next"
-       href="bayesflow.diagnostics.posterior_contraction.html"
+       href="bayesflow.diagnostics.plot_quantity.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">posterior_contraction</p>
+        <p class="prev-next-title">plot_quantity</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -918,7 +931,7 @@ should also display legend</p>
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -927,7 +940,7 @@ should also display legend</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/diffusion_model/schedules/edm_noise_schedule';</script>
     <script>
@@ -475,6 +475,7 @@
                   
   <h1>Source code for bayesflow.networks.diffusion_model.schedules.edm_noise_schedule</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">ops</span>
 
@@ -496,7 +497,13 @@
 <span class="sd">    generative models. Advances in Neural Information Processing Systems, 35, 26565-26577.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_data</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="n">sigma_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">80.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">sigma_data</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">sigma_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
+        <span class="n">sigma_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">80.0</span><span class="p">,</span>
+        <span class="n">variance_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;preserving&quot;</span><span class="p">,</span> <span class="s2">&quot;exploding&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;preserving&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the EDM noise schedule.</span>
 
@@ -509,8 +516,10 @@
 <span class="sd">            The minimum noise level. Only relevant for sampling. Default is 1e-4.</span>
 <span class="sd">        sigma_max : float, optional</span>
 <span class="sd">            The maximum noise level. Only relevant for sampling. Default is 80.0.</span>
+<span class="sd">        variance_type : Literal[&quot;preserving&quot;, &quot;exploding&quot;], optional</span>
+<span class="sd">            The type of variance to use. Default is &quot;preserving&quot;. Original EDM paper uses &quot;exploding&quot;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;edm_noise_schedule&quot;</span><span class="p">,</span> <span class="n">variance_type</span><span class="o">=</span><span class="s2">&quot;preserving&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;edm_noise_schedule&quot;</span><span class="p">,</span> <span class="n">variance_type</span><span class="o">=</span><span class="n">variance_type</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma_data</span> <span class="o">=</span> <span class="n">sigma_data</span>
         <span class="c1"># training settings</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p_mean</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.2</span>
@@ -533,10 +542,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_log_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the log signal-to-noise ratio (lambda) for a given diffusion time.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">training</span><span class="p">:</span>
-            <span class="c1"># SNR = -dist.icdf(t_trunc) # negative seems to be wrong in the Kingma paper</span>
+            <span class="c1"># SNR = dist.icdf(1-t)  # Kingma paper wrote -F(t) but this seems to be wrong</span>
             <span class="n">loc</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_mean</span>
             <span class="n">scale</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_std</span>
-            <span class="n">snr</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">+</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">erfinv</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">snr</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">+</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">erfinv</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">snr</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">x_min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_snr_min_training</span><span class="p">,</span> <span class="n">x_max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_snr_max_training</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sigma_min_rho</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
@@ -550,11 +559,11 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_t_from_log_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_snr_t</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the diffusion time (t) from the log signal-to-noise ratio (lambda).&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">training</span><span class="p">:</span>
-            <span class="c1"># SNR = -dist.icdf(t_trunc) =&gt; t = dist.cdf(-snr)  # negative seems to be wrong in the Kingma paper</span>
+            <span class="c1"># SNR = dist.icdf(1-t) =&gt; t = 1-dist.cdf(snr)  # Kingma paper wrote -F(t) but this seems to be wrong</span>
             <span class="n">loc</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_mean</span>
             <span class="n">scale</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_std</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">log_snr_t</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">ops</span><span class="o">.</span><span class="n">erf</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">loc</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">scale</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))))</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">ops</span><span class="o">.</span><span class="n">erf</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">loc</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">scale</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))))</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># sampling</span>
             <span class="c1"># SNR = -2 * rho * log(sigma_max ** (1/rho) + (1 - t) * (sigma_min ** (1/rho) - sigma_max ** (1/rho)))</span>
             <span class="c1"># =&gt; t = 1 - ((exp(-snr/(2*rho)) - sigma_max ** (1/rho)) / (sigma_min ** (1/rho) - sigma_max ** (1/rho)))</span>
@@ -597,7 +606,12 @@
 <div class="viewcode-block" id="EDMNoiseSchedule.get_config">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.diffusion_model.EDMNoiseSchedule.html#bayesflow.networks.diffusion_model.EDMNoiseSchedule.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sigma_data&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_data</span><span class="p">,</span> <span class="s2">&quot;sigma_min&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span><span class="p">,</span> <span class="s2">&quot;sigma_max&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span><span class="p">}</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;sigma_data&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_data</span><span class="p">,</span>
+            <span class="s2">&quot;sigma_min&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span><span class="p">,</span>
+            <span class="s2">&quot;sigma_max&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span><span class="p">,</span>
+            <span class="s2">&quot;variance_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variance_type</span><span class="p">,</span>
+        <span class="p">}</span>
         <span class="k">return</span> <span class="n">config</span></div>
 
 
@@ -649,7 +663,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -658,7 +672,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

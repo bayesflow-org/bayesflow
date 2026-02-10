@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.configuration';</script>
     <script>
@@ -516,36 +516,36 @@
 <span id="bayesflow-configuration-module"></span><h1>bayesflow.configuration module<a class="headerlink" href="#module-bayesflow.configuration" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.configuration.DefaultCombiner">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultCombiner</span></span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultCombiner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultCombiner" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultCombiner</span></span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultCombiner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultCombiner" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Fallback class for a generic combiner of conditions.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.configuration.DefaultJointConfigurator">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultJointConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_float_type=&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultJointConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultJointConfigurator" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultJointConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_float_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultJointConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultJointConfigurator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Fallback class for a generic configurator for joint posterior and likelihood approximation.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.configuration.DefaultLikelihoodConfigurator">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultLikelihoodConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_float_type=&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultLikelihoodConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultLikelihoodConfigurator" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultLikelihoodConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_float_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultLikelihoodConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultLikelihoodConfigurator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Fallback class for a generic configrator for amortized likelihood approximation.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.configuration.DefaultModelComparisonConfigurator">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultModelComparisonConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combiner=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_float_type=&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultModelComparisonConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultModelComparisonConfigurator" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultModelComparisonConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combiner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_float_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultModelComparisonConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultModelComparisonConfigurator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Fallback class for a default configurator for amortized model comparison.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.configuration.DefaultPosteriorConfigurator">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultPosteriorConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_float_type=&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultPosteriorConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultPosteriorConfigurator" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.configuration.</span></span><span class="sig-name descname"><span class="pre">DefaultPosteriorConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_float_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/configuration.html#DefaultPosteriorConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.configuration.DefaultPosteriorConfigurator" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Fallback class for a generic configrator for amortized posterior approximation.</p>
 </dd></dl>
 
@@ -651,7 +651,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -660,7 +660,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

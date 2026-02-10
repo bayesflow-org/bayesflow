@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.summary_networks';</script>
     <script>
@@ -516,7 +516,7 @@
 <span id="bayesflow-summary-networks-module"></span><h1>bayesflow.summary_networks module<a class="headerlink" href="#module-bayesflow.summary_networks" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.DeepSet">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">DeepSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#DeepSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.DeepSet" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">DeepSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#DeepSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.DeepSet" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>Implements a deep permutation-invariant network according to [1] and [2].</p>
 <p>[1] Zaheer, M., Kottur, S., Ravanbakhsh, S., Poczos, B., Salakhutdinov, R. R., &amp; Smola, A. J. (2017).
@@ -583,7 +583,7 @@ a sequence of equivariant transforms followed by an invariant transform.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.HierarchicalNetwork">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">HierarchicalNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#HierarchicalNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.HierarchicalNetwork" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">HierarchicalNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#HierarchicalNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.HierarchicalNetwork" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>Implements a hierarchical summary network according to [1].</p>
 <dl class="simple">
@@ -635,7 +635,7 @@ of <code class="docutils literal notranslate"><span class="pre">len(outputs)</sp
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.InvariantNetwork">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">InvariantNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#InvariantNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.InvariantNetwork" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">InvariantNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#InvariantNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.InvariantNetwork" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bayesflow.summary_networks.DeepSet" title="bayesflow.summary_networks.DeepSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeepSet</span></code></a></p>
 <p>Deprecated class for <code class="docutils literal notranslate"><span class="pre">InvariantNetwork</span></code>.</p>
 <p>Creates a stack of ‘num_equiv’ equivariant layers followed by a final invariant layer.</p>
@@ -676,7 +676,7 @@ neural network can be passed for learnable pooling.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.SequenceNetwork">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SequenceNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SequenceNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SequenceNetwork" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SequenceNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SequenceNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SequenceNetwork" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>Implements a sequence of <cite>MultiConv1D</cite> layers followed by an (bidirectional) LSTM network.</p>
 <p>For details and rationale, see [1]:</p>
@@ -736,7 +736,7 @@ multi-convolutional layers and then applying the LSTM network.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.SequentialNetwork">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SequentialNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SequentialNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SequentialNetwork" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SequentialNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SequentialNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SequentialNetwork" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bayesflow.summary_networks.SequenceNetwork" title="bayesflow.summary_networks.SequenceNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">SequenceNetwork</span></code></a></p>
 <p>Deprecated class for amortizer posterior estimation.</p>
 <p>Creates a stack of inception-like layers followed by an LSTM network, with the idea
@@ -769,7 +769,7 @@ or unidirectional (forward in time). Defaults to False, but may increase perform
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.SetTransformer">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SetTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SetTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SetTransformer" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SetTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SetTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SetTransformer" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>Implements the set transformer architecture from [1] which ultimately represents
 a learnable permutation-invariant function. Designed to naturally model interactions in
@@ -849,7 +849,7 @@ into a 2-dimensional output, which will have a dimensionality of <code class="do
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.SplitNetwork">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SplitNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SplitNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SplitNetwork" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">SplitNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#SplitNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.SplitNetwork" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>Implements a vertical stack of networks and concatenates their individual outputs. Allows for splitting
 of data to provide an individual network for each split of the data.</p>
@@ -911,7 +911,7 @@ indicating which rows belong to the split <cite>i</cite>.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.summary_networks.TimeSeriesTransformer">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">TimeSeriesTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#TimeSeriesTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.TimeSeriesTransformer" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.summary_networks.</span></span><span class="sig-name descname"><span class="pre">TimeSeriesTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/summary_networks.html#TimeSeriesTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.summary_networks.TimeSeriesTransformer" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>Implements a many-to-one transformer architecture for time series encoding.
 Some ideas can be found in [1]:</p>
@@ -1120,7 +1120,7 @@ will be double the template_dim size, so consider reducing it in half.</p>
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1129,7 +1129,7 @@ will be double the template_dim size, so consider reducing it in half.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

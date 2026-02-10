@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.utils.optimal_transport';</script>
     <script>
@@ -493,13 +493,17 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_ecdf_from_quantiles.html">calibration_ecdf_from_quantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_error.html">calibration_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_histogram.html">calibration_histogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_log_gamma.html">calibration_log_gamma</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.loss.html">loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_calibration.html">mc_calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_confusion_matrix.html">mc_confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mmd_hypothesis_test.html">mmd_hypothesis_test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_posterior.html">pairs_posterior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_quantity.html">pairs_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_samples.html">pairs_samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.plot_quantity.html">plot_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_contraction.html">posterior_contraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_z_score.html">posterior_z_score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery.html">recovery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery_from_estimates.html">recovery_from_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.summary_space_comparison.html">summary_space_comparison</a></li>
@@ -514,9 +518,6 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -558,7 +559,9 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.StableConsistencyModel.html">StableConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeMLP.html">TimeMLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesTransformer.html">TimeSeriesTransformer</a></li>
 </ul>
@@ -606,6 +609,7 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.debug.html">debug</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.error.html">error</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.exception.html">exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.format_duration.html">format_duration</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.info.html">info</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.log.html">log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.warn_once.html">warn_once</a></li>
@@ -613,6 +617,7 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.numpy_utils.html">numpy_utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.credible_interval.html">credible_interval</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_shifted_softplus.html">inverse_shifted_softplus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_sigmoid.html">inverse_sigmoid</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_softplus.html">inverse_softplus</a></li>
@@ -639,6 +644,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.calibration_curve.html">calibration_curve</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.compute_empirical_coverage.html">compute_empirical_coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
@@ -647,6 +653,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html">deserialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html">detailed_loss_callback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.devices.html">devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.dim_maybe_nested.html">dim_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand.html">expand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_as.html">expand_as</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_left.html">expand_left</a></li>
@@ -669,6 +676,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html">find_recurrent_net</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_duration.html">format_duration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
@@ -689,6 +697,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html">serialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html">simultaneous_ecdf_bands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.size_of.html">size_of</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.slice_maybe_nested.html">slice_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_arrays.html">split_arrays</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_tensors.html">split_tensors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html">squeeze_inner_estimates_dict</a></li>
@@ -785,30 +794,42 @@
 <h1>optimal_transport<a class="headerlink" href="#optimal-transport" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="bayesflow.utils.optimal_transport">
-<span class="sig-prename descclassname"><span class="pre">bayesflow.utils.</span></span><span class="sig-name descname"><span class="pre">optimal_transport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log_sinkhorn'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_assignments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/utils/optimal_transport/optimal_transport.html#optimal_transport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.utils.optimal_transport" title="Link to this definition">#</a></dt>
-<dd><p>Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method
-and cost matrix used.</p>
-<p>Depending on the method used, elements in either tensor may be permuted, dropped, duplicated, or otherwise modified,
-such that the assignment is optimal.</p>
-<p>Note: this is just a dispatch function that calls the appropriate optimal transport method.
-See the documentation of the respective method for more details.</p>
+<span class="sig-prename descclassname"><span class="pre">bayesflow.utils.</span></span><span class="sig-name descname"><span class="pre">optimal_transport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sinkhorn'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_assignments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/utils/optimal_transport/optimal_transport.html#optimal_transport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.utils.optimal_transport" title="Link to this definition">#</a></dt>
+<dd><p>Match elements from <code class="docutils literal notranslate"><span class="pre">x2</span></code> onto <code class="docutils literal notranslate"><span class="pre">x1</span></code> by minimizing the transport cost.</p>
+<p>This function dispatches to a specific optimal transport method according to
+the selected <code class="docutils literal notranslate"><span class="pre">method</span></code> and cost formulation. Depending on the method used,
+elements in either tensor may be permuted, dropped, duplicated, or otherwise
+modified in order to achieve an optimal assignment.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x1</strong> – Tensor of shape (n, …)
-Samples from the first distribution.</p></li>
-<li><p><strong>x2</strong> – Tensor of shape (m, …)
-Samples from the second distribution.</p></li>
-<li><p><strong>method</strong> – Method used to compute the transport cost.
-Default: ‘log_sinkhorn’</p></li>
-<li><p><strong>return_assignments</strong> – Whether to return the assignment indices.
-Default: False</p></li>
-<li><p><strong>kwargs</strong> – Additional keyword arguments that are passed to the optimization method.</p></li>
-</ul>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x1</strong><span class="classifier">Tensor</span></dt><dd><p>Tensor of shape <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">...)</span></code> containing samples from the first distribution.</p>
+</dd>
+<dt><strong>x2</strong><span class="classifier">Tensor</span></dt><dd><p>Tensor of shape <code class="docutils literal notranslate"><span class="pre">(m,</span> <span class="pre">...)</span></code> containing samples from the second distribution.</p>
+</dd>
+<dt><strong>conditions</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Tensor of shape <code class="docutils literal notranslate"><span class="pre">(k,</span> <span class="pre">...)</span></code> providing conditioning information for
+conditional optimal transport. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, unconditional optimal transport
+is performed. Default is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+<dt><strong>method</strong><span class="classifier">str, optional</span></dt><dd><p>Method used to compute the optimal transport plan (e.g., <code class="docutils literal notranslate"><span class="pre">'sinkhorn'</span></code>).
+Default is <code class="docutils literal notranslate"><span class="pre">'sinkhorn'</span></code>.</p>
+</dd>
+<dt><strong>return_assignments</strong><span class="classifier">bool</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, also return the assignment indices produced by the transport
+method. Default is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</dd>
+<dt><strong>**kwargs</strong></dt><dd><p>Additional keyword arguments passed to the selected optimal transport method.</p>
+</dd>
+</dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Tensors of shapes (n, …) and (m, …)
-x1 and x2 in optimal transport permutation order.</p>
+<dd class="field-even"><dl class="simple">
+<dt>Tuple of tensors</dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">return_assignments</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, returns three tensors of shapes
+<code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">...)</span></code> and <code class="docutils literal notranslate"><span class="pre">(m,</span> <span class="pre">...)</span></code> corresponding to <code class="docutils literal notranslate"><span class="pre">x1</span></code>, <code class="docutils literal notranslate"><span class="pre">x2</span></code>, <code class="docutils literal notranslate"><span class="pre">conditions</span></code> reordered
+according to the optimal transport solution. If <code class="docutils literal notranslate"><span class="pre">return_assignments</span></code> is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>, the reordered tensors and the corresponding assignment indices
+are returned as a fourth element.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -911,7 +932,7 @@ x1 and x2 in optimal transport permutation order.</p>
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -920,7 +941,7 @@ x1 and x2 in optimal transport permutation order.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

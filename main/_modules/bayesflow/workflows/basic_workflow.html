@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/workflows/basic_workflow';</script>
     <script>
@@ -475,12 +475,14 @@
                   
   <h1>Source code for bayesflow.workflows.basic_workflow</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
@@ -490,7 +492,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.adapters</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adapter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.approximators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContinuousApproximator</span><span class="p">,</span> <span class="n">PointApproximator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Shape</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_inference_network</span><span class="p">,</span> <span class="n">find_summary_network</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_inference_network</span><span class="p">,</span> <span class="n">find_summary_network</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">format_duration</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">bf_metrics</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">plots</span> <span class="k">as</span> <span class="n">bf_plots</span>
 
@@ -698,8 +700,8 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        batch_shape : Shape</span>
-<span class="sd">            The shape of the batch to be simulated. Typically an integer for simple simulators.</span>
-<span class="sd">        **kwargs : dict, optional</span>
+<span class="sd">            The shape of the batch to be simulated. Typically, an integer for simple simulators.</span>
+<span class="sd">        **kwargs : dict | str, optional</span>
 <span class="sd">            Additional keyword arguments passed to the simulator&#39;s sample method.</span>
 
 <span class="sd">        Returns</span>
@@ -727,8 +729,8 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        batch_shape : Shape</span>
-<span class="sd">            The shape of the batch to be simulated. Typically an integer for simple simulators.</span>
-<span class="sd">        **kwargs : dict, optional</span>
+<span class="sd">            The shape of the batch to be simulated. Typically, an integer for simple simulators.</span>
+<span class="sd">        **kwargs : dict | str, optional</span>
 <span class="sd">            Additional keyword arguments passed to the simulator&#39;s sample method.</span>
 
 <span class="sd">        Returns</span>
@@ -754,6 +756,9 @@
         <span class="o">*</span><span class="p">,</span>
         <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">conditions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sample_shape</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;infer&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -767,7 +772,21 @@
 <span class="sd">            A dictionary where keys represent variable names and values are</span>
 <span class="sd">            NumPy arrays containing the adapted simulated variables. Keys used as summary or inference</span>
 <span class="sd">            conditions during training should be present.</span>
-<span class="sd">        **kwargs : dict, optional</span>
+<span class="sd">        split : bool, default=False</span>
+<span class="sd">            Whether to split the output arrays along the last axis and return one sample array per target variable.</span>
+<span class="sd">        batch_size : int or None, optional</span>
+<span class="sd">            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated</span>
+<span class="sd">            sequentially. Can help with memory management for large sample sizes.</span>
+<span class="sd">        sample_shape : str or tuple of int, optional</span>
+<span class="sd">            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)</span>
+<span class="sd">            dimension. For example, use `(time,)` for time series or `(height, width)` for images.</span>
+
+<span class="sd">            If set to `&quot;infer&quot;` (default), the structural dimensions are inferred from the `inference_conditions`.</span>
+<span class="sd">            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural</span>
+<span class="sd">            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,</span>
+<span class="sd">            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape</span>
+<span class="sd">            `(num_conditions, num_samples, time, target_dim)`.</span>
+<span class="sd">        **kwargs : dict | str, optional</span>
 <span class="sd">            Additional keyword arguments passed to the approximator&#39;s sampling function.</span>
 
 <span class="sd">        Returns</span>
@@ -776,7 +795,18 @@
 <span class="sd">            A dictionary where keys correspond to variable names and</span>
 <span class="sd">            values are arrays containing the generated samples.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
+            <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span>
+            <span class="n">split</span><span class="o">=</span><span class="n">split</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">sample_shape</span><span class="o">=</span><span class="n">sample_shape</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sampling completed in </span><span class="si">{</span><span class="n">format_duration</span><span class="p">(</span><span class="n">elapsed</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples</span></div>
 
 
 <div class="viewcode-block" id="BasicWorkflow.estimate">
@@ -794,7 +824,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        conditions : Mapping[str, np.ndarray]</span>
 <span class="sd">            A dictionary mapping variable names to arrays representing the conditions for the estimation process.</span>
-<span class="sd">        **kwargs</span>
+<span class="sd">        **kwargs : dict | str</span>
 <span class="sd">            Additional keyword arguments passed to underlying processing functions.</span>
 
 <span class="sd">        Returns</span>
@@ -809,7 +839,11 @@
 <span class="sd">            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array</span>
 <span class="sd">            of shape (num_datasets, point_estimate_size, variable_block_size).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimating completed in </span><span class="si">{</span><span class="n">format_duration</span><span class="p">(</span><span class="n">elapsed</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">estimates</span></div>
 
 
 <div class="viewcode-block" id="BasicWorkflow.log_prob">
@@ -823,7 +857,7 @@
 <span class="sd">        data : Mapping[str, np.ndarray]</span>
 <span class="sd">            A dictionary where keys represent variable names and values are arrays corresponding to the variables&#39;</span>
 <span class="sd">            realizations.</span>
-<span class="sd">        **kwargs : dict, optional</span>
+<span class="sd">        **kwargs : dict | str, optional</span>
 <span class="sd">            Additional keyword arguments passed to the approximator&#39;s log probability function.</span>
 
 <span class="sd">        Returns</span>
@@ -831,7 +865,11 @@
 <span class="sd">        np.ndarray</span>
 <span class="sd">            An array containing the log probabilities computed from the provided variables.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computing log probability completed in </span><span class="si">{</span><span class="n">format_duration</span><span class="p">(</span><span class="n">elapsed</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">log_prob</span></div>
 
 
 <div class="viewcode-block" id="BasicWorkflow.plot_default_diagnostics">
@@ -850,7 +888,11 @@
 <span class="sd">        - Loss history (if training history is available).</span>
 <span class="sd">        - Parameter recovery plots.</span>
 <span class="sd">        - Calibration ECDF plots.</span>
+<span class="sd">        - Coverage plots.</span>
 <span class="sd">        - Z-score contraction plots.</span>
+
+<span class="sd">        Caution: For models with many parameters, plotting all marginal diagnostics becomes unwieldy. Consider</span>
+<span class="sd">        providing `variables_keys` for visualizing the diagnostics for subsets of the parameter space.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -901,6 +943,7 @@
         <span class="n">plot_fns</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;recovery&quot;</span><span class="p">:</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">recovery</span><span class="p">,</span>
             <span class="s2">&quot;calibration_ecdf&quot;</span><span class="p">:</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">,</span>
+            <span class="s2">&quot;coverage&quot;</span><span class="p">:</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">coverage</span><span class="p">,</span>
             <span class="s2">&quot;z_score_contraction&quot;</span><span class="p">:</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">z_score_contraction</span><span class="p">,</span>
         <span class="p">}</span>
 
@@ -1009,9 +1052,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes default diagnostic metrics to evaluate the quality of inference. The function computes several</span>
 <span class="sd">        diagnostic metrics, including:</span>
-<span class="sd">        - Root Mean Squared Error (RMSE)</span>
-<span class="sd">        - Posterior contraction</span>
-<span class="sd">        - Calibration error</span>
+<span class="sd">        - (Normalized) Root Mean Squared Error ((N)RMSE): summarizes the recovery plots</span>
+<span class="sd">        - Log-gamma statistic - summarizes the ECDF calibration plots</span>
+<span class="sd">        - Expected Calibration Error (ECE) - summarizes the coverage plots</span>
+<span class="sd">        - Posterior contraction - partially summarizes the contraction plots</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1063,12 +1107,12 @@
             <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;root_mean_squared_error_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
         <span class="p">)</span>
 
-        <span class="n">contraction</span> <span class="o">=</span> <span class="n">bf_metrics</span><span class="o">.</span><span class="n">posterior_contraction</span><span class="p">(</span>
+        <span class="n">log_gamma</span> <span class="o">=</span> <span class="n">bf_metrics</span><span class="o">.</span><span class="n">calibration_log_gamma</span><span class="p">(</span>
             <span class="n">estimates</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
             <span class="n">targets</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
             <span class="n">variable_keys</span><span class="o">=</span><span class="n">variable_keys</span><span class="p">,</span>
             <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;posterior_contraction_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_gamma_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
         <span class="p">)</span>
 
         <span class="n">calibration_errors</span> <span class="o">=</span> <span class="n">bf_metrics</span><span class="o">.</span><span class="n">calibration_error</span><span class="p">(</span>
@@ -1079,17 +1123,26 @@
             <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;calibration_error_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
         <span class="p">)</span>
 
+        <span class="n">contraction</span> <span class="o">=</span> <span class="n">bf_metrics</span><span class="o">.</span><span class="n">posterior_contraction</span><span class="p">(</span>
+            <span class="n">estimates</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
+            <span class="n">targets</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
+            <span class="n">variable_keys</span><span class="o">=</span><span class="n">variable_keys</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;posterior_contraction_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">as_data_frame</span><span class="p">:</span>
             <span class="n">metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                 <span class="p">{</span>
                     <span class="n">root_mean_squared_error</span><span class="p">[</span><span class="s2">&quot;metric_name&quot;</span><span class="p">]:</span> <span class="n">root_mean_squared_error</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
-                    <span class="n">contraction</span><span class="p">[</span><span class="s2">&quot;metric_name&quot;</span><span class="p">]:</span> <span class="n">contraction</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
+                    <span class="n">log_gamma</span><span class="p">[</span><span class="s2">&quot;metric_name&quot;</span><span class="p">]:</span> <span class="n">log_gamma</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
                     <span class="n">calibration_errors</span><span class="p">[</span><span class="s2">&quot;metric_name&quot;</span><span class="p">]:</span> <span class="n">calibration_errors</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
+                    <span class="n">contraction</span><span class="p">[</span><span class="s2">&quot;metric_name&quot;</span><span class="p">]:</span> <span class="n">contraction</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
                 <span class="p">},</span>
                 <span class="n">index</span><span class="o">=</span><span class="n">variable_keys</span> <span class="ow">or</span> <span class="n">root_mean_squared_error</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">],</span>
             <span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">metrics</span> <span class="o">=</span> <span class="p">(</span><span class="n">root_mean_squared_error</span><span class="p">,</span> <span class="n">contraction</span><span class="p">,</span> <span class="n">calibration_errors</span><span class="p">)</span>
+            <span class="n">metrics</span> <span class="o">=</span> <span class="p">(</span><span class="n">root_mean_squared_error</span><span class="p">,</span> <span class="n">log_gamma</span><span class="p">,</span> <span class="n">calibration_errors</span><span class="p">,</span> <span class="n">contraction</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">metrics</span></div>
 
@@ -1441,7 +1494,8 @@
         <span class="k">if</span> <span class="n">strategy</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;online&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">clipnorm</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">AdamW</span><span class="p">(</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">clipnorm</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">AdamW</span><span class="p">(</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">clipnorm</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_fit</span><span class="p">(</span>
@@ -1484,15 +1538,19 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;callbacks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">model_checkpoint_callback</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">build_optimizer</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">num_batches</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
+        <span class="c1"># returns None if no new optimizer was built and assigned to self.optimizer, which indicates we do not have</span>
+        <span class="c1"># to (re)compile the approximator.</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_optimizer</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">num_batches</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;metrics&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
 
         <span class="k">try</span><span class="p">:</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
                 <span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
             <span class="p">)</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training completed in </span><span class="si">{</span><span class="n">format_duration</span><span class="p">(</span><span class="n">elapsed</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_on_training_finished</span><span class="p">()</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span>
         <span class="k">finally</span><span class="p">:</span>
@@ -1565,7 +1623,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1574,7 +1632,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

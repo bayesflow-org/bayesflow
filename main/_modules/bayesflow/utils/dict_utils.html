@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/dict_utils';</script>
     <script>
@@ -610,6 +610,33 @@
 
 
 
+<div class="viewcode-block" id="dim_maybe_nested">
+<a class="viewcode-back" href="../../../api/bayesflow.utils.dim_maybe_nested.html#bayesflow.utils.dim_maybe_nested">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dim_maybe_nested</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Mapping</span> <span class="o">|</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim_maybe_nested</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">first</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All array conditions must have same leading dimension, got </span><span class="si">{</span><span class="n">sizes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">first</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="slice_maybe_nested">
+<a class="viewcode-back" href="../../../api/bayesflow.utils.slice_maybe_nested.html#bayesflow.utils.slice_maybe_nested">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">slice_maybe_nested</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Mapping</span> <span class="o">|</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slices a possibly nested dictionary of arrays along the first axis.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">slice_maybe_nested</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Assume sliceable</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span></div>
+
+
+
 <div class="viewcode-block" id="split_arrays">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.split_arrays.html#bayesflow.utils.split_arrays">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_arrays</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
@@ -644,7 +671,7 @@
 <span class="sd">    An enriched numpy array with information on variable keys and names</span>
 <span class="sd">    to be used in post-processing, specifically the diagnostics module.</span>
 
-<span class="sd">    The current implemention is very basic and we may want to extend it</span>
+<span class="sd">    The current implementation is very basic, and we may want to extend it</span>
 <span class="sd">    in the future should this general structure prove useful.</span>
 
 <span class="sd">    Design according to</span>
@@ -719,7 +746,7 @@
             <span class="c1"># reuse existing variable keys and names if contained in x</span>
             <span class="k">if</span> <span class="n">variable_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">variable_names</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">variable_names</span>
-            <span class="k">if</span> <span class="n">variable_keys</span> <span class="ow">in</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">variable_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">variable_keys</span>
 
         <span class="c1"># use default names if not otherwise specified</span>
@@ -847,6 +874,58 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">estimates</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_test_quantities</span><span class="p">(</span>
+    <span class="n">targets</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">estimates</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">test_quantities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute additional test quantities for given targets and estimates.&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+
+    <span class="n">test_quantities_estimates</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">test_quantities_targets</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">test_quantity_fn</span> <span class="ow">in</span> <span class="n">test_quantities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Apply test_quantity_func to ground-truths</span>
+        <span class="n">tq_targets</span> <span class="o">=</span> <span class="n">test_quantity_fn</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">targets</span><span class="p">)</span>
+        <span class="n">test_quantities_targets</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">tq_targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Flatten estimates for batch processing in test_quantity_fn, apply function, and restore shape</span>
+            <span class="n">num_conditions</span><span class="p">,</span> <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">flattened_estimates</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conditions</span> <span class="o">*</span> <span class="n">num_samples</span><span class="p">,</span> <span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:]))</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">t</span>
+                <span class="p">),</span>
+                <span class="n">estimates</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">flat_tq_estimates</span> <span class="o">=</span> <span class="n">test_quantity_fn</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">flattened_estimates</span><span class="p">)</span>
+            <span class="n">test_quantities_estimates</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_tq_estimates</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Add custom test quantities to variable keys and names for plotting</span>
+    <span class="c1"># keys and names are set to the test_quantities dict keys</span>
+    <span class="n">test_quantities_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">test_quantities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">variable_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">variable_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">targets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">test_quantities_names</span> <span class="o">+</span> <span class="n">variable_names</span>
+
+    <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">test_quantities_names</span> <span class="o">+</span> <span class="n">variable_keys</span>
+    <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">test_quantities_estimates</span> <span class="o">|</span> <span class="n">estimates</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="n">test_quantities_targets</span> <span class="o">|</span> <span class="n">targets</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;variable_keys&quot;</span><span class="p">:</span> <span class="n">variable_keys</span><span class="p">,</span>
+        <span class="s2">&quot;estimates&quot;</span><span class="p">:</span> <span class="n">estimates</span><span class="p">,</span>
+        <span class="s2">&quot;targets&quot;</span><span class="p">:</span> <span class="n">targets</span><span class="p">,</span>
+        <span class="s2">&quot;variable_names&quot;</span><span class="p">:</span> <span class="n">variable_names</span><span class="p">,</span>
+    <span class="p">}</span>
 </pre></div>
 
                 </article>
@@ -888,7 +967,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -897,7 +976,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

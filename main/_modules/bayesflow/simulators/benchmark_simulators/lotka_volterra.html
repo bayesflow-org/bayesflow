@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/simulators/benchmark_simulators/lotka_volterra';</script>
     <script>
@@ -488,10 +488,10 @@
         <span class="n">X0</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
         <span class="n">Y0</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-        <span class="n">subsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">subsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;original&quot;</span><span class="p">,</span>
         <span class="n">flatten</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">obs_noise</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
-        <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
         <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Lotka Volterra simulated benchmark.</span>
@@ -505,14 +505,17 @@
 <span class="sd">            Initial number of predator species.</span>
 <span class="sd">        T: int, optional, default: 20</span>
 <span class="sd">            The duration (time horizon) of the simulation.</span>
-<span class="sd">        subsample: int or None, optional, default: 10</span>
+<span class="sd">        subsample: int, str or None, optional, default: &#39;original&#39;</span>
 <span class="sd">            The number of evenly spaced time points to return.</span>
 <span class="sd">            If None, no subsampling will be performed and all T timepoints will be returned.</span>
+<span class="sd">            If &#39;original&#39;, the original benchmark task subsampling of 20 points is used.</span>
 <span class="sd">        flatten: bool, optional, default: True</span>
 <span class="sd">            A flag to indicate whether a 1D (`flatten=True`) or 2D (`flatten=False`)</span>
 <span class="sd">            representation of the simulated data is returned.</span>
 <span class="sd">        obs_noise: float, optional, default: 0.1</span>
 <span class="sd">            The standard deviation of the log-normal likelihood.</span>
+<span class="sd">        dt: float, optional, default: 0.1</span>
+<span class="sd">            The time step size for the ODE solver.</span>
 <span class="sd">        rng: np.random.Generator or None, optional, default: None</span>
 <span class="sd">            An optional random number generator to use.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -578,23 +581,25 @@
         <span class="c1"># Unpack parameter vector into scalars</span>
         <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">delta</span> <span class="o">=</span> <span class="n">params</span>
 
-        <span class="c1"># Prepate time vector between 0 and T of length T</span>
-        <span class="n">t_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">))</span>
+        <span class="c1"># Prepare time vector between 0 and T of length T</span>
+        <span class="n">t_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="c1"># Integrate using scipy and retain only infected (2-nd dimension)</span>
         <span class="n">pp</span> <span class="o">=</span> <span class="n">odeint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deriv</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_vec</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">delta</span><span class="p">))</span>
 
         <span class="c1"># Subsample evenly the specified number of points, if specified</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span> <span class="o">==</span> <span class="s2">&quot;original&quot;</span><span class="p">:</span>
+            <span class="n">pp</span> <span class="o">=</span> <span class="n">pp</span><span class="p">[::</span><span class="mi">21</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">pp</span> <span class="o">=</span> <span class="n">pp</span><span class="p">[::</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span><span class="p">)]</span>
 
-        <span class="c1"># Ensure minimum count is 0, which will later pass by log(0 + 1)</span>
-        <span class="n">pp</span><span class="p">[</span><span class="n">pp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># Ensure minimum count is 0</span>
+        <span class="n">pp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">10000.0</span><span class="p">)</span>
 
         <span class="c1"># Add noise, decide whether to flatten and return</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">pp</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_noise</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pp</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_noise</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">x</span></div>
 </div>
 
@@ -639,7 +644,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -648,7 +653,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

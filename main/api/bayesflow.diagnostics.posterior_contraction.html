@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.diagnostics.posterior_contraction';</script>
     <script>
@@ -58,8 +58,8 @@
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="recovery" href="bayesflow.diagnostics.recovery.html" />
-    <link rel="prev" title="pairs_samples" href="bayesflow.diagnostics.pairs_samples.html" />
+    <link rel="next" title="posterior_z_score" href="bayesflow.diagnostics.posterior_z_score.html" />
+    <link rel="prev" title="plot_quantity" href="bayesflow.diagnostics.plot_quantity.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -493,13 +493,17 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_ecdf_from_quantiles.html">calibration_ecdf_from_quantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_error.html">calibration_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_histogram.html">calibration_histogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_log_gamma.html">calibration_log_gamma</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.loss.html">loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_calibration.html">mc_calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_confusion_matrix.html">mc_confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mmd_hypothesis_test.html">mmd_hypothesis_test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_posterior.html">pairs_posterior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_quantity.html">pairs_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_samples.html">pairs_samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.plot_quantity.html">plot_quantity</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">posterior_contraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_z_score.html">posterior_z_score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery.html">recovery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery_from_estimates.html">recovery_from_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.summary_space_comparison.html">summary_space_comparison</a></li>
@@ -514,9 +518,6 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -558,7 +559,9 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.StableConsistencyModel.html">StableConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeMLP.html">TimeMLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesTransformer.html">TimeSeriesTransformer</a></li>
 </ul>
@@ -606,6 +609,7 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.debug.html">debug</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.error.html">error</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.exception.html">exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.format_duration.html">format_duration</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.info.html">info</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.log.html">log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.warn_once.html">warn_once</a></li>
@@ -613,6 +617,7 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.numpy_utils.html">numpy_utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.credible_interval.html">credible_interval</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_shifted_softplus.html">inverse_shifted_softplus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_sigmoid.html">inverse_sigmoid</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_softplus.html">inverse_softplus</a></li>
@@ -639,6 +644,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.calibration_curve.html">calibration_curve</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.compute_empirical_coverage.html">compute_empirical_coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
@@ -647,6 +653,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html">deserialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html">detailed_loss_callback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.devices.html">devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.dim_maybe_nested.html">dim_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand.html">expand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_as.html">expand_as</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_left.html">expand_left</a></li>
@@ -669,6 +676,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html">find_recurrent_net</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_duration.html">format_duration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
@@ -689,6 +697,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html">serialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html">simultaneous_ecdf_bands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.size_of.html">size_of</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.slice_maybe_nested.html">slice_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_arrays.html">split_arrays</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_tensors.html">split_tensors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html">squeeze_inner_estimates_dict</a></li>
@@ -785,11 +794,11 @@
 <h1>posterior_contraction<a class="headerlink" href="#posterior-contraction" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="bayesflow.diagnostics.posterior_contraction">
-<span class="sig-prename descclassname"><span class="pre">bayesflow.diagnostics.</span></span><span class="sig-name descname"><span class="pre">posterior_contraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimates:</span> <span class="pre">~collections.abc.Mapping[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~numpy.ndarray]</span> <span class="pre">|</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets:</span> <span class="pre">~collections.abc.Mapping[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~numpy.ndarray]</span> <span class="pre">|</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_keys:</span> <span class="pre">~collections.abc.Sequence[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_names:</span> <span class="pre">~collections.abc.Sequence[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregation:</span> <span class="pre">~collections.abc.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">median&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/diagnostics/metrics/posterior_contraction.html#posterior_contraction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.diagnostics.posterior_contraction" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">bayesflow.diagnostics.</span></span><span class="sig-name descname"><span class="pre">posterior_contraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~numpy.ndarray]</span> <span class="pre">|</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~numpy.ndarray]</span> <span class="pre">|</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_quantities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~collections.abc.Callable]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">median&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/diagnostics/metrics/posterior_contraction.html#posterior_contraction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.diagnostics.posterior_contraction" title="Link to this definition">#</a></dt>
 <dd><p>Computes the posterior contraction (PC) from prior to posterior for the given samples.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
+<dd class="field-odd"><dl>
 <dt><strong>estimates</strong><span class="classifier">np.ndarray of shape (num_datasets, num_draws_post, num_variables)</span></dt><dd><p>Posterior samples, comprising <cite>num_draws_post</cite> random draws from the posterior distribution
 for each data set from <cite>num_datasets</cite>.</p>
 </dd>
@@ -800,7 +809,19 @@ By default, select all keys.</p>
 </dd>
 <dt><strong>variable_names</strong><span class="classifier">Sequence[str], optional (default = None)</span></dt><dd><p>Optional variable names to show in the output.</p>
 </dd>
-<dt><strong>aggregation</strong><span class="classifier">callable, optional (default = np.median)</span></dt><dd><p>Function to aggregate the PC across draws. Typically <cite>np.mean</cite> or <cite>np.median</cite>.</p>
+<dt><strong>test_quantities</strong><span class="classifier">dict or None, optional, default: None</span></dt><dd><p>A dict that maps plot titles to functions that compute
+test quantities based on estimate/target draws.</p>
+<p>The dict keys are automatically added to <code class="docutils literal notranslate"><span class="pre">variable_keys</span></code>
+and <code class="docutils literal notranslate"><span class="pre">variable_names</span></code>.
+Test quantity functions are expected to accept a dict of draws with
+shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">...)</span></code> as the first (typically only)
+positional argument and return an NumPy array of shape
+<code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code>.
+The functions do not have to deal with an additional
+sample dimension, as appropriate reshaping is done internally.</p>
+</dd>
+<dt><strong>aggregation</strong><span class="classifier">callable or None, optional (default = np.median)</span></dt><dd><p>Function to aggregate the PC across draws. Typically <cite>np.mean</cite> or <cite>np.median</cite>.
+If None is provided, the individual values are returned.</p>
 </dd>
 </dl>
 </dd>
@@ -809,7 +830,7 @@ By default, select all keys.</p>
 <dt><strong>result</strong><span class="classifier">dict</span></dt><dd><p>Dictionary containing:</p>
 <ul class="simple">
 <li><dl class="simple">
-<dt>“values”<span class="classifier">float or np.ndarray</span></dt><dd><p>The aggregated posterior contraction per variable</p>
+<dt>“values”<span class="classifier">float or np.ndarray</span></dt><dd><p>The (optionally aggregated) posterior contraction per variable</p>
 </dd>
 </dl>
 </li>
@@ -847,20 +868,20 @@ indicate low contraction.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="bayesflow.diagnostics.pairs_samples.html"
+       href="bayesflow.diagnostics.plot_quantity.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pairs_samples</p>
+        <p class="prev-next-title">plot_quantity</p>
       </div>
     </a>
     <a class="right-next"
-       href="bayesflow.diagnostics.recovery.html"
+       href="bayesflow.diagnostics.posterior_z_score.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">recovery</p>
+        <p class="prev-next-title">posterior_z_score</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -932,7 +953,7 @@ indicate low contraction.</p>
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -941,7 +962,7 @@ indicate low contraction.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

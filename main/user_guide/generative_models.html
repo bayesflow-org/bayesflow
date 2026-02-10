@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,11 +42,11 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/generative_models';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -589,7 +589,7 @@ Calling the simulation_fn.
 </div>
 </div>
 <p>Even though we only implemented how to obtain one sample, the simulator allows us to simulate a whole batch of data at once. It calls the provided function repeatedly and combines the outputs into a single dictionary.</p>
-<p>For the batched function, we have to take a <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> as the first argument. It tells us how many samples we should produce, and which shape they should have. Here, we can simply pass it on to the <code class="docutils literal notranslate"><span class="pre">size</span></code> parameter of the <a class="reference external" href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html#numpy.random.uniform" title="(in NumPy v2.3)"><code class="xref py py-func docutils literal notranslate"><span class="pre">uniform()</span></code></a> function. In addition, we have to tell the <a class="reference internal" href="../api/bayesflow.simulators.LambdaSimulator.html#bayesflow.simulators.LambdaSimulator" title="bayesflow.simulators.LambdaSimulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">LambdaSimulator</span></code></a> that we produce complete batches now, by setting <code class="docutils literal notranslate"><span class="pre">is_batched=True</span></code>.</p>
+<p>For the batched function, we have to take a <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> as the first argument. It tells us how many samples we should produce, and which shape they should have. Here, we can simply pass it on to the <code class="docutils literal notranslate"><span class="pre">size</span></code> parameter of the <a class="reference external" href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html#numpy.random.uniform" title="(in NumPy v2.4)"><code class="xref py py-func docutils literal notranslate"><span class="pre">uniform()</span></code></a> function. In addition, we have to tell the <a class="reference internal" href="../api/bayesflow.simulators.LambdaSimulator.html#bayesflow.simulators.LambdaSimulator" title="bayesflow.simulators.LambdaSimulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">LambdaSimulator</span></code></a> that we produce complete batches now, by setting <code class="docutils literal notranslate"><span class="pre">is_batched=True</span></code>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">2025</span><span class="p">)</span>
@@ -812,7 +812,7 @@ Shapes with rejection: {&#39;x&#39;: (502,), &#39;y&#39;: (502,)}
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -821,7 +821,7 @@ Shapes with rejection: {&#39;x&#39;: (502,), &#39;y&#39;: (502,)}
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

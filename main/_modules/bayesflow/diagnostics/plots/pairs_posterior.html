@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/pairs_posterior';</script>
     <script>
@@ -474,10 +474,9 @@
                 <article class="bd-article">
                   
   <h1>Source code for bayesflow.diagnostics.plots.pairs_posterior</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
@@ -497,11 +496,13 @@
     <span class="n">dataset_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
     <span class="n">post_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
     <span class="n">prior_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;gray&quot;</span><span class="p">,</span>
     <span class="n">target_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span>
     <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
+    <span class="n">markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">target_markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
     <span class="n">label_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
     <span class="n">legend_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
@@ -540,6 +541,10 @@
 <span class="sd">        The color for the optional true parameter lines and points</span>
 <span class="sd">    alpha             : float in [0, 1], optional, default: 0.9</span>
 <span class="sd">        The opacity of the posterior plots</span>
+<span class="sd">    markersize        : float, optional, default: 40</span>
+<span class="sd">        The marker size in points**2 of the scatter plots</span>
+<span class="sd">    target_markersize : float, optional, default: 40</span>
+<span class="sd">        The marker size in points**2 of the target marker</span>
 
 <span class="sd">    **kwargs          : dict, optional, default: {}</span>
 <span class="sd">        Further optional keyword arguments propagated to `_pairs_samples`</span>
@@ -579,6 +584,9 @@
         <span class="n">label_fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">,</span>
         <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">,</span>
         <span class="n">legend_fontsize</span><span class="o">=</span><span class="n">legend_fontsize</span><span class="p">,</span>
+        <span class="n">markersize</span><span class="o">=</span><span class="n">markersize</span><span class="p">,</span>
+        <span class="n">target_markersize</span><span class="o">=</span><span class="n">target_markersize</span><span class="p">,</span>
+        <span class="n">target_color</span><span class="o">=</span><span class="n">target_color</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -592,7 +600,7 @@
         <span class="n">g</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">targets</span><span class="o">.</span><span class="n">variable_names</span><span class="p">)</span>
         <span class="n">g</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;_source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;True Parameter&quot;</span>
         <span class="n">g</span><span class="o">.</span><span class="n">map_diag</span><span class="p">(</span><span class="n">plot_true_params_as_lines</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">target_color</span><span class="p">)</span>
-        <span class="n">g</span><span class="o">.</span><span class="n">map_offdiag</span><span class="p">(</span><span class="n">plot_true_params_as_points</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">target_color</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">map_offdiag</span><span class="p">(</span><span class="n">plot_true_params_as_points</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">target_color</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">target_markersize</span><span class="p">)</span>
 
         <span class="n">create_legends</span><span class="p">(</span>
             <span class="n">g</span><span class="p">,</span>
@@ -601,6 +609,8 @@
             <span class="n">color2</span><span class="o">=</span><span class="n">prior_color</span><span class="p">,</span>
             <span class="n">legend_fontsize</span><span class="o">=</span><span class="n">legend_fontsize</span><span class="p">,</span>
             <span class="n">show_single_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">target_color</span><span class="o">=</span><span class="n">target_color</span><span class="p">,</span>
+            <span class="n">target_markersize</span><span class="o">=</span><span class="n">target_markersize</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">g</span></div>
@@ -660,7 +670,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -669,7 +679,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

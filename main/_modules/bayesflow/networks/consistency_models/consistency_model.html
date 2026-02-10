@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/consistency_models/consistency_model';</script>
     <script>
@@ -474,13 +474,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for bayesflow.networks.consistency_models.consistency_model</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">ops</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_network</span><span class="p">,</span> <span class="n">layer_kwargs</span><span class="p">,</span> <span class="n">weighted_mean</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_network</span><span class="p">,</span> <span class="n">layer_kwargs</span><span class="p">,</span> <span class="n">weighted_mean</span><span class="p">,</span> <span class="n">expand_right_as</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">deserialize</span><span class="p">,</span> <span class="n">serializable</span><span class="p">,</span> <span class="n">serialize</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..inference_network</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceNetwork</span>
@@ -502,19 +502,22 @@
 <span class="sd">    fast simulation-based inference. arXiv preprint arXiv:2312.05440.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">MLP_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">TIME_MLP_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
         <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
         <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
         <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
         <span class="s2">&quot;spectral_normalization&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;time_embedding_dim&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="s2">&quot;merge&quot;</span><span class="p">:</span> <span class="s2">&quot;concat&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="s2">&quot;layer&quot;</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
+        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;time_mlp&quot;</span><span class="p">,</span>
         <span class="n">max_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
         <span class="n">sigma2</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
@@ -530,9 +533,11 @@
 <span class="sd">        total_steps : int</span>
 <span class="sd">            The total number of training steps, must be calculated as number of epochs * number of batches</span>
 <span class="sd">            and cannot be inferred during construction time.</span>
-<span class="sd">        subnet      : str or type, optional, default: &quot;mlp&quot;</span>
-<span class="sd">            A neural network type for the consistency model, will be</span>
-<span class="sd">            instantiated using subnet_kwargs.</span>
+<span class="sd">        subnet      : str or type, optional, default: &quot;time_mlp&quot;</span>
+<span class="sd">            A neural network type for the consistency model, will be instantiated using subnet_kwargs.</span>
+<span class="sd">            If a string is provided, it should be a registered name (e.g., &quot;time_mlp&quot;).</span>
+<span class="sd">            If a type or keras.Layer is provided, it will be directly instantiated</span>
+<span class="sd">            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).</span>
 <span class="sd">        max_time : int or float, optional, default: 200.0</span>
 <span class="sd">            The maximum time of the diffusion</span>
 <span class="sd">        sigma2      : float or Tensor of dimension (input_dim, 1), optional, default: 1.0</span>
@@ -553,13 +558,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
 
         <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">subnet_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">subnet</span> <span class="o">==</span> <span class="s2">&quot;mlp&quot;</span><span class="p">:</span>
-            <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">ConsistencyModel</span><span class="o">.</span><span class="n">MLP_DEFAULT_CONFIG</span> <span class="o">|</span> <span class="n">subnet_kwargs</span>
-
+        <span class="k">if</span> <span class="n">subnet</span> <span class="o">==</span> <span class="s2">&quot;time_mlp&quot;</span><span class="p">:</span>
+            <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">ConsistencyModel</span><span class="o">.</span><span class="n">TIME_MLP_DEFAULT_CONFIG</span> <span class="o">|</span> <span class="n">subnet_kwargs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span> <span class="o">=</span> <span class="n">find_network</span><span class="p">(</span><span class="n">subnet</span><span class="p">,</span> <span class="o">**</span><span class="n">subnet_kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
-            <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;output_projector&quot;</span>
-        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma2</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">sigma2</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma2</span><span class="p">)</span>
@@ -643,22 +646,17 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">base_distribution</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">xz_shape</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="n">xz_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
+            <span class="n">units</span><span class="o">=</span><span class="n">xz_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;output_projector&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">xz_shape</span><span class="p">)</span>
-
-        <span class="c1"># time vector</span>
-        <span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-
-        <span class="k">if</span> <span class="n">conditions_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">conditions_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
-
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
+        <span class="c1"># construct input shape for subnet and subnet projector</span>
+        <span class="n">time_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">xz_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>  <span class="c1"># same batch/sequence dims, 1 feature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">build</span><span class="p">((</span><span class="n">xz_shape</span><span class="p">,</span> <span class="n">time_shape</span><span class="p">,</span> <span class="n">conditions_shape</span><span class="p">))</span>
+        <span class="n">out_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">((</span><span class="n">xz_shape</span><span class="p">,</span> <span class="n">time_shape</span><span class="p">,</span> <span class="n">conditions_shape</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">out_shape</span><span class="p">)</span>
 
         <span class="c1"># Choose coefficient according to [2] Section 3.3</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">c_huber</span> <span class="o">=</span> <span class="mf">0.00054</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xz_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -683,7 +681,7 @@
 
         <span class="c1"># Next, we calculate the discretized times for each n</span>
         <span class="c1"># and establish a mapping between n and the position i of the</span>
-        <span class="c1"># discretizated times in the vector</span>
+        <span class="c1"># discretized times in the vector</span>
         <span class="n">discretized_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_n</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
         <span class="n">discretization_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">max_n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unique_n</span><span class="p">):</span>
@@ -759,13 +757,8 @@
 <span class="sd">        training    : bool, optional, default: True</span>
 <span class="sd">            Whether internal layers (e.g., dropout) should behave in train or inference mode.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="n">conditions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">xtc</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">conditions</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">xtc</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">(</span><span class="n">xtc</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">))</span>
+        <span class="n">subnet_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="p">(</span><span class="n">subnet_out</span><span class="p">)</span>
 
         <span class="c1"># Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)</span>
         <span class="c1"># Thus, we can do a cross product with the time vector which is (batch_size, 1) for</span>
@@ -808,8 +801,8 @@
 
         <span class="n">log_p</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
         <span class="n">times</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">categorical</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">log_p</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed_generator</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">t1</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">discretized_time</span><span class="p">,</span> <span class="n">times</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">t2</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">discretized_time</span><span class="p">,</span> <span class="n">times</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="n">expand_right_as</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">discretized_time</span><span class="p">,</span> <span class="n">times</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">t2</span> <span class="o">=</span> <span class="n">expand_right_as</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">discretized_time</span><span class="p">,</span> <span class="n">times</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
 
         <span class="c1"># generate noise vector</span>
         <span class="n">noise</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed_generator</span><span class="p">)</span>
@@ -871,7 +864,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -880,7 +873,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

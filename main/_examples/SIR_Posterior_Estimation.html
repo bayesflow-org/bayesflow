@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,11 +42,11 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/SIR_Posterior_Estimation';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -506,31 +506,15 @@
 <p><em>Author: Stefan T. Radev</em></p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-
-<span class="k">if</span> <span class="s2">&quot;KERAS_BACKEND&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
-    <span class="c1"># set this to &quot;torch&quot;, &quot;tensorflow&quot;, or &quot;jax&quot;</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;jax&#39;
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 </pre></div>
 </div>
 </div>
@@ -539,7 +523,10 @@
 <h2><span class="section-number">4.1. </span>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
 <p>In this tutorial, we will illustrate how to perform posterior inference on simple, stationary SIR-like models (complex models will be tackled in a further notebook). SIR-like models comprise suitable illustrative examples, since they generate time-series and their outputs represent the results of solving a system of ordinary differential equations (ODEs).</p>
 <p>The details for tackling stochastic epidemiological models with neural networks are described in our corresponding paper, which you can consult for a more formal exposition and a more comprehensive treatment of neural architectures:</p>
-<p>OutbreakFlow: Model-based Bayesian inference of disease outbreak dynamics with invertible neural networks and its application to the COVID-19 pandemics in Germany. https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009472</p>
+<ul class="simple">
+<li><p><em>OutbreakFlow: Model-based Bayesian inference of disease outbreak dynamics with invertible neural networks and its application to the COVID-19 pandemics in Germany</em>. https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009472</p></li>
+<li><p><em>Integrating artificial intelligence with mechanistic epidemiological modeling: a scoping review of opportunities and challenges</em>. https://www.nature.com/articles/s41467-024-55461-x</p></li>
+</ul>
 </section>
 <section id="defining-the-simulator">
 <h2><span class="section-number">4.2. </span>Defining the Simulator <a class="anchor" id="defining_the_generative"></a><a class="headerlink" href="#defining-the-simulator" title="Link to this heading">#</a></h2>
@@ -730,7 +717,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/7b3df9d0eae22e92c307dd37de45ea0a2a6a6f64b88a23825542e62ab7f0705e.png" src="../_images/7b3df9d0eae22e92c307dd37de45ea0a2a6a6f64b88a23825542e62ab7f0705e.png" />
+<img alt="../_images/e30919ada5539934f2a9599a3c40b8c0874baa65382168c4e8416a3cc4963c74.png" src="../_images/e30919ada5539934f2a9599a3c40b8c0874baa65382168c4e8416a3cc4963c74.png" />
 </div>
 </div>
 </section>
@@ -801,13 +788,12 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">gru</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gru</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">summary_stats</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
         
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_series</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compresses time_series of shape (batch_size, T, 1) into summaries of shape (batch_size, 8).&quot;&quot;&quot;</span>
-
-        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gru</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stage&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gru</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_stats</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">summary</span>
 </pre></div>
@@ -827,7 +813,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 <p>As a backbone inference network, we choose the all-time classic coupling flow (i.e., a type of normalizing flow).</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -863,12 +849,12 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: total: 0 ns
-Wall time: 8.68 ms
+Wall time: 7.27 ms
 </pre></div>
 </div>
 </div>
 </div>
-<p>Not too bad! However, for the purpose of illustration, we will go with offline training using a fixed data set of 6000 simulations. This may be considered a “low simulation budget” in many settings.</p>
+<p>Not too bad! However, for the purpose of illustration, we will go with offline training using a fixed data set of 8000 simulations. This may be considered a “low simulation budget” in many settings.</p>
 <section id="generating-offline-data">
 <h3><span class="section-number">4.6.1. </span>Generating Offline Data <a class="anchor" id="generating_offline_data"></a><a class="headerlink" href="#generating-offline-data" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
@@ -884,10 +870,221 @@ Wall time: 8.68 ms
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
     <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span> 
-    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> 
     <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
 <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OfflineDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">7s</span> 44ms/step - loss: 8.4654 - val_loss: 1.5626
+Epoch 2/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: 0.4086 - val_loss: -0.8353
+Epoch 3/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -0.7898 - val_loss: -1.0914
+Epoch 4/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -0.9806 - val_loss: -0.8046
+Epoch 5/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -1.4445 - val_loss: -1.8668
+Epoch 6/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -1.8533 - val_loss: -2.3139
+Epoch 7/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -1.9075 - val_loss: -2.2328
+Epoch 8/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -2.3124 - val_loss: -2.6770
+Epoch 9/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -2.4624 - val_loss: -2.5321
+Epoch 10/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -2.5059 - val_loss: -2.8379
+Epoch 11/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -2.6303 - val_loss: -3.0210
+Epoch 12/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -2.7221 - val_loss: -2.9149
+Epoch 13/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -2.8668 - val_loss: -3.1688
+Epoch 14/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -2.8628 - val_loss: -3.2402
+Epoch 15/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -2.9847 - val_loss: -3.1865
+Epoch 16/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -2.8777 - val_loss: -2.7351
+Epoch 17/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.0363 - val_loss: -3.2453
+Epoch 18/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.1559 - val_loss: -3.2152
+Epoch 19/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.2761 - val_loss: -3.3717
+Epoch 20/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -3.2941 - val_loss: -2.9347
+Epoch 21/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.3390 - val_loss: -2.4774
+Epoch 22/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.2548 - val_loss: -3.4285
+Epoch 23/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.4629 - val_loss: -3.6532
+Epoch 24/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.5553 - val_loss: -3.6732
+Epoch 25/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.5633 - val_loss: -3.4503
+Epoch 26/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.6465 - val_loss: -2.9345
+Epoch 27/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.6869 - val_loss: -3.8239
+Epoch 28/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.7057 - val_loss: -3.5314
+Epoch 29/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.8235 - val_loss: -3.9725
+Epoch 30/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.7690 - val_loss: -3.8369
+Epoch 31/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -3.8363 - val_loss: -3.6539
+Epoch 32/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.7696 - val_loss: -3.9771
+Epoch 33/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.9930 - val_loss: -4.3570
+Epoch 34/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.9420 - val_loss: -4.2805
+Epoch 35/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -3.9715 - val_loss: -4.2154
+Epoch 36/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.0096 - val_loss: -4.0003
+Epoch 37/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.0512 - val_loss: -4.3531
+Epoch 38/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.0466 - val_loss: -4.3966
+Epoch 39/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.1284 - val_loss: -4.3681
+Epoch 40/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.1455 - val_loss: -4.6147
+Epoch 41/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.1957 - val_loss: -4.3947
+Epoch 42/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.2301 - val_loss: -4.2612
+Epoch 43/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.1711 - val_loss: -4.2295
+Epoch 44/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.2400 - val_loss: -4.2500
+Epoch 45/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.1973 - val_loss: -4.5687
+Epoch 46/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.2754 - val_loss: -4.4925
+Epoch 47/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.2942 - val_loss: -4.4212
+Epoch 48/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.3051 - val_loss: -4.3167
+Epoch 49/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.3382 - val_loss: -4.6363
+Epoch 50/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.3795 - val_loss: -4.5311
+Epoch 51/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.3426 - val_loss: -4.4652
+Epoch 52/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.3575 - val_loss: -4.7164
+Epoch 53/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.3901 - val_loss: -4.5578
+Epoch 54/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.4426 - val_loss: -4.5307
+Epoch 55/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.4596 - val_loss: -4.6627
+Epoch 56/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.4224 - val_loss: -4.5603
+Epoch 57/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.4945 - val_loss: -4.7749
+Epoch 58/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.4606 - val_loss: -4.7459
+Epoch 59/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 8ms/step - loss: -4.5072 - val_loss: -4.7695
+Epoch 60/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5077 - val_loss: -4.7474
+Epoch 61/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5570 - val_loss: -4.7009
+Epoch 62/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5535 - val_loss: -4.6684
+Epoch 63/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5646 - val_loss: -4.5845
+Epoch 64/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5566 - val_loss: -4.7818
+Epoch 65/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5891 - val_loss: -4.7746
+Epoch 66/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.5927 - val_loss: -4.7614
+Epoch 67/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6112 - val_loss: -4.7501
+Epoch 68/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5921 - val_loss: -4.3004
+Epoch 69/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.6026 - val_loss: -4.6233
+Epoch 70/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.6264 - val_loss: -4.6281
+Epoch 71/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6367 - val_loss: -4.7888
+Epoch 72/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.5993 - val_loss: -4.6472
+Epoch 73/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.6190 - val_loss: -4.8114
+Epoch 74/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6550 - val_loss: -4.8672
+Epoch 75/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6514 - val_loss: -4.7688
+Epoch 76/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6911 - val_loss: -4.7451
+Epoch 77/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6688 - val_loss: -4.8056
+Epoch 78/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6795 - val_loss: -4.8583
+Epoch 79/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6882 - val_loss: -4.6955
+Epoch 80/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6950 - val_loss: -4.7902
+Epoch 81/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.6990 - val_loss: -4.8877
+Epoch 82/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7153 - val_loss: -4.8404
+Epoch 83/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7270 - val_loss: -4.7290
+Epoch 84/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7503 - val_loss: -4.8032
+Epoch 85/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7275 - val_loss: -4.8712
+Epoch 86/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7371 - val_loss: -4.7946
+Epoch 87/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7406 - val_loss: -4.8546
+Epoch 88/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7504 - val_loss: -4.8674
+Epoch 89/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7553 - val_loss: -4.8885
+Epoch 90/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7628 - val_loss: -4.8377
+Epoch 91/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7667 - val_loss: -4.8889
+Epoch 92/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7712 - val_loss: -4.8980
+Epoch 93/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7713 - val_loss: -4.8723
+Epoch 94/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7798 - val_loss: -4.8633
+Epoch 95/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7745 - val_loss: -4.8896
+Epoch 96/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7865 - val_loss: -4.8828
+Epoch 97/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7945 - val_loss: -4.8684
+Epoch 98/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7919 - val_loss: -4.8732
+Epoch 99/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 6ms/step - loss: -4.7930 - val_loss: -4.8752
+Epoch 100/100
+<span class=" -Color -Color-Bold">94/94</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 7ms/step - loss: -4.7911 - val_loss: -4.8767
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Training completed in 1.15 minutes.
 </pre></div>
 </div>
 </div>
@@ -903,7 +1100,7 @@ Wall time: 8.68 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/eda698e79d6116fdcf002a4f38ba52019c2925dac5e41fac53e7330043355c9b.png" src="../_images/eda698e79d6116fdcf002a4f38ba52019c2925dac5e41fac53e7330043355c9b.png" />
+<img alt="../_images/8f014bd9f154e9bbb88074626300cf07c344c84ec4e792d40c7f93a4c96d992d.png" src="../_images/8f014bd9f154e9bbb88074626300cf07c344c84ec4e792d40c7f93a4c96d992d.png" />
 </div>
 </div>
 <p>Great, it seems that our approximator has converged! Before we get too excited and throw our networks at real data, we need to make sure that they meet our expectations <em>in silico</em>, that is, given the small world of simulations the networks have seen during training.</p>
@@ -922,7 +1119,12 @@ Wall time: 8.68 ms
 <span class="n">test_sims</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">num_datasets</span><span class="p">)</span>
 
 <span class="c1"># Obtain num_samples posterior samples per scenario</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">test_sims</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">test_sims</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "e34ef88ac4224debae11670c8ad6855b", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 8.60 seconds.
 </pre></div>
 </div>
 </div>
@@ -940,7 +1142,7 @@ Wall time: 8.68 ms
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:The ratio of simulations / posterior draws should be &gt; 20 for reliable variance reduction, but your ratio is 0. Confidence intervals might be unreliable!
 </pre></div>
 </div>
-<img alt="../_images/f0b214b8c6317e3ec8820bc8b0655e11579c203e5479ef9ee84daa2c35dfc36d.png" src="../_images/f0b214b8c6317e3ec8820bc8b0655e11579c203e5479ef9ee84daa2c35dfc36d.png" />
+<img alt="../_images/d4d6e4821d8ee046e8d53110371f7ca697af669444c4487a6097077094c23041.png" src="../_images/d4d6e4821d8ee046e8d53110371f7ca697af669444c4487a6097077094c23041.png" />
 </div>
 </div>
 </section>
@@ -955,7 +1157,7 @@ Wall time: 8.68 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/1a2f83dafd639e9ebccb7708be12cc1886666fbecaff83c956c8573670c08fb7.png" src="../_images/1a2f83dafd639e9ebccb7708be12cc1886666fbecaff83c956c8573670c08fb7.png" />
+<img alt="../_images/68824cea0077f2fb4d13330fd20dda06907cb7dcd6ec7e802fcaba74bc0e8757.png" src="../_images/68824cea0077f2fb4d13330fd20dda06907cb7dcd6ec7e802fcaba74bc0e8757.png" />
 </div>
 </div>
 </section>
@@ -969,7 +1171,7 @@ Wall time: 8.68 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/f9539bef02426d38889f0a1e8307c0a1b887285ea0c5e8388544c7a9d806f2be.png" src="../_images/f9539bef02426d38889f0a1e8307c0a1b887285ea0c5e8388544c7a9d806f2be.png" />
+<img alt="../_images/a82c1ec24f86d33ef5063e3f5d0447f00bb50dd0378915bf1f4b38536c895e19.png" src="../_images/a82c1ec24f86d33ef5063e3f5d0447f00bb50dd0378915bf1f4b38536c895e19.png" />
 </div>
 </div>
 <p>Interestingly, it seems that the parameters <span class="math notranslate nohighlight">\(\theta_1 = \mu\)</span> and <span class="math notranslate nohighlight">\(\theta_2 = D\)</span> have not been learned properly as they are estimated roughly the same for every simulated datset used during testing. For some models, this might indicate that the the network training had partially failed; and we would have to train longer or adjust the network architecture. For this specific model, however, the reason is different: From the provided observables, these parameters are actually not identified so cannot be learned consistently, no matter the kind of approximator we would use.</p>
@@ -985,7 +1187,7 @@ Wall time: 8.68 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_html"><div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "9b1caf3a00654768a2284580a3cc9add", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><div>
 <style scoped>
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
@@ -1013,50 +1215,60 @@ Wall time: 8.68 ms
   <tbody>
     <tr>
       <th>NRMSE</th>
-      <td>0.079257</td>
-      <td>0.246147</td>
-      <td>0.231538</td>
-      <td>0.199334</td>
-      <td>0.173794</td>
+      <td>0.064986</td>
+      <td>0.196263</td>
+      <td>0.225614</td>
+      <td>0.218368</td>
+      <td>0.143819</td>
     </tr>
     <tr>
-      <th>Posterior Contraction</th>
-      <td>0.945971</td>
-      <td>0.078332</td>
-      <td>0.070332</td>
-      <td>0.546068</td>
-      <td>0.718773</td>
+      <th>Log Gamma</th>
+      <td>2.654485</td>
+      <td>2.377004</td>
+      <td>1.149616</td>
+      <td>1.868467</td>
+      <td>0.466460</td>
     </tr>
     <tr>
       <th>Calibration Error</th>
-      <td>0.011930</td>
-      <td>0.025263</td>
-      <td>0.013246</td>
-      <td>0.040614</td>
-      <td>0.004737</td>
+      <td>0.022982</td>
+      <td>0.009737</td>
+      <td>0.012105</td>
+      <td>0.014298</td>
+      <td>0.039561</td>
+    </tr>
+    <tr>
+      <th>Posterior Contraction</th>
+      <td>0.953850</td>
+      <td>0.000000</td>
+      <td>0.058371</td>
+      <td>0.391052</td>
+      <td>0.788854</td>
     </tr>
   </tbody>
 </table>
 </div></div></div>
 </div>
-<p>We can also obtain the full set of graphical diagnostics:</p>
+<p>We can also obtain the full set of graphical diagnostics. The method below lets you control nearly all display features (can take a while):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">figures</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span>
     <span class="n">test_data</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
     <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
     <span class="n">recovery_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
-    <span class="n">calibration_ecdf_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;legend_fontsize&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;difference&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
+    <span class="n">calibration_ecdf_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;legend_fontsize&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
+    <span class="n">coverage_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;legend_fontsize&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
     <span class="n">z_score_contraction_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}</span>    
 <span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/aef713428cfb70d89cc19fa74eca8202b1ad5fdbcf5dbe84f0cd6d09d7fff607.png" src="../_images/aef713428cfb70d89cc19fa74eca8202b1ad5fdbcf5dbe84f0cd6d09d7fff607.png" />
-<img alt="../_images/fd8d4137719177be41ba1fd4f9b8115b9caee6a8474f4f1bbb68b6b9d9c684fa.png" src="../_images/fd8d4137719177be41ba1fd4f9b8115b9caee6a8474f4f1bbb68b6b9d9c684fa.png" />
-<img alt="../_images/d4cfef844c1b02fc1b1e44e520e22a0048d0995c34857922335e590d8bac5968.png" src="../_images/d4cfef844c1b02fc1b1e44e520e22a0048d0995c34857922335e590d8bac5968.png" />
-<img alt="../_images/7f7aab897f41c5b10218900fbfaefcf4ed3fb729a3b0e926f7423caac97ab96c.png" src="../_images/7f7aab897f41c5b10218900fbfaefcf4ed3fb729a3b0e926f7423caac97ab96c.png" />
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "e0d63a4dd6424f4e82df55e9b231210c", "version_major": 2, "version_minor": 0}</script><img alt="../_images/dee0e757c6cf1e1deb7377ab16d728fd869bb8832cf253f0c3015c4b77d88503.png" src="../_images/dee0e757c6cf1e1deb7377ab16d728fd869bb8832cf253f0c3015c4b77d88503.png" />
+<img alt="../_images/d2d6535cadb62c1c38024765cb5371032c079f0fe9e1522139801a81bac11e6a.png" src="../_images/d2d6535cadb62c1c38024765cb5371032c079f0fe9e1522139801a81bac11e6a.png" />
+<img alt="../_images/8b454c4f686eae23a62bbb270c4d73ceb5f793b04378aa12e02df86b7e5043bd.png" src="../_images/8b454c4f686eae23a62bbb270c4d73ceb5f793b04378aa12e02df86b7e5043bd.png" />
+<img alt="../_images/cbd07630b9abc304824e8952d032c863420869a2279c1ea3fed148bca13252e1.png" src="../_images/cbd07630b9abc304824e8952d032c863420869a2279c1ea3fed148bca13252e1.png" />
+<img alt="../_images/c241c4ee4577b92167b53e2829884c1dd29ad298bf3e530461869e7de16189c6.png" src="../_images/c241c4ee4577b92167b53e2829884c1dd29ad298bf3e530461869e7de16189c6.png" />
 </div>
 </div>
 </section>
@@ -1080,6 +1292,9 @@ Wall time: 8.68 ms
 </div>
 </div>
 <div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "35266c8f7594407888b4ab0802fa84d3", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 3.46 seconds.
+</pre></div>
+</div>
 <div class="output text_html"><div>
 <style scoped>
     .dataframe tbody tr th:only-of-type {
@@ -1108,43 +1323,43 @@ Wall time: 8.68 ms
   <tbody>
     <tr>
       <th>0</th>
-      <td>0.403132</td>
-      <td>0.132537</td>
-      <td>8.742765</td>
-      <td>18.748758</td>
-      <td>8.087518</td>
+      <td>0.335902</td>
+      <td>0.105328</td>
+      <td>8.957308</td>
+      <td>36.724449</td>
+      <td>2.664177</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>0.386655</td>
-      <td>0.125630</td>
-      <td>7.554114</td>
-      <td>27.330902</td>
-      <td>17.882437</td>
+      <td>0.384752</td>
+      <td>0.108980</td>
+      <td>8.115654</td>
+      <td>19.146898</td>
+      <td>8.231798</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>0.390225</td>
-      <td>0.117071</td>
-      <td>14.507048</td>
-      <td>5.123773</td>
-      <td>8.285616</td>
+      <td>0.391883</td>
+      <td>0.106271</td>
+      <td>6.658990</td>
+      <td>26.861231</td>
+      <td>5.851600</td>
     </tr>
     <tr>
       <th>3</th>
-      <td>0.394396</td>
-      <td>0.114620</td>
-      <td>9.687984</td>
-      <td>14.718996</td>
-      <td>5.073137</td>
+      <td>0.353696</td>
+      <td>0.129373</td>
+      <td>9.651686</td>
+      <td>31.665882</td>
+      <td>4.636521</td>
     </tr>
     <tr>
       <th>4</th>
-      <td>0.373933</td>
-      <td>0.119038</td>
-      <td>6.440099</td>
-      <td>33.536617</td>
-      <td>9.953448</td>
+      <td>0.353486</td>
+      <td>0.099916</td>
+      <td>5.251906</td>
+      <td>55.420692</td>
+      <td>4.937239</td>
     </tr>
   </tbody>
 </table>
@@ -1210,7 +1425,7 @@ Wall time: 8.68 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/fcf20bfeccb5e64e9bc05a3321ee8c67cd7a27d7ad908eea3ca946432c84ace8.png" src="../_images/fcf20bfeccb5e64e9bc05a3321ee8c67cd7a27d7ad908eea3ca946432c84ace8.png" />
+<img alt="../_images/6b0e9f30e223da9fe667b1abb874df59dd3304d971a04df8ac5b774c18315874.png" src="../_images/6b0e9f30e223da9fe667b1abb874df59dd3304d971a04df8ac5b774c18315874.png" />
 </div>
 </div>
 <p>That’s it for this tutorial! You now know how to use the basic building blocks of <code class="docutils literal notranslate"><span class="pre">BayesFlow</span></code> to create amortized neural approximators. :)</p>
@@ -1341,7 +1556,7 @@ Wall time: 8.68 ms
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1350,7 +1565,7 @@ Wall time: 8.68 ms
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

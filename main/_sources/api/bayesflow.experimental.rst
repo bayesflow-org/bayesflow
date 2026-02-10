@@ -16,14 +16,6 @@ experimental
 
   
   
-  .. rubric:: Functions
-
-  .. autosummary::
-    :toctree:
-    :template: base.rst
-  
-    DiffusionModel
-  
   
 
   
@@ -34,8 +26,6 @@ experimental
     :toctree:
     :template: base.rst
   
-    CIF
-    ContinuousTimeConsistencyModel
     FreeFormFlow
   
   

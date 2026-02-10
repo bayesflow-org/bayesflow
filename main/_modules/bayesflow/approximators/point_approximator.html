@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/approximators/point_approximator';</script>
     <script>
@@ -477,11 +477,21 @@
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm.auto</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">filter_kwargs</span><span class="p">,</span> <span class="n">split_arrays</span><span class="p">,</span> <span class="n">squeeze_inner_estimates_dict</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">concatenate_valid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">logging</span><span class="p">,</span>
+    <span class="n">filter_kwargs</span><span class="p">,</span>
+    <span class="n">split_arrays</span><span class="p">,</span>
+    <span class="n">slice_maybe_nested</span><span class="p">,</span>
+    <span class="n">dim_maybe_nested</span><span class="p">,</span>
+    <span class="n">squeeze_inner_estimates_dict</span><span class="p">,</span>
+    <span class="n">concatenate_valid</span><span class="p">,</span>
+    <span class="n">tree_concatenate</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.continuous_approximator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContinuousApproximator</span>
@@ -537,7 +547,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Adapt, optionally standardize and convert conditions to tensor.</span>
         <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="c1"># Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?</span>
+        <span class="c1"># Remove any superfluous keys, just retain actual conditions.</span>
         <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">}</span>
 
         <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimate</span><span class="p">(</span><span class="o">**</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -558,7 +568,6 @@
 
         <span class="c1"># Reorder the nested dictionary so that original variable names are at the top.</span>
         <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
-        <span class="c1"># Remove unnecessary nesting.</span>
         <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_squeeze_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">estimates</span></div>
@@ -572,6 +581,7 @@
         <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">conditions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
         <span class="n">split</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -589,7 +599,10 @@
 <span class="sd">            for the sampling process.</span>
 <span class="sd">        split : bool, optional</span>
 <span class="sd">            If True, the sampled arrays are split along the last axis, by default False.</span>
-<span class="sd">            Currently not supported for :py:class:`PointApproximator` .</span>
+<span class="sd">            Currently not supported for :py:class:`PointApproximator`.</span>
+<span class="sd">        batch_size : int or None, optional</span>
+<span class="sd">            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated</span>
+<span class="sd">            sequentially. Can help with memory management for large sample sizes.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments passed to underlying processing functions.</span>
 
@@ -604,22 +617,32 @@
 <span class="sd">            Each output (i.e., dictionary value that is not itself a dictionary) is an array</span>
 <span class="sd">            of shape (num_datasets, num_samples, variable_block_size).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Adapt, optionally standardize and convert conditions to tensor.</span>
-        <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="c1"># Remove any superfluous keys, just retain actual conditions.  # TODO: is this necessary?</span>
-        <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">}</span>
-
-        <span class="c1"># Sample and undo optional standardization</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">(</span><span class="n">num_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">score_key</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">](</span><span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">],</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_inverse_adapter_to_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;split=True is currently not supported for `PointApproximator`.&quot;</span><span class="p">)</span>
+
+        <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">}</span>
+
+        <span class="n">num_conditions</span> <span class="o">=</span> <span class="n">dim_maybe_nested</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+
+        <span class="c1"># If no batching requested, pretend everything is one batch</span>
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">batch_size</span> <span class="o">=</span> <span class="n">num_conditions</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_conditions</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Sampling&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;batch&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">batch_conditions</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">batch_conditions</span> <span class="o">=</span> <span class="n">slice_maybe_nested</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">)</span>
+
+            <span class="n">batch_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">batch_conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch_samples</span><span class="p">)</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">tree_concatenate</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Optionally unstandardize and back-transform samples via adapter</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_process_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
 
         <span class="c1"># Squeeze sample dictionary if there&#39;s only one key-value pair.</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
@@ -627,14 +650,50 @@
         <span class="k">return</span> <span class="n">samples</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_post_process_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo optional standardization and make dict of samples.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">score_key</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">](</span><span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">],</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_inverse_adapter_to_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">inference_conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use summary variables without a summary network.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables are required when a summary network is present.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">(</span>
+                <span class="n">summary_variables</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">call</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">inference_conditions</span> <span class="o">=</span> <span class="n">concatenate_valid</span><span class="p">([</span><span class="n">inference_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">inference_conditions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">batch_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">inference_conditions</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">num_samples</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">batch_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_samples</span><span class="p">,)</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="n">batch_shape</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">inference_conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">sample</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">samples</span>
+
 <div class="viewcode-block" id="PointApproximator.log_prob">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.PointApproximator.html#bayesflow.approximators.PointApproximator.log_prob">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="o">*</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the log-probability of given data under the parametric distribution(s) for given input conditions.</span>
 
@@ -742,7 +801,7 @@
         <span class="k">return</span> <span class="n">squeezed</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">samples</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">samples</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Squeezes the dictionary to just the value if there is only one key-value pair.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># Extract and return the only item&#39;s value</span>
@@ -810,7 +869,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -819,7 +878,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

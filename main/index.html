@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <script>
@@ -454,24 +454,20 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="bayesflow">
 <h1>BayesFlow<a class="headerlink" href="#bayesflow" title="Link to this heading">#</a></h1>
-<p>BayesFlow is a Python library for simulation-based <strong>Amortized Bayesian Inference</strong> with neural networks.
-It provides users and researchers with:</p>
+<p>BayesFlow is a Python library for efficient Bayesian inference with deep learning.
+It provides users with:</p>
 <ul class="simple">
-<li><p>A user-friendly API for rapid Bayesian workflows</p></li>
-<li><p>A rich collection of neural network architectures</p></li>
+<li><p>A user-friendly API for <a class="reference external" href="https://arxiv.org/abs/2409.04332">amortized Bayesian workflows</a></p></li>
+<li><p>A rich collection of <a class="reference external" href="https://arxiv.org/abs/2512.20685">neural network architectures</a></p></li>
 <li><p>Multi-backend support via <a class="reference external" href="https://keras.io/keras_3/">Keras3</a>: You can use <a class="reference external" href="https://github.com/pytorch/pytorch">PyTorch</a>, <a class="reference external" href="https://github.com/tensorflow/tensorflow">TensorFlow</a>, or <a class="reference external" href="https://github.com/google/jax">JAX</a></p></li>
 </ul>
-<p>BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
-fueled by continuous progress in generative AI and Bayesian inference.</p>
-<p>To access the documentation for <a class="reference external" href="https://github.com/bayesflow-org/bayesflow/tree/stable-legacy">BayesFlow version 1.x</a>, select <code class="docutils literal notranslate"><span class="pre">stable-legacy</span></code> in the version picker above.
-For advice on the migration from version 1.x to version 2+, please refer to the <a class="reference external" href="https://github.com/bayesflow-org/bayesflow/blob/main/README.md">README</a>.</p>
 <section id="conceptual-overview">
 <h2>Conceptual Overview<a class="headerlink" href="#conceptual-overview" title="Link to this heading">#</a></h2>
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="_static/bayesflow_landing_dark.jpg">
-  <source media="(prefers-color-scheme: light)" srcset="_static/bayesflow_landing_light.jpg">
-        <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Choose your backend: BayesFlow is based on Keras, so you can choose PyTorch, TensorFlow or JAX. 2. Define your simulator: You specify your simulator in Python, and use it to generate simulated data. 3. Choose your algorithm: You define a generative neural network that you can use for estimation after training." src="_static/bayesflow_landing_dark.jpg">
+  <source media="(prefers-color-scheme: dark)" srcset="_static/bayesflow_landing_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="_static/bayesflow_landing_light.png">
+  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the gold-standard toolkit for simulation intelligence." src="_static/bayesflow_landing_dark.png">
 </picture>
 </div>
 <p>A cornerstone idea of amortized Bayesian inference is to employ generative
@@ -479,45 +475,17 @@ neural networks for parameter estimation, model comparison, and model validation
 when working with intractable simulators whose behavior as a whole is too
 complex to be described analytically.</p>
 </section>
-<section id="getting-started">
-<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
-<p>Using the high-level interface is easy, as demonstrated by the minimal working example below:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
-
-<span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
-    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
-    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(),</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
-    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">],</span>
-    <span class="n">simulator</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">SIR</span><span class="p">()</span>
-<span class="p">)</span>
-
-<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
-
-<span class="n">diagnostics</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span><span class="n">test_data</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>For an in-depth exposition, check out our walkthrough notebooks in the <a class="reference internal" href="examples.html"><span class="doc">Examples</span></a> section.</p>
-<p>More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.</p>
-</section>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Link to this heading">#</a></h2>
-<div class="sd-tab-set docutils">
-<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
-<label class="sd-tab-label" for="sd-tab-item-0">
-pip</label><div class="sd-tab-content docutils">
+<p>We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;bayesflow&gt;=2.0&quot;</span>
 </pre></div>
 </div>
-</div>
-<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
-<label class="sd-tab-label" for="sd-tab-item-1">
-source</label><div class="sd-tab-content docutils">
+<p>If you want the latest features, you can install from source:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/bayesflow-org/bayesflow.git@dev
 </pre></div>
 </div>
-</div>
-</div>
+<p>If you encounter problems with this or require more control, please refer to the instructions to install from source below.</p>
 <section id="backend">
 <h3>Backend<a class="headerlink" href="#backend" title="Link to this heading">#</a></h3>
 <p>To use BayesFlow, you will also need to install one of the following machine learning backends.
@@ -528,48 +496,69 @@ Note that BayesFlow <strong>will not run</strong> without a backend.</p>
 <li><p><a class="reference external" href="https://www.tensorflow.org/install">Install TensorFlow</a></p></li>
 </ul>
 <p>If you don’t know which backend to use, we recommend JAX as it is currently the fastest backend.</p>
-<p>Once installed, <a class="reference external" href="https://keras.io/getting_started/#configuring-your-backend">set the backend environment variable as required by keras</a> to one of the following:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">KERAS_BACKEND=jax</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">KERAS_BACKEND=torch</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">KERAS_BACKEND=tensorflow</span></code></p></li>
-</ul>
-<p>For example, to set the backend to <code class="docutils literal notranslate"><span class="pre">jax</span></code>, you can use one of the following:</p>
-<div class="sd-tab-set docutils">
-<input checked="checked" id="sd-tab-item-2" name="sd-tab-set-1" type="radio">
-<label class="sd-tab-label" for="sd-tab-item-2">
-Python</label><div class="sd-tab-content docutils">
+<p>As of version <code class="docutils literal notranslate"><span class="pre">2.0.7</span></code>, the backend will be set automatically. If you have multiple backends, you can manually <a class="reference external" href="https://keras.io/getting_started/#configuring-your-backend">set the backend environment variable as described by keras</a>.
+For example, inside your Python script write:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span>
 </pre></div>
 </div>
-</div>
-<input id="sd-tab-item-3" name="sd-tab-set-1" type="radio">
-<label class="sd-tab-label" for="sd-tab-item-3">
-Conda</label><div class="sd-tab-content docutils">
+<p>If you use conda, you can alternatively set this individually for each environment in your terminal. For example:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>config<span class="w"> </span>vars<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">KERAS_BACKEND</span><span class="o">=</span>jax
 </pre></div>
 </div>
-</div>
-<input id="sd-tab-item-4" name="sd-tab-set-1" type="radio">
-<label class="sd-tab-label" for="sd-tab-item-4">
-Shell</label><div class="sd-tab-content docutils">
+<p>Or just plainly set the environment variable in your shell:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">KERAS_BACKEND</span><span class="o">=</span>jax
 </pre></div>
 </div>
+</section>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
+<p>Using the high-level interface is easy, as demonstrated by the minimal working example below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">],</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">SIR</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="n">diagnostics</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span><span class="n">test_data</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</pre></div>
 </div>
-</div>
-<p><strong>Caution:</strong> Some development environments (e.g., VSCode or PyCharm) can silently overwrite environment variables. If you have set your backend as an environment variable and you still get keras-related import errors when loading BayesFlow, these IDE shenanigans might be the culprit. Try setting the keras backend in your Python script via <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">os.environ[&quot;KERAS_BACKEND&quot;]</span> <span class="pre">=</span> <span class="pre">&quot;&lt;YOUR-BACKEND&gt;&quot;</span></code>.</p>
+<p>For an in-depth exposition, check out our expanding list of resources below.</p>
+<section id="books">
+<h3>Books<a class="headerlink" href="#books" title="Link to this heading">#</a></h3>
+<p>Many examples from <a class="reference external" href="https://bayesmodels.com/">Bayesian Cognitive Modeling: A Practical Course</a> by Lee &amp; Wagenmakers (2013) in <a class="reference external" href="https://kucharssim.github.io/bayesflow-cognitive-modeling-book/">BayesFlow</a>.</p>
+</section>
+<section id="tutorial-notebooks">
+<h3>Tutorial notebooks<a class="headerlink" href="#tutorial-notebooks" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#examples/Linear_Regression_Starter.ipynb"><span class="xref myst">Linear regression starter example</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/From_ABC_to_BayesFlow.ipynb"><span class="xref myst">From ABC to BayesFlow</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/Two_Moons_Starter.ipynb"><span class="xref myst">Two moons starter example</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/Lotka_Volterra_Point_Estimation.ipynb"><span class="xref myst">Rapid iteration with point estimators</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/SIR_Posterior_Estimation.ipynb"><span class="xref myst">SIR model with custom summary network</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/Bayesian_Experimental_Design.ipynb"><span class="xref myst">Bayesian experimental design</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/One_Sample_TTest.ipynb"><span class="xref myst">Simple model comparison example</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/Likelihood_Estimation.ipynb"><span class="xref myst">Likelihood estimation</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/Multimodal_Data.ipynb"><span class="xref myst">Multimodal data</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/From_BayesFlow_1.1_to_2.0.ipynb"><span class="xref myst">Moving from BayesFlow v1.1 to v2.0</span></a></p></li>
+</ol>
+<p>More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.</p>
 </section>
 </section>
 <section id="contributing">
 <h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">#</a></h2>
-<p>To contribute to BayesFlow, please check out the <a class="reference external" href="https://github.com/bayesflow-org/bayesflow">git repository</a></p>
-<section id="reporting-issues">
-<h3>Reporting Issues<a class="headerlink" href="#reporting-issues" title="Link to this heading">#</a></h3>
-<p>If you encounter any issues, please don’t hesitate to open an issue here on <a class="reference external" href="https://github.com/bayesflow-org/bayesflow/issues">Github</a> or ask questions on our <a class="reference external" href="https://discuss.bayesflow.org/">Discourse Forums</a>.</p>
+<p>To contribute to BayesFlow, please check out the <a class="reference external" href="https://github.com/bayesflow-org/bayesflow">git repository</a>.</p>
 </section>
+<section id="reporting-issues">
+<h2>Reporting Issues<a class="headerlink" href="#reporting-issues" title="Link to this heading">#</a></h2>
+<p>If you encounter any issues, please don’t hesitate to open an issue on <a class="reference external" href="https://github.com/bayesflow-org/bayesflow/issues">Github</a> or ask questions on our <a class="reference external" href="https://discuss.bayesflow.org/">Discourse Forums</a>.</p>
 </section>
 <section id="getting-help">
 <h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">#</a></h2>
@@ -653,18 +642,53 @@ and extensibility. What is more, the new BayesFlow has multi-backend support via
 while the old version was based on TensorFlow.</p>
 <hr class="docutils" />
 <p><strong>Question:</strong>
+Should I switch to BayesFlow 2.0+ now? Are there features that are still missing?</p>
+<p><strong>Answer:</strong>
+In general, we recommend to switch, as the new version is easier to use and will continue
+to receive improvements and new features. However, a few features are still missing, so you
+might want to wait until everything you need has been ported to BayesFlow 2.0+.</p>
+<p>Depending on your needs, you might not want to upgrade yet if one of the following applies:</p>
+<ul class="simple">
+<li><p>You have an ongoing project that uses BayesFlow 1.x, and you do not want to allocate
+time for migrating it to the new API.</p></li>
+<li><p>You have already trained models in BayesFlow 1.x, that you do not want to re-train
+with the new version. Loading models from version 1.x in version 2.0+ is not supported.</p></li>
+<li><p>You require a feature that was not ported to BayesFlow 2.0+ yet. To our knowledge,
+this applies to:</p>
+<ul>
+<li><p>Two-level/Hierarchical models (planned for version 2.1): <code class="docutils literal notranslate"><span class="pre">TwoLevelGenerativeModel</span></code>, <code class="docutils literal notranslate"><span class="pre">TwoLevelPrior</span></code>.</p></li>
+<li><p>Sensitivity analysis (partially discontinued): functionality from the <code class="docutils literal notranslate"><span class="pre">bayesflow.sensitivity</span></code> module. This is still
+possible, but we do no longer offer a special module for it. We plan to add a tutorial on this, see <a class="reference external" href="https://github.com/bayesflow-org/bayesflow/issues/455">#455</a>.</p></li>
+<li><p>MCMC (discontinued): The <code class="docutils literal notranslate"><span class="pre">bayesflow.mcmc</span></code> module. We are considering other options
+to enable the use of BayesFlow in an MCMC setting.</p></li>
+<li><p>Networks: <code class="docutils literal notranslate"><span class="pre">EvidentialNetwork</span></code>.</p></li>
+<li><p>Model misspecification detection: MMD test in the summary space (see <a class="reference external" href="https://github.com/bayesflow-org/bayesflow/issues/384">#384</a>).</p></li>
+</ul>
+</li>
+</ul>
+<p>If you encounter any functionality that is missing and not listed here, please let us
+know by opening an issue.</p>
+<hr class="docutils" />
+<p><strong>Question:</strong>
 I still need the old BayesFlow for some of my projects. How can I install it?</p>
 <p><strong>Answer:</strong>
-You can find and install the old Bayesflow version via the <code class="docutils literal notranslate"><span class="pre">stable-legacy</span></code> branch on GitHub.</p>
+You can find and install the old Bayesflow version via the <code class="docutils literal notranslate"><span class="pre">stable-legacy</span></code> branch on GitHub.
+The corresponding <a class="reference external" href="https://bayesflow.org/stable-legacy/index.html">documentation</a> can be
+accessed by selecting the “stable-legacy” entry in the version picker of the documentation.</p>
+<p>You can also install the latest version of BayesFlow v1.x from PyPI using</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;bayesflow&lt;2.0&quot;</span>
+</pre></div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="awesome-amortized-inference">
 <h2>Awesome Amortized Inference<a class="headerlink" href="#awesome-amortized-inference" title="Link to this heading">#</a></h2>
-<p>If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our <a class="reference external" href="https://github.com/bayesflow-org/awesome-amortized-inference">community-driven list</a>.</p>
+<p>If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our <a class="reference external" href="https://github.com/bayesflow-org/awesome-amortized-inference">community-driven list</a>. If you’d like a paper (by yourself or someone else) featured, please add it to the list with a pull request, an issue, or a message to the maintainers.</p>
 </section>
 <section id="acknowledgments">
 <h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Link to this heading">#</a></h2>
-<p>This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation, Project 528702768). The project is further supported by Germany’s Excellence Strategy – EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.</p>
+<p>This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) Projects 528702768 and 508399956. The project is further supported by Germany’s Excellence Strategy – EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), the collaborative research cluster TRR 391 – 520388526, as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.</p>
+<p>BayesFlow is a <a class="reference external" href="https://numfocus.org/sponsored-projects/affiliated-projects">NumFOCUS Affiliated Project</a>.</p>
 <p>The <a class="reference external" href="https://scikit-learn.org/">scikit-learn</a> website was a great resource and inspration for this site and the API documentation. We thank the scikit-learn community for sharing their configurations, which allowed us to include many nice features into this site as well.</p>
 </section>
 <section id="license-source-code">
@@ -722,15 +746,17 @@ The source code is hosted on the public <a class="reference external" href="http
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conceptual-overview">Conceptual Overview</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started">Getting Started</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install">Install</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#backend">Backend</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributing">Contributing</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reporting-issues">Reporting Issues</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started">Getting Started</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#books">Books</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorial-notebooks">Tutorial notebooks</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributing">Contributing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reporting-issues">Reporting Issues</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-help">Getting Help</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citing-bayesflow">Citing BayesFlow</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#faq">FAQ</a></li>
@@ -782,7 +808,7 @@ The source code is hosted on the public <a class="reference external" href="http
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -791,7 +817,7 @@ The source code is hosted on the public <a class="reference external" href="http
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

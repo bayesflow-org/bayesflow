@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,11 +42,11 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.scores.MeanScore';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -495,13 +495,17 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_ecdf_from_quantiles.html">calibration_ecdf_from_quantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_error.html">calibration_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_histogram.html">calibration_histogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_log_gamma.html">calibration_log_gamma</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.loss.html">loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_calibration.html">mc_calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_confusion_matrix.html">mc_confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mmd_hypothesis_test.html">mmd_hypothesis_test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_posterior.html">pairs_posterior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_quantity.html">pairs_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_samples.html">pairs_samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.plot_quantity.html">plot_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_contraction.html">posterior_contraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_z_score.html">posterior_z_score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery.html">recovery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery_from_estimates.html">recovery_from_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.summary_space_comparison.html">summary_space_comparison</a></li>
@@ -516,9 +520,6 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -560,7 +561,9 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.StableConsistencyModel.html">StableConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeMLP.html">TimeMLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesTransformer.html">TimeSeriesTransformer</a></li>
 </ul>
@@ -608,6 +611,7 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.debug.html">debug</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.error.html">error</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.exception.html">exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.format_duration.html">format_duration</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.info.html">info</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.log.html">log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.warn_once.html">warn_once</a></li>
@@ -615,6 +619,7 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.numpy_utils.html">numpy_utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.credible_interval.html">credible_interval</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_shifted_softplus.html">inverse_shifted_softplus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_sigmoid.html">inverse_sigmoid</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_softplus.html">inverse_softplus</a></li>
@@ -641,6 +646,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.calibration_curve.html">calibration_curve</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.compute_empirical_coverage.html">compute_empirical_coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
@@ -649,6 +655,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html">deserialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html">detailed_loss_callback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.devices.html">devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.dim_maybe_nested.html">dim_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand.html">expand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_as.html">expand_as</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_left.html">expand_left</a></li>
@@ -671,6 +678,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html">find_recurrent_net</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_duration.html">format_duration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
@@ -691,6 +699,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html">serialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html">simultaneous_ecdf_bands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.size_of.html">size_of</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.slice_maybe_nested.html">slice_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_arrays.html">split_arrays</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_tensors.html">split_tensors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html">squeeze_inner_estimates_dict</a></li>
@@ -787,13 +796,13 @@
 <h1>MeanScore<a class="headerlink" href="#meanscore" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.scores.</span></span><span class="sig-name descname"><span class="pre">MeanScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/scores/mean_score.html#MeanScore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MeanScore" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.scores.</span></span><span class="sig-name descname"><span class="pre">MeanScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/scores/mean_score.html#MeanScore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.scores.MeanScore" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="bayesflow.scores.NormedDifferenceScore.html#bayesflow.scores.NormedDifferenceScore" title="bayesflow.scores.normed_difference_score.NormedDifferenceScore"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormedDifferenceScore</span></code></a></p>
 <p><span class="math notranslate nohighlight">\(S(\hat \theta, \theta) = | \hat \theta - \theta |^2\)</span></p>
 <p>Scores a predicted mean with the squared error score.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING">
-<span class="sig-name descname"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></em><a class="headerlink" href="#bayesflow.scores.MeanScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.NOT_TRANSFORMING_LIKE_VECTOR_WARNING" title="Link to this definition">#</a></dt>
 <dd><p>Names of prediction heads for which to warn if the adapter is called on their estimates in inverse direction.</p>
 <p>Prediction heads can output estimates in spaces other than the target distribution space.
 To such estimates the adapter cannot be straightforwardly applied in inverse direction,
@@ -804,7 +813,7 @@ with a type of estimate whenever the adapter is applied to them in inverse direc
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.TRANSFORMATION_TYPE">
-<span class="sig-name descname"><span class="pre">TRANSFORMATION_TYPE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#bayesflow.scores.MeanScore.TRANSFORMATION_TYPE" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">TRANSFORMATION_TYPE</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.TRANSFORMATION_TYPE" title="Link to this definition">#</a></dt>
 <dd><p>Defines nonstandard transformation behaviour for de-standardization.</p>
 <p>The standard transformation</p>
 <p>x_i = x_i’ * sigma_i + mu_i</p>
@@ -813,7 +822,7 @@ with a type of estimate whenever the adapter is applied to them in inverse direc
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.from_config">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.scores.MeanScore.from_config" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.scores.MeanScore.from_config" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -823,7 +832,7 @@ with a type of estimate whenever the adapter is applied to them in inverse direc
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.get_head">
-<span class="sig-name descname"><span class="pre">get_head</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Sequential</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_head" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_head</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Sequential</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_head" title="Link to this definition">#</a></dt>
 <dd><p>For a specified head key and output shape, request corresponding head network.</p>
 <p>A head network has the following components that are called sequentially:</p>
 <ol class="arabic simple">
@@ -856,13 +865,13 @@ to parameterize estimates.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.get_head_shapes_from_target_shape">
-<span class="sig-name descname"><span class="pre">get_head_shapes_from_target_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_head_shapes_from_target_shape" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_head_shapes_from_target_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_head_shapes_from_target_shape" title="Link to this definition">#</a></dt>
 <dd><p>Request a dictionary of names and output shapes of required heads from the score.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.get_link">
-<span class="sig-name descname"><span class="pre">get_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Layer</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_link" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Layer</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_link" title="Link to this definition">#</a></dt>
 <dd><p>For a specified key, request a link from network output to estimation target.</p>
 <p>If no link was specified for the key (e.g. upon initialization), return a linear activation.</p>
 <dl class="field-list simple">
@@ -883,7 +892,7 @@ to parameterize estimates.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.get_subnet">
-<span class="sig-name descname"><span class="pre">get_subnet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Layer</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_subnet" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_subnet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Layer</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.get_subnet" title="Link to this definition">#</a></dt>
 <dd><p>For a specified key, request a subnet to be used for projecting the shared condition embedding
 before further projection and reshaping to the heads output shape.</p>
 <p>If no subnet was specified for the key (e.g. upon initialization),
@@ -906,7 +915,7 @@ return just an instance of keras.layers.Identity.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.scores.MeanScore.score">
-<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.score" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#bayesflow.scores.MeanScore.score" title="Link to this definition">#</a></dt>
 <dd><p>Computes the scoring function based on the absolute difference between <strong>estimates</strong> and <strong>targets</strong>.</p>
 <p><span class="math notranslate nohighlight">\(S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k\)</span></p>
 <p>This function extracts the Tensor named <code class="docutils literal notranslate"><span class="pre">&quot;value&quot;</span></code> from the <strong>estimates</strong> dictionary and computes
@@ -1053,7 +1062,7 @@ of <cite>self.k</cite>, optionally weighted.</p>
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1062,7 +1071,7 @@ of <cite>self.k</cite>, optionally weighted.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,11 +42,11 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Likelihood_Estimation';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -536,7 +536,9 @@ If you have an idea for a more interesting case study, please make a pull reques
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;jax&#39;
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:2026-01-19 14:00:00,265:jax._src.xla_bridge:867: Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: dlopen(libtpu.so, 0x0001): tried: &#39;libtpu.so&#39; (no such file), &#39;/System/Volumes/Preboot/Cryptexes/OSlibtpu.so&#39; (no such file), &#39;/Users/jonas.arruda/miniconda/envs/BayesFlow/bin/../lib/libtpu.so&#39; (no such file), &#39;/usr/lib/libtpu.so&#39; (no such file, not in dyld cache), &#39;libtpu.so&#39; (no such file)
+INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: dlopen(libtpu.so, 0x0001): tried: &#39;libtpu.so&#39; (no such file), &#39;/System/Volumes/Preboot/Cryptexes/OSlibtpu.so&#39; (no such file), &#39;/Users/jonas.arruda/miniconda/envs/BayesFlow/bin/../lib/libtpu.so&#39; (no such file), &#39;/usr/lib/libtpu.so&#39; (no such file, not in dyld cache), &#39;libtpu.so&#39; (no such file)
+INFO:bayesflow:Using backend &#39;jax&#39;
 </pre></div>
 </div>
 </div>
@@ -594,7 +596,7 @@ If you have an idea for a more interesting case study, please make a pull reques
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/483a96b7f69ea60dfec73c46e9b2984eae402b9a9dd616109a91b25c74f459f1.png" src="../_images/483a96b7f69ea60dfec73c46e9b2984eae402b9a9dd616109a91b25c74f459f1.png" />
+<img alt="../_images/1779cb50e02b06faf080012649c5411f9e0a5a3de89d959599e0093e365ab905.png" src="../_images/1779cb50e02b06faf080012649c5411f9e0a5a3de89d959599e0093e365ab905.png" />
 </div>
 </div>
 <p>While we could use those samples to produce an estimation of the likelihood for this specific parameter value, we often want to obtain an estimation for a range of parameter values. Similar to the prior distribution in posterior estimation, we can specify a function that randomly produces parameter values we are interested in.</p>
@@ -638,6 +640,77 @@ If you have an idea for a more interesting case study, please make a pull reques
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OnlineDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">5s</span> 8ms/step - loss: 1.8132 - val_loss: 1.5928
+Epoch 2/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.3817 - val_loss: 1.2347
+Epoch 3/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2465 - val_loss: 1.1200
+Epoch 4/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2133 - val_loss: 1.0925
+Epoch 5/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2353 - val_loss: 1.2219
+Epoch 6/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2647 - val_loss: 1.0182
+Epoch 7/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.3412 - val_loss: 0.9190
+Epoch 8/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2433 - val_loss: 1.0610
+Epoch 9/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.1952 - val_loss: 1.1668
+Epoch 10/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2226 - val_loss: 1.2218
+Epoch 11/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2110 - val_loss: 1.0065
+Epoch 12/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.1621 - val_loss: 1.0369
+Epoch 13/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2077 - val_loss: 1.0292
+Epoch 14/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.3287 - val_loss: 1.1939
+Epoch 15/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.1968 - val_loss: 1.6238
+Epoch 16/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2375 - val_loss: 1.2876
+Epoch 17/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2268 - val_loss: 1.1172
+Epoch 18/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.1427 - val_loss: 1.3182
+Epoch 19/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2558 - val_loss: 1.1044
+Epoch 20/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.1809 - val_loss: 1.0535
+Epoch 21/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 8ms/step - loss: 1.2182 - val_loss: 1.3453
+Epoch 22/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.1785 - val_loss: 1.0537
+Epoch 23/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.2341 - val_loss: 0.9423
+Epoch 24/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.2300 - val_loss: 1.4224
+Epoch 25/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.2145 - val_loss: 1.0615
+Epoch 26/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.1548 - val_loss: 1.1272
+Epoch 27/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.2149 - val_loss: 1.0312
+Epoch 28/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.1200 - val_loss: 1.1179
+Epoch 29/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.1221 - val_loss: 1.0999
+Epoch 30/30
+<span class=" -Color -Color-Bold">500/500</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">4s</span> 9ms/step - loss: 1.1747 - val_loss: 0.9279
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Training completed in 2.12 minutes.
+</pre></div>
+</div>
+</div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -646,7 +719,7 @@ If you have an idea for a more interesting case study, please make a pull reques
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/09f574433041e4d279551ce9357a4393d1f1af8404ae5eeb8b3204d4f65f0c6b.png" src="../_images/09f574433041e4d279551ce9357a4393d1f1af8404ae5eeb8b3204d4f65f0c6b.png" />
+<img alt="../_images/c7fd6bbb8b9fba16db15fcaa653b1aa667d7bed0c0a0326d2e8a6ed8cddb70a2.png" src="../_images/c7fd6bbb8b9fba16db15fcaa653b1aa667d7bed0c0a0326d2e8a6ed8cddb70a2.png" />
 </div>
 </div>
 </section>
@@ -661,8 +734,12 @@ If you have an idea for a more interesting case study, please make a pull reques
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: total: 17.1 s
-Wall time: 2.24 s
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "970b5472449d4197902dc98dd00c232a", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:JAX backend needs to preallocate random samples for &#39;max_steps=1000&#39;.
+INFO:bayesflow:Sampling completed in 9.37 seconds.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 40.4 s, sys: 1.2 s, total: 41.6 s
+Wall time: 9.37 s
 </pre></div>
 </div>
 </div>
@@ -690,7 +767,7 @@ Wall time: 2.24 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/5138a9b44ad41a8cfdcfd34b5dcdb3b94fec901eb53eca7ba11600fe0c25b053.png" src="../_images/5138a9b44ad41a8cfdcfd34b5dcdb3b94fec901eb53eca7ba11600fe0c25b053.png" />
+<img alt="../_images/5c0f9ad4a2224a4f7cde125ba7b3aec95b6a8ab8004cc00af7c9008a225641b1.png" src="../_images/5c0f9ad4a2224a4f7cde125ba7b3aec95b6a8ab8004cc00af7c9008a225641b1.png" />
 </div>
 </div>
 <p>You might have noticed that we could already sample before training, as we needed this to actually train our model.
@@ -706,16 +783,15 @@ Below, we make a two-dimensional plot of the density for a given set of paramete
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: total: 16 s
-Wall time: 2.73 s
-</pre></div>
-</div>
-</div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_density</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">xvals</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">theta_0</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">xvals</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)})</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_density</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">xvals</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">theta_0</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">xvals</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),})</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Computing log probability completed in 6.62 seconds.
 </pre></div>
 </div>
 </div>
@@ -732,7 +808,7 @@ Wall time: 2.73 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/5bd66c352713f927bec9b4403ef406d26fbb0d4c33f2ca54a06a3d3d11ebecf3.png" src="../_images/5bd66c352713f927bec9b4403ef406d26fbb0d4c33f2ca54a06a3d3d11ebecf3.png" />
+<img alt="../_images/2625e2029ac4d7d0a765f9fcfbb27bedb065b5eeee1068b37f97f91da6720b5c.png" src="../_images/2625e2029ac4d7d0a765f9fcfbb27bedb065b5eeee1068b37f97f91da6720b5c.png" />
 </div>
 </div>
 </section>
@@ -839,7 +915,7 @@ To improve performance, you can experiment with hyperparameters (learning rate, 
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -848,7 +924,7 @@ To improve performance, you can experiment with hyperparameters (learning rate, 
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

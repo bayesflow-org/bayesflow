@@ -48,7 +48,9 @@ networks
     PointInferenceNetwork
     Sequential
     SetTransformer
+    StableConsistencyModel
     SummaryNetwork
+    TimeMLP
     TimeSeriesNetwork
     TimeSeriesTransformer
   

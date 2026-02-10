@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/diffusion_model/diffusion_model';</script>
     <script>
@@ -475,7 +475,7 @@
                   
   <h1>Source code for bayesflow.networks.diffusion_model.diffusion_model</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Callable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">ops</span>
@@ -491,7 +491,8 @@
     <span class="n">integrate</span><span class="p">,</span>
     <span class="n">integrate_stochastic</span><span class="p">,</span>
     <span class="n">logging</span><span class="p">,</span>
-    <span class="n">tensor_utils</span><span class="p">,</span>
+    <span class="n">STOCHASTIC_METHODS</span><span class="p">,</span>
+    <span class="n">DETERMINISTIC_METHODS</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serialize</span><span class="p">,</span> <span class="n">deserialize</span><span class="p">,</span> <span class="n">serializable</span>
 
@@ -499,37 +500,37 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_noise_schedule</span>
 
 
-<span class="c1"># disable module check, use potential module after moving from experimental</span>
 <div class="viewcode-block" id="DiffusionModel">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.diffusion_model.DiffusionModel.html#bayesflow.networks.DiffusionModel">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DiffusionModel</span><span class="p">(</span><span class="n">InferenceNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Diffusion Model as described in this overview paper [1].</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Score-based diffusion model for simulation-based inference as described in [1]:</span>
 
-<span class="sd">    [1] Variational Diffusion Models 2.0: Understanding Diffusion Model Objectives as the ELBO with Simple Data</span>
-<span class="sd">    Augmentation: Kingma et al. (2023)</span>
-
-<span class="sd">    [2] Score-Based Generative Modeling through Stochastic Differential Equations: Song et al. (2021)</span>
+<span class="sd">    [1] Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., &amp; Radev, S. T. (2025).</span>
+<span class="sd">    Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">MLP_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">TIME_MLP_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
         <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
         <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
         <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
         <span class="s2">&quot;spectral_normalization&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;time_embedding_dim&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="s2">&quot;merge&quot;</span><span class="p">:</span> <span class="s2">&quot;concat&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="s2">&quot;layer&quot;</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">INTEGRATE_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;euler&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;steps&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;two_step_adaptive&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;steps&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
+        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;time_mlp&quot;</span><span class="p">,</span>
         <span class="n">noise_schedule</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;edm&quot;</span><span class="p">,</span> <span class="s2">&quot;cosine&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">NoiseSchedule</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;edm&quot;</span><span class="p">,</span>
         <span class="n">prediction_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;velocity&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span>
         <span class="n">loss_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;velocity&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;noise&quot;</span><span class="p">,</span>
@@ -548,8 +549,10 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        subnet : str, type or keras.Layer, optional</span>
-<span class="sd">            Architecture for the transformation network. Can be &quot;mlp&quot;, a custom network class, or</span>
-<span class="sd">            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is &quot;mlp&quot;.</span>
+<span class="sd">            A neural network type for the diffusion model, will be instantiated using subnet_kwargs.</span>
+<span class="sd">            If a string is provided, it should be a registered name (e.g., &quot;time_mlp&quot;).</span>
+<span class="sd">            If a type or keras.Layer is provided, it will be directly instantiated</span>
+<span class="sd">            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).</span>
 <span class="sd">        noise_schedule : {&#39;edm&#39;, &#39;cosine&#39;} or NoiseSchedule or type, optional</span>
 <span class="sd">            Noise schedule controlling the diffusion dynamics. Can be a string identifier,</span>
 <span class="sd">            a schedule class, or a pre-initialized schedule instance. Default is &quot;edm&quot;.</span>
@@ -591,11 +594,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">seed_generator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span><span class="p">()</span>
 
         <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">subnet_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">subnet</span> <span class="o">==</span> <span class="s2">&quot;mlp&quot;</span><span class="p">:</span>
-            <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">DiffusionModel</span><span class="o">.</span><span class="n">MLP_DEFAULT_CONFIG</span> <span class="o">|</span> <span class="n">subnet_kwargs</span>
+        <span class="k">if</span> <span class="n">subnet</span> <span class="o">==</span> <span class="s2">&quot;time_mlp&quot;</span><span class="p">:</span>
+            <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">DiffusionModel</span><span class="o">.</span><span class="n">TIME_MLP_DEFAULT_CONFIG</span> <span class="o">|</span> <span class="n">subnet_kwargs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span> <span class="o">=</span> <span class="n">find_network</span><span class="p">(</span><span class="n">subnet</span><span class="p">,</span> <span class="o">**</span><span class="n">subnet_kwargs</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;output_projector&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="DiffusionModel.build">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.diffusion_model.DiffusionModel.html#bayesflow.networks.DiffusionModel.build">[docs]</a>
@@ -605,18 +608,17 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">base_distribution</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">xz_shape</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="n">xz_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">xz_shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
+            <span class="n">units</span><span class="o">=</span><span class="n">xz_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;output_projector&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="c1"># construct time vector</span>
-        <span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">conditions_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">conditions_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># construct input shape for subnet and subnet projector</span>
+        <span class="n">time_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">xz_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>  <span class="c1"># same batch/sequence dims, 1 feature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">build</span><span class="p">((</span><span class="n">xz_shape</span><span class="p">,</span> <span class="n">time_shape</span><span class="p">,</span> <span class="n">conditions_shape</span><span class="p">))</span>
+        <span class="n">out_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">((</span><span class="n">xz_shape</span><span class="p">,</span> <span class="n">time_shape</span><span class="p">,</span> <span class="n">conditions_shape</span><span class="p">))</span>
 
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
-        <span class="n">out_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">out_shape</span><span class="p">)</span></div>
 
 
@@ -632,6 +634,7 @@
             <span class="s2">&quot;prediction_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span><span class="p">,</span>
             <span class="s2">&quot;loss_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loss_type</span><span class="p">,</span>
             <span class="s2">&quot;integrate_kwargs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_kwargs</span><span class="p">,</span>
+            <span class="c1"># we do not need to store subnet_kwargs</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
@@ -671,20 +674,111 @@
 <span class="sd">        Tensor</span>
 <span class="sd">            The reconstructed clean signal `x` from the model prediction.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span> <span class="o">==</span> <span class="s2">&quot;velocity&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">alpha_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">-</span> <span class="n">sigma_t</span> <span class="o">*</span> <span class="n">pred</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span> <span class="o">==</span> <span class="s2">&quot;noise&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">z</span> <span class="o">-</span> <span class="n">sigma_t</span> <span class="o">*</span> <span class="n">pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">alpha_t</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span> <span class="o">==</span> <span class="s2">&quot;F&quot;</span><span class="p">:</span>
-            <span class="n">sigma_data</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="p">,</span> <span class="s2">&quot;sigma_data&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-            <span class="n">x1</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">alpha_t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-            <span class="n">x2</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma_data</span> <span class="o">/</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">pred</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pred</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span> <span class="o">==</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">sigma_t</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">alpha_t</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown prediction type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+
+        <span class="k">match</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">&quot;velocity&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">alpha_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">-</span> <span class="n">sigma_t</span> <span class="o">*</span> <span class="n">pred</span>
+
+            <span class="k">case</span> <span class="s2">&quot;noise&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">z</span> <span class="o">-</span> <span class="n">sigma_t</span> <span class="o">*</span> <span class="n">pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">alpha_t</span>
+
+            <span class="k">case</span> <span class="s2">&quot;F&quot;</span><span class="p">:</span>
+                <span class="n">sigma_data</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="p">,</span> <span class="s2">&quot;sigma_data&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">x1</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">alpha_t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">x2</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma_data</span> <span class="o">/</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">pred</span>
+
+            <span class="k">case</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pred</span>
+
+            <span class="k">case</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">sigma_t</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">alpha_t</span>
+
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown prediction type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_prediction_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiffusionModel.score">
+<a class="viewcode-back" href="../../../../api/bayesflow.networks.diffusion_model.DiffusionModel.html#bayesflow.networks.DiffusionModel.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">xz</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">log_snr_t</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the score of the target or latent variable `xz`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xz : Tensor</span>
+<span class="sd">            The current state of the latent variable `z`, typically of shape (..., D),</span>
+<span class="sd">            where D is the dimensionality of the latent space.</span>
+<span class="sd">        time : float or Tensor</span>
+<span class="sd">            Scalar or tensor representing the time (or noise level) at which the velocity</span>
+<span class="sd">            should be computed. Will be broadcasted to xz. If None, log_snr_t must be provided.</span>
+<span class="sd">        log_snr_t : Tensor</span>
+<span class="sd">            The log signal-to-noise ratio at time `t`. If None, time must be provided.</span>
+<span class="sd">        conditions : Tensor, optional</span>
+<span class="sd">            Conditional inputs to the network, such as conditioning variables</span>
+<span class="sd">            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.</span>
+<span class="sd">        training : bool, optional</span>
+<span class="sd">            Whether the model is in training mode. Affects behavior of dropout, batch norm,</span>
+<span class="sd">            or other stochastic layers. Default is False.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Additional keyword arguments for custom guidance. The following dicts can be provided:</span>
+
+<span class="sd">            guidance_constraints, containing any of the following keys:</span>
+
+<span class="sd">            - constraints: Required constraint functions or a single function of xz</span>
+<span class="sd">            - guidance_strength (float, optional): Strength of the constraint guidance.</span>
+<span class="sd">            Defaults to 1.0.</span>
+<span class="sd">            - scaling_function (callable, optional): Optional function to scale constraint</span>
+<span class="sd">            values. Defaults to None.</span>
+<span class="sd">            - reduce (str or callable, optional): Reduction method applied to constraints.</span>
+<span class="sd">            Defaults to &quot;sum&quot;.</span>
+
+<span class="sd">            guidance_function: a function that takes x and time as keyword arguments and</span>
+<span class="sd">            returns a guidance signal.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tensor</span>
+<span class="sd">            The velocity tensor of the same shape as `xz`, representing the right-hand</span>
+<span class="sd">            side of the probability-flow SDE or ODE at the given `time`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">log_snr_t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_snr_t</span> <span class="o">=</span> <span class="n">expand_right_as</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_log_snr</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">),</span> <span class="n">xz</span><span class="p">)</span>
+            <span class="n">log_snr_t</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">,</span> <span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">xz</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+
+        <span class="k">if</span> <span class="n">time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_t_from_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+
+        <span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_alpha_sigma</span><span class="p">(</span><span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">)</span>
+
+        <span class="n">subnet_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">xz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">),</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="p">(</span><span class="n">subnet_out</span><span class="p">)</span>
+
+        <span class="n">x_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_prediction_to_x</span><span class="p">(</span><span class="n">pred</span><span class="o">=</span><span class="n">pred</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">xz</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">,</span> <span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">)</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_t</span> <span class="o">*</span> <span class="n">x_pred</span> <span class="o">-</span> <span class="n">xz</span><span class="p">)</span> <span class="o">/</span> <span class="n">ops</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">sigma_t</span><span class="p">)</span>
+
+        <span class="c1"># Optional constraints for guidance</span>
+        <span class="n">guidance_constraints</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guidance_constraints&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">guidance_constraints</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">guidance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">guidance_constraint_term</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_pred</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="o">**</span><span class="n">guidance_constraints</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">score</span> <span class="o">+</span> <span class="n">guidance</span>
+
+        <span class="c1"># Optional guidance function</span>
+        <span class="n">guidance_function</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guidance_function&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">guidance_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">guidance</span> <span class="o">=</span> <span class="n">guidance_function</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_pred</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">score</span> <span class="o">+</span> <span class="n">guidance</span>
+
+        <span class="k">return</span> <span class="n">score</span></div>
 
 
 <div class="viewcode-block" id="DiffusionModel.velocity">
@@ -696,6 +790,7 @@
         <span class="n">stochastic_solver</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
         <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the velocity (i.e., time derivative) of the target or latent variable `xz` for either</span>
@@ -713,7 +808,7 @@
 <span class="sd">            If True, computes the velocity for the stochastic formulation (SDE).</span>
 <span class="sd">            If False, uses the deterministic formulation (ODE).</span>
 <span class="sd">        conditions : Tensor, optional</span>
-<span class="sd">            Optional conditional inputs to the network, such as conditioning variables</span>
+<span class="sd">            Conditional inputs to the network, such as conditioning variables</span>
 <span class="sd">            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.</span>
 <span class="sd">        training : bool, optional</span>
 <span class="sd">            Whether the model is in training mode. Affects behavior of dropout, batch norm,</span>
@@ -725,21 +820,10 @@
 <span class="sd">            The velocity tensor of the same shape as `xz`, representing the right-hand</span>
 <span class="sd">            side of the SDE or ODE at the given `time`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># calculate the current noise level and transform into correct shape</span>
         <span class="n">log_snr_t</span> <span class="o">=</span> <span class="n">expand_right_as</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_log_snr</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">),</span> <span class="n">xz</span><span class="p">)</span>
         <span class="n">log_snr_t</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">,</span> <span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">xz</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
-        <span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_alpha_sigma</span><span class="p">(</span><span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">conditions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">xtc</span> <span class="o">=</span> <span class="n">tensor_utils</span><span class="o">.</span><span class="n">concatenate_valid</span><span class="p">([</span><span class="n">xz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">xtc</span> <span class="o">=</span> <span class="n">tensor_utils</span><span class="o">.</span><span class="n">concatenate_valid</span><span class="p">([</span><span class="n">xz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">),</span> <span class="n">conditions</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">(</span><span class="n">xtc</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
-
-        <span class="n">x_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_prediction_to_x</span><span class="p">(</span><span class="n">pred</span><span class="o">=</span><span class="n">pred</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">xz</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">,</span> <span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">)</span>
-
-        <span class="n">score</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_t</span> <span class="o">*</span> <span class="n">x_pred</span> <span class="o">-</span> <span class="n">xz</span><span class="p">)</span> <span class="o">/</span> <span class="n">ops</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">sigma_t</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">xz</span><span class="p">,</span> <span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="c1"># compute velocity f, g of the SDE or ODE</span>
         <span class="n">f</span><span class="p">,</span> <span class="n">g_squared</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_drift_diffusion</span><span class="p">(</span><span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">xz</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
@@ -792,9 +876,12 @@
         <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">stochastic_solver</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">stochastic_solver</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
 
         <span class="n">v</span><span class="p">,</span> <span class="n">trace</span> <span class="o">=</span> <span class="n">jacobian_trace</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">xz</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed_generator</span><span class="p">,</span> <span class="n">return_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -820,8 +907,13 @@
         <span class="n">integrate_kwargs</span> <span class="o">=</span> <span class="n">integrate_kwargs</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_kwargs</span>
         <span class="n">integrate_kwargs</span> <span class="o">=</span> <span class="n">integrate_kwargs</span> <span class="o">|</span> <span class="n">kwargs</span>
 
-        <span class="k">if</span> <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;euler_maruyama&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Stochastic methods are not supported for forward integration.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">STOCHASTIC_METHODS</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Stochastic methods are not supported for density evaluation.&quot;</span>
+                <span class="s2">&quot; Falling back to tsit5 ODE solver.&quot;</span>
+                <span class="s2">&quot; To suppress this warning, explicitly pass a method from &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">DETERMINISTIC_METHODS</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tsit5&quot;</span>
 
         <span class="k">if</span> <span class="n">density</span><span class="p">:</span>
 
@@ -866,15 +958,19 @@
         <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-        <span class="n">integrate_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;start_time&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;stop_time&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
-        <span class="n">integrate_kwargs</span> <span class="o">=</span> <span class="n">integrate_kwargs</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_kwargs</span>
-        <span class="n">integrate_kwargs</span> <span class="o">=</span> <span class="n">integrate_kwargs</span> <span class="o">|</span> <span class="n">kwargs</span>
+        <span class="n">integrate_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;start_time&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;stop_time&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_kwargs</span> <span class="o">|</span> <span class="n">kwargs</span>
+
         <span class="k">if</span> <span class="n">density</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;euler_maruyama&quot;</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Stochastic methods are not supported for density computation.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">STOCHASTIC_METHODS</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Stochastic methods are not supported for density computation.&quot;</span>
+                    <span class="s2">&quot; Falling back to ODE solver.&quot;</span>
+                    <span class="s2">&quot; Use one of the deterministic methods: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">DETERMINISTIC_METHODS</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tsit5&quot;</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">deltas</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">xz</span><span class="p">):</span>
-                <span class="n">v</span><span class="p">,</span> <span class="n">trace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_trace</span><span class="p">(</span><span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+                <span class="n">v</span><span class="p">,</span> <span class="n">trace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_trace</span><span class="p">(</span><span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
                 <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;xz&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;trace&quot;</span><span class="p">:</span> <span class="n">trace</span><span class="p">}</span>
 
             <span class="n">state</span> <span class="o">=</span> <span class="p">{</span>
@@ -889,19 +985,29 @@
             <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">log_density</span>
 
         <span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;xz&quot;</span><span class="p">:</span> <span class="n">z</span><span class="p">}</span>
-        <span class="k">if</span> <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;euler_maruyama&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">integrate_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">STOCHASTIC_METHODS</span><span class="p">:</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">deltas</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">xz</span><span class="p">):</span>
                 <span class="k">return</span> <span class="p">{</span>
-                    <span class="s2">&quot;xz&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">(</span><span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">stochastic_solver</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+                    <span class="s2">&quot;xz&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">(</span>
+                        <span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">stochastic_solver</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                    <span class="p">)</span>
                 <span class="p">}</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">diffusion</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">xz</span><span class="p">):</span>
                 <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;xz&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffusion_term</span><span class="p">(</span><span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)}</span>
 
+            <span class="n">score_fn</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="s2">&quot;corrector_steps&quot;</span> <span class="ow">in</span> <span class="n">integrate_kwargs</span> <span class="ow">or</span> <span class="n">integrate_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;langevin&quot;</span><span class="p">:</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">score_fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">xz</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;xz&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)}</span>
+
             <span class="n">state</span> <span class="o">=</span> <span class="n">integrate_stochastic</span><span class="p">(</span>
                 <span class="n">drift_fn</span><span class="o">=</span><span class="n">deltas</span><span class="p">,</span>
                 <span class="n">diffusion_fn</span><span class="o">=</span><span class="n">diffusion</span><span class="p">,</span>
+                <span class="n">score_fn</span><span class="o">=</span><span class="n">score_fn</span><span class="p">,</span>
+                <span class="n">noise_schedule</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="p">,</span>
                 <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
                 <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed_generator</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">integrate_kwargs</span><span class="p">,</span>
@@ -911,7 +1017,7 @@
             <span class="k">def</span><span class="w"> </span><span class="nf">deltas</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">xz</span><span class="p">):</span>
                 <span class="k">return</span> <span class="p">{</span>
                     <span class="s2">&quot;xz&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">(</span>
-                        <span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">stochastic_solver</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span>
+                        <span class="n">xz</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">stochastic_solver</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
                     <span class="p">)</span>
                 <span class="p">}</span>
 
@@ -959,43 +1065,128 @@
         <span class="n">diffused_x</span> <span class="o">=</span> <span class="n">alpha_t</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">sigma_t</span> <span class="o">*</span> <span class="n">eps_t</span>
 
         <span class="c1"># calculate output of the network</span>
-        <span class="k">if</span> <span class="n">conditions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">xtc</span> <span class="o">=</span> <span class="n">tensor_utils</span><span class="o">.</span><span class="n">concatenate_valid</span><span class="p">([</span><span class="n">diffused_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">xtc</span> <span class="o">=</span> <span class="n">tensor_utils</span><span class="o">.</span><span class="n">concatenate_valid</span><span class="p">([</span><span class="n">diffused_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">),</span> <span class="n">conditions</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">(</span><span class="n">xtc</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">subnet_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">diffused_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="p">),</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="p">(</span><span class="n">subnet_out</span><span class="p">)</span>
 
         <span class="n">x_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_prediction_to_x</span><span class="p">(</span>
             <span class="n">pred</span><span class="o">=</span><span class="n">pred</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">diffused_x</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">,</span> <span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loss_type</span> <span class="o">==</span> <span class="s2">&quot;noise&quot;</span><span class="p">:</span>
-            <span class="c1"># convert x to epsilon prediction</span>
-            <span class="n">noise_pred</span> <span class="o">=</span> <span class="p">(</span><span class="n">diffused_x</span> <span class="o">-</span> <span class="n">alpha_t</span> <span class="o">*</span> <span class="n">x_pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma_t</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">weights_for_snr</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">noise_pred</span> <span class="o">-</span> <span class="n">eps_t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># convert predicted target (x_pred) to corresponding diffusion prediction</span>
+        <span class="k">match</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loss_type</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">&quot;noise&quot;</span><span class="p">:</span>
+                <span class="n">noise_pred</span> <span class="o">=</span> <span class="p">(</span><span class="n">diffused_x</span> <span class="o">-</span> <span class="n">alpha_t</span> <span class="o">*</span> <span class="n">x_pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma_t</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">weights_for_snr</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">noise_pred</span> <span class="o">-</span> <span class="n">eps_t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loss_type</span> <span class="o">==</span> <span class="s2">&quot;velocity&quot;</span><span class="p">:</span>
-            <span class="c1"># convert x to velocity prediction</span>
-            <span class="n">velocity_pred</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_t</span> <span class="o">*</span> <span class="n">diffused_x</span> <span class="o">-</span> <span class="n">x_pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma_t</span>
-            <span class="n">v_t</span> <span class="o">=</span> <span class="n">alpha_t</span> <span class="o">*</span> <span class="n">eps_t</span> <span class="o">-</span> <span class="n">sigma_t</span> <span class="o">*</span> <span class="n">x</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">weights_for_snr</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">velocity_pred</span> <span class="o">-</span> <span class="n">v_t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">&quot;velocity&quot;</span><span class="p">:</span>
+                <span class="n">velocity_pred</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_t</span> <span class="o">*</span> <span class="n">diffused_x</span> <span class="o">-</span> <span class="n">x_pred</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma_t</span>
+                <span class="n">v_t</span> <span class="o">=</span> <span class="n">alpha_t</span> <span class="o">*</span> <span class="n">eps_t</span> <span class="o">-</span> <span class="n">sigma_t</span> <span class="o">*</span> <span class="n">x</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">weights_for_snr</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">velocity_pred</span> <span class="o">-</span> <span class="n">v_t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loss_type</span> <span class="o">==</span> <span class="s2">&quot;F&quot;</span><span class="p">:</span>
-            <span class="c1"># convert x to F prediction</span>
-            <span class="n">sigma_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">sigma_data</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="p">,</span> <span class="s2">&quot;sigma_data&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.0</span>
-            <span class="n">x1</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma_data</span><span class="p">)</span>
-            <span class="n">x2</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma_data</span> <span class="o">*</span> <span class="n">alpha_t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-            <span class="n">f_pred</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">x_pred</span> <span class="o">-</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">diffused_x</span>
-            <span class="n">f_t</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">diffused_x</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">weights_for_snr</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">f_pred</span> <span class="o">-</span> <span class="n">f_t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">&quot;F&quot;</span><span class="p">:</span>
+                <span class="n">sigma_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">sigma_data</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="p">,</span> <span class="s2">&quot;sigma_data&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.0</span>
+                <span class="n">x1</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma_data</span><span class="p">)</span>
+                <span class="n">x2</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma_data</span> <span class="o">*</span> <span class="n">alpha_t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">+</span> <span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+                <span class="n">f_pred</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">x_pred</span> <span class="o">-</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">diffused_x</span>
+                <span class="n">f_t</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">diffused_x</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">weights_for_snr</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">f_pred</span> <span class="o">-</span> <span class="n">f_t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown loss type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loss_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown loss type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loss_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">loss</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
 
         <span class="n">base_metrics</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">base_metrics</span> <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="DiffusionModel.guidance_constraint_term">
+<a class="viewcode-back" href="../../../../api/bayesflow.networks.diffusion_model.DiffusionModel.html#bayesflow.networks.DiffusionModel.guidance_constraint_term">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">guidance_constraint_term</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">constraints</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span>
+        <span class="n">guidance_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">scaling_function</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">reduce</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Backend-agnostic implementation of:</span>
+<span class="sd">            `∇_x Σ_k log sigmoid( -s(t) * c_k(x) )`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : Tensor</span>
+<span class="sd">            The denoised target at time t.</span>
+<span class="sd">        time : Tensor</span>
+<span class="sd">            The time corresponding to x.</span>
+<span class="sd">        constraints : Callable or Sequence[Callable]</span>
+<span class="sd">            A single constraint function or a list/tuple of constraint functions.</span>
+<span class="sd">            Each function should take x as input and return a tensor of constraint values.</span>
+<span class="sd">        guidance_strength : float, optional</span>
+<span class="sd">            A positive scaling factor for the guidance term. Default is 1.0.</span>
+<span class="sd">        scaling_function : Callable, optional</span>
+<span class="sd">            A function that takes time t as input and returns a scaling factor s(t).</span>
+<span class="sd">            If None, a default scaling based on the noise schedule is used. Default is None.</span>
+<span class="sd">        reduce : {&#39;sum&#39;, &#39;mean&#39;}, optional</span>
+<span class="sd">            Method to reduce the log-probabilities from multiple constraints. Default is &#39;sum&#39;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tensor</span>
+<span class="sd">            The computed guidance term of the same shape as zt.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="n">constraints</span> <span class="o">=</span> <span class="p">[</span><span class="n">constraints</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">scaling_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">scaling_function</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+                <span class="n">log_snr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_log_snr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_alpha_sigma</span><span class="p">(</span><span class="n">log_snr</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">alpha_t</span><span class="p">)</span> <span class="o">/</span> <span class="n">ops</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">sigma_t</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">objective_fn</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">scaling_function</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+            <span class="n">logp</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">zeros</span><span class="p">((),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">z</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">constraints</span><span class="p">:</span>
+                <span class="n">ck</span> <span class="o">=</span> <span class="n">c</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+                <span class="n">logp</span> <span class="o">=</span> <span class="n">logp</span> <span class="o">-</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">st</span> <span class="o">*</span> <span class="n">ck</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">logp</span><span class="p">)</span> <span class="k">if</span> <span class="n">reduce</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span> <span class="k">else</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">logp</span><span class="p">)</span>
+
+        <span class="n">backend</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span>
+
+        <span class="k">match</span> <span class="n">backend</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+
+                <span class="n">grad</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">objective_fn</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+            <span class="k">case</span> <span class="s2">&quot;tensorflow&quot;</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+
+                <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">GradientTape</span><span class="p">()</span> <span class="k">as</span> <span class="n">tape</span><span class="p">:</span>
+                    <span class="n">tape</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="n">objective</span> <span class="o">=</span> <span class="n">objective_fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">grad</span> <span class="o">=</span> <span class="n">tape</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+            <span class="k">case</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+                <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">enable_grad</span><span class="p">():</span>
+                    <span class="n">x_grad</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">objective</span> <span class="o">=</span> <span class="n">objective_fn</span><span class="p">(</span><span class="n">x_grad</span><span class="p">)</span>
+                    <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>
+                        <span class="n">outputs</span><span class="o">=</span><span class="n">objective</span><span class="p">,</span>
+                        <span class="n">inputs</span><span class="o">=</span><span class="n">x_grad</span><span class="p">,</span>
+                    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported backend: </span><span class="si">{</span><span class="n">backend</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">guidance_strength</span> <span class="o">*</span> <span class="n">grad</span></div>
 </div>
 
 </pre></div>
@@ -1039,7 +1230,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1048,7 +1239,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

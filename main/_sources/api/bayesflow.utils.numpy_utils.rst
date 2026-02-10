@@ -22,6 +22,7 @@ numpy\_utils
     :toctree:
     :template: base.rst
   
+    credible_interval
     inverse_shifted_softplus
     inverse_sigmoid
     inverse_softplus

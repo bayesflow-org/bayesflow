@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/z_score_contraction';</script>
     <script>
@@ -474,12 +474,13 @@
                 <article class="bd-article">
                   
   <h1>Source code for bayesflow.diagnostics.plots.z_score_contraction</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_plot_data</span><span class="p">,</span> <span class="n">add_titles_and_labels</span><span class="p">,</span> <span class="n">prettify_subplots</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.dict_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_test_quantities</span>
 
 
 <div class="viewcode-block" id="z_score_contraction">
@@ -489,6 +490,7 @@
     <span class="n">targets</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">test_quantities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">label_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
     <span class="n">title_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">18</span><span class="p">,</span>
@@ -496,6 +498,7 @@
     <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
     <span class="n">num_col</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">num_row</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements a graphical check for global model sensitivity by plotting the</span>
@@ -540,6 +543,18 @@
 <span class="sd">       By default, select all keys.</span>
 <span class="sd">    variable_names    : list or None, optional, default: None</span>
 <span class="sd">        The parameter names for nice plot titles. Inferred if None</span>
+<span class="sd">    test_quantities   : dict or None, optional, default: None</span>
+<span class="sd">        A dict that maps plot titles to functions that compute</span>
+<span class="sd">        test quantities based on estimate/target draws.</span>
+
+<span class="sd">        The dict keys are automatically added to ``variable_keys``</span>
+<span class="sd">        and ``variable_names``.</span>
+<span class="sd">        Test quantity functions are expected to accept a dict of draws with</span>
+<span class="sd">        shape ``(batch_size, ...)`` as the first (typically only)</span>
+<span class="sd">        positional argument and return an NumPy array of shape</span>
+<span class="sd">        ``(batch_size,)``.</span>
+<span class="sd">        The functions do not have to deal with an additional</span>
+<span class="sd">        sample dimension, as appropriate reshaping is done internally.</span>
 <span class="sd">    figsize           : tuple or None, optional, default : None</span>
 <span class="sd">        The figure size passed to the matplotlib constructor. Inferred if None.</span>
 <span class="sd">    label_fontsize    : int, optional, default: 16</span>
@@ -554,6 +569,8 @@
 <span class="sd">        The number of rows for the subplots. Dynamically determined if None.</span>
 <span class="sd">    num_col           : int, optional, default: None</span>
 <span class="sd">        The number of columns for the subplots. Dynamically determined if None.</span>
+<span class="sd">    markersize        : float, optional, default: None</span>
+<span class="sd">        The marker size in points**2 of the scatter plot.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -564,6 +581,20 @@
 <span class="sd">    ShapeError</span>
 <span class="sd">        If there is a deviation from the expected shapes of ``estimates`` and ``targets``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Optionally, compute and prepend test quantities from draws</span>
+    <span class="k">if</span> <span class="n">test_quantities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">updated_data</span> <span class="o">=</span> <span class="n">compute_test_quantities</span><span class="p">(</span>
+            <span class="n">targets</span><span class="o">=</span><span class="n">targets</span><span class="p">,</span>
+            <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>
+            <span class="n">variable_keys</span><span class="o">=</span><span class="n">variable_keys</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">test_quantities</span><span class="o">=</span><span class="n">test_quantities</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">]</span>
+        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_keys&quot;</span><span class="p">]</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">]</span>
 
     <span class="c1"># Gather plot data and metadata into a dictionary</span>
     <span class="n">plot_data</span> <span class="o">=</span> <span class="n">prepare_plot_data</span><span class="p">(</span>
@@ -596,7 +627,7 @@
         <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_variables&quot;</span><span class="p">]:</span>
             <span class="k">break</span>
 
-        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">contraction</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">z_score</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">contraction</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">z_score</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">markersize</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">])</span>
 
     <span class="n">prettify_subplots</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">],</span> <span class="n">num_subplots</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_variables&quot;</span><span class="p">],</span> <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
@@ -657,7 +688,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -666,7 +697,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

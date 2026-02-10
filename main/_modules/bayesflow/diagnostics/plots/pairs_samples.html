@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/pairs_samples';</script>
     <script>
@@ -491,6 +491,7 @@
 <a class="viewcode-back" href="../../../../api/bayesflow.diagnostics.pairs_samples.html#bayesflow.diagnostics.pairs_samples">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">pairs_samples</span><span class="p">(</span>
     <span class="n">samples</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dataset_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span>
@@ -500,6 +501,7 @@
     <span class="n">label_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
     <span class="n">show_single_legend</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sns</span><span class="o">.</span><span class="n">PairGrid</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -510,6 +512,8 @@
 <span class="sd">    ----------</span>
 <span class="sd">    samples     : dict[str, Tensor], default: None</span>
 <span class="sd">        Sample draws from any dataset</span>
+<span class="sd">    dataset_id: Optional ID of the dataset for whose posterior the pair plots shall be generated.</span>
+<span class="sd">        Should only be specified if estimates contain posterior draws from multiple datasets.</span>
 <span class="sd">    variable_keys       : list or None, optional, default: None</span>
 <span class="sd">       Select keys from the dictionary provided in samples.</span>
 <span class="sd">       By default, select all keys.</span>
@@ -530,15 +534,23 @@
 <span class="sd">    show_single_legend : bool, optional, default: False</span>
 <span class="sd">        Optional toggle for the user to choose whether a single dataset</span>
 <span class="sd">        should also display legend</span>
+<span class="sd">    markersize  : float, optional, default: 40</span>
+<span class="sd">        Marker size in points**2 of the scatter plot.</span>
 <span class="sd">    **kwargs    : dict, optional</span>
 <span class="sd">        Additional keyword arguments passed to the sns.PairGrid constructor</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">plot_data</span> <span class="o">=</span> <span class="n">dicts_to_arrays</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
+        <span class="n">dataset_ids</span><span class="o">=</span><span class="n">dataset_id</span><span class="p">,</span>
         <span class="n">variable_keys</span><span class="o">=</span><span class="n">variable_keys</span><span class="p">,</span>
         <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="c1"># dicts_to_arrays will keep the dataset axis even if it is of length 1</span>
+    <span class="c1"># however, pairs plotting requires the dataset axis to be removed</span>
+    <span class="n">estimates_shape</span> <span class="o">=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimates_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">estimates_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="n">g</span> <span class="o">=</span> <span class="n">_pairs_samples</span><span class="p">(</span>
         <span class="n">plot_data</span><span class="o">=</span><span class="n">plot_data</span><span class="p">,</span>
@@ -549,6 +561,7 @@
         <span class="n">label_fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">,</span>
         <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">,</span>
         <span class="n">show_single_legend</span><span class="o">=</span><span class="n">show_single_legend</span><span class="p">,</span>
+        <span class="n">markersize</span><span class="o">=</span><span class="n">markersize</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -567,6 +580,9 @@
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
     <span class="n">legend_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
     <span class="n">show_single_legend</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">target_markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">target_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sns</span><span class="o">.</span><span class="n">PairGrid</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -580,6 +596,12 @@
 <span class="sd">    color2      : str, optional, default: &#39;gray&#39;</span>
 <span class="sd">        Secondary color for the pair plots.</span>
 <span class="sd">        This is the color used for the prior draws.</span>
+<span class="sd">    markersize  : float, optional, default: 40</span>
+<span class="sd">        Marker size in points**2 of the scatter plot.</span>
+<span class="sd">    target_markersize  : float, optional, default: 40</span>
+<span class="sd">        Target marker size in points**2 of the scatter plot.</span>
+<span class="sd">    target_color : str, optional, default: &quot;red&quot;</span>
+<span class="sd">        Target marker color for the legend.</span>
 
 <span class="sd">    Other arguments are documented in pairs_samples</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -612,6 +634,7 @@
             <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span>
             <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;_source&quot;</span><span class="p">,</span>
             <span class="n">palette</span><span class="o">=</span><span class="p">[</span><span class="n">color2</span><span class="p">,</span> <span class="n">color</span><span class="p">],</span>
+            <span class="n">diag_sharey</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -637,14 +660,14 @@
     <span class="p">)</span>
 
     <span class="c1"># add scatter plots to the upper diagonal</span>
-    <span class="n">g</span><span class="o">.</span><span class="n">map_upper</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">map_upper</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">markersize</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="c1"># add KDEs to the lower diagonal</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">g</span><span class="o">.</span><span class="n">map_lower</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">map_lower</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">common_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;KDE failed due to the following exception:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Substituting scatter plot.&quot;</span><span class="p">)</span>
-        <span class="n">g</span><span class="o">.</span><span class="n">map_lower</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">map_lower</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">markersize</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="c1"># Generate grids</span>
     <span class="n">dim</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -678,6 +701,9 @@
         <span class="n">legend_fontsize</span><span class="o">=</span><span class="n">legend_fontsize</span><span class="p">,</span>
         <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
         <span class="n">show_single_legend</span><span class="o">=</span><span class="n">show_single_legend</span><span class="p">,</span>
+        <span class="n">markersize</span><span class="o">=</span><span class="n">markersize</span><span class="p">,</span>
+        <span class="n">target_markersize</span><span class="o">=</span><span class="n">target_markersize</span><span class="p">,</span>
+        <span class="n">target_color</span><span class="o">=</span><span class="n">target_color</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Return figure</span>
@@ -746,7 +772,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -755,7 +781,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,11 +42,11 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.losses';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -630,7 +630,7 @@ normalized (False, default)</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="bayesflow.losses.mmd_summary_space">
-<span class="sig-prename descclassname"><span class="pre">bayesflow.losses.</span></span><span class="sig-name descname"><span class="pre">mmd_summary_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">summary_outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_dist=&lt;function</span> <span class="pre">random_normal&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel='gaussian'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/losses.html#mmd_summary_space"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.losses.mmd_summary_space" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">bayesflow.losses.</span></span><span class="sig-name descname"><span class="pre">mmd_summary_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">summary_outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">random_normal&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gaussian'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/losses.html#mmd_summary_space"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.losses.mmd_summary_space" title="Link to this definition">#</a></dt>
 <dd><p>Computes the MMD(p(summary_otuputs) | z_dist) to re-shape the summary network outputs in
 an information-preserving manner.</p>
 <dl class="field-list simple">
@@ -768,7 +768,7 @@ an information-preserving manner.</p>
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -777,7 +777,7 @@ an information-preserving manner.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

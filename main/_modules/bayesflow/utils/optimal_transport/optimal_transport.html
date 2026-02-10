@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/optimal_transport/optimal_transport';</script>
     <script>
@@ -476,6 +476,8 @@
   <h1>Source code for bayesflow.utils.optimal_transport.optimal_transport</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.log_sinkhorn</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_sinkhorn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.sinkhorn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sinkhorn</span>
 
@@ -489,40 +491,63 @@
 
 <div class="viewcode-block" id="optimal_transport">
 <a class="viewcode-back" href="../../../../api/bayesflow.utils.optimal_transport.html#bayesflow.utils.optimal_transport">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">optimal_transport</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;log_sinkhorn&quot;</span><span class="p">,</span> <span class="n">return_assignments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method</span>
-<span class="sd">    and cost matrix used.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">optimal_transport</span><span class="p">(</span>
+    <span class="n">x1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">x2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;sinkhorn&quot;</span><span class="p">,</span> <span class="n">return_assignments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Match elements from ``x2`` onto ``x1`` by minimizing the transport cost.</span>
 
-<span class="sd">    Depending on the method used, elements in either tensor may be permuted, dropped, duplicated, or otherwise modified,</span>
-<span class="sd">    such that the assignment is optimal.</span>
+<span class="sd">    This function dispatches to a specific optimal transport method according to</span>
+<span class="sd">    the selected ``method`` and cost formulation. Depending on the method used,</span>
+<span class="sd">    elements in either tensor may be permuted, dropped, duplicated, or otherwise</span>
+<span class="sd">    modified in order to achieve an optimal assignment.</span>
 
-<span class="sd">    Note: this is just a dispatch function that calls the appropriate optimal transport method.</span>
-<span class="sd">    See the documentation of the respective method for more details.</span>
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    This is a dispatch function that calls the appropriate optimal transport</span>
+<span class="sd">    implementation. See the documentation of the selected method for details on</span>
+<span class="sd">    the exact optimization procedure and assumptions.</span>
 
-<span class="sd">    :param x1: Tensor of shape (n, ...)</span>
-<span class="sd">        Samples from the first distribution.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x1 : Tensor</span>
+<span class="sd">        Tensor of shape ``(n, ...)`` containing samples from the first distribution.</span>
+<span class="sd">    x2 : Tensor</span>
+<span class="sd">        Tensor of shape ``(m, ...)`` containing samples from the second distribution.</span>
+<span class="sd">    conditions : Tensor, optional</span>
+<span class="sd">        Tensor of shape ``(k, ...)`` providing conditioning information for</span>
+<span class="sd">        conditional optimal transport. If ``None``, unconditional optimal transport</span>
+<span class="sd">        is performed. Default is ``None``.</span>
+<span class="sd">    method : str, optional</span>
+<span class="sd">        Method used to compute the optimal transport plan (e.g., ``&#39;sinkhorn&#39;``).</span>
+<span class="sd">        Default is ``&#39;sinkhorn&#39;``.</span>
+<span class="sd">    return_assignments : bool</span>
+<span class="sd">        If ``True``, also return the assignment indices produced by the transport</span>
+<span class="sd">        method. Default is ``False``.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Additional keyword arguments passed to the selected optimal transport method.</span>
 
-<span class="sd">    :param x2: Tensor of shape (m, ...)</span>
-<span class="sd">        Samples from the second distribution.</span>
-
-<span class="sd">    :param method: Method used to compute the transport cost.</span>
-<span class="sd">        Default: &#39;log_sinkhorn&#39;</span>
-
-<span class="sd">    :param return_assignments: Whether to return the assignment indices.</span>
-<span class="sd">        Default: False</span>
-
-<span class="sd">    :param kwargs: Additional keyword arguments that are passed to the optimization method.</span>
-
-<span class="sd">    :return: Tensors of shapes (n, ...) and (m, ...)</span>
-<span class="sd">        x1 and x2 in optimal transport permutation order.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tuple of tensors</span>
+<span class="sd">        If ``return_assignments`` is ``False``, returns three tensors of shapes</span>
+<span class="sd">        ``(n, ...)`` and ``(m, ...)`` corresponding to ``x1``, ``x2``, ``conditions`` reordered</span>
+<span class="sd">        according to the optimal transport solution. If ``return_assignments`` is</span>
+<span class="sd">        ``True``, the reordered tensors and the corresponding assignment indices</span>
+<span class="sd">        are returned as a fourth element.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">assignments</span> <span class="o">=</span> <span class="n">methods</span><span class="p">[</span><span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">assignments</span> <span class="o">=</span> <span class="n">methods</span><span class="p">[</span><span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">x2</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">assignments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">return_assignments</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">assignments</span>
+    <span class="k">if</span> <span class="n">conditions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># conditions must be resampled along with x1</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="n">assignments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span></div>
+    <span class="k">if</span> <span class="n">return_assignments</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">conditions</span><span class="p">,</span> <span class="n">assignments</span>
+
+    <span class="k">return</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">conditions</span></div>
 
 </pre></div>
 
@@ -565,7 +590,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -574,7 +599,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

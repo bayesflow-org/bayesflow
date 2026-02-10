@@ -26,6 +26,7 @@ logging
     debug
     error
     exception
+    format_duration
     info
     log
     warn_once

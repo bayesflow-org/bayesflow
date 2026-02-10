@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,8 +41,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/index';</script>
     <script>
@@ -512,8 +512,10 @@
 <li><a href="bayesflow/datasets/offline_dataset.html">bayesflow.datasets.offline_dataset</a></li>
 <li><a href="bayesflow/datasets/online_dataset.html">bayesflow.datasets.online_dataset</a></li>
 <li><a href="bayesflow/diagnostics/metrics/calibration_error.html">bayesflow.diagnostics.metrics.calibration_error</a></li>
+<li><a href="bayesflow/diagnostics/metrics/calibration_log_gamma.html">bayesflow.diagnostics.metrics.calibration_log_gamma</a></li>
 <li><a href="bayesflow/diagnostics/metrics/model_misspecification.html">bayesflow.diagnostics.metrics.model_misspecification</a></li>
 <li><a href="bayesflow/diagnostics/metrics/posterior_contraction.html">bayesflow.diagnostics.metrics.posterior_contraction</a></li>
+<li><a href="bayesflow/diagnostics/metrics/posterior_z_score.html">bayesflow.diagnostics.metrics.posterior_z_score</a></li>
 <li><a href="bayesflow/diagnostics/plots/calibration_ecdf.html">bayesflow.diagnostics.plots.calibration_ecdf</a></li>
 <li><a href="bayesflow/diagnostics/plots/calibration_ecdf_from_quantiles.html">bayesflow.diagnostics.plots.calibration_ecdf_from_quantiles</a></li>
 <li><a href="bayesflow/diagnostics/plots/calibration_histogram.html">bayesflow.diagnostics.plots.calibration_histogram</a></li>
@@ -522,7 +524,9 @@
 <li><a href="bayesflow/diagnostics/plots/mc_confusion_matrix.html">bayesflow.diagnostics.plots.mc_confusion_matrix</a></li>
 <li><a href="bayesflow/diagnostics/plots/mmd_hypothesis_test.html">bayesflow.diagnostics.plots.mmd_hypothesis_test</a></li>
 <li><a href="bayesflow/diagnostics/plots/pairs_posterior.html">bayesflow.diagnostics.plots.pairs_posterior</a></li>
+<li><a href="bayesflow/diagnostics/plots/pairs_quantity.html">bayesflow.diagnostics.plots.pairs_quantity</a></li>
 <li><a href="bayesflow/diagnostics/plots/pairs_samples.html">bayesflow.diagnostics.plots.pairs_samples</a></li>
+<li><a href="bayesflow/diagnostics/plots/plot_quantity.html">bayesflow.diagnostics.plots.plot_quantity</a></li>
 <li><a href="bayesflow/diagnostics/plots/recovery.html">bayesflow.diagnostics.plots.recovery</a></li>
 <li><a href="bayesflow/diagnostics/plots/recovery_from_estimates.html">bayesflow.diagnostics.plots.recovery_from_estimates</a></li>
 <li><a href="bayesflow/diagnostics/plots/z_score_contraction.html">bayesflow.diagnostics.plots.z_score_contraction</a></li>
@@ -530,9 +534,6 @@
 <li><a href="bayesflow/distributions/diagonal_student_t.html">bayesflow.distributions.diagonal_student_t</a></li>
 <li><a href="bayesflow/distributions/distribution.html">bayesflow.distributions.distribution</a></li>
 <li><a href="bayesflow/distributions/mixture.html">bayesflow.distributions.mixture</a></li>
-<li><a href="bayesflow/experimental/cif/cif.html">bayesflow.experimental.cif.cif</a></li>
-<li><a href="bayesflow/experimental/continuous_time_consistency_model.html">bayesflow.experimental.continuous_time_consistency_model</a></li>
-<li><a href="bayesflow/experimental/diffusion_model.html">bayesflow.experimental.diffusion_model</a></li>
 <li><a href="bayesflow/experimental/free_form_flow/free_form_flow.html">bayesflow.experimental.free_form_flow.free_form_flow</a></li>
 <li><a href="bayesflow/links/cholesky_factor.html">bayesflow.links.cholesky_factor</a></li>
 <li><a href="bayesflow/links/ordered.html">bayesflow.links.ordered</a></li>
@@ -543,6 +544,7 @@
 <li><a href="bayesflow/metrics/maximum_mean_discrepancy.html">bayesflow.metrics.maximum_mean_discrepancy</a></li>
 <li><a href="bayesflow/metrics/root_mean_squard_error.html">bayesflow.metrics.root_mean_squard_error</a></li>
 <li><a href="bayesflow/networks/consistency_models/consistency_model.html">bayesflow.networks.consistency_models.consistency_model</a></li>
+<li><a href="bayesflow/networks/consistency_models/stable_consistency_model.html">bayesflow.networks.consistency_models.stable_consistency_model</a></li>
 <li><a href="bayesflow/networks/coupling_flow/coupling_flow.html">bayesflow.networks.coupling_flow.coupling_flow</a></li>
 <li><a href="bayesflow/networks/deep_set/deep_set.html">bayesflow.networks.deep_set.deep_set</a></li>
 <li><a href="bayesflow/networks/diffusion_model/diffusion_model.html">bayesflow.networks.diffusion_model.diffusion_model</a></li>
@@ -554,6 +556,7 @@
 <li><a href="bayesflow/networks/fusion_network/fusion_network.html">bayesflow.networks.fusion_network.fusion_network</a></li>
 <li><a href="bayesflow/networks/inference_network.html">bayesflow.networks.inference_network</a></li>
 <li><a href="bayesflow/networks/mlp/mlp.html">bayesflow.networks.mlp.mlp</a></li>
+<li><a href="bayesflow/networks/mlp/time_mlp.html">bayesflow.networks.mlp.time_mlp</a></li>
 <li><a href="bayesflow/networks/point_inference_network.html">bayesflow.networks.point_inference_network</a></li>
 <li><a href="bayesflow/networks/sequential/sequential.html">bayesflow.networks.sequential.sequential</a></li>
 <li><a href="bayesflow/networks/summary_network.html">bayesflow.networks.summary_network</a></li>
@@ -618,7 +621,6 @@
 <li><a href="bayesflow/workflows/basic_workflow.html">bayesflow.workflows.basic_workflow</a></li>
 <li><a href="bayesflow/wrappers/mamba/mamba.html">bayesflow.wrappers.mamba.mamba</a></li>
 <li><a href="bayesflow/wrappers/mamba/mamba_block.html">bayesflow.wrappers.mamba.mamba_block</a></li>
-<li><a href="builtins.html">builtins</a></li>
 </ul>
 
                 </article>
@@ -660,7 +662,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -669,7 +671,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

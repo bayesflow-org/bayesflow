@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.networks.diffusion_model.DiffusionModel';</script>
     <script>
@@ -493,13 +493,17 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_ecdf_from_quantiles.html">calibration_ecdf_from_quantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_error.html">calibration_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_histogram.html">calibration_histogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_log_gamma.html">calibration_log_gamma</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.loss.html">loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_calibration.html">mc_calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_confusion_matrix.html">mc_confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mmd_hypothesis_test.html">mmd_hypothesis_test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_posterior.html">pairs_posterior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_quantity.html">pairs_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_samples.html">pairs_samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.plot_quantity.html">plot_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_contraction.html">posterior_contraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_z_score.html">posterior_z_score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery.html">recovery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery_from_estimates.html">recovery_from_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.summary_space_comparison.html">summary_space_comparison</a></li>
@@ -514,9 +518,6 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -558,7 +559,9 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.StableConsistencyModel.html">StableConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeMLP.html">TimeMLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesTransformer.html">TimeSeriesTransformer</a></li>
 </ul>
@@ -606,6 +609,7 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.debug.html">debug</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.error.html">error</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.exception.html">exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.format_duration.html">format_duration</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.info.html">info</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.log.html">log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.warn_once.html">warn_once</a></li>
@@ -613,6 +617,7 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.numpy_utils.html">numpy_utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.credible_interval.html">credible_interval</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_shifted_softplus.html">inverse_shifted_softplus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_sigmoid.html">inverse_sigmoid</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_softplus.html">inverse_softplus</a></li>
@@ -639,6 +644,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.calibration_curve.html">calibration_curve</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.compute_empirical_coverage.html">compute_empirical_coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
@@ -647,6 +653,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html">deserialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html">detailed_loss_callback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.devices.html">devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.dim_maybe_nested.html">dim_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand.html">expand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_as.html">expand_as</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_left.html">expand_left</a></li>
@@ -669,6 +676,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html">find_recurrent_net</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_duration.html">format_duration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
@@ -689,6 +697,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html">serialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html">simultaneous_ecdf_bands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.size_of.html">size_of</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.slice_maybe_nested.html">slice_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_arrays.html">split_arrays</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_tensors.html">split_tensors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html">squeeze_inner_estimates_dict</a></li>
@@ -788,12 +797,11 @@
 <h1>DiffusionModel<a class="headerlink" href="#diffusionmodel" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.networks.diffusion_model.</span></span><span class="sig-name descname"><span class="pre">DiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.networks.diffusion_model.</span></span><span class="sig-name descname"><span class="pre">DiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="bayesflow.networks.InferenceNetwork.html#bayesflow.networks.InferenceNetwork" title="bayesflow.networks.inference_network.InferenceNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InferenceNetwork</span></code></a></p>
-<p>Diffusion Model as described in this overview paper [1].</p>
-<p>[1] Variational Diffusion Models 2.0: Understanding Diffusion Model Objectives as the ELBO with Simple Data
-Augmentation: Kingma et al. (2023)</p>
-<p>[2] Score-Based Generative Modeling through Stochastic Differential Equations: Song et al. (2021)</p>
+<p>Score-based diffusion model for simulation-based inference as described in [1]:</p>
+<p>[1] Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., &amp; Radev, S. T. (2025).
+Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.</p>
 <p>Initializes a diffusion model with configurable subnet architecture, noise schedule,
 and prediction/loss types for amortized Bayesian inference.</p>
 <p>Note, that score-based diffusion is the most sluggish of all available samplers,
@@ -801,8 +809,10 @@ so expect slower inference times than flow matching and much slower than normali
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>subnet</strong><span class="classifier">str, type or keras.Layer, optional</span></dt><dd><p>Architecture for the transformation network. Can be “mlp”, a custom network class, or
-a Layer object, e.g., <cite>bayesflow.networks.MLP(widths=[32, 32])</cite>. Default is “mlp”.</p>
+<dt><strong>subnet</strong><span class="classifier">str, type or keras.Layer, optional</span></dt><dd><p>A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
+If a string is provided, it should be a registered name (e.g., “time_mlp”).
+If a type or keras.Layer is provided, it will be directly instantiated
+with the given <code class="docutils literal notranslate"><span class="pre">subnet_kwargs</span></code>. Any subnet must accept a tuple of tensors (target, time, conditions).</p>
 </dd>
 <dt><strong>noise_schedule</strong><span class="classifier">{‘edm’, ‘cosine’} or NoiseSchedule or type, optional</span></dt><dd><p>Noise schedule controlling the diffusion dynamics. Can be a string identifier,
 a schedule class, or a pre-initialized schedule instance. Default is “edm”.</p>
@@ -823,18 +833,18 @@ a schedule class, or a pre-initialized schedule instance. Default is “edm”.<
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.MLP_DEFAULT_CONFIG">
-<span class="sig-name descname"><span class="pre">MLP_DEFAULT_CONFIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'activation':</span> <span class="pre">'mish',</span> <span class="pre">'dropout':</span> <span class="pre">0.0,</span> <span class="pre">'kernel_initializer':</span> <span class="pre">'he_normal',</span> <span class="pre">'residual':</span> <span class="pre">True,</span> <span class="pre">'spectral_normalization':</span> <span class="pre">False,</span> <span class="pre">'widths':</span> <span class="pre">(256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256)}</span></em><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.MLP_DEFAULT_CONFIG" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.TIME_MLP_DEFAULT_CONFIG">
+<span class="sig-name descname"><span class="pre">TIME_MLP_DEFAULT_CONFIG</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'activation':</span> <span class="pre">'mish',</span> <span class="pre">'dropout':</span> <span class="pre">0.05,</span> <span class="pre">'kernel_initializer':</span> <span class="pre">'he_normal',</span> <span class="pre">'merge':</span> <span class="pre">'concat',</span> <span class="pre">'norm':</span> <span class="pre">'layer',</span> <span class="pre">'residual':</span> <span class="pre">True,</span> <span class="pre">'spectral_normalization':</span> <span class="pre">False,</span> <span class="pre">'time_embedding_dim':</span> <span class="pre">32,</span> <span class="pre">'widths':</span> <span class="pre">(256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256)}</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.TIME_MLP_DEFAULT_CONFIG" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.INTEGRATE_DEFAULT_CONFIG">
-<span class="sig-name descname"><span class="pre">INTEGRATE_DEFAULT_CONFIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'method':</span> <span class="pre">'euler',</span> <span class="pre">'steps':</span> <span class="pre">100}</span></em><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.INTEGRATE_DEFAULT_CONFIG" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">INTEGRATE_DEFAULT_CONFIG</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'method':</span> <span class="pre">'two_step_adaptive',</span> <span class="pre">'steps':</span> <span class="pre">'adaptive'}</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.INTEGRATE_DEFAULT_CONFIG" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.build">
-<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.build" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.build" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -847,7 +857,7 @@ containing the information needed to re-instantiate it.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.from_config">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.from_config" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.from_config" title="Link to this definition">#</a></dt>
 <dd><p>Creates an operation from its config.</p>
 <p>This method is the reverse of <cite>get_config</cite>, capable of instantiating the
 same operation from the config dictionary.</p>
@@ -896,8 +906,55 @@ velocity, or a transformation of the clean signal.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_snr_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.score" title="Link to this definition">#</a></dt>
+<dd><p>Computes the score of the target or latent variable <cite>xz</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>xz</strong><span class="classifier">Tensor</span></dt><dd><p>The current state of the latent variable <cite>z</cite>, typically of shape (…, D),
+where D is the dimensionality of the latent space.</p>
+</dd>
+<dt><strong>time</strong><span class="classifier">float or Tensor</span></dt><dd><p>Scalar or tensor representing the time (or noise level) at which the velocity
+should be computed. Will be broadcasted to xz. If None, log_snr_t must be provided.</p>
+</dd>
+<dt><strong>log_snr_t</strong><span class="classifier">Tensor</span></dt><dd><p>The log signal-to-noise ratio at time <cite>t</cite>. If None, time must be provided.</p>
+</dd>
+<dt><strong>conditions</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Conditional inputs to the network, such as conditioning variables
+or encoder outputs. Shape must be broadcastable with <cite>xz</cite>. Default is None.</p>
+</dd>
+<dt><strong>training</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether the model is in training mode. Affects behavior of dropout, batch norm,
+or other stochastic layers. Default is False.</p>
+</dd>
+<dt><strong>**kwargs</strong></dt><dd><p>Additional keyword arguments for custom guidance. The following dicts can be provided:</p>
+<p>guidance_constraints, containing any of the following keys:</p>
+<ul class="simple">
+<li><p>constraints: Required constraint functions or a single function of xz</p></li>
+<li><p>guidance_strength (float, optional): Strength of the constraint guidance.</p></li>
+</ul>
+<p>Defaults to 1.0.
+- scaling_function (callable, optional): Optional function to scale constraint
+values. Defaults to None.
+- reduce (str or callable, optional): Reduction method applied to constraints.
+Defaults to “sum”.</p>
+<p>guidance_function: a function that takes x and time as keyword arguments and
+returns a guidance signal.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tensor</dt><dd><p>The velocity tensor of the same shape as <cite>xz</cite>, representing the right-hand
+side of the probability-flow SDE or ODE at the given <cite>time</cite>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.velocity">
-<span class="sig-name descname"><span class="pre">velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stochastic_solver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.velocity" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stochastic_solver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.velocity" title="Link to this definition">#</a></dt>
 <dd><p>Computes the velocity (i.e., time derivative) of the target or latent variable <cite>xz</cite> for either
 a stochastic differential equation (SDE) or ordinary differential equation (ODE).</p>
 <dl class="field-list simple">
@@ -912,7 +969,7 @@ should be computed. Will be broadcasted to xz.</p>
 <dt><strong>stochastic_solver</strong><span class="classifier">bool</span></dt><dd><p>If True, computes the velocity for the stochastic formulation (SDE).
 If False, uses the deterministic formulation (ODE).</p>
 </dd>
-<dt><strong>conditions</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Optional conditional inputs to the network, such as conditioning variables
+<dt><strong>conditions</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Conditional inputs to the network, such as conditioning variables
 or encoder outputs. Shape must be broadcastable with <cite>xz</cite>. Default is None.</p>
 </dd>
 <dt><strong>training</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether the model is in training mode. Affects behavior of dropout, batch norm,
@@ -932,7 +989,7 @@ side of the SDE or ODE at the given <cite>time</cite>.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.diffusion_term">
-<span class="sig-name descname"><span class="pre">diffusion_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.diffusion_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.diffusion_term" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">diffusion_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.diffusion_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.diffusion_term" title="Link to this definition">#</a></dt>
 <dd><p>Compute the diffusion term (standard deviation of the noise) at a given time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -956,8 +1013,43 @@ side of the SDE or ODE at the given <cite>time</cite>.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.compute_metrics">
-<span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'training'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.compute_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.compute_metrics" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'training'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.compute_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.compute_metrics" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.guidance_constraint_term">
+<span class="sig-name descname"><span class="pre">guidance_constraint_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guidance_strength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaling_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'sum'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'mean'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'sum'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/networks/diffusion_model/diffusion_model.html#DiffusionModel.guidance_constraint_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.guidance_constraint_term" title="Link to this definition">#</a></dt>
+<dd><dl class="simple">
+<dt>Backend-agnostic implementation of:</dt><dd><p><cite>∇_x Σ_k log sigmoid( -s(t) * c_k(x) )</cite></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x</strong><span class="classifier">Tensor</span></dt><dd><p>The denoised target at time t.</p>
+</dd>
+<dt><strong>time</strong><span class="classifier">Tensor</span></dt><dd><p>The time corresponding to x.</p>
+</dd>
+<dt><strong>constraints</strong><span class="classifier">Callable or Sequence[Callable]</span></dt><dd><p>A single constraint function or a list/tuple of constraint functions.
+Each function should take x as input and return a tensor of constraint values.</p>
+</dd>
+<dt><strong>guidance_strength</strong><span class="classifier">float, optional</span></dt><dd><p>A positive scaling factor for the guidance term. Default is 1.0.</p>
+</dd>
+<dt><strong>scaling_function</strong><span class="classifier">Callable, optional</span></dt><dd><p>A function that takes time t as input and returns a scaling factor s(t).
+If None, a default scaling based on the noise schedule is used. Default is None.</p>
+</dd>
+<dt><strong>reduce</strong><span class="classifier">{‘sum’, ‘mean’}, optional</span></dt><dd><p>Method to reduce the log-probabilities from multiple constraints. Default is ‘sum’.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tensor</dt><dd><p>The computed guidance term of the same shape as zt.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.__call__">
@@ -1048,12 +1140,12 @@ layer’s state, you should override this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.call" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.call" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.compute_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.compute_dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">compute_dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.compute_dtype" title="Link to this definition">#</a></dt>
 <dd><p>The dtype of the computations performed by the layer.</p>
 </dd></dl>
 
@@ -1084,13 +1176,13 @@ layer’s state, you should override this method.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.dtype" title="Link to this definition">#</a></dt>
 <dd><p>Alias of <cite>layer.variable_dtype</cite>.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.dtype_policy">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype_policy</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.dtype_policy" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dtype_policy</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.dtype_policy" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1119,7 +1211,7 @@ loading.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.input">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.input" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">input</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.input" title="Link to this definition">#</a></dt>
 <dd><p>Retrieves the input tensor(s) of a symbolic operation.</p>
 <p>Only returns the tensor(s) corresponding to the <em>first time</em>
 the operation was called.</p>
@@ -1131,13 +1223,13 @@ the operation was called.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.input_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.input_dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">input_dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.input_dtype" title="Link to this definition">#</a></dt>
 <dd><p>The dtype layer inputs should be converted to.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.input_spec">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_spec</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.input_spec" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">input_spec</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.input_spec" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1159,25 +1251,25 @@ the layer is loaded upon calling <cite>keras.models.load_model()</cite>.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.losses">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">losses</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.losses" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">losses</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.losses" title="Link to this definition">#</a></dt>
 <dd><p>List of scalar losses from <cite>add_loss</cite>, regularizers and sublayers.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.metrics">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.metrics" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.metrics" title="Link to this definition">#</a></dt>
 <dd><p>List of all metrics.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.metrics_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics_variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.metrics_variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">metrics_variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.metrics_variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all metric variables.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.non_trainable_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">non_trainable_variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.non_trainable_variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">non_trainable_variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.non_trainable_variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all non-trainable layer state.</p>
 <p>This extends <cite>layer.non_trainable_weights</cite> to include all state used by
 the layer including state for metrics and <a href="#id1"><span class="problematic" id="id2">`</span></a>SeedGenerator`s.</p>
@@ -1185,7 +1277,7 @@ the layer including state for metrics and <a href="#id1"><span class="problemati
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.non_trainable_weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">non_trainable_weights</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.non_trainable_weights" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">non_trainable_weights</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.non_trainable_weights" title="Link to this definition">#</a></dt>
 <dd><p>List of all non-trainable weight variables of the layer.</p>
 <p>These are the weights that should not be updated by the optimizer during
 training. Unlike, <cite>layer.non_trainable_variables</cite> this excludes metric
@@ -1194,7 +1286,7 @@ state and random seeds.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.output">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.output" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.output" title="Link to this definition">#</a></dt>
 <dd><p>Retrieves the output tensor(s) of a layer.</p>
 <p>Only returns the tensor(s) corresponding to the <em>first time</em>
 the operation was called.</p>
@@ -1206,20 +1298,20 @@ the operation was called.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.path">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.path" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.path" title="Link to this definition">#</a></dt>
 <dd><p>The path of the layer.</p>
 <p>If the layer has not been built yet, it will be <cite>None</cite>.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.quantization_mode">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantization_mode</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.quantization_mode" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">quantization_mode</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.quantization_mode" title="Link to this definition">#</a></dt>
 <dd><p>The quantization mode of this layer, <cite>None</cite> if not quantized.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.quantize">
-<span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.quantize" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.quantize" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1246,7 +1338,7 @@ the operation was called.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.sample">
-<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.sample" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.sample" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1319,7 +1411,7 @@ These are all elements of state of the layer.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.supports_masking">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supports_masking</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.supports_masking" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">supports_masking</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.supports_masking" title="Link to this definition">#</a></dt>
 <dd><p>Whether this layer supports computing a mask using <cite>compute_mask</cite>.</p>
 </dd></dl>
 
@@ -1330,33 +1422,33 @@ These are all elements of state of the layer.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.trainable">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.trainable" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">trainable</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.trainable" title="Link to this definition">#</a></dt>
 <dd><p>Settable boolean, whether this layer should be trainable or not.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.trainable_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable_variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.trainable_variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">trainable_variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.trainable_variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all trainable layer state.</p>
 <p>This is equivalent to <cite>layer.trainable_weights</cite>.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.trainable_weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable_weights</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.trainable_weights" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">trainable_weights</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.trainable_weights" title="Link to this definition">#</a></dt>
 <dd><p>List of all trainable weight variables of the layer.</p>
 <p>These are the weights that get updated by the optimizer during training.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.variable_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variable_dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.variable_dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">variable_dtype</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.variable_dtype" title="Link to this definition">#</a></dt>
 <dd><p>The dtype of the state (weights) of the layer.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">variables</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all layer state, including random seeds.</p>
 <p>This extends <cite>layer.weights</cite> to include all state used by the layer
 including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGenerator`s.</p>
@@ -1366,7 +1458,7 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.networks.diffusion_model.DiffusionModel.weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.weights" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#bayesflow.networks.diffusion_model.DiffusionModel.weights" title="Link to this definition">#</a></dt>
 <dd><p>List of all weight variables of the layer.</p>
 <p>Unlike, <cite>layer.variables</cite> this excludes metric state and random seeds.</p>
 </dd></dl>
@@ -1424,15 +1516,17 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
     
 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel"><code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code></a><ul class="nav section-nav flex-column visible">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.MLP_DEFAULT_CONFIG"><code class="docutils literal notranslate"><span class="pre">MLP_DEFAULT_CONFIG</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.TIME_MLP_DEFAULT_CONFIG"><code class="docutils literal notranslate"><span class="pre">TIME_MLP_DEFAULT_CONFIG</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.INTEGRATE_DEFAULT_CONFIG"><code class="docutils literal notranslate"><span class="pre">INTEGRATE_DEFAULT_CONFIG</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.build"><code class="docutils literal notranslate"><span class="pre">build()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.from_config"><code class="docutils literal notranslate"><span class="pre">from_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.convert_prediction_to_x"><code class="docutils literal notranslate"><span class="pre">convert_prediction_to_x()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.score"><code class="docutils literal notranslate"><span class="pre">score()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.velocity"><code class="docutils literal notranslate"><span class="pre">velocity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.diffusion_term"><code class="docutils literal notranslate"><span class="pre">diffusion_term()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.compute_metrics"><code class="docutils literal notranslate"><span class="pre">compute_metrics()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.guidance_constraint_term"><code class="docutils literal notranslate"><span class="pre">guidance_constraint_term()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.__call__"><code class="docutils literal notranslate"><span class="pre">__call__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.add_loss"><code class="docutils literal notranslate"><span class="pre">add_loss()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesflow.networks.diffusion_model.DiffusionModel.add_metric"><code class="docutils literal notranslate"><span class="pre">add_metric()</span></code></a></li>
@@ -1527,7 +1621,7 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1536,7 +1630,7 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

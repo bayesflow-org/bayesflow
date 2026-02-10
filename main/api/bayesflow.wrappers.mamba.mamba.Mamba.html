@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8fec244e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,8 +42,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.wrappers.mamba.mamba.Mamba';</script>
     <script>
@@ -493,13 +493,17 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_ecdf_from_quantiles.html">calibration_ecdf_from_quantiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_error.html">calibration_error</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_histogram.html">calibration_histogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.calibration_log_gamma.html">calibration_log_gamma</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.loss.html">loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_calibration.html">mc_calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mc_confusion_matrix.html">mc_confusion_matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.mmd_hypothesis_test.html">mmd_hypothesis_test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_posterior.html">pairs_posterior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_quantity.html">pairs_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.pairs_samples.html">pairs_samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.plot_quantity.html">plot_quantity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_contraction.html">posterior_contraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.posterior_z_score.html">posterior_z_score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery.html">recovery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.recovery_from_estimates.html">recovery_from_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.diagnostics.summary_space_comparison.html">summary_space_comparison</a></li>
@@ -514,9 +518,6 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="bayesflow.experimental.html">experimental</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.DiffusionModel.html">DiffusionModel</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.CIF.html">CIF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.ContinuousTimeConsistencyModel.html">ContinuousTimeConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.experimental.FreeFormFlow.html">FreeFormFlow</a></li>
 </ul>
 </details></li>
@@ -558,7 +559,9 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.PointInferenceNetwork.html">PointInferenceNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.Sequential.html">Sequential</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SetTransformer.html">SetTransformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.StableConsistencyModel.html">StableConsistencyModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.SummaryNetwork.html">SummaryNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeMLP.html">TimeMLP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesNetwork.html">TimeSeriesNetwork</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.networks.TimeSeriesTransformer.html">TimeSeriesTransformer</a></li>
 </ul>
@@ -606,6 +609,7 @@
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.debug.html">debug</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.error.html">error</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.exception.html">exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.format_duration.html">format_duration</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.info.html">info</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.log.html">log</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.logging.warn_once.html">warn_once</a></li>
@@ -613,6 +617,7 @@
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="bayesflow.utils.numpy_utils.html">numpy_utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.credible_interval.html">credible_interval</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_shifted_softplus.html">inverse_shifted_softplus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_sigmoid.html">inverse_sigmoid</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bayesflow.utils.numpy_utils.inverse_softplus.html">inverse_softplus</a></li>
@@ -639,6 +644,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.calibration_curve.html">calibration_curve</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_estimates_prior_shapes.html">check_estimates_prior_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.check_lengths_same.html">check_lengths_same</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.compute_empirical_coverage.html">compute_empirical_coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid.html">concatenate_valid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.concatenate_valid_shapes.html">concatenate_valid_shapes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.confusion_matrix.html">confusion_matrix</a></li>
@@ -647,6 +653,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.deserialize_value_or_type.html">deserialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.detailed_loss_callback.html">detailed_loss_callback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.devices.html">devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.dim_maybe_nested.html">dim_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand.html">expand</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_as.html">expand_as</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.expand_left.html">expand_left</a></li>
@@ -669,6 +676,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_recurrent_net.html">find_recurrent_net</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.find_summary_network.html">find_summary_network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_bytes.html">format_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.format_duration.html">format_duration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate.html">integrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.integrate_stochastic.html">integrate_stochastic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.jacobian.html">jacobian</a></li>
@@ -689,6 +697,7 @@
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.serialize_value_or_type.html">serialize_value_or_type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.simultaneous_ecdf_bands.html">simultaneous_ecdf_bands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.size_of.html">size_of</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.slice_maybe_nested.html">slice_maybe_nested</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_arrays.html">split_arrays</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.split_tensors.html">split_tensors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bayesflow.utils.squeeze_inner_estimates_dict.html">squeeze_inner_estimates_dict</a></li>
@@ -791,7 +800,7 @@
 <h1>Mamba<a class="headerlink" href="#mamba" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayesflow.wrappers.mamba.mamba.</span></span><span class="sig-name descname"><span class="pre">Mamba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/wrappers/mamba/mamba.html#Mamba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">bayesflow.wrappers.mamba.mamba.</span></span><span class="sig-name descname"><span class="pre">Mamba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bayesflow/wrappers/mamba/mamba.html#Mamba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="bayesflow.networks.SummaryNetwork.html#bayesflow.networks.SummaryNetwork" title="bayesflow.networks.summary_network.SummaryNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">SummaryNetwork</span></code></a></p>
 <p>(SN) Wraps a sequence of Mamba modules using the simple Mamba module from:
 <a class="github reference external" href="https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba_simple.py">state-spaces/mamba</a></p>
@@ -833,7 +842,7 @@ followed by optional pooling, dropout, and a dense layer for extracting summary 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/wrappers/mamba/mamba.html#Mamba.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.call" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/wrappers/mamba/mamba.html#Mamba.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.call" title="Link to this definition">#</a></dt>
 <dd><p>Apply a sequence of Mamba blocks, followed by pooling, dropout, and summary statistics.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -951,7 +960,7 @@ layer’s state, you should override this method.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.compute_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.compute_dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">compute_dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.compute_dtype" title="Link to this definition">#</a></dt>
 <dd><p>The dtype of the computations performed by the layer.</p>
 </dd></dl>
 
@@ -962,7 +971,7 @@ layer’s state, you should override this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.compute_metrics">
-<span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'training'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.compute_metrics" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'training'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.compute_metrics" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -987,18 +996,18 @@ layer’s state, you should override this method.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.dtype" title="Link to this definition">#</a></dt>
 <dd><p>Alias of <cite>layer.variable_dtype</cite>.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.dtype_policy">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype_policy</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.dtype_policy" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dtype_policy</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.dtype_policy" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.from_config">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.from_config" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.from_config" title="Link to this definition">#</a></dt>
 <dd><p>Creates an operation from its config.</p>
 <p>This method is the reverse of <cite>get_config</cite>, capable of instantiating the
 same operation from the config dictionary.</p>
@@ -1050,7 +1059,7 @@ containing the information needed to re-instantiate it.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.input">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.input" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">input</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.input" title="Link to this definition">#</a></dt>
 <dd><p>Retrieves the input tensor(s) of a symbolic operation.</p>
 <p>Only returns the tensor(s) corresponding to the <em>first time</em>
 the operation was called.</p>
@@ -1062,13 +1071,13 @@ the operation was called.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.input_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.input_dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">input_dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.input_dtype" title="Link to this definition">#</a></dt>
 <dd><p>The dtype layer inputs should be converted to.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.input_spec">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_spec</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.input_spec" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">input_spec</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.input_spec" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1085,25 +1094,25 @@ the layer is loaded upon calling <cite>keras.models.load_model()</cite>.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.losses">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">losses</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.losses" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">losses</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.losses" title="Link to this definition">#</a></dt>
 <dd><p>List of scalar losses from <cite>add_loss</cite>, regularizers and sublayers.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.metrics">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.metrics" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.metrics" title="Link to this definition">#</a></dt>
 <dd><p>List of all metrics.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.metrics_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics_variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.metrics_variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">metrics_variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.metrics_variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all metric variables.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.non_trainable_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">non_trainable_variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.non_trainable_variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">non_trainable_variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.non_trainable_variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all non-trainable layer state.</p>
 <p>This extends <cite>layer.non_trainable_weights</cite> to include all state used by
 the layer including state for metrics and <a href="#id1"><span class="problematic" id="id2">`</span></a>SeedGenerator`s.</p>
@@ -1111,7 +1120,7 @@ the layer including state for metrics and <a href="#id1"><span class="problemati
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.non_trainable_weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">non_trainable_weights</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.non_trainable_weights" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">non_trainable_weights</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.non_trainable_weights" title="Link to this definition">#</a></dt>
 <dd><p>List of all non-trainable weight variables of the layer.</p>
 <p>These are the weights that should not be updated by the optimizer during
 training. Unlike, <cite>layer.non_trainable_variables</cite> this excludes metric
@@ -1120,7 +1129,7 @@ state and random seeds.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.output">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.output" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.output" title="Link to this definition">#</a></dt>
 <dd><p>Retrieves the output tensor(s) of a layer.</p>
 <p>Only returns the tensor(s) corresponding to the <em>first time</em>
 the operation was called.</p>
@@ -1132,20 +1141,20 @@ the operation was called.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.path">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.path" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.path" title="Link to this definition">#</a></dt>
 <dd><p>The path of the layer.</p>
 <p>If the layer has not been built yet, it will be <cite>None</cite>.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.quantization_mode">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantization_mode</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.quantization_mode" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">quantization_mode</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.quantization_mode" title="Link to this definition">#</a></dt>
 <dd><p>The quantization mode of this layer, <cite>None</cite> if not quantized.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.quantize">
-<span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.quantize" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.quantize" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1240,7 +1249,7 @@ These are all elements of state of the layer.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.supports_masking">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supports_masking</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.supports_masking" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">supports_masking</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.supports_masking" title="Link to this definition">#</a></dt>
 <dd><p>Whether this layer supports computing a mask using <cite>compute_mask</cite>.</p>
 </dd></dl>
 
@@ -1251,33 +1260,33 @@ These are all elements of state of the layer.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.trainable">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.trainable" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">trainable</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.trainable" title="Link to this definition">#</a></dt>
 <dd><p>Settable boolean, whether this layer should be trainable or not.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.trainable_variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable_variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.trainable_variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">trainable_variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.trainable_variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all trainable layer state.</p>
 <p>This is equivalent to <cite>layer.trainable_weights</cite>.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.trainable_weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable_weights</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.trainable_weights" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">trainable_weights</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.trainable_weights" title="Link to this definition">#</a></dt>
 <dd><p>List of all trainable weight variables of the layer.</p>
 <p>These are the weights that get updated by the optimizer during training.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.variable_dtype">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variable_dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.variable_dtype" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">variable_dtype</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.variable_dtype" title="Link to this definition">#</a></dt>
 <dd><p>The dtype of the state (weights) of the layer.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.variables">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.variables" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">variables</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.variables" title="Link to this definition">#</a></dt>
 <dd><p>List of all layer state, including random seeds.</p>
 <p>This extends <cite>layer.weights</cite> to include all state used by the layer
 including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGenerator`s.</p>
@@ -1287,7 +1296,7 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
 
 <dl class="py property">
 <dt class="sig sig-object py" id="bayesflow.wrappers.mamba.mamba.Mamba.weights">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.weights" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#bayesflow.wrappers.mamba.mamba.Mamba.weights" title="Link to this definition">#</a></dt>
 <dd><p>List of all weight variables of the layer.</p>
 <p>Unlike, <cite>layer.variables</cite> this excludes metric state and random seeds.</p>
 </dd></dl>
@@ -1441,7 +1450,7 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
 
   <p class="copyright">
     
-      © Copyright 2023-2025, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
       <br/>
     
   </p>
@@ -1450,7 +1459,7 @@ including <a href="#id7"><span class="problematic" id="id8">`</span></a>SeedGene
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     <br/>
   </p>
 </div>

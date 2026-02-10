@@ -58,47 +58,59 @@ def prior3(a, b, c):
 
 Once we agree on an approach in the issue you opened, we can move ahead with the implementation.
 
-First, create a development environment with conda, or any other environment manager of your choice.
-
-```bash
-conda create -n bf python=3.11
-conda activate bf
-```
-
-Note: always use a clean environment dedicated for development of BayesFlow to avoid dependency issues.
-
 Most contributors will have to create and clone a fork of BayesFlow using the GitHub interface or the CLI:
 
 ```bash
 gh repo fork bayesflow-org/bayesflow --clone
-```
-
-Then, check out the development branch and install dependencies:
-
-```bash
 cd bayesflow
 git checkout dev
-conda install pip
-pip install -e .[dev,docs,test]
+```
+
+Then, create a development environment with uv, or any other environment manager of your choice.
+We recommend installing the optional `all` dependencies, which include packages for testing and documentation generation.
+Don't forget to also install `pre-commit` hooks to ensure code quality and consistency.
+**Your PR will likely not pass checks if you skip this step.**
+
+```bash
+uv venv --python 3.12
+source .venv/bin/activate
+uv sync --extra all
 pre-commit install
 ```
 
+Note: always use a clean environment dedicated for development of BayesFlow to avoid dependency issues.
+
 Finally, install at least one backend of your choice.
-At the moment of writing this, to install all three backends on a machine supporting CUDA 12.6, we would use:
+At the moment of writing this, to install all three backends with CUDA support, run:
 
 ```bash
-pip install -U jax[cuda12]
-pip install -U tensorflow[and-cuda]
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+uv pip install -U jax[cuda12] torch torchvision tensorflow[and-cuda]
 ```
 
-You can set an environment variable to choose the default backend. We recommend defaulting to jax:
+Note that if you install multiple backends, BayesFlow will try to pick them according to the order of preference
+`jax > torch > tensorflow` when you import it. To test your code under a specific backend, set the environment variable
+`KERAS_BACKEND` to either `jax`, `torch`, or `tensorflow` before importing BayesFlow:
+
+```python
+import os
+os.environ["KERAS_BACKEND"] = "torch"  # or jax, or tensorflow
+import bayesflow as bf
+```
+
+You can also set the environment variable in your terminal session before running your code:
 
 ```bash
-conda env config vars set KERAS_BACKEND=jax
+KERAS_BACKEND=torch python my_script.py
 ```
 
-Note that you will have to re-activate the environment for the changes to take effect.
+or export it for the whole session:
+
+```bash
+export KERAS_BACKEND=tensorflow  # or jax, or torch
+```
+
+You can also add this line to your `.bashrc` file (or equivalent) to make it permanent,
+but be aware that this will affect all your BayesFlow code until you change it again.
 
 ### 3. Implement your changes
 
@@ -157,13 +169,6 @@ z = keras.ops.convert_to_numpy(x)
 
 The documentation uses [sphinx](https://www.sphinx-doc.org/) and relies on [numpy style docstrings](https://numpydoc.readthedocs.io/en/latest/format.html) in classes and functions.
 
-If you haven't done so earlier, run the following command to install all necessary packages for setting up
-documentation generation:
-
-```
-pip install .[docs]
-```
-
 The overall *structure* of the documentation is manually designed, but the API documentation is auto-generated.
 New top-level modules (i.e., `bayesflow.mynewmodule`) have to be manually added to the list in `docsrc/source/api/bayesflow.rst` to be included.
 
@@ -201,7 +206,7 @@ Note that undocumented changes will likely be rejected.
 
 ### 5. Create a pull request
 
-Once your changes are ready, create a pull request to the `dev` branch using the GitHub interface.
+Once your changes are ready, create a pull request to the `dev` branch using the GitHub web interface, CLI, or tool of your choice.
 Make sure to reference the issue you opened in step 1. If no issue exists, either open one first or follow the
 issue guidelines for the pull request description.
 

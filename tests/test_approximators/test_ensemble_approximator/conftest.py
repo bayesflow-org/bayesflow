@@ -3,7 +3,16 @@ from tests.utils import check_combination_simulator_adapter
 
 
 @pytest.fixture()
-def train_dataset_for_ensemble(batch_size, adapter, simulator):
+def ensemble_approximator_continuous_and_point(continuous_approximator, point_approximator_without_parametric_score):
+    from bayesflow import EnsembleApproximator
+
+    return EnsembleApproximator(
+        dict(cont_approx=continuous_approximator, point_approx=point_approximator_without_parametric_score)
+    )
+
+
+@pytest.fixture()
+def train_dataset_for_ensemble(batch_size, adapter, simulator, ensemble_approximator_continuous_and_point):
     check_combination_simulator_adapter(simulator, adapter)
 
     from bayesflow import OfflineDataset, EnsembleDataset
@@ -12,16 +21,7 @@ def train_dataset_for_ensemble(batch_size, adapter, simulator):
     data = simulator.sample((num_batches * batch_size,))
     return EnsembleDataset(
         OfflineDataset(data=data, adapter=adapter, batch_size=batch_size, workers=4, max_queue_size=num_batches),
-        ensemble_size=2,
-    )
-
-
-@pytest.fixture()
-def ensemble_approximator_continuous_and_point(continuous_approximator, point_approximator_without_parametric_score):
-    from bayesflow import EnsembleApproximator
-
-    return EnsembleApproximator(
-        dict(cont_approx=continuous_approximator, point_approx=point_approximator_without_parametric_score)
+        member_names=ensemble_approximator_continuous_and_point.approximators.keys(),
     )
 
 

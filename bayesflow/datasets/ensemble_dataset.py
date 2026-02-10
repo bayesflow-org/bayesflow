@@ -1,5 +1,7 @@
 import keras
 
+from collections.abc import Sequence
+
 from .ensemble_online_dataset import EnsembleOnlineDataset
 from .ensemble_indexed_dataset import EnsembleIndexedDataset
 
@@ -10,10 +12,10 @@ class EnsembleDataset(keras.utils.PyDataset):
 
     This dataset class is the recommended entry point for training ensembles.
     The wrapped dataset should meet the requirements of any single approximator in
-    the :class:`~bayesflow.approximators.EnsembleApproximator`. It works with
+    the :class:`~bayesflow.approximators.EnsembleApproximator`. `EnsembleDataset` supports
     :class:`~bayesflow.datasets.OnlineDataset`, :class:`~bayesflow.datasets.OfflineDataset`,
-    and :class:`~bayesflow.datasets.DiskDataset` and returns batches whose array entries
-    have shape ``(batch, ensemble, ...)``.
+    and :class:`~bayesflow.datasets.DiskDataset` and returns a key-value pair for each
+    ensemble member, containing output of the same structure as the wrapped dataset.
 
     The wrapper controls how much data is shared between ensemble members through the
     ``data_reuse`` parameter:
@@ -42,8 +44,8 @@ class EnsembleDataset(keras.utils.PyDataset):
     ----------
     dataset : keras.utils.PyDataset
         A BayesFlow dataset (OnlineDataset, OfflineDataset, DiskDataset).
-    ensemble_size : int
-        Number of ensemble members.
+    member_names: Sequence[str]
+        Names of ensemble members, used as dictionary keys.
     data_reuse : float, default=1.0
         Degree of independence between ensemble members in ``[0, 1]``.
         See Notes for how it is applied for different dataset types.
@@ -52,7 +54,7 @@ class EnsembleDataset(keras.utils.PyDataset):
     def __init__(
         self,
         dataset: keras.utils.PyDataset,
-        ensemble_size: int,
+        member_names: Sequence[str],
         data_reuse: float = 1.0,
         **kwargs,
     ):
@@ -62,13 +64,13 @@ class EnsembleDataset(keras.utils.PyDataset):
         if hasattr(dataset, "simulator") and hasattr(dataset, "num_batches"):
             self._wrapped = EnsembleOnlineDataset(
                 dataset,
-                ensemble_size=ensemble_size,
+                member_names=member_names,
                 data_reuse=data_reuse,
             )
         elif hasattr(dataset, "get_batch_by_sample_indices") and hasattr(dataset, "num_samples"):
             self._wrapped = EnsembleIndexedDataset(
                 dataset,
-                ensemble_size=ensemble_size,
+                member_names=member_names,
                 data_reuse=data_reuse,
             )
         else:
@@ -85,7 +87,7 @@ class EnsembleDataset(keras.utils.PyDataset):
     def __len__(self) -> int:
         return len(self._wrapped)
 
-    def __getitem__(self, item: int) -> dict[str, object]:
+    def __getitem__(self, item: int) -> dict[str, dict[str, object]]:
         return self._wrapped[item]
 
     def on_epoch_end(self):

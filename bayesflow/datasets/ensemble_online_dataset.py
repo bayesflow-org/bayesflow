@@ -1,4 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
+from typing import Any
 
 import math
 
@@ -14,14 +15,14 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
     def __init__(
         self,
         dataset: keras.utils.PyDataset,
-        ensemble_size: int,
+        member_names: Sequence[str],
         data_reuse: float = 1.0,
         **kwargs,
     ):
         super().__init__(**kwargs)
 
-        if ensemble_size < 1:
-            raise ValueError("EnsembleOnlineDataset: ensemble_size must be >= 1.")
+        if len(member_names) < 2:
+            raise ValueError("EnsembleOnlineDataset: len(member_names) must be >= 2.")
         if not (0.0 <= data_reuse <= 1.0):
             raise ValueError("EnsembleOnlineDataset: data_reuse must be in [0, 1].")
 
@@ -30,12 +31,13 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
                 raise TypeError(f"EnsembleOnlineDataset: wrapped dataset must expose `{attr}`.")
 
         self.dataset = dataset
-        self.ensemble_size = ensemble_size
+        self.member_names = list(member_names)
+        self.ensemble_size = len(self.member_names)
         self.data_reuse = data_reuse
         self.batch_size = int(dataset.batch_size)
         self._num_batches = dataset.num_batches
 
-        self.reduction_factor = 1 / (data_reuse + (1 - data_reuse) * ensemble_size)
+        self.reduction_factor = 1 / (data_reuse + (1 - data_reuse) * self.ensemble_size)
         self.pool_size = int(math.ceil(self.batch_size / self.reduction_factor))
 
         logging.info(
@@ -53,8 +55,8 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
     def __len__(self) -> int:
         return self.num_batches
 
-    def __getitem__(self, item: int) -> dict[str, object]:
-        if self.data_reuse == 1.0 or self.ensemble_size == 1:
+    def __getitem__(self, item: int) -> dict[str, dict[str, Any]]:
+        if self.data_reuse == 1.0:
             batch = self.dataset.simulator.sample(self.batch_size)
             batch = self._postprocess(batch)
             return self._replicate(batch)
@@ -66,19 +68,27 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
         starts = ring_starts(self.pool_size, self.ensemble_size)
         idx2d = ring_window_indices(self.pool_size, self.batch_size, starts)
 
-        member_batches = []
-        for m in range(self.ensemble_size):
-            member_batches.append(self._take(pool, idx2d[m]))
+        out = {}
+        for k, name in enumerate(self.member_names):
+            out[name] = self._take(pool, idx2d[k])
 
-        return self._stack(member_batches)
+        return self._flip_nested_dict(out)
 
-    def _postprocess(self, batch: dict[str, object]) -> dict[str, object]:
+    def _flip_nested_dict(self, d: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        flipped = {}
+        for key, val in d.items():
+            for subkey, subval in val.items():
+                flipped.setdefault(subkey, {})
+                flipped[subkey][key] = subval
+        return flipped
+
+    def _postprocess(self, batch: dict[str, Any]) -> dict[str, Any]:
         batch = self._apply_augmentations(batch)
         if self.dataset.adapter is not None:
             batch = self.dataset.adapter(batch)
         return batch
 
-    def _apply_augmentations(self, batch: dict[str, object]) -> dict[str, object]:
+    def _apply_augmentations(self, batch: dict[str, Any]) -> dict[str, Any]:
         match self.dataset.augmentations:
             case None:
                 return batch
@@ -100,26 +110,16 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
                 raise RuntimeError(f"Could not apply augmentations of type {type(self.dataset.augmentations)}.")
 
     @staticmethod
-    def _take(batch: Mapping[str, any], idx: np.ndarray) -> dict[str, object]:
+    def _take(batch: Mapping[str, Any], idx: np.ndarray) -> dict[str, Any]:
         out = {}
         for k, v in batch.items():
             out[k] = np.take(v, idx, axis=0) if isinstance(v, np.ndarray) else v
         return out
 
-    @staticmethod
-    def _stack(member_batches: Sequence[Mapping[str, object]]) -> dict[str, object]:
+    def _replicate(self, batch: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
         out = {}
-        keys = member_batches[0].keys()
-        for k in keys:
-            v0 = member_batches[0][k]
-            out[k] = np.stack([mb[k] for mb in member_batches], axis=1) if isinstance(v0, np.ndarray) else v0
-        return out
-
-    def _replicate(self, batch: Mapping[str, any]) -> dict[str, object]:
-        out = {}
-        for k, v in batch.items():
-            if isinstance(v, np.ndarray):
-                out[k] = np.repeat(np.expand_dims(v, 1), self.ensemble_size, axis=1)
-            else:
-                out[k] = v
+        for key, value in batch.items():
+            out[key] = {}
+            for name in self.member_names:
+                out[key][name] = value
         return out

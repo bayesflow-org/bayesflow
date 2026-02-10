@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 import numpy as np
 from scipy.special import logsumexp
@@ -8,6 +9,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.datasets import EnsembleDataset
 
 from .approximator import Approximator
 
@@ -26,9 +28,8 @@ class EnsembleApproximator(Approximator):
         # The attribute would not be necessary if the dataset wouldn't need an adapter.
         return next(iter(self.approximators.values())).adapter
 
-    @classmethod
-    def build_dataset(
-        cls,
+    def build_dataset(  # type: ignore[override]
+        self,
         *,
         batch_size: int = "auto",
         num_batches: int,
@@ -39,38 +40,40 @@ class EnsembleApproximator(Approximator):
         use_multiprocessing: bool = False,
         max_queue_size: int = 32,
         **kwargs,
-    ):
-        raise NotImplementedError("Automatic construction of an EnsembleDataset from a simulator is not yet supported.")
+    ) -> EnsembleDataset:
+        # Build the underlying OnlineDataset using the base implementation.
+        base_ds = super().build_dataset(
+            batch_size=batch_size,
+            num_batches=num_batches,
+            adapter=adapter,
+            memory_budget=memory_budget,
+            simulator=simulator,
+            workers=workers,
+            use_multiprocessing=use_multiprocessing,
+            max_queue_size=max_queue_size,
+            **kwargs,
+        )
 
-    # the lines below WOULD take care of automatic EnsembleDataset construction, were this not a class method.
-    # len(self.approximators) cannot be called since self is not availalbe.
-    # ) -> EnsembleDataset:
-    #     # Build the underlying OnlineDataset using the base implementation.
-    #     base_ds = super().build_dataset(
-    #         batch_size=batch_size,
-    #         num_batches=num_batches,
-    #         adapter=adapter,
-    #         memory_budget=memory_budget,
-    #         simulator=simulator,
-    #         workers=workers,
-    #         use_multiprocessing=use_multiprocessing,
-    #         max_queue_size=max_queue_size,
-    #         **kwargs,
-    #     )
-    #
-    #     # Wrap it into an EnsembleDataset
-    #     return EnsembleDataset(base_ds, ensemble_size=len(self.approximators), **kwargs)
+        # Wrap it into an EnsembleDataset
+        return EnsembleDataset(base_ds, member_names=list(self.approximators.keys()), **kwargs)
 
-    def build_from_data(self, adapted_data: dict[str, any]):
+    def build_from_data(self, adapted_data: dict[str, Any]):
         data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
-        # Remove the ensemble dimension from data_shapes. This expects data_shapes are the shapes of a
-        # batch of training data, where the second axis corresponds to different approximators.
-        data_shapes = keras.tree.map_shape_structure(lambda shape: shape[:1] + shape[2:], data_shapes)
         self.build(data_shapes)
 
-    def build(self, input_shape: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        for approximator in self.approximators.values():
-            approximator.build(input_shape)
+    def build(self, data_shapes: dict[str, dict[str, tuple[int]] | dict[str, dict[str, dict]]]) -> None:
+        for approx_name, approximator in self.approximators.items():
+            _data_shape = {}
+            for var_name, variable in data_shapes.items():  # variable type
+                # If data_shapes has a nested ensemble level, select shapes with approx_name.
+                # Note, summary_variables might be dict, if a FusionNetwork is used.
+                # Thus, we further check whether the approx_name is in the keys.
+                if isinstance(variable, dict) and approx_name in variable.keys():
+                    _data_shape[var_name] = variable[approx_name]
+                else:
+                    _data_shape[var_name] = variable
+
+            approximator.build(_data_shape)
 
         self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
         self.has_distribution = len(self.distribution_keys) > 0
@@ -137,37 +140,26 @@ class EnsembleApproximator(Approximator):
 
     def compute_metrics(
         self,
-        inference_variables: Tensor,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        sample_weight: Tensor = None,
+        inference_variables: dict[str, Tensor] | Tensor,
+        inference_conditions: dict[str, Tensor] | Tensor | None = None,
+        summary_variables: dict[str, Tensor] | Tensor | None = None,
+        sample_weight: dict[str, Tensor] | Tensor | None = None,
         stage: str = "training",
     ) -> dict[str, dict[str, Tensor]]:
         metrics = {}
 
-        # Define the variable slices as None (default) or respective input
-        _inference_variables = inference_variables
-        _inference_conditions = inference_conditions
-        _summary_variables = summary_variables
-        _sample_weight = sample_weight
+        def select(value: dict[str, Tensor] | Tensor | None, name: str) -> Tensor | None:
+            "Helper to select ensemble member data (during training) or pass through while respecting None."
+            if value is None:
+                return None
+            return value[name] if stage == "training" else value
 
-        for i, (approx_name, approximator) in enumerate(self.approximators.items()):
-            # During training each approximator receives its own separate slice from an EnsembleDataset
-            if stage == "training":
-                # Pick out the correct slice for each ensemble member
-                _inference_variables = inference_variables[:, i]
-                if inference_conditions is not None:
-                    _inference_conditions = inference_conditions[:, i]
-                if summary_variables is not None:
-                    _summary_variables = keras.tree.map_structure(lambda v: v[:, i], summary_variables)
-                if sample_weight is not None:
-                    _sample_weight = sample_weight[:, i]
-
-            metrics[approx_name] = approximator.compute_metrics(
-                inference_variables=_inference_variables,
-                inference_conditions=_inference_conditions,
-                summary_variables=_summary_variables,
-                sample_weight=_sample_weight,
+        for name, approximator in self.approximators.items():
+            metrics[name] = approximator.compute_metrics(
+                inference_variables=select(inference_variables, name),
+                inference_conditions=select(inference_conditions, name),
+                summary_variables=select(summary_variables, name),
+                sample_weight=select(sample_weight, name),
                 stage=stage,
             )
 
@@ -397,12 +389,15 @@ class EnsembleApproximator(Approximator):
         member_weights = {k: v / sum for k, v in member_weights.items()}
         return member_weights
 
-    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
+    def _batch_size_from_data(self, data: Mapping[str, Mapping[str, Any]]) -> int:
         """
         Fetches the current batch size from an input dictionary. Can only be used during training when
         inference variables as present.
         """
-        return keras.ops.shape(data["inference_variables"])[0]
+        if isinstance(data["inference_variables"], dict):
+            return keras.ops.shape(data["inference_variables"][list(self.approximators.keys())[0]])[0]
+        else:
+            return keras.ops.shape(data["inference_variables"])[0]
 
     def get_config(self):
         base_config = super().get_config()

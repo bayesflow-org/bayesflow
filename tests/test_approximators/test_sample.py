@@ -12,7 +12,7 @@ def test_approximator_sample(approximator, simulator, batch_size, adapter):
 
     train_dataset = OnlineDataset(simulator=simulator, adapter=adapter, num_batches=4, batch_size=batch_size)
     if isinstance(approximator, EnsembleApproximator):
-        train_dataset = EnsembleDataset(train_dataset, ensemble_size=len(approximator.approximators))
+        train_dataset = EnsembleDataset(train_dataset, member_names=list(approximator.approximators.keys()))
     batch = train_dataset[0]
 
     print(keras.tree.map_structure(keras.ops.shape, batch))

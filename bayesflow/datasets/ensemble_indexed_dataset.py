@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Sequence
 
 import math
 import numpy as np
@@ -13,14 +13,14 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
     def __init__(
         self,
         dataset: keras.utils.PyDataset,
-        ensemble_size: int,
+        member_names: Sequence[str],
         data_reuse: float = 1.0,
         **kwargs,
     ):
         super().__init__(**kwargs)
 
-        if ensemble_size < 1:
-            raise ValueError("EnsembleIndexedDataset: ensemble_size must be >= 1.")
+        if len(member_names) < 2:
+            raise ValueError("EnsembleIndexedDataset: len(member_names) must be >= 2.")
         if not (0.0 <= data_reuse <= 1.0):
             raise ValueError("EnsembleIndexedDataset: data_reuse must be in [0, 1].")
 
@@ -29,12 +29,13 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
                 raise TypeError(f"EnsembleIndexedDataset: wrapped dataset must expose `{attr}`.")
 
         self.dataset = dataset
-        self.ensemble_size = int(ensemble_size)
+        self.member_names = list(member_names)
+        self.ensemble_size = len(member_names)
         self.data_reuse = float(data_reuse)
         self.batch_size = int(dataset.batch_size)
         self.num_samples = int(dataset.num_samples)
 
-        self.reduction_factor = 1 / (data_reuse + (1 - data_reuse) * ensemble_size)
+        self.reduction_factor = 1 / (data_reuse + (1 - data_reuse) * self.ensemble_size)
         self.window_size = int(math.ceil(self.num_samples * self.reduction_factor))
         self.steps_per_epoch = int(math.ceil(self.window_size / self.batch_size))
 
@@ -43,7 +44,7 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
 
         starts = ring_starts(self.num_samples, self.ensemble_size)
         idx2d = ring_window_indices(self.num_samples, self.window_size, starts)  # (E, W)
-        self.member_indices = [pool[idx2d[m]].copy() for m in range(self.ensemble_size)]
+        self.member_indices = {name: pool[idx2d[k]].copy() for k, name in enumerate(self.member_names)}
 
         # initial shuffle of member subdatasets (member_indices)
         self.on_epoch_end()
@@ -61,38 +62,34 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
         return self.steps_per_epoch
 
     def on_epoch_end(self):
-        if self.data_reuse == 1.0 or self.ensemble_size == 1:
-            np.random.shuffle(self.member_indices[0])
-            for m in range(1, self.ensemble_size):
-                self.member_indices[m] = self.member_indices[0]
+        if self.data_reuse == 1.0:
+            np.random.shuffle(self.member_indices[self.member_names[0]])
+            for name in self.member_names[1:]:
+                self.member_indices[name] = self.member_indices[self.member_names[0]]
             return
 
         # otherwise independent shuffle per member
-        for m in range(self.ensemble_size):
-            np.random.shuffle(self.member_indices[m])
+        for name in self.member_names:
+            np.random.shuffle(self.member_indices[name])
 
-    def __getitem__(self, step: int) -> dict[str, object]:
+    def __getitem__(self, step: int) -> dict[str, dict[str, object]]:
         if not 0 <= step < self.steps_per_epoch:
             raise IndexError(f"Index {step} is out of bounds for dataset with {self.steps_per_epoch} steps.")
 
         start = step * self.batch_size
         stop = min((step + 1) * self.batch_size, self.window_size)  # allow shorter last batch
 
-        member_batches = []
-        for m in range(self.ensemble_size):
-            idx = self.member_indices[m][start:stop]
-            member_batches.append(self.dataset.get_batch_by_sample_indices(idx))
+        out: dict[str, dict[str, object]] = {}
+        for name in self.member_names:
+            idx = self.member_indices[name][start:stop]
+            out[name] = self.dataset.get_batch_by_sample_indices(idx)
 
-        return self._stack_member_batches(member_batches)
+        return self._flip_nested_dict(out)
 
-    def _stack_member_batches(self, member_batches: list[Mapping[str, object]]) -> dict[str, object]:
-        out: dict[str, object] = {}
-        keys = member_batches[0].keys()
-
-        for key in keys:
-            first = member_batches[0][key]
-            if isinstance(first, np.ndarray):
-                out[key] = np.stack([mb[key] for mb in member_batches], axis=1)  # (batch, ensemble, ...)
-            else:
-                out[key] = first
-        return out
+    def _flip_nested_dict(self, d: dict[str, dict[str, object]]) -> dict[str, dict[str, object]]:
+        flipped = {}
+        for key, val in d.items():
+            for subkey, subval in val.items():
+                flipped.setdefault(subkey, {})
+                flipped[subkey][key] = subval
+        return flipped

@@ -24,6 +24,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10"] # we usually only need to test the oldest python version
         backend: ["jax", "tensorflow", "torch"]
+        optimization: ["", "-O", "-OO"]
 
     runs-on: ${{ matrix.os }}
 
@@ -68,7 +69,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          pytest -x -m "not slow"
+          python ${{ matrix.optimization }} -m pytest tests/ --tb=short -v
 
       - name: Run Slow Tests
         # Run slow tests, such as full integration notebooks:

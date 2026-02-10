@@ -902,6 +902,8 @@ class ContinuousApproximator(Approximator):
         compute_prior_score: Callable[[Tensor], Tensor],
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         sample_shape: Literal["infer"] | Sequence[int] = "infer",
         **kwargs,
     ) -> Tensor:
@@ -923,7 +925,8 @@ class ContinuousApproximator(Approximator):
             summary_variables = keras.ops.reshape(summary_variables, (batch_size * n_compositional, *condition_dims))
 
             summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
             )
             condition_out_dims = keras.ops.shape(summary_outputs)[1:]
             summary_outputs = keras.ops.reshape(summary_outputs, (batch_size, n_compositional, *condition_out_dims))

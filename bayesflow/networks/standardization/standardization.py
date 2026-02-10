@@ -120,6 +120,8 @@ class Standardization(keras.Layer):
                     case "right_side_scale_inverse":
                         # x_ij = x_ij' / sigma_j
                         out = val / std
+                    case "identity":
+                        out = val
                     case _:
                         out = val
 

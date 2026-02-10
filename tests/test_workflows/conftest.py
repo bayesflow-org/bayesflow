@@ -25,7 +25,7 @@ def inference_network(request):
     elif request.param == "consistency_model":
         from bayesflow.networks import ConsistencyModel
 
-        return ConsistencyModel(subnet_kwargs=dict(widths=(16, 16)), total_steps=4)
+        return ConsistencyModel(subnet_kwargs=dict(widths=(16, 16)), total_steps=10)
 
 
 @pytest.fixture(params=["time_series_transformer", "fusion_transformer", "time_series_network", "custom"])

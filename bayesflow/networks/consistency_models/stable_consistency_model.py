@@ -99,9 +99,12 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         self.sigma = sigma
-        self.seed_generator = keras.random.SeedGenerator()
+        self.p_mean = float(kwargs.get("p_mean", -1.0))
+        self.p_std = float(kwargs.get("p_std", 1.6))
+        self.c = float(kwargs.get("c", 0.1))
         self.drop_cond_prob = drop_cond_prob
         self.unconditional_mode = False
+        self.seed_generator = keras.random.SeedGenerator()
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -114,6 +117,9 @@ class StableConsistencyModel(InferenceNetwork):
         config = {
             "subnet": self.subnet,
             "sigma": self.sigma,
+            "p_mean": self.p_mean,
+            "p_std": self.p_std,
+            "c": self.c,
             "drop_cond_prob": self.drop_cond_prob,
         }
 
@@ -246,19 +252,13 @@ class StableConsistencyModel(InferenceNetwork):
 
             conditions = mask_conditions * conditions
 
-        # training parameters
-        p_mean = -1.0
-        p_std = 1.6
-
-        c = 0.1
-
         # generate noise vector
         z = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.sigma
 
         # sample time
         tau = (
-            keras.random.normal(keras.ops.shape(x)[:1], dtype=keras.ops.dtype(x), seed=self.seed_generator) * p_std
-            + p_mean
+            keras.random.normal(keras.ops.shape(x)[:1], dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.p_std
+            + self.p_mean
         )
         t_ = ops.arctan(ops.exp(tau) / self.sigma)
         t = expand_right_as(t_, x)
@@ -295,7 +295,7 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         # apply normalization to stabilize training
-        g = g / (ops.norm(g, axis=-1, keepdims=True) + c)
+        g = g / (ops.norm(g, axis=-1, keepdims=True) + self.c)
 
         # compute adaptive weights and calculate loss
         w = self.weight_fn_projector(self.weight_fn(expand_right_to(t_, 2)))

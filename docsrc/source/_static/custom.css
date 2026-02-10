@@ -20,3 +20,8 @@
 .bd-sidebar-primary div#rtd-footer-container {
   margin: 0;
 }
+
+/* Ensure images appear with a transparent background */
+img[src$=".png"] {
+  background-color: transparent !important;
+}

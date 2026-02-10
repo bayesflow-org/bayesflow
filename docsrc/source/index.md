@@ -1,25 +1,19 @@
 # BayesFlow
 
-BayesFlow is a Python library for simulation-based **Amortized Bayesian Inference** with neural networks.
-It provides users and researchers with:
+BayesFlow is a Python library for efficient Bayesian inference with deep learning.
+It provides users with:
 
-- A user-friendly API for rapid Bayesian workflows
-- A rich collection of neural network architectures
+- A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2409.04332)
+- A rich collection of [neural network architectures](https://arxiv.org/abs/2512.20685)
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
-
-BayesFlow (version 2+) is designed to be a flexible and efficient tool that enables rapid statistical inference
-fueled by continuous progress in generative AI and Bayesian inference.
-
-To access the documentation for [BayesFlow version 1.x](https://github.com/bayesflow-org/bayesflow/tree/stable-legacy), select `stable-legacy` in the version picker above.
-For advice on the migration from version 1.x to version 2+, please refer to the [README](https://github.com/bayesflow-org/bayesflow/blob/main/README.md).
 
 ## Conceptual Overview
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="_static/bayesflow_landing_dark.jpg">
-  <source media="(prefers-color-scheme: light)" srcset="_static/bayesflow_landing_light.jpg">
-        <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Choose your backend: BayesFlow is based on Keras, so you can choose PyTorch, TensorFlow or JAX. 2. Define your simulator: You specify your simulator in Python, and use it to generate simulated data. 3. Choose your algorithm: You define a generative neural network that you can use for estimation after training." src="_static/bayesflow_landing_dark.jpg">
+  <source media="(prefers-color-scheme: dark)" srcset="_static/bayesflow_landing_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="_static/bayesflow_landing_light.png">
+  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the gold-standard toolkit for simulation intelligence." src="_static/bayesflow_landing_dark.png">
 </picture>
 </div>
 
@@ -28,47 +22,21 @@ neural networks for parameter estimation, model comparison, and model validation
 when working with intractable simulators whose behavior as a whole is too
 complex to be described analytically.
 
-## Getting Started
-
-Using the high-level interface is easy, as demonstrated by the minimal working example below:
-
-```python
-import bayesflow as bf
-
-workflow = bf.BasicWorkflow(
-    inference_network=bf.networks.FlowMatching(),
-    summary_network=bf.networks.TimeSeriesTransformer(),
-    inference_variables=["parameters"],
-    summary_variables=["observables"],
-    simulator=bf.simulators.SIR()
-)
-
-history = workflow.fit_online(epochs=50, batch_size=32, num_batches_per_epoch=500)
-
-diagnostics = workflow.plot_default_diagnostics(test_data=300)
-```
-
-For an in-depth exposition, check out our walkthrough notebooks in the {doc}`Examples <../examples>` section.
-
-More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
-
 ## Install
 
-```{eval-rst}
-.. tab-set::
+We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
 
-    .. tab-item:: pip
-
-        .. code-block:: bash
-
-            pip install "bayesflow>=2.0"
-
-    .. tab-item:: source
-
-        .. code-block:: bash
-
-            pip install git+https://github.com/bayesflow-org/bayesflow.git@dev
+```bash
+pip install "bayesflow>=2.0"
 ```
+
+If you want the latest features, you can install from source:
+
+```bash
+pip install git+https://github.com/bayesflow-org/bayesflow.git@dev
+```
+
+If you encounter problems with this or require more control, please refer to the instructions to install from source below.
 
 ### Backend
 
@@ -81,47 +49,74 @@ Note that BayesFlow **will not run** without a backend.
 
 If you don't know which backend to use, we recommend JAX as it is currently the fastest backend.
 
-Once installed, [set the backend environment variable as required by keras](https://keras.io/getting_started/#configuring-your-backend) to one of the following:
+As of version ``2.0.7``, the backend will be set automatically. If you have multiple backends, you can manually [set the backend environment variable as described by keras](https://keras.io/getting_started/#configuring-your-backend).
+For example, inside your Python script write:
 
-- `KERAS_BACKEND=jax`
-- `KERAS_BACKEND=torch`
-- `KERAS_BACKEND=tensorflow`
-
-For example, to set the backend to `jax`, you can use one of the following:
-
-```{eval-rst}
-.. tab-set::
-
-    .. tab-item:: Python
-
-        .. code-block:: python
-
-            import os
-            os.environ["KERAS_BACKEND"] = "jax"
-            import bayesflow
-
-    .. tab-item:: Conda
-
-        .. code-block:: bash
-
-            conda env config vars set KERAS_BACKEND=jax
-
-    .. tab-item:: Shell
-
-        .. code-block:: bash
-
-            export KERAS_BACKEND=jax
+```python
+import os
+os.environ["KERAS_BACKEND"] = "jax"
+import bayesflow
 ```
 
-**Caution:** Some development environments (e.g., VSCode or PyCharm) can silently overwrite environment variables. If you have set your backend as an environment variable and you still get keras-related import errors when loading BayesFlow, these IDE shenanigans might be the culprit. Try setting the keras backend in your Python script via `import os; os.environ["KERAS_BACKEND"] = "<YOUR-BACKEND>"`.
+If you use conda, you can alternatively set this individually for each environment in your terminal. For example:
+
+```bash
+conda env config vars set KERAS_BACKEND=jax
+```
+
+Or just plainly set the environment variable in your shell:
+
+```bash
+export KERAS_BACKEND=jax
+```
+
+## Getting Started
+
+Using the high-level interface is easy, as demonstrated by the minimal working example below:
+
+```python
+import bayesflow as bf
+
+workflow = bf.BasicWorkflow(
+    inference_network=bf.networks.FlowMatching(),
+    inference_variables=["parameters"],
+    inference_conditions=["observables"],
+    simulator=bf.simulators.SIR()
+)
+
+history = workflow.fit_online(epochs=20, batch_size=32, num_batches_per_epoch=200)
+
+diagnostics = workflow.plot_default_diagnostics(test_data=300)
+```
+
+For an in-depth exposition, check out our expanding list of resources below.
+
+### Books
+
+Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bayesmodels.com/) by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
+
+### Tutorial notebooks
+
+1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
+2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
+3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
+4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation.ipynb)
+5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
+6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
+7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
+8. [Likelihood estimation](examples/Likelihood_Estimation.ipynb)
+9. [Multimodal data](examples/Multimodal_Data.ipynb)
+10. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
+
+More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 
 ## Contributing
 
-To contribute to BayesFlow, please check out the [git repository](https://github.com/bayesflow-org/bayesflow)
+To contribute to BayesFlow, please check out the [git repository](https://github.com/bayesflow-org/bayesflow).
 
-### Reporting Issues
+## Reporting Issues
 
-If you encounter any issues, please don't hesitate to open an issue here on [Github](https://github.com/bayesflow-org/bayesflow/issues) or ask questions on our [Discourse Forums](https://discuss.bayesflow.org/).
+If you encounter any issues, please don't hesitate to open an issue on [Github](https://github.com/bayesflow-org/bayesflow/issues) or ask questions on our [Discourse Forums](https://discuss.bayesflow.org/).
 
 ## Getting Help
 
@@ -217,20 +212,59 @@ while the old version was based on TensorFlow.
 -------------
 
 **Question:**
+Should I switch to BayesFlow 2.0+ now? Are there features that are still missing?
+
+**Answer:**
+In general, we recommend to switch, as the new version is easier to use and will continue
+to receive improvements and new features. However, a few features are still missing, so you
+might want to wait until everything you need has been ported to BayesFlow 2.0+.
+
+Depending on your needs, you might not want to upgrade yet if one of the following applies:
+
+- You have an ongoing project that uses BayesFlow 1.x, and you do not want to allocate
+  time for migrating it to the new API.
+- You have already trained models in BayesFlow 1.x, that you do not want to re-train
+  with the new version. Loading models from version 1.x in version 2.0+ is not supported.
+- You require a feature that was not ported to BayesFlow 2.0+ yet. To our knowledge,
+  this applies to:
+  * Two-level/Hierarchical models (planned for version 2.1): `TwoLevelGenerativeModel`, `TwoLevelPrior`.
+  * Sensitivity analysis (partially discontinued): functionality from the `bayesflow.sensitivity` module. This is still
+    possible, but we do no longer offer a special module for it. We plan to add a tutorial on this, see [#455](https://github.com/bayesflow-org/bayesflow/issues/455).
+  * MCMC (discontinued): The `bayesflow.mcmc` module. We are considering other options
+    to enable the use of BayesFlow in an MCMC setting.
+  * Networks: `EvidentialNetwork`.
+  * Model misspecification detection: MMD test in the summary space (see [#384](https://github.com/bayesflow-org/bayesflow/issues/384)).
+
+If you encounter any functionality that is missing and not listed here, please let us
+know by opening an issue.
+
+-------------
+
+**Question:**
 I still need the old BayesFlow for some of my projects. How can I install it?
 
 **Answer:**
 You can find and install the old Bayesflow version via the `stable-legacy` branch on GitHub.
+The corresponding [documentation](https://bayesflow.org/stable-legacy/index.html) can be
+accessed by selecting the "stable-legacy" entry in the version picker of the documentation.
+
+You can also install the latest version of BayesFlow v1.x from PyPI using
+
+```
+pip install "bayesflow<2.0"
+```
 
 -------------
 
 ## Awesome Amortized Inference
 
-If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our [community-driven list](https://github.com/bayesflow-org/awesome-amortized-inference).
+If you are interested in a curated list of resources, including reviews, software, papers, and other resources related to amortized inference, feel free to explore our [community-driven list](https://github.com/bayesflow-org/awesome-amortized-inference). If you'd like a paper (by yourself or someone else) featured, please add it to the list with a pull request, an issue, or a message to the maintainers.
 
 ## Acknowledgments
 
-This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation, Project 528702768). The project is further supported by Germany's Excellence Strategy -- EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.
+This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) Projects 528702768 and 508399956. The project is further supported by Germany's Excellence Strategy -- EXC-2075 - 390740016 (Stuttgart Cluster of Excellence SimTech) and EXC-2181 - 390900948 (Heidelberg Cluster of Excellence STRUCTURES), the collaborative research cluster TRR 391 – 520388526, as well as the Informatics for Life initiative funded by the Klaus Tschira Foundation.
+
+BayesFlow is a [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects).
 
 The [scikit-learn](https://scikit-learn.org/) website was a great resource and inspration for this site and the API documentation. We thank the scikit-learn community for sharing their configurations, which allowed us to include many nice features into this site as well.
 

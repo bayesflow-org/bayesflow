@@ -4,11 +4,11 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable
 
-from .mab import MultiHeadAttentionBlock
+from .multihead_attention import MultiHeadAttention
 
 
 @serializable("bayesflow.networks")
-class InducedSetAttentionBlock(keras.Layer):
+class InducedSetAttention(keras.Layer):
     """Implements the ISAB block from [1] which represents learnable self-attention specifically
     designed to deal with large sets via a learnable set of "inducing points".
 
@@ -79,24 +79,21 @@ class InducedSetAttentionBlock(keras.Layer):
             use_bias=use_bias,
             layer_norm=layer_norm,
         )
-        self.mab0 = MultiHeadAttentionBlock(**mab_kwargs)
-        self.mab1 = MultiHeadAttentionBlock(**mab_kwargs)
+        self.mab0 = MultiHeadAttention(**mab_kwargs)
+        self.mab1 = MultiHeadAttention(**mab_kwargs)
 
-    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False) -> Tensor:
         """Performs the forward pass through the self-attention layer.
 
         Parameters
         ----------
-        input_set  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
+        x          : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
             Since this is self-attention, the input set is used
             as a query (Q), key (K), and value (V)
         training   : boolean, optional (default - True)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
-        **kwargs   : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
@@ -104,8 +101,8 @@ class InducedSetAttentionBlock(keras.Layer):
             Output of shape (batch_size, set_size, input_dim)
         """
 
-        batch_size = keras.ops.shape(input_set)[0]
+        batch_size = keras.ops.shape(x)[0]
         inducing_points_expanded = keras.ops.expand_dims(self.inducing_points, axis=0)
         inducing_points_tiled = keras.ops.tile(inducing_points_expanded, [batch_size, 1, 1])
-        h = self.mab0(inducing_points_tiled, input_set, training=training, **kwargs)
-        return self.mab1(input_set, h, training=training, **kwargs)
+        h = self.mab0(inducing_points_tiled, x, training=training)
+        return self.mab1(x, h, training=training)

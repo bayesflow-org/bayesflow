@@ -1,5 +1,4 @@
 import keras
-import keras.ops as ops
 
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
@@ -7,7 +6,7 @@ from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
-from .mab import MultiHeadAttentionBlock
+from .multihead_attention import MultiHeadAttention
 
 
 @serializable("bayesflow.networks")
@@ -72,7 +71,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
 
         super().__init__(**layer_kwargs(kwargs))
 
-        self.mab = MultiHeadAttentionBlock(
+        self.mab = MultiHeadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
             dropout=dropout,
@@ -97,21 +96,18 @@ class PoolingByMultiHeadAttention(keras.Layer):
             dropout=dropout,
         )
 
-    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False) -> Tensor:
         """Performs the forward pass through the PMA block.
 
         Parameters
         ----------
-        input_set  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
+        x  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
             Since this is self-attention, the input set is used
             as a query (Q), key (K), and value (V)
         training   : boolean, optional (default - True)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
-        **kwargs   : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
 
         Returns
         -------
@@ -119,12 +115,12 @@ class PoolingByMultiHeadAttention(keras.Layer):
             Output of shape (batch_size, num_seeds * summary_dim)
         """
 
-        set_x_transformed = self.feedforward(input_set, training=training)
-        batch_size = ops.shape(input_set)[0]
-        seed_vector_expanded = ops.expand_dims(self.seed_vector, axis=0)
-        seed_tiled = ops.tile(seed_vector_expanded, [batch_size, 1, 1])
-        summaries = self.mab(seed_tiled, set_x_transformed, training=training, **kwargs)
-        return ops.reshape(summaries, (ops.shape(summaries)[0], -1))
+        set_x_transformed = self.feedforward(x, training=training)
+        batch_size = keras.ops.shape(x)[0]
+        seed_vector_expanded = keras.ops.expand_dims(self.seed_vector, axis=0)
+        seed_tiled = keras.ops.tile(seed_vector_expanded, [batch_size, 1, 1])
+        summaries = self.mab(seed_tiled, set_x_transformed, training=training)
+        return keras.ops.reshape(summaries, (keras.ops.shape(summaries)[0], -1))
 
     @sanitize_input_shape
     def compute_output_shape(self, input_shape):

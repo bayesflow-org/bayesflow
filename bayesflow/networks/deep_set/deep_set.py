@@ -116,7 +116,7 @@ class DeepSet(SummaryNetwork):
 
         self.summary_dim = summary_dim
 
-    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False) -> Tensor:
         """
         Performs the forward pass of a hierarchical deep invariant transformation.
 
@@ -132,8 +132,6 @@ class DeepSet(SummaryNetwork):
             Input tensor representing a set or collection of elements to be transformed.
         training : bool, optional
             Whether the model is in training mode, affecting layers like dropout. Default is False.
-        **kwargs
-            Additional keyword arguments passed to the transformation layers.
 
         Returns
         -------

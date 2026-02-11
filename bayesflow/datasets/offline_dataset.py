@@ -6,6 +6,8 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.utils import logging
 
+from ._augmentations import apply_augmentations
+
 
 class OfflineDataset(keras.utils.PyDataset):
     """
@@ -129,33 +131,12 @@ class OfflineDataset(keras.utils.PyDataset):
             for key, value in self.data.items()
         }
 
-        batch = self._apply_augmentations(batch)
+        batch = apply_augmentations(batch, self.augmentations)
 
         if self.adapter is not None:
             batch = self.adapter(batch)
 
         return batch
-
-    def _apply_augmentations(self, batch: dict[str, object]) -> dict[str, object]:
-        match self.augmentations:
-            case None:
-                return batch
-
-            case Mapping() as aug:
-                for key, fn in aug.items():
-                    batch[key] = fn(batch[key])
-                return batch
-
-            case Sequence() as augs if not isinstance(augs, (str, bytes)):
-                for fn in augs:
-                    batch = fn(batch)
-                return batch
-
-            case Callable() as fn:
-                return fn(batch)
-
-            case _:
-                raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
     def __len__(self) -> int:
         return self.num_batches

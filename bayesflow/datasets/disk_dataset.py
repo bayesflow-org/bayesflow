@@ -9,6 +9,8 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.utils import tree_stack, pickle_load
 
+from ._augmentations import apply_augmentations
+
 
 class DiskDataset(keras.utils.PyDataset):
     """
@@ -100,27 +102,12 @@ class DiskDataset(keras.utils.PyDataset):
         batch = [self.load_fn(file) for file in selected_files]
         batch = tree_stack(batch)
 
-        batch = self._apply_augmentations(batch)
+        batch = apply_augmentations(batch, self.augmentations)
 
         if self.adapter is not None:
             batch = self.adapter(batch)
 
         return batch
-
-    def _apply_augmentations(self, batch: dict[str, object]) -> dict[str, object]:
-        if self.augmentations is None:
-            return batch
-        if isinstance(self.augmentations, Mapping):
-            for key, fn in self.augmentations.items():
-                batch[key] = fn(batch[key])
-            return batch
-        if isinstance(self.augmentations, Sequence):
-            for fn in self.augmentations:
-                batch = fn(batch)
-            return batch
-        if isinstance(self.augmentations, Callable):
-            return self.augmentations(batch)
-        raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
 
     def on_epoch_end(self):
         if self._shuffle:

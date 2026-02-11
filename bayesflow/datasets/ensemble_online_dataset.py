@@ -1,13 +1,13 @@
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import math
-
 import numpy as np
 import keras
 
 from bayesflow.utils import logging
 
+from ._augmentations import apply_augmentations
 from ._ensemble_sharing import ring_starts, ring_window_indices
 
 
@@ -83,31 +83,10 @@ class EnsembleOnlineDataset(keras.utils.PyDataset):
         return flipped
 
     def _postprocess(self, batch: dict[str, Any]) -> dict[str, Any]:
-        batch = self._apply_augmentations(batch)
+        batch = apply_augmentations(batch, self.dataset.augmentations)
         if self.dataset.adapter is not None:
             batch = self.dataset.adapter(batch)
         return batch
-
-    def _apply_augmentations(self, batch: dict[str, Any]) -> dict[str, Any]:
-        match self.dataset.augmentations:
-            case None:
-                return batch
-
-            case Mapping() as aug:
-                for key, fn in aug.items():
-                    batch[key] = fn(batch[key])
-                return batch
-
-            case Sequence() as augs if not isinstance(augs, (str, bytes)):
-                for fn in augs:
-                    batch = fn(batch)
-                return batch
-
-            case Callable() as fn:
-                return fn(batch)
-
-            case _:
-                raise RuntimeError(f"Could not apply augmentations of type {type(self.dataset.augmentations)}.")
 
     @staticmethod
     def _take(batch: Mapping[str, Any], idx: np.ndarray) -> dict[str, Any]:

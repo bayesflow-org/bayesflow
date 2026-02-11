@@ -1,6 +1,7 @@
-import keras
-
 from collections.abc import Sequence
+from typing import Any
+
+import keras
 
 from .ensemble_online_dataset import EnsembleOnlineDataset
 from .ensemble_indexed_dataset import EnsembleIndexedDataset
@@ -87,7 +88,7 @@ class EnsembleDataset(keras.utils.PyDataset):
     def __len__(self) -> int:
         return len(self._wrapped)
 
-    def __getitem__(self, item: int) -> dict[str, dict[str, object]]:
+    def __getitem__(self, item: int) -> dict[str, dict[str, Any]]:
         return self._wrapped[item]
 
     def on_epoch_end(self):

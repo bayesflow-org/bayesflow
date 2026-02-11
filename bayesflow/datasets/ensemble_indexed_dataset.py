@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 import math
 import numpy as np
@@ -72,21 +73,21 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
         for name in self.member_names:
             np.random.shuffle(self.member_indices[name])
 
-    def __getitem__(self, step: int) -> dict[str, dict[str, object]]:
+    def __getitem__(self, step: int) -> dict[str, dict[str, Any]]:
         if not 0 <= step < self.steps_per_epoch:
             raise IndexError(f"Index {step} is out of bounds for dataset with {self.steps_per_epoch} steps.")
 
         start = step * self.batch_size
         stop = min((step + 1) * self.batch_size, self.window_size)  # allow shorter last batch
 
-        out: dict[str, dict[str, object]] = {}
+        out: dict[str, dict[str, Any]] = {}
         for name in self.member_names:
             idx = self.member_indices[name][start:stop]
             out[name] = self.dataset.get_batch_by_sample_indices(idx)
 
         return self._flip_nested_dict(out)
 
-    def _flip_nested_dict(self, d: dict[str, dict[str, object]]) -> dict[str, dict[str, object]]:
+    def _flip_nested_dict(self, d: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
         flipped = {}
         for key, val in d.items():
             for subkey, subval in val.items():

@@ -139,7 +139,7 @@ class PointApproximator(ContinuousApproximator):
 
         return estimates
 
-    def sample_separate(
+    def _sample_separate(
         self,
         *,
         num_samples: int,
@@ -260,36 +260,68 @@ class PointApproximator(ContinuousApproximator):
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
         score_weights: Mapping[str, float] | None = None,
+        merge_samples: bool = True,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray] | dict[str, dict[str, np.ndarray]]:
         """
-        Draws samples from the mixture induced by all parametric scoring rules.
+        Draw samples from the parametric distributions induced by the configured scoring rules.
 
-        Samples are allocated to scoring rules via multinomial sampling using score_weights,
-        then drawn efficiently by sampling only max(num_samples_per_score) per score, cropping
-        to the allocated counts, concatenating along the sample axis, and finally shuffling.
+        This method supports two modes:
+
+        1) ``merge_samples=True`` (default):
+        Samples are drawn from the *mixture* over scoring rules.
+        The requested ``num_samples`` are allocated across scores according to ``score_weights``
+        (uniform if None), drawn for each score, and merged into a single shuffled set.
+
+        2) ``merge_samples=False``:
+        Samples are drawn *separately* for each scoring rule, returning a nested dictionary
+        keyed by score name. In this mode, ``num_samples`` samples are generated per score.
 
         Parameters
         ----------
         num_samples : int
-            Total number of samples to draw.
+            Number of samples to draw. If ``merge_samples=True``, this is the total number of
+            mixture samples returned. If ``merge_samples=False``, this is the number of samples
+            generated per scoring rule.
         conditions : Mapping[str, np.ndarray]
             Conditions for sampling.
         split : bool, optional
             Whether to split the output arrays along the last axis. Delegated to :meth:`sample_separate`.
         score_weights : Mapping[str, float] or None, default None
-            Probability weights for each scoring rule. If ``None``, uniform weights are assumed.
-            Must be positive, will be normalized to sum to 1.
+            Probability weights for each scoring rule. Must be positive and will be normalized to sum to 1.
+            Only used when ``merge_samples=True``. If ``None``, uniform weights are assumed.
+        merge_samples : bool, default True
+            If True, return samples aggregated across scoring rules as a mixture.
+            If False, return samples separately for each scoring rule.
         **kwargs
-            Additional keyword arguments forwarded to :meth:`sample_separate`.
+            Additional keyword arguments forwarded to the underlying sampling pipeline
+            (e.g., batching controls such as ``batch_size``).
 
         Returns
         -------
-        dict[str, np.ndarray]
-            Samples aggregated across all scoring rules, keyed by inference variable names.
-            Entries have shape (num_datasets, num_samples, ...).
+        samples : dict[str, np.ndarray] or dict[str, dict[str, np.ndarray]]
+            If ``merge_samples=True``:
+                A dictionary keyed by inference variable name. Entries have shape
+                ``(num_datasets, num_samples, ...)``.
+            If ``merge_samples=False``:
+                A nested dictionary where the first-level key is the score name and the second-level
+                key is the inference variable name. Each leaf array has shape
+                ``(num_datasets, num_samples, ...)``.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``split=True`` is not supported by the approximator implementation.
         """
         self._check_has_distribution()
+
+        if not merge_samples:
+            if score_weights is not None:
+                logging.warning(
+                    "`score_weights` is ignored when `merge_samples=False`. "
+                    "Set `merge_samples=True` to sample from the weighted mixture."
+                )
+            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
         score_weights: Mapping[str, float] = self._resolve_score_weights(score_weights)
 
@@ -298,7 +330,7 @@ class PointApproximator(ContinuousApproximator):
         max_k = int(np.max(num_samples_per_score))
         num_samples_per_score = {k: num_samples_per_score[i] for i, k in enumerate(score_weights.keys())}
 
-        samples_by_score = self.sample_separate(num_samples=max_k, conditions=conditions, split=split, **kwargs)
+        samples_by_score = self._sample_separate(num_samples=max_k, conditions=conditions, split=split, **kwargs)
 
         # Crop each score's samples down to its allocated k
         cropped_list = []

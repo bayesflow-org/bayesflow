@@ -87,3 +87,24 @@ def test_offline_overlap_monotonic(offline_dataset, member_names):
     a1, b1 = ds1._wrapped.member_indices[m1], ds1._wrapped.member_indices[m2]
 
     assert overlap(a0, b0) <= overlap(a05, b05) <= overlap(a1, b1)
+
+    assert len(ds0) < len(ds1)
+
+
+def test_ensemble_value_error(individual_dataset):
+    from bayesflow import EnsembleDataset
+
+    with pytest.raises(ValueError):
+        EnsembleDataset(individual_dataset, member_names=["just_one"])
+
+    for data_reuse in [-0.5, 2]:
+        with pytest.raises(ValueError):
+            EnsembleDataset(individual_dataset, member_names=["a", "b"], data_reuse=data_reuse)
+
+    ensemble_dataset = EnsembleDataset(individual_dataset, member_names=["a", "b"])
+    with pytest.raises(TypeError):
+        EnsembleDataset(ensemble_dataset, member_names=["a", "b"])
+
+    dummy_object = "abc"
+    with pytest.raises(TypeError):
+        EnsembleDataset(dummy_object, member_names=["a", "b"])  # type: ignore

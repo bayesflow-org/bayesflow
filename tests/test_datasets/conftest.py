@@ -2,6 +2,8 @@ import keras
 import numpy as np
 import pytest
 
+from bayesflow.utils.decorators import allow_batch_size
+
 
 @pytest.fixture()
 def batch_size():
@@ -14,8 +16,8 @@ def num_batches():
 
 
 @pytest.fixture()
-def ensemble_size():
-    return 3
+def member_names():
+    return ["m1", "m2", "m3"]
 
 
 @pytest.fixture(params=[0.0, 0.5, 1.0])
@@ -39,10 +41,10 @@ def individual_dataset(request, online_dataset, offline_dataset):
 
 
 @pytest.fixture()
-def ensemble_dataset(individual_dataset, ensemble_size, data_reuse):
+def ensemble_dataset(individual_dataset, member_names, data_reuse):
     from bayesflow import EnsembleDataset
 
-    return EnsembleDataset(individual_dataset, ensemble_size=ensemble_size, data_reuse=data_reuse)
+    return EnsembleDataset(individual_dataset, member_names=member_names, data_reuse=data_reuse)
 
 
 @pytest.fixture()
@@ -74,13 +76,13 @@ def offline_dataset(simulator, batch_size, num_batches, workers, use_multiproces
 
 
 @pytest.fixture()
-def ensemble_offline_dataset(simulator, batch_size, num_batches, workers, use_multiprocessing):
+def ensemble_offline_dataset(simulator, batch_size, num_batches, workers, use_multiprocessing, member_names):
     from bayesflow import OfflineDataset, EnsembleDataset
 
     # TODO: there is a bug in keras where if len(dataset) == 1 batch
     #  fit will error because no logs are generated
     #  the single batch is then skipped entirely
-    ensemble_size = 3
+    ensemble_size = len(member_names)
     data = simulator.sample((batch_size * num_batches * ensemble_size,))
     return EnsembleDataset(
         OfflineDataset(
@@ -90,7 +92,7 @@ def ensemble_offline_dataset(simulator, batch_size, num_batches, workers, use_mu
             use_multiprocessing=use_multiprocessing,
             adapter=None,
         ),
-        ensemble_size=ensemble_size,
+        member_names=member_names,
     )
 
 
@@ -112,6 +114,7 @@ def online_dataset(simulator, batch_size, num_batches, workers, use_multiprocess
 
 
 class Simulator:
+    @allow_batch_size
     def sample(self, batch_shape):
         return dict(x=np.random.standard_normal(size=batch_shape + (2,)).astype("float32"))
 

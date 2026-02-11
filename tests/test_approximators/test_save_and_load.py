@@ -9,8 +9,10 @@ def test_save_and_load(tmp_path, approximator, train_dataset):
         train_dataset = EnsembleDataset(train_dataset, member_names=list(approximator.approximators.keys()))
 
     # to save, the model must be built
-    approximator.build_from_data(train_dataset[0])
-    approximator.compute_metrics(**train_dataset[0])
+    data = train_dataset[0]
+    data_shapes = keras.tree.map_structure(keras.ops.shape, data)
+    approximator.build(data_shapes)
+    approximator.compute_metrics(**data)
 
     keras.saving.save_model(approximator, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")

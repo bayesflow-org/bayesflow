@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           path: repo
           ref: main
@@ -24,7 +24,7 @@ jobs:
           fetch-tags: true
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
           cache: "pip"
@@ -46,7 +46,7 @@ jobs:
           make production-docs-sequential
 
       - name: Checkout gh-pages-dev
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           path: gh-pages-dev
           ref: gh-pages-dev

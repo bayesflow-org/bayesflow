@@ -15,10 +15,8 @@ def ring_window_indices(pool_size: int, window_size: int, starts: np.ndarray) ->
     """
     Return indices of shape (ensemble_size, window_size), where row m is a ring window starting at starts[m].
     """
-    if window_size < 0:
-        raise ValueError("window_size must be >= 0.")
-    if window_size == 0:
-        return np.zeros((len(starts), 0), dtype="int64")
+    if window_size < 1:
+        raise ValueError("window_size must be >= 1.")
     base = np.arange(window_size, dtype="int64")[None, :]
     idx = (starts[:, None] + base) % pool_size
     return idx

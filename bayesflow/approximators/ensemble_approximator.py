@@ -8,6 +8,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
+from bayesflow.utils import logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.datasets import EnsembleDataset
 
@@ -181,6 +182,7 @@ class EnsembleApproximator(Approximator):
         conditions: Mapping[str, np.ndarray],
         split: bool = False,
         member_weights: Mapping[str, float] | None = None,
+        merge_members: bool = True,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -200,6 +202,7 @@ class EnsembleApproximator(Approximator):
         member_weights : Mapping[str, float] or None, optional
             Probability weights for each approximator. If None, uses uniform weights.
             Must be positive, will be normalized to sum to 1.
+        TODO: merge_members
         **kwargs
             Additional arguments passed to approximator.sample().
 
@@ -208,6 +211,14 @@ class EnsembleApproximator(Approximator):
         dict[str, np.ndarray]
             Samples with shape (batch_size, num_samples, ...) for each variable.
         """
+        if not merge_members:
+            if member_weights is not None:
+                logging.warning(
+                    "`member_weights` is ignored when `merge_members=False`. "
+                    "Set `merge_members=True` to sample from the weighted mixture."
+                )
+            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+
         member_weights: Mapping[str, float] = self._resolve_member_weights(member_weights)
 
         # Sample members from multinomial and convert to dict
@@ -271,7 +282,11 @@ class EnsembleApproximator(Approximator):
         return samples
 
     def log_prob(
-        self, data: Mapping[str, np.ndarray], member_weights: Mapping[str, float] | None = None, **kwargs
+        self,
+        data: Mapping[str, np.ndarray],
+        member_weights: Mapping[str, float] | None = None,
+        merge_members: bool = True,
+        **kwargs,
     ) -> np.ndarray:
         """
         Compute the marginalized log probability over ensemble members.
@@ -285,6 +300,7 @@ class EnsembleApproximator(Approximator):
         member_weights : Mapping[str, float] or None, default None
             Probability weights for each approximator. If None, uses uniform weights.
             Must sum to 1.
+        TODO
         **kwargs
             Additional arguments passed to approximator.log_prob().
 
@@ -293,8 +309,19 @@ class EnsembleApproximator(Approximator):
         np.ndarray
             Marginalized log probabilities with shape (batch_size,).
         """
+        log_probs = self._log_prob_separate(
+            data=data, members=list(member_weights.keys()) if member_weights else None, **kwargs
+        )
+
+        if not merge_members:
+            if member_weights is not None:
+                logging.warning(
+                    "`member_weights` is ignored when `merge_members=False`. "
+                    "Set `merge_members=True` to compute the weighted mixture log-probability."
+                )
+            return log_probs
+
         member_weights = self._resolve_member_weights(member_weights)
-        log_probs = self._log_prob_separate(data=data, members=list(member_weights.keys()), **kwargs)
 
         # log p = log_sum_exp(log(w_i) + log p_i)
         stacked = np.stack(list(log_probs.values()), axis=-1)
@@ -329,16 +356,61 @@ class EnsembleApproximator(Approximator):
         """
         log_prob = {}
         members = self.distribution_keys if members is None else members
-        for approx_name, approximator in self.approximators.items():
-            if approx_name in members:
-                log_prob[approx_name] = approximator.log_prob(data=data, **kwargs)
+        for member in members:
+            log_prob[member] = self.approximators[member].log_prob(data=data, **kwargs)
         return log_prob
 
-    def estimate(*args, **kwargs):
-        raise NotImplementedError(
-            "Automatically aggregating estimates across ensemble members is not supported. "
-            "Use estimate_separate() to get estimates from each approximator."
-        )
+    def estimate(
+        self,
+        conditions: Mapping[str, np.ndarray],
+        *,
+        members: Sequence[str] | None = None,
+        split: bool = False,
+        groupby: str = "member",
+        **kwargs,
+    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
+        """
+        Compute point estimates and distribution parameters from each approximator separately.
+
+        Parameters
+        ----------
+        conditions : Mapping[str, np.ndarray]
+            Conditions for estimation.
+        members : Sequence[str] or None, default None
+            Ensemble members to estimate with.
+            If None, will estimate with all members that have an `estimate` method.
+        split : bool, optional
+            Whether to split output arrays, by default False.
+        groupby : {"member", "variable"}, default "member"
+            Controls the top-level nesting of the returned dictionary.
+
+            - "member": return estimates as ``member -> variable -> score (-> head) -> array``.
+            - "variable": return estimates as ``variable -> score (-> head) -> member -> array``.
+              ``groupby="variable"`` requires that output structure of
+              ``member.estimate(..., groupby="variable")`` of all ensemble members is the same,
+              by for example sharing the same scores.
+              See also :py:meth:`~bayesflow.PointApproximator.estimate`.
+        **kwargs
+
+        groupby : {"member", "variable"},
+        **kwargs
+            Additional arguments passed to approximator.estimate().
+
+        Returns
+        -------
+        dict[str, dict[str, dict[str, np.ndarray]]]
+            Estimates keyed by approximator name, then by variable and score names.
+        """
+        estimates = self._estimate_separate(conditions=conditions, members=members, split=split, **kwargs)
+
+        if groupby == "member":
+            return estimates
+        elif groupby == "variable":
+            pass
+        else:
+            raise NotImplementedError(
+                f"`groupby={groupby!r}` is not supported for EnsembleApproximator. Use groupby='member'."
+            )
 
     def _estimate_separate(
         self,

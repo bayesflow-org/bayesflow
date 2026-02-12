@@ -97,7 +97,7 @@ os.environ["KERAS_BACKEND"] = "torch"  # or jax, or tensorflow
 import bayesflow as bf
 ```
 
-You can also set the environment variable in your terminal session before running your code:
+Alternatively, set the environment variable in your terminal session before running your code:
 
 ```bash
 KERAS_BACKEND=torch python my_script.py
@@ -107,9 +107,10 @@ or export it for the whole session:
 
 ```bash
 export KERAS_BACKEND=tensorflow  # or jax, or torch
+python my_script.py
 ```
 
-You can also add this line to your `.bashrc` file (or equivalent) to make it permanent,
+You may add this line to your `.bashrc` file (or equivalent) to make it permanent,
 but be aware that this will affect all your BayesFlow code until you change it again.
 
 ### 3. Implement your changes

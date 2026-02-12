@@ -33,7 +33,7 @@ complex to be described analytically.
 We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
-pip install "bayesflow>=2.0"
+pip install -U bayesflow
 ```
 
 If you want the latest features, you can install from source:
@@ -55,8 +55,14 @@ Note that BayesFlow **will not run** without a backend.
 
 If you don't know which backend to use, we recommend JAX as it is currently the fastest backend.
 
-As of version ``2.0.7``, the backend will be set automatically. If you have multiple backends, you can manually [set the backend environment variable as described by keras](https://keras.io/getting_started/#configuring-your-backend).
-For example, inside your Python script write:
+As of version ``2.0.7``, the backend will be **detected automatically from your installed packages**.
+
+If you have multiple backends installed, BayesFlow chooses them according to the priority `jax > torch > tensorflow`.
+
+### Manually Choosing a Backend
+
+Alternatively, you can manually [set the backend environment variable as described by keras](https://keras.io/getting_started/#configuring-your-backend)
+by setting the `KERAS_BACKEND` environment variable, for example in your Python script:
 
 ```python
 import os
@@ -64,16 +70,17 @@ os.environ["KERAS_BACKEND"] = "jax"
 import bayesflow
 ```
 
-If you use conda, you can alternatively set this individually for each environment in your terminal. For example:
+Alternatively, set the environment variable in your terminal session before running your code:
 
 ```bash
-conda env config vars set KERAS_BACKEND=jax
+KERAS_BACKEND=torch python my_script.py
 ```
 
-Or just plainly set the environment variable in your shell:
+or export it for the whole session:
 
 ```bash
-export KERAS_BACKEND=jax
+export KERAS_BACKEND=tensorflow  # or jax, or torch
+python my_script.py
 ```
 
 ## Getting Started

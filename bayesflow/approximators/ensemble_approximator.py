@@ -174,45 +174,6 @@ class EnsembleApproximator(Approximator):
 
         return metrics
 
-    def sample_separate(
-        self,
-        *,
-        num_samples: int | Mapping[str, int],
-        conditions: Mapping[str, np.ndarray],
-        split: bool = False,
-        **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
-        """
-        Draw samples from each approximator separately.
-
-        Parameters
-        ----------
-        num_samples : int or Mapping[str, int]
-            Number of samples to draw from each approximator. If int, all approximators
-            draw the same number of samples. If dict, specifies samples per approximator.
-        conditions : Mapping[str, np.ndarray]
-            Conditions for sampling.
-        split : bool, optional
-            Whether to split output arrays, by default False.
-        **kwargs
-            Additional arguments passed to approximator.sample().
-
-        Returns
-        -------
-        dict[str, dict[str, np.ndarray]]
-            Samples keyed by approximator name, then by variable name.
-        """
-        samples = {}
-        if isinstance(num_samples, int):
-            num_samples = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
-            num_samples = {k: num_samples[i] for i, k in enumerate(self.distribution_keys)}
-
-        for approx_name, _num_samples in num_samples.items():
-            samples[approx_name] = self.approximators[approx_name].sample(
-                num_samples=_num_samples, conditions=conditions, split=split, **kwargs
-            )
-        return samples
-
     def sample(
         self,
         *,
@@ -252,7 +213,9 @@ class EnsembleApproximator(Approximator):
         # Sample members from multinomial and convert to dict
         num_samples_per_member = np.random.multinomial(num_samples, list(member_weights.values()))
         num_samples_per_member = {k: num_samples_per_member[i] for i, k in enumerate(member_weights.keys())}
-        samples = self.sample_separate(num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs)
+        samples = self._sample_separate(
+            num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs
+        )
 
         # Concatenate samples from all approximators along sample dimension (axis 1)
         samples_list = [
@@ -268,7 +231,82 @@ class EnsembleApproximator(Approximator):
         shuffled = keras.tree.map_structure(lambda arr: arr[:, shuffle_idx], concatenated)
         return shuffled
 
-    def log_prob_separate(
+    def _sample_separate(
+        self,
+        *,
+        num_samples: int | Mapping[str, int],
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, dict[str, np.ndarray]]:
+        """
+        Draw samples from each approximator separately.
+
+        Parameters
+        ----------
+        num_samples : int or Mapping[str, int]
+            Number of samples to draw from each approximator. If int, all approximators
+            draw the same number of samples. If dict, specifies samples per approximator.
+        conditions : Mapping[str, np.ndarray]
+            Conditions for sampling.
+        split : bool, optional
+            Whether to split output arrays, by default False.
+        **kwargs
+            Additional arguments passed to approximator.sample().
+
+        Returns
+        -------
+        dict[str, dict[str, np.ndarray]]
+            Samples keyed by approximator name, then by variable name.
+        """
+        samples = {}
+        if isinstance(num_samples, int):
+            num_samples = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
+            num_samples = {k: num_samples[i] for i, k in enumerate(self.distribution_keys)}
+
+        for approx_name, _num_samples in num_samples.items():
+            samples[approx_name] = self.approximators[approx_name].sample(
+                num_samples=_num_samples, conditions=conditions, split=split, **kwargs
+            )
+        return samples
+
+    def log_prob(
+        self, data: Mapping[str, np.ndarray], member_weights: Mapping[str, float] | None = None, **kwargs
+    ) -> np.ndarray:
+        """
+        Compute the marginalized log probability over ensemble members.
+
+        Uses log-sum-exp trick to compute log p(x) = log(sum_i w_i * p_i(x)).
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Data containing inference variables and conditions.
+        member_weights : Mapping[str, float] or None, default None
+            Probability weights for each approximator. If None, uses uniform weights.
+            Must sum to 1.
+        **kwargs
+            Additional arguments passed to approximator.log_prob().
+
+        Returns
+        -------
+        np.ndarray
+            Marginalized log probabilities with shape (batch_size,).
+        """
+        member_weights = self._resolve_member_weights(member_weights)
+        log_probs = self._log_prob_separate(data=data, members=list(member_weights.keys()), **kwargs)
+
+        # log p = log_sum_exp(log(w_i) + log p_i)
+        stacked = np.stack(list(log_probs.values()), axis=-1)
+        log_weights = np.log(list(member_weights.values()))
+
+        # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
+        z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
+
+        # stable logsumexp over last axis
+        return logsumexp(z, axis=-1)
+
+    def _log_prob_separate(
         self, data: Mapping[str, np.ndarray], members: Sequence[str] | None = None, **kwargs
     ) -> dict[str, np.ndarray]:
         """
@@ -296,43 +334,13 @@ class EnsembleApproximator(Approximator):
                 log_prob[approx_name] = approximator.log_prob(data=data, **kwargs)
         return log_prob
 
-    def log_prob(
-        self, data: Mapping[str, np.ndarray], member_weights: Mapping[str, float] | None = None, **kwargs
-    ) -> np.ndarray:
-        """
-        Compute the marginalized log probability over ensemble members.
+    def estimate(*args, **kwargs):
+        raise NotImplementedError(
+            "Automatically aggregating estimates across ensemble members is not supported. "
+            "Use estimate_separate() to get estimates from each approximator."
+        )
 
-        Uses log-sum-exp trick to compute log p(x) = log(sum_i w_i * p_i(x)).
-
-        Parameters
-        ----------
-        data : Mapping[str, np.ndarray]
-            Data containing inference variables and conditions.
-        member_weights : Mapping[str, float] or None, default None
-            Probability weights for each approximator. If None, uses uniform weights.
-            Must sum to 1.
-        **kwargs
-            Additional arguments passed to approximator.log_prob().
-
-        Returns
-        -------
-        np.ndarray
-            Marginalized log probabilities with shape (batch_size,).
-        """
-        member_weights = self._resolve_member_weights(member_weights)
-        log_probs = self.log_prob_separate(data=data, members=list(member_weights.keys()), **kwargs)
-
-        # log p = log_sum_exp(log(w_i) + log p_i)
-        stacked = np.stack(list(log_probs.values()), axis=-1)
-        log_weights = np.log(list(member_weights.values()))
-
-        # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
-        z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
-
-        # stable logsumexp over last axis
-        return logsumexp(z, axis=-1)
-
-    def estimate_separate(
+    def _estimate_separate(
         self,
         conditions: Mapping[str, np.ndarray],
         members: Sequence[str] | None = None,
@@ -365,12 +373,6 @@ class EnsembleApproximator(Approximator):
             if approx_name in members and hasattr(approximator, "estimate"):
                 estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
         return estimates
-
-    def estimate(*args, **kwargs):
-        raise NotImplementedError(
-            "Automatically aggregating estimates across ensemble members is not supported. "
-            "Use estimate_separate() to get estimates from each approximator."
-        )
 
     def _resolve_member_weights(self, member_weights: Mapping[str, float] | None) -> Mapping[str, float]:
         if member_weights is None:

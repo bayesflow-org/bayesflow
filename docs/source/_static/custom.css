@@ -1,0 +1,4 @@
+/* Ensure images appear with a transparent background */
+img[src$=".png"] {
+  background-color: transparent !important;
+}

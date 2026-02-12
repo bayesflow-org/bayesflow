@@ -50,37 +50,56 @@ class PointApproximator(ContinuousApproximator):
         if len(self.distribution_keys) == 0:
             self.has_distribution = False
 
-    def estimate_separate(
+    def estimate(
         self,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
+        groupby: str = "variable",
         **kwargs,
-    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
+    ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
         """
-        Estimates point summaries of inference variables for each parametric scoring rule separately.
-
-        This method processes input conditions, computes estimates, applies necessary adapter transformations,
-        and optionally splits the resulting arrays along the last axis. Estimates are grouped by scoring rule,
-        then estimation head, then inference variable.
+        Estimate point summaries and distributional parameters of inference variables induced by
+        scoring rules.
 
         Parameters
         ----------
         conditions : Mapping[str, np.ndarray]
-            A dictionary mapping variable names to arrays representing the conditions
-            for the estimation process.
+            A batch of conditions to estimate. None for unconditional distributions.
         split : bool, optional
-            If True, the estimated arrays are split along the last axis, by default False.
+            If True, split estimated arrays along the last axis, by default False.
+        groupby : {"variable", "score"}, default "variable"
+            Controls the top-level nesting of the returned dictionary.
+
+            - "variable": return estimates as ``variable -> score -> head -> array``.
+              If a score has just one head, which is called value, squeeze the unnecessary nesting.
+            - "score": return estimates as ``score -> head -> variable -> array``.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
         Returns
         -------
-        dict[str, dict[str, dict[str, np.ndarray]]]
-            Nested dictionary where keys follow ``score -> estimator head -> inference variable`` ordering.
-            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array of shape
-            ``(num_datasets, point_estimate_size, ...)``.
+        dict
+            Estimates in the requested layout. Leafs have shape
+            ``(num_conditions, point_estimate_size, variable_block_size)`` or
+            ``(point_estimate_size, variable_block_size)`` if ``conditions=None``.
         """
-        # Adapt, optionally standardize and convert conditions to tensor.
+        estimates = self._estimate_byscore(conditions=conditions, split=split, **kwargs)
+
+        if groupby == "score":
+            return estimates
+
+        # Reorder the nested dictionary so that original variable names are at the top.
+        estimates = self._reorder_estimates(estimates)
+        estimates = self._squeeze_estimates(estimates)
+
+        return estimates
+
+    def _estimate_byscore(
+        self,
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         conditions = self._prepare_data(conditions, **kwargs)
         # Remove any superfluous keys, just retain actual conditions.
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
@@ -103,47 +122,108 @@ class PointApproximator(ContinuousApproximator):
 
         return estimates
 
-    def estimate(
+    def sample(  # type: ignore[override]
         self,
-        conditions: Mapping[str, np.ndarray],
+        *,
+        num_samples: int,
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
+        score_weights: Mapping[str, float] | None = None,
+        merge_scores: bool = True,
         **kwargs,
-    ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
+    ) -> dict[str, np.ndarray] | dict[str, dict[str, np.ndarray]]:
         """
-        Estimates point summaries of inference variables based on specified conditions.
+        Draw samples from the parametric distributions induced by the configured scoring rules.
 
-        This method delegates to :meth:`estimate_separate`, then reorders and squeezes the
-        resulting dictionary so that inference variable names become the top-level keys.
+        This method supports two modes:
+
+        1) ``merge_scores=True`` (default):
+        Samples are drawn from the *mixture* over scoring rules.
+        The requested ``num_samples`` are allocated across scores according to ``score_weights``
+        (uniform if None), drawn for each score, and merged into a single shuffled set.
+
+        2) ``merge_scores=False``:
+        Samples are drawn *separately* for each scoring rule, returning a nested dictionary
+        keyed by score name. In this mode, ``num_samples`` samples are generated per score.
 
         Parameters
         ----------
-        conditions : Mapping[str, np.ndarray]
-            A dictionary mapping variable names to arrays representing the conditions
-            for the estimation process.
+        num_samples : int
+            Number of samples to draw. If ``merge_scores=True``, this is the total number of
+            mixture samples returned. If ``merge_scores=False``, this is the number of samples
+            generated per scoring rule.
+        conditions : Mapping[str, np.ndarray] or None,
+            A batch of conditions to sample for. None for unconditional distributions.
         split : bool, optional
-            If True, the estimated arrays are split along the last axis, by default False.
+            Whether to split the output arrays along the last axis. Delegated to :meth:`sample_separate`.
+        score_weights : Mapping[str, float] or None, default None
+            Probability weights for each scoring rule. If ``None``, uniform weights are assumed.
+            Must be positive, will be normalized to sum to 1. Only used when ``merge_scores=True``.
+        merge_scores : bool, default True
+            If True, return samples aggregated across scoring rules as a mixture.
+            If False, return samples separately for each scoring rule.
         **kwargs
-            Additional keyword arguments passed to underlying processing functions.
+            Additional keyword arguments such as ``batch_size``.
 
         Returns
         -------
-        dict[str, dict[str, np.ndarray or dict[str, np.ndarray]]]
-            Nested dictionary ordered by ``inference variable -> scoring rule``.
-            Entries have shape (num_datasets, ...).
+        samples : dict[str, np.ndarray] or dict[str, dict[str, np.ndarray]]
+            If ``merge_scores=True``:
+                A dictionary keyed by inference variable name. Entries have shape
+                ``(num_datasets, num_samples, ...)``.
+            If ``merge_scores=False``:
+                A nested dictionary where the first-level key is the score name and the second-level
+                key is the inference variable name. Each leaf array has shape
+                ``(num_datasets, num_samples, ...)``.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``split=True`` is not supported by the approximator implementation.
         """
-        estimates = self.estimate_separate(conditions=conditions, split=split, **kwargs)
+        self._check_has_distribution()
 
-        # Reorder the nested dictionary so that original variable names are at the top.
-        estimates = self._reorder_estimates(estimates)
-        estimates = self._squeeze_estimates(estimates)
+        if not merge_scores:
+            if score_weights is not None:
+                logging.warning(
+                    "`score_weights` is ignored when `merge_scores=False`. "
+                    "Set `merge_scores=True` to sample from the weighted mixture."
+                )
+            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
-        return estimates
+        score_weights: Mapping[str, float] = self._resolve_score_weights(score_weights)
+
+        # Allocate samples per score and draw only as many as needed (max over scores).
+        num_samples_per_score = np.random.multinomial(num_samples, list(score_weights.values()))
+        max_k = int(np.max(num_samples_per_score))
+        num_samples_per_score = {k: num_samples_per_score[i] for i, k in enumerate(score_weights.keys())}
+
+        samples_by_score = self._sample_separate(num_samples=max_k, conditions=conditions, split=split, **kwargs)
+
+        # Crop each score's samples down to its allocated k
+        cropped_list = []
+        for score_key, k in num_samples_per_score.items():
+            if k == 0:
+                continue
+            cropped = keras.tree.map_structure(lambda arr: arr[:, :k], samples_by_score[score_key])
+            cropped_list.append(cropped)
+
+        # Concatenate across scores along the sample axis.
+        concatenated = keras.tree.map_structure(
+            lambda *arrays: np.concatenate(arrays, axis=1),
+            *cropped_list,
+        )
+
+        # Shuffle along the sample axis (1) to form the mixture samples.
+        shuffle_idx = np.random.permutation(num_samples)
+        shuffled = keras.tree.map_structure(lambda arr: np.take(arr, shuffle_idx, axis=1), concatenated)
+        return shuffled
 
     def _sample_separate(
         self,
         *,
         num_samples: int,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
         batch_size: int | None = None,
         **kwargs,
@@ -158,9 +238,8 @@ class PointApproximator(ContinuousApproximator):
         ----------
         num_samples : int
             The number of samples to generate.
-        conditions : Mapping[str, np.ndarray]
-            A dictionary mapping variable names to arrays representing the conditions
-            for the sampling process.
+        conditions : Mapping[str, np.ndarray] or None,
+            A batch of conditions to sample for. None for unconditional distributions.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
             Currently not supported for :py:class:`PointApproximator`.
@@ -172,11 +251,11 @@ class PointApproximator(ContinuousApproximator):
 
         Returns
         -------
-        samples : dict[str, np.ndarray or dict[str, np.ndarray]]
+        samples : dict[str, dict[str, np.ndarray]]
             Samples for all inference variables and all parametric scoring rules in a nested dictionary.
 
-            1. Each first-level key is the name of an inference variable.
-            2. Each second-level key is the name of a parametric score.
+            1. Each first-level key is the name of a parametric score.
+            2. Each second-level key is the name of an inference variable.
 
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, num_samples, ...).
@@ -253,105 +332,68 @@ class PointApproximator(ContinuousApproximator):
 
         return samples
 
-    def sample(
+    def log_prob(  # type: ignore[override]
         self,
-        *,
-        num_samples: int,
-        conditions: Mapping[str, np.ndarray],
-        split: bool = False,
+        data: Mapping[str, np.ndarray],
         score_weights: Mapping[str, float] | None = None,
-        merge_samples: bool = True,
+        merge_scores: bool = True,
         **kwargs,
-    ) -> dict[str, np.ndarray] | dict[str, dict[str, np.ndarray]]:
+    ) -> np.ndarray | dict[str, np.ndarray]:
         """
-        Draw samples from the parametric distributions induced by the configured scoring rules.
+        Compute log-probabilities under the parametric distribution(s) induced by the scoring rules.
 
         This method supports two modes:
 
-        1) ``merge_samples=True`` (default):
-        Samples are drawn from the *mixture* over scoring rules.
-        The requested ``num_samples`` are allocated across scores according to ``score_weights``
-        (uniform if None), drawn for each score, and merged into a single shuffled set.
+        1) ``merge_scores=True`` (default):
+        Return the marginalized (mixture) log-probability across scoring rules using ``score_weights``:
+        ``log p(x) = log sum_s w_s p_s(x)``.
 
-        2) ``merge_samples=False``:
-        Samples are drawn *separately* for each scoring rule, returning a nested dictionary
-        keyed by score name. In this mode, ``num_samples`` samples are generated per score.
+        2) ``merge_scores=False``:
+        Return log-probabilities separately for each scoring rule as a dictionary keyed by score name.
+        In this mode, ``score_weights`` is ignored.
 
         Parameters
         ----------
-        num_samples : int
-            Number of samples to draw. If ``merge_samples=True``, this is the total number of
-            mixture samples returned. If ``merge_samples=False``, this is the number of samples
-            generated per scoring rule.
-        conditions : Mapping[str, np.ndarray]
-            Conditions for sampling.
-        split : bool, optional
-            Whether to split the output arrays along the last axis. Delegated to :meth:`sample_separate`.
+        data : Mapping[str, np.ndarray]
+            Dictionary containing inference variables and conditions.
         score_weights : Mapping[str, float] or None, default None
-            Probability weights for each scoring rule. Must be positive and will be normalized to sum to 1.
-            Only used when ``merge_samples=True``. If ``None``, uniform weights are assumed.
-        merge_samples : bool, default True
-            If True, return samples aggregated across scoring rules as a mixture.
-            If False, return samples separately for each scoring rule.
+            Probability weights for each scoring rule. If ``None``, uniform weights are assumed.
+            Must be positive, will be normalized to sum to 1. Only used when ``merge_scores=True``.
+        merge_scores : bool, default True
+            If True, return marginalized log-probabilities across scoring rules.
+            If False, return per-score log-probabilities.
         **kwargs
-            Additional keyword arguments forwarded to the underlying sampling pipeline
-            (e.g., batching controls such as ``batch_size``).
+            Additional keyword arguments.
 
         Returns
         -------
-        samples : dict[str, np.ndarray] or dict[str, dict[str, np.ndarray]]
-            If ``merge_samples=True``:
-                A dictionary keyed by inference variable name. Entries have shape
-                ``(num_datasets, num_samples, ...)``.
-            If ``merge_samples=False``:
-                A nested dictionary where the first-level key is the score name and the second-level
-                key is the inference variable name. Each leaf array has shape
-                ``(num_datasets, num_samples, ...)``.
+        np.ndarray or dict[str, np.ndarray]
+            If ``merge_scores=True``: array of shape ``(num_datasets,)`` with marginalized log-probabilities.
+            If ``merge_scores=False``: dictionary mapping score name to an array of shape ``(num_datasets,)``.
 
-        Raises
-        ------
-        NotImplementedError
-            If ``split=True`` is not supported by the approximator implementation.
         """
-        self._check_has_distribution()
+        log_probs = self._log_prob_separate(data=data, **kwargs)
 
-        if not merge_samples:
+        if not merge_scores:
             if score_weights is not None:
                 logging.warning(
-                    "`score_weights` is ignored when `merge_samples=False`. "
-                    "Set `merge_samples=True` to sample from the weighted mixture."
+                    "`score_weights` is ignored when `merge_scores=False`. "
+                    "Set `merge_scores=True` to compute the weighted mixture log-probability."
                 )
-            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+            return log_probs
 
-        score_weights: Mapping[str, float] = self._resolve_score_weights(score_weights)
+        score_weights = self._resolve_score_weights(score_weights)
 
-        # Allocate samples per score and draw only as many as needed (max over scores).
-        num_samples_per_score = np.random.multinomial(num_samples, list(score_weights.values()))
-        max_k = int(np.max(num_samples_per_score))
-        num_samples_per_score = {k: num_samples_per_score[i] for i, k in enumerate(score_weights.keys())}
+        stacked = np.stack([np.asarray(log_probs[score_key]) for score_key in self.distribution_keys], axis=-1)
+        log_weights = np.log(list(score_weights.values()))
 
-        samples_by_score = self._sample_separate(num_samples=max_k, conditions=conditions, split=split, **kwargs)
+        # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
+        z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
 
-        # Crop each score's samples down to its allocated k
-        cropped_list = []
-        for score_key, k in num_samples_per_score.items():
-            if k == 0:
-                continue
-            cropped = keras.tree.map_structure(lambda arr: arr[:, :k], samples_by_score[score_key])
-            cropped_list.append(cropped)
+        # stable logsumexp over last axis
+        return logsumexp(z, axis=-1)
 
-        # Concatenate across scores along the sample axis.
-        concatenated = keras.tree.map_structure(
-            lambda *arrays: np.concatenate(arrays, axis=1),
-            *cropped_list,
-        )
-
-        # Shuffle along the sample axis (1) to form the mixture samples.
-        shuffle_idx = np.random.permutation(num_samples)
-        shuffled = keras.tree.map_structure(lambda arr: np.take(arr, shuffle_idx, axis=1), concatenated)
-        return shuffled
-
-    def log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def _log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
         """
         Computes the log-probability of given data under the parametric distribution(s) for given input conditions.
 
@@ -383,44 +425,6 @@ class PointApproximator(ContinuousApproximator):
             log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
 
         return log_prob
-
-    def log_prob(
-        self,
-        data: Mapping[str, np.ndarray],
-        score_weights: Mapping[str, float] | None = None,
-        **kwargs,
-    ) -> np.ndarray:
-        """
-        Computes the marginalized log-probability across all parametric scoring rules.
-
-        Parameters
-        ----------
-        data : Mapping[str, np.ndarray]
-            Dictionary containing inference variables and conditions.
-        score_weights : Mapping[str, float] or None, default None
-            Probability weights for each scoring rule. If ``None``, uniform weights are assumed.
-            Must be positive, will be normalized to sum to 1.
-
-        **kwargs
-            Additional keyword arguments forwarded to :meth:`log_prob_separate`.
-
-        Returns
-        -------
-        np.ndarray, shape (num_datasets,)
-            Marginalized log-probabilities with the same leading dimensions as the inputs.
-        """
-        log_probs = self.log_prob_separate(data=data, **kwargs)
-
-        score_weights = self._resolve_score_weights(score_weights)
-
-        stacked = np.stack([np.asarray(log_probs[score_key]) for score_key in self.distribution_keys], axis=-1)
-        log_weights = np.log(list(score_weights.values()))
-
-        # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
-        z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
-
-        # stable logsumexp over last axis
-        return logsumexp(z, axis=-1)
 
     def _check_has_distribution(self):
         if not self.has_distribution:

@@ -1,0 +1,333 @@
+name: Complete Clone Test BayesFlow
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository to fetch (owner/repo)'
+        required: true
+        default: 'bayesflow-org/bayesflow'
+      branch:
+        description: 'Branch to fetch from'
+        required: true
+        default: 'main'
+      python_versions:
+        description: 'Python versions to test (comma-separated)'
+        required: true
+        default: '3.10.8'
+        type: string
+      operating_systems:
+        description: 'Operating systems to test'
+        required: true
+        default: 'ubuntu'
+        type: choice
+        options:
+          - ubuntu
+          - windows
+          - macos
+          - all
+      backends:
+        description: 'Backends to test (comma-separated)'
+        required: true
+        default: 'tensorflow'
+        type: string
+      pytest_command:
+        description: 'Custom pytest command to run'
+        required: false
+        default: 'python -m pytest tests/test_approximators/test_approximator_standardization/test_approximator_standardization.py'
+        type: string
+  pull_request:
+    branches:
+      - '**'
+  push:
+    branches:
+      - force_test
+
+defaults:
+  run:
+    shell: bash
+
+
+env:
+  DEFAULT_PYTEST_CMD: 'python -m pytest tests/test_approximators/test_approximator_standardization/test_approximator_standardization.py'
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set up matrix
+        id: set-matrix
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Inputs: repo=${{ github.event.inputs.repo }}, operating_systems=${{ github.event.inputs.operating_systems }}, python_versions=${{ github.event.inputs.python_versions }}, backends=${{ github.event.inputs.backends }}"
+          
+          # Default values when not triggered manually
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "Using default matrix for non-manual trigger"
+            echo 'matrix={"os":["ubuntu-latest"],"python-version":["3.10.8"],"backend":["tensorflow"]}' >> $GITHUB_OUTPUT
+          else
+            echo "Building matrix from workflow_dispatch inputs"
+            
+            # Parse operating systems
+            OS_INPUT="${{ github.event.inputs.operating_systems }}"
+            echo "OS_INPUT: '$OS_INPUT'"
+            case "$OS_INPUT" in
+              "ubuntu")
+                OS_LIST="\"ubuntu-latest\""
+                ;;
+              "windows")
+                OS_LIST="\"windows-latest\""
+                ;;
+              "macos")
+                OS_LIST="\"macos-latest\""
+                ;;
+              "all")
+                OS_LIST="\"ubuntu-latest\",\"windows-latest\",\"macos-latest\""
+                ;;
+              *)
+                OS_LIST="\"ubuntu-latest\""
+                ;;
+            esac
+            echo "OS_LIST: $OS_LIST"
+            
+            # Parse Python versions (comma-separated)
+            PYTHON_INPUT="${{ github.event.inputs.python_versions }}"
+            echo "PYTHON_INPUT: '$PYTHON_INPUT'"
+            PYTHON_LIST=""
+            IFS=',' read -ra PYTHON_ARRAY <<< "$PYTHON_INPUT"
+            for version in "${PYTHON_ARRAY[@]}"; do
+              # Trim whitespace
+              version=$(echo "$version" | xargs)
+              echo "Processing Python version: '$version'"
+              # Validate version
+              if [[ "$version" =~ ^3\.(10|11|12)(\.[0-9]+)?$ ]]; then
+                if [ -n "$PYTHON_LIST" ]; then
+                  PYTHON_LIST="$PYTHON_LIST,\"$version\""
+                else
+                  PYTHON_LIST="\"$version\""
+                fi
+              else
+                echo "Invalid Python version: '$version'"
+              fi
+            done
+            # Fallback if no valid versions
+            if [ -z "$PYTHON_LIST" ]; then
+              PYTHON_LIST="\"3.10\""
+              echo "No valid Python versions found, using fallback"
+            fi
+            echo "PYTHON_LIST: $PYTHON_LIST"
+            
+            # Parse backends (comma-separated)
+            BACKEND_INPUT="${{ github.event.inputs.backends }}"
+            echo "BACKEND_INPUT: '$BACKEND_INPUT'"
+            BACKEND_LIST=""
+            IFS=',' read -ra BACKEND_ARRAY <<< "$BACKEND_INPUT"
+            for backend in "${BACKEND_ARRAY[@]}"; do
+              # Trim whitespace
+              backend=$(echo "$backend" | xargs)
+              echo "Processing backend: '$backend'"
+              # Validate backend
+              if [[ "$backend" =~ ^(tensorflow|jax|torch|numpy)$ ]]; then
+                if [ -n "$BACKEND_LIST" ]; then
+                  BACKEND_LIST="$BACKEND_LIST,\"$backend\""
+                else
+                  BACKEND_LIST="\"$backend\""
+                fi
+              else
+                echo "Invalid backend: '$backend'"
+              fi
+            done
+            # Fallback if no valid backends
+            if [ -z "$BACKEND_LIST" ]; then
+              BACKEND_LIST="\"tensorflow\""
+              echo "No valid backends found, using fallback"
+            fi
+            echo "BACKEND_LIST: $BACKEND_LIST"
+            
+            MATRIX_JSON="{\"os\":[$OS_LIST],\"python-version\":[$PYTHON_LIST],\"backend\":[$BACKEND_LIST]}"
+            echo "Generated matrix: $MATRIX_JSON"
+            echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          fi
+
+  test:
+    needs: prepare-matrix
+    name: Run Tests on ${{ matrix.os }} with Python ${{ matrix.python-version }} and ${{ matrix.backend }} backend
+
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      KERAS_BACKEND: ${{ matrix.backend }}
+
+    steps:
+      - name: 🎯 Display Matrix Configuration
+        run: |
+          echo "╔════════════════════════════════════════════════════════════════════════════════╗"
+          echo "║                            🚀 MATRIX CONFIGURATION 🚀                          ║"
+          echo "╠════════════════════════════════════════════════════════════════════════════════╣"
+          echo "║  🖥️  Operating System: ${{ matrix.os }}"
+          echo "║  🐍  Python Version: ${{ matrix.python-version }}"
+          echo "║  ⚡  Backend: ${{ matrix.backend }}"
+          echo "║  🎭  Event Type: ${{ github.event_name }}"
+          echo "╚════════════════════════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "🔍 Matrix Debug Info:"
+          echo "   - Job Name: Run Tests on ${{ matrix.os }} with Python ${{ matrix.python-version }} and ${{ matrix.backend }} backend"
+          echo "   - Runner OS: ${{ runner.os }}"
+          echo "   - KERAS_BACKEND env: ${{ env.KERAS_BACKEND }}"
+          echo ""
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Complete clone of bayesflow repository
+        shell: bash
+        run: |
+          set -e
+          # Use input values if available, otherwise use defaults
+          REPO="${{ github.event.inputs.repo || 'bayesflow-org/bayesflow' }}"
+          BRANCH="${{ github.event.inputs.branch || 'main' }}"
+          
+          echo "Cloning complete ${REPO} repository from branch ${BRANCH}"
+          
+          # Remove any existing directory
+          rm -rf external/bayesflow
+          
+          # Clone the complete repository
+          git clone --single-branch --branch ${BRANCH} https://github.com/${REPO}.git external/bayesflow
+          
+          echo "Successfully cloned ${REPO}@${BRANCH}"
+          
+          # Verify we have the necessary files
+          echo "Contents of bayesflow directory:"
+          ls -la external/bayesflow/
+          
+          echo "Checking for tests directory:"
+          if [[ -d "external/bayesflow/tests" ]]; then
+            echo "✅ Tests directory found"
+            ls -la external/bayesflow/tests/ | head -5
+          else
+            echo "❌ Tests directory not found"
+          fi
+
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ./.pip_cache
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+      - name: Install uv
+        shell: bash
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          else
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+          # Source the path for immediate use
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+      - name: Install external bayesflow package with all dependencies
+        shell: bash
+        run: |
+          set -e
+          cd external/bayesflow
+          # Verify the directory has the expected files
+          ls -la
+          if [[ -f "pyproject.toml" || -f "setup.py" || -f "setup.cfg" ]]; then
+            echo "Installing bayesflow with all dependencies..."
+            uv pip install --system ".[all]"
+            
+            echo "Ensuring TensorFlow is properly installed..."
+            uv pip install --system tensorflow
+            
+            echo "Verifying TensorFlow installation..."
+            python -c "import tensorflow as tf; print(f'TensorFlow version: {tf.__version__}')"
+          else
+            echo "Error: No setup files found in bayesflow directory"
+            exit 1
+          fi
+          cd -
+
+      - name: 📋 Show Environment Info
+        run: |
+          echo "╔════════════════════════════════════════════════════════════════════════════════╗"
+          echo "║                           📋 ENVIRONMENT INFORMATION 📋                        ║"
+          echo "╠════════════════════════════════════════════════════════════════════════════════╣"
+          echo "║  🐍 Python Version: $(python --version)"
+          echo "║  📦 Pip Version: $(python -m pip --version)"
+          echo "║  ⚡ Backend: $KERAS_BACKEND"
+          echo "║  🖥️  OS: ${{ runner.os }}"
+          echo "║  💻 Architecture: $(uname -m 2>/dev/null || echo 'N/A')"
+          echo "╚════════════════════════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "🔍 Installed packages:"
+          python -m pip list
+          python -m pip freeze > packages_.txt
+      
+      - name: Upload packages list artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-list-${{ matrix.os }}-${{ matrix.backend }}   
+          path: packages_.txt
+          retention-days: 10  
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          set -e
+          echo "Current directory contents:"
+          ls -la
+          
+          echo "Checking external/bayesflow structure:"
+          if [[ -d "external/bayesflow" ]]; then
+            echo "Contents of external/bayesflow:"
+            ls -la external/bayesflow/
+            
+            echo "Changing to bayesflow directory to run tests..."
+            cd external/bayesflow
+            
+            echo "Exploring directory structure to find tests:"
+            echo "Contents of current directory:"
+            ls -la
+            
+            echo "Looking for test directories:"
+            find . -name "*test*" -type d | head -10
+            
+            echo "Looking for the specific test file:"
+            find . -name "*approximator_standardization*" -type f | head -5
+            
+            echo "Checking if bayesflow subdirectory has tests:"
+            if [[ -d "bayesflow" ]]; then
+              echo "Contents of bayesflow subdirectory:"
+              ls -la bayesflow/
+              if [[ -d "bayesflow/tests" ]]; then
+                echo "Found bayesflow/tests directory:"
+                ls -la bayesflow/tests/ | head -10
+              fi
+            fi
+            
+            echo "Running tests with backend: $KERAS_BACKEND"
+            
+            # Use custom pytest command from input or default
+            PYTEST_CMD="${{ github.event.inputs.pytest_command || env.DEFAULT_PYTEST_CMD }}"
+            echo "Executing: $PYTEST_CMD"
+            eval "$PYTEST_CMD"
+          else
+            echo "Error: external/bayesflow directory not found!"
+            exit 1
+          fi
+           

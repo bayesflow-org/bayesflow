@@ -1,8 +1,7 @@
-from collections.abc import Mapping, Sequence, Callable
+from collections.abc import Mapping, Sequence
 from typing import Literal, Tuple
 
 import numpy as np
-from tqdm.auto import tqdm
 
 import keras
 
@@ -13,24 +12,25 @@ from bayesflow.utils import (
     logging,
     filter_kwargs,
     split_arrays,
-    slice_maybe_nested,
-    dim_maybe_nested,
-    squeeze_inner_estimates_dict,
-    concatenate_valid,
     concatenate_valid_shapes,
-    tree_concatenate,
 )
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
 from ..networks.standardization import Standardization
 
+from ._runtime import Sampler, ConditionBuilder
+
 
 @serializable("bayesflow.approximators")
 class ContinuousApproximator(Approximator):
     """
-    Defines a workflow for performing fast posterior or likelihood inference.
-    The distribution is approximated with an inference network and an optional summary network.
+    Defines a wrapper for estimating arbitrary continuous distributions of the form:
+    `p(inference_variables | summary(summary_variables), inference_conditions)`
+
+    Any of the quantities on the RHS are optional. Can be used for neural posterior
+    estimation (NPE), neural likelihood estimation (NLE), or any other kind of
+    neural density estimation.
 
     Parameters
     ----------
@@ -49,8 +49,6 @@ class ContinuousApproximator(Approximator):
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
 
-    CONDITION_KEYS = ["summary_variables", "inference_conditions"]
-
     def __init__(
         self,
         *,
@@ -64,49 +62,28 @@ class ContinuousApproximator(Approximator):
         self.adapter = adapter
         self.inference_network = inference_network
         self.summary_network = summary_network
-
-        # standardization has to come last in the constructor
-        if isinstance(standardize, str) and standardize != "all":
-            self.standardize = [standardize]
-        else:
-            self.standardize = standardize or []
-
-        if self.standardize == "all":
-            # we have to lazily initialize these
-            self.standardize_layers = None
-        else:
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+        self.sampler = Sampler()
+        self.standardizer = Standardization(standardize)
+        self.condition_builder = ConditionBuilder()
+        self.standardize = standardize
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        # Build summary network and get output shape if present
-        summary_outputs_shape = None
+        if self.summary_network is not None and not self.summary_network.built:
+            self.summary_network.build(data_shapes["summary_variables"])
+
         if self.summary_network is not None:
-            if not self.summary_network.built:
-                self.summary_network.build(data_shapes["summary_variables"])
             summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+        else:
+            summary_outputs_shape = None
 
-        # Compute inference_conditions_shape by combining original and summary outputs
-        inference_conditions_shape = concatenate_valid_shapes(
-            [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
-        )
-
-        # Build inference network if needed
         if not self.inference_network.built:
+            inference_conditions_shape = concatenate_valid_shapes(
+                [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
+            )
             self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
 
-        # Set up standardization layers if requested
-        if self.standardize == "all":
-            # Only include variables present in data_shapes
-            self.standardize = [
-                var
-                for var in ["inference_variables", "summary_variables", "inference_conditions"]
-                if var in data_shapes
-            ]
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-
-        # Build all standardization layers
-        for var, layer in self.standardize_layers.items():
-            layer.build(data_shapes[var])
+        if not self.standardizer.built:
+            self.standardizer.build(data_shapes)
 
         self.built = True
 
@@ -219,16 +196,19 @@ class ContinuousApproximator(Approximator):
             "inference_" or "summary_" to indicate its source.
         """
 
-        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
+        inference_variables = self.standardizer.maybe_standardize(
+            inference_variables, key="inference_variables", stage=stage
+        )
+        inference_conditions = self.standardizer.maybe_standardize(
+            inference_conditions, key="inference_conditions", stage=stage
+        )
+        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
 
-        if "inference_conditions" in self.standardize:
-            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
-        inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
-
-        inference_variables = self._prepare_inference_variables(inference_variables, stage=stage)
-
+        summary_metrics, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network, inference_conditions, summary_variables, stage=stage, purpose="metrics"
+        )
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
+            inference_variables, conditions=resolved_conditions, sample_weight=sample_weight, stage=stage
         )
 
         if "loss" in summary_metrics:
@@ -241,30 +221,6 @@ class ContinuousApproximator(Approximator):
 
         metrics = {"loss": loss} | inference_metrics | summary_metrics
         return metrics
-
-    def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:
-        """Helper function to compute summary metrics and outputs."""
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot compute summaries from summary_variables without a summary network.")
-            return {}, None
-
-        if summary_variables is None:
-            raise ValueError("Summary variables are required when a summary network is present.")
-
-        if "summary_variables" in self.standardize:
-            summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
-
-        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
-        summary_outputs = summary_metrics.pop("outputs")
-        return summary_metrics, summary_outputs
-
-    def _prepare_inference_variables(self, inference_variables: Tensor, stage: str) -> Tensor:
-        """Helper function to convert inference variables to tensors and optionally standardize them."""
-        if "inference_variables" in self.standardize:
-            inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
-
-        return inference_variables
 
     def fit(self, *args, **kwargs):
         """
@@ -345,88 +301,6 @@ class ContinuousApproximator(Approximator):
 
         return base_config | serialize(config)
 
-    def estimate(
-        self,
-        conditions: Mapping[str, np.ndarray],
-        split: bool = False,
-        estimators: Mapping[str, Callable] = None,
-        num_samples: int = 1000,
-        batch_size: int = None,
-        **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
-        """
-        Estimate summary statistics for variables based on given conditions.
-
-        This function samples data using the object's ``sample`` method according to the provided
-        conditions and then computes summary statistics for each variable using a set of estimator
-        functions. By default, it calculates the mean, median, and selected quantiles (10th, 50th,
-        and 90th percentiles). Users can also supply custom estimators that override or extend the
-        default ones.
-
-        Parameters
-        ----------
-        conditions : Mapping[str, np.ndarray]
-            A mapping from variable names to numpy arrays representing the conditions under which
-            samples should be generated.
-        split : bool, optional
-            If True, indicates that the data sampling process should split the samples based on an
-            internal logic. The default is False.
-        estimators : Mapping[str, Callable], optional
-            A dictionary where keys are estimator names and values are callables. Each callable must
-            accept an array and an axis parameter, and return a dictionary with the computed statistic.
-            If not provided, a default set of estimators is used:
-                - 'mean': Computes the mean along the specified axis.
-                - 'median': Computes the median along the specified axis.
-                - 'quantiles': Computes the 10th, 50th, and 90th percentiles along the specified axis,
-                  then rearranges the axes for convenience.
-        num_samples : int, optional
-            The number of samples to generate for each variable. The default is 1000.
-        batch_size : int or None, optional
-            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
-            sequentially. Can help with memory management for large sample sizes.
-        **kwargs
-            Additional keyword arguments passed to the ``sample`` method.
-
-        Returns
-        -------
-        dict[str, dict[str, np.ndarray]]
-            A nested dictionary where the outer keys correspond to variable names and the inner keys
-            correspond to estimator names. Each inner dictionary contains the computed statistic(s) for
-            the variable, potentially with reduced nesting via ``squeeze_inner_estimates_dict``.
-        """
-
-        estimators = estimators or {}
-        estimators = (
-            dict(
-                mean=lambda x, axis: dict(value=np.mean(x, keepdims=True, axis=axis)),
-                median=lambda x, axis: dict(value=np.median(x, keepdims=True, axis=axis)),
-                quantiles=lambda x, axis: dict(value=np.moveaxis(np.quantile(x, q=[0.1, 0.5, 0.9], axis=axis), 0, 1)),
-            )
-            | estimators
-        )
-
-        samples = self.sample(
-            num_samples=num_samples, conditions=conditions, split=split, batch_size=batch_size, **kwargs
-        )
-
-        estimates = {
-            variable_name: {
-                estimator_name: func(samples[variable_name], axis=1) for estimator_name, func in estimators.items()
-            }
-            for variable_name in samples.keys()
-        }
-
-        # remove unnecessary nesting
-        estimates = {
-            variable_name: {
-                outer_key: squeeze_inner_estimates_dict(estimates[variable_name][outer_key])
-                for outer_key in estimates[variable_name].keys()
-            }
-            for variable_name in estimates.keys()
-        }
-
-        return estimates
-
     def sample(
         self,
         *,
@@ -435,6 +309,7 @@ class ContinuousApproximator(Approximator):
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        return_summaries: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -461,197 +336,59 @@ class ContinuousApproximator(Approximator):
             dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
             then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
             `(num_conditions, num_samples, time, target_dim)`.
+        return_summaries: bool, optional
+            If set to True and a summary network is present, will return the learned summary statistics for
+            the provided conditions.
         **kwargs : dict
-            Additional keyword arguments for the adapter and sampling process.
+            Additional keyword arguments for the sampling process.
 
         Returns
         -------
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        conditions = self._prepare_data(conditions, **kwargs)
-        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
 
-        num_conditions = dim_maybe_nested(conditions, axis=0) if len(conditions) > 0 else 1
+        adapted_conditions = self.adapter(conditions, strict=False)
+        adapted_conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_conditions)
 
-        # If no batching requested, pretend everything is one batch
-        if batch_size is None:
-            batch_size = num_conditions
+        inference_conditions = self.standardizer.maybe_standardize(
+            adapted_conditions.get("inference_conditions"), key="inference_conditions", stage="inference"
+        )
+        summary_variables = self.standardizer.maybe_standardize(
+            adapted_conditions.get("summary_variables"), key="summary_variables", stage="inference"
+        )
 
-        samples = []
-        for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
-            if len(conditions) == 0:
-                batch_conditions = {}
-            else:
-                batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
+        summary_outputs, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
+        )
 
-            batch_samples = self._sample(
-                num_samples=num_samples, **batch_conditions, sample_shape=sample_shape, **kwargs
-            )
-            samples.append(batch_samples)
+        samples = self.sampler.sample(
+            inference_network=self.inference_network,
+            num_samples=num_samples,
+            conditions=resolved_conditions,
+            batch_size=batch_size,
+            sample_shape=sample_shape,
+            **filter_kwargs(kwargs, self.inference_network.sample),
+        )
 
-        samples = tree_concatenate(samples, axis=0)
+        samples = self.standardizer.maybe_standardize(
+            samples, key="inference_variables", stage="inference", forward=False
+        )
 
-        # Optionally unstandardize and back-transform samples via adapter
-        samples = self._post_process_samples(samples)
-        samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": samples})
+        samples = self.adapter(samples, inverse=True, strict=False)
+
+        if return_summaries and summary_outputs is not None:
+            samples["summaries"] = summary_outputs
 
         if split:
             samples = split_arrays(samples, axis=-1)
+
         return samples
-
-    def _post_process_samples(self, samples: Tensor | Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
-        """Undo optional standardization and make dict of samples."""
-        if "inference_variables" in self.standardize:
-            samples = self.standardize_layers["inference_variables"](samples, forward=False)
-
-        samples = {"inference_variables": samples}
-        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
-        return samples
-
-    def _prepare_data(
-        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
-    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
-        """
-        Adapts, (optionally) standardizes, and converts data to tensors for inference.
-
-        Handles inputs containing only conditions, only inference_variables, or both.
-        Optionally tracks log-determinant Jacobian (ldj) of transformations.
-        """
-        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
-
-        if log_det_jac:
-            data, ldj = adapted
-            ldj_inference = ldj.get("inference_variables", 0.0)
-        else:
-            data = adapted
-            ldj_inference = None
-
-        # Standardize conditions
-        for key in self.CONDITION_KEYS:
-            if key in self.standardize and key in data:
-                data[key] = self.standardize_layers[key](data[key])
-
-        # Standardize inference variables
-        if "inference_variables" in data and "inference_variables" in self.standardize:
-            result = self.standardize_layers["inference_variables"](
-                data["inference_variables"], log_det_jac=log_det_jac
-            )
-            if log_det_jac:
-                data["inference_variables"], ldj_std = result
-                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
-            else:
-                data["inference_variables"] = result
-
-        # Convert all data to tensors
-        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
-
-        if log_det_jac:
-            return data, ldj_inference
-        return data
-
-    def _sample(
-        self,
-        num_samples: int,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        sample_shape: Literal["infer"] | Sequence[int] = "infer",
-        **kwargs,
-    ) -> Tensor:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
-
-        if self.summary_network is not None:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-
-            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
-
-        if inference_conditions is not None:
-            batch_size = keras.ops.shape(inference_conditions)[0]
-
-            # Repeat conditions across a new sample dimension
-            inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
-            inference_conditions = keras.ops.broadcast_to(
-                inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
-            )
-
-            # Flatten batch and sample dimensions into a new batch_size*num_samples batch dimension
-            inference_conditions = keras.ops.reshape(
-                inference_conditions, (batch_size * num_samples,) + keras.ops.shape(inference_conditions)[2:]
-            )
-
-            batch_shape = (batch_size * num_samples,)
-        else:
-            batch_shape = (num_samples,)
-
-        # Deal with trailing structural dimensions
-        if sample_shape == "infer":
-            if inference_conditions is None:
-                logging.warning(
-                    "No conditions to infer sample_shape from. Assuming no structural dimensions (e.g., time, etc.)"
-                )
-                sample_shape = ()
-            else:
-                sample_shape = keras.ops.shape(inference_conditions)[1:-1]
-
-        elif isinstance(sample_shape, int):
-            sample_shape = (sample_shape,)
-
-        elif isinstance(sample_shape, (tuple, list)):
-            sample_shape = tuple(sample_shape)
-
-        else:
-            raise ValueError(
-                f"sample_shape must be 'infer', an int, or a tuple/list of ints, but got {type(sample_shape)}."
-            )
-
-        batch_shape += sample_shape
-
-        samples = self.inference_network.sample(
-            batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
-        )
-
-        # Unflatten batch dimension to retrieve the sample dimension as a separate one
-        if inference_conditions is not None:
-            samples = keras.ops.reshape(samples, (-1, num_samples) + keras.ops.shape(samples)[1:])
-        return samples
-
-    def summarize(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
-        """
-        Computes the learned summary statistics of given summary variables.
-
-        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
-
-        Parameters
-        ----------
-        data : Mapping[str, np.ndarray]
-            Dictionary of simulated or real quantities as NumPy arrays.
-        **kwargs : dict
-            Additional keyword arguments for the adapter and the summary network.
-
-        Returns
-        -------
-        summaries : np.ndarray
-            The learned summary statistics.
-        """
-        if self.summary_network is None:
-            raise ValueError("A summary network is required to compute summaries.")
-
-        data_adapted = self._prepare_data(data, **kwargs)
-        if "summary_variables" not in data_adapted or data_adapted["summary_variables"] is None:
-            raise ValueError("Summary variables are required to compute summaries.")
-
-        summary_variables = data_adapted["summary_variables"]
-        summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
-        summaries = keras.ops.convert_to_numpy(summaries)
-
-        return summaries
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
@@ -670,43 +407,76 @@ class ContinuousApproximator(Approximator):
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
-        # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac.
-        data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
 
-        # Pass data to networks and convert back to numpy array.
-        log_prob = self._log_prob(**data, **kwargs)
+        adapted_data, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
+        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
+
+        inference_conditions = self.standardizer.maybe_standardize(
+            adapted_data.get("inference_conditions"), key="inference_conditions", stage="inference"
+        )
+        summary_variables = self.standardizer.maybe_standardize(
+            adapted_data.get("summary_variables"), key="summary_variables", stage="inference"
+        )
+        inference_variables, log_det_jac_std = self.standardizer.maybe_standardize(
+            adapted_data.get("inference_variables"), key="inference_variables", stage="inference", log_det_jac=True
+        )
+
+        log_det_jac = log_det_jac.get("inference_variables", 0.0)
+        log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
+
+        _, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
+        )
+
+        log_prob = self.inference_network.log_prob(
+            inference_variables,
+            conditions=resolved_conditions,
+            **filter_kwargs(kwargs, self.inference_network.log_prob),
+        )
+
         log_prob = keras.ops.convert_to_numpy(log_prob)
 
-        # Change of variables formula.
         log_prob = log_prob + log_det_jac
 
         return log_prob
 
-    def _log_prob(
-        self,
-        inference_variables: Tensor,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        **kwargs,
-    ) -> Tensor:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
+    def summarize(self, conditions: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+        """
+        Computes the learned summary statistics of given summary variables.
 
-        if self.summary_network is not None:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-            inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
+        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
 
-        return self.inference_network.log_prob(
-            inference_variables,
-            conditions=inference_conditions,
-            **filter_kwargs(kwargs, self.inference_network.log_prob),
+        Parameters
+        ----------
+        conditions : Mapping[str, np.ndarray]
+            Dictionary of simulated or real quantities as NumPy arrays.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and the summary network.
+
+        Returns
+        -------
+        summaries : np.ndarray
+            The learned summary statistics.
+        """
+        adapted_data = self.adapter(conditions, strict=False)
+        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
+
+        summary_variables = self.standardizer.maybe_standardize(
+            adapted_data.get("summary_variables"), key="summary_variables", stage="inference"
         )
+
+        summary_outputs, _ = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=None,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
+        )
+        return keras.ops.convert_to_numpy(summary_outputs)
 
     def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
         """

@@ -46,6 +46,7 @@ class ConsistencyModel(InferenceNetwork):
         s0: int | float = 10,
         s1: int | float = 150,
         subnet_kwargs: dict[str, any] = None,
+        drop_cond_prob: float = 0.0,
         **kwargs,
     ):
         """Creates an instance of a consistency model (CM) to be used for standalone consistency training (CT).
@@ -72,6 +73,10 @@ class ConsistencyModel(InferenceNetwork):
             Final number of discretization steps
         subnet_kwargs: dict[str, any], optional
             Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
+        drop_cond_prob : float, optional
+            Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
+            and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
+            model during inference, set `unconditional_mode` to True.
         **kwargs    : dict, optional, default: {}
             Additional keyword arguments
         """
@@ -110,6 +115,8 @@ class ConsistencyModel(InferenceNetwork):
         self.c_huber = None
         self.c_huber2 = None
         self.unique_n = None
+        self.drop_cond_prob = drop_cond_prob
+        self.unconditional_mode = False
 
     @property
     def student(self):
@@ -134,6 +141,7 @@ class ConsistencyModel(InferenceNetwork):
             "rho": self.rho,
             "p_mean": self.p_mean,
             "p_std": self.p_std,
+            "drop_cond_prob": self.drop_cond_prob,
             # we do not need to store subnet_kwargs
         }
 
@@ -260,6 +268,10 @@ class ConsistencyModel(InferenceNetwork):
         discretized_time = keras.ops.flip(self._discretize_time(steps), axis=-1)
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
 
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
+
         x = self.consistency_function(x, t, conditions=conditions, training=training)
 
         for n in range(1, steps):
@@ -298,8 +310,6 @@ class ConsistencyModel(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
-        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
-
         # The discretization schedule requires the number of passed training steps.
         # To be independent of external information, we track it here.
         if stage == "training":
@@ -310,6 +320,22 @@ class ConsistencyModel(InferenceNetwork):
             self.discretization_map, ops.cast(self._schedule_discretization(self.current_step), "int")
         )
         discretized_time = ops.take(self.discretized_times, discretization_index, axis=0)
+
+        if self.drop_cond_prob > 0 and conditions is not None:
+            # generate random masks for every batch of the condition
+            cond_shape = ops.shape(conditions)
+            batch = cond_shape[0]
+            rank = ops.ndim(conditions)
+            mask_conditions = keras.random.uniform(
+                shape=(batch,), dtype=ops.dtype(conditions), seed=self.seed_generator
+            )
+            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
+
+            mask_shape = (batch,) + (1,) * (rank - 1)
+            mask_conditions = ops.reshape(mask_conditions, mask_shape)
+            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
+
+            conditions = mask_conditions * conditions
 
         # Randomly sample t_n and t_[n+1] and reshape to (batch_size, 1)
         # adapted noise schedule from [2], Section 3.5
@@ -340,4 +366,5 @@ class ConsistencyModel(InferenceNetwork):
         loss = lam * (ops.sqrt(ops.square(teacher_out - student_out) + self.c_huber2) - self.c_huber)
         loss = weighted_mean(loss, sample_weight)
 
+        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
         return base_metrics | {"loss": loss}

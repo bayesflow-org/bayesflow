@@ -184,6 +184,8 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         sample_weight: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -207,6 +209,13 @@ class ContinuousApproximator(Approximator):
             a summary network is present.
         sample_weight : Tensor, optional
             Weighting tensor for metric computation (default is None).
+        mask : Tensor, optional (default is None).
+            Boolean tensor encoding masked timesteps in the input (used e.g. in RNN layers).
+        attention_mask: Tensor, optional (default is None)
+            A boolean mask of shape (batch_size, query_len, key_len), that prevents attention to
+            certain positions. The  mask specifies which query elements can attend to which key
+            elements, 1 indicates attention and 0 indicates no attention. Broadcasting can happen
+            for the missing batch dimensions.
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").
@@ -219,7 +228,8 @@ class ContinuousApproximator(Approximator):
             "inference_" or "summary_" to indicate its source.
         """
 
-        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
+        masks = {"mask": mask, "attention_mask": attention_mask}
+        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage, masks=masks)
 
         if "inference_conditions" in self.standardize:
             inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
@@ -228,7 +238,11 @@ class ContinuousApproximator(Approximator):
         inference_variables = self._prepare_inference_variables(inference_variables, stage=stage)
 
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
+            inference_variables,
+            conditions=inference_conditions,
+            sample_weight=sample_weight,
+            stage=stage,
+            **filter_kwargs(masks, self.inference_network.compute_metrics),
         )
 
         if "loss" in summary_metrics:
@@ -242,7 +256,9 @@ class ContinuousApproximator(Approximator):
         metrics = {"loss": loss} | inference_metrics | summary_metrics
         return metrics
 
-    def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:
+    def _compute_summary_metrics(
+        self, summary_variables: Tensor | None, stage: str, masks: dict[str, Tensor] = None
+    ) -> tuple[dict, Tensor | None]:
         """Helper function to compute summary metrics and outputs."""
         if self.summary_network is None:
             if summary_variables is not None:
@@ -255,7 +271,7 @@ class ContinuousApproximator(Approximator):
         if "summary_variables" in self.standardize:
             summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
 
-        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
+        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage, masks=masks)
         summary_outputs = summary_metrics.pop("outputs")
         return summary_metrics, summary_outputs
 
@@ -265,6 +281,47 @@ class ContinuousApproximator(Approximator):
             inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
 
         return inference_variables
+
+    def _prepare_data(
+        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
+        """
+        Adapts, (optionally) standardizes, and converts data to tensors for inference.
+
+        Handles inputs containing only conditions, only inference_variables, or both.
+        Optionally tracks log-determinant Jacobian (ldj) of transformations.
+        """
+        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
+
+        if log_det_jac:
+            data, ldj = adapted
+            ldj_inference = ldj.get("inference_variables", 0.0)
+        else:
+            data = adapted
+            ldj_inference = None
+
+        # Standardize conditions
+        for key in self.CONDITION_KEYS:
+            if key in self.standardize and key in data:
+                data[key] = self.standardize_layers[key](data[key])
+
+        # Standardize inference variables
+        if "inference_variables" in data and "inference_variables" in self.standardize:
+            result = self.standardize_layers["inference_variables"](
+                data["inference_variables"], log_det_jac=log_det_jac
+            )
+            if log_det_jac:
+                data["inference_variables"], ldj_std = result
+                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
+            else:
+                data["inference_variables"] = result
+
+        # Convert all data to tensors
+        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+
+        if log_det_jac:
+            return data, ldj_inference
+        return data
 
     def fit(self, *args, **kwargs):
         """
@@ -509,52 +566,13 @@ class ContinuousApproximator(Approximator):
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         return samples
 
-    def _prepare_data(
-        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
-    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
-        """
-        Adapts, (optionally) standardizes, and converts data to tensors for inference.
-
-        Handles inputs containing only conditions, only inference_variables, or both.
-        Optionally tracks log-determinant Jacobian (ldj) of transformations.
-        """
-        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
-
-        if log_det_jac:
-            data, ldj = adapted
-            ldj_inference = ldj.get("inference_variables", 0.0)
-        else:
-            data = adapted
-            ldj_inference = None
-
-        # Standardize conditions
-        for key in self.CONDITION_KEYS:
-            if key in self.standardize and key in data:
-                data[key] = self.standardize_layers[key](data[key])
-
-        # Standardize inference variables
-        if "inference_variables" in data and "inference_variables" in self.standardize:
-            result = self.standardize_layers["inference_variables"](
-                data["inference_variables"], log_det_jac=log_det_jac
-            )
-            if log_det_jac:
-                data["inference_variables"], ldj_std = result
-                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
-            else:
-                data["inference_variables"] = result
-
-        # Convert all data to tensors
-        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
-
-        if log_det_jac:
-            return data, ldj_inference
-        return data
-
     def _sample(
         self,
         num_samples: int,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         sample_shape: Literal["infer"] | Sequence[int] = "infer",
         **kwargs,
     ) -> Tensor:
@@ -567,7 +585,8 @@ class ContinuousApproximator(Approximator):
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
             )
 
             inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
@@ -687,6 +706,8 @@ class ContinuousApproximator(Approximator):
         inference_variables: Tensor,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         **kwargs,
     ) -> Tensor:
         if self.summary_network is None:
@@ -698,7 +719,8 @@ class ContinuousApproximator(Approximator):
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
             )
             inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 

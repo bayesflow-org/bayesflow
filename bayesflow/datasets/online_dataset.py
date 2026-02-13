@@ -1,10 +1,12 @@
 from collections.abc import Callable, Mapping, Sequence
 
-import keras
 import numpy as np
+import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.simulators.simulator import Simulator
+
+from ._augmentations import apply_augmentations
 
 
 class OnlineDataset(keras.utils.PyDataset):
@@ -71,20 +73,9 @@ class OnlineDataset(keras.utils.PyDataset):
         dict of str to np.ndarray
             A batch of simulated (and optionally augmented/adapted) data.
         """
-        batch = self.simulator.sample((self.batch_size,))
+        batch = self.simulator.sample(self.batch_size)
 
-        if self.augmentations is None:
-            pass
-        elif isinstance(self.augmentations, Mapping):
-            for key, fn in self.augmentations.items():
-                batch[key] = fn(batch[key])
-        elif isinstance(self.augmentations, Sequence):
-            for fn in self.augmentations:
-                batch = fn(batch)
-        elif isinstance(self.augmentations, Callable):
-            batch = self.augmentations(batch)
-        else:
-            raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
+        batch = apply_augmentations(batch, self.augmentations)
 
         if self.adapter is not None:
             batch = self.adapter(batch)
@@ -94,3 +85,6 @@ class OnlineDataset(keras.utils.PyDataset):
     @property
     def num_batches(self) -> int:
         return self._num_batches
+
+    def __len__(self) -> int:
+        return self.num_batches

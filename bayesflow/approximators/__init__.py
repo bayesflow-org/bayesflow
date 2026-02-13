@@ -8,6 +8,7 @@ from .continuous_approximator import ContinuousApproximator
 from .model_comparison_approximator import ModelComparisonApproximator
 from .point_approximator import PointApproximator
 from .ratio_approximator import RatioApproximator
+from .ensemble_approximator import EnsembleApproximator
 
 from ..utils._docs import _add_imports_to_all
 

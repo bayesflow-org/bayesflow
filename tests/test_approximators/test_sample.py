@@ -2,21 +2,36 @@ import pytest
 import keras
 from tests.utils import check_combination_simulator_adapter
 
+from bayesflow import OnlineDataset, EnsembleDataset, EnsembleApproximator
+
 
 def test_approximator_sample(approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
-    num_batches = 4
-    data = simulator.sample((num_batches * batch_size,))
+    data = simulator.sample(batch_size)
 
-    batch = adapter(data)
-    batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
-    batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    approximator.build(batch_shapes)
+    train_dataset = OnlineDataset(simulator=simulator, adapter=adapter, num_batches=4, batch_size=batch_size)
+    if isinstance(approximator, EnsembleApproximator):
+        train_dataset = EnsembleDataset(train_dataset, member_names=list(approximator.approximators.keys()))
+    batch = train_dataset[0]
 
-    samples = approximator.sample(num_samples=2, conditions=data)
+    print(keras.tree.map_structure(keras.ops.shape, batch))
 
-    assert isinstance(samples, dict)
+    approximator.build_from_data(batch)
+
+    num_samples = 11
+    if approximator.has_distribution:
+        samples = approximator.sample(conditions=data, num_samples=num_samples)
+        assert isinstance(samples, dict)
+        if "inference_conditions" in batch.keys():
+            expected_shape = (batch_size, num_samples)
+        else:
+            expected_shape = (num_samples,)
+        for v in samples.values():
+            assert v.shape[: len(expected_shape)] == expected_shape
+    else:
+        with pytest.raises(ValueError):
+            approximator.log_prob(data)
 
 
 @pytest.mark.parametrize("inference_network_type", ["flow_matching", "diffusion_model"])

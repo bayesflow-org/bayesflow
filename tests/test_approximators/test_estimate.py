@@ -1,8 +1,11 @@
+import pytest
 import keras
 from tests.utils import check_combination_simulator_adapter
 
 
 def test_approximator_estimate(approximator, simulator, batch_size, adapter):
+    from bayesflow import EnsembleApproximator
+
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
@@ -13,7 +16,12 @@ def test_approximator_estimate(approximator, simulator, batch_size, adapter):
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
     approximator.build(batch_shapes)
 
-    estimates = approximator.estimate(data)
+    # Check if approximator is an instance of EnsembleApproximator
+    if isinstance(approximator, EnsembleApproximator):
+        with pytest.raises(NotImplementedError):
+            approximator.estimate(data)
+    else:
+        estimates = approximator.estimate(data)
 
-    assert isinstance(estimates, dict)
-    print(keras.tree.map_structure(keras.ops.shape, estimates))
+        assert isinstance(estimates, dict)
+        print(keras.tree.map_structure(keras.ops.shape, estimates))

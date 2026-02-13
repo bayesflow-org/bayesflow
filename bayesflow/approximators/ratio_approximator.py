@@ -110,6 +110,10 @@ class RatioApproximator(Approximator):
 
         self.built = True
 
+    def build_from_data(self, adapted_data: dict[str, any]) -> None:
+        data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
+        self.build(data_shapes)
+
     def compute_metrics(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str = "training"):
         """Computes loss following https://arxiv.org/pdf/2210.06170"""
 

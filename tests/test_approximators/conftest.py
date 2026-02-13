@@ -36,15 +36,14 @@ def continuous_approximator(adapter, inference_network, summary_network):
 
 
 @pytest.fixture()
-def point_inference_network():
+def point_inference_network_without_parametric_score():
     from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import NormedDifferenceScore, QuantileScore, MultivariateNormalScore
+    from bayesflow.scores import NormedDifferenceScore, QuantileScore
 
     return PointInferenceNetwork(
         scores=dict(
             mean=NormedDifferenceScore(k=2),
             quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
-            mvn=MultivariateNormalScore(),
         ),
         subnet="mlp",
         subnet_kwargs=dict(widths=(32, 32)),
@@ -54,10 +53,11 @@ def point_inference_network():
 @pytest.fixture()
 def point_inference_network_with_multiple_parametric_scores():
     from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import MultivariateNormalScore
+    from bayesflow.scores import QuantileScore, MultivariateNormalScore
 
     return PointInferenceNetwork(
         scores=dict(
+            quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
             mvn1=MultivariateNormalScore(),
             mvn2=MultivariateNormalScore(),
         ),
@@ -65,7 +65,9 @@ def point_inference_network_with_multiple_parametric_scores():
 
 
 @pytest.fixture()
-def point_approximator_with_single_parametric_score(adapter, point_inference_network, summary_network):
+def point_approximator_without_parametric_score(
+    adapter, point_inference_network_without_parametric_score, summary_network
+):
     from bayesflow import PointApproximator
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
@@ -73,7 +75,7 @@ def point_approximator_with_single_parametric_score(adapter, point_inference_net
 
     return PointApproximator(
         adapter=adapter,
-        inference_network=point_inference_network,
+        inference_network=point_inference_network_without_parametric_score,
         summary_network=summary_network,
     )
 
@@ -94,8 +96,25 @@ def point_approximator_with_multiple_parametric_scores(
     )
 
 
+@pytest.fixture()
+def ensemble_approximator(
+    continuous_approximator,
+    point_approximator_without_parametric_score,
+    point_approximator_with_multiple_parametric_scores,
+):
+    from bayesflow import EnsembleApproximator
+
+    return EnsembleApproximator(
+        dict(
+            continuous_1=continuous_approximator,
+            point_1=point_approximator_without_parametric_score,
+            point_2=point_approximator_with_multiple_parametric_scores,
+        )
+    )
+
+
 @pytest.fixture(
-    params=["point_approximator_with_single_parametric_score", "point_approximator_with_multiple_parametric_scores"]
+    params=["point_approximator_without_parametric_score", "point_approximator_with_multiple_parametric_scores"]
 )
 def point_approximator(request):
     return request.getfixturevalue(request.param)
@@ -104,7 +123,8 @@ def point_approximator(request):
 @pytest.fixture(
     params=[
         "continuous_approximator",
-        "point_approximator_with_single_parametric_score",
+        "ensemble_approximator",
+        "point_approximator_without_parametric_score",
         "point_approximator_with_multiple_parametric_scores",
     ],
     scope="function",

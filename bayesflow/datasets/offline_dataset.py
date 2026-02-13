@@ -1,11 +1,12 @@
 from collections.abc import Callable, Mapping, Sequence
 
 import numpy as np
-
 import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.utils import logging
+
+from ._augmentations import apply_augmentations
 
 
 class OfflineDataset(keras.utils.PyDataset):
@@ -73,6 +74,10 @@ class OfflineDataset(keras.utils.PyDataset):
         if self._shuffle:
             self.shuffle()
 
+    @property
+    def num_batches(self) -> int:
+        return int(np.ceil(self.num_samples / self.batch_size))
+
     def __getitem__(self, item: int) -> dict[str, np.ndarray]:
         """
         Load a batch of data from disk.
@@ -95,35 +100,46 @@ class OfflineDataset(keras.utils.PyDataset):
         if not 0 <= item < self.num_batches:
             raise IndexError(f"Index {item} is out of bounds for dataset with {self.num_batches} batches.")
 
-        item = slice(item * self.batch_size, (item + 1) * self.batch_size)
-        item = self.indices[item]
+        start = item * self.batch_size
+        stop = min((item + 1) * self.batch_size, self.num_samples)
+        idx = self.indices[start:stop]
 
+        return self.get_batch_by_sample_indices(idx)
+
+    def get_batch_by_sample_indices(self, indices: np.ndarray) -> dict[str, np.ndarray]:
+        """
+        Return a batch for explicit sample indices.
+
+        This method is the index-based access primitive used by ensemble dataset wrappers.
+        It selects samples from the underlying in-memory arrays, then applies augmentations
+        and the adapter just like in :meth:`__getitem__`.
+
+        Parameters
+        ----------
+        indices : np.ndarray
+            1D integer array of sample indices in the range ``[0, num_samples)``.
+            The returned batch will have leading dimension ``len(indices)``.
+
+        Returns
+        -------
+        dict of str to np.ndarray
+            A batch dictionary where each NumPy array has shape ``(len(indices), ...)``.
+            Non-array entries are passed through unchanged.
+        """
         batch = {
-            key: np.take(value, item, axis=0) if isinstance(value, np.ndarray) else value
+            key: np.take(value, indices, axis=0) if isinstance(value, np.ndarray) else value
             for key, value in self.data.items()
         }
 
-        if self.augmentations is None:
-            pass
-        elif isinstance(self.augmentations, Mapping):
-            for key, fn in self.augmentations.items():
-                batch[key] = fn(batch[key])
-        elif isinstance(self.augmentations, Sequence):
-            for fn in self.augmentations:
-                batch = fn(batch)
-        elif isinstance(self.augmentations, Callable):
-            batch = self.augmentations(batch)
-        else:
-            raise RuntimeError(f"Could not apply augmentations of type {type(self.augmentations)}.")
+        batch = apply_augmentations(batch, self.augmentations)
 
         if self.adapter is not None:
             batch = self.adapter(batch)
 
         return batch
 
-    @property
-    def num_batches(self) -> int | None:
-        return int(np.ceil(self.num_samples / self.batch_size))
+    def __len__(self) -> int:
+        return self.num_batches
 
     def on_epoch_end(self) -> None:
         if self._shuffle:

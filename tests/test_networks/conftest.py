@@ -114,11 +114,11 @@ def free_form_flow():
 
 
 @pytest.fixture()
-def typical_point_inference_network():
-    from bayesflow.networks import PointInferenceNetwork
+def typical_scoring_rule_inference_network():
+    from bayesflow.networks import ScoringRuleInferenceNetwork
     from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
 
-    return PointInferenceNetwork(
+    return ScoringRuleInferenceNetwork(
         scores=dict(
             mean=MeanScore(),
             median=MedianScore(),
@@ -129,13 +129,13 @@ def typical_point_inference_network():
 
 
 @pytest.fixture()
-def typical_point_inference_network_subnet():
-    from bayesflow.networks import PointInferenceNetwork
+def typical_scoring_rule_inference_network_subnet():
+    from bayesflow.networks import ScoringRuleInferenceNetwork
     from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
 
     subnet = MLP([16, 8])
 
-    return PointInferenceNetwork(
+    return ScoringRuleInferenceNetwork(
         scores=dict(
             mean=MeanScore(subnets=dict(value=subnet)),
             median=MedianScore(subnets=dict(value=subnet)),
@@ -148,7 +148,7 @@ def typical_point_inference_network_subnet():
 
 @pytest.fixture(
     params=[
-        "typical_point_inference_network",
+        "typical_scoring_rule_inference_network",
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
@@ -172,7 +172,7 @@ def inference_network(request):
 
 @pytest.fixture(
     params=[
-        "typical_point_inference_network_subnet",
+        "typical_scoring_rule_inference_network_subnet",
         "coupling_flow_subnet",
         "flow_matching_subnet",
         "free_form_flow_subnet",

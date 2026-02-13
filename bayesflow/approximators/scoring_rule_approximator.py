@@ -22,13 +22,14 @@ from .continuous_approximator import ContinuousApproximator
 
 
 @serializable("bayesflow.approximators")
-class PointApproximator(ContinuousApproximator):
+class ScoringRuleApproximator(ContinuousApproximator):
     """
-    A workflow for fast amortized point estimation of a conditional distribution.
+    A workflow for fast amortized Bayes risk minimization for arbitrary scoring rules.
 
-    The distribution is approximated by point estimators, parameterized by a feed-forward
-    :py:class:`~bayesflow.networks.PointInferenceNetwork`. Conditions can be compressed by an optional summary network
-    (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.
+    The distribution is approximated by point or variational distribution estimators, parameterized by a feed-forward
+    :py:class:`~bayesflow.networks.ScoringRuleInferenceNetwork`. Conditions can be compressed by an optional
+    summary network (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`)
+    or used directly as input to the inference network.
     """
 
     def estimate(
@@ -116,7 +117,7 @@ class PointApproximator(ContinuousApproximator):
             for the sampling process.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
-            Currently not supported for :py:class:`PointApproximator`.
+            Currently not supported for :py:class:`ScoringRuleApproximator`.
         batch_size : int or None, optional
             If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
             sequentially. Can help with memory management for large sample sizes.
@@ -135,7 +136,7 @@ class PointApproximator(ContinuousApproximator):
             of shape (num_datasets, num_samples, variable_block_size).
         """
         if split:
-            raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
+            raise NotImplementedError("split=True is currently not supported for `ScoringRuleApproximator`.")
 
         conditions = self._prepare_data(conditions, **kwargs)
         conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}

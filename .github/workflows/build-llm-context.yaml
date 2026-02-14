@@ -1,0 +1,33 @@
+name: Build LLM Context
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-context:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r llm_context/requirements.txt
+
+      - name: Build LLM context files
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          python scripts/build_llm_context.py "$TAG"
+
+      - name: Upload context files as release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: llm_context/llm_context_*.md

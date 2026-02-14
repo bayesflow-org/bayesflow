@@ -13,6 +13,7 @@ docsrc/source/contributing.md
 examples/checkpoints/
 build
 docs/
+llm_context/llm_context*
 
 
 # mypy

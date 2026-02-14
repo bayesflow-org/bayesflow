@@ -184,6 +184,8 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         sample_weight: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -207,6 +209,13 @@ class ContinuousApproximator(Approximator):
             a summary network is present.
         sample_weight : Tensor, optional
             Weighting tensor for metric computation (default is None).
+        mask : Tensor, optional (default is None).
+            Boolean tensor encoding masked timesteps in the input (used e.g. in RNN layers).
+        attention_mask: Tensor, optional (default is None)
+            A boolean mask of shape (batch_size, query_len, key_len), that prevents attention to
+            certain positions. The  mask specifies which query elements can attend to which key
+            elements, 1 indicates attention and 0 indicates no attention. Broadcasting can happen
+            for the missing batch dimensions.
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").
@@ -219,7 +228,8 @@ class ContinuousApproximator(Approximator):
             "inference_" or "summary_" to indicate its source.
         """
 
-        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
+        masks = {"mask": mask, "attention_mask": attention_mask}
+        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage, masks=masks)
 
         if "inference_conditions" in self.standardize:
             inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
@@ -228,7 +238,11 @@ class ContinuousApproximator(Approximator):
         inference_variables = self._prepare_inference_variables(inference_variables, stage=stage)
 
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=inference_conditions, sample_weight=sample_weight, stage=stage
+            inference_variables,
+            conditions=inference_conditions,
+            sample_weight=sample_weight,
+            stage=stage,
+            **filter_kwargs(masks, self.inference_network.compute_metrics),
         )
 
         if "loss" in summary_metrics:
@@ -242,7 +256,9 @@ class ContinuousApproximator(Approximator):
         metrics = {"loss": loss} | inference_metrics | summary_metrics
         return metrics
 
-    def _compute_summary_metrics(self, summary_variables: Tensor | None, stage: str) -> tuple[dict, Tensor | None]:
+    def _compute_summary_metrics(
+        self, summary_variables: Tensor | None, stage: str, masks: dict[str, Tensor] = None
+    ) -> tuple[dict, Tensor | None]:
         """Helper function to compute summary metrics and outputs."""
         if self.summary_network is None:
             if summary_variables is not None:
@@ -255,7 +271,7 @@ class ContinuousApproximator(Approximator):
         if "summary_variables" in self.standardize:
             summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
 
-        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
+        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage, masks=masks)
         summary_outputs = summary_metrics.pop("outputs")
         return summary_metrics, summary_outputs
 
@@ -265,6 +281,47 @@ class ContinuousApproximator(Approximator):
             inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
 
         return inference_variables
+
+    def _prepare_data(
+        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
+        """
+        Adapts, (optionally) standardizes, and converts data to tensors for inference.
+
+        Handles inputs containing only conditions, only inference_variables, or both.
+        Optionally tracks log-determinant Jacobian (ldj) of transformations.
+        """
+        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
+
+        if log_det_jac:
+            data, ldj = adapted
+            ldj_inference = ldj.get("inference_variables", 0.0)
+        else:
+            data = adapted
+            ldj_inference = None
+
+        # Standardize conditions
+        for key in self.CONDITION_KEYS:
+            if key in self.standardize and key in data:
+                data[key] = self.standardize_layers[key](data[key])
+
+        # Standardize inference variables
+        if "inference_variables" in data and "inference_variables" in self.standardize:
+            result = self.standardize_layers["inference_variables"](
+                data["inference_variables"], log_det_jac=log_det_jac
+            )
+            if log_det_jac:
+                data["inference_variables"], ldj_std = result
+                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
+            else:
+                data["inference_variables"] = result
+
+        # Convert all data to tensors
+        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+
+        if log_det_jac:
+            return data, ldj_inference
+        return data
 
     def fit(self, *args, **kwargs):
         """
@@ -509,52 +566,13 @@ class ContinuousApproximator(Approximator):
         samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         return samples
 
-    def _prepare_data(
-        self, data: Mapping[str, np.ndarray], log_det_jac: bool = False, **kwargs
-    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
-        """
-        Adapts, (optionally) standardizes, and converts data to tensors for inference.
-
-        Handles inputs containing only conditions, only inference_variables, or both.
-        Optionally tracks log-determinant Jacobian (ldj) of transformations.
-        """
-        adapted = self.adapter(data, strict=False, log_det_jac=log_det_jac, **kwargs)
-
-        if log_det_jac:
-            data, ldj = adapted
-            ldj_inference = ldj.get("inference_variables", 0.0)
-        else:
-            data = adapted
-            ldj_inference = None
-
-        # Standardize conditions
-        for key in self.CONDITION_KEYS:
-            if key in self.standardize and key in data:
-                data[key] = self.standardize_layers[key](data[key])
-
-        # Standardize inference variables
-        if "inference_variables" in data and "inference_variables" in self.standardize:
-            result = self.standardize_layers["inference_variables"](
-                data["inference_variables"], log_det_jac=log_det_jac
-            )
-            if log_det_jac:
-                data["inference_variables"], ldj_std = result
-                ldj_inference += keras.ops.convert_to_numpy(ldj_std)
-            else:
-                data["inference_variables"] = result
-
-        # Convert all data to tensors
-        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
-
-        if log_det_jac:
-            return data, ldj_inference
-        return data
-
     def _sample(
         self,
         num_samples: int,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         sample_shape: Literal["infer"] | Sequence[int] = "infer",
         **kwargs,
     ) -> Tensor:
@@ -567,7 +585,8 @@ class ContinuousApproximator(Approximator):
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
             )
 
             inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
@@ -687,6 +706,8 @@ class ContinuousApproximator(Approximator):
         inference_variables: Tensor,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
         **kwargs,
     ) -> Tensor:
         if self.summary_network is None:
@@ -698,7 +719,8 @@ class ContinuousApproximator(Approximator):
 
         if self.summary_network is not None:
             summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
             )
             inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
 
@@ -714,3 +736,246 @@ class ContinuousApproximator(Approximator):
         inference variables as present.
         """
         return keras.ops.shape(data["inference_variables"])[0]
+
+    def compositional_sample(
+        self,
+        *,
+        num_samples: int,
+        conditions: Mapping[str, np.ndarray],
+        compute_prior_score: Callable[[Mapping[str, np.ndarray]], np.ndarray],
+        split: bool = False,
+        batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generates compositional samples from the approximator given input conditions.
+        The `conditions` dictionary should have shape (n_datasets, n_compositional_conditions, ...).
+
+        Parameters
+        ----------
+        num_samples : int
+            Number of samples to generate.
+        conditions : dict[str, np.ndarray]
+            Dictionary of conditioning variables as NumPy arrays with shape
+            (n_datasets, n_compositional_conditions, ...).
+        compute_prior_score : Callable[[Mapping[str, np.ndarray]], np.ndarray]
+            A function that computes the score of the log prior distribution.
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and sampling process.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Dictionary containing generated samples with compositional structure preserved.
+        """
+        if keras.backend.backend() == "jax":
+            NotImplemented("Compositional sampling with JAX backend is not supported yet.")
+
+        original_shapes = {}
+        flattened_conditions = {}
+        for key, value in conditions.items():  # Flatten compositional dimensions
+            original_shapes[key] = value.shape
+            n_datasets, n_comp = value.shape[:2]
+            flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
+            flattened_conditions[key] = value.reshape(flattened_shape)
+        n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
+
+        if n_comp <= 1:
+            raise ValueError(
+                "At least two conditioning variables are required for compositional sampling, got "
+                f"{n_comp}. Use 'sample' instead."
+            )
+
+        # Prepare data using existing method (handles adaptation and standardization)
+        adapted_conditions = self._prepare_data(flattened_conditions, **kwargs)
+
+        # Remove any superfluous keys, just retain actual conditions
+        adapted_conditions = {k: v for k, v in adapted_conditions.items() if k in self.CONDITION_KEYS}
+
+        # Reshape conditions back to (n_datasets, n_compositional, ...)
+        prepared_conditions = {}
+        for key, value in adapted_conditions.items():
+            expanded_shape = (
+                n_datasets,
+                n_comp,
+            ) + value.shape[1:]
+            prepared_conditions[key] = keras.ops.reshape(value, expanded_shape)
+
+        def compute_prior_score_pre(_samples: Tensor) -> Tensor:
+            if "inference_variables" in self.standardize:
+                _samples = self.standardize_layers["inference_variables"](_samples, forward=False)
+            _samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": _samples})
+            adapted_samples, log_det_jac = self.adapter(
+                _samples, inverse=True, strict=False, log_det_jac=True, **kwargs
+            )
+            if len(log_det_jac) > 0:
+                problematic_keys = [key for key in log_det_jac if log_det_jac[key] != 0.0]
+                raise NotImplementedError(
+                    f"Cannot use compositional sampling with adapters "
+                    f"that have non-zero log_det_jac. Problematic keys: {problematic_keys}"
+                )
+
+            prior_score = compute_prior_score(adapted_samples)
+            for key in adapted_samples:
+                prior_score[key] = keras.ops.cast(prior_score[key], "float32")
+
+            prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
+            out = keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
+
+            if "inference_variables" in self.standardize:
+                # Apply jacobian correction from standardization
+                # For standardization T^{-1}(z) = z * std + mean, the jacobian is diagonal with std on diagonal
+                # The gradient of log|det(J)| w.r.t. z is 0 since log|det(J)| = sum(log(std)) is constant w.r.t. z
+                # But we need to transform the score: score_z = score_x * std where x = T^{-1}(z)
+                standardize_layer = self.standardize_layers["inference_variables"]
+
+                # Compute the correct standard deviation for all components
+                std_components = []
+                for idx in range(len(standardize_layer.moving_mean)):
+                    std_val = standardize_layer.moving_std(idx)
+                    std_components.append(std_val)
+
+                # Concatenate std components to match the shape of out
+                if len(std_components) == 1:
+                    std = std_components[0]
+                else:
+                    std = keras.ops.concatenate(std_components, axis=-1)
+
+                # Expand std to match batch dimension of out
+                std_expanded = keras.ops.expand_dims(std, 0)  # Add batch dimensions
+
+                # Apply the jacobian: score_z = score_x * std
+                out = out * std_expanded
+            return out
+
+        # If no batching requested, process everything as one batch
+        if batch_size is None:
+            batch_size = n_datasets
+
+        samples = []
+        for i in tqdm(range(0, n_datasets, batch_size), desc="Compositional Sampling", unit="batch"):
+            batch_conditions = slice_maybe_nested(prepared_conditions, i, i + batch_size)
+
+            batch_samples = self._compositional_sample(
+                num_samples=num_samples,
+                n_compositional=n_comp,
+                compute_prior_score=compute_prior_score_pre,
+                **batch_conditions,
+                sample_shape=sample_shape,
+                **kwargs,
+            )
+            samples.append(batch_samples)
+
+        samples = tree_concatenate(samples, axis=0)
+
+        if "inference_variables" in self.standardize:
+            samples = self.standardize_layers["inference_variables"](samples, forward=False)
+
+        samples = {"inference_variables": samples}
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
+
+        # Back-transform quantities and samples
+        samples = self.adapter(samples, inverse=True, strict=False, **kwargs)
+
+        if split:
+            samples = split_arrays(samples, axis=-1)
+        return samples
+
+    def _compositional_sample(
+        self,
+        num_samples: int,
+        n_compositional: int,
+        compute_prior_score: Callable[[Tensor], Tensor],
+        inference_conditions: Tensor = None,
+        summary_variables: Tensor = None,
+        mask: Tensor = None,
+        attention_mask: Tensor = None,
+        sample_shape: Literal["infer"] | Sequence[int] = "infer",
+        **kwargs,
+    ) -> Tensor:
+        """
+        Internal method for compositional sampling.
+        """
+        if self.summary_network is None:
+            if summary_variables is not None:
+                raise ValueError("Cannot use summary variables without a summary network.")
+        else:
+            if summary_variables is None:
+                raise ValueError("Summary variables are required when a summary network is present.")
+
+        if self.summary_network is not None:
+            # remove compositional dimension for summary network
+            # From (n_datasets, n_comp, ...., dims) to (n_datasets * n_comp, ...., dims)
+            condition_dims = keras.ops.shape(summary_variables)[2:]
+            batch_size = keras.ops.shape(summary_variables)[0]
+            summary_variables = keras.ops.reshape(summary_variables, (batch_size * n_compositional, *condition_dims))
+
+            summary_outputs = self.summary_network(
+                summary_variables,
+                **filter_kwargs(kwargs | {"mask": mask, "attention_mask": attention_mask}, self.summary_network.call),
+            )
+            condition_out_dims = keras.ops.shape(summary_outputs)[1:]
+            summary_outputs = keras.ops.reshape(summary_outputs, (batch_size, n_compositional, *condition_out_dims))
+
+            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
+
+        if inference_conditions is not None:
+            batch_size = keras.ops.shape(inference_conditions)[0]
+
+            # Repeat conditions across a new sample dimension
+            inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
+            inference_conditions = keras.ops.broadcast_to(
+                inference_conditions, (batch_size, num_samples, *keras.ops.shape(inference_conditions)[2:])
+            )
+
+            # Flatten batch and sample dimensions into a new batch_size*num_samples batch dimension
+            inference_conditions = keras.ops.reshape(
+                inference_conditions, (batch_size * num_samples,) + keras.ops.shape(inference_conditions)[2:]
+            )
+
+            batch_shape = (batch_size * num_samples,)
+        else:
+            raise ValueError("Cannot perform compositional sampling without inference conditions.")
+
+        # Deal with trailing structural dimensions, do not include compositional dimension
+        if sample_shape == "infer":
+            sample_shape = keras.ops.shape(inference_conditions)[2:-1]
+
+        elif isinstance(sample_shape, int):
+            sample_shape = (sample_shape,)
+
+        elif isinstance(sample_shape, (tuple, list)):
+            sample_shape = tuple(sample_shape)
+
+        else:
+            raise ValueError(
+                f"sample_shape must be 'infer', an int, or a tuple/list of ints, but got {type(sample_shape)}."
+            )
+
+        batch_shape += sample_shape
+
+        samples = self.inference_network.sample(
+            batch_shape,
+            conditions=inference_conditions,
+            compute_prior_score=compute_prior_score,
+            **filter_kwargs(kwargs, self.inference_network.sample),
+        )
+
+        # Unflatten batch dimension to retrieve the sample dimension as a separate one
+        samples = keras.ops.reshape(samples, (-1, num_samples) + keras.ops.shape(samples)[1:])
+        return samples

@@ -475,6 +475,7 @@ def create_legends(
     color2: str | tuple = "gray",
     label: str = "Posterior",
     show_single_legend: bool = False,
+    place_legend_below: bool = False,
     legend_fontsize: int = 14,
     legend_location: str = "center left",
     legend_anchor: tuple = (1, 0.5),
@@ -537,6 +538,11 @@ def create_legends(
         target_label = "Targets"
         handles.append(target_handle)
         labels.append(target_label)
+
+    if place_legend_below:
+        legend_location = "upper center"
+        legend_anchor = (0.5, 0)
+        legend_ncol = 3
 
     # If there are more than one dataset to plot,
     if len(handles) > 1 or show_single_legend:

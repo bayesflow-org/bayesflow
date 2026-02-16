@@ -23,6 +23,7 @@ def pairs_samples(
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     show_single_legend: bool = False,
+    place_legend_below: bool = False,
     markersize: float = 40,
     **kwargs,
 ) -> sns.PairGrid:
@@ -83,6 +84,7 @@ def pairs_samples(
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
         show_single_legend=show_single_legend,
+        place_legend_below=place_legend_below,
         markersize=markersize,
         **kwargs,
     )
@@ -104,6 +106,7 @@ def _pairs_samples(
     legend_anchor: tuple = (1, 0.5),
     legend_ncol: int = 1,
     show_single_legend: bool = False,
+    place_legend_below: bool = False,
     markersize: float = 40,
     target_markersize: float = 40,
     target_color: str = "red",
@@ -230,6 +233,7 @@ def _pairs_samples(
         legend_location=legend_location,
         legend_anchor=legend_anchor,
         legend_ncol=legend_ncol,
+        place_legend_below=place_legend_below,
     )
 
     # Return figure

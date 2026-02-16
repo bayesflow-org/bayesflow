@@ -28,6 +28,9 @@ def pairs_posterior(
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
+    legend_location: str = "center left",
+    legend_anchor: tuple = (1, 0.5),
+    legend_ncol: int = 1,
     **kwargs,
 ) -> sns.PairGrid:
     """Generates a bivariate pair plot given posterior draws and optional prior or prior draws.
@@ -106,6 +109,9 @@ def pairs_posterior(
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
         legend_fontsize=legend_fontsize,
+        legend_location=legend_location,
+        legend_anchor=legend_anchor,
+        legend_ncol=legend_ncol,
         markersize=markersize,
         target_markersize=target_markersize,
         target_color=target_color,
@@ -133,6 +139,9 @@ def pairs_posterior(
             show_single_legend=False,
             target_color=target_color,
             target_markersize=target_markersize,
+            legend_location=legend_location,
+            legend_anchor=legend_anchor,
+            legend_ncol=legend_ncol,
         )
 
     return g

@@ -100,6 +100,9 @@ def _pairs_samples(
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
+    legend_location: str = "center left",
+    legend_anchor: tuple = (1, 0.5),
+    legend_ncol: int = 1,
     show_single_legend: bool = False,
     markersize: float = 40,
     target_markersize: float = 40,
@@ -222,9 +225,11 @@ def _pairs_samples(
         legend_fontsize=legend_fontsize,
         label=label,
         show_single_legend=show_single_legend,
-        markersize=markersize,
         target_markersize=target_markersize,
         target_color=target_color,
+        legend_location=legend_location,
+        legend_anchor=legend_anchor,
+        legend_ncol=legend_ncol,
     )
 
     # Return figure

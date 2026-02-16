@@ -476,9 +476,12 @@ def create_legends(
     label: str = "Posterior",
     show_single_legend: bool = False,
     legend_fontsize: int = 14,
-    markersize: float = 40,
+    legend_location: str = "center left",
+    legend_anchor: tuple = (1, 0.5),
+    legend_ncol: int = 1,
     target_color: str = "red",
     target_markersize: float = 40,
+    **kwargs,
 ):
     """
     Helper function to create legends for pairplots.
@@ -540,8 +543,10 @@ def create_legends(
         g.figure.legend(
             handles=handles,
             labels=labels,
-            loc="center left",
-            bbox_to_anchor=(1, 0.5),
+            loc=legend_location,
+            bbox_to_anchor=legend_anchor,
+            ncol=legend_ncol,
             frameon=False,
             fontsize=legend_fontsize,
+            **kwargs,
         )

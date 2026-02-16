@@ -59,7 +59,9 @@ def pairs_posterior(
         The font size of the axis tick labels
     place_legend_below : bool, optional, default: False
         Optional toggle for the user to choose whether to place the legends
-        below the plot
+        below the plot.
+        If set to True, then user-defined legend location, anchor, and ncol
+        will be ignored and overwritten by presets.
     legend_fontsize   : int, optional, default: 16
         The font size of the legend text
     legend_location  : str, optional, default: "center left"

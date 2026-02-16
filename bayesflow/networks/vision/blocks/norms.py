@@ -26,11 +26,10 @@ class SimpleNorm(keras.Layer):
         self,
         method: Literal["layer", "group"] = "group",
         *,
-        groups: int = 8,
+        groups: int | None = 8,
         axis: int = -1,
         center: bool = True,
         scale: bool = True,
-        epsilon: float = 1e-3,
         **kwargs
     ):
         """
@@ -41,7 +40,7 @@ class SimpleNorm(keras.Layer):
         method : {"layer", "group"}, optional
             Type of normalization to apply. "layer" uses Layer Normalization; "group" uses Group Normalization.
             Default is "group".
-        groups : int, optional
+        groups : int or None, optional
             Number of groups for Group Normalization. Only used when `method="group"`. At build time, if the
             requested value does not divide the number of channels, it is reduced to the largest valid divisor
             <= `groups`. Default is 8.
@@ -52,9 +51,6 @@ class SimpleNorm(keras.Layer):
             Whether to include a learnable offset (beta). Default is True.
         scale : bool, optional
             Whether to include a learnable scale (gamma). Default is True.
-        epsilon : float, optional
-            Small constant added for numerical stability. Diffusion-style architectures often use larger eps
-            values than the Keras defaults. Default is 1e-3.
         **kwargs
             Additional keyword arguments passed to `keras.Layer`.
         """
@@ -64,14 +60,12 @@ class SimpleNorm(keras.Layer):
         self.axis = axis
         self.center = center
         self.scale = scale
-        self.epsilon = epsilon
         match method:
             case "layer":
                 self.norm = keras.layers.LayerNormalization(
                     axis=axis,
                     center=center,
                     scale=scale,
-                    epsilon=epsilon,
                 )
             case "group":
                 self.norm = keras.layers.GroupNormalization(
@@ -79,7 +73,6 @@ class SimpleNorm(keras.Layer):
                     axis=axis,
                     center=center,
                     scale=scale,
-                    epsilon=epsilon,
                 )
             case _:
                 raise ValueError(f"Unsupported normalization method: {method}")
@@ -97,7 +90,6 @@ class SimpleNorm(keras.Layer):
             "axis": self.axis,
             "center": self.center,
             "scale": self.scale,
-            "epsilon": self.epsilon,
         }
         return base | serialize(cfg)
 
@@ -126,7 +118,6 @@ class SimpleNorm(keras.Layer):
                         axis=self.axis,
                         center=self.center,
                         scale=self.scale,
-                        epsilon=self.epsilon,
                     )
         self.norm.build(input_shape)
 

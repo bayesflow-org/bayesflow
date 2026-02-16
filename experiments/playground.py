@@ -18,12 +18,7 @@ def _():
     import shutil
     from tqdm import tqdm
 
-    return bf, gdown, np, os, shutil, tqdm
-
-
-@app.cell
-def _():
-    return
+    return bf, gdown, keras, np, os, shutil, tqdm
 
 
 @app.cell
@@ -70,12 +65,13 @@ def _(bf, np, os):
             img = img.resize((64, 64), Image.Resampling.BILINEAR) # Resize to (64, 64)
             obs = img.convert("L") # Convert to grayscale
 
-            img_array = np.array(img) / 255. # Convert to NumPy array
+            img_array = np.array(img) / 255.
             obs_array = np.array(obs) / 255.
             obs_array = np.expand_dims(obs_array, axis=-1) # Add channel dimension for grayscale
+            assert len(img_array.shape) == 3 and len(obs_array.shape) == 3, f"Expected 3D arrays, got {img_array.shape} and {obs_array.shape}"
             return {
-                "img": img_array.astype(np.float32),
-                "gray_img": obs_array.astype(np.float32),
+                "img": img_array,
+                "gray_img": obs_array,
             }
 
     adapter = (
@@ -93,15 +89,43 @@ def _(bf, np, os):
 
 
 @app.cell
-def _(adapter, bf, load_fn):
+def _(bf, keras):
     # stage res: (64, 32, 16, 8)
+    subnet_kwargs_unet = dict(
+        widths=(64, 64, 64, 64),
+        res_blocks=2,
+        attn_stage=(False, False, True, True)
+    )
+    subnet_unet = bf.networks.UNet
+
+    subnet_kwargs_uvit = dict(
+        widths=(64, 64, 64),
+        res_blocks=2,
+        transformer_blocks=3,
+        transformer_dropout=0.2,
+        transformer_width=256,
+    )
+    subnet_uvit = bf.networks.UViT
+
+    subnet_kwargs_resuvit = subnet_kwargs_uvit
+    subnet_resuvit = bf.networks.ResidualUViT
+
+    for subnet, subnet_kwargs in zip([subnet_unet, subnet_uvit, subnet_resuvit], [subnet_kwargs_unet, subnet_kwargs_uvit, subnet_kwargs_resuvit]):
+        x = keras.Input(shape=(64, 64, 3))
+        theta = keras.Input(shape=(64, 64, 1))
+        t = keras.Input(shape=(1,))
+    
+        model_output = subnet(**subnet_kwargs)((theta, t, x))
+        model = keras.Model(inputs=(theta, t, x), outputs=model_output)
+        model.summary()
+    return subnet, subnet_kwargs
+
+
+@app.cell
+def _(adapter, bf, load_fn, subnet, subnet_kwargs):
     diffusion = bf.networks.DiffusionModel(
-        subnet=bf.networks.UNet,
-        subnet_kwargs=dict(
-            widths=(64, 64, 128, 128),
-            res_blocks=2,
-            attn_stage=(False, False, True, True)
-        )
+        subnet=subnet,
+        subnet_kwargs=subnet_kwargs,
     )
     workflow = bf.BasicWorkflow(
         simulator=None,
@@ -120,7 +144,11 @@ def _(adapter, bf, load_fn):
         batch_size = 100,
         adapter = adapter,
     )
+    return dataset_test, workflow
 
+
+@app.cell
+def _(dataset_test, load_fn, workflow):
     history = workflow.fit_disk(
         root = "datasets/celeba/train",
         pattern = "*.jpg",
@@ -131,23 +159,6 @@ def _(adapter, bf, load_fn):
         validation_data = dataset_test[0], 
         augmentations = None,
     )
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
-def _():
-
-
     return
 
 

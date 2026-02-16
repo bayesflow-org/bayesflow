@@ -57,8 +57,18 @@ def pairs_posterior(
         The font size of the x and y-label texts (parameter names)
     tick_fontsize     : int, optional, default: 12
         The font size of the axis tick labels
+    place_legend_below : bool, optional, default: False
+        Optional toggle for the user to choose whether to place the legends
+        below the plot
     legend_fontsize   : int, optional, default: 16
         The font size of the legend text
+    legend_location  : str, optional, default: "center left"
+        Anchoring location of the legend bounding box to position the legends
+        globally
+    legend_anchor  : tuple, optional, default: (1, 0.5)
+        Anchor coordinate to globally position the legends
+    legend_ncol  : int, optional, default: 1
+        Number of legend columns
     post_color        : str, optional, default: '#132a70'
         The color for the posterior histograms and KDEs
     prior_color      : str, optional, default: gray

@@ -57,6 +57,9 @@ def pairs_samples(
     show_single_legend : bool, optional, default: False
         Optional toggle for the user to choose whether a single dataset
         should also display legend
+    place_legend_below : bool, optional, default: False
+        Optional toggle for the user to choose whether to place the legends
+        below the plot
     markersize  : float, optional, default: 40
         Marker size in points**2 of the scatter plot.
     **kwargs    : dict, optional

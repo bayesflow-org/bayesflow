@@ -502,8 +502,18 @@ def create_legends(
     show_single_legend : bool, optional, default: False
         Optional toggle for the user to choose whether a single dataset
         should also display legend
+    place_legend_below : bool, optional, default: False
+        Optional toggle for the user to choose whether to place the legends
+        below the plot
     legend_fontsize    : int, optional, default: 14
         fontsize for the legend
+    legend_location  : str, optional, default: "center left"
+        Anchoring location of the legend bounding box to position the legends
+        globally
+    legend_anchor  : tuple, optional, default: (1, 0.5)
+        Anchor coordinate to globally position the legends
+    legend_ncol  : int, optional, default: 1
+        Number of legend columns
     markersize  : float, optional, default: 40
         The marker size in points**2
     target_color : str, optional, default: "red"

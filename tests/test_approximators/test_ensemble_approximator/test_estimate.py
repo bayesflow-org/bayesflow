@@ -2,7 +2,7 @@ import keras
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_approximator_estimate_separate(ensemble_approximator, simulator, batch_size, adapter):
+def test_approximator_estimate(ensemble_approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
@@ -13,7 +13,7 @@ def test_approximator_estimate_separate(ensemble_approximator, simulator, batch_
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
     ensemble_approximator.build(batch_shapes)
 
-    estimates = ensemble_approximator.estimate_separate(data)
+    estimates = ensemble_approximator.estimate(data, groupby="variable")
 
     assert isinstance(estimates, dict)
 

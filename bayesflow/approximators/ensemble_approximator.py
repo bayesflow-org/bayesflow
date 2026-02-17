@@ -390,13 +390,7 @@ class EnsembleApproximator(Approximator):
 
             - "member": return estimates as ``member -> variable -> score (-> head) -> array``.
             - "variable": return estimates as ``variable -> score (-> head) -> member -> array``.
-              ``groupby="variable"`` requires that output structure of
-              ``member.estimate(..., groupby="variable")`` of all ensemble members is the same,
-              by for example sharing the same scores.
               See also :py:meth:`~bayesflow.PointApproximator.estimate`.
-        **kwargs
-
-        groupby : {"member", "variable"},
         **kwargs
             Additional arguments passed to approximator.estimate().
 
@@ -410,10 +404,43 @@ class EnsembleApproximator(Approximator):
         if groupby == "member":
             return estimates
         elif groupby == "variable":
-            pass
+            out: dict[str, dict[str, dict]] = {}
+            for member_key, member_est in estimates.items():
+                for var_key, var_est in member_est.items():
+                    out.setdefault(var_key, {})
+
+                    for score_key, score_val in var_est.items():
+                        # Case 1: score has heads -> dict[head] = array
+                        if isinstance(score_val, dict):
+                            node = out[var_key].setdefault(score_key, {})
+                            if not isinstance(node, dict):
+                                raise ValueError(
+                                    f"Inconsistent estimate structure for variable={var_key!r}, score={score_key!r}: "
+                                    "some members return a dict of heads, others return an array."
+                                )
+                            for head_key, arr in score_val.items():
+                                node.setdefault(head_key, {})
+                                node[head_key][member_key] = arr
+
+                        # Case 2: score is already an array (no head level / squeezed)
+                        else:
+                            node = out[var_key].setdefault(score_key, {})
+                            if isinstance(node, dict) and node and any(isinstance(v, dict) for v in node.values()):
+                                raise ValueError(
+                                    f"Inconsistent estimate structure for variable={var_key!r}, score={score_key!r}: "
+                                    "some members return an array, others return a dict of heads."
+                                )
+                            # keep head level absent; attach member at score level
+                            if not isinstance(node, dict):
+                                # should not happen, but keep it safe
+                                out[var_key][score_key] = {}
+                                node = out[var_key][score_key]
+                            node[member_key] = score_val
+
+            return out
         else:
             raise NotImplementedError(
-                f"`groupby={groupby!r}` is not supported for EnsembleApproximator. Use groupby='member'."
+                f"`groupby={groupby!r}` is not supported for EnsembleApproximator. Use 'member' or 'variable'."
             )
 
     def _estimate_separate(

@@ -8,7 +8,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
-from bayesflow.utils import logging
+from bayesflow.utils import logging, filter_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.datasets import EnsembleDataset
 
@@ -56,7 +56,11 @@ class EnsembleApproximator(Approximator):
         )
 
         # Wrap it into an EnsembleDataset
-        return EnsembleDataset(base_ds, member_names=list(self.approximators.keys()), **kwargs)
+        return EnsembleDataset(
+            base_ds,
+            member_names=list(self.approximators.keys()),
+            **filter_kwargs(kwargs, keras.utils.PyDataset.__init__),
+        )
 
     def build_from_data(self, adapted_data: dict[str, Any]):
         data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)

@@ -311,6 +311,7 @@ class UViT(keras.Layer):
         assert x_shape[-1] is not None, "UViT requires a known channel dimension for x."
         assert x_shape[1] is not None and x_shape[2] is not None, "UViT requires known spatial dimensions for x."
 
+        t_shape = (t_shape[0], 1)
         self.time_emb.build(t_shape)
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
 
@@ -404,6 +405,7 @@ class UViT(keras.Layer):
         x, t, cond = inputs
         assert cond is not None, "UViT currently requires a condition input."
 
+        t = keras.ops.reshape(t, (t.shape[0], -1))[:, :1]  # ensure t is (B, 1)
         t_emb = self.time_emb(t, training=training)
 
         x = concatenate_valid([x, cond], axis=-1)

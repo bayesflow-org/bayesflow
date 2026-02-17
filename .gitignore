@@ -43,3 +43,4 @@ docs/
 # Rproj
 .Rproj.user
 /experiments/datasets/
+/experiments/checkpoints/

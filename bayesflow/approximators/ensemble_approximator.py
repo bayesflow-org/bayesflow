@@ -410,7 +410,7 @@ class EnsembleApproximator(Approximator):
                     out.setdefault(var_key, {})
 
                     for score_key, score_val in var_est.items():
-                        # Case 1: score has heads -> dict[head] = array
+                        # score has heads -> dict[head] = array
                         if isinstance(score_val, dict):
                             node = out[var_key].setdefault(score_key, {})
                             if not isinstance(node, dict):
@@ -422,7 +422,7 @@ class EnsembleApproximator(Approximator):
                                 node.setdefault(head_key, {})
                                 node[head_key][member_key] = arr
 
-                        # Case 2: score is already an array (no head level / squeezed)
+                        # score is already an array (no head level / squeezed)
                         else:
                             node = out[var_key].setdefault(score_key, {})
                             if isinstance(node, dict) and node and any(isinstance(v, dict) for v in node.values()):

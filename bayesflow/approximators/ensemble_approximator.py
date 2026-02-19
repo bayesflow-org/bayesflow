@@ -233,9 +233,7 @@ class EnsembleApproximator(Approximator):
         )
 
         # Concatenate samples from all approximators along sample dimension (axis 1)
-        samples_list = [
-            samples[approx_name] for approx_name in self.distribution_keys if samples[approx_name] is not None
-        ]
+        samples_list = list(samples.values())
         concatenated = keras.tree.map_structure(
             lambda *arrays: np.concatenate(arrays, axis=1),  # zip & concat across approximators
             *samples_list,  # unpack: apply lambda to corresponding leaves from each dict
@@ -280,9 +278,10 @@ class EnsembleApproximator(Approximator):
             num_samples = {k: num_samples[i] for i, k in enumerate(self.distribution_keys)}
 
         for approx_name, _num_samples in num_samples.items():
-            samples[approx_name] = self.approximators[approx_name].sample(
-                num_samples=_num_samples, conditions=conditions, split=split, **kwargs
-            )
+            if _num_samples > 0:
+                samples[approx_name] = self.approximators[approx_name].sample(
+                    num_samples=_num_samples, conditions=conditions, split=split, **kwargs
+                )
         return samples
 
     def log_prob(

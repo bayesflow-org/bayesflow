@@ -126,8 +126,8 @@ class PointInferenceNetwork(keras.Layer):
 
     def call(
         self,
-        xz: Tensor = None,
-        conditions: Tensor = None,
+        xz: Tensor | None = None,
+        conditions: Tensor | None = None,
         training: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, Tensor]]:
@@ -170,7 +170,7 @@ class PointInferenceNetwork(keras.Layer):
         return metrics | {"loss": neg_score}
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape, conditions: Tensor = None) -> dict[str, Tensor]:
+    def sample(self, batch_shape: Shape, conditions: Tensor | None = None) -> dict[str, Tensor]:
         """
         Parameters
         ----------

@@ -124,4 +124,4 @@ from .approximators import (
 )
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
 from .simulators import make_simulator
-from .workflows import BasicWorkflow
+from .workflows import BasicWorkflow, EnsembleWorkflow

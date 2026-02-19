@@ -56,7 +56,7 @@ class ContinuousApproximator(Approximator):
         *,
         adapter: Adapter,
         inference_network: InferenceNetwork,
-        summary_network: SummaryNetwork = None,
+        summary_network: SummaryNetwork | None = None,
         standardize: str | Sequence[str] | None = "all",
         **kwargs,
     ):

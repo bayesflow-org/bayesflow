@@ -3,7 +3,7 @@ import keras
 
 
 @singledispatch
-def find_inference_network(arg, *args, **kwargs):
+def find_inference_network(arg, *args, **kwargs) -> keras.Layer:
     raise TypeError(f"Cannot infer inference network from {arg!r}.")
 
 

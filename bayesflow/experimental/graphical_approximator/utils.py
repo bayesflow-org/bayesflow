@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 import keras
 
 from ...types import Shape, Tensor
+from .shape_inference import expand_shape_rank
 
 
 def split_network_output(
@@ -583,46 +584,46 @@ def add_sample_dimension(tensor: Tensor, num_samples: int, batch_dims: int = 1) 
     return stacked
 
 
-def concatenate_shapes(shapes) -> Tensor:
-    max_rank = max(len(s) for s in shapes)
-    expanded = [expand_shape_rank(s, max_rank) for s in shapes]
-
-    return reduce(stack_shapes, expanded)
-
-
-def stack_shapes(a, b, axis=-1) -> Tensor:
-    rank = max(keras.ops.shape(a)[0], keras.ops.shape(b)[0])
-    a = expand_shape_rank(a, rank)
-    a = keras.ops.convert_to_tensor(a)
-
-    b = expand_shape_rank(b, rank)
-    b = keras.ops.convert_to_tensor(b)
-
-    sum_tensor = a + b
-    max_tensor = keras.ops.maximum(a, b)
-    axis = axis % rank
-
-    idx = keras.ops.arange(rank)
-    mask = idx == axis
-
-    shape = keras.ops.where(mask, sum_tensor, max_tensor)
-
-    return shape
-
-
-def expand_shape_rank(shape, target_rank) -> Tensor:
-    """
-    Expand a tensor shape to a desired rank by inserting singleton (1)
-    dimensions immediately before the last dimension.
-    >>> expand_shape_rank((10, 2, 3), 5)
-    (10, 2, 1, 1, 3)
-    """
-    shape = keras.ops.convert_to_tensor(shape)
-    n = target_rank - keras.ops.shape(shape)[0]
-    shape_rank = keras.ops.concatenate(
-        [keras.ops.convert_to_tensor(shape[:-1]), keras.ops.ones((n,)), keras.ops.take(shape, indices=[-1], axis=0)],
-        axis=0,
-    )
-    shape_rank = keras.ops.cast(shape_rank, "int")
-
-    return shape_rank
+# def concatenate_shapes(shapes) -> Tensor:
+#     max_rank = max(len(s) for s in shapes)
+#     expanded = [expand_shape_rank(s, max_rank) for s in shapes]
+#
+#     return reduce(stack_shapes, expanded)
+#
+#
+# def stack_shapes(a, b, axis=-1) -> Tensor:
+#     rank = max(keras.ops.shape(a)[0], keras.ops.shape(b)[0])
+#     a = expand_shape_rank(a, rank)
+#     a = keras.ops.convert_to_tensor(a)
+#
+#     b = expand_shape_rank(b, rank)
+#     b = keras.ops.convert_to_tensor(b)
+#
+#     sum_tensor = a + b
+#     max_tensor = keras.ops.maximum(a, b)
+#     axis = axis % rank
+#
+#     idx = keras.ops.arange(rank)
+#     mask = idx == axis
+#
+#     shape = keras.ops.where(mask, sum_tensor, max_tensor)
+#
+#     return shape
+#
+#
+# def expand_shape_rank(shape, target_rank) -> Tensor:
+#     """
+#     Expand a tensor shape to a desired rank by inserting singleton (1)
+#     dimensions immediately before the last dimension.
+#     >>> expand_shape_rank((10, 2, 3), 5)
+#     (10, 2, 1, 1, 3)
+#     """
+#     shape = keras.ops.convert_to_tensor(shape)
+#     n = target_rank - keras.ops.shape(shape)[0]
+#     shape_rank = keras.ops.concatenate(
+#         [keras.ops.convert_to_tensor(shape[:-1]), keras.ops.ones((n,)), keras.ops.take(shape, indices=[-1], axis=0)],
+#         axis=0,
+#     )
+#     shape_rank = keras.ops.cast(shape_rank, "int")
+#
+#     return shape_rank

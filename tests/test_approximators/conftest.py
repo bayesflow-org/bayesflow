@@ -226,12 +226,19 @@ def approximator_with_summaries(request):
     match request.param:
         case "continuous_approximator":
             from bayesflow.approximators import ContinuousApproximator
+            from bayesflow.networks import CouplingFlow
 
-            return ContinuousApproximator(adapter=adapter, inference_network=None, summary_network=None)
+            return ContinuousApproximator(adapter=adapter, inference_network=CouplingFlow(), summary_network=None)
         case "point_approximator":
             from bayesflow.approximators import PointApproximator
+            from bayesflow.networks import PointInferenceNetwork
+            from bayesflow.scores import MeanScore
 
-            return PointApproximator(adapter=adapter, inference_network=None, summary_network=None)
+            return PointApproximator(
+                adapter=adapter,
+                inference_network=PointInferenceNetwork(scores=dict(mean=MeanScore())),
+                summary_network=None,
+            )
         case "model_comparison_approximator":
             from bayesflow.approximators import ModelComparisonApproximator
 

@@ -21,6 +21,9 @@ class EnsembleApproximator(Approximator):
         super().__init__(**kwargs)
         self.approximators = approximators
 
+        self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
+        self.has_distribution = len(self.distribution_keys) > 0
+
     @property
     def adapter(self) -> Adapter:
         # Defer to any adapter of the approximators,
@@ -79,9 +82,6 @@ class EnsembleApproximator(Approximator):
                     _data_shape[var_name] = variable
 
             approximator.build(_data_shape)
-
-        self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
-        self.has_distribution = len(self.distribution_keys) > 0
 
     def fit(self, *args, **kwargs):
         """

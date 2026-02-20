@@ -1,11 +1,12 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 from scipy.special import logsumexp
 import keras
 from tqdm.auto import tqdm
 
-from bayesflow.networks.point_inference_network import PointInferenceNetwork
+from bayesflow.adapters import Adapter
+from bayesflow.networks import PointInferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     logging,
@@ -32,10 +33,22 @@ class PointApproximator(ContinuousApproximator):
     (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.
     """
 
-    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        super().build(data_shapes)
-
-        assert isinstance(self.inference_network, PointInferenceNetwork)
+    def __init__(
+        self,
+        *,
+        adapter: Adapter,
+        inference_network: PointInferenceNetwork,
+        summary_network: SummaryNetwork | None = None,
+        standardize: str | Sequence[str] | None = "all",
+        **kwargs,
+    ):
+        super().__init__(
+            adapter=adapter,
+            inference_network=inference_network,
+            summary_network=summary_network,
+            standardize=standardize,
+            **kwargs,
+        )
 
         # Infer which scoring rules induce distributions
         dist_keys = []

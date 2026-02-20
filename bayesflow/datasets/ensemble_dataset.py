@@ -85,6 +85,10 @@ class EnsembleDataset(keras.utils.PyDataset):
         # provide a consistent attribute if the impl has it, else fall back to __len__
         return int(getattr(self._wrapped, "num_batches", len(self._wrapped)))
 
+    @property
+    def batch_size(self) -> int:
+        return self._wrapped.batch_size
+
     def __len__(self) -> int:
         return len(self._wrapped)
 

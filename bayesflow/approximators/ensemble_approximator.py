@@ -19,10 +19,42 @@ from .approximator import Approximator
 class EnsembleApproximator(Approximator):
     def __init__(self, approximators: dict[str, Approximator], **kwargs):
         super().__init__(**kwargs)
+        self._warn_if_shared_approximator_components(approximators)
         self.approximators = approximators
 
         self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
         self.has_distribution = len(self.distribution_keys) > 0
+
+    @classmethod
+    def _warn_if_shared_approximator_components(cls, approximators):
+        """Warn if approximators share component instances (not safely serializable yet)."""
+        # Track object identity across ensemble members for selected attributes.
+        tracked = ("inference_network", "summary_network")
+        seen = {name: {} for name in tracked}  # attr -> {id(obj): [member_names...]}
+
+        for member_name, approximator in approximators.items():
+            for attr in tracked:
+                if not hasattr(approximator, attr):
+                    continue
+
+                obj = getattr(approximator, attr)
+                if obj is None:
+                    continue
+
+                obj_id = id(obj)
+                seen[attr].setdefault(obj_id, []).append(member_name)
+
+        # Emit one warning per shared object instance.
+        for attr, by_id in seen.items():
+            for members in by_id.values():
+                if len(members) > 1:
+                    logging.warning(
+                        "EnsembleApproximator contains shared component '{attr}' across members {members}. "
+                        "Deserialization of weights of shared components is not supported yet and may fail. "
+                        "Use separate component instances (e.g., clone networks) before building or fitting the model.",
+                        attr=attr,
+                        members=members,
+                    )
 
     @property
     def adapter(self) -> Adapter:

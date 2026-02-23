@@ -475,10 +475,14 @@ def create_legends(
     color2: str | tuple = "gray",
     label: str = "Posterior",
     show_single_legend: bool = False,
+    place_legend_below: bool = False,
     legend_fontsize: int = 14,
-    markersize: float = 40,
+    legend_location: str = "center left",
+    legend_anchor: tuple = (1, 0.5),
+    legend_ncol: int = 1,
     target_color: str = "red",
     target_markersize: float = 40,
+    **kwargs,
 ):
     """
     Helper function to create legends for pairplots.
@@ -498,8 +502,20 @@ def create_legends(
     show_single_legend : bool, optional, default: False
         Optional toggle for the user to choose whether a single dataset
         should also display legend
+    place_legend_below : bool, optional, default: False
+        Optional toggle for the user to choose whether to place the legends
+        below the plot.
+        If set to True, then user-defined legend location, anchor, and ncol
+        will be ignored and overwritten by presets.
     legend_fontsize    : int, optional, default: 14
         fontsize for the legend
+    legend_location  : str, optional, default: "center left"
+        Anchoring location of the legend bounding box to position the legends
+        globally
+    legend_anchor  : tuple, optional, default: (1, 0.5)
+        Anchor coordinate to globally position the legends
+    legend_ncol  : int, optional, default: 1
+        Number of legend columns
     markersize  : float, optional, default: 40
         The marker size in points**2
     target_color : str, optional, default: "red"
@@ -535,13 +551,20 @@ def create_legends(
         handles.append(target_handle)
         labels.append(target_label)
 
+    if place_legend_below:
+        legend_location = "upper center"
+        legend_anchor = (0.5, 0)
+        legend_ncol = 3
+
     # If there are more than one dataset to plot,
     if len(handles) > 1 or show_single_legend:
         g.figure.legend(
             handles=handles,
             labels=labels,
-            loc="center left",
-            bbox_to_anchor=(1, 0.5),
+            loc=legend_location,
+            bbox_to_anchor=legend_anchor,
+            ncol=legend_ncol,
             frameon=False,
             fontsize=legend_fontsize,
+            **kwargs,
         )

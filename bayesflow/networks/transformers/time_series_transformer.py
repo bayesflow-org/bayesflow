@@ -27,6 +27,7 @@ class TimeSeriesTransformer(SummaryNetwork):
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
         time_axis: int = None,
+        return_sequences: bool = False,
         **kwargs,
     ):
         """(SN) Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time
@@ -63,6 +64,13 @@ class TimeSeriesTransformer(SummaryNetwork):
             The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into the embedding.
             If an embedding is provided and time_axis is None, a uniform time interval between [0, sequence_len]
             will be assumed.
+        return_sequences : bool, optional (default - False)
+            If True, the network returns a sequence of representations of shape
+            (batch_size, sequence_length, summary_dim) by applying the output
+            projection independently to each timestep. If False, a global
+            average pooling operation is applied across the time dimension
+            before projection, resulting in a tensor of shape
+            (batch_size, summary_dim).
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
@@ -106,6 +114,7 @@ class TimeSeriesTransformer(SummaryNetwork):
 
         self.summary_dim = summary_dim
         self.time_axis = time_axis
+        self.return_sequences = return_sequences
 
     def call(self, input_sequence: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Compresses the input sequence into a summary vector of size `summary_dim`.
@@ -142,6 +151,9 @@ class TimeSeriesTransformer(SummaryNetwork):
         # Apply self-attention blocks
         for layer in self.attention_blocks:
             inp = layer(inp, inp, training=training, **kwargs)
+
+        if self.return_sequences:
+            return self.output_projector(inp)
 
         # Global average pooling and output projection
         summary = self.pooling(inp)

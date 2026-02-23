@@ -79,7 +79,7 @@ class EnsembleWorkflow(BasicWorkflow):
                     raise ValueError(f"A summary network was specified for {k}, but no inference network.")
                 if v is not None:
                     _summary_networks[k] = find_summary_network(v, **kwargs.get("summary_kwargs", {}).get(k, {}))
-        else:
+        elif summary_networks is not None:
             summary_network = find_summary_network(summary_networks, **kwargs.get("summary_kwargs", {}))
             for k in _inference_networks.keys():
                 _summary_networks[k] = summary_network

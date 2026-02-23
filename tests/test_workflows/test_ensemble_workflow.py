@@ -1,9 +1,91 @@
+import pytest
 import os
 
 import keras
 
 import bayesflow as bf
 from tests.utils import assert_models_equal
+
+
+def test_ensemble_workflow_raises_for_invalid_ensemble_size():
+    with pytest.raises(ValueError, match="ensemble_size"):
+        bf.EnsembleWorkflow(
+            inference_networks="coupling_flow",
+            ensemble_size=1,  # invalid
+        )
+
+
+def test_ensemble_workflow_raises_when_no_dict_and_no_ensemble_size():
+    with pytest.raises(ValueError, match="Either `inference_networks` is a dictionary"):
+        bf.EnsembleWorkflow(
+            inference_networks="coupling_flow",
+            ensemble_size=None,
+        )
+
+
+def test_dict_inference_networks_ignores_ensemble_args(caplog):
+    bf.EnsembleWorkflow(
+        inference_networks={"a": "coupling_flow"},
+        ensemble_size=5,
+        share_inference_network=True,
+    )
+
+    msgs = " ".join(r.message for r in caplog.records)
+    assert "Ignoring argument ensemble_size" in msgs
+    assert "Ignoring argument share_inference_network" in msgs
+
+
+def test_ensemble_workflow_raises_for_summary_key_without_inference_key():
+    with pytest.raises(ValueError, match="summary network was specified"):
+        bf.EnsembleWorkflow(
+            inference_networks={"a": "coupling_flow"},
+            summary_networks={"b": None},  # mismatched key
+        )
+
+
+def test_share_inference_network_true_reuses_same_model():
+    workflow = bf.EnsembleWorkflow(
+        inference_networks="coupling_flow",
+        summary_networks=None,
+        ensemble_size=3,
+        share_inference_network=True,
+    )
+
+    members = workflow.approximator.approximators
+    nets = [members[k].inference_network for k in sorted(members.keys())]
+
+    assert nets[0] is nets[1] is nets[2]
+
+
+def test_share_inference_network_false_clones_models():
+    workflow = bf.EnsembleWorkflow(
+        inference_networks="coupling_flow",
+        summary_networks=None,
+        ensemble_size=3,
+        share_inference_network=False,
+    )
+
+    members = workflow.approximator.approximators
+    nets = [members[k].inference_network for k in sorted(members.keys())]
+
+    assert nets[0] is not nets[1]
+    assert nets[1] is not nets[2]
+
+
+def test_single_summary_network_is_broadcast_to_all_members():
+    workflow = bf.EnsembleWorkflow(
+        inference_networks="coupling_flow",
+        summary_networks="time_series_network",
+        ensemble_size=2,
+        share_inference_network=False,
+    )
+
+    members = workflow.approximator.approximators
+    s0 = members["0"].summary_network
+    s1 = members["1"].summary_network
+
+    # same object is assigned to all members in current implementation
+    assert s0 is s1
 
 
 def test_ensemble_workflow(tmp_path):
@@ -14,9 +96,9 @@ def test_ensemble_workflow(tmp_path):
             point=bf.networks.PointInferenceNetwork(scores=dict(mean=bf.scores.MeanScore())),
         ),
         summary_networks=dict(
-            nf=bf.networks.TimeSeriesTransformer(),
-            parametric=bf.networks.TimeSeriesTransformer(),
-            point=bf.networks.TimeSeriesTransformer(),
+            nf=bf.networks.TimeSeriesNetwork(),
+            parametric=bf.networks.TimeSeriesNetwork(),
+            point=bf.networks.TimeSeriesNetwork(),
         ),
         inference_variables=["parameters"],
         summary_variables=["observables"],

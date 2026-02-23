@@ -3,10 +3,10 @@ import pytest
 
 
 def test_require_argument_k():
-    from bayesflow.scores import NormedDifferenceScore
+    from bayesflow.scoring_rules import NormedDifferenceScoringRule
 
     with pytest.raises(TypeError) as excinfo:
-        NormedDifferenceScore()
+        NormedDifferenceScoringRule()
 
     assert "missing 1 required positional argument: 'k'" in str(excinfo)
 

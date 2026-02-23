@@ -1,13 +1,13 @@
 r"""
 A collection of scoring rules for Bayes risk minimization with
-:py:class:`~bayesflow.networks.ScoringRuleInferenceNetwork`.
+:py:class:`~bayesflow.networks.ScoringRuleNetwork`.
 
 Examples
 --------
 >>> # A network to estimate both point estimates and parameters of a multivariate normal distribution.
 >>> from bayesflow.scoring_rules import MeanScoringRule, QuantileScoringRule, MvNormalScoringRule
->>> inference_network = bf.networks.ScoringRuleInferenceNetwork(
-        scores=dict(
+>>> inference_network = bf.networks.ScoringRuleNetwork(
+        scoring_rules=dict(
             mean=MeanScoringRule(),
             quantiles=QuantileScoringRule(),
             mvn=MvNormalScoringRule(),

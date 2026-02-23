@@ -27,7 +27,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
     A workflow for fast amortized Bayes risk minimization for arbitrary scoring rules.
 
     The distribution is approximated by point or variational distribution estimators, parameterized by a feed-forward
-    :py:class:`~bayesflow.networks.ScoringRuleInferenceNetwork`. Conditions can be compressed by an optional
+    :py:class:`~bayesflow.networks.ScoringRuleNetwork`. Conditions can be compressed by an optional
     summary network (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`)
     or used directly as input to the inference network.
     """
@@ -74,7 +74,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         estimates = self._estimate(**conditions, **kwargs)
 
         if "inference_variables" in self.standardize:
-            for score_key, score in self.inference_network.scores.items():
+            for score_key, score in self.inference_network.scoring_rules.items():
                 for head_key in estimates[score_key].keys():
                     transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
                     estimates[score_key][head_key] = self.standardize_layers["inference_variables"](
@@ -106,7 +106,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         Draws samples from a parametric distribution based on point estimates for given input conditions.
 
         These samples will generally not correspond to samples from the fully Bayesian posterior, since
-        they will assume some parametric form (e.g., multivariate normal when using the MultivariateNormalScore).
+        they will assume some parametric form (e.g., multivariate normal when using the MvNormalScoringRule).
 
         Parameters
         ----------
@@ -130,7 +130,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
             Samples for all inference variables and all parametric scoring rules in a nested dictionary.
 
             1. Each first-level key is the name of an inference variable.
-            2. (If there are multiple parametric scores, each second-level key is the name of such a score.)
+            2. (If there are multiple parametric scoring rules, each second-level key is the name of such a score.)
 
             Each output (i.e., dictionary value that is not itself a dictionary) is an array
             of shape (num_datasets, num_samples, variable_block_size).
@@ -227,7 +227,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
             If only one parametric score is available, output is an array of log-probabilities.
 
-            Output is a dictionary if multiple parametric scores are available.
+            Output is a dictionary if multiple parametric scoring rules are available.
             Then, each key is the name of a score and values are corresponding log-probabilities.
 
             Log-probabilities have shape (num_datasets,).
@@ -256,7 +256,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         for score_key, score_val in estimates.items():
             processed[score_key] = {}
             for head_key, estimate in score_val.items():
-                if head_key in self.inference_network.scores[score_key].NOT_TRANSFORMING_LIKE_VECTOR_WARNING:
+                if head_key in self.inference_network.scoring_rules[score_key].NOT_TRANSFORMING_LIKE_VECTOR_WARNING:
                     logging.warning(
                         f"Estimate '{score_key}.{head_key}' is marked to not transform like a vector. "
                         f"It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."

@@ -11,7 +11,7 @@ import time
 import keras
 
 from bayesflow.datasets import OnlineDataset, OfflineDataset, DiskDataset
-from bayesflow.networks import InferenceNetwork, ScoringRuleInferenceNetwork, SummaryNetwork
+from bayesflow.networks import InferenceNetwork, ScoringRuleNetwork, SummaryNetwork
 from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ContinuousApproximator, ScoringRuleApproximator
@@ -100,7 +100,7 @@ class BasicWorkflow(Workflow):
 
         adapter = adapter or BasicWorkflow.default_adapter(inference_variables, inference_conditions, summary_variables)
 
-        if isinstance(self.inference_network, ScoringRuleInferenceNetwork):
+        if isinstance(self.inference_network, ScoringRuleNetwork):
             constructor = ScoringRuleApproximator
         else:
             constructor = ContinuousApproximator

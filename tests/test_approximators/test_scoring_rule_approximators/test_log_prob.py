@@ -1,5 +1,5 @@
 import numpy as np
-from bayesflow.scores import ParametricDistributionScore
+from bayesflow.scoring_rules import ParametricDistributionScoringRule
 from tests.utils import check_combination_simulator_adapter
 
 
@@ -12,13 +12,13 @@ def test_approximator_log_prob(scoring_rule_approximator, simulator, batch_size,
     scoring_rule_approximator.build_from_data(batch)
 
     log_prob = scoring_rule_approximator.log_prob(data=data)
-    parametric_scores = [
+    parametric_scoring_rules = [
         score
-        for score in scoring_rule_approximator.inference_network.scores.values()
-        if isinstance(score, ParametricDistributionScore)
+        for score in scoring_rule_approximator.inference_network.scoring_rules.values()
+        if isinstance(score, ParametricDistributionScoringRule)
     ]
 
-    if len(parametric_scores) > 1:
+    if len(parametric_scoring_rules) > 1:
         assert isinstance(log_prob, dict)
         for score_key, score_log_prob in log_prob.items():
             assert isinstance(score_log_prob, np.ndarray)

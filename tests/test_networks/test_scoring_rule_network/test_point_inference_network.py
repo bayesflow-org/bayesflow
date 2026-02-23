@@ -11,7 +11,7 @@ def test_output_structure(scoring_rule_inference_network, random_samples, random
     output = scoring_rule_inference_network(random_samples, conditions=random_conditions)
 
     assert isinstance(output, dict)
-    for score_key, score in scoring_rule_inference_network.scores.items():
+    for score_key, score in scoring_rule_inference_network.scoring_rules.items():
         head_shapes = score.get_head_shapes_from_target_shape(random_samples.shape)
         assert isinstance(head_shapes, dict)
 
@@ -76,13 +76,13 @@ def test_save_and_load_quantile(tmp_path, quantile_scoring_rule_inference_networ
 
     assert_layers_equal(net, loaded)
 
-    for score_key, score in net.scores.items():
+    for score_key, score in net.scoring_rules.items():
         for head_key, head in net.heads[score_key].items():
             net_head = net.heads[score_key][head_key]
             loaded_head = loaded.heads[score_key][head_key]
 
-            net_score = net.scores[score_key]
-            loaded_score = loaded.scores[score_key]
+            net_score = net.scoring_rules[score_key]
+            loaded_score = loaded.scoring_rules[score_key]
 
             assert keras.ops.all(keras.ops.isclose(net_score._q, loaded_score._q))
             assert keras.ops.all(keras.ops.isclose(net_head.layers[-1].q, loaded_head.layers[-1].q))

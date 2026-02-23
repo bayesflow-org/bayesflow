@@ -3,31 +3,31 @@ import keras
 from bayesflow.utils import model_kwargs, find_network
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Shape, Tensor
-from bayesflow.scores import ScoringRule, ParametricDistributionScore
+from bayesflow.scoring_rules import ScoringRule, ParametricDistributionScoringRule
 from bayesflow.utils.decorators import allow_batch_size
 
 
 @serializable("bayesflow.networks")
-class ScoringRuleInferenceNetwork(keras.Layer):
+class ScoringRuleNetwork(keras.Layer):
     """Implements Bayes risk minimization for user specified scoring rules by a shared feed forward architecture
     with separate heads for each scoring rule.
     """
 
     def __init__(
         self,
-        scores: dict[str, ScoringRule],
+        scoring_rules: dict[str, ScoringRule],
         subnet: str | keras.Layer = "mlp",
         **kwargs,
     ):
         super().__init__(**model_kwargs(kwargs))
 
-        self.scores = scores
+        self.scoring_rules = scoring_rules
 
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
 
         self.config = {
             "subnet": serialize(subnet),
-            "scores": serialize(scores),
+            "scoring_rules": serialize(scoring_rules),
             **kwargs,
         }
 
@@ -59,7 +59,7 @@ class ScoringRuleInferenceNetwork(keras.Layer):
         self.heads = dict()
         self.heads_flat = dict()  # see comment regarding heads_flat below
 
-        for score_key, score in self.scores.items():
+        for score_key, score in self.scoring_rules.items():
             head_shapes = score.get_head_shapes_from_target_shape(xz_shape)
 
             self.heads[score_key] = {}
@@ -102,7 +102,7 @@ class ScoringRuleInferenceNetwork(keras.Layer):
     def build_from_config(self, config):
         self.build(xz_shape=config["xz_shape"], conditions_shape=config["conditions_shape"])
 
-        for score_key in self.scores.keys():
+        for score_key in self.scoring_rules.keys():
             for head_key, head in self.heads[score_key].items():
                 head.name = config["heads"][score_key][head_key]
 
@@ -114,7 +114,7 @@ class ScoringRuleInferenceNetwork(keras.Layer):
     @classmethod
     def from_config(cls, config):
         config = config.copy()
-        config["scores"] = deserialize(config["scores"])
+        config["scoring_rules"] = deserialize(config["scoring_rules"])
         config["subnet"] = deserialize(config["subnet"])
         return cls(**config)
 
@@ -148,8 +148,8 @@ class ScoringRuleInferenceNetwork(keras.Layer):
         output = self(x, conditions, training=stage == "training")
 
         metrics = {}
-        # calculate negative score as mean over all scores
-        for score_key, score in self.scores.items():
+        # calculate negative score as mean over all scoring_rules
+        for score_key, score in self.scoring_rules.items():
             score_value = score.score(output[score_key], x, sample_weight)
             metrics[score_key] = score_value
         neg_score = keras.ops.mean(list(metrics.values()))
@@ -189,8 +189,8 @@ class ScoringRuleInferenceNetwork(keras.Layer):
         output = self.subnet(conditions)
         samples = {}
 
-        for score_key, score in self.scores.items():
-            if isinstance(score, ParametricDistributionScore):
+        for score_key, score in self.scoring_rules.items():
+            if isinstance(score, ParametricDistributionScoringRule):
                 parameters = {head_key: head(output) for head_key, head in self.heads[score_key].items()}
                 samples[score_key] = score.sample(batch_shape, **parameters)
 
@@ -200,8 +200,8 @@ class ScoringRuleInferenceNetwork(keras.Layer):
         output = self.subnet(conditions)
         log_probs = {}
 
-        for score_key, score in self.scores.items():
-            if isinstance(score, ParametricDistributionScore):
+        for score_key, score in self.scoring_rules.items():
+            if isinstance(score, ParametricDistributionScoringRule):
                 parameters = {head_key: head(output) for head_key, head in self.heads[score_key].items()}
                 log_probs[score_key] = score.log_prob(x=samples, **parameters)
 

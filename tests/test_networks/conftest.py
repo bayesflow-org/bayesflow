@@ -115,32 +115,32 @@ def free_form_flow():
 
 @pytest.fixture()
 def typical_scoring_rule_inference_network():
-    from bayesflow.networks import ScoringRuleInferenceNetwork
-    from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import MeanScoringRule, MedianScoringRule, QuantileScoringRule, MvNormalScoringRule
 
-    return ScoringRuleInferenceNetwork(
-        scores=dict(
-            mean=MeanScore(),
-            median=MedianScore(),
-            quantiles=QuantileScore([0.1, 0.2, 0.5, 0.65]),
-            mvn=MultivariateNormalScore(),  # currently not stable
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
+            mean=MeanScoringRule(),
+            median=MedianScoringRule(),
+            quantiles=QuantileScoringRule([0.1, 0.2, 0.5, 0.65]),
+            mvn=MvNormalScoringRule(),  # currently not stable
         )
     )
 
 
 @pytest.fixture()
 def typical_scoring_rule_inference_network_subnet():
-    from bayesflow.networks import ScoringRuleInferenceNetwork
-    from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import MeanScoringRule, MedianScoringRule, QuantileScoringRule, MvNormalScoringRule
 
     subnet = MLP([16, 8])
 
-    return ScoringRuleInferenceNetwork(
-        scores=dict(
-            mean=MeanScore(subnets=dict(value=subnet)),
-            median=MedianScore(subnets=dict(value=subnet)),
-            quantiles=QuantileScore(subnets=dict(value=subnet)),
-            mvn=MultivariateNormalScore(subnets=dict(mean=subnet, covariance=subnet)),
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
+            mean=MeanScoringRule(subnets=dict(value=subnet)),
+            median=MedianScoringRule(subnets=dict(value=subnet)),
+            quantiles=QuantileScoringRule(subnets=dict(value=subnet)),
+            mvn=MvNormalScoringRule(subnets=dict(mean=subnet, covariance=subnet)),
         ),
         subnet=subnet,
     )

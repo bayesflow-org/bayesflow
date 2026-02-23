@@ -1,9 +1,9 @@
 from bayesflow.utils.serialization import serializable
-from .normed_difference_score import NormedDifferenceScore
+from .normed_difference_scoring_rule import NormedDifferenceScoringRule
 
 
-@serializable("bayesflow.scores")
-class MedianScore(NormedDifferenceScore):
+@serializable("bayesflow.scoring_rules")
+class MedianScoringRule(NormedDifferenceScoringRule):
     r""":math:`S(\hat \theta, \theta) = | \hat \theta - \theta |`
 
     Scores a predicted median with the absolute error score.

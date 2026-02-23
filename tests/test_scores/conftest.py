@@ -9,37 +9,37 @@ def reference(batch_size, feature_size):
 
 @pytest.fixture()
 def median_score():
-    from bayesflow.scores import MedianScore
+    from bayesflow.scoring_rules import MedianScoringRule
 
-    return MedianScore()
+    return MedianScoringRule()
 
 
 @pytest.fixture()
 def mean_score():
-    from bayesflow.scores import MeanScore
+    from bayesflow.scoring_rules import MeanScoringRule
 
-    return MeanScore()
+    return MeanScoringRule()
 
 
 @pytest.fixture()
 def normed_diff_score():
-    from bayesflow.scores import NormedDifferenceScore
+    from bayesflow.scoring_rules import NormedDifferenceScoringRule
 
-    return NormedDifferenceScore(k=3)
+    return NormedDifferenceScoringRule(k=3)
 
 
 @pytest.fixture(scope="function")
 def quantile_score():
-    from bayesflow.scores import QuantileScore
+    from bayesflow.scoring_rules import QuantileScoringRule
 
-    return QuantileScore()
+    return QuantileScoringRule()
 
 
 @pytest.fixture()
 def multivariate_normal_score():
-    from bayesflow.scores import MultivariateNormalScore
+    from bayesflow.scoring_rules import MvNormalScoringRule
 
-    return MultivariateNormalScore()
+    return MvNormalScoringRule()
 
 
 @pytest.fixture(
@@ -47,5 +47,5 @@ def multivariate_normal_score():
     scope="function",
 )
 def scoring_rule(request):
-    print("initialize scoring rule in test_scores")
+    print("initialize scoring rule in test_scoring_rules")
     return request.getfixturevalue(request.param)

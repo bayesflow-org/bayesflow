@@ -6,11 +6,11 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.links import CholeskyFactor
 from bayesflow.utils.serialization import serializable
 
-from .parametric_distribution_score import ParametricDistributionScore
+from .parametric_distribution_scoring_rule import ParametricDistributionScoringRule
 
 
-@serializable("bayesflow.scores")
-class MultivariateNormalScore(ParametricDistributionScore):
+@serializable("bayesflow.scoring_rules")
+class MvNormalScoringRule(ParametricDistributionScoringRule):
     r""":math:`S(\hat p_{\mu, \Sigma}, \theta; k) = -\log( \mathcal N (\theta; \mu, \Sigma))`
 
     Scores a predicted mean and lower-triangular Cholesky factor :math:`L` of the precision matrix :math:`P`

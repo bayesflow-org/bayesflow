@@ -37,14 +37,14 @@ def continuous_approximator(adapter, inference_network, summary_network):
 
 @pytest.fixture()
 def scoring_rule_inference_network():
-    from bayesflow.networks import ScoringRuleInferenceNetwork
-    from bayesflow.scores import NormedDifferenceScore, QuantileScore, MultivariateNormalScore
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import NormedDifferenceScoringRule, QuantileScoringRule, MvNormalScoringRule
 
-    return ScoringRuleInferenceNetwork(
-        scores=dict(
-            mean=NormedDifferenceScore(k=2),
-            quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
-            mvn=MultivariateNormalScore(),
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
+            mean=NormedDifferenceScoringRule(k=2),
+            quantiles=QuantileScoringRule(q=[0.1, 0.5, 0.9]),
+            mvn=MvNormalScoringRule(),
         ),
         subnet="mlp",
         subnet_kwargs=dict(widths=(32, 32)),
@@ -52,14 +52,14 @@ def scoring_rule_inference_network():
 
 
 @pytest.fixture()
-def scoring_rule_inference_network_with_multiple_parametric_scores():
-    from bayesflow.networks import ScoringRuleInferenceNetwork
-    from bayesflow.scores import MultivariateNormalScore
+def scoring_rule_inference_network_with_multiple_parametric_scoring_rules():
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import MvNormalScoringRule
 
-    return ScoringRuleInferenceNetwork(
-        scores=dict(
-            mvn1=MultivariateNormalScore(),
-            mvn2=MultivariateNormalScore(),
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
+            mvn1=MvNormalScoringRule(),
+            mvn2=MvNormalScoringRule(),
         ),
     )
 
@@ -79,8 +79,8 @@ def scoring_rule_approximator_with_single_parametric_score(adapter, scoring_rule
 
 
 @pytest.fixture()
-def scoring_rule_approximator_with_multiple_parametric_scores(
-    adapter, scoring_rule_inference_network_with_multiple_parametric_scores, summary_network
+def scoring_rule_approximator_with_multiple_parametric_scoring_rules(
+    adapter, scoring_rule_inference_network_with_multiple_parametric_scoring_rules, summary_network
 ):
     from bayesflow import ScoringRuleApproximator
 
@@ -89,7 +89,7 @@ def scoring_rule_approximator_with_multiple_parametric_scores(
 
     return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=scoring_rule_inference_network_with_multiple_parametric_scores,
+        inference_network=scoring_rule_inference_network_with_multiple_parametric_scoring_rules,
         summary_network=summary_network,
     )
 
@@ -97,7 +97,7 @@ def scoring_rule_approximator_with_multiple_parametric_scores(
 @pytest.fixture(
     params=[
         "scoring_rule_approximator_with_single_parametric_score",
-        "scoring_rule_approximator_with_multiple_parametric_scores",
+        "scoring_rule_approximator_with_multiple_parametric_scoring_rules",
     ]
 )
 def scoring_rule_approximator(request):
@@ -108,7 +108,7 @@ def scoring_rule_approximator(request):
     params=[
         "continuous_approximator",
         "scoring_rule_approximator_with_single_parametric_score",
-        "scoring_rule_approximator_with_multiple_parametric_scores",
+        "scoring_rule_approximator_with_multiple_parametric_scoring_rules",
     ],
     scope="function",
 )

@@ -7,8 +7,8 @@ from bayesflow.utils.serialization import serializable
 from .scoring_rule import ScoringRule
 
 
-@serializable("bayesflow.scores")
-class NormedDifferenceScore(ScoringRule):
+@serializable("bayesflow.scoring_rules")
+class NormedDifferenceScoringRule(ScoringRule):
     r""":math:`S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k`
 
     Scores a point estimate with the k-norm of the error.

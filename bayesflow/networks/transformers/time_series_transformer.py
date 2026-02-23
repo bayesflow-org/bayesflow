@@ -133,7 +133,9 @@ class TimeSeriesTransformer(SummaryNetwork):
         Returns
         -------
         out : Tensor
-            Output of shape (batch_size, set_size, output_dim)
+            Tensor with shape depending on `return_sequences`:
+                - False: (batch_size, summary_dim)
+                - True:  (batch_size, seq_len, summary_dim)
         """
 
         if self.time_axis is not None:

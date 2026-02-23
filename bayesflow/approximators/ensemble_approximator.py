@@ -51,7 +51,9 @@ class EnsembleApproximator(Approximator):
                     logging.warning(
                         "EnsembleApproximator contains shared component '{attr}' across members {members}. "
                         "Deserialization of weights of shared components is not supported yet and may fail. "
-                        "Use separate component instances (e.g., clone networks).",
+                        "Use separate component instances (e.g., clone networks) to be able to serialize the "
+                        "the whole EnsembleApproximator object or serialize the approximators in the ensemble "
+                        "separately.",
                         attr=attr,
                         members=members,
                     )

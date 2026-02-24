@@ -4,6 +4,7 @@ from typing import Any, Callable, TypeAlias
 
 import networkx as nx
 import numpy as np
+import sympy as sp
 from networkx.readwrite import json_graph
 
 from bayesflow.utils.serialization import serializable, serialize
@@ -168,7 +169,7 @@ class SimulationGraph(nx.DiGraph):
             if meta_dict:
                 v = [meta_dict.get(x, x) for x in v]
 
-            output_shapes[k] = tuple(v)
+            output_shapes[k] = tuple(sp.Symbol(x) if isinstance(x, str) else x for x in v)
 
         return output_shapes
 

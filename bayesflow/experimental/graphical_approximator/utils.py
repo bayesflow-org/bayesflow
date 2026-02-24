@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 import keras
 
 from ...types import Shape, Tensor
-from .shape_inference import expand_shape_rank
+from .shape_operations import expand_shape_rank
 
 
 def split_network_output(

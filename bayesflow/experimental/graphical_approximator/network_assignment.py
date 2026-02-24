@@ -130,37 +130,39 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
 
     for network_idx, _ in enumerate(approximator.inference_networks):
         vars = []
-        nodes_to_condition_on = (
-            set(approximator.network_conditions) - {data_node} - set(approximator.network_composition)
-        )
 
-        for node in sort_nodes_topologically(approximator.graph.simulation_graph, list(nodes_to_condition_on)):
-            for name in variable_names[node]:
-                var = adapted_data[name]
+        for node in sort_nodes_topologically(
+            approximator.graph.simulation_graph, approximator.network_conditions[network_idx]
+        ):
+            if node in data_node:
+                vars.append(data_conditions[network_idx])
+            else:
+                for name in variable_names[node]:
+                    var = adapted_data[name]
 
-                # standardize inference variables if required
-                if name in approximator.standardize:
-                    var = approximator.standardize_layers[name](var, stage="validation")
+                    # standardize inference variables if required
+                    if name in approximator.standardize:
+                        var = approximator.standardize_layers[name](var, stage="validation")
 
-                # flatten group dimension if node is not amortizable
-                if not approximator.graph.allows_amortization(node):
-                    # transpose last two dimensions before flattening
-                    # so unpacking in split_network_output becomes easier
-                    rank = keras.ops.ndim(var)
-                    perm = (*range(rank - 2), rank - 1, rank - 2)
-                    transpose = keras.ops.transpose(var, axes=tuple(perm))
-                    var = keras.ops.reshape(transpose, (*keras.ops.shape(transpose)[:-2], -1))
+                    # flatten group dimension if node is not amortizable
+                    if not approximator.graph.allows_amortization(node):
+                        # transpose last two dimensions before flattening
+                        # so unpacking in split_network_output becomes easier
+                        rank = keras.ops.ndim(var)
+                        perm = (*range(rank - 2), rank - 1, rank - 2)
+                        transpose = keras.ops.transpose(var, axes=tuple(perm))
+                        var = keras.ops.reshape(transpose, (*keras.ops.shape(transpose)[:-2], -1))
 
-                vars.append(var)
+                    vars.append(var)
 
-        vars.append(data_conditions[network_idx])
         conditions = concatenate(vars)
 
         # add node repetitions
-        repetitions = node_repetitions(approximator, adapted_data)
-
-        if repetitions != {}:
-            conditions = add_node_reps_to_conditions(conditions, repetitions)
+        node_reps = summary_input(approximator, adapted_data).shape[1:-1]
+        if len(node_reps) > 1:
+            squared = keras.ops.sqrt(node_reps)
+            expanded = keras.ops.expand_dims(squared, axis=0)
+            conditions = concatenate([conditions, expanded])
 
         result[network_idx] = conditions
 

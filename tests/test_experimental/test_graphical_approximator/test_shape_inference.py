@@ -49,12 +49,12 @@ def test_data_condition_shapes_by_network_crossed_design_irt(
     assert data_condition_shapes_by_network(crossed_design_irt_approximator) == {
         0: (sp.Symbol("B"), 20),
         1: (sp.Symbol("B"), sp.Symbol("num_questions"), 10),
-        2: (sp.Symbol("B"), 20),
+        2: (sp.Symbol("B"), sp.Symbol("num_students"), 20),
     }
     assert data_condition_shapes_by_network(crossed_design_irt_approximator, data_shapes) == {
         0: (1, 20),
         1: (1, data.meta["num_questions"], 10),
-        2: (1, 20),
+        2: (1, data.meta["num_students"], 20),
     }
 
 
@@ -331,6 +331,7 @@ def test_inference_condition_shapes_by_network_crossed_design_irt(
         1: (2, data.meta["num_questions"], 16),  # 10 summary dimensions + 4 variables + 2 node reps
         2: (
             2,
+            data.meta["num_students"],
             20 + data.meta["num_questions"] * 3 + 4 + 2,
         ),  # 20 summary dimensions + num_questions * 3 + 4 variables + 2 node reps
     }

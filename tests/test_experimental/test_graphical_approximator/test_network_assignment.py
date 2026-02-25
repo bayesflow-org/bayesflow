@@ -498,3 +498,255 @@ def test_data_conditions_by_network_crossed_design_irt(crossed_design_irt_simula
 
     for k, v in conditions.items():
         assert v.shape == condition_shapes[k]
+
+
+def test_inference_conditions_single_level(single_level_simulator, single_level_approximator):
+    from bayesflow.experimental.graphical_approximator.network_assignment import (
+        inference_conditions_by_network,
+        summary_outputs_by_network,
+    )
+
+    data = single_level_simulator.sample(2)
+    data_shapes = single_level_approximator._data_shapes(data)
+
+    approximator = single_level_approximator
+    approximator.build(data_shapes)
+
+    conditions = inference_conditions_by_network(approximator, data)
+
+    # output has the correct shape
+    expected_shape = (2, 10)
+    assert keras.ops.shape(conditions[0]) == expected_shape
+
+    # output is as expected
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    expected_output = summary_outputs[0]
+    assert keras.ops.all(conditions[0] == expected_output)
+
+
+def test_inference_conditions_two_level(two_level_simulator, two_level_approximator):
+    from bayesflow.experimental.graphical_approximator.network_assignment import (
+        inference_conditions_by_network,
+        summary_outputs_by_network,
+        summary_input,
+    )
+
+    data = two_level_simulator.sample(2)
+    data_shapes = two_level_approximator._data_shapes(data)
+
+    approximator = two_level_approximator
+    approximator.build(data_shapes)
+
+    conditions = inference_conditions_by_network(approximator, data)
+
+    # output has the correct shape
+    expected_shape = (2, 22)
+    assert keras.ops.shape(conditions[0]) == expected_shape
+
+    # output is as expected
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    data_conditions = summary_outputs[0]
+
+    hyper_mean = approximator.standardize_layers["hyper_mean"](data["hyper_mean"])
+    hyper_std = approximator.standardize_layers["hyper_std"](data["hyper_std"])
+    shared_std = approximator.standardize_layers["shared_std"](data["shared_std"])
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate([hyper_mean, hyper_std, shared_std, data_conditions, expanded])
+
+    assert keras.ops.all(conditions[1] == expected_output)
+
+    # output has the correct shape
+    expected_shape = (2, 6, 15)
+    assert keras.ops.shape(conditions[1]) == expected_shape
+
+
+def test_inference_conditions_three_level(three_level_simulator, three_level_approximator):
+    from bayesflow.experimental.graphical_approximator.network_assignment import (
+        inference_conditions_by_network,
+        summary_outputs_by_network,
+        summary_input,
+    )
+
+    data = three_level_simulator.sample(2)
+    data_shapes = three_level_approximator._data_shapes(data)
+
+    approximator = three_level_approximator
+    approximator.build(data_shapes)
+
+    conditions = inference_conditions_by_network(approximator, data)
+
+    # output has the correct shape
+    expected_shape = (2, 33)
+    assert keras.ops.shape(conditions[0]) == expected_shape
+
+    # output is as expected
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    data_conditions = summary_outputs[2]
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate([data_conditions, expanded])
+
+    assert keras.ops.all(conditions[0] == expected_output)
+
+    # output has the correct shape
+    expected_shape = (2, data.meta["N_classrooms"], 26)
+    assert keras.ops.shape(conditions[1]) == expected_shape
+
+    # output is as expected
+    data_conditions = summary_outputs[1]
+    school_mu = approximator.standardize_layers["school_mu"](data["school_mu"])
+    school_sigma = approximator.standardize_layers["school_sigma"](data["school_sigma"])
+    shared_sigma = approximator.standardize_layers["shared_sigma"](data["shared_sigma"])
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate([school_mu, school_sigma, shared_sigma, data_conditions, expanded])
+
+    assert keras.ops.all(conditions[1] == expected_output)
+
+    # output has the correct shape
+    expected_shape = (2, data.meta["N_classrooms"], data.meta["N_students"], 18)
+    assert keras.ops.shape(conditions[2]) == expected_shape
+
+    # output is as expected
+    data_conditions = summary_outputs[0]
+    school_mu = approximator.standardize_layers["school_mu"](data["school_mu"])
+    school_sigma = approximator.standardize_layers["school_sigma"](data["school_sigma"])
+    classroom_mu = approximator.standardize_layers["classroom_mu"](data["classroom_mu"])
+    classroom_sigma = approximator.standardize_layers["classroom_sigma"](data["classroom_sigma"])
+    shared_sigma = approximator.standardize_layers["shared_sigma"](data["shared_sigma"])
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate(
+        [school_mu, school_sigma, classroom_mu, classroom_sigma, shared_sigma, data_conditions, expanded]
+    )
+
+    assert keras.ops.all(conditions[2] == expected_output)
+
+
+def test_inference_conditions_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
+    from bayesflow.experimental.graphical_approximator.network_assignment import (
+        inference_conditions_by_network,
+        data_conditions_by_network,
+        summary_outputs_by_network,
+        summary_input,
+    )
+
+    data = crossed_design_irt_simulator.sample(2)
+    data_shapes = crossed_design_irt_approximator._data_shapes(data)
+
+    approximator = crossed_design_irt_approximator
+    approximator.build(data_shapes)
+
+    conditions = inference_conditions_by_network(approximator, data)
+
+    # output has the correct shape
+    expected_shape = (2, 22)
+    assert keras.ops.shape(conditions[0]) == expected_shape
+
+    # output is as expected
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    data_conditions = summary_outputs[1]
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate([data_conditions, expanded])
+
+    assert keras.ops.all(conditions[0] == expected_output)
+
+    # output has the correct shape
+    expected_shape = (2, data.meta["num_questions"], 16)
+    assert keras.ops.shape(conditions[1]) == expected_shape
+
+    # output is as expected
+    summary_outputs = summary_outputs_by_network(approximator, data)
+    data_conditions = summary_outputs[0]
+
+    mu_question_mean = approximator.standardize_layers["mu_question_mean"](data["mu_question_mean"])
+    sigma_question_mean = approximator.standardize_layers["sigma_question_mean"](data["sigma_question_mean"])
+    mu_question_std = approximator.standardize_layers["mu_question_std"](data["mu_question_std"])
+    sigma_question_std = approximator.standardize_layers["sigma_question_std"](data["sigma_question_std"])
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate(
+        [mu_question_mean, sigma_question_mean, mu_question_std, sigma_question_std, data_conditions, expanded]
+    )
+
+    assert keras.ops.all(conditions[1] == expected_output)
+
+    # output has the correct shape
+    expected_shape = (
+        2,
+        data.meta["num_students"],
+        20 + data.meta["num_questions"] * 3 + 4 + 2,
+    )
+    assert keras.ops.shape(conditions[2]) == expected_shape
+
+    # output is as expected
+    data_conditions = data_conditions_by_network(approximator, data)
+    # data_conditions = summary_outputs[1]
+    mu_question_mean = approximator.standardize_layers["mu_question_mean"](data["mu_question_mean"])
+    sigma_question_mean = approximator.standardize_layers["sigma_question_mean"](data["sigma_question_mean"])
+    mu_question_std = approximator.standardize_layers["mu_question_std"](data["mu_question_std"])
+    sigma_question_std = approximator.standardize_layers["sigma_question_std"](data["sigma_question_std"])
+
+    question_mean = approximator.standardize_layers["question_mean"](data["question_mean"])
+    question_mean_rank = keras.ops.cast(keras.ops.ndim(question_mean), "int32")
+    question_mean_perm = (*range(question_mean_rank - 2), question_mean_rank - 1, question_mean_rank - 2)
+    question_mean_transpose = keras.ops.transpose(question_mean, axes=question_mean_perm)
+    question_mean_reshape = keras.ops.reshape(
+        question_mean_transpose, (*keras.ops.shape(question_mean_transpose)[:-2], -1)
+    )
+
+    question_std = approximator.standardize_layers["question_std"](data["question_std"])
+    question_std_rank = keras.ops.cast(keras.ops.ndim(question_std), "int32")
+    question_std_perm = (*range(question_std_rank - 2), question_std_rank - 1, question_std_rank - 2)
+    question_std_transpose = keras.ops.transpose(question_std, axes=question_std_perm)
+    question_std_reshape = keras.ops.reshape(
+        question_std_transpose, (*keras.ops.shape(question_std_transpose)[:-2], -1)
+    )
+
+    question_difficulty = approximator.standardize_layers["question_difficulty"](data["question_difficulty"])
+    question_difficulty_rank = keras.ops.cast(keras.ops.ndim(question_difficulty), "int32")
+    question_difficulty_perm = (
+        *range(question_difficulty_rank - 2),
+        question_difficulty_rank - 1,
+        question_difficulty_rank - 2,
+    )
+    question_difficulty_transpose = keras.ops.transpose(question_difficulty, axes=question_difficulty_perm)
+    question_difficulty_reshape = keras.ops.reshape(
+        question_difficulty_transpose, (*keras.ops.shape(question_mean_transpose)[:-2], -1)
+    )
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate(
+        [
+            mu_question_mean,
+            sigma_question_mean,
+            mu_question_std,
+            sigma_question_std,
+            question_mean_reshape,
+            question_std_reshape,
+            question_difficulty_reshape,
+            data_conditions[2],
+            expanded,
+        ]
+    )
+    print("__")
+    print(expected_output.shape)
+    print(conditions[2].shape)
+    print("##")
+    assert keras.ops.all(conditions[2] == expected_output)

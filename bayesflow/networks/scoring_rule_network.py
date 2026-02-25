@@ -9,7 +9,7 @@ from bayesflow.utils.decorators import allow_batch_size
 
 @serializable("bayesflow.networks")
 class ScoringRuleNetwork(keras.Layer):
-    """Implements Bayes risk minimization for user specified scoring rules by a shared feed forward architecture
+    """(IN) Implements Bayes risk minimization for user specified scoring rules by a shared feed forward architecture
     with separate heads for each scoring rule.
     """
 

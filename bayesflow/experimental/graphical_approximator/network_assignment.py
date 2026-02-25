@@ -159,7 +159,7 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
 
         # add node repetitions
         node_reps = summary_input(approximator, adapted_data).shape[1:-1]
-        if len(node_reps) > 1:
+        if len(node_reps) >= 1:
             squared = keras.ops.sqrt(node_reps)
             expanded = keras.ops.expand_dims(squared, axis=0)
             conditions = concatenate([conditions, expanded])
@@ -167,33 +167,3 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
         result[network_idx] = conditions
 
     return result
-
-
-def node_repetitions(approximator: "GraphicalApproximator", adapted_data: dict[str, int]) -> dict[str, int]:
-    """
-    Infers repetition counts for each node from data shapes.
-    """
-    data_shapes = approximator._data_shapes(adapted_data)
-    data_node = approximator.graph.simulation_graph.data_node()
-    data_keys = approximator.graph.simulation_graph.variable_names()[data_node]
-
-    summary_input_shape = concatenate_shapes([data_shapes[k] for k in data_keys])
-    shape_order = approximator.graph.data_shape_order()
-
-    repetitions = {}
-
-    for i, variable in enumerate(shape_order):
-        repetitions[variable] = summary_input_shape[1:-1][i]  # skip batch and and variable dimension
-
-    return repetitions
-
-
-def add_node_reps_to_conditions(conditions, repetitions: dict[str, int]) -> Tensor:
-    """
-    Appends node repetition features (sqrt of node repetitons) to a conditions tensor.
-    """
-    rep_values = keras.ops.convert_to_tensor(list(repetitions.values()))
-    squared = keras.ops.sqrt(rep_values)
-    expanded = keras.ops.expand_dims(squared, axis=0)
-
-    return concatenate([conditions, expanded])

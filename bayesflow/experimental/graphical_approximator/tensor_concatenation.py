@@ -3,39 +3,42 @@ from keras import ops
 from bayesflow.types import Tensor
 
 
-def concatenate(tensors: list[Tensor]) -> Tensor:
+from keras import ops
+
+
+def _shape1d(x):
+    """ops.shape(x) as a 1D int tensor, even if Keras returns a Python tuple."""
+    s = ops.shape(x)
+    if isinstance(s, tuple):
+        s = ops.stack([ops.cast(ops.convert_to_tensor(d), "int32") for d in s], axis=0)
+    else:
+        s = ops.cast(s, "int32")
+    return s
+
+
+def expand_to_target_rank(tensor, target_rank: int):
+    while tensor.ndim < target_rank:
+        tensor = ops.expand_dims(tensor, axis=-2)
+    return tensor
+
+
+def concatenate(tensors):
     """
-    Concatenate tensors of potentially different ranks by first introducing singleton
-    dimensions and then tiling those before concatination.
+    Rank-align by inserting singleton dims at -2, then broadcast singleton dims
+    (all axes except the last / feature axis), then concatenate on the last axis.
     """
-    # ensure all tensors have the same rank: [(2, 3), (2, 15, 5)] -> [(2, 1, 3), (2, 15, 5)]
+    tensors = [ops.convert_to_tensor(t) for t in tensors]
+
     max_rank = max(t.ndim for t in tensors)
     expanded = [expand_to_target_rank(t, max_rank) for t in tensors]
 
-    # maximum for each dimension: [(2, 1, 3), (2, 15, 5)] -> (2, 15, 5)
-    max_shape = ()
-    for dims in zip(*(x.shape for x in expanded)):
-        max_dim = max((x for x in dims if x is not None), default=None)
-        max_shape = max_shape + (max_dim,)
+    # runtime shapes, tuple-safe
+    shapes = [_shape1d(t) for t in expanded]  # list of (rank,) int tensors
+    target = ops.max(ops.stack(shapes, axis=0), axis=0)  # (rank,) = elementwise max
 
-    # repeat singleton dimensions for concatenation:
-    # [(2, 1, 3), (2, 15, 5)] -> [(2, 15, 3), (2, 15, 5)]
-    repeated = []
-    for t in expanded:
-        for axis, (dim, target) in enumerate(zip(t.shape[:-1], max_shape[:-1])):
-            if target is None or dim == target:  # skipping None in graph mode
-                continue
-            t = ops.repeat(t, repeats=target, axis=axis)
-        repeated.append(t)
-
-    return ops.concatenate(repeated, axis=-1)
-
-
-def expand_to_target_rank(tensor: Tensor, target_rank: int) -> Tensor:
-    """
-    Expands a tensor to a target rank by inserting singleton dimensions at axis=-2.
-    """
-    while tensor.ndim < target_rank:
-        tensor = keras.ops.expand_dims(tensor, axis=-2)
-
-    return tensor
+    # broadcast to target on all non-feature axes, keep own feature dim (last axis)
+    out = []
+    for t, s in zip(expanded, shapes):
+        bshape = ops.concatenate([target[:-1], s[-1:]], axis=0)
+        out.append(ops.broadcast_to(t, bshape))  # only works if non-feature dims are 1 or equal
+    return ops.concatenate(out, axis=-1)

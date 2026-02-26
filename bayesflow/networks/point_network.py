@@ -23,11 +23,9 @@ class PointNetwork(ScoringRuleNetwork):
 
         >>> from bayesflow.scoring_rules import MeanScoringRule, QuantileScoringRule
         >>> inference_network = bf.networks.ScoringRuleNetwork(
-        ...     scoring_rules=dict(
-        ...         mean=MeanScoringRule(),
-        ...         quantiles=QuantileScoringRule([0.1, 0.3, 0.5, 0.7, 0.9]),
-        ...         # mvn=MvNormalScoringRule(),  # not supported by PointNetwork
-        ...     )
+        ...     mean=MeanScoringRule(),
+        ...     quantiles=QuantileScoringRule([0.1, 0.3, 0.5, 0.7, 0.9]),
+        ...     # mvn=MvNormalScoringRule(),  # not supported by PointNetwork
         ... )
 
     ... but the latter supports passing any subclass of :py:class:`ScoringRule`, e.g. parametric distributions.

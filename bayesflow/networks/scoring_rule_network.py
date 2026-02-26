@@ -15,15 +15,31 @@ class ScoringRuleNetwork(keras.Layer):
 
     def __init__(
         self,
-        scoring_rules: dict[str, ScoringRule],
+        *,
+        scoring_rules: dict[str, ScoringRule] | None = None,
         subnet: str | keras.Layer = "mlp",
         **kwargs,
     ):
-        super().__init__(**model_kwargs(kwargs))
+        # Pull scoring rules passed directly as keyword args
+        kw_scoring_rules = {k: v for k, v in list(kwargs.items()) if isinstance(v, ScoringRule)}
+        for k in kw_scoring_rules:
+            kwargs.pop(k)
+
+        scoring_rules = dict(scoring_rules or {})
+
+        scoring_rules.update(kw_scoring_rules)
+
+        if not scoring_rules:
+            raise ValueError(
+                "`ScoringRuleNetwork` requires at least one scoring rule. "
+                "Provide them via `scoring_rules={'name': rule, ...}` or as direct keyword argument."
+            )
 
         self.scoring_rules = scoring_rules
 
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
+
+        super().__init__(**model_kwargs(kwargs))
 
         self.config = {
             "subnet": serialize(subnet),

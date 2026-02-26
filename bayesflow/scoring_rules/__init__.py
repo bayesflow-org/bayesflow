@@ -7,12 +7,10 @@ Examples
 >>> # A network to estimate both point estimates and parameters of a multivariate normal distribution.
 >>> from bayesflow.scoring_rules import MeanScoringRule, QuantileScoringRule, MvNormalScoringRule
 >>> inference_network = bf.networks.ScoringRuleNetwork(
-        scoring_rules=dict(
-            mean=MeanScoringRule(),
-            quantiles=QuantileScoringRule(),
-            mvn=MvNormalScoringRule(),
-        )
-    )
+...     mean=MeanScoringRule(),
+...     quantiles=QuantileScoringRule(),
+...     mvn=MvNormalScoringRule(),
+... )
 
 Inherit from :py:class:`ScoringRule` to build your own custom scoring rule.
 """

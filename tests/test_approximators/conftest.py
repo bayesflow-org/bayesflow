@@ -36,7 +36,7 @@ def continuous_approximator(adapter, inference_network, summary_network):
 
 
 @pytest.fixture()
-def scoring_rule_inference_network():
+def scoring_rule_network():
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import NormedDifferenceScoringRule, QuantileScoringRule, MvNormalScoringRule
 
@@ -52,7 +52,7 @@ def scoring_rule_inference_network():
 
 
 @pytest.fixture()
-def scoring_rule_inference_network_with_multiple_parametric_scoring_rules():
+def scoring_rule_network_with_multiple_parametric_scoring_rules():
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import MvNormalScoringRule
 
@@ -65,7 +65,7 @@ def scoring_rule_inference_network_with_multiple_parametric_scoring_rules():
 
 
 @pytest.fixture()
-def scoring_rule_approximator_with_single_parametric_score(adapter, scoring_rule_inference_network, summary_network):
+def scoring_rule_approximator_with_single_parametric_score(adapter, scoring_rule_network, summary_network):
     from bayesflow import ScoringRuleApproximator
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
@@ -73,14 +73,14 @@ def scoring_rule_approximator_with_single_parametric_score(adapter, scoring_rule
 
     return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=scoring_rule_inference_network,
+        inference_network=scoring_rule_network,
         summary_network=summary_network,
     )
 
 
 @pytest.fixture()
 def scoring_rule_approximator_with_multiple_parametric_scoring_rules(
-    adapter, scoring_rule_inference_network_with_multiple_parametric_scoring_rules, summary_network
+    adapter, scoring_rule_network_with_multiple_parametric_scoring_rules, summary_network
 ):
     from bayesflow import ScoringRuleApproximator
 
@@ -89,7 +89,7 @@ def scoring_rule_approximator_with_multiple_parametric_scoring_rules(
 
     return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=scoring_rule_inference_network_with_multiple_parametric_scoring_rules,
+        inference_network=scoring_rule_network_with_multiple_parametric_scoring_rules,
         summary_network=summary_network,
     )
 

@@ -114,7 +114,7 @@ def free_form_flow():
 
 
 @pytest.fixture()
-def typical_scoring_rule_inference_network():
+def typical_scoring_rule_network():
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import MeanScoringRule, MedianScoringRule, QuantileScoringRule, MvNormalScoringRule
 
@@ -129,7 +129,7 @@ def typical_scoring_rule_inference_network():
 
 
 @pytest.fixture()
-def typical_scoring_rule_inference_network_subnet():
+def typical_scoring_rule_network_subnet():
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import MeanScoringRule, MedianScoringRule, QuantileScoringRule, MvNormalScoringRule
 
@@ -148,7 +148,7 @@ def typical_scoring_rule_inference_network_subnet():
 
 @pytest.fixture(
     params=[
-        "typical_scoring_rule_inference_network",
+        "typical_scoring_rule_network",
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
@@ -172,7 +172,7 @@ def inference_network(request):
 
 @pytest.fixture(
     params=[
-        "typical_scoring_rule_inference_network_subnet",
+        "typical_scoring_rule_network_subnet",
         "coupling_flow_subnet",
         "flow_matching_subnet",
         "free_form_flow_subnet",

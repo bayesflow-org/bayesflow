@@ -39,7 +39,7 @@ class PointNetwork(ScoringRuleNetwork):
         scoring_rules = self._resolve_scoring_rules(points, q)
         super().__init__(scoring_rules, subnet, **kwargs)
 
-    def _resolve_scoring_rules(self, points: Sequence[str], q) -> dict[str, ScoringRule]:
+    def _resolve_scoring_rules(self, points: Sequence[str], q: Sequence[float]) -> dict[str, ScoringRule]:
         scoring_rules = {}
         for p in points:
             match p:

@@ -34,3 +34,10 @@ def test_kwargs_forwarded(points, q, subnet, kwargs, assertion):
     net = PointNetwork(points, q, subnet, **kwargs)
     subnet_layer = net.subnet  # adjust path
     assertion(subnet_layer)
+
+
+def test_invalid_points_arg():
+    with pytest.raises(ValueError) as excinfo:
+        PointNetwork(["not-supported"])
+
+    assert "must be either" in str(excinfo)

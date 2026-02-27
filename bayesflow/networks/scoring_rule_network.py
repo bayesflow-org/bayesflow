@@ -35,11 +35,11 @@ class ScoringRuleNetwork(keras.Layer):
                 "Provide them via `scoring_rules={'name': rule, ...}` or as direct keyword argument."
             )
 
+        super().__init__(**model_kwargs(kwargs))
+
         self.scoring_rules = scoring_rules
 
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
-
-        super().__init__(**model_kwargs(kwargs))
 
         self.config = {
             "subnet": serialize(subnet),

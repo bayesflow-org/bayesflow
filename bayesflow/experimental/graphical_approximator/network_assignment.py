@@ -198,11 +198,13 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
         conditions = concatenate(vars)
 
         # add node repetitions
-        node_reps = keras.ops.shape(summary_input(approximator, adapted_data))[1:-1]
+        input = summary_input(approximator, adapted_data)
+        node_reps = keras.ops.shape(input)[1:-1]
         if len(node_reps) >= 1:
             squared = keras.ops.sqrt(node_reps)
             expanded = keras.ops.expand_dims(squared, axis=0)
-            conditions = concatenate([conditions, expanded])
+            repeated = keras.ops.repeat(expanded, keras.ops.shape(input)[0], axis=0)
+            conditions = concatenate([conditions, repeated])
 
         result[network_idx] = conditions
 

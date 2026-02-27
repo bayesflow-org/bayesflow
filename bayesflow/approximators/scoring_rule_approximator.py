@@ -106,7 +106,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         Draws samples from a parametric distribution based on point estimates for given input conditions.
 
         These samples will generally not correspond to samples from the fully Bayesian posterior, since
-        they will assume some parametric form (e.g., multivariate normal when using the MvNormalScoringRule).
+        they will assume some parametric form (e.g., multivariate normal when using the MvNormalScore).
 
         Parameters
         ----------

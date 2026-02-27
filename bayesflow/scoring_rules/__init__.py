@@ -16,12 +16,12 @@ Inherit from :py:class:`ScoringRule` to build your own custom scoring rule.
 """
 
 from .scoring_rule import ScoringRule
-from .parametric_distribution_scoring_rule import ParametricDistributionScore
-from .normed_difference_scoring_rule import NormedDifferenceScore
-from .mean_scoring_rule import MeanScore
-from .median_scoring_rule import MedianScore
-from .quantile_scoring_rule import QuantileScore
-from .mv_normal_scoring_rule import MvNormalScore
+from .parametric_distribution_score import ParametricDistributionScore
+from .normed_difference_score import NormedDifferenceScore
+from .mean_score import MeanScore
+from .median_score import MedianScore
+from .quantile_score import QuantileScore
+from .mv_normal_score import MvNormalScore
 
 from ..utils._docs import _add_imports_to_all
 

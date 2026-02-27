@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import warnings
 from typing import Literal, Sequence
 
 import keras
@@ -110,9 +111,8 @@ class GraphicalApproximator(Approximator):
 
         return adapter
 
-    @classmethod
     def build_dataset(
-        cls,
+        self,
         *,
         batch_size: int,
         num_batches: int,
@@ -137,7 +137,6 @@ class GraphicalApproximator(Approximator):
             workers=workers,
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,
-            augmentations=lambda x: dict(x),
         )
 
     @classmethod
@@ -297,7 +296,13 @@ class GraphicalApproximator(Approximator):
             If both `dataset` and `simulator` are provided or neither is provided.
         """
         if "dataset" in kwargs:
-            kwargs["dataset"] = dict(**kwargs["dataset"])
+            kwargs["dataset"] = OfflineDataset(
+                kwargs["dataset"],
+                batch_size=kwargs.get("batch_size"),  # type: ignore[invalid-argument-type]
+                num_samples=kwargs.get("num_samples"),  # type: ignore[invalid-argument-type]
+                adapter=self.adapter,
+                augmentations=self.subset_data,
+            )
 
         if "simulator" in kwargs:
             kwargs["dataset"] = self.build_dataset(
@@ -331,6 +336,34 @@ class GraphicalApproximator(Approximator):
                 kwargs.setdefault("steps_per_epoch", kwargs["num_batches"])
 
         return super().fit(*args, **kwargs, adapter=self.adapter)
+
+    def subset_data(self, data, meta_fn=None):
+        output_shapes = self.graph.simulation_graph.output_shapes()
+
+        if not meta_fn:
+            meta_fn = self.graph.simulation_graph.meta_fn
+            if meta_fn:
+                output_shapes = self.graph.simulation_graph.output_shapes(meta_fn())
+
+        output = {}
+
+        for k, v in data.items():
+            if k not in output_shapes:
+                raise KeyError(f"Unexpected data entry: {k}")
+
+            begin = (0,) * len(keras.ops.shape(v))
+
+            output_shape = list(output_shapes[k])
+            output_shape[0] = keras.ops.shape(v)[0]  # replace batch size placeholder
+            output_shape = tuple(output_shape)
+
+            # current keras version throws a deprecation warning when using keras.ops.slice even if
+            # called approriately
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Using a non-tuple sequence")
+                output[k] = keras.ops.convert_to_numpy(keras.ops.slice(v, begin, output_shape))
+
+        return output
 
     def _batch_size_from_data(self, data):
         """

@@ -86,8 +86,6 @@ class SelfAttention2D(keras.Layer):
         self.residual = "none" if residual is None else str(residual)
         self.kernel_initializer = kernel_initializer
 
-
-
         # Input norm (pre-norm attention)
         self.x_norm = SimpleNorm(
             method="group" if self.norm == "group" else "layer",
@@ -239,7 +237,7 @@ class SelfAttention2D(keras.Layer):
             k = self.k_norm(k, training=training)
 
         # scaled dot-product attention
-        q = q * (self.head_dim ** -0.5)
+        q = q * (self.head_dim**-0.5)
 
         # (b=B, h=heads, q=HW, k=HW, d=head_dim): (B, heads, HW, HW)
         attn = keras.ops.einsum("bqhd,bkhd->bhqk", q, k)

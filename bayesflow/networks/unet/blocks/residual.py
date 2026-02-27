@@ -218,10 +218,7 @@ class ResidualBlock2D(keras.Layer):
         return x
 
     def call(
-        self,
-        inputs: tuple[Tensor, Tensor, Tensor] | tuple[Tensor, Tensor],
-        training: bool | None = None,
-        **kwargs
+        self, inputs: tuple[Tensor, Tensor, Tensor] | tuple[Tensor, Tensor], training: bool | None = None, **kwargs
     ) -> Tensor:
         if len(inputs) == 2:
             x, emb = inputs

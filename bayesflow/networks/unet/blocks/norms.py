@@ -22,6 +22,7 @@ class SimpleNorm(keras.Layer):
     If it does not, `groups` is reduced at build-time to the largest divisor
     <= the requested value.
     """
+
     def __init__(
         self,
         method: Literal["layer", "group"] = "group",
@@ -30,7 +31,7 @@ class SimpleNorm(keras.Layer):
         axis: int = -1,
         center: bool = True,
         scale: bool = True,
-        **kwargs
+        **kwargs,
     ):
         """
         Implements a lightweight normalization wrapper for vision backbones.

@@ -65,16 +65,18 @@ class DownSample2D(keras.Layer):
                     name="down",
                 )
             case "average":
-                self.down = Sequential([
-                    keras.layers.AveragePooling2D(pool_size=2, strides=2, padding="same", name="avg_pool"),
-                    keras.layers.Conv2D(
-                        filters=self.width,
-                        kernel_size=1,
-                        padding="same",
-                        kernel_initializer=self.kernel_initializer,
-                        name="conv_proj",
-                    ),
-                ])
+                self.down = Sequential(
+                    [
+                        keras.layers.AveragePooling2D(pool_size=2, strides=2, padding="same", name="avg_pool"),
+                        keras.layers.Conv2D(
+                            filters=self.width,
+                            kernel_size=1,
+                            padding="same",
+                            kernel_initializer=self.kernel_initializer,
+                            name="conv_proj",
+                        ),
+                    ]
+                )
             case _:
                 raise ValueError(f"Unsupported downsampling mode: {self.mode}")
 

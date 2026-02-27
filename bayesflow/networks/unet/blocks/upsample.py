@@ -63,28 +63,31 @@ class UpSample2D(keras.Layer):
         self.kernel_initializer = kernel_initializer
 
         if self.conv_first:
-            self.up = Sequential([
-                keras.layers.Conv2D(
-                    filters=self.width,
-                    kernel_size=self.kernel_size,
-                    padding="same",
-                    kernel_initializer=self.kernel_initializer,
-                    name="conv",
-                ),
-                keras.layers.UpSampling2D(size=2, interpolation=self.interpolation, name="up")
-            ])
+            self.up = Sequential(
+                [
+                    keras.layers.Conv2D(
+                        filters=self.width,
+                        kernel_size=self.kernel_size,
+                        padding="same",
+                        kernel_initializer=self.kernel_initializer,
+                        name="conv",
+                    ),
+                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation, name="up"),
+                ]
+            )
         else:
-            self.up = Sequential([
-                keras.layers.UpSampling2D(size=2, interpolation=self.interpolation, name="up"),
-                keras.layers.Conv2D(
-                    filters=self.width,
-                    kernel_size=self.kernel_size,
-                    padding="same",
-                    kernel_initializer=self.kernel_initializer,
-                    name="conv",
-                ),
-            ])
-
+            self.up = Sequential(
+                [
+                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation, name="up"),
+                    keras.layers.Conv2D(
+                        filters=self.width,
+                        kernel_size=self.kernel_size,
+                        padding="same",
+                        kernel_initializer=self.kernel_initializer,
+                        name="conv",
+                    ),
+                ]
+            )
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

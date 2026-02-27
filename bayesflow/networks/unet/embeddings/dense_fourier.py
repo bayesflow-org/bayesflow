@@ -24,6 +24,7 @@ class DenseFourier(keras.Layer):
         t:   (B, 1)
         out: (B, D) if include_identity=False else (B, D+1)
     """
+
     def __init__(
         self,
         emb_dim: int = 32,
@@ -87,19 +88,21 @@ class DenseFourier(keras.Layer):
 
         self.time_mlp = None
         if self.use_residual_mlp:
-            self.time_mlp = Sequential([
-                keras.layers.Dense(
-                    self.emb_dim + (1 if self.include_identity else 0),
-                    activation=self.activation,
-                    kernel_initializer=self.kernel_initializer,
-                    name="time_mlp_1",
-                ),
-                keras.layers.Dense(
-                    self.emb_dim + (1 if self.include_identity else 0),
-                    kernel_initializer="zeros",
-                    name="time_mlp_2",
-                )
-            ])
+            self.time_mlp = Sequential(
+                [
+                    keras.layers.Dense(
+                        self.emb_dim + (1 if self.include_identity else 0),
+                        activation=self.activation,
+                        kernel_initializer=self.kernel_initializer,
+                        name="time_mlp_1",
+                    ),
+                    keras.layers.Dense(
+                        self.emb_dim + (1 if self.include_identity else 0),
+                        kernel_initializer="zeros",
+                        name="time_mlp_2",
+                    ),
+                ]
+            )
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

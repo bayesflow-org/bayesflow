@@ -2,37 +2,44 @@ from typing import Sequence, Literal
 
 import keras
 
-from bayesflow.networks.vision.blocks.transformer import TransformerBlock2D
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs, concatenate_valid
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.utils import check_lengths_same
 
-from bayesflow.networks.vision.blocks.norms import SimpleNorm
-from bayesflow.networks.vision.blocks.residual import ResidualBlock2D
-from bayesflow.networks.vision.blocks.upsample import UpSample2D
-from bayesflow.networks.vision.blocks.downsample import DownSample2D
-from bayesflow.networks.vision.blocks.attention import SelfAttention2D
-from bayesflow.networks.vision.embeddings.dense_fourier import DenseFourier
+from .blocks.transformer import TransformerBlock2D
+from .blocks.norms import SimpleNorm
+from .blocks.residual import ResidualBlock2D
+from .blocks.upsample import UpSample2D
+from .blocks.downsample import DownSample2D
+from .blocks.attention import SelfAttention2D
+from .embeddings.dense_fourier import DenseFourier
 
 
 @serializable("bayesflow.networks")
-class ResidualUViT(keras.Layer):
+class UViT(keras.Layer):
     """
-    Residual U-ViT backbone (SiD2-style [1]) for diffusion models.
+    Time-conditioned U-ViT backbone for diffusion models.
 
     Expects inputs `(x, t, cond)`, where `cond` is concatenated channel-wise to `x` and a learned time embedding
-    conditions residual / transformer blocks (optionally via FiLM). Compared to a classic U-Net, this variant removes
-    blockwise skip connections and instead uses one residual skip connection per resolution change and transformer
-    blocks as bottleneck.
+    conditions all residual and transformer blocks (optionally via FiLM). The network uses a DDPM-style convolutional
+    encoder–decoder with skip connections at higher resolutions, but replaces the low-resolution bottleneck with a
+    stack of transformer blocks operating on NHWC feature maps. A learned 2D positional embedding is added at the
+    bottleneck resolution.
 
-    [1] Hoogeboom et al. (2024) Simpler Diffusion (SiD2): 1.5 FID on ImageNet512 with pixel-space diffusion
+    Follows the UViT architecture from [1], with some modifications and generalizations:
+      - Flexible widths and block counts per stage (not necessarily doubling channels at each downsample).
+      - Optional self-attention blocks after each residual block within a stage.
+      - Configurable downsampling mode ("conv" vs "average").
+      - More flexible time embedding options (custom layer, FiLM vs additive, etc.).
+
+    [1] Hoogeboom et al. (2023), simple diffusion: End-to-end diffusion for high-resolution images
     """
+
     def __init__(
         self,
         widths: Sequence[int] = (64, 128, 256),
-        res_blocks_down: Sequence[int] | int = 2,
-        res_blocks_up: Sequence[int] | int | None = 5,
+        res_blocks: Sequence[int] | int = 2,
         transformer_blocks: int = 3,
         *,
         transformer_dropout: float = 0.2,
@@ -53,65 +60,74 @@ class ResidualUViT(keras.Layer):
         **kwargs,
     ):
         """
-        Residual U-ViT backbone (SiD2-style) for diffusion models.
+        Time-conditioned U-ViT backbone for diffusion models.
 
         Parameters
         ----------
         widths : Sequence[int], optional
-            Channel widths per resolution stage (encoder/decoder).
-        res_blocks_down : Sequence[int] or int, optional
-            Number of residual blocks per encoder stage.
-        res_blocks_up : Sequence[int] or int or None, optional
-            Number of residual blocks per decoder stage. If None, uses `res_blocks_down`.
+            Channel widths per convolutional resolution stage (encoder/decoder stages).
+        res_blocks : Sequence[int] or int, optional
+            Number of residual blocks per stage (same count in encoder and decoder).
         transformer_blocks : int, optional
-            Number of transformer blocks in the bottleneck.
+            Number of transformer blocks applied at the bottleneck resolution.
         transformer_dropout : float, optional
-            Dropout rate inside bottleneck MLP sub-blocks.
+            Dropout rate used inside the bottleneck transformer MLP sub-blocks.
         transformer_width : int or None, optional
-            Channel width used in the bottleneck transformer stack. If None, set to `4*widths[-1]`.
+            Channel width used at the bottleneck and within transformer blocks. If None, uses `widths[-1]`.
         num_heads : int, optional
-            Number of attention heads for attention/transformer blocks.
+            Number of attention heads for self-attention in both stage attention blocks and bottleneck transformers.
         time_emb_dim : int, optional
             Dimensionality of the time embedding. If 1, time is used directly.
         time_emb : keras.layers.Layer or None, optional
             Custom global time embedding layer. If None, uses `DenseFourier` when `time_emb_dim > 1`.
         use_film : bool, optional
-            Whether to use FiLM-style scale/shift conditioning (otherwise additive).
+            Whether embedding injection uses FiLM (scale/shift) or additive conditioning.
         activation : str, optional
             Activation used throughout the network.
         kernel_initializer : str or keras.initializers.Initializer, optional
-            Kernel initializer for learnable projections.
+            Kernel initializer used for convolution and dense layers (except explicitly zero-initialized projections).
         dropout : Sequence[float] or float, optional
-            Dropout rate used inside residual blocks.
+            Dropout rate used inside residual blocks. Default is 0.0.
         norm : {"layer", "group"}, optional
-            Normalization type used in residual/attention blocks.
+            Normalization type used throughout the backbone.
         groups : int, optional
             Number of groups for group normalization where applicable.
         attn_stage : Sequence[bool] or None, optional
-            Whether to insert self-attention blocks within each resolution stage. Default is None (no attention).
-        down_mode : {"conv", "average"}, optional
-            Downsampling mode. "average" uses average pooling plus a projection, while "conv" uses a strided
-            convolution. Default is "average".
+            Whether to insert an additional self-attention block after each residual block within a stage.
+        down_mode : {"average", "conv"}, optional
+            Downsampling mode. "conv" uses a strided convolution; "average" uses average pooling followed by a
+            convolution/projection. Default is "average".
         up_kernel_size : {1, 3}, optional
             Kernel size for the convolution used in the upsampling block. Default is 1.
         up_conv_first : bool, optional
             If True, applies the convolution before upsampling in the upsampling block. Default is True.
         **kwargs
-            Additional keyword arguments forwarded to `keras.Layer`.
+            Additional keyword arguments (e.g., `time_emb_include_identity`, `time_emb_use_residual_mlp`).
+
+        Notes
+        -----
+        - Expected inputs in `call()` are a tuple ``(x, t, cond)``.
+        - `x` is an NHWC tensor of shape ``(B, H, W, Cx)`` and defines the output channel dimension.
+        - `cond` is expected to be broadcast-compatible for channel-wise concatenation with `x` (typically
+          ``(B, H, W, Cc)``).
+        - Downsampling is applied after every convolutional stage (including the last) to reach the transformer
+          bottleneck resolution; the decoder upsamples symmetrically.
+        - The model pads bottom/right before each downsampling step if H/W are odd, and crops after the corresponding
+          upsampling step so the final spatial dimensions match the input.
+        - Decoder residual blocks use skip fusion when a skip tensor is provided (e.g., simple-diffusion-style
+          additive fusion via `skip_fuse_case="add_sqrt2"` in `ResidualBlock2D`).
         """
         super().__init__(**layer_kwargs(kwargs))
 
         self.widths = widths
-        self.res_blocks_down = (res_blocks_down,) * len(self.widths) if isinstance(res_blocks_down, int) else res_blocks_down
-        self.res_blocks_up = (res_blocks_up,) * len(self.widths) if isinstance(res_blocks_up, int) else res_blocks_up
-        self.res_blocks_up = self.res_blocks_up if self.res_blocks_up is not None else self.res_blocks_down
+        self.res_blocks = (res_blocks,) * len(self.widths) if isinstance(res_blocks, int) else res_blocks
         self.attn_stage = (False,) * len(self.widths) if attn_stage is None else attn_stage
         self.dropout = (float(dropout),) * len(self.widths) if isinstance(dropout, float) else dropout
-        check_lengths_same(self.res_blocks_down, self.res_blocks_up, self.widths, self.attn_stage, self.dropout)
+        check_lengths_same(self.res_blocks, self.widths, self.attn_stage, self.dropout)
 
         self.transformer_blocks = int(transformer_blocks)
         self.transformer_dropout = float(transformer_dropout)
-        self.transformer_width = int(4*self.widths[-1]) if transformer_width is None else int(transformer_width)
+        self.transformer_width = int(4 * self.widths[-1]) if transformer_width is None else int(transformer_width)
         self.time_emb_dim = int(time_emb_dim)
         self.use_film = bool(use_film)
         self.activation = str(activation)
@@ -119,10 +135,9 @@ class ResidualUViT(keras.Layer):
         self.groups = int(groups)
         self.norm = str(norm)
         self.num_heads = int(num_heads)
-        self.down_mode = str(down_mode)
-        self.up_kernel_size = int(up_kernel_size)
+        self.down_mode = down_mode
+        self.up_kernel_size = up_kernel_size
         self.up_conv_first = bool(up_conv_first)
-
 
         # --- Time embedding ---
         if time_emb is None:
@@ -154,7 +169,7 @@ class ResidualUViT(keras.Layer):
         self.paddings: list[keras.Layer] = []
         for si, ch in enumerate(self.widths):
             blocks: list[keras.Layer] = []
-            for bi in range(self.res_blocks_down[si]):
+            for bi in range(self.res_blocks[si]):
                 blocks.append(
                     ResidualBlock2D(
                         width=ch,
@@ -182,9 +197,9 @@ class ResidualUViT(keras.Layer):
             self.down_stages.append(blocks)
             self.downsamples.append(
                 DownSample2D(
-                    width=self.widths[si+1] if si < len(self.widths) - 1 else self.transformer_width,
+                    width=self.widths[si + 1] if si < len(self.widths) - 1 else self.transformer_width,
                     mode=self.down_mode,
-                    name=f"down_s{si}_ds"
+                    name=f"down_s{si}_ds",
                 )
             )
 
@@ -217,11 +232,11 @@ class ResidualUViT(keras.Layer):
                     width=self.widths[si],
                     kernel_size=self.up_kernel_size,
                     conv_first=self.up_conv_first,
-                    name=f"up_s{si}_us"
+                    name=f"up_s{si}_us",
                 )
             )
             blocks: list[keras.Layer] = []
-            for bi in range(self.res_blocks_up[si]):
+            for bi in range(self.res_blocks[si]):
                 blocks.append(
                     ResidualBlock2D(
                         width=ch,
@@ -231,7 +246,7 @@ class ResidualUViT(keras.Layer):
                         dropout=self.dropout[si],
                         kernel_initializer=self.kernel_initializer,
                         use_film=self.use_film,
-                        skip_fuse_case=None,
+                        skip_fuse_case="add_sqrt2",
                         name=f"up_s{si}_b{bi}",
                     )
                 )
@@ -245,7 +260,6 @@ class ResidualUViT(keras.Layer):
                             name=f"up_s{si}_b{bi}_attn",
                         )
                     )
-
             self.up_stages.append(blocks)
 
         # --- head ---
@@ -267,8 +281,7 @@ class ResidualUViT(keras.Layer):
         base = layer_kwargs(super().get_config())
         cfg = {
             "widths": self.widths,
-            "res_blocks_down": self.res_blocks_down,
-            "res_blocks_up": self.res_blocks_up,
+            "res_blocks": self.res_blocks,
             "transformer_blocks": self.transformer_blocks,
             "transformer_dropout": self.transformer_dropout,
             "transformer_width": self.transformer_width,
@@ -309,6 +322,7 @@ class ResidualUViT(keras.Layer):
         h_shape = self.proj_in.compute_output_shape(h_shape)
 
         # down
+        skip_shapes = []
         padding = []
         for si, blocks in enumerate(self.down_stages):
             for layer in blocks:
@@ -317,11 +331,12 @@ class ResidualUViT(keras.Layer):
                     h_shape = layer.compute_output_shape((h_shape, t_emb_shape))
                     if self.attn_stage[si]:
                         continue
-                else: # self-attention
+                else:  # self-attention
                     layer.build(h_shape)
+                skip_shapes.append(h_shape)
             # Downsampling and Pad
-            pad_h = (h_shape[1] % 2 != 0)
-            pad_w = (h_shape[2] % 2 != 0)
+            pad_h = h_shape[1] % 2 != 0
+            pad_w = h_shape[2] % 2 != 0
             padding.append((pad_h, pad_w))
             layer = keras.layers.ZeroPadding2D(padding=((0, int(pad_h)), (0, int(pad_w))), name=f"down_s{si}_pad")
             layer.build(h_shape)
@@ -335,7 +350,7 @@ class ResidualUViT(keras.Layer):
             shape=(1,) + tuple(h_shape[1:]),
             initializer=keras.initializers.RandomNormal(stddev=0.01),
             trainable=True,
-            name="pos_emb"
+            name="pos_emb",
         )
         for ti, layer in enumerate(self.trans_blocks):
             layer.build((h_shape, t_emb_shape))
@@ -356,11 +371,11 @@ class ResidualUViT(keras.Layer):
 
             for layer in blocks:
                 if isinstance(layer, ResidualBlock2D):
-                    layer.build((h_shape, t_emb_shape))
-                    h_shape = layer.compute_output_shape((h_shape, t_emb_shape))
-                else: # self-attention
+                    skip_shape = skip_shapes.pop()
+                    layer.build((h_shape, t_emb_shape, skip_shape))
+                    h_shape = layer.compute_output_shape((h_shape, t_emb_shape, skip_shape))
+                else:  # self-attention
                     layer.build(h_shape)
-
 
         self.out_norm.build(h_shape)
         self.out_act.build(h_shape)
@@ -384,9 +399,9 @@ class ResidualUViT(keras.Layer):
         training: bool | None = None,
         mask=None,
     ) -> Tensor:
-        assert len(inputs) == 3, "ResidualUViT expects inputs to be a tuple of (x, t, cond)"
+        assert len(inputs) == 3, "UViT expects inputs to be a tuple of (x, t, cond)"
         x, t, cond = inputs
-        assert cond is not None, "ResidualUViT currently requires a condition input."
+        assert cond is not None, "UViT currently requires a condition input."
 
         t = keras.ops.reshape(t, (t.shape[0], -1))[:, :1]  # ensure t is (B, 1)
         t_emb = self.time_emb(t, training=training)
@@ -394,22 +409,19 @@ class ResidualUViT(keras.Layer):
         x = concatenate_valid([x, cond], axis=-1)
         x = self.proj_in(x, training=training)
 
-        pos_skips: list[Tensor] = []
-        neg_skips: list[Tensor] = []
-
         # encoder
+        skips: list[Tensor] = []
         for si, blocks in enumerate(self.down_stages):
-            for li, layer in enumerate(blocks):
+            for layer in blocks:
                 if isinstance(layer, ResidualBlock2D):
                     x = layer((x, t_emb), training=training)
                     if self.attn_stage[si]:
                         continue
                 else:
                     x = layer(x, training=training)
-            pos_skips.append(x)
+                skips.append(x)
             x = self.paddings[si](x, training=training)
             x = self.downsamples[si](x, training=training)
-            neg_skips.append(x)
 
         # bottleneck
         x = x + self.pos_emb
@@ -418,16 +430,14 @@ class ResidualUViT(keras.Layer):
 
         # decoder (reverse skips)
         for ri, blocks in enumerate(self.up_stages):
-            x = x - neg_skips.pop()
             x = self.upsamples[ri](x, training=training)
             x = self.crops[ri](x, training=training)
-            x = x + pos_skips.pop()
             for layer in blocks:
                 if isinstance(layer, ResidualBlock2D):
-                    x = layer((x, t_emb), training=training)
-                else: # self-attention
+                    skip = skips.pop()
+                    x = layer((x, t_emb, skip), training=training)
+                else:  # self-attention
                     x = layer(x, training=training)
-
 
         x = self.out_norm(x, training=training)
         x = self.out_act(x)

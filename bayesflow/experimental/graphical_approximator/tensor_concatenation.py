@@ -16,29 +16,87 @@ def _shape1d(x):
     return s
 
 
-def expand_to_target_rank(tensor, target_rank: int):
-    while tensor.ndim < target_rank:
-        tensor = ops.expand_dims(tensor, axis=-2)
-    return tensor
+def expand_to_target_rank(x, target_rank: int):
+    while x.ndim < target_rank:
+        x = ops.expand_dims(x, axis=-2)  # singleton at -2 (your convention)
+    return x
 
 
-def concatenate(tensors):
-    """
-    Rank-align by inserting singleton dims at -2, then broadcast singleton dims
-    (all axes except the last / feature axis), then concatenate on the last axis.
-    """
-    tensors = [ops.convert_to_tensor(t) for t in tensors]
+def concatenate(tensors, batch_dims=1):
+    if keras.backend.backend() == "tensorflow":
+        return concatenate_tf(tensors, batch_dims=batch_dims)
+    else:
+        return concatenate_(tensors, batch_dims=batch_dims)
 
-    max_rank = max(t.ndim for t in tensors)
-    expanded = [expand_to_target_rank(t, max_rank) for t in tensors]
 
-    # runtime shapes, tuple-safe
-    shapes = [_shape1d(t) for t in expanded]  # list of (rank,) int tensors
-    target = ops.max(ops.stack(shapes, axis=0), axis=0)  # (rank,) = elementwise max
+def concatenate_(tensors, batch_dims=1) -> Tensor:
+    max_rank = max(len(t.shape) for t in tensors)
 
-    # broadcast to target on all non-feature axes, keep own feature dim (last axis)
-    out = []
+    expanded = []
+    for t in tensors:
+        while len(t.shape) < max_rank:
+            t = keras.ops.expand_dims(t, axis=-2)
+        expanded.append(t)
+
+    # compute max shape
+    max_shape = list(expanded[0].shape)
+    for t in expanded[1:]:
+        for i in range(batch_dims, max_rank - 1):
+            max_shape[i] = max(max_shape[i], t.shape[i])
+
+    max_shape[0] = keras.ops.shape(tensors[0])[0]
+    broadcasted = []
+    for t in expanded:
+        # keep last dimension unique
+        target = tuple(max_shape[:-1] + [t.shape[-1]])
+        broadcasted.append(keras.ops.broadcast_to(t, target))
+
+    return keras.ops.concatenate(broadcasted, axis=-1)
+
+
+def concatenate_tf(tensors, batch_dims=1):
+    def _shape_tensor(t):
+        """
+        Special case for tensorflow, because keras.ops.shape(t) returns a Python tuple.
+        """
+        s = keras.ops.shape(t)
+        return keras.ops.convert_to_tensor(s, dtype="int32")
+
+    max_rank = max(len(t.shape) for t in tensors)
+
+    expanded = []
+    for t in tensors:
+        while len(t.shape) < max_rank:
+            t = keras.ops.expand_dims(t, axis=-2)
+        expanded.append(t)
+
+    shapes = [_shape_tensor(t) for t in expanded]
+    base = shapes[0]
+
+    if max_rank - 1 > batch_dims:
+        mids = keras.ops.stack(
+            [s[batch_dims : max_rank - 1] for s in shapes],
+            axis=0,
+        )
+
+        mids_max = keras.ops.max(mids, axis=0)
+        max_shape = keras.ops.concatenate(
+            [base[:batch_dims], mids_max, base[max_rank - 1 : max_rank]],
+            axis=0,
+        )
+    else:
+        max_shape = base
+
+    broadcasted = []
     for t, s in zip(expanded, shapes):
-        bshape = ops.concatenate([target[:-1], s[-1:]], axis=0)
-        out.append(ops.broadcast_to(t, bshape))  # only works if non-feature dims are 1 or equal
-    return ops.concatenate(out, axis=-1)
+        target = keras.ops.concatenate(
+            [
+                max_shape[: max_rank - 1],
+                s[max_rank - 1 : max_rank],
+            ],
+            axis=0,
+        )
+
+        broadcasted.append(keras.ops.broadcast_to(t, target))
+
+    return keras.ops.concatenate(broadcasted, axis=-1)

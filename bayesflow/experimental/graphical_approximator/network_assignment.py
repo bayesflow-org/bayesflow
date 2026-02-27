@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
 
 import keras
-
+import keras.ops as ops
 from bayesflow.experimental.graphs.utils import sort_nodes_topologically
 
+from .shape_inference import inference_variable_shapes_by_network, summary_output_shapes_by_network
 from .shape_operations import concatenate_shapes
 from .tensor_concatenation import concatenate
 
@@ -90,31 +91,70 @@ def summary_inputs_by_network(approximator: "GraphicalApproximator", adapted_dat
 
 
 def data_conditions_by_network(approximator: "GraphicalApproximator", adapted_data: dict) -> dict[int, Tensor]:
-    """
+    """ ""
     Returns a dictionary where the keys are integers denoting network indices
     and the values are data condition shapes of that inference network.
     """
     inference_variables = inference_variables_by_network(approximator, adapted_data)
     summary_outputs = summary_outputs_by_network(approximator, adapted_data)
+    inference_to_summary_map = match_inference_to_summary_networks(approximator)
 
     result = {}
 
     for network_idx, variable in inference_variables.items():
-        for k, v in summary_outputs.items():
-            if variable.shape[:-1] == v.shape[:-1]:
-                result[network_idx] = v
+        summary_idx = inference_to_summary_map[network_idx]
+        summary_output = summary_outputs[summary_idx]
 
-        if network_idx not in result:
-            for k, v in summary_outputs.items():
-                try:
-                    concatenate([variable, v])
-                    expanded = keras.ops.expand_dims(v, axis=-2)
-                    repeated = keras.ops.repeat(expanded, variable.shape[-2], axis=-2)
-                    result[network_idx] = repeated
-                except Exception:
-                    pass
+        if len(variable.shape) == len(summary_output.shape):
+            result[network_idx] = summary_output
+        else:
+            expanded = keras.ops.expand_dims(summary_output, axis=-2)
+            broadcasted = keras.ops.broadcast_to(
+                expanded,
+                (
+                    *keras.ops.shape(summary_output)[:-1],
+                    keras.ops.shape(variable)[-2],
+                    keras.ops.shape(summary_output)[-1],
+                ),
+            )
+            result[network_idx] = broadcasted
 
     return result
+
+
+def match_inference_to_summary_networks(approximator: "GraphicalApproximator") -> dict[int, int]:
+    """
+    Match each inference network to a summary network that outputs the necessary data conditions.
+    """
+
+    def num_equal_dims(a, b):
+        i = 0
+        for x, y in zip(a, b):
+            if x == y:
+                i += 1
+            else:
+                break
+
+        return i
+
+    inference_variable_shapes = inference_variable_shapes_by_network(approximator)
+    summary_output_shapes = summary_output_shapes_by_network(approximator)
+
+    summary_output_by_rank = {len(v): v for _, v in summary_output_shapes.items()}
+    network_idx_by_rank = {len(v): k for k, v in summary_output_shapes.items()}
+
+    inference_to_summary_map = {}
+
+    for k, v in inference_variable_shapes.items():
+        rank = len(v)
+        summary_output = summary_output_by_rank[rank]
+
+        if num_equal_dims(summary_output, v) == rank - 1:
+            inference_to_summary_map[k] = network_idx_by_rank[rank]
+        else:
+            inference_to_summary_map[k] = network_idx_by_rank[rank - 1]
+
+    return inference_to_summary_map
 
 
 def inference_conditions_by_network(approximator: "GraphicalApproximator", adapted_data: dict) -> dict[int, Tensor]:
@@ -158,7 +198,7 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
         conditions = concatenate(vars)
 
         # add node repetitions
-        node_reps = summary_input(approximator, adapted_data).shape[1:-1]
+        node_reps = keras.ops.shape(summary_input(approximator, adapted_data))[1:-1]
         if len(node_reps) >= 1:
             squared = keras.ops.sqrt(node_reps)
             expanded = keras.ops.expand_dims(squared, axis=0)

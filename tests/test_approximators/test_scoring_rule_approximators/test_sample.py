@@ -1,6 +1,6 @@
 import keras
 import numpy as np
-from bayesflow.scoring_rules import ParametricDistributionScoringRule
+from bayesflow.scoring_rules import ParametricDistributionScore
 from tests.utils import check_combination_simulator_adapter
 
 
@@ -21,7 +21,7 @@ def test_approximator_sample(scoring_rule_approximator, simulator, batch_size, n
     scoring_rules_for_sampling = [
         score
         for score in scoring_rule_approximator.inference_network.scoring_rules.values()
-        if isinstance(score, ParametricDistributionScoringRule)
+        if isinstance(score, ParametricDistributionScore)
     ]
 
     if len(scoring_rules_for_sampling) > 1:

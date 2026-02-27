@@ -1,9 +1,9 @@
 from bayesflow.utils.serialization import serializable
-from .normed_difference_scoring_rule import NormedDifferenceScoringRule
+from .normed_difference_scoring_rule import NormedDifferenceScore
 
 
 @serializable("bayesflow.scoring_rules")
-class MeanScoringRule(NormedDifferenceScoringRule):
+class MeanScore(NormedDifferenceScore):
     r""":math:`S(\hat \theta, \theta) = | \hat \theta - \theta |^2`
 
     Scores a predicted mean with the squared error score.

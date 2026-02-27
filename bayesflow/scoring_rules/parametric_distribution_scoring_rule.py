@@ -6,7 +6,7 @@ from .scoring_rule import ScoringRule
 
 
 @serializable("bayesflow.scoring_rules")
-class ParametricDistributionScoringRule(ScoringRule):
+class ParametricDistributionScore(ScoringRule):
     r""":math:`S(\hat p_\phi, \theta; k) = -\log(\hat p_\phi(\theta))`
 
     Base class for scoring a predicted parametric probability distribution with the log-score

@@ -2,7 +2,7 @@ import keras
 from typing import Sequence
 
 from bayesflow.networks.scoring_rule_network import ScoringRuleNetwork
-from bayesflow.scoring_rules import ScoringRule, MeanScoringRule, QuantileScoringRule
+from bayesflow.scoring_rules import ScoringRule, MeanScore, QuantileScore
 
 
 class PointNetwork(ScoringRuleNetwork):
@@ -21,11 +21,11 @@ class PointNetwork(ScoringRuleNetwork):
 
         >>> inference_network = bf.networks.PointNetwork(["mean", "quantiles"], q=[0.1, 0.3, 0.5, 0.7, 0.9])
 
-        >>> from bayesflow.scoring_rules import MeanScoringRule, QuantileScoringRule
+        >>> from bayesflow.scoring_rules import MeanScore, QuantileScore
         >>> inference_network = bf.networks.ScoringRuleNetwork(
-        ...     mean=MeanScoringRule(),
-        ...     quantiles=QuantileScoringRule([0.1, 0.3, 0.5, 0.7, 0.9]),
-        ...     # mvn=MvNormalScoringRule(),  # not supported by PointNetwork
+        ...     mean=MeanScore(),
+        ...     quantiles=QuantileScore([0.1, 0.3, 0.5, 0.7, 0.9]),
+        ...     # mvn=MvNormalScore(),  # not supported by PointNetwork
         ... )
 
     ... but the latter supports passing any subclass of :py:class:`ScoringRule`, e.g. parametric distributions.
@@ -35,16 +35,16 @@ class PointNetwork(ScoringRuleNetwork):
         self, points: Sequence[str], q: Sequence[float] | None = None, subnet: str | keras.Layer = "mlp", **kwargs
     ):
         scoring_rules = self._resolve_scoring_rules(points, q)
-        super().__init__(scoring_rules, subnet, **kwargs)
+        super().__init__(scoring_rules=scoring_rules, subnet=subnet, **kwargs)
 
     def _resolve_scoring_rules(self, points: Sequence[str], q: Sequence[float]) -> dict[str, ScoringRule]:
         scoring_rules = {}
         for p in points:
             match p:
                 case "mean" as key:
-                    scoring_rules[key] = MeanScoringRule()
+                    scoring_rules[key] = MeanScore()
                 case "quantiles" as key:
-                    scoring_rules[key] = QuantileScoringRule(q=q)
+                    scoring_rules[key] = QuantileScore(q=q)
                 case _ as key:
                     raise ValueError(f"{key} must be either `mean` or `quantiles`")
         return scoring_rules

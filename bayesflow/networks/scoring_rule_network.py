@@ -3,7 +3,7 @@ import keras
 from bayesflow.utils import model_kwargs, find_network
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Shape, Tensor
-from bayesflow.scoring_rules import ScoringRule, ParametricDistributionScoringRule
+from bayesflow.scoring_rules import ScoringRule, ParametricDistributionScore
 from bayesflow.utils.decorators import allow_batch_size
 
 
@@ -206,7 +206,7 @@ class ScoringRuleNetwork(keras.Layer):
         samples = {}
 
         for score_key, score in self.scoring_rules.items():
-            if isinstance(score, ParametricDistributionScoringRule):
+            if isinstance(score, ParametricDistributionScore):
                 parameters = {head_key: head(output) for head_key, head in self.heads[score_key].items()}
                 samples[score_key] = score.sample(batch_shape, **parameters)
 
@@ -217,7 +217,7 @@ class ScoringRuleNetwork(keras.Layer):
         log_probs = {}
 
         for score_key, score in self.scoring_rules.items():
-            if isinstance(score, ParametricDistributionScoringRule):
+            if isinstance(score, ParametricDistributionScore):
                 parameters = {head_key: head(output) for head_key, head in self.heads[score_key].items()}
                 log_probs[score_key] = score.log_prob(x=samples, **parameters)
 

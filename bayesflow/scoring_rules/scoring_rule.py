@@ -21,8 +21,8 @@ class ScoringRule:
     Estimates are typically parameterized by projection heads consisting of a neural network component
     and a link to project into the correct output space.
 
-    A :py:class:`ScoringRule` can score estimates consisting of multiple parts. See :py:class:`MvNormalScoringRule`
-    for an example of a :py:class:`ParametricDistributionScoringRule`. That score evaluates an estimated mean
+    A :py:class:`ScoringRule` can score estimates consisting of multiple parts. See :py:class:`MvNormalScore`
+    for an example of a :py:class:`ParametricDistributionScore`. That score evaluates an estimated mean
     and covariance simultaneously.
     """
 
@@ -184,11 +184,11 @@ class ScoringRule:
 
         Examples
         --------
-        The following shows how to score estimates with a :py:class:`MeanScoringRule`. All :py:class:`ScoringRule`\ s
+        The following shows how to score estimates with a :py:class:`MeanScore`. All :py:class:`ScoringRule`\ s
         follow this pattern, only differing in the structure of the estimates dictionary.
 
         >>> import keras
-        >>> from bayesflow.scoring_rules import MeanScoringRule
+        >>> from bayesflow.scoring_rules import MeanScore
         >>>
         >>> # batch of samples from a normal distribution
         >>> samples = keras.random.normal(shape=(100,))
@@ -200,7 +200,7 @@ class ScoringRule:
         >>> better_estimates = {"value": keras.random.normal(stddev=0.1, shape=(100,))}
         >>>
         >>> # calculate the score
-        >>> scoring_rule = MeanScoringRule()
+        >>> scoring_rule = MeanScore()
         >>> scoring_rule.score(bad_estimates, samples)
         <tf.Tensor: shape=(), dtype=float32, numpy=1.2243813276290894>
         >>> scoring_rule.score(better_estimates, samples)

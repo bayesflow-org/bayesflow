@@ -11,7 +11,7 @@ from .scoring_rule import ScoringRule
 
 
 @serializable("bayesflow.scoring_rules")
-class QuantileScoringRule(ScoringRule):
+class QuantileScore(ScoringRule):
     r""":math:`S(\hat \theta_i, \theta; \tau_i)
     = (\hat \theta_i - \theta)(\mathbf{1}_{\hat \theta - \theta > 0} - \tau_i)`
 
@@ -23,9 +23,7 @@ class QuantileScoringRule(ScoringRule):
         super().__init__(links=links, **kwargs)
         if q is None:
             q = [0.1, 0.5, 0.9]
-            logging.info(
-                f"QuantileScoringRule was not provided with argument `q`. Using the default quantile levels: {q}."
-            )
+            logging.info(f"QuantileScore was not provided with argument `q`. Using the default quantile levels: {q}.")
 
         # force a conversion to list for proper serialization
         q = list(q)

@@ -38,13 +38,13 @@ def continuous_approximator(adapter, inference_network, summary_network):
 @pytest.fixture()
 def scoring_rule_network():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import NormedDifferenceScoringRule, QuantileScoringRule, MvNormalScoringRule
+    from bayesflow.scoring_rules import NormedDifferenceScore, QuantileScore, MvNormalScore
 
     return ScoringRuleNetwork(
         scoring_rules=dict(
-            mean=NormedDifferenceScoringRule(k=2),
-            quantiles=QuantileScoringRule(q=[0.1, 0.5, 0.9]),
-            mvn=MvNormalScoringRule(),
+            mean=NormedDifferenceScore(k=2),
+            quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
+            mvn=MvNormalScore(),
         ),
         subnet="mlp",
         subnet_kwargs=dict(widths=(32, 32)),
@@ -54,12 +54,12 @@ def scoring_rule_network():
 @pytest.fixture()
 def scoring_rule_network_with_multiple_parametric_scoring_rules():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import MvNormalScoringRule
+    from bayesflow.scoring_rules import MvNormalScore
 
     return ScoringRuleNetwork(
         scoring_rules=dict(
-            mvn1=MvNormalScoringRule(),
-            mvn2=MvNormalScoringRule(),
+            mvn1=MvNormalScore(),
+            mvn2=MvNormalScore(),
         ),
     )
 

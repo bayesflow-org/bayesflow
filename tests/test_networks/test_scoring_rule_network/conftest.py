@@ -4,44 +4,44 @@ import numpy as np
 
 @pytest.fixture()
 def median_score():
-    from bayesflow.scoring_rules import MedianScoringRule
+    from bayesflow.scoring_rules import MedianScore
 
-    return MedianScoringRule()
+    return MedianScore()
 
 
 @pytest.fixture()
 def median_score_subnet():
-    from bayesflow.scoring_rules import MedianScoringRule
+    from bayesflow.scoring_rules import MedianScore
 
-    return MedianScoringRule(subnets=dict(value="mlp"))
+    return MedianScore(subnets=dict(value="mlp"))
 
 
 @pytest.fixture()
 def mean_score():
-    from bayesflow.scoring_rules import MeanScoringRule
+    from bayesflow.scoring_rules import MeanScore
 
-    return MeanScoringRule()
+    return MeanScore()
 
 
 @pytest.fixture()
 def normed_diff_score():
-    from bayesflow.scoring_rules import NormedDifferenceScoringRule
+    from bayesflow.scoring_rules import NormedDifferenceScore
 
-    return NormedDifferenceScoringRule(k=3)
+    return NormedDifferenceScore(k=3)
 
 
 @pytest.fixture(scope="function")
 def quantile_score():
-    from bayesflow.scoring_rules import QuantileScoringRule
+    from bayesflow.scoring_rules import QuantileScore
 
-    return QuantileScoringRule(q=[0.2, 0.3, 0.4, 0.5, 0.7])
+    return QuantileScore(q=[0.2, 0.3, 0.4, 0.5, 0.7])
 
 
 @pytest.fixture()
 def multivariate_normal_score():
-    from bayesflow.scoring_rules import MvNormalScoringRule
+    from bayesflow.scoring_rules import MvNormalScore
 
-    return MvNormalScoringRule()
+    return MvNormalScore()
 
 
 @pytest.fixture(
@@ -70,8 +70,8 @@ def scoring_rule_network(scoring_rule):
 @pytest.fixture(scope="function")
 def quantile_scoring_rule_network():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import QuantileScoringRule
+    from bayesflow.scoring_rules import QuantileScore
 
     return ScoringRuleNetwork(
-        scoring_rules=dict(quantiles=QuantileScoringRule(q=np.array([0.1, 0.4, 0.5, 0.7]), subnets=dict(value="mlp"))),
+        scoring_rules=dict(quantiles=QuantileScore(q=np.array([0.1, 0.4, 0.5, 0.7]), subnets=dict(value="mlp"))),
     )

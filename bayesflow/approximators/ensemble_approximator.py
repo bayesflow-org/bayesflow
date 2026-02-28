@@ -68,7 +68,6 @@ class EnsembleApproximator(Approximator):
         # Defer to any adapter of the approximators,
         # assuming all are the same, which is not enforced at the moment.
         # self.adapter will only be used when super().fit calls build_dataset(..., adapter=self.adapter).
-        # The attribute would not be necessary if the dataset wouldn't need an adapter.
         return next(iter(self.approximators.values())).adapter
 
     def build_dataset(  # type: ignore[override]

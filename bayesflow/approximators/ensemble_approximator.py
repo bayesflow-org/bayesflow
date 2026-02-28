@@ -1,4 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 from scipy.special import logsumexp
@@ -101,7 +102,7 @@ class EnsembleApproximator(Approximator):
             **filter_kwargs(kwargs, keras.utils.PyDataset.__init__),
         )
 
-    def build_from_data(self, adapted_data: dict[str, any]):
+    def build_from_data(self, adapted_data: dict[str, Any]):
         data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
         self.build(data_shapes)
 
@@ -391,7 +392,7 @@ class EnsembleApproximator(Approximator):
         *,
         capability: str,
         fn: Callable,
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         resolved = self._resolve_members(members, capability=capability)
         return {name: fn(name, self.approximators[name]) for name in resolved}
 
@@ -439,7 +440,7 @@ class EnsembleApproximator(Approximator):
         member_weights = {k: v / summed for k, v in member_weights.items()}
         return member_weights
 
-    def _batch_size_from_data(self, data: Mapping[str, Mapping[str, any]]) -> int:
+    def _batch_size_from_data(self, data: Mapping[str, Mapping[str, Any]]) -> int:
         """
         Fetches the current batch size from an input dictionary. Can only be used during training when
         inference variables as present.

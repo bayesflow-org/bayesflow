@@ -62,7 +62,7 @@ class Standardization(keras.Layer):
                 for var in ["inference_variables", "summary_variables", "inference_conditions"]
                 if var in data_shapes
             ]
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+            self.standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
 
         for var, layer in self.standardize_layers.items():
             layer.build(data_shapes[var])

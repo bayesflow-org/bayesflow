@@ -226,7 +226,11 @@ class EnsembleApproximator(Approximator):
         self._warn_ignored_member_weights(member_weights, merge_members)
 
         if not merge_members:
-            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+            return self._map_members(
+                None,
+                capability="distribution",
+                fn=lambda name, a: a.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs),
+            )
 
         weights = self._resolve_member_weights(member_weights)
         names = tuple(weights.keys())
@@ -235,7 +239,11 @@ class EnsembleApproximator(Approximator):
         counts = np.random.multinomial(num_samples, probs)
         alloc = {name: int(count) for name, count in zip(names, counts) if count > 0}
 
-        per_member = self._sample_separate(num_samples=alloc, conditions=conditions, split=split, **kwargs)
+        per_member = self._map_members(
+            list(alloc.keys()),
+            capability="distribution",
+            fn=lambda name, a: a.sample(num_samples=alloc[name], conditions=conditions, split=split, **kwargs),
+        )
 
         merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *list(per_member.values()))
         idx = np.random.permutation(num_samples)
@@ -276,9 +284,9 @@ class EnsembleApproximator(Approximator):
 
         if not merge_members:
             return self._map_members(
-                None if member_weights is None else list(member_weights.keys()),
+                None,
                 capability="distribution",
-                fn=lambda a: a.log_prob(data=data, **kwargs),
+                fn=lambda name, a: a.log_prob(data=data, **kwargs),
             )
 
         weights = self._resolve_member_weights(member_weights)
@@ -287,7 +295,7 @@ class EnsembleApproximator(Approximator):
         log_probs = self._map_members(
             members,
             capability="distribution",
-            fn=lambda a: a.log_prob(data=data, **kwargs),
+            fn=lambda name, a: a.log_prob(data=data, **kwargs),
         )
 
         stacked = np.stack([log_probs[m] for m in members], axis=-1)
@@ -329,7 +337,11 @@ class EnsembleApproximator(Approximator):
         dict[str, dict[str, dict[str, np.ndarray]]]
             Estimates keyed by approximator name, then by variable and score names.
         """
-        estimates = self._estimate_separate(conditions=conditions, members=members, split=split, **kwargs)
+        estimates = self._map_members(
+            members,
+            capability="estimate",
+            fn=lambda name, a: a.estimate(conditions=conditions, split=split, **kwargs),
+        )
 
         if groupby == "member":
             return estimates
@@ -381,7 +393,7 @@ class EnsembleApproximator(Approximator):
         fn: Callable,
     ) -> dict[str, any]:
         resolved = self._resolve_members(members, capability=capability)
-        return {name: fn(self.approximators[name]) for name in resolved}
+        return {name: fn(name, self.approximators[name]) for name in resolved}
 
     def _resolve_members(self, members: Sequence[str] | None, *, capability: str) -> tuple[str, ...]:
         if capability == "any":
@@ -409,107 +421,6 @@ class EnsembleApproximator(Approximator):
                 "`member_weights` is ignored when `merge_members=False`. "
                 "Set `merge_members=True` to use a weighted mixture."
             )
-
-    def _sample_separate(
-        self,
-        *,
-        num_samples: int | Mapping[str, int],
-        conditions: Mapping[str, np.ndarray],
-        split: bool = False,
-        **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
-        """
-        Draw samples from each approximator separately.
-
-        Parameters
-        ----------
-        num_samples : int or Mapping[str, int]
-            Number of samples to draw from each approximator. If int, all approximators
-            draw the same number of samples. If dict, specifies samples per approximator.
-        conditions : Mapping[str, np.ndarray]
-            Conditions for sampling.
-        split : bool, optional
-            Whether to split output arrays, by default False.
-        **kwargs
-            Additional arguments passed to approximator.sample().
-
-        Returns
-        -------
-        dict[str, dict[str, np.ndarray]]
-            Samples keyed by approximator name, then by variable name.
-        """
-        samples = {}
-        if isinstance(num_samples, int):
-            num_samples = num_samples * np.ones(len(self.distribution_members), dtype="int64")
-            num_samples = {k: num_samples[i] for i, k in enumerate(self.distribution_members)}
-
-        for approx_name, _num_samples in num_samples.items():
-            if _num_samples > 0:
-                samples[approx_name] = self.approximators[approx_name].sample(
-                    num_samples=_num_samples, conditions=conditions, split=split, **kwargs
-                )
-        return samples
-
-    def _log_prob_separate(
-        self, data: Mapping[str, np.ndarray], members: Sequence[str] | None = None, **kwargs
-    ) -> dict[str, np.ndarray]:
-        """
-        Compute log probabilities from each approximator separately.
-
-        Parameters
-        ----------
-        data : Mapping[str, np.ndarray]
-            Data containing inference variables and conditions.
-        members: Sequence[str] or None, default None
-            Ensemble members to evaluate log prob for.
-            If None, will evaluate all distribution members.
-        **kwargs
-            Additional arguments passed to approximator.log_prob().
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Log probabilities keyed by approximator name, each with shape (batch_size,).
-        """
-        log_prob = {}
-        members = self.distribution_members if members is None else members
-        for member in members:
-            log_prob[member] = self.approximators[member].log_prob(data=data, **kwargs)
-        return log_prob
-
-    def _estimate_separate(
-        self,
-        conditions: Mapping[str, np.ndarray],
-        members: Sequence[str] | None = None,
-        split: bool = False,
-        **kwargs,
-    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
-        """
-        Compute point estimates from each approximator separately.
-
-        Parameters
-        ----------
-        conditions : Mapping[str, np.ndarray]
-            Conditions for estimation.
-        members: Sequence[str] or None, default None
-            Ensemble members to estimate with.
-            If None, will estimate with all members that have an `estimate` method.
-        split : bool, optional
-            Whether to split output arrays, by default False.
-        **kwargs
-            Additional arguments passed to approximator.estimate().
-
-        Returns
-        -------
-        dict[str, dict[str, dict[str, np.ndarray]]]
-            Estimates keyed by approximator name, then by variable and score names.
-        """
-        estimates = {}
-        members = self.members if members is None else members
-        for approx_name, approximator in self.approximators.items():
-            if approx_name in members and hasattr(approximator, "estimate"):
-                estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
-        return estimates
 
     def _resolve_member_weights(self, member_weights: Mapping[str, float] | None) -> Mapping[str, float]:
         if member_weights is None:

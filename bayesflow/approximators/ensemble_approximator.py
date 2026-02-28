@@ -225,7 +225,7 @@ class EnsembleApproximator(Approximator):
         dict[str, np.ndarray]
             Samples with shape (batch_size, num_samples, ...) for each variable.
         """
-        self._warn_ignored_member_weights(member_weights, merge_members, op="sample")
+        self._warn_ignored_member_weights(member_weights, merge_members)
 
         if not merge_members:
             return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
@@ -274,7 +274,7 @@ class EnsembleApproximator(Approximator):
             Marginalized log probabilities with shape (batch_size,).
         """
 
-        self._warn_ignored_member_weights(member_weights, merge_members, op="log_prob")
+        self._warn_ignored_member_weights(member_weights, merge_members)
 
         if not merge_members:
             return self._map_members(
@@ -405,11 +405,11 @@ class EnsembleApproximator(Approximator):
             raise ValueError(f"Unknown/unsupported members for capability={capability!r}: {unknown}")
         return members_t
 
-    def _warn_ignored_member_weights(self, member_weights: Mapping[str, float] | None, merge_members: bool, op: str):
+    def _warn_ignored_member_weights(self, member_weights: Mapping[str, float] | None, merge_members: bool):
         if member_weights is not None and not merge_members:
             logging.warning(
-                f"`member_weights` is ignored when `merge_members=False` {op}. "
-                f"Set `merge_members=True` to use a weighted mixture."
+                "`member_weights` is ignored when `merge_members=False`. "
+                "Set `merge_members=True` to use a weighted mixture."
             )
 
     def _sample_separate(

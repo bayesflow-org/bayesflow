@@ -17,6 +17,9 @@ def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor
     if not tensors:
         return None
 
+    if len(tensors) == 1:
+        return tensors[0]
+
     return keras.ops.concatenate(tensors, axis=axis)
 
 

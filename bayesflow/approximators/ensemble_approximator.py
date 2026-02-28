@@ -542,7 +542,7 @@ class EnsembleApproximator(Approximator):
 
     def get_config(self):
         base_config = super().get_config()
-        config = {"approximators": self.approximators, "member_names": self.members}
+        config = {"approximators": self.approximators}
         return base_config | serialize(config)
 
     @classmethod

@@ -44,7 +44,7 @@ class ContinuousApproximator(Approximator):
     standardize : str | Sequence[str] | None
         The variables to standardize before passing to the networks. Can be either
         "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].
-        (default is "all").
+        (default is "inference_variables").
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
@@ -55,7 +55,7 @@ class ContinuousApproximator(Approximator):
         adapter: Adapter,
         inference_network: InferenceNetwork,
         summary_network: SummaryNetwork = None,
-        standardize: str | Sequence[str] | None = "all",
+        standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
         super().__init__(**kwargs)

@@ -1,5 +1,6 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Mapping
 
+import numpy as np
 import keras
 
 from bayesflow.types import Tensor
@@ -16,14 +17,21 @@ class RatioApproximator(Approximator):
     """
     Implements contrastive neural likelihood-to-evidence ratio estimation  (NRE-C)
     as described in https://arxiv.org/pdf/2210.06170.
+
     The estimation target is the ratio of likelihood and evidence: p(x | theta) / p(x).
+
+    Important: this class does not use `summary_variables` as a key. If a summary
+    network is present, all conditions need to be concatenated into `inference_conditions`
+    and the summary network will be applied to them.
 
     Parameters
     ----------
     adapter : bayesflow.adapters.Adapter
         Adapter for data processing. You can use :py:meth:`build_adapter`
         to create it.
-    classifier_network : A classification network to perform contrastive learning.
+    classifier_network : keras.Layer
+        A classification backbone to perform contrastive learning. Last logits layer
+        is automatically added on top of the classifier network.
     summary_network : SummaryNetwork, optional
         The summary network used for data summarization (default is None).
     gamma: float, optional
@@ -32,6 +40,10 @@ class RatioApproximator(Approximator):
     K: int, optional
         Number of parameter candidates used for contrastive learning.
         Default is 5.
+    standardize : str | Sequence[str] | None
+        The variables to standardize before passing to the networks. Can be either
+        "all" or any subset of ["inference_variables", "inference_conditions"].
+        (default is "inference_variables").
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
@@ -43,7 +55,7 @@ class RatioApproximator(Approximator):
         summary_network: keras.Layer = None,
         gamma: float = 1.0,
         K: int = 5,
-        standardize: str | Sequence[str] | None = "all",
+        standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -65,19 +77,10 @@ class RatioApproximator(Approximator):
         self.projector = keras.layers.Dense(units=1)
         self.seed_generator = keras.random.SeedGenerator()
 
-        # standardization has to come last in the constructor
-        if isinstance(standardize, str) and standardize != "all":
-            self.standardize = [standardize]
-        else:
-            self.standardize = standardize or []
+        self.standardizer = Standardization(standardize)
+        self.standardize = standardize
 
-        if self.standardize == "all":
-            # we have to lazily initialize these
-            self.standardize_layers = None
-        else:
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-
-    def build(self, data_shapes):
+    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
         if self.summary_network is not None:
             if not self.summary_network.built:
                 self.summary_network.build(data_shapes["inference_conditions"])
@@ -85,12 +88,10 @@ class RatioApproximator(Approximator):
         else:
             inference_conditions_shape = data_shapes["inference_conditions"]
 
-        # Compute inference_conditions_shape by combining original and summary outputs
         classifier_inputs_shape = concatenate_valid_shapes(
             [data_shapes["inference_variables"], inference_conditions_shape], axis=-1
         )
 
-        # Build inference network if needed
         if not self.classifier_network.built:
             self.classifier_network.build(classifier_inputs_shape)
         classifier_outputs_shape = self.classifier_network.compute_output_shape(classifier_inputs_shape)
@@ -98,26 +99,22 @@ class RatioApproximator(Approximator):
         if not self.projector.built:
             self.projector.build(classifier_outputs_shape)
 
-        # Set up standardization layers if requested
-        if self.standardize == "all":
-            # Only include variables present in data_shapes
-            self.standardize = [var for var in ["inference_variables", "inference_conditions"] if var in data_shapes]
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-
-        # Build all standardization layers
-        for var, layer in self.standardize_layers.items():
-            layer.build(data_shapes[var])
+        if not self.standardizer.built:
+            self.standardizer.build(data_shapes)
 
         self.built = True
 
-    def compute_metrics(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str = "training"):
-        """Computes loss following https://arxiv.org/pdf/2210.06170"""
+    def compute_metrics(
+        self, inference_variables: Tensor, inference_conditions: Tensor, stage: str = "training"
+    ) -> dict[str, Tensor]:
+        """Computes loss following https://arxiv.org/pdf/2210.06170."""
 
-        if "inference_variables" in self.standardize:
-            inference_variables = self.standardize_layers["inference_variables"](inference_variables, stage=stage)
-
-        if "inference_conditions" in self.standardize:
-            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions, stage=stage)
+        inference_variables = self.standardizer.maybe_standardize(
+            inference_variables, key="inference_variables", stage=stage
+        )
+        inference_conditions = self.standardizer.maybe_standardize(
+            inference_conditions, key="inference_conditions", stage=stage
+        )
 
         batch_size = keras.ops.shape(inference_variables)[0]
 
@@ -162,24 +159,6 @@ class RatioApproximator(Approximator):
         loss = keras.ops.mean(loss)
 
         return {"loss": loss}
-
-    def _sample_from_batch(self, inference_variables: Tensor, seed=None):
-        """Samples K batches of inference variables with replacement. Ensures
-        that no self-sampling occurs (i.e., all samples are negative examples)."""
-        B = keras.ops.shape(inference_variables)[0]
-
-        r = keras.random.randint(
-            shape=(B, self.K),
-            minval=0,
-            maxval=B - 1,
-            dtype="int32",
-            seed=self.seed_generator,
-        )
-
-        i = keras.ops.expand_dims(keras.ops.arange(B, dtype="int32"), axis=1)
-        idx = r + keras.ops.cast(r >= i, "int32")
-
-        return keras.ops.take(inference_variables, idx, axis=0)
 
     def fit(self, *args, **kwargs):
         """
@@ -235,7 +214,7 @@ class RatioApproximator(Approximator):
         """
         return super().fit(*args, **kwargs, adapter=self.adapter)
 
-    def log_ratio(self, data: dict[str, Tensor], **kwargs):
+    def log_ratio(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
         """
         Computes the log likelihood-to-evidence ratio.
         The `data` dictionary is preprocessed using the `adapter`.
@@ -256,11 +235,12 @@ class RatioApproximator(Approximator):
         inference_variables = adapted["inference_variables"]
         inference_conditions = adapted.get("inference_conditions")
 
-        if "inference_variables" in self.standardize:
-            inference_variables = self.standardize_layers["inference_variables"](inference_variables)
-
-        if "inference_conditions" in self.standardize:
-            inference_conditions = self.standardize_layers["inference_conditions"](inference_conditions)
+        inference_variables = self.standardizer.maybe_standardize(
+            inference_variables, key="inference_variables", stage="inference"
+        )
+        inference_conditions = self.standardizer.maybe_standardize(
+            inference_conditions, key="inference_conditions", stage="inference"
+        )
 
         if self.summary_network is not None:
             inference_conditions = self.summary_network(inference_conditions, training=False)
@@ -268,7 +248,7 @@ class RatioApproximator(Approximator):
         log_ratio = self.logits(inference_variables, inference_conditions, stage="inference")
         return log_ratio
 
-    def logits(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str):
+    def logits(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str) -> Tensor:
         """Computes logits for K batches of variables-conditions pairs."""
         classifier_inputs = keras.ops.concatenate([inference_variables, inference_conditions], axis=-1)
         logits = self.classifier_network(classifier_inputs, training=stage == "training")
@@ -311,5 +291,23 @@ class RatioApproximator(Approximator):
         adapter.concatenate(inference_conditions, into="inference_conditions")
         return adapter
 
-    def _batch_size_from_data(self, data: any) -> int:
+    def _batch_size_from_data(self, data: Mapping[str, Tensor]) -> int:
         return keras.ops.shape(data["inference_variables"])[0]
+
+    def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
+        """Samples K batches of inference variables with replacement. Ensures
+        that no self-sampling occurs (i.e., all samples are negative examples)."""
+        B = keras.ops.shape(inference_variables)[0]
+
+        r = keras.random.randint(
+            shape=(B, self.K),
+            minval=0,
+            maxval=B - 1,
+            dtype="int32",
+            seed=self.seed_generator,
+        )
+
+        i = keras.ops.expand_dims(keras.ops.arange(B, dtype="int32"), axis=1)
+        idx = r + keras.ops.cast(r >= i, "int32")
+
+        return keras.ops.take(inference_variables, idx, axis=0)

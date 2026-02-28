@@ -8,11 +8,13 @@ from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, logging, concatenate_valid, concatenate_valid_shapes
+from bayesflow.utils import filter_kwargs, logging, concatenate_valid_shapes
 from bayesflow.utils.serialization import serialize, deserialize, serializable
 
 from .approximator import Approximator
 from ..networks.standardization import Standardization
+
+from ._runtime import ConditionBuilder
 
 
 @serializable("bayesflow.approximators")
@@ -29,18 +31,16 @@ class ModelComparisonApproximator(Approximator):
         Number of models (simulators) that the approximator will compare
     classifier_network: keras.Layer
         The network backbone (e.g, an MLP) that is used for model classification.
-        The input of the classifier network is created by concatenating `classifier_variables`
+        The input of the classifier network is created by concatenating `inference_conditions`
         and (optional) output of the summary_network.
     summary_network: bf.networks.SummaryNetwork, optional
         The summary network used for data summarization (default is None).
         The input of the summary network is `summary_variables`.
     standardize : str | Sequence[str] | None
         The variables to standardize before passing to the networks. Can be either
-        "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].
-        (default is "all").
+        "all" or any subset of ["inference_conditions", "summary_variables"].
+        (default is "inference_variables").
     """
-
-    CONDITION_KEYS = ["summary_variables", "classifier_conditions"]
 
     def __init__(
         self,
@@ -49,7 +49,7 @@ class ModelComparisonApproximator(Approximator):
         classifier_network: keras.Layer,
         adapter: Adapter,
         summary_network: SummaryNetwork = None,
-        standardize: str | Sequence[str] | None = "all",
+        standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -58,47 +58,32 @@ class ModelComparisonApproximator(Approximator):
         self.summary_network = summary_network
         self.num_models = num_models
         self.logits_projector = keras.layers.Dense(units=num_models)
-
-        # standardization has to come last in the constructor
-        if isinstance(standardize, str) and standardize != "all":
-            self.standardize = [standardize]
-        else:
-            self.standardize = standardize or []
-
-        if self.standardize == "all":
-            # we have to lazily initialize these
-            self.standardize_layers = None
-        else:
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+        self.condition_builder = ConditionBuilder()
+        self.standardizer = Standardization(standardize)
+        self.standardize = standardize
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        # Build summary network and get output shape if present
-        summary_outputs_shape = None
-        if self.summary_network is not None:
-            if not self.summary_network.built:
-                self.summary_network.build(data_shapes["summary_variables"])
-            summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+        if self.summary_network is not None and not self.summary_network.built:
+            self.summary_network.build(data_shapes["summary_variables"])
 
-        # Compute classifier_conditions_shape by combining original and summary outputs
-        classifier_conditions_shape = concatenate_valid_shapes(
-            [data_shapes.get("classifier_conditions"), summary_outputs_shape], axis=-1
+        if self.summary_network is not None:
+            summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
+        else:
+            summary_outputs_shape = None
+
+        inference_conditions_shape = concatenate_valid_shapes(
+            [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
         )
 
-        # Build classifier network and logits projector if needed
         if not self.classifier_network.built:
-            self.classifier_network.build(classifier_conditions_shape)
+            self.classifier_network.build(inference_conditions_shape)
+
         if not self.logits_projector.built:
-            output_shape = self.classifier_network.compute_output_shape(classifier_conditions_shape)
+            output_shape = self.classifier_network.compute_output_shape(inference_conditions_shape)
             self.logits_projector.build(output_shape)
 
-        # Set up standardization layers if requested
-        if self.standardize == "all":
-            self.standardize = [var for var in self.CONDITION_KEYS if var in data_shapes]
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
-
-        # Build all standardization layers
-        for var, layer in self.standardize_layers.items():
-            layer.build(data_shapes[var])
+        if not self.standardizer.built:
+            self.standardizer.build(data_shapes)
 
         self.built = True
 
@@ -109,24 +94,24 @@ class ModelComparisonApproximator(Approximator):
     def build_adapter(
         cls,
         num_models: int,
-        classifier_conditions: Sequence[str] = None,
+        inference_conditions: Sequence[str] = None,
         summary_variables: Sequence[str] = None,
         model_index_name: str = "model_indices",
     ):
-        if classifier_conditions is None and summary_variables is None:
-            raise ValueError("At least one of `classifier_conditions` or `summary_variables` must be provided.")
+        if inference_conditions is None and summary_variables is None:
+            raise ValueError("At least one of `inference_conditions` or `summary_variables` must be provided.")
 
         adapter = Adapter().to_array().convert_dtype("float64", "float32")
 
-        if classifier_conditions is not None:
-            adapter = adapter.concatenate(classifier_conditions, into="classifier_conditions")
+        if inference_conditions is not None:
+            adapter = adapter.concatenate(inference_conditions, into="inference_conditions")
 
         if summary_variables is not None:
             adapter = adapter.as_set(summary_variables).concatenate(summary_variables, into="summary_variables")
 
         adapter = (
             adapter.rename(model_index_name, "model_indices")
-            .keep(["classifier_conditions", "summary_variables", "model_indices"])
+            .keep(["inference_conditions", "summary_variables", "model_indices"])
             .one_hot("model_indices", num_models)
         )
 
@@ -176,7 +161,7 @@ class ModelComparisonApproximator(Approximator):
     def compute_metrics(
         self,
         *,
-        classifier_conditions: Tensor = None,
+        inference_conditions: Tensor = None,
         model_indices: Tensor,
         summary_variables: Tensor = None,
         stage: str = "training",
@@ -185,13 +170,13 @@ class ModelComparisonApproximator(Approximator):
         Computes loss and tracks metrics for the classifier and summary networks.
 
         This method coordinates summary metric computation (if present), combines summary outputs with
-        classifier conditions, computes classifier logits and cross-entropy loss, and aggregates all
+        inference conditions, computes classifier logits and cross-entropy loss, and aggregates all
         tracked metrics into a single dictionary. Keys are prefixed with "classifier_" or "summary_"
         to indicate their origin.
 
         Parameters
         ----------
-        classifier_conditions : Tensor, optional
+        inference_conditions : Tensor, optional
             Conditioning variables for the classifier network (default is None). May be
             combined with summary network outputs if present.
         model_indices : Tensor
@@ -211,14 +196,16 @@ class ModelComparisonApproximator(Approximator):
             indicate its source.
         """
 
-        summary_metrics, summary_outputs = self._compute_summary_metrics(summary_variables, stage=stage)
+        inference_conditions = self.standardizer.maybe_standardize(
+            inference_conditions, key="inference_conditions", stage=stage
+        )
+        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
 
-        if classifier_conditions is not None and "classifier_conditions" in self.standardize:
-            classifier_conditions = self.standardize_layers["classifier_conditions"](classifier_conditions, stage=stage)
+        summary_metrics, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network, inference_conditions, summary_variables, stage=stage, purpose="metrics"
+        )
 
-        classifier_conditions = concatenate_valid((classifier_conditions, summary_outputs), axis=-1)
-
-        logits = self._compute_logits(classifier_conditions)
+        logits = self._compute_logits(resolved_conditions)
         cross_entropy = keras.ops.mean(keras.losses.categorical_crossentropy(model_indices, logits, from_logits=True))
 
         classifier_metrics = {"loss": cross_entropy}
@@ -392,16 +379,23 @@ class ModelComparisonApproximator(Approximator):
         # Apply adapter transforms to raw simulated / real quantities
         conditions = self.adapter(conditions, strict=False, **kwargs)
 
-        # Ensure only keys relevant for sampling are present in the conditions dictionary
-        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
+        # Ensure only keys relevant for prediction are present in the conditions dictionary
+        conditions = {k: v for k, v in conditions.items() if k in ["inference_conditions", "summary_variables"]}
         conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
 
         # Optionally standardize conditions
-        for key in self.CONDITION_KEYS:
-            if key in conditions and key in self.standardize:
-                conditions[key] = self.standardize_layers[key](conditions[key])
+        conditions["inference_conditions"] = self.standardizer.maybe_standardize(
+            conditions.get("inference_conditions"), key="inference_conditions", stage="inference"
+        )
+        conditions["summary_variables"] = self.standardizer.maybe_standardize(
+            conditions.get("summary_variables"), key="summary_variables", stage="inference"
+        )
 
-        output = self._predict(**conditions, **kwargs)
+        output = self._predict(
+            inference_conditions=conditions.get("inference_conditions"),
+            summary_variables=conditions.get("summary_variables"),
+            **kwargs,
+        )
 
         if probs:
             output = keras.ops.softmax(output)
@@ -435,47 +429,36 @@ class ModelComparisonApproximator(Approximator):
 
         summary_variables = keras.tree.map_structure(keras.ops.convert_to_tensor, data_adapted["summary_variables"])
 
-        if "summary_variables" in self.standardize:
-            summary_variables = self.standardize_layers["summary_variables"](summary_variables)
+        summary_variables = self.standardizer.maybe_standardize(
+            summary_variables, key="summary_variables", stage="inference"
+        )
 
         summaries = self.summary_network(summary_variables, **filter_kwargs(kwargs, self.summary_network.call))
         summaries = keras.ops.convert_to_numpy(summaries)
 
         return summaries
 
-    def _compute_logits(self, classifier_conditions: Tensor) -> Tensor:
+    def _compute_logits(self, conditions: Tensor) -> Tensor:
         """Helper to compute projected logits from the classifier network."""
-        logits = self.classifier_network(classifier_conditions)
+        logits = self.classifier_network(conditions)
         logits = self.logits_projector(logits)
         return logits
 
-    def _predict(self, classifier_conditions: Tensor = None, summary_variables: Tensor = None, **kwargs) -> Tensor:
+    def _predict(self, inference_conditions: Tensor = None, summary_variables: Tensor = None) -> Tensor:
         """Helper method to obtain logits from the internal classifier based on conditions."""
         if (self.summary_network is None) != (summary_variables is None):
             raise ValueError("Summary variables and summary network must be used together.")
 
-        if self.summary_network is not None:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-            classifier_conditions = concatenate_valid((classifier_conditions, summary_outputs), axis=-1)
+        _, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
+        )
 
-        logits = self._compute_logits(classifier_conditions)
+        logits = self._compute_logits(resolved_conditions)
         return logits
-
-    def _compute_summary_metrics(self, summary_variables: Tensor, stage: str) -> tuple[dict, Tensor | None]:
-        """Helper function to compute summary metrics and outputs."""
-        if self.summary_network is None:
-            return {}, None
-        if summary_variables is None:
-            raise ValueError("Summary variables are required when a summary network is present.")
-
-        if "summary_variables" in self.standardize:
-            summary_variables = self.standardize_layers["summary_variables"](summary_variables, stage=stage)
-
-        summary_metrics = self.summary_network.compute_metrics(summary_variables, stage=stage)
-        summary_outputs = summary_metrics.pop("outputs")
-        return summary_metrics, summary_outputs
 
     def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
         """

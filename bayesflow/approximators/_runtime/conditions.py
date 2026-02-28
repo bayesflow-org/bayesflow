@@ -24,7 +24,10 @@ class ConditionBuilder:
         if summary_network is None:
             if summary_variables is not None:
                 raise ValueError("Cannot use summary_variables without a summary network.")
-            return (None, inference_conditions) if purpose == "call" else (inference_conditions, {})
+            if purpose == "call":
+                return None, inference_conditions
+            else:
+                return {}, inference_conditions
 
         if summary_variables is None:
             raise ValueError("Summary variables are required when a summary network is present.")

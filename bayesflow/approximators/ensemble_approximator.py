@@ -135,8 +135,6 @@ class EnsembleApproximator(Approximator):
             A dataset containing simulations for training. If provided, `simulator` must be None.
         simulator : Simulator, optional
             A simulator used to generate a dataset. If provided, `dataset` must be None.
-            NOTE: Currently passing a simulator directly to fit is not supported.
-            Pass an EnsembleDataset instead.
         **kwargs
             Additional keyword arguments passed to `keras.Model.fit()` and to the dataset constructor
             if `dataset` is not provided.
@@ -214,7 +212,7 @@ class EnsembleApproximator(Approximator):
             Whether to split output arrays, by default False.
         member_weights : Mapping[str, float] or None, optional
             Probability weights for each approximator. If None, uses uniform weights.
-            Must be positive, will be normalized to sum to 1.
+            Must be nonnegative, will be normalized to sum to 1.
         merge_members : bool, optional
             Whether to merge samples from all approximators into a single (weighted) marginal sample.
         **kwargs
@@ -262,7 +260,7 @@ class EnsembleApproximator(Approximator):
             Data containing inference variables and conditions.
         member_weights : Mapping[str, float] or None, default None
             Probability weights for each approximator. If None, uses uniform weights.
-            Must sum to 1.
+            Must be nonnegative, will be normalized to sum to 1.
         merge_members : bool, optional
             Whether to merge log probabilities from all approximators into a single marginal log probability.
         **kwargs

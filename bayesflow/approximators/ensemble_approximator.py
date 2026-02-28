@@ -1,8 +1,8 @@
-from collections.abc import Mapping, Sequence
-from typing import Any
+from collections.abc import Callable, Mapping, Sequence
 
 import numpy as np
 from scipy.special import logsumexp
+
 import keras
 
 from bayesflow.adapters import Adapter
@@ -22,15 +22,20 @@ class EnsembleApproximator(Approximator):
         self._warn_if_shared_approximator_components(approximators)
         self.approximators = approximators
 
-        self.distribution_keys = [k for k, approx in self.approximators.items() if approx.has_distribution]
-        self.has_distribution = len(self.distribution_keys) > 0
+        self.members = tuple(self.approximators.keys())
+
+        self.distribution_members = tuple(
+            k for k, a in self.approximators.items() if getattr(a, "has_distribution", False)
+        )
+        self.estimate_members = tuple(k for k, a in self.approximators.items() if hasattr(a, "estimate"))
+
+        self.has_distribution = bool(self.distribution_members)
 
     @classmethod
     def _warn_if_shared_approximator_components(cls, approximators):
         """Warn if approximators share component instances (not safely serializable yet)."""
-        # Track object identity across ensemble members for selected attributes.
         tracked = ("inference_network", "summary_network")
-        seen = {name: {} for name in tracked}  # attr -> {id(obj): [member_names...]}
+        seen = {name: {} for name in tracked}
 
         for member_name, approximator in approximators.items():
             for attr in tracked:
@@ -51,7 +56,7 @@ class EnsembleApproximator(Approximator):
                     logging.warning(
                         "EnsembleApproximator contains shared component '{attr}' across members {members}. "
                         "Deserialization of weights of shared components is not supported yet and may fail. "
-                        "Use separate component instances (e.g., clone networks) to be able to serialize the "
+                        "Use separate component instances (e.g., clone networks) to be able to serialize "
                         "the whole EnsembleApproximator object or serialize the approximators in the ensemble "
                         "separately.",
                         attr=attr,
@@ -79,8 +84,7 @@ class EnsembleApproximator(Approximator):
         max_queue_size: int = 32,
         **kwargs,
     ) -> EnsembleDataset:
-        # Build the underlying OnlineDataset using the base implementation.
-        base_ds = super().build_dataset(
+        base_dataset = super().build_dataset(
             batch_size=batch_size,
             num_batches=num_batches,
             adapter=adapter,
@@ -92,18 +96,17 @@ class EnsembleApproximator(Approximator):
             **kwargs,
         )
 
-        # Wrap it into an EnsembleDataset
         return EnsembleDataset(
-            base_ds,
-            member_names=list(self.approximators.keys()),
+            base_dataset=base_dataset,
+            member_names=self.members,
             **filter_kwargs(kwargs, keras.utils.PyDataset.__init__),
         )
 
-    def build_from_data(self, adapted_data: dict[str, Any]):
+    def build_from_data(self, adapted_data: dict[str, any]):
         data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
         self.build(data_shapes)
 
-    def build(self, data_shapes: dict[str, dict[str, tuple[int]] | dict[str, dict[str, dict]]]) -> None:
+    def build(self, data_shapes: dict) -> None:
         for approx_name, approximator in self.approximators.items():
             _data_shape = {}
             for var_name, variable in data_shapes.items():  # variable type
@@ -117,7 +120,7 @@ class EnsembleApproximator(Approximator):
 
             approximator.build(_data_shape)
 
-    def fit(self, *args, **kwargs):
+    def fit(self, *args, **kwargs) -> keras.callbacks.History:
         """
         Trains the ensemble of approximators on the provided dataset or on-demand data generated
         from the given simulator.
@@ -133,37 +136,11 @@ class EnsembleApproximator(Approximator):
             A dataset containing simulations for training. If provided, `simulator` must be None.
         simulator : Simulator, optional
             A simulator used to generate a dataset. If provided, `dataset` must be None.
-            NOTE: CURRENTLY PASSING A simulator DIRECTLY TO fit IS NOT SUPPORTED.
-            PASS A EnsembleDataset instead.
+            NOTE: Currently passing a simulator directly to fit is not supported.
+            Pass an EnsembleDataset instead.
         **kwargs
-            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
-
-            batch_size : int or None, default='auto'
-                Number of samples per gradient update. Do not specify if `dataset` is provided as a
-                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
-            epochs : int, default=1
-                Number of epochs to train the model.
-            verbose : {"auto", 0, 1, 2}, default="auto"
-                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
-            callbacks : list of keras.callbacks.Callback, optional
-                List of callbacks to apply during training.
-            validation_split : float, optional
-                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
-                or tensors).
-            validation_data : tuple or dataset, optional
-                Data for validation, overriding `validation_split`.
-            shuffle : bool, default=True
-                Whether to shuffle the training data before each epoch (ignored for dataset generators).
-            initial_epoch : int, default=0
-                Epoch at which to start training (useful for resuming training).
-            steps_per_epoch : int or None, optional
-                Number of steps (batches) before declaring an epoch finished.
-            validation_steps : int or None, optional
-                Number of validation steps per validation epoch.
-            validation_batch_size : int or None, optional
-                Number of samples per validation batch (defaults to `batch_size`).
-            validation_freq : int, default=1
-                Specifies how many training epochs to run before performing validation.
+            Additional keyword arguments passed to `keras.Model.fit()` and to the dataset constructor
+            if `dataset` is not provided.
 
         Returns
         -------
@@ -187,8 +164,7 @@ class EnsembleApproximator(Approximator):
     ) -> dict[str, dict[str, Tensor]]:
         metrics = {}
 
-        def select(value: dict[str, Tensor] | Tensor | None, name: str) -> Tensor | None:
-            "Helper to select ensemble member data (during training) or pass through while respecting None."
+        def select(value, name):
             if value is None:
                 return None
             return value[name] if stage == "training" else value
@@ -240,7 +216,8 @@ class EnsembleApproximator(Approximator):
         member_weights : Mapping[str, float] or None, optional
             Probability weights for each approximator. If None, uses uniform weights.
             Must be positive, will be normalized to sum to 1.
-        TODO: merge_members
+        merge_members : bool, optional
+            Whether to merge samples from all approximators into a single (weighted) marginal sample.
         **kwargs
             Additional arguments passed to approximator.sample().
 
@@ -249,74 +226,24 @@ class EnsembleApproximator(Approximator):
         dict[str, np.ndarray]
             Samples with shape (batch_size, num_samples, ...) for each variable.
         """
+        self._warn_ignored_member_weights(member_weights, merge_members, op="sample")
+
         if not merge_members:
-            if member_weights is not None:
-                logging.warning(
-                    "`member_weights` is ignored when `merge_members=False`. "
-                    "Set `merge_members=True` to sample from the weighted mixture."
-                )
             return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
-        member_weights: Mapping[str, float] = self._resolve_member_weights(member_weights)
+        weights = self._resolve_member_weights(member_weights)
+        names = tuple(weights.keys())
+        probs = np.fromiter(weights.values(), dtype=float, count=len(weights))
 
-        # Sample members from multinomial and convert to dict
-        num_samples_per_member = np.random.multinomial(num_samples, list(member_weights.values()))
-        num_samples_per_member = {k: num_samples_per_member[i] for i, k in enumerate(member_weights.keys())}
-        samples = self._sample_separate(
-            num_samples=num_samples_per_member, conditions=conditions, split=split, **kwargs
-        )
+        counts = np.random.multinomial(num_samples, probs)
+        alloc = {name: int(count) for name, count in zip(names, counts) if count > 0}
 
-        # Concatenate samples from all approximators along sample dimension (axis 1)
-        samples_list = list(samples.values())
-        concatenated = keras.tree.map_structure(
-            lambda *arrays: np.concatenate(arrays, axis=1),  # zip & concat across approximators
-            *samples_list,  # unpack: apply lambda to corresponding leaves from each dict
-        )
+        per_member = self._sample_separate(num_samples=alloc, conditions=conditions, split=split, **kwargs)
 
-        # Shuffle along sample dimension (axis 1)
-        shuffle_idx = np.random.permutation(num_samples)
-        shuffled = keras.tree.map_structure(lambda arr: arr[:, shuffle_idx], concatenated)
-        return shuffled
+        merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *list(per_member.values()))
+        idx = np.random.permutation(num_samples)
 
-    def _sample_separate(
-        self,
-        *,
-        num_samples: int | Mapping[str, int],
-        conditions: Mapping[str, np.ndarray],
-        split: bool = False,
-        **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
-        """
-        Draw samples from each approximator separately.
-
-        Parameters
-        ----------
-        num_samples : int or Mapping[str, int]
-            Number of samples to draw from each approximator. If int, all approximators
-            draw the same number of samples. If dict, specifies samples per approximator.
-        conditions : Mapping[str, np.ndarray]
-            Conditions for sampling.
-        split : bool, optional
-            Whether to split output arrays, by default False.
-        **kwargs
-            Additional arguments passed to approximator.sample().
-
-        Returns
-        -------
-        dict[str, dict[str, np.ndarray]]
-            Samples keyed by approximator name, then by variable name.
-        """
-        samples = {}
-        if isinstance(num_samples, int):
-            num_samples = num_samples * np.ones(len(self.distribution_keys), dtype="int64")
-            num_samples = {k: num_samples[i] for i, k in enumerate(self.distribution_keys)}
-
-        for approx_name, _num_samples in num_samples.items():
-            if _num_samples > 0:
-                samples[approx_name] = self.approximators[approx_name].sample(
-                    num_samples=_num_samples, conditions=conditions, split=split, **kwargs
-                )
-        return samples
+        return keras.tree.map_structure(lambda a: np.take(a, idx, axis=1), merged)
 
     def log_prob(
         self,
@@ -337,7 +264,8 @@ class EnsembleApproximator(Approximator):
         member_weights : Mapping[str, float] or None, default None
             Probability weights for each approximator. If None, uses uniform weights.
             Must sum to 1.
-        TODO
+        merge_members : bool, optional
+            Whether to merge log probabilities from all approximators into a single marginal log probability.
         **kwargs
             Additional arguments passed to approximator.log_prob().
 
@@ -346,56 +274,28 @@ class EnsembleApproximator(Approximator):
         np.ndarray
             Marginalized log probabilities with shape (batch_size,).
         """
-        log_probs = self._log_prob_separate(
-            data=data, members=list(member_weights.keys()) if member_weights else None, **kwargs
-        )
+
+        self._warn_ignored_member_weights(member_weights, merge_members, op="log_prob")
 
         if not merge_members:
-            if member_weights is not None:
-                logging.warning(
-                    "`member_weights` is ignored when `merge_members=False`. "
-                    "Set `merge_members=True` to compute the weighted mixture log-probability."
-                )
-            return log_probs
+            return self._map_members(
+                None if member_weights is None else list(member_weights.keys()),
+                capability="distribution",
+                fn=lambda a: a.log_prob(data=data, **kwargs),
+            )
 
-        member_weights = self._resolve_member_weights(member_weights)
+        weights = self._resolve_member_weights(member_weights)
+        members = list(weights.keys())
 
-        # log p = log_sum_exp(log(w_i) + log p_i)
-        stacked = np.stack(list(log_probs.values()), axis=-1)
-        log_weights = np.log(list(member_weights.values()))
+        log_probs = self._map_members(
+            members,
+            capability="distribution",
+            fn=lambda a: a.log_prob(data=data, **kwargs),
+        )
 
-        # stacked: (num_datasets, num_scores), log_weights: (num_scores,)
-        z = stacked + log_weights  # broadcasted to (num_datasets, num_scores)
-
-        # stable logsumexp over last axis
-        return logsumexp(z, axis=-1)
-
-    def _log_prob_separate(
-        self, data: Mapping[str, np.ndarray], members: Sequence[str] | None = None, **kwargs
-    ) -> dict[str, np.ndarray]:
-        """
-        Compute log probabilities from each approximator separately.
-
-        Parameters
-        ----------
-        data : Mapping[str, np.ndarray]
-            Data containing inference variables and conditions.
-        members: Sequence[str] or None, default None
-            Ensemble members to evaluate log prob for.
-            If None, will evaluate all distribution members.
-        **kwargs
-            Additional arguments passed to approximator.log_prob().
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Log probabilities keyed by approximator name, each with shape (batch_size,).
-        """
-        log_prob = {}
-        members = self.distribution_keys if members is None else members
-        for member in members:
-            log_prob[member] = self.approximators[member].log_prob(data=data, **kwargs)
-        return log_prob
+        stacked = np.stack([log_probs[m] for m in members], axis=-1)
+        log_w = np.log(np.fromiter((weights[m] for m in members), dtype=float, count=len(members)))
+        return logsumexp(stacked + log_w, axis=-1)
 
     def estimate(
         self,
@@ -405,7 +305,7 @@ class EnsembleApproximator(Approximator):
         split: bool = False,
         groupby: str = "member",
         **kwargs,
-    ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
+    ) -> dict:
         """
         Compute point estimates and distribution parameters from each approximator separately.
 
@@ -437,7 +337,7 @@ class EnsembleApproximator(Approximator):
         if groupby == "member":
             return estimates
         elif groupby == "variable":
-            out: dict[str, dict[str, dict]] = {}
+            out = {}
             for member_key, member_est in estimates.items():
                 for var_key, var_est in member_est.items():
                     out.setdefault(var_key, {})
@@ -476,6 +376,110 @@ class EnsembleApproximator(Approximator):
                 f"`groupby={groupby!r}` is not supported for EnsembleApproximator. Use 'member' or 'variable'."
             )
 
+    def _map_members(
+        self,
+        members: Sequence[str] | None,
+        *,
+        capability: str,
+        fn: Callable,
+    ) -> dict[str, any]:
+        resolved = self._resolve_members(members, capability=capability)
+        return {name: fn(self.approximators[name]) for name in resolved}
+
+    def _resolve_members(self, members: Sequence[str] | None, *, capability: str) -> tuple[str, ...]:
+        if capability == "any":
+            base = self.members
+        elif capability == "distribution":
+            base = self.distribution_members
+        elif capability == "estimate":
+            base = self.estimate_members
+        else:
+            raise ValueError(f"Unknown capability {capability!r}")
+
+        if members is None:
+            return base
+
+        base_set = set(base)
+        members_t = tuple(members)
+        unknown = [m for m in members_t if m not in base_set]
+        if unknown:
+            raise ValueError(f"Unknown/unsupported members for capability={capability!r}: {unknown}")
+        return members_t
+
+    def _warn_ignored_member_weights(self, member_weights: Mapping[str, float] | None, merge_members: bool, op: str):
+        if member_weights is not None and not merge_members:
+            logging.warning(
+                f"`member_weights` is ignored when `merge_members=False` {op}. "
+                f"Set `merge_members=True` to use a weighted mixture."
+            )
+
+    def _sample_separate(
+        self,
+        *,
+        num_samples: int | Mapping[str, int],
+        conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        **kwargs,
+    ) -> dict[str, dict[str, np.ndarray]]:
+        """
+        Draw samples from each approximator separately.
+
+        Parameters
+        ----------
+        num_samples : int or Mapping[str, int]
+            Number of samples to draw from each approximator. If int, all approximators
+            draw the same number of samples. If dict, specifies samples per approximator.
+        conditions : Mapping[str, np.ndarray]
+            Conditions for sampling.
+        split : bool, optional
+            Whether to split output arrays, by default False.
+        **kwargs
+            Additional arguments passed to approximator.sample().
+
+        Returns
+        -------
+        dict[str, dict[str, np.ndarray]]
+            Samples keyed by approximator name, then by variable name.
+        """
+        samples = {}
+        if isinstance(num_samples, int):
+            num_samples = num_samples * np.ones(len(self.distribution_members), dtype="int64")
+            num_samples = {k: num_samples[i] for i, k in enumerate(self.distribution_members)}
+
+        for approx_name, _num_samples in num_samples.items():
+            if _num_samples > 0:
+                samples[approx_name] = self.approximators[approx_name].sample(
+                    num_samples=_num_samples, conditions=conditions, split=split, **kwargs
+                )
+        return samples
+
+    def _log_prob_separate(
+        self, data: Mapping[str, np.ndarray], members: Sequence[str] | None = None, **kwargs
+    ) -> dict[str, np.ndarray]:
+        """
+        Compute log probabilities from each approximator separately.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Data containing inference variables and conditions.
+        members: Sequence[str] or None, default None
+            Ensemble members to evaluate log prob for.
+            If None, will evaluate all distribution members.
+        **kwargs
+            Additional arguments passed to approximator.log_prob().
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Log probabilities keyed by approximator name, each with shape (batch_size,).
+        """
+        log_prob = {}
+        members = self.distribution_members if members is None else members
+        for member in members:
+            log_prob[member] = self.approximators[member].log_prob(data=data, **kwargs)
+        return log_prob
+
     def _estimate_separate(
         self,
         conditions: Mapping[str, np.ndarray],
@@ -504,7 +508,7 @@ class EnsembleApproximator(Approximator):
             Estimates keyed by approximator name, then by variable and score names.
         """
         estimates = {}
-        members = list(self.approximators.keys()) if members is None else members
+        members = self.members if members is None else members
         for approx_name, approximator in self.approximators.items():
             if approx_name in members and hasattr(approximator, "estimate"):
                 estimates[approx_name] = approximator.estimate(conditions=conditions, split=split, **kwargs)
@@ -512,34 +516,33 @@ class EnsembleApproximator(Approximator):
 
     def _resolve_member_weights(self, member_weights: Mapping[str, float] | None) -> Mapping[str, float]:
         if member_weights is None:
-            member_weights = {k: 1.0 for k in self.distribution_keys}
+            member_weights = {k: 1.0 for k in self.distribution_members}
         for key, weight in member_weights.items():
-            if key not in self.distribution_keys:
+            if key not in self.distribution_members:
                 raise ValueError(
-                    "Member weights must be subset of self.distribution_keys. "
-                    f"Unknown keys: {set(member_weights) - set(self.distribution_keys)}"
+                    "Member weights must be subset of self.distribution_members. "
+                    f"Unknown keys: {set(member_weights) - set(self.distribution_members)}"
                 )
             if weight < 0:
                 raise ValueError(f"All member_weights must be positive. Received {key}: {weight}.")
 
         # Normalize weights to 1
-        sum = np.sum(list(member_weights.values()))
-        member_weights = {k: v / sum for k, v in member_weights.items()}
+        summed = np.sum(list(member_weights.values()))
+        member_weights = {k: v / summed for k, v in member_weights.items()}
         return member_weights
 
-    def _batch_size_from_data(self, data: Mapping[str, Mapping[str, Any]]) -> int:
+    def _batch_size_from_data(self, data: Mapping[str, Mapping[str, any]]) -> int:
         """
         Fetches the current batch size from an input dictionary. Can only be used during training when
         inference variables as present.
         """
         if isinstance(data["inference_variables"], dict):
             return keras.ops.shape(data["inference_variables"][list(self.approximators.keys())[0]])[0]
-        else:
-            return keras.ops.shape(data["inference_variables"])[0]
+        return keras.ops.shape(data["inference_variables"])[0]
 
     def get_config(self):
         base_config = super().get_config()
-        config = {"approximators": self.approximators}
+        config = {"approximators": self.approximators, "member_names": self.members}
         return base_config | serialize(config)
 
     @classmethod

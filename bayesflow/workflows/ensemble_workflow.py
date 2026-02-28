@@ -107,6 +107,8 @@ class EnsembleWorkflow(BasicWorkflow):
             approximators=approximators, **filter_kwargs(kwargs, keras.Model.__init__)
         )
 
+        self.member_names = tuple(self.approximator.approximators.keys())
+
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
         self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
         self.history = None
@@ -169,10 +171,7 @@ class EnsembleWorkflow(BasicWorkflow):
         """
 
         dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter, augmentations=augmentations)
-
-        dataset = EnsembleDataset(
-            dataset, member_names=list(self.approximator.approximators.keys()), data_reuse=data_reuse
-        )
+        dataset = EnsembleDataset(dataset, member_names=self.member_names, data_reuse=data_reuse)
 
         return self._fit(
             dataset,
@@ -245,10 +244,7 @@ class EnsembleWorkflow(BasicWorkflow):
             adapter=self.adapter,
             augmentations=augmentations,
         )
-
-        dataset = EnsembleDataset(
-            dataset, member_names=list(self.approximator.approximators.keys()), data_reuse=data_reuse
-        )
+        dataset = EnsembleDataset(dataset, member_names=self.member_names, data_reuse=data_reuse)
 
         return self._fit(
             dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
@@ -325,9 +321,7 @@ class EnsembleWorkflow(BasicWorkflow):
             augmentations=augmentations,
         )
 
-        dataset = EnsembleDataset(
-            dataset, member_names=list(self.approximator.approximators.keys()), data_reuse=data_reuse
-        )
+        dataset = EnsembleDataset(dataset, member_names=self.member_names, data_reuse=data_reuse)
 
         return self._fit(
             dataset,

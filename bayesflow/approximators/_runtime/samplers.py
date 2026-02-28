@@ -35,7 +35,7 @@ class Sampler:
 
     def repeat_and_flatten_conditions(self, conditions: Tensor | None, num_samples: int):
         if conditions is None:
-            return None, None
+            return None
 
         shape = keras.ops.shape(conditions)
         batch_size = shape[0]

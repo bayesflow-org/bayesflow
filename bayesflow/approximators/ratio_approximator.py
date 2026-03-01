@@ -5,7 +5,7 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.adapters import Adapter
-from bayesflow.utils import expand_tile
+from bayesflow.utils import expand_tile, concatenate_valid_shapes
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
@@ -78,10 +78,25 @@ class RatioApproximator(Approximator):
 
         self.standardizer = Standardization(standardize)
 
-    def _build_post_processing_layers(self, inference_outputs_shape: tuple) -> None:
-        """Build the logits projector for ratio estimation."""
+    def build(self, data_shapes: Mapping[str, Tensor]):
+        self._build_standardization_layers(data_shapes)
+
+        # Build summary network once at template level and cache output shape
+        summary_outputs_shape = self._build_summary_network(data_shapes)
+
+        classifier_inputs_shape = concatenate_valid_shapes(
+            [data_shapes["inference_variables"], data_shapes["inference_conditions"], summary_outputs_shape], axis=-1
+        )
+
+        if not self.inference_network.built:
+            self.inference_network.build(classifier_inputs_shape)
+
+        classifier_outputs_shape = self.inference_network.compute_output_shape(classifier_inputs_shape)
+
         if not self.projector.built:
-            self.projector.build(inference_outputs_shape)
+            self.projector.build(classifier_outputs_shape)
+
+        self.built = True
 
     def compute_metrics(
         self,

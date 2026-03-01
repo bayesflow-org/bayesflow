@@ -30,7 +30,7 @@ class CrossEntropyScore(ScoringRule):
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
         """
-        Computes categorical cross-entropy from logits.
+        Computes categorical cross-entropy from logits or probs.
 
         Parameters
         ----------
@@ -47,8 +47,12 @@ class CrossEntropyScore(ScoringRule):
         Tensor
             The (optionally weighted) mean categorical cross-entropy.
         """
-        logits = estimates["logits"]
-        scores = keras.losses.categorical_crossentropy(targets, logits, from_logits=True)
+
+        scores = keras.losses.categorical_crossentropy(
+            targets,
+            estimates["logits" if "logits" in estimates else "probs"],
+            from_logits=("logits" in estimates),
+        )
         score = weighted_mean(scores, weights)
         return score
 

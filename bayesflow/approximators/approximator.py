@@ -22,9 +22,8 @@ class Approximator(BackendApproximator):
     def build_from_data(self, adapted_data: dict[str, any]) -> None:
         raise NotImplementedError
 
-    @classmethod
     def build_dataset(
-        cls,
+        self,
         *,
         batch_size: int = "auto",
         num_batches: int,
@@ -41,7 +40,7 @@ class Approximator(BackendApproximator):
             logging.info(f"Using a batch size of {batch_size}.")
 
         if adapter == "auto":
-            adapter = cls.build_adapter(**filter_kwargs(kwargs, cls.build_adapter))
+            adapter = self.build_adapter(**filter_kwargs(kwargs, self.build_adapter))
 
         if workers == "auto":
             workers = mp.cpu_count()

@@ -1,8 +1,9 @@
 import keras
+import numpy as np
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_approximator_estimate(approximator, simulator, batch_size, adapter):
+def test_log_prob(continuous_approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
@@ -11,9 +12,7 @@ def test_approximator_estimate(approximator, simulator, batch_size, adapter):
     batch = adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    approximator.build(batch_shapes)
+    continuous_approximator.build(batch_shapes)
 
-    estimates = approximator.estimate(data)
-
-    assert isinstance(estimates, dict)
-    print(keras.tree.map_structure(keras.ops.shape, estimates))
+    log_prob = continuous_approximator.log_prob(data=data)
+    assert isinstance(log_prob, (np.ndarray, dict))

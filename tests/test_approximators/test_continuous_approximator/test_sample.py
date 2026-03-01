@@ -3,7 +3,7 @@ import keras
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_approximator_sample(approximator, simulator, batch_size, adapter):
+def test_sample(continuous_approximator, simulator, batch_size, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
@@ -12,9 +12,9 @@ def test_approximator_sample(approximator, simulator, batch_size, adapter):
     batch = adapter(data)
     batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    approximator.build(batch_shapes)
+    continuous_approximator.build(batch_shapes)
 
-    samples = approximator.sample(num_samples=2, conditions=data)
+    samples = continuous_approximator.sample(num_samples=2, conditions=data)
 
     assert isinstance(samples, dict)
 
@@ -22,9 +22,7 @@ def test_approximator_sample(approximator, simulator, batch_size, adapter):
 @pytest.mark.parametrize("inference_network_type", ["flow_matching", "diffusion_model"])
 @pytest.mark.parametrize("summary_network_type", ["none", "deep_set", "set_transformer", "time_series"])
 @pytest.mark.parametrize("method", ["euler", "rk45", "euler_maruyama"])
-def test_approximator_sample_with_integration_methods(
-    inference_network_type, summary_network_type, method, simulator, adapter
-):
+def test_sample_with_integration_methods(inference_network_type, summary_network_type, method, simulator, adapter):
     """Test approximator sampling with different integration methods and summary networks.
 
     Tests flow matching and diffusion models with different ODE/SDE solvers:

@@ -1,31 +1,16 @@
 import re
-
-import pytest
 import io
 from contextlib import redirect_stdout
 
 
-@pytest.mark.skip(reason="not implemented")
-def test_compile(approximator):
-    approximator.compile(optimizer="AdamW")
-
-
-@pytest.mark.skip(reason="not implemented")
-def test_fit(approximator, dataset):
-    approximator.compile(optimizer="AdamW")
-    approximator.fit(dataset)
-
-    assert approximator.losses is not None
-
-
-def test_loss_progress(approximator, train_dataset, validation_dataset):
-    approximator.compile(optimizer="AdamW")
+def test_loss_progress(continuous_approximator, train_dataset, validation_dataset):
+    continuous_approximator.compile(optimizer="AdamW")
     num_epochs = 2
 
     # Capture ostream and train model
     with io.StringIO() as stream:
         with redirect_stdout(stream):
-            approximator.fit(dataset=train_dataset, validation_data=validation_dataset, epochs=num_epochs)
+            continuous_approximator.fit(dataset=train_dataset, validation_data=validation_dataset, epochs=num_epochs)
 
         output = stream.getvalue()
 

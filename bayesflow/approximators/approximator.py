@@ -1,26 +1,161 @@
+from collections.abc import Mapping, Sequence
+from typing import Any
+
 import multiprocessing as mp
 
+import numpy as np
 import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
 from bayesflow.simulators import Simulator
-from bayesflow.utils import find_batch_size, filter_kwargs, logging
+from bayesflow.utils import find_batch_size, filter_kwargs, concatenate_valid_shapes, logging
+from bayesflow.utils.serialization import deserialize, serialize
 
 from .backend_approximators import BackendApproximator
 
 
 class Approximator(BackendApproximator):
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        raise NotImplementedError
+        """
+        Template method for building all network components.
+
+        This method orchestrates the build process by:
+        1. Building the summary network (if present) and caching its output shape
+        2. Enriching data_shapes with computed values for hooks to access
+        3. Calling hook methods in the proper sequence
+        4. Marking as built
+
+        Hooks receive an enriched data_shapes dict that includes "_summary_outputs" if a
+        summary network was built, so they don't need to recompute this value.
+        """
+        # Build standardizer first
+        self._build_standardization_layers(data_shapes)
+
+        # Build summary network once at template level and cache output shape
+        summary_outputs_shape = self._build_summary_network(data_shapes)
+
+        # Enrich data_shapes with computed summary output shape for hooks to access (if summary network was built)
+        enriched_shapes = data_shapes.copy()
+        if summary_outputs_shape is not None:
+            enriched_shapes["_summary_outputs"] = summary_outputs_shape
+
+        # Call hooks with enriched shape information
+        inference_outputs_shape = self._build_inference_network(enriched_shapes)
+        self._build_post_processing_layers(inference_outputs_shape)
+
+        self.built = True
+
+    def _get_summary_network_input_key(self) -> str:
+        """
+        Hook method: override to specify which data key feeds the summary network.
+        Default is "summary_variables". Ratio approximator overrides to "inference_conditions".
+        """
+        return "summary_variables"
+
+    def _build_standardization_layers(self, data_shapes: dict[str, tuple[int] | dict]) -> None:
+        """
+        Helper method: builds the standardizer if present (default behavior for most approximators).
+        """
+        if hasattr(self, "standardizer") and not self.standardizer.built:
+            self.standardizer.build(data_shapes)
+
+    def _build_summary_network(self, data_shapes: dict[str, tuple[int] | dict]) -> tuple[int] | dict | None:
+        """
+        Helper method: builds the summary network if present.
+        Subclasses can call this to build their summary network.
+
+        Returns
+        -------
+        output_shape : tuple or dict or None
+            The output shape of the summary network, or None if no summary network.
+        """
+        if not hasattr(self, "summary_network") or self.summary_network is None:
+            return None
+
+        summary_input_key = self._get_summary_network_input_key()
+        if not self.summary_network.built:
+            self.summary_network.build(data_shapes[summary_input_key])
+
+        return self.summary_network.compute_output_shape(data_shapes[summary_input_key])
+
+    def _build_inference_network(self, data_shapes: dict[str, tuple[int] | dict]) -> None:
+        """
+        Hook method: subclasses implement to build their inference network(s).
+        Subclasses should call _build_summary_network() internally if needed.
+        """
+
+        summary_outputs_shape = data_shapes.get("_summary_outputs")
+        inference_conditions_shape = concatenate_valid_shapes(
+            [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
+        )
+
+        if not self.inference_network.built:
+            self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
+
+        return self.inference_network.compute_output_shape(
+            data_shapes["inference_variables"], inference_conditions_shape
+        )
+
+    def _build_post_processing_layers(self, input_shape: tuple) -> None:
+        """
+        Hook method: subclasses override to build task-specific output layers (e.g., projectors, heads).
+        Default implementation does nothing (for approximators without additional output layers).
+        """
+        pass
 
     @classmethod
-    def build_adapter(cls, **kwargs) -> Adapter:
-        # implemented by each respective architecture
-        raise NotImplementedError
+    def build_adapter(
+        cls,
+        inference_variables: str | Sequence[str],
+        inference_conditions: str | Sequence[str] = None,
+        summary_variables: str | Sequence[str] = None,
+        sample_weight: str = None,
+    ) -> Adapter:
+        """Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.
 
-    def build_from_data(self, adapted_data: dict[str, any]) -> None:
-        raise NotImplementedError
+        Handles the common pipeline shared by all approximators:
+        ``to_array -> convert_dtype -> concatenate -> keep``.
+        Subclasses can call ``super().build_adapter(...)`` and apply additional
+        steps to the returned adapter.
+
+        Parameters
+        ----------
+        inference_variables : str or Sequence[str]
+            Names of the inference variables in the data dict.
+        inference_conditions : str or Sequence[str], optional
+            Names of the inference conditions in the data dict.
+        summary_variables : str or Sequence[str], optional
+            Names of the summary variables in the data dict.
+        sample_weight : str, optional
+            Name of the sample weight variable.
+        """
+
+        if isinstance(inference_variables, str):
+            inference_variables = [inference_variables]
+        if isinstance(inference_conditions, str):
+            inference_conditions = [inference_conditions]
+        if isinstance(summary_variables, str):
+            summary_variables = [summary_variables]
+
+        adapter = Adapter()
+        adapter.to_array()
+        adapter.convert_dtype("float64", "float32")
+        adapter.concatenate(inference_variables, into="inference_variables")
+
+        if inference_conditions is not None:
+            adapter.concatenate(inference_conditions, into="inference_conditions")
+
+        if summary_variables is not None:
+            adapter.as_set(summary_variables)
+            adapter.concatenate(summary_variables, into="summary_variables")
+
+        if sample_weight is not None:
+            adapter.rename(sample_weight, "sample_weight")
+
+        adapter.keep(["inference_variables", "inference_conditions", "summary_variables", "sample_weight"])
+
+        return adapter
 
     @classmethod
     def build_dataset(
@@ -61,6 +196,36 @@ class Approximator(BackendApproximator):
 
     def call(self, *args, **kwargs):
         return self.compute_metrics(*args, **kwargs)
+
+    def compile(
+        self,
+        *args,
+        inference_metrics: Any = None,
+        summary_metrics: Any = None,
+        **kwargs,
+    ):
+        """
+        Compile the approximator, setting metrics on inference and summary networks if provided.
+
+        Parameters
+        ----------
+        inference_metrics : keras.Metric or Sequence[keras.Metric], optional
+            Metric(s) to set on the inference_network.
+        summary_metrics : keras.Metric or Sequence[keras.Metric], optional
+            Metric(s) to set on the summary_network (if present).
+        *args, **kwargs
+            Additional arguments passed to the parent compile method.
+        """
+        if inference_metrics:
+            self.inference_network._metrics = inference_metrics
+
+        if summary_metrics:
+            if not hasattr(self, "summary_network") or self.summary_network is None:
+                logging.warning("Ignoring summary metrics because there is no summary network.")
+            else:
+                self.summary_network._metrics = summary_metrics
+
+        return super().compile(*args, **kwargs)
 
     def fit(self, *, dataset: keras.utils.PyDataset = None, simulator: Simulator = None, **kwargs):
         """
@@ -137,3 +302,90 @@ class Approximator(BackendApproximator):
             self.build(mock_data_shapes)
 
         return super().fit(dataset=dataset, **kwargs)
+
+    def build_from_data(self, adapted_data: dict[str, Any]) -> None:
+        """Build the approximator from adapted data by extracting shapes."""
+        self.build(keras.tree.map_structure(keras.ops.shape, adapted_data))
+
+    def compile_from_config(self, config):
+        """Compile the approximator from a saved configuration."""
+        self.compile(**deserialize(config))
+        if hasattr(self, "optimizer") and self.built:
+            self.optimizer.build(self.trainable_variables)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        """Deserialize and instantiate an approximator from configuration."""
+        return cls(**deserialize(config, custom_objects=custom_objects))
+
+    def get_compile_config(self):
+        """
+        Serialize compile configuration for all network metrics.
+
+        Collects metrics from inference_network and summary_network (if present),
+        serializes them, and merges with parent class config.
+
+        Returns
+        -------
+        dict
+            Configuration dictionary with serialized metrics.
+        """
+        base_config = super().get_compile_config() or {}
+
+        config = {
+            "inference_metrics": self.inference_network._metrics,
+        }
+
+        if hasattr(self, "summary_network") and self.summary_network is not None:
+            config["summary_metrics"] = self.summary_network._metrics
+
+        return base_config | serialize(config)
+
+    def summarize(self, conditions: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+        """
+        Computes the learned summary statistics of given summary variables.
+
+        The `conditions` dictionary is preprocessed using the `adapter` and passed through the summary network.
+
+        Parameters
+        ----------
+        conditions : Mapping[str, np.ndarray]
+            Dictionary of simulated or real quantities as NumPy arrays.
+        **kwargs : dict
+            Additional keyword arguments for the adapter and the summary network.
+
+        Returns
+        -------
+        summaries : np.ndarray
+            The learned summary statistics. Returns None if no summary network is present.
+        """
+        if not hasattr(self, "summary_network") or self.summary_network is None:
+            raise ValueError("Summary network is not available. This approximator does not support summarization.")
+
+        if not hasattr(self, "adapter"):
+            raise ValueError("Adapter is not available.")
+
+        adapted_data = self.adapter(conditions, strict=False)
+        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
+
+        summary_variables = adapted_data.get("summary_variables")
+
+        if hasattr(self, "standardizer"):
+            summary_variables = self.standardizer.maybe_standardize(
+                summary_variables, key="summary_variables", stage="inference"
+            )
+
+        if hasattr(self, "condition_builder"):
+            summary_outputs, _ = self.condition_builder.resolve(
+                self.summary_network,
+                inference_conditions=None,
+                summary_variables=summary_variables,
+                stage="inference",
+                purpose="call",
+            )
+        else:
+            summary_outputs = self.summary_network(
+                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
+            )
+
+        return keras.ops.convert_to_numpy(summary_outputs)

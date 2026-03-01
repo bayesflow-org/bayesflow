@@ -183,8 +183,6 @@ class Adapter(MutableSequence[Transform]):
 
         return f"Adapter([{result}])"
 
-    # list methods
-
     def append(self, value: Transform) -> "Adapter":
         """Append a transform to the list of transforms.
 
@@ -257,8 +255,6 @@ class Adapter(MutableSequence[Transform]):
 
     def __len__(self):
         return len(self.transforms)
-
-    # adapter methods
 
     add_transform = append
 

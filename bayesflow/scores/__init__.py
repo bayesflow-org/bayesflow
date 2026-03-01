@@ -3,6 +3,7 @@
 from .scoring_rule import ScoringRule
 from .parametric_distribution_score import ParametricDistributionScore
 from .normed_difference_score import NormedDifferenceScore
+from .cross_entropy_score import CrossEntropyScore
 from .mean_score import MeanScore
 from .median_score import MedianScore
 from .quantile_score import QuantileScore

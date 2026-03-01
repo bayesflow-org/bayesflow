@@ -9,12 +9,10 @@ from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
-    logging,
     filter_kwargs,
     split_arrays,
-    concatenate_valid_shapes,
 )
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
 from ..networks.standardization import Standardization
@@ -65,95 +63,6 @@ class ContinuousApproximator(Approximator):
         self.sampler = Sampler()
         self.standardizer = Standardization(standardize)
         self.condition_builder = ConditionBuilder()
-        self.standardize = standardize
-
-    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        if self.summary_network is not None and not self.summary_network.built:
-            self.summary_network.build(data_shapes["summary_variables"])
-
-        if self.summary_network is not None:
-            summary_outputs_shape = self.summary_network.compute_output_shape(data_shapes["summary_variables"])
-        else:
-            summary_outputs_shape = None
-
-        if not self.inference_network.built:
-            inference_conditions_shape = concatenate_valid_shapes(
-                [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
-            )
-            self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
-
-        if not self.standardizer.built:
-            self.standardizer.build(data_shapes)
-
-        self.built = True
-
-    @classmethod
-    def build_adapter(
-        cls,
-        inference_variables: Sequence[str],
-        inference_conditions: Sequence[str] = None,
-        summary_variables: Sequence[str] = None,
-        sample_weight: str = None,
-    ) -> Adapter:
-        """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator.
-
-        Parameters
-        ----------
-        inference_variables : Sequence of str
-            Names of the inference variables (to be modeled) in the data dict.
-        inference_conditions : Sequence of str, optional
-            Names of the inference conditions (to be used as direct conditions) in the data dict.
-        summary_variables : Sequence of str, optional
-            Names of the summary variables (to be passed to a summary network) in the data dict.
-        sample_weight : str, optional
-            Name of the sample weights
-        """
-
-        adapter = Adapter()
-        adapter.to_array()
-        adapter.convert_dtype("float64", "float32")
-        adapter.concatenate(inference_variables, into="inference_variables")
-
-        if inference_conditions is not None:
-            adapter.concatenate(inference_conditions, into="inference_conditions")
-
-        if summary_variables is not None:
-            adapter.as_set(summary_variables)
-            adapter.concatenate(summary_variables, into="summary_variables")
-
-        if sample_weight is not None:
-            adapter = adapter.rename(sample_weight, "sample_weight")
-
-        adapter.keep(["inference_variables", "inference_conditions", "summary_variables", "sample_weight"])
-
-        return adapter
-
-    def compile(
-        self,
-        *args,
-        inference_metrics: Sequence[keras.Metric] = None,
-        summary_metrics: Sequence[keras.Metric] = None,
-        **kwargs,
-    ):
-        if inference_metrics:
-            self.inference_network._metrics = inference_metrics
-
-        if summary_metrics:
-            if self.summary_network is None:
-                logging.warning("Ignoring summary metrics because there is no summary network.")
-            else:
-                self.summary_network._metrics = summary_metrics
-
-        return super().compile(*args, **kwargs)
-
-    def build_from_data(self, adapted_data: dict[str, any]):
-        self.build(keras.tree.map_structure(keras.ops.shape, adapted_data))
-
-    def compile_from_config(self, config):
-        self.compile(**deserialize(config))
-        if hasattr(self, "optimizer") and self.built:
-            # Create optimizer variables.
-            self.optimizer.build(self.trainable_variables)
 
     def compute_metrics(
         self,
@@ -235,34 +144,9 @@ class ContinuousApproximator(Approximator):
         simulator : Simulator, optional
             A simulator used to generate a dataset. If provided, `dataset` must be None.
         **kwargs
-            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
+            Additional keyword arguments passed to `keras.Model.fit()`, as described in:
 
-            batch_size : int or None, default='auto'
-                Number of samples per gradient update. Do not specify if `dataset` is provided as a
-                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
-            epochs : int, default=1
-                Number of epochs to train the model.
-            verbose : {"auto", 0, 1, 2}, default="auto"
-                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
-            callbacks : list of keras.callbacks.Callback, optional
-                List of callbacks to apply during training.
-            validation_split : float, optional
-                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
-                or tensors).
-            validation_data : tuple or dataset, optional
-                Data for validation, overriding `validation_split`.
-            shuffle : bool, default=True
-                Whether to shuffle the training data before each epoch (ignored for dataset generators).
-            initial_epoch : int, default=0
-                Epoch at which to start training (useful for resuming training).
-            steps_per_epoch : int or None, optional
-                Number of steps (batches) before declaring an epoch finished.
-            validation_steps : int or None, optional
-                Number of validation steps per validation epoch.
-            validation_batch_size : int or None, optional
-                Number of samples per validation batch (defaults to `batch_size`).
-            validation_freq : int, default=1
-                Specifies how many training epochs to run before performing validation.
+        https://github.com/keras-team/keras/blob/v3.13.2/keras/src/backend/tensorflow/trainer.py#L314
 
         Returns
         -------
@@ -276,27 +160,13 @@ class ContinuousApproximator(Approximator):
         """
         return super().fit(*args, **kwargs, adapter=self.adapter)
 
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
     def get_config(self):
         base_config = super().get_config()
         config = {
             "adapter": self.adapter,
             "inference_network": self.inference_network,
             "summary_network": self.summary_network,
-            "standardize": self.standardize,
-        }
-
-        return base_config | serialize(config)
-
-    def get_compile_config(self):
-        base_config = super().get_compile_config() or {}
-
-        config = {
-            "inference_metrics": self.inference_network._metrics,
-            "summary_metrics": self.summary_network._metrics if self.summary_network is not None else None,
+            "standardize": self.standardizer.standardize,
         }
 
         return base_config | serialize(config)
@@ -375,12 +245,17 @@ class ContinuousApproximator(Approximator):
             **filter_kwargs(kwargs, self.inference_network.sample),
         )
 
-        samples = self.standardizer.maybe_standardize(
-            samples, key="inference_variables", stage="inference", forward=False
+        # Unstandardize and inverse-adapt samples (tree-aware for nested dict outputs)
+        samples = keras.tree.map_structure(
+            lambda s: self.standardizer.maybe_standardize(
+                s, key="inference_variables", stage="inference", forward=False
+            ),
+            samples,
         )
-
-        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, {"inference_variables": samples})
-        samples = self.adapter(samples, inverse=True, strict=False)
+        samples = keras.tree.map_structure(
+            lambda s: self.adapter({"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False),
+            samples,
+        )
 
         if return_summaries and summary_outputs is not None:
             samples["summaries"] = summary_outputs
@@ -438,45 +313,10 @@ class ContinuousApproximator(Approximator):
             **filter_kwargs(kwargs, self.inference_network.log_prob),
         )
 
-        log_prob = keras.ops.convert_to_numpy(log_prob)
-
-        log_prob = log_prob + log_det_jac
+        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
+        log_prob = keras.tree.map_structure(lambda lp: lp + log_det_jac, log_prob)
 
         return log_prob
-
-    def summarize(self, conditions: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
-        """
-        Computes the learned summary statistics of given summary variables.
-
-        The `data` dictionary is preprocessed using the `adapter` and passed through the summary network.
-
-        Parameters
-        ----------
-        conditions : Mapping[str, np.ndarray]
-            Dictionary of simulated or real quantities as NumPy arrays.
-        **kwargs : dict
-            Additional keyword arguments for the adapter and the summary network.
-
-        Returns
-        -------
-        summaries : np.ndarray
-            The learned summary statistics.
-        """
-        adapted_data = self.adapter(conditions, strict=False)
-        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
-
-        summary_variables = self.standardizer.maybe_standardize(
-            adapted_data.get("summary_variables"), key="summary_variables", stage="inference"
-        )
-
-        summary_outputs, _ = self.condition_builder.resolve(
-            self.summary_network,
-            inference_conditions=None,
-            summary_variables=summary_variables,
-            stage="inference",
-            purpose="call",
-        )
-        return keras.ops.convert_to_numpy(summary_outputs)
 
     def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
         """

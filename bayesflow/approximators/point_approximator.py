@@ -1,7 +1,6 @@
 from collections.abc import Mapping
 
 import numpy as np
-from tqdm.auto import tqdm
 
 import keras
 
@@ -10,11 +9,7 @@ from bayesflow.utils import (
     logging,
     filter_kwargs,
     split_arrays,
-    slice_maybe_nested,
-    dim_maybe_nested,
     squeeze_inner_estimates_dict,
-    concatenate_valid,
-    tree_concatenate,
 )
 from bayesflow.utils.serialization import serializable
 
@@ -26,9 +21,23 @@ class PointApproximator(ContinuousApproximator):
     """
     A workflow for fast amortized point estimation of a conditional distribution.
 
-    The distribution is approximated by point estimators, parameterized by a feed-forward
-    :py:class:`~bayesflow.networks.PointInferenceNetwork`. Conditions can be compressed by an optional summary network
-    (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.
+    Inherits from :class:`ContinuousApproximator` and adapts the sample, log_prob, and estimate
+    interfaces for the nested output structure of :class:`~bayesflow.networks.PointInferenceNetwork`.
+
+    Parameters
+    ----------
+    adapter : bayesflow.adapters.Adapter
+        Adapter for data processing. You can use :py:meth:`build_adapter` to create it.
+    inference_network : InferenceNetwork
+        The inference network used for point estimation.
+    summary_network : SummaryNetwork, optional
+        The summary network used for data summarization (default is None).
+    standardize : str | Sequence[str] | None
+        The variables to standardize before passing to the networks. Can be either
+        "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].
+        (default is "inference_variables").
+    **kwargs : dict, optional
+        Additional arguments passed to the :py:class:`ContinuousApproximator` class.
     """
 
     def estimate(
@@ -39,9 +48,6 @@ class PointApproximator(ContinuousApproximator):
     ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
         """
         Estimates point summaries of inference variables based on specified conditions.
-
-        This method processes input conditions, computes estimates, applies necessary adapter transformations,
-        and optionally splits the resulting arrays along the last axis.
 
         Parameters
         ----------
@@ -62,31 +68,46 @@ class PointApproximator(ContinuousApproximator):
             2. Each second-level key is the name of a scoring rule.
             3. (If the scoring rule comprises multiple estimators, each third-level key is the name of an estimator.)
 
-            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array
-            of shape (num_datasets, point_estimate_size, variable_block_size).
+            Each estimator output is an array of shape (num_datasets, point_estimate_size, variable_block_size).
         """
-        # Adapt, optionally standardize and convert conditions to tensor.
-        conditions = self._prepare_data(conditions, **kwargs)
-        # Remove any superfluous keys, just retain actual conditions.
-        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
+        # Adapt conditions and convert to tensors
+        adapted_conditions = self.adapter(conditions, strict=False)
+        adapted_conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_conditions)
 
-        estimates = self._estimate(**conditions, **kwargs)
+        # Standardize individual components
+        inference_conditions = self.standardizer.maybe_standardize(
+            adapted_conditions.get("inference_conditions"), key="inference_conditions", stage="inference"
+        )
+        summary_variables = self.standardizer.maybe_standardize(
+            adapted_conditions.get("summary_variables"), key="summary_variables", stage="inference"
+        )
 
+        # Compute point estimates
+        estimates = self._estimate(
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            **kwargs,
+        )
+
+        # Unstandardize the network outputs
         if "inference_variables" in self.standardize:
             for score_key, score in self.inference_network.scores.items():
                 for head_key in estimates[score_key].keys():
                     transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
-                    estimates[score_key][head_key] = self.standardize_layers["inference_variables"](
-                        estimates[score_key][head_key], forward=False, transformation_type=transformation_type
+                    estimates[score_key][head_key] = self.standardizer.maybe_standardize(
+                        estimates[score_key][head_key],
+                        key="inference_variables",
+                        stage="inference",
+                        forward=False,
+                        transformation_type=transformation_type,
                     )
 
+        # Apply inverse adapter to each estimate
         estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
 
-        # Optionally split the arrays along the last axis.
         if split:
             estimates = split_arrays(estimates, axis=-1)
 
-        # Reorder the nested dictionary so that original variable names are at the top.
         estimates = self._reorder_estimates(estimates)
         estimates = self._squeeze_estimates(estimates)
 
@@ -100,26 +121,26 @@ class PointApproximator(ContinuousApproximator):
         split: bool = False,
         batch_size: int | None = None,
         **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
+    ) -> dict[str, np.ndarray | dict[str, np.ndarray]]:
         """
-        Draws samples from a parametric distribution based on point estimates for given input conditions.
+        Draws samples from a parametric distribution based on point estimates.
 
-        These samples will generally not correspond to samples from the fully Bayesian posterior, since
-        they will assume some parametric form (e.g., multivariate normal when using the MultivariateNormalScore).
+        Uses :meth:`ContinuousApproximator.sample` for condition resolution, sampling,
+        unstandardization, and inverse adapter, then squeezes the nested score-major
+        output structure.
 
         Parameters
         ----------
         num_samples : int
             The number of samples to generate.
         conditions : Mapping[str, np.ndarray]
-            A dictionary mapping variable names to arrays representing the conditions
-            for the sampling process.
+            A dictionary mapping variable names to arrays representing the conditions.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
             Currently not supported for :py:class:`PointApproximator`.
         batch_size : int or None, optional
-            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
-            sequentially. Can help with memory management for large sample sizes.
+            If provided, the conditions are split into batches of size `batch_size`,
+            for which samples are generated sequentially.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
@@ -127,124 +148,63 @@ class PointApproximator(ContinuousApproximator):
         -------
         samples : dict[str, np.ndarray or dict[str, np.ndarray]]
             Samples for all inference variables and all parametric scoring rules in a nested dictionary.
-
-            1. Each first-level key is the name of an inference variable.
-            2. (If there are multiple parametric scores, each second-level key is the name of such a score.)
-
-            Each output (i.e., dictionary value that is not itself a dictionary) is an array
-            of shape (num_datasets, num_samples, variable_block_size).
+            Shape: (num_datasets, num_samples, variable_block_size).
         """
         if split:
             raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
 
-        conditions = self._prepare_data(conditions, **kwargs)
-        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
-
-        num_conditions = dim_maybe_nested(conditions, axis=0) if len(conditions) > 0 else 1
-
-        # If no batching requested, pretend everything is one batch
-        if batch_size is None:
-            batch_size = num_conditions
-
-        samples = []
-        for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
-            if len(conditions) == 0:
-                batch_conditions = {}
-            else:
-                batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
-
-            batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
-            samples.append(batch_samples)
-
-        samples = tree_concatenate(samples, axis=0)
-
-        # Optionally unstandardize and back-transform samples via adapter
-        samples = self._post_process_samples(samples)
-
-        # Squeeze sample dictionary if there's only one key-value pair.
-        samples = self._squeeze_parametric_score_major_dict(samples)
-
-        return samples
-
-    def _post_process_samples(self, samples: Tensor | Mapping[str, np.ndarray], **kwargs) -> Mapping[str, np.ndarray]:
-        """Undo optional standardization and make dict of samples."""
-        if "inference_variables" in self.standardize:
-            for score_key in samples.keys():
-                samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
-
-        samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
-        return samples
-
-    def _sample(
-        self,
-        num_samples: int,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        **kwargs,
-    ) -> Tensor:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
-
-        if self.summary_network is not None:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-
-            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
-
-        if inference_conditions is not None:
-            batch_shape = (keras.ops.shape(inference_conditions)[0], num_samples)
-        else:
-            batch_shape = (num_samples,)
-
-        samples = self.inference_network.sample(
-            batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
+        # Delegate to parent for condition resolution, sampling, unstandardization, and inverse adapter
+        samples = super().sample(
+            num_samples=num_samples,
+            conditions=conditions,
+            split=False,
+            batch_size=batch_size,
+            **kwargs,
         )
 
-        return samples
+        return self._squeeze_parametric_score_major_dict(samples)
 
     def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray | dict[str, np.ndarray]:
         """
-        Computes the log-probability of given data under the parametric distribution(s) for given input conditions.
+        Computes the log-probability of given data under the parametric distribution(s).
 
         Parameters
         ----------
         data : dict[str, np.ndarray]
-            A dictionary mapping variable names to arrays representing the inference conditions and variables.
+            A dictionary mapping variable names to arrays representing the data.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
         Returns
         -------
         log_prob : np.ndarray or dict[str, np.ndarray]
-            Log-probabilities of the distribution
-            `p(inference_variables | inference_conditions, h(summary_conditions))` for all parametric scoring rules.
-
-            If only one parametric score is available, output is an array of log-probabilities.
-
-            Output is a dictionary if multiple parametric scores are available.
-            Then, each key is the name of a score and values are corresponding log-probabilities.
-
-            Log-probabilities have shape (num_datasets,).
+            Log-probabilities of the distribution for all parametric scoring rules.
+            If only one parametric score is available, returns an array.
+            Otherwise, returns a dictionary with score names as keys.
+            Shape: (num_datasets,)
         """
-        # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac
-        data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
+        log_prob = super().log_prob(data, **kwargs)
+        return self._squeeze_parametric_score_major_dict(log_prob)
 
-        # Pass data to networks and convert back to numpy array
-        log_prob = self._log_prob(**data, **kwargs)
-        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
+    def _estimate(
+        self,
+        inference_conditions: Tensor = None,
+        summary_variables: Tensor = None,
+        **kwargs,
+    ) -> dict[str, dict[str, Tensor]]:
+        """Compute point estimates from the network using resolved conditions."""
+        _, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            stage="inference",
+            purpose="call",
+        )
 
-        # Change of variables formula, respecting log_prob to be a dictionary
-        if log_det_jac is not None:
-            log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
-
-        log_prob = self._squeeze_parametric_score_major_dict(log_prob)
-
-        return log_prob
+        return self.inference_network(
+            conditions=resolved_conditions,
+            **filter_kwargs(kwargs, self.inference_network.call),
+        )
 
     def _apply_inverse_adapter_to_estimates(
         self, estimates: Mapping[str, Mapping[str, Tensor]], **kwargs
@@ -270,27 +230,11 @@ class PointApproximator(ContinuousApproximator):
                 processed[score_key][head_key] = adapted
         return processed
 
-    def _apply_inverse_adapter_to_samples(
-        self, samples: Mapping[str, Tensor], **kwargs
-    ) -> dict[str, dict[str, np.ndarray]]:
-        """Applies the inverse adapter to a dictionary of samples."""
-        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
-        processed = {}
-        for score_key, score_value in samples.items():
-            processed[score_key] = self.adapter(
-                {"inference_variables": score_value},
-                inverse=True,
-                strict=False,
-                **kwargs,
-            )
-        return processed
-
     @staticmethod
     def _reorder_estimates(
         estimates: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]],
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         """Reorders the nested dictionary so that the inference variable names become the top-level keys."""
-        # Grab the variable names from one sample inner dictionary.
         sample_inner = next(iter(next(iter(estimates.values())).values()))
         variable_names = sample_inner.keys()
         reordered = {}
@@ -317,26 +261,5 @@ class PointApproximator(ContinuousApproximator):
     def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray | dict[str, np.ndarray]:
         """Squeezes the dictionary to just the value if there is only one key-value pair."""
         if len(samples) == 1:
-            # Extract and return the only item's value
             return next(iter(samples.values()))
         return samples
-
-    def _estimate(
-        self,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        **kwargs,
-    ) -> dict[str, dict[str, Tensor]]:
-        if (self.summary_network is None) != (summary_variables is None):
-            raise ValueError("Summary variables and summary network must be used together.")
-
-        if self.summary_network is not None:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-            inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
-
-        return self.inference_network(
-            conditions=inference_conditions,
-            **filter_kwargs(kwargs, self.inference_network.call),
-        )

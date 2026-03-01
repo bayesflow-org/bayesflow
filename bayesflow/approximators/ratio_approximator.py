@@ -5,11 +5,12 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.adapters import Adapter
-from bayesflow.utils import expand_tile, concatenate_valid_shapes
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils import expand_tile
+from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
 from ..networks.standardization import Standardization
+from ._runtime import ConditionBuilder
 
 
 @serializable("bayesflow.approximators")
@@ -20,20 +21,17 @@ class RatioApproximator(Approximator):
 
     The estimation target is the ratio of likelihood and evidence: p(x | theta) / p(x).
 
-    Important: this class does not use `summary_variables` as a key. If a summary
-    network is present, all conditions need to be concatenated into `inference_conditions`
-    and the summary network will be applied to them.
-
     Parameters
     ----------
     adapter : bayesflow.adapters.Adapter
         Adapter for data processing. You can use :py:meth:`build_adapter`
         to create it.
-    classifier_network : keras.Layer
-        A classification backbone to perform contrastive learning. Last logits layer
-        is automatically added on top of the classifier network.
+    inference_network : keras.Layer
+        A network backbone to perform contrastive learning. Last logits layer
+        is automatically added on top of the inference network.
     summary_network : SummaryNetwork, optional
-        The summary network used for data summarization (default is None).
+        The summary network used for data summarization of summary_variables (default is None).
+        When present, summary outputs are automatically concatenated with inference_conditions.
     gamma: float, optional
         Odds or of any pair being drawn dependently to completely independently.
         Default is 1.
@@ -42,7 +40,7 @@ class RatioApproximator(Approximator):
         Default is 5.
     standardize : str | Sequence[str] | None
         The variables to standardize before passing to the networks. Can be either
-        "all" or any subset of ["inference_variables", "inference_conditions"].
+        "all" or any subset of ["inference_variables", "inference_conditions", "summary_variables"].
         (default is "inference_variables").
     **kwargs : dict, optional
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
@@ -51,7 +49,7 @@ class RatioApproximator(Approximator):
     def __init__(
         self,
         adapter: Adapter,
-        classifier_network: keras.Layer,
+        inference_network: keras.Layer,
         summary_network: keras.Layer = None,
         gamma: float = 1.0,
         K: int = 5,
@@ -61,8 +59,9 @@ class RatioApproximator(Approximator):
         super().__init__(**kwargs)
 
         self.adapter = adapter
-        self.classifier_network = classifier_network
+        self.inference_network = inference_network
         self.summary_network = summary_network
+        self.condition_builder = ConditionBuilder()
 
         if gamma <= 0:
             raise ValueError(f"Gamma must be positive, got {gamma}.")
@@ -78,42 +77,40 @@ class RatioApproximator(Approximator):
         self.seed_generator = keras.random.SeedGenerator()
 
         self.standardizer = Standardization(standardize)
-        self.standardize = standardize
 
-    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
-        if self.summary_network is not None:
-            if not self.summary_network.built:
-                self.summary_network.build(data_shapes["inference_conditions"])
-            inference_conditions_shape = self.summary_network.compute_output_shape(data_shapes["inference_conditions"])
-        else:
-            inference_conditions_shape = data_shapes["inference_conditions"]
-
-        classifier_inputs_shape = concatenate_valid_shapes(
-            [data_shapes["inference_variables"], inference_conditions_shape], axis=-1
-        )
-
-        if not self.classifier_network.built:
-            self.classifier_network.build(classifier_inputs_shape)
-        classifier_outputs_shape = self.classifier_network.compute_output_shape(classifier_inputs_shape)
-
+    def _build_post_processing_layers(self, inference_outputs_shape: tuple) -> None:
+        """Build the logits projector for ratio estimation."""
         if not self.projector.built:
-            self.projector.build(classifier_outputs_shape)
-
-        if not self.standardizer.built:
-            self.standardizer.build(data_shapes)
-
-        self.built = True
+            self.projector.build(inference_outputs_shape)
 
     def compute_metrics(
-        self, inference_variables: Tensor, inference_conditions: Tensor, stage: str = "training"
+        self,
+        inference_variables: Tensor,
+        inference_conditions: Tensor = None,
+        summary_variables: Tensor = None,
+        stage: str = "training",
     ) -> dict[str, Tensor]:
-        """Computes loss following https://arxiv.org/pdf/2210.06170."""
+        """
+        Computes loss following https://arxiv.org/pdf/2210.06170.
 
+        Handles both summary network outputs (if present) and inference conditions,
+        combining them via ConditionBuilder.resolve().
+        """
         inference_variables = self.standardizer.maybe_standardize(
             inference_variables, key="inference_variables", stage=stage
         )
         inference_conditions = self.standardizer.maybe_standardize(
             inference_conditions, key="inference_conditions", stage=stage
+        )
+        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
+
+        # Use ConditionBuilder to resolve summary outputs + inference conditions
+        summary_metrics, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions,
+            summary_variables,
+            stage=stage,
+            purpose="metrics",
         )
 
         batch_size = keras.ops.shape(inference_variables)[0]
@@ -130,13 +127,11 @@ class RatioApproximator(Approximator):
             [inference_variables[:, None, :], bootstrap_inference_variables], axis=1
         )
 
-        # Get (batch_size, K, dim) conditions
-        if self.summary_network is not None:
-            inference_conditions = self.summary_network(inference_conditions, training=stage == "training")
-        inference_conditions = expand_tile(inference_conditions, n=self.K, axis=1)
+        # Get (batch_size, K, dim) conditions (already resolved from condition builder)
+        conditions = expand_tile(resolved_conditions, n=self.K, axis=1)
 
-        marginal_logits = self.logits(bootstrap_inference_variables[:, 1:, :], inference_conditions, stage=stage)
-        joint_logits = self.logits(bootstrap_inference_variables[:, :-1, :], inference_conditions, stage=stage)
+        marginal_logits = self.logits(bootstrap_inference_variables[:, 1:, :], conditions, stage=stage)
+        joint_logits = self.logits(bootstrap_inference_variables[:, :-1, :], conditions, stage=stage)
 
         # Eq. 7 (https://arxiv.org/abs/2210.06170) - we use a trick for numerical stability:
         # log(K + gamma * sum_{i=1}^{K} exp(h_i)) = log(exp(log K) + sum_{i=1}^{K} exp(h_i + log gamma))
@@ -156,9 +151,20 @@ class RatioApproximator(Approximator):
         marginal_loss = log_denominator_marginal - log_numerator_marginal
 
         loss = marginal_weight * marginal_loss + joint_weight * joint_loss
-        loss = keras.ops.mean(loss)
+        inference_loss = keras.ops.mean(loss)
 
-        return {"loss": loss}
+        # Handle summary network metrics if present
+        if "loss" in summary_metrics:
+            total_loss = inference_loss + summary_metrics["loss"]
+        else:
+            total_loss = inference_loss
+
+        # Format metrics with prefixes
+        inference_metrics = {"loss": total_loss}
+        summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
+
+        metrics = inference_metrics | summary_metrics
+        return metrics
 
     def fit(self, *args, **kwargs):
         """
@@ -173,34 +179,9 @@ class RatioApproximator(Approximator):
         simulator : Simulator, optional
             A simulator used to generate a dataset. If provided, `dataset` must be None.
         **kwargs
-            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):
+            Additional keyword arguments passed to `keras.Model.fit()`, as described in:
 
-            batch_size : int or None, default='auto'
-                Number of samples per gradient update. Do not specify if `dataset` is provided as a
-                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.
-            epochs : int, default=1
-                Number of epochs to train the model.
-            verbose : {"auto", 0, 1, 2}, default="auto"
-                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
-            callbacks : list of keras.callbacks.Callback, optional
-                List of callbacks to apply during training.
-            validation_split : float, optional
-                Fraction of training data to use for validation (only supported if `dataset` consists of NumPy arrays
-                or tensors).
-            validation_data : tuple or dataset, optional
-                Data for validation, overriding `validation_split`.
-            shuffle : bool, default=True
-                Whether to shuffle the training data before each epoch (ignored for dataset generators).
-            initial_epoch : int, default=0
-                Epoch at which to start training (useful for resuming training).
-            steps_per_epoch : int or None, optional
-                Number of steps (batches) before declaring an epoch finished.
-            validation_steps : int or None, optional
-                Number of validation steps per validation epoch.
-            validation_batch_size : int or None, optional
-                Number of samples per validation batch (defaults to `batch_size`).
-            validation_freq : int, default=1
-                Specifies how many training epochs to run before performing validation.
+        https://github.com/keras-team/keras/blob/v3.13.2/keras/src/backend/tensorflow/trainer.py#L314
 
         Returns
         -------
@@ -214,11 +195,10 @@ class RatioApproximator(Approximator):
         """
         return super().fit(*args, **kwargs, adapter=self.adapter)
 
-    def log_ratio(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+    def log_ratio(self, data: Mapping[str, np.ndarray], **kwargs) -> Tensor:
         """
         Computes the log likelihood-to-evidence ratio.
         The `data` dictionary is preprocessed using the `adapter`.
-        Log-ratios are returned as NumPy arrays.
 
         Parameters
         ----------
@@ -229,11 +209,14 @@ class RatioApproximator(Approximator):
 
         Returns
         -------
-        np.ndarray
+        log_ratio: Tensor
+            The estimated log ratios.
         """
+
         adapted = self.adapter(data, strict=False, **kwargs)
         inference_variables = adapted["inference_variables"]
         inference_conditions = adapted.get("inference_conditions")
+        summary_variables = adapted.get("summary_variables")
 
         inference_variables = self.standardizer.maybe_standardize(
             inference_variables, key="inference_variables", stage="inference"
@@ -241,55 +224,41 @@ class RatioApproximator(Approximator):
         inference_conditions = self.standardizer.maybe_standardize(
             inference_conditions, key="inference_conditions", stage="inference"
         )
+        summary_variables = self.standardizer.maybe_standardize(
+            summary_variables, key="summary_variables", stage="inference"
+        )
 
-        if self.summary_network is not None:
-            inference_conditions = self.summary_network(inference_conditions, training=False)
+        _, resolved_conditions = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions,
+            summary_variables,
+            stage="inference",
+            purpose="call",
+        )
 
-        log_ratio = self.logits(inference_variables, inference_conditions, stage="inference")
+        log_ratio = self.logits(inference_variables, resolved_conditions, stage="inference")
         return log_ratio
 
     def logits(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str) -> Tensor:
         """Computes logits for K batches of variables-conditions pairs."""
         classifier_inputs = keras.ops.concatenate([inference_variables, inference_conditions], axis=-1)
-        logits = self.classifier_network(classifier_inputs, training=stage == "training")
+        logits = self.inference_network(classifier_inputs, training=stage == "training")
         logits = self.projector(logits)
         logits = keras.ops.squeeze(logits, axis=-1)
         return logits
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
         config = {
             "adapter": self.adapter,
             "summary_network": self.summary_network,
-            "classifier_network": self.classifier_network,
+            "inference_network": self.inference_network,
             "gamma": self.gamma,
             "K": self.K,
-            "standardize": self.standardize,
+            "standardize": self.standardizer.standardize,
         }
 
         return base_config | serialize(config)
-
-    @classmethod
-    def build_adapter(
-        cls, inference_variables: str | Sequence[str], inference_conditions: str | Sequence[str]
-    ) -> Adapter:
-        """Produce a default adapter that converts dtypes and renames variables."""
-
-        if isinstance(inference_variables, str):
-            inference_variables = [inference_variables]
-        if isinstance(inference_conditions, str):
-            inference_conditions = [inference_conditions]
-
-        adapter = Adapter()
-        adapter.to_array()
-        adapter.convert_dtype("float64", "float32")
-        adapter.concatenate(inference_variables, into="inference_variables")
-        adapter.concatenate(inference_conditions, into="inference_conditions")
-        return adapter
 
     def _batch_size_from_data(self, data: Mapping[str, Tensor]) -> int:
         return keras.ops.shape(data["inference_variables"])[0]

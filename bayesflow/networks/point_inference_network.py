@@ -132,10 +132,8 @@ class PointInferenceNetwork(keras.Layer):
                 [[1.0]], dtype=keras.ops.dtype(xz) if xz is not None else "float32"
             )
 
-        # pass conditions to the shared subnet
         output = self.subnet(conditions, training=training)
 
-        # pass along to calculate individual head outputs
         output = {
             score_key: {head_key: head(output, training=training) for head_key, head in self.heads[score_key].items()}
             for score_key in self.heads.keys()

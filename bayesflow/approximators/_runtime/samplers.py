@@ -47,8 +47,11 @@ class Sampler:
 
         return conditions
 
-    def unflatten_samples(self, samples: Tensor, num_samples: int):
-        return keras.ops.reshape(samples, (-1, num_samples, *keras.ops.shape(samples)[1:]))
+    def unflatten_samples(self, samples, num_samples: int):
+        return keras.tree.map_structure(
+            lambda s: keras.ops.reshape(s, (-1, num_samples, *keras.ops.shape(s)[1:])),
+            samples,
+        )
 
     def sample(
         self,

@@ -70,16 +70,13 @@ class PointApproximator(ContinuousApproximator):
 
             Each estimator output is an array of shape (num_datasets, point_estimate_size, variable_block_size).
         """
-        # Adapt, standardize, and resolve conditions
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions)
 
-        # Build inference kwargs: merge mask + user kwargs, filter for target method
-        inference_kwargs = dict(**kwargs)
-        if "inference_mask" in adapted:
-            inference_kwargs["attention_mask"] = adapted["inference_mask"]
+        inference_kwargs = kwargs | (
+            {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
+        )
         inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.call)
 
-        # Compute point estimates
         estimates = self.inference_network(
             conditions=resolved_conditions,
             **inference_kwargs,

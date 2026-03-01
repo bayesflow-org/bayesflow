@@ -133,17 +133,20 @@ class ModelComparisonApproximator(Approximator):
             indicate its source.
         """
 
-        # Build summary kwargs from mask
-        summary_kwargs = {}
-        if summary_mask is not None:
-            summary_kwargs["attention_mask"] = summary_mask
+        summary_kwargs = {"attention_mask": summary_mask} if summary_mask is not None else {}
+        inference_kwargs = {"attention_mask": inference_mask} if inference_mask is not None else {}
+        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.compute_metrics)
 
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
             inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
         )
 
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=resolved_conditions, sample_weight=sample_weight, stage=stage
+            inference_variables,
+            conditions=resolved_conditions,
+            sample_weight=sample_weight,
+            stage=stage,
+            **inference_kwargs,
         )
 
         if "loss" in summary_metrics:
@@ -259,10 +262,7 @@ class ModelComparisonApproximator(Approximator):
 
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions, **kwargs)
 
-        # Build inference kwargs: merge mask, filter for target method
-        inference_kwargs = {}
-        if "inference_mask" in adapted:
-            inference_kwargs["attention_mask"] = adapted["inference_mask"]
+        inference_kwargs = {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
         inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.call)
 
         output = self.inference_network(xz=None, conditions=resolved_conditions, **inference_kwargs)

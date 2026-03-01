@@ -111,16 +111,19 @@ class ContinuousApproximator(Approximator):
             inference_variables, key="inference_variables", stage=stage
         )
 
-        # Build summary kwargs from mask
-        summary_kwargs = {}
-        if summary_mask is not None:
-            summary_kwargs["attention_mask"] = summary_mask
+        summary_kwargs = {"attention_mask": summary_mask} if summary_mask is not None else {}
+        inference_kwargs = {"attention_mask": inference_mask} if inference_mask is not None else {}
+        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.compute_metrics)
 
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
             inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
         )
         inference_metrics = self.inference_network.compute_metrics(
-            inference_variables, conditions=resolved_conditions, sample_weight=sample_weight, stage=stage
+            inference_variables,
+            conditions=resolved_conditions,
+            sample_weight=sample_weight,
+            stage=stage,
+            **inference_kwargs,
         )
 
         if "loss" in summary_metrics:
@@ -223,10 +226,9 @@ class ContinuousApproximator(Approximator):
 
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions)
 
-        # Build inference kwargs: merge mask + user kwargs, filter for target method
-        inference_kwargs = dict(**kwargs)
-        if "inference_mask" in adapted:
-            inference_kwargs["attention_mask"] = adapted["inference_mask"]
+        inference_kwargs = kwargs | (
+            {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
+        )
         inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.sample)
 
         samples = self.sampler.sample(
@@ -279,32 +281,28 @@ class ContinuousApproximator(Approximator):
         # NOTE: We cannot use _prepare_conditions here because we need
         # log_det_jac from the adapter call (log_det_jac=True), which
         # _prepare_conditions does not support.
-        adapted_data, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
-        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
+        adapted, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
+        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
-        # Thread summary_mask → attention_mask for the summary network
-        summary_kwargs = {}
-        if "summary_mask" in adapted_data:
-            summary_kwargs["attention_mask"] = adapted_data["summary_mask"]
+        summary_kwargs = {"attention_mask": adapted["summary_mask"]} if "summary_mask" in adapted else {}
 
         resolved_conditions, _ = self._standardize_and_resolve(
-            adapted_data.get("inference_conditions"),
-            adapted_data.get("summary_variables"),
+            adapted.get("inference_conditions"),
+            adapted.get("summary_variables"),
             stage="inference",
             **summary_kwargs,
         )
 
         inference_variables, log_det_jac_std = self.standardizer.maybe_standardize(
-            adapted_data.get("inference_variables"), key="inference_variables", stage="inference", log_det_jac=True
+            adapted.get("inference_variables"), key="inference_variables", stage="inference", log_det_jac=True
         )
 
         log_det_jac = log_det_jac.get("inference_variables", 0.0)
         log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
 
-        # Build inference kwargs: merge mask + user kwargs, filter for target method
-        inference_kwargs = dict(**kwargs)
-        if "inference_mask" in adapted_data:
-            inference_kwargs["attention_mask"] = adapted_data["inference_mask"]
+        inference_kwargs = kwargs | (
+            {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
+        )
         inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.log_prob)
 
         log_prob = self.inference_network.log_prob(

@@ -120,10 +120,7 @@ class Approximator(BackendApproximator):
         adapted = self.adapter(data, strict=False, **adapter_kwargs)
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
-        # Thread summary_mask-> attention_mask for the summary network
-        summary_kwargs = {}
-        if "summary_mask" in adapted:
-            summary_kwargs["attention_mask"] = adapted["summary_mask"]
+        summary_kwargs = {"attention_mask": adapted["summary_mask"]} if "summary_mask" in adapted else {}
 
         resolved_conditions, summary_outputs = self._standardize_and_resolve(
             adapted.get("inference_conditions"),

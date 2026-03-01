@@ -105,7 +105,6 @@ class RatioApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         summary_mask: Tensor = None,
-        inference_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -118,10 +117,7 @@ class RatioApproximator(Approximator):
             inference_variables, key="inference_variables", stage=stage
         )
 
-        # Build summary kwargs from mask
-        summary_kwargs = {}
-        if summary_mask is not None:
-            summary_kwargs["attention_mask"] = summary_mask
+        summary_kwargs = {"attention_mask": summary_mask} if summary_mask is not None else {}
 
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
             inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs

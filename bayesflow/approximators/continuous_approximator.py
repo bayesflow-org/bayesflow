@@ -15,9 +15,9 @@ from bayesflow.utils import (
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
-from ..networks.standardization import Standardization
+from .helpers import Sampler, ConditionBuilder
 
-from ._runtime import Sampler, ConditionBuilder
+from ..networks.standardization import Standardization
 
 
 @serializable("bayesflow.approximators")
@@ -108,13 +108,9 @@ class ContinuousApproximator(Approximator):
         inference_variables = self.standardizer.maybe_standardize(
             inference_variables, key="inference_variables", stage=stage
         )
-        inference_conditions = self.standardizer.maybe_standardize(
-            inference_conditions, key="inference_conditions", stage=stage
-        )
-        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
 
-        summary_metrics, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network, inference_conditions, summary_variables, stage=stage, purpose="metrics"
+        resolved_conditions, summary_metrics = self._standardize_and_resolve(
+            inference_conditions, summary_variables, stage=stage, purpose="metrics"
         )
         inference_metrics = self.inference_network.compute_metrics(
             inference_variables, conditions=resolved_conditions, sample_weight=sample_weight, stage=stage
@@ -218,23 +214,7 @@ class ContinuousApproximator(Approximator):
             Dictionary containing generated samples with the same keys as `conditions`.
         """
 
-        adapted_conditions = self.adapter(conditions, strict=False)
-        adapted_conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_conditions)
-
-        inference_conditions = self.standardizer.maybe_standardize(
-            adapted_conditions.get("inference_conditions"), key="inference_conditions", stage="inference"
-        )
-        summary_variables = self.standardizer.maybe_standardize(
-            adapted_conditions.get("summary_variables"), key="summary_variables", stage="inference"
-        )
-
-        summary_outputs, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network,
-            inference_conditions=inference_conditions,
-            summary_variables=summary_variables,
-            stage="inference",
-            purpose="call",
-        )
+        resolved_conditions, _, summary_outputs = self._prepare_conditions(conditions)
 
         samples = self.sampler.sample(
             inference_network=self.inference_network,
@@ -283,29 +263,24 @@ class ContinuousApproximator(Approximator):
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
         """
 
+        # NOTE: We cannot use _prepare_conditions here because we need
+        # log_det_jac from the adapter call (log_det_jac=True), which
+        # _prepare_conditions does not support.
         adapted_data, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
         adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
 
-        inference_conditions = self.standardizer.maybe_standardize(
-            adapted_data.get("inference_conditions"), key="inference_conditions", stage="inference"
+        resolved_conditions, _ = self._standardize_and_resolve(
+            adapted_data.get("inference_conditions"),
+            adapted_data.get("summary_variables"),
+            stage="inference",
         )
-        summary_variables = self.standardizer.maybe_standardize(
-            adapted_data.get("summary_variables"), key="summary_variables", stage="inference"
-        )
+
         inference_variables, log_det_jac_std = self.standardizer.maybe_standardize(
             adapted_data.get("inference_variables"), key="inference_variables", stage="inference", log_det_jac=True
         )
 
         log_det_jac = log_det_jac.get("inference_variables", 0.0)
         log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
-
-        _, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network,
-            inference_conditions=inference_conditions,
-            summary_variables=summary_variables,
-            stage="inference",
-            purpose="call",
-        )
 
         log_prob = self.inference_network.log_prob(
             inference_variables,
@@ -317,10 +292,3 @@ class ContinuousApproximator(Approximator):
         log_prob = keras.tree.map_structure(lambda lp: lp + log_det_jac, log_prob)
 
         return log_prob
-
-    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
-        """
-        Fetches the current batch size from an input dictionary. Can only be used during training when
-        inference variables as present.
-        """
-        return keras.ops.shape(data["inference_variables"])[0]

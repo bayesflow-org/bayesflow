@@ -70,23 +70,13 @@ class PointApproximator(ContinuousApproximator):
 
             Each estimator output is an array of shape (num_datasets, point_estimate_size, variable_block_size).
         """
-        # Adapt conditions and convert to tensors
-        adapted_conditions = self.adapter(conditions, strict=False)
-        adapted_conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_conditions)
-
-        # Standardize individual components
-        inference_conditions = self.standardizer.maybe_standardize(
-            adapted_conditions.get("inference_conditions"), key="inference_conditions", stage="inference"
-        )
-        summary_variables = self.standardizer.maybe_standardize(
-            adapted_conditions.get("summary_variables"), key="summary_variables", stage="inference"
-        )
+        # Adapt, standardize, and resolve conditions
+        resolved_conditions = self._prepare_conditions(conditions)[0]
 
         # Compute point estimates
-        estimates = self._estimate(
-            inference_conditions=inference_conditions,
-            summary_variables=summary_variables,
-            **kwargs,
+        estimates = self.inference_network(
+            conditions=resolved_conditions,
+            **filter_kwargs(kwargs, self.inference_network.call),
         )
 
         # Unstandardize the network outputs
@@ -185,26 +175,6 @@ class PointApproximator(ContinuousApproximator):
         """
         log_prob = super().log_prob(data, **kwargs)
         return self._squeeze_parametric_score_major_dict(log_prob)
-
-    def _estimate(
-        self,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        **kwargs,
-    ) -> dict[str, dict[str, Tensor]]:
-        """Compute point estimates from the network using resolved conditions."""
-        _, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network,
-            inference_conditions=inference_conditions,
-            summary_variables=summary_variables,
-            stage="inference",
-            purpose="call",
-        )
-
-        return self.inference_network(
-            conditions=resolved_conditions,
-            **filter_kwargs(kwargs, self.inference_network.call),
-        )
 
     def _apply_inverse_adapter_to_estimates(
         self, estimates: Mapping[str, Mapping[str, Tensor]], **kwargs

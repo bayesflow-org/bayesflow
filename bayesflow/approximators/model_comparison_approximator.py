@@ -15,9 +15,9 @@ from bayesflow.utils import filter_kwargs, logging
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
-from ..networks.standardization import Standardization
+from .helpers import ConditionBuilder
 
-from ._runtime import ConditionBuilder
+from ..networks.standardization import Standardization
 
 
 @serializable("bayesflow.approximators")
@@ -93,7 +93,6 @@ class ModelComparisonApproximator(Approximator):
 
     def compute_metrics(
         self,
-        *,
         inference_variables: Tensor,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
@@ -132,13 +131,8 @@ class ModelComparisonApproximator(Approximator):
             indicate its source.
         """
 
-        inference_conditions = self.standardizer.maybe_standardize(
-            inference_conditions, key="inference_conditions", stage=stage
-        )
-        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
-
-        summary_metrics, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network, inference_conditions, summary_variables, stage=stage, purpose="metrics"
+        resolved_conditions, summary_metrics = self._standardize_and_resolve(
+            inference_conditions, summary_variables, stage=stage, purpose="metrics"
         )
 
         inference_metrics = self.inference_network.compute_metrics(
@@ -256,51 +250,12 @@ class ModelComparisonApproximator(Approximator):
             Predicted posterior model probabilities given `conditions`.
         """
 
-        # Apply adapter transforms to raw simulated / real quantities
-        conditions = self.adapter(conditions, strict=False, **kwargs)
-
-        # Ensure only keys relevant for prediction are present in the conditions dictionary
-        conditions = {k: v for k, v in conditions.items() if k in ["inference_conditions", "summary_variables"]}
-        conditions = keras.tree.map_structure(keras.ops.convert_to_tensor, conditions)
-
-        # Optionally standardize conditions
-        conditions["inference_conditions"] = self.standardizer.maybe_standardize(
-            conditions.get("inference_conditions"), key="inference_conditions", stage="inference"
-        )
-        conditions["summary_variables"] = self.standardizer.maybe_standardize(
-            conditions.get("summary_variables"), key="summary_variables", stage="inference"
-        )
-
-        output = self._predict(
-            inference_conditions=conditions.get("inference_conditions"),
-            summary_variables=conditions.get("summary_variables"),
-            **kwargs,
-        )
-
-        if probs:
-            output = keras.ops.softmax(output)
-
-        return keras.ops.convert_to_numpy(output)
-
-    def _predict(self, inference_conditions: Tensor = None, summary_variables: Tensor = None) -> Tensor:
-        """Helper method to obtain logits from the classifier network."""
-        if (self.summary_network is None) != (summary_variables is None):
-            raise ValueError("Summary variables and summary network must be used together.")
-
-        _, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network,
-            inference_conditions=inference_conditions,
-            summary_variables=summary_variables,
-            stage="inference",
-            purpose="call",
-        )
+        resolved_conditions = self._prepare_conditions(conditions, **kwargs)[0]
 
         output = self.inference_network(xz=None, conditions=resolved_conditions)
-        return output["cross_entropy"]["logits"]
+        logits = output["cross_entropy"]["logits"]
 
-    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
-        """
-        Fetches the current batch size from an input dictionary. Can only be used during training when
-        inference variables (one-hot model indices) are present.
-        """
-        return keras.ops.shape(data["inference_variables"])[0]
+        if probs:
+            logits = keras.ops.softmax(logits)
+
+        return keras.ops.convert_to_numpy(logits)

@@ -9,8 +9,9 @@ from bayesflow.utils import expand_tile, concatenate_valid_shapes
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
+from .helpers import ConditionBuilder
+
 from ..networks.standardization import Standardization
-from ._runtime import ConditionBuilder
 
 
 @serializable("bayesflow.approximators")
@@ -114,18 +115,9 @@ class RatioApproximator(Approximator):
         inference_variables = self.standardizer.maybe_standardize(
             inference_variables, key="inference_variables", stage=stage
         )
-        inference_conditions = self.standardizer.maybe_standardize(
-            inference_conditions, key="inference_conditions", stage=stage
-        )
-        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
 
-        # Use ConditionBuilder to resolve summary outputs + inference conditions
-        summary_metrics, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network,
-            inference_conditions,
-            summary_variables,
-            stage=stage,
-            purpose="metrics",
+        resolved_conditions, summary_metrics = self._standardize_and_resolve(
+            inference_conditions, summary_variables, stage=stage, purpose="metrics"
         )
 
         batch_size = keras.ops.shape(inference_variables)[0]
@@ -228,27 +220,10 @@ class RatioApproximator(Approximator):
             The estimated log ratios.
         """
 
-        adapted = self.adapter(data, strict=False, **kwargs)
-        inference_variables = adapted["inference_variables"]
-        inference_conditions = adapted.get("inference_conditions")
-        summary_variables = adapted.get("summary_variables")
+        resolved_conditions, adapted, _ = self._prepare_conditions(data, **kwargs)
 
         inference_variables = self.standardizer.maybe_standardize(
-            inference_variables, key="inference_variables", stage="inference"
-        )
-        inference_conditions = self.standardizer.maybe_standardize(
-            inference_conditions, key="inference_conditions", stage="inference"
-        )
-        summary_variables = self.standardizer.maybe_standardize(
-            summary_variables, key="summary_variables", stage="inference"
-        )
-
-        _, resolved_conditions = self.condition_builder.resolve(
-            self.summary_network,
-            inference_conditions,
-            summary_variables,
-            stage="inference",
-            purpose="call",
+            adapted.get("inference_variables"), key="inference_variables", stage="inference"
         )
 
         log_ratio = self.logits(inference_variables, resolved_conditions, stage="inference")
@@ -274,9 +249,6 @@ class RatioApproximator(Approximator):
         }
 
         return base_config | serialize(config)
-
-    def _batch_size_from_data(self, data: Mapping[str, Tensor]) -> int:
-        return keras.ops.shape(data["inference_variables"])[0]
 
     def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
         """Samples K batches of inference variables with replacement. Ensures

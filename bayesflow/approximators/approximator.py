@@ -9,6 +9,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
 from bayesflow.simulators import Simulator
+from bayesflow.types import Tensor
 from bayesflow.utils import find_batch_size, filter_kwargs, concatenate_valid_shapes, logging
 from bayesflow.utils.serialization import deserialize, serialize
 
@@ -16,7 +17,7 @@ from .backend_approximators import BackendApproximator
 
 
 class Approximator(BackendApproximator):
-    def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
+    def build(self, data_shapes: Mapping[str, tuple[int] | Mapping[str, Mapping]]):
         """
         Template method for building all network components.
 
@@ -44,21 +45,14 @@ class Approximator(BackendApproximator):
 
         self.built = True
 
-    def _get_summary_network_input_key(self) -> str:
-        """
-        Hook method: override to specify which data key feeds the summary network.
-        Default is "summary_variables". Ratio approximator overrides to "inference_conditions".
-        """
-        return "summary_variables"
-
-    def _build_standardization_layers(self, data_shapes: dict[str, tuple[int] | dict]) -> None:
+    def _build_standardization_layers(self, data_shapes: Mapping[str, tuple[int] | Mapping]):
         """
         Helper method: builds the standardizer if present (default behavior for most approximators).
         """
         if hasattr(self, "standardizer") and not self.standardizer.built:
             self.standardizer.build(data_shapes)
 
-    def _build_summary_network(self, data_shapes: dict[str, tuple[int] | dict]) -> tuple[int] | dict | None:
+    def _build_summary_network(self, data_shapes: Mapping[str, tuple[int] | Mapping]) -> tuple[int] | dict | None:
         """
         Helper method: builds the summary network if present.
         Subclasses can call this to build their summary network.
@@ -71,13 +65,12 @@ class Approximator(BackendApproximator):
         if not hasattr(self, "summary_network") or self.summary_network is None:
             return None
 
-        summary_input_key = self._get_summary_network_input_key()
         if not self.summary_network.built:
-            self.summary_network.build(data_shapes[summary_input_key])
+            self.summary_network.build(data_shapes["summary_variables"])
 
-        return self.summary_network.compute_output_shape(data_shapes[summary_input_key])
+        return self.summary_network.compute_output_shape(data_shapes["summary_variables"])
 
-    def _build_inference_network(self, data_shapes: dict[str, tuple[int] | dict]):
+    def _build_inference_network(self, data_shapes: Mapping[str, tuple[int] | Mapping]):
         """
         Hook method: subclasses implement to build their inference network(s).
         Subclasses should call _build_summary_network() internally if needed.
@@ -90,12 +83,94 @@ class Approximator(BackendApproximator):
             )
             self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
 
-    def _build_post_processing_layers(self, input_shape: tuple) -> None:
+    def _prepare_conditions(
+        self,
+        data: Mapping[str, np.ndarray],
+        *,
+        stage: str = "inference",
+        **adapter_kwargs,
+    ) -> tuple[dict[str, Tensor], Tensor | None, Tensor | None]:
+        """Adapt raw user data, tensorize, standardize conditions, and resolve.
+
+        Standard inference-time pipeline shared across all approximators:
+
+        1. Apply the adapter (``strict=False``)
+        2. Convert all values to tensors
+        3. Standardize ``inference_conditions`` and ``summary_variables``
+        4. Resolve conditions via the summary network (if present)
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            Raw user data dictionary.
+        stage : str, optional
+            Stage for standardization (default is ``"inference"``).
+        **adapter_kwargs
+            Extra keyword arguments forwarded to the adapter.
+
+        Returns
+        -------
+        resolved_conditions : Tensor or None
+            Standardized inference conditions concatenated with summary outputs.
+        adapted : dict[str, Tensor]
+            The full adapted and tensorized dictionary.
+        summary_outputs : Tensor or None
+            Raw summary network outputs, or ``None`` if no summary network.
         """
-        Hook method: subclasses override to build task-specific output layers (e.g., projectors, heads).
-        Default implementation does nothing (for approximators without additional output layers).
+        adapted = self.adapter(data, strict=False, **adapter_kwargs)
+        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
+        resolved_conditions, summary_outputs = self._standardize_and_resolve(
+            adapted.get("inference_conditions"),
+            adapted.get("summary_variables"),
+            stage=stage,
+        )
+        return resolved_conditions, adapted, summary_outputs
+
+    def _standardize_and_resolve(
+        self,
+        inference_conditions: Tensor | None,
+        summary_variables: Tensor | None,
+        *,
+        stage: str,
+        purpose: str = "call",
+    ):
+        """Standardize condition tensors and resolve via the summary network.
+
+        Shared by both inference-time methods (via :meth:`_prepare_conditions`)
+        and training-time ``compute_metrics`` implementations.
+
+        Parameters
+        ----------
+        inference_conditions : Tensor or None
+            Inference conditions (pre-adapted tensors).
+        summary_variables : Tensor or None
+            Summary variables (pre-adapted tensors).
+        stage : str
+            Current stage (``"training"``, ``"validation"``, or ``"inference"``).
+        purpose : str, optional
+            Passed to :meth:`ConditionBuilder.resolve` — ``"call"`` for forward
+            passes, ``"metrics"`` for training/validation (default is ``"call"``).
+
+        Returns
+        -------
+        resolved_conditions : Tensor or None
+            Standardized inference conditions concatenated with summary outputs.
+        summary_output : Tensor, dict, or None
+            For ``purpose="call"``: summary network output tensor or ``None``.
+            For ``purpose="metrics"``: dict of summary metrics.
         """
-        pass
+        inference_conditions = self.standardizer.maybe_standardize(
+            inference_conditions, key="inference_conditions", stage=stage
+        )
+        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
+        resolved_conditions, summary_output = self.condition_builder.resolve(
+            self.summary_network,
+            inference_conditions,
+            summary_variables,
+            stage=stage,
+            purpose=purpose,
+        )
+        return resolved_conditions, summary_output
 
     @classmethod
     def build_adapter(
@@ -296,7 +371,7 @@ class Approximator(BackendApproximator):
 
         return super().fit(dataset=dataset, **kwargs)
 
-    def build_from_data(self, adapted_data: dict[str, Any]) -> None:
+    def build_from_data(self, adapted_data: Mapping[str, Any]) -> None:
         """Build the approximator from adapted data by extracting shapes."""
         self.build(keras.tree.map_structure(keras.ops.shape, adapted_data))
 
@@ -358,27 +433,14 @@ class Approximator(BackendApproximator):
         if not hasattr(self, "adapter"):
             raise ValueError("Adapter is not available.")
 
-        adapted_data = self.adapter(conditions, strict=False)
-        adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
-
-        summary_variables = adapted_data.get("summary_variables")
-
-        if hasattr(self, "standardizer"):
-            summary_variables = self.standardizer.maybe_standardize(
-                summary_variables, key="summary_variables", stage="inference"
-            )
-
-        if hasattr(self, "condition_builder"):
-            summary_outputs, _ = self.condition_builder.resolve(
-                self.summary_network,
-                inference_conditions=None,
-                summary_variables=summary_variables,
-                stage="inference",
-                purpose="call",
-            )
-        else:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
+        _, _, summary_outputs = self._prepare_conditions(conditions)
 
         return keras.ops.convert_to_numpy(summary_outputs)
+
+    def _batch_size_from_data(self, data: Mapping[str, any]) -> int:
+        """Return the batch size from a training data dict.
+
+        Relies on the ``"inference_variables"`` key, which is present in
+        every approximator's training data.
+        """
+        return keras.ops.shape(data["inference_variables"])[0]

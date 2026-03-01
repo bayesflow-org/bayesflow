@@ -12,6 +12,21 @@ from bayesflow.types import Tensor
 
 @serializable("bayesflow.approximators")
 class Sampler:
+    """Handles batched, repeated sampling from an inference network.
+
+    Orchestrates the full sampling pipeline:
+
+    1. Repeat and flatten conditions so each condition is paired with
+       ``num_samples`` independent draws.
+    2. Infer or validate the structural ``sample_shape``.
+    3. Call ``inference_network.sample``.
+    4. Unflatten the resulting samples back to
+       ``(batch_size, num_samples, ...)``.
+
+    Supports optional mini-batching over conditions (controlled by
+    ``batch_size``) to manage memory for large sample counts.
+    """
+
     def infer_sample_shape(
         self,
         conditions: Tensor | None,

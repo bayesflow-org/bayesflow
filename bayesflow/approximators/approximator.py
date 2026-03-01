@@ -40,9 +40,7 @@ class Approximator(BackendApproximator):
         if summary_outputs_shape is not None:
             enriched_shapes["_summary_outputs"] = summary_outputs_shape
 
-        # Call hooks with enriched shape information
-        inference_outputs_shape = self._build_inference_network(enriched_shapes)
-        self._build_post_processing_layers(inference_outputs_shape)
+        self._build_inference_network(enriched_shapes)
 
         self.built = True
 
@@ -79,23 +77,18 @@ class Approximator(BackendApproximator):
 
         return self.summary_network.compute_output_shape(data_shapes[summary_input_key])
 
-    def _build_inference_network(self, data_shapes: dict[str, tuple[int] | dict]) -> None:
+    def _build_inference_network(self, data_shapes: dict[str, tuple[int] | dict]):
         """
         Hook method: subclasses implement to build their inference network(s).
         Subclasses should call _build_summary_network() internally if needed.
         """
 
-        summary_outputs_shape = data_shapes.get("_summary_outputs")
-        inference_conditions_shape = concatenate_valid_shapes(
-            [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
-        )
-
         if not self.inference_network.built:
+            summary_outputs_shape = data_shapes.get("_summary_outputs")
+            inference_conditions_shape = concatenate_valid_shapes(
+                [data_shapes.get("inference_conditions"), summary_outputs_shape], axis=-1
+            )
             self.inference_network.build(data_shapes["inference_variables"], inference_conditions_shape)
-
-        return self.inference_network.compute_output_shape(
-            data_shapes["inference_variables"], inference_conditions_shape
-        )
 
     def _build_post_processing_layers(self, input_shape: tuple) -> None:
         """

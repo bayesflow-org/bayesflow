@@ -2,7 +2,7 @@ import keras
 
 from bayesflow.metrics.functional import maximum_mean_discrepancy
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, find_distribution
+from bayesflow.utils import layer_kwargs, find_distribution, filter_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import deserialize
 
@@ -35,7 +35,7 @@ class SummaryNetwork(keras.Layer):
         raise NotImplementedError
 
     def compute_metrics(self, x: Tensor, stage: str = "training", **kwargs) -> dict[str, Tensor]:
-        outputs = self(x, training=stage == "training")
+        outputs = self(x, training=stage == "training", **filter_kwargs(kwargs, self.call))
 
         metrics = {"outputs": outputs}
 

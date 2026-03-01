@@ -97,6 +97,8 @@ class ModelComparisonApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         sample_weight: Tensor = None,
+        summary_mask: Tensor = None,
+        inference_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -131,8 +133,13 @@ class ModelComparisonApproximator(Approximator):
             indicate its source.
         """
 
+        # Build summary kwargs from mask
+        summary_kwargs = {}
+        if summary_mask is not None:
+            summary_kwargs["attention_mask"] = summary_mask
+
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
-            inference_conditions, summary_variables, stage=stage, purpose="metrics"
+            inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
         )
 
         inference_metrics = self.inference_network.compute_metrics(
@@ -250,9 +257,15 @@ class ModelComparisonApproximator(Approximator):
             Predicted posterior model probabilities given `conditions`.
         """
 
-        resolved_conditions = self._prepare_conditions(conditions, **kwargs)[0]
+        resolved_conditions, adapted, _ = self._prepare_conditions(conditions, **kwargs)
 
-        output = self.inference_network(xz=None, conditions=resolved_conditions)
+        # Build inference kwargs: merge mask, filter for target method
+        inference_kwargs = {}
+        if "inference_mask" in adapted:
+            inference_kwargs["attention_mask"] = adapted["inference_mask"]
+        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.call)
+
+        output = self.inference_network(xz=None, conditions=resolved_conditions, **inference_kwargs)
         logits = output["cross_entropy"]["logits"]
 
         if probs:

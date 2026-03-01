@@ -27,7 +27,7 @@ class ConditionBuilder:
         summary_variables: Tensor | None,
         stage: str,
         purpose: Literal["call", "metrics"],
-        **kwargs,
+        **summary_kwargs,
     ):
         """Resolve inference conditions, optionally incorporating summary network outputs.
 
@@ -52,7 +52,10 @@ class ConditionBuilder:
             ``"call"``  — forward pass: returns raw summary outputs.
             ``"metrics"`` — training/validation: returns summary metric dict.
         **kwargs
-            Extra keyword arguments forwarded to ``summary_network.call``.
+            Extra keyword arguments forwarded to ``summary_network.call``
+            (when ``purpose="call"``) or ``summary_network.compute_metrics``
+            (when ``purpose="metrics"``).  Filtered via :func:`filter_kwargs`
+            so only accepted parameters are passed (e.g. ``attention_mask``).
 
         Returns
         -------
@@ -80,14 +83,18 @@ class ConditionBuilder:
             raise ValueError("Summary variables are required when a summary network is present.")
 
         if purpose == "call":
-            outputs = summary_network(summary_variables, **filter_kwargs(kwargs, summary_network.call))
+            outputs = summary_network(summary_variables, **filter_kwargs(summary_kwargs, summary_network.call))
             conditions = concatenate_valid((inference_conditions, outputs), axis=-1)
             return conditions, outputs
+
         elif purpose == "metrics":
-            metrics = summary_network.compute_metrics(summary_variables, stage=stage)
+            metrics = summary_network.compute_metrics(
+                summary_variables, stage=stage, **filter_kwargs(summary_kwargs, summary_network.compute_metrics)
+            )
             outputs = metrics.pop("outputs")
             conditions = concatenate_valid((inference_conditions, outputs), axis=-1)
             return conditions, metrics
+
         else:
             raise ValueError(f"Unknown purpose={purpose!r}.")
 

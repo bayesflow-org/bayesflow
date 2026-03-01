@@ -70,6 +70,8 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         sample_weight: Tensor = None,
+        summary_mask: Tensor = None,
+        inference_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -109,8 +111,13 @@ class ContinuousApproximator(Approximator):
             inference_variables, key="inference_variables", stage=stage
         )
 
+        # Build summary kwargs from mask
+        summary_kwargs = {}
+        if summary_mask is not None:
+            summary_kwargs["attention_mask"] = summary_mask
+
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
-            inference_conditions, summary_variables, stage=stage, purpose="metrics"
+            inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
         )
         inference_metrics = self.inference_network.compute_metrics(
             inference_variables, conditions=resolved_conditions, sample_weight=sample_weight, stage=stage
@@ -214,7 +221,13 @@ class ContinuousApproximator(Approximator):
             Dictionary containing generated samples with the same keys as `conditions`.
         """
 
-        resolved_conditions, _, summary_outputs = self._prepare_conditions(conditions)
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions)
+
+        # Build inference kwargs: merge mask + user kwargs, filter for target method
+        inference_kwargs = dict(**kwargs)
+        if "inference_mask" in adapted:
+            inference_kwargs["attention_mask"] = adapted["inference_mask"]
+        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.sample)
 
         samples = self.sampler.sample(
             inference_network=self.inference_network,
@@ -222,7 +235,7 @@ class ContinuousApproximator(Approximator):
             conditions=resolved_conditions,
             batch_size=batch_size,
             sample_shape=sample_shape,
-            **filter_kwargs(kwargs, self.inference_network.sample),
+            **inference_kwargs,
         )
 
         # Unstandardize and inverse-adapt samples (tree-aware for nested dict outputs)
@@ -269,10 +282,16 @@ class ContinuousApproximator(Approximator):
         adapted_data, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
         adapted_data = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_data)
 
+        # Thread summary_mask → attention_mask for the summary network
+        summary_kwargs = {}
+        if "summary_mask" in adapted_data:
+            summary_kwargs["attention_mask"] = adapted_data["summary_mask"]
+
         resolved_conditions, _ = self._standardize_and_resolve(
             adapted_data.get("inference_conditions"),
             adapted_data.get("summary_variables"),
             stage="inference",
+            **summary_kwargs,
         )
 
         inference_variables, log_det_jac_std = self.standardizer.maybe_standardize(
@@ -282,10 +301,16 @@ class ContinuousApproximator(Approximator):
         log_det_jac = log_det_jac.get("inference_variables", 0.0)
         log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
 
+        # Build inference kwargs: merge mask + user kwargs, filter for target method
+        inference_kwargs = dict(**kwargs)
+        if "inference_mask" in adapted_data:
+            inference_kwargs["attention_mask"] = adapted_data["inference_mask"]
+        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.log_prob)
+
         log_prob = self.inference_network.log_prob(
             inference_variables,
             conditions=resolved_conditions,
-            **filter_kwargs(kwargs, self.inference_network.log_prob),
+            **inference_kwargs,
         )
 
         log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)

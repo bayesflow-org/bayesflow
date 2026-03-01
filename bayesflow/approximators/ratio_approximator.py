@@ -104,6 +104,8 @@ class RatioApproximator(Approximator):
         inference_variables: Tensor,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        summary_mask: Tensor = None,
+        inference_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -116,8 +118,13 @@ class RatioApproximator(Approximator):
             inference_variables, key="inference_variables", stage=stage
         )
 
+        # Build summary kwargs from mask
+        summary_kwargs = {}
+        if summary_mask is not None:
+            summary_kwargs["attention_mask"] = summary_mask
+
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
-            inference_conditions, summary_variables, stage=stage, purpose="metrics"
+            inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
         )
 
         batch_size = keras.ops.shape(inference_variables)[0]
@@ -226,6 +233,9 @@ class RatioApproximator(Approximator):
             adapted.get("inference_variables"), key="inference_variables", stage="inference"
         )
 
+        # NOTE: inference_mask is not threaded here because logits() concatenates
+        # inference_variables with conditions and passes them through a plain MLP,
+        # which does not use attention.
         log_ratio = self.logits(inference_variables, resolved_conditions, stage="inference")
         return log_ratio
 

@@ -119,10 +119,17 @@ class Approximator(BackendApproximator):
         """
         adapted = self.adapter(data, strict=False, **adapter_kwargs)
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
+
+        # Thread summary_mask-> attention_mask for the summary network
+        summary_kwargs = {}
+        if "summary_mask" in adapted:
+            summary_kwargs["attention_mask"] = adapted["summary_mask"]
+
         resolved_conditions, summary_outputs = self._standardize_and_resolve(
             adapted.get("inference_conditions"),
             adapted.get("summary_variables"),
             stage=stage,
+            **summary_kwargs,
         )
         return resolved_conditions, adapted, summary_outputs
 
@@ -133,6 +140,7 @@ class Approximator(BackendApproximator):
         *,
         stage: str,
         purpose: str = "call",
+        **summary_kwargs,
     ):
         """Standardize condition tensors and resolve via the summary network.
 
@@ -150,6 +158,11 @@ class Approximator(BackendApproximator):
         purpose : str, optional
             Passed to :meth:`ConditionBuilder.resolve` — ``"call"`` for forward
             passes, ``"metrics"`` for training/validation (default is ``"call"``).
+        **summary_kwargs
+            Extra keyword arguments forwarded to
+            :meth:`ConditionBuilder.resolve` and ultimately to the summary
+            network's ``call`` / ``compute_metrics`` method (e.g.
+            ``attention_mask``).
 
         Returns
         -------
@@ -169,6 +182,7 @@ class Approximator(BackendApproximator):
             summary_variables,
             stage=stage,
             purpose=purpose,
+            **summary_kwargs,
         )
         return resolved_conditions, summary_output
 
@@ -179,6 +193,8 @@ class Approximator(BackendApproximator):
         inference_conditions: str | Sequence[str] = None,
         summary_variables: str | Sequence[str] = None,
         sample_weight: str = None,
+        summary_mask: str = None,
+        inference_mask: str = None,
     ) -> Adapter:
         """Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.
 
@@ -197,6 +213,14 @@ class Approximator(BackendApproximator):
             Names of the summary variables in the data dict.
         sample_weight : str, optional
             Name of the sample weight variable.
+        summary_mask : str, optional
+            Name of the attention mask for the summary network.
+            Forwarded as ``attention_mask`` to the summary network's
+            ``call`` and ``compute_metrics`` methods.
+        inference_mask : str, optional
+            Name of the attention mask for the inference network.
+            Forwarded as ``attention_mask`` to the inference network's
+            ``call``, ``sample``, and ``log_prob`` methods.
         """
 
         if isinstance(inference_variables, str):
@@ -221,7 +245,17 @@ class Approximator(BackendApproximator):
         if sample_weight is not None:
             adapter.rename(sample_weight, "sample_weight")
 
-        adapter.keep(["inference_variables", "inference_conditions", "summary_variables", "sample_weight"])
+        keep = ["inference_variables", "inference_conditions", "summary_variables", "sample_weight"]
+
+        if summary_mask is not None:
+            adapter.rename(summary_mask, "summary_mask")
+            keep.append("summary_mask")
+
+        if inference_mask is not None:
+            adapter.rename(inference_mask, "inference_mask")
+            keep.append("inference_mask")
+
+        adapter.keep(keep)
 
         return adapter
 

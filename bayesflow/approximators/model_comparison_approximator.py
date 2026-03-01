@@ -46,8 +46,8 @@ class ModelComparisonApproximator(Approximator):
         The summary network used for data summarization (default is None).
         The input of the summary network is ``summary_variables``.
     standardize : str | Sequence[str] | None
-        The variables to standardize before passing to the networks. Can be either
-        "all" or any subset of ["inference_conditions", "summary_variables"].
+        The variables to standardize before passing to the networks. Can be any subset
+        of ["inference_conditions", "summary_variables"].
         (default is None, since model indices are one-hot encoded and should not be standardized).
     """
 

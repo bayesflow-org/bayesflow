@@ -164,32 +164,43 @@ class PointInferenceNetwork(keras.Layer):
     @allow_batch_size
     def sample(self, batch_shape: Shape, conditions: Tensor = None) -> dict[str, Tensor]:
         """
+        Draw one sample per parameter set from each parametric scoring rule.
+
+        For conditional sampling, each condition produces its own parameter set.
+        For unconditional sampling, a single parameter set is broadcast to ``batch_shape``.
+
         Parameters
         ----------
-        batch_shape : tuple,
-            Expected dimensions depend on `conditions`
-            - conditional sampling: (batch_size, num_samples) if `conditions` is a tensor
-              of shape (batch_size, num_samples)
-            - unconditional sampling: (num_samples,) if `conditions` is None
+        batch_shape : tuple
+            The desired leading dimensions of the output.
+            - conditional: ``(num_conditions,)`` — one sample per condition.
+            - unconditional: ``(num_samples,)`` — single parameter set broadcast.
         conditions : Tensor or None, default None
-            Optional inference conditions. If `conditions` is not given, the method will return unconditional samples.
+            Optional inference conditions. If not given, unconditional samples are returned.
 
         Returns
         -------
         samples : dict[str, Tensor]
-            Samples for every parametric scoring rule. Dict values have shape (batch_size, num_samples, num_variables)
-            or (num_samples, num_variables) for conditional or unconditional sampling respectively.
+            Samples for every parametric scoring rule.
         """
-        if conditions is None:  # unconditional estimation uses a fixed input vector
-            conditions = keras.ops.ones(batch_shape, dtype="float32").reshape(1, -1, 1)
+        if conditions is None:
+            conditions = keras.ops.convert_to_tensor([[1.0]], dtype="float32")
 
-        # conditions are duplicated along axis 1 num_sample times
         output = self.subnet(conditions)
         samples = {}
 
         for score_key, score in self.scores.items():
             if isinstance(score, ParametricDistributionScore):
                 parameters = {head_key: head(output) for head_key, head in self.heads[score_key].items()}
+
+                # Unconditional: broadcast the single parameter set to batch_shape
+                if keras.ops.shape(output)[0] == 1 and batch_shape[0] > 1:
+                    num_samples = batch_shape[0]
+                    parameters = {
+                        k: keras.ops.broadcast_to(v, (num_samples, *keras.ops.shape(v)[1:]))
+                        for k, v in parameters.items()
+                    }
+
                 samples[score_key] = score.sample(batch_shape, **parameters)
 
         return samples

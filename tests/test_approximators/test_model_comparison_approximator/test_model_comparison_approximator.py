@@ -22,10 +22,9 @@ def test_build_adapter():
     from bayesflow.approximators import ModelComparisonApproximator
 
     _ = ModelComparisonApproximator.build_adapter(
-        num_models=2,
         inference_conditions=["foo", "bar"],
         summary_variables=["observables"],
-        model_index_name=["indices"],
+        inference_variables=["indices"],
     )
 
 
@@ -37,8 +36,8 @@ def test_build_dataset(simulator, adapter):
         simulator=simulator,
         memory_budget="20 KiB",
         num_batches=2,
-        num_models=2,
         inference_conditions="foo",
+        inference_variables="indices",
         summary_variables=["x1", "x2"],
     )
     assert isinstance(dataset, OnlineDataset)

@@ -60,7 +60,7 @@ def summary_network():
 def classifier_network():
     from bayesflow.networks import MLP
 
-    return MLP(widths=[32, 32])
+    return MLP(widths=(8, 8))
 
 
 @pytest.fixture

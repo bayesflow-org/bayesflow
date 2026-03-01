@@ -12,7 +12,7 @@ def test_build(approximator, train_dataset):
     approximator.build(data_shapes)
 
     assert approximator.built is True
-    assert approximator.classifier_network.built is True
+    assert approximator.inference_network.built is True
     if approximator.summary_network is not None:
         assert approximator.summary_network.built is True
 

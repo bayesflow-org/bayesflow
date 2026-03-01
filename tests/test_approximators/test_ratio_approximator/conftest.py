@@ -33,9 +33,9 @@ def adapter():
 
     return (
         Adapter()
+        .convert_dtype("float64", "float32")
         .rename("x", "inference_conditions")
         .rename("mu", "inference_variables")
-        .convert_dtype("float64", "float32")
     )
 
 
@@ -51,7 +51,7 @@ def approximator(adapter, classifier_network, standardize):
     from bayesflow.approximators import RatioApproximator
 
     return RatioApproximator(
-        classifier_network=classifier_network,
+        inference_network=classifier_network,
         adapter=adapter,
         standardize=standardize,
     )

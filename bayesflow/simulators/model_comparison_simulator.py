@@ -154,7 +154,7 @@ class ModelComparisonSimulator(Simulator):
             data = self.simulators[model_index].sample(batch_shape, **(kwargs | data))
             model_indices = npu.one_hot(np.full(batch_shape, model_index, dtype="int32"), num_models)
 
-        return data | {"inference_variables": model_indices}
+        return data | {"model_indices": model_indices}
 
     def _handle_key_conflicts(self, sims, batch_sizes):
         batch_sizes = [b for b in batch_sizes if b > 0]

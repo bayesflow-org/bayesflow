@@ -4,15 +4,12 @@ from bayesflow.types import Tensor
 from bayesflow.utils import check_lengths_same
 from bayesflow.utils.serialization import serializable
 
-from ..summary_network import SummaryNetwork
-
-from .sab import SetAttentionBlock
-from .isab import InducedSetAttentionBlock
-from .pma import PoolingByMultiHeadAttention
+from .transformer import Transformer
+from .attention import SetAttention, InducedSetAttention, PoolingByMultiHeadAttention
 
 
 @serializable("bayesflow.networks")
-class SetTransformer(SummaryNetwork):
+class SetTransformer(Transformer):
     """(SN) Implements the set transformer architecture from [1] which ultimately represents
     a learnable permutation-invariant function. Designed to naturally model interactions in
     the input set, which may be hard to capture with the simpler ``DeepSet`` architecture.
@@ -105,12 +102,10 @@ class SetTransformer(SummaryNetwork):
             )
 
             if num_inducing_points is None:
-                block = SetAttentionBlock(**(global_attention_settings | layer_attention_settings))
+                block = SetAttention(**(global_attention_settings | layer_attention_settings))
             else:
                 isab_settings = dict(num_inducing_points=num_inducing_points)
-                block = InducedSetAttentionBlock(
-                    **(global_attention_settings | layer_attention_settings | isab_settings)
-                )
+                block = InducedSetAttention(**(global_attention_settings | layer_attention_settings | isab_settings))
 
             self.attention_blocks.add(block)
 
@@ -128,26 +123,29 @@ class SetTransformer(SummaryNetwork):
 
         self.summary_dim = summary_dim
 
-    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
-        """Compresses the input sequence into a summary vector of size `summary_dim`.
+    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
+        """Compresses the input sequence into a summary vector of size `summary_dim`. Note, that
+        this network should not use causal mask as it assumes no order in the `x` sequence.
 
         Parameters
         ----------
-        input_set  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
+        x               : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
-        training   : boolean, optional (default - False)
+        training        : boolean, optional (default - False)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
-        **kwargs   : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
+        attention_mask  : a boolean mask of shape `(B, T, T)`, that prevents
+            attention to certain positions. The boolean mask specifies which
+            query elements can attend to which key elements, 1 indicates
+            attention and 0 indicates no attention. Broadcasting can happen for
+            the missing batch dimensions and the head dimension.
 
         Returns
         -------
         out : Tensor
-            Output of shape (batch_size, set_size, output_dim)
+            Output of shape (batch_size, summary_dim)
         """
-        summary = self.attention_blocks(input_set, training=training)
-        summary = self.pooling_by_attention(summary, training=training, **kwargs)
+        summary = self.attention_blocks(x, training=training, attention_mask=attention_mask)
+        summary = self.pooling_by_attention(summary, training=training)
         summary = self.output_projector(summary)
         return summary

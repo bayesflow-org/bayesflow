@@ -258,7 +258,7 @@ class ContinuousApproximator(Approximator):
         )
 
         if return_summaries and summary_outputs is not None:
-            samples["summaries"] = summary_outputs
+            samples["_summaries"] = summary_outputs
 
         if split:
             samples = split_arrays(samples, axis=-1)

@@ -7,12 +7,13 @@ from bayesflow.utils import layer_kwargs, concatenate_valid
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.utils import check_lengths_same
 
-from .blocks.transformer import TransformerBlock2D
 from .blocks.norms import SimpleNorm
 from .blocks.residual import ResidualBlock2D
-from .blocks.upsample import UpSample2D
-from .blocks.downsample import DownSample2D
 from .blocks.attention import SelfAttention2D
+from .blocks.downsample import DownSample2D
+from .blocks.transformer import TransformerBlock2D
+from .blocks.upsample import UpSample2D
+
 from .embeddings.dense_fourier import DenseFourier
 
 
@@ -41,12 +42,13 @@ class UViT(keras.Layer):
         widths: Sequence[int] = (64, 128, 256),
         res_blocks: Sequence[int] | int = 2,
         transformer_blocks: int = 3,
-        *,
         transformer_dropout: float = 0.2,
         transformer_width: int | None = 1024,
         num_heads: int = 4,
         time_emb_dim: int = 32,
         time_emb: keras.Layer | None = None,
+        time_emb_include_identity: bool = True,
+        time_emb_use_residual_mlp: bool = True,
         use_film: bool = True,
         activation: str = "swish",
         kernel_initializer: str | keras.initializers.Initializer = "he_normal",
@@ -80,6 +82,11 @@ class UViT(keras.Layer):
             Dimensionality of the time embedding. If 1, time is used directly.
         time_emb : keras.layers.Layer or None, optional
             Custom global time embedding layer. If None, uses `DenseFourier` when `time_emb_dim > 1`.
+        time_emb_include_identity : bool, optional
+            Whether the time embedding includes the original time scalar concatenated to the Fourier features.
+            Default is True.
+        time_emb_use_residual_mlp : bool, optional
+            Whether the time embedding uses a residual MLP instead of a simple MLP. Default is True.
         use_film : bool, optional
             Whether embedding injection uses FiLM (scale/shift) or additive conditioning.
         activation : str, optional
@@ -102,73 +109,62 @@ class UViT(keras.Layer):
         up_conv_first : bool, optional
             If True, applies the convolution before upsampling in the upsampling block. Default is True.
         **kwargs
-            Additional keyword arguments (e.g., `time_emb_include_identity`, `time_emb_use_residual_mlp`).
-
-        Notes
-        -----
-        - Expected inputs in `call()` are a tuple ``(x, t, cond)``.
-        - `x` is an NHWC tensor of shape ``(B, H, W, Cx)`` and defines the output channel dimension.
-        - `cond` is expected to be broadcast-compatible for channel-wise concatenation with `x` (typically
-          ``(B, H, W, Cc)``).
-        - Downsampling is applied after every convolutional stage (including the last) to reach the transformer
-          bottleneck resolution; the decoder upsamples symmetrically.
-        - The model pads bottom/right before each downsampling step if H/W are odd, and crops after the corresponding
-          upsampling step so the final spatial dimensions match the input.
-        - Decoder residual blocks use skip fusion when a skip tensor is provided (e.g., simple-diffusion-style
-          additive fusion via `skip_fuse_case="add_sqrt2"` in `ResidualBlock2D`).
+            Additional keyword arguments.
         """
         super().__init__(**layer_kwargs(kwargs))
 
         self.widths = widths
         self.res_blocks = (res_blocks,) * len(self.widths) if isinstance(res_blocks, int) else res_blocks
         self.attn_stage = (False,) * len(self.widths) if attn_stage is None else attn_stage
-        self.dropout = (float(dropout),) * len(self.widths) if isinstance(dropout, float) else dropout
-        check_lengths_same(self.res_blocks, self.widths, self.attn_stage, self.dropout)
+        self.dropout = (dropout,) * len(self.widths) if isinstance(dropout, float) else dropout
 
-        self.transformer_blocks = int(transformer_blocks)
-        self.transformer_dropout = float(transformer_dropout)
-        self.transformer_width = int(4 * self.widths[-1]) if transformer_width is None else int(transformer_width)
-        self.time_emb_dim = int(time_emb_dim)
-        self.use_film = bool(use_film)
-        self.activation = str(activation)
+        self.transformer_blocks = transformer_blocks
+        self.transformer_dropout = transformer_dropout
+        self.transformer_width = 4 * self.widths[-1] if transformer_width is None else transformer_width
+        self.num_heads = num_heads
+
+        self.time_emb_dim = time_emb_dim
+        self.time_emb_include_identity = time_emb_include_identity
+        self.time_emb_use_residual_mlp = time_emb_use_residual_mlp
+        self.use_film = use_film
+
+        self.activation = activation
         self.kernel_initializer = kernel_initializer
-        self.groups = int(groups)
-        self.norm = str(norm)
-        self.num_heads = int(num_heads)
+        self.groups = groups
+        self.norm = norm
+
         self.down_mode = down_mode
         self.up_kernel_size = up_kernel_size
-        self.up_conv_first = bool(up_conv_first)
+        self.up_conv_first = up_conv_first
 
-        # --- Time embedding ---
+        check_lengths_same(self.res_blocks, self.widths, self.attn_stage, self.dropout)
+
         if time_emb is None:
             if self.time_emb_dim == 1:
                 self.time_emb = keras.layers.Identity()
             else:
                 self.time_emb = DenseFourier(
                     emb_dim=self.time_emb_dim,
-                    include_identity=kwargs.get("time_emb_include_identity", True),
-                    use_residual_mlp=kwargs.get("time_emb_use_residual_mlp", True),
+                    include_identity=self.time_emb_include_identity,
+                    use_residual_mlp=self.time_emb_use_residual_mlp,
                     kernel_initializer=self.kernel_initializer,
-                    name="time_emb",
                 )
         else:
             self.time_emb = time_emb
 
-        # --- input projection ---
-        self.proj_in = keras.layers.Conv2D(
+        self.input_projector = keras.layers.Conv2D(
             filters=self.widths[0],
             kernel_size=3,
             padding="same",
             kernel_initializer=self.kernel_initializer,
-            name="proj_in",
         )
 
-        # --- down path ---
-        self.down_stages: list[list[keras.Layer]] = []
-        self.downsamples: list[keras.Layer] = []
-        self.paddings: list[keras.Layer] = []
+        self.down_stage_names = []
+        self.downsamples = []
+        self.paddings = []
+
         for si, ch in enumerate(self.widths):
-            blocks: list[keras.Layer] = []
+            blocks = []
             for bi in range(self.res_blocks[si]):
                 blocks.append(
                     ResidualBlock2D(
@@ -180,7 +176,6 @@ class UViT(keras.Layer):
                         kernel_initializer=self.kernel_initializer,
                         use_film=self.use_film,
                         skip_fuse_case=None,
-                        name=f"down_s{si}_b{bi}",
                     )
                 )
                 if self.attn_stage[si]:
@@ -190,22 +185,21 @@ class UViT(keras.Layer):
                             groups=self.groups,
                             residual="norm",
                             kernel_initializer=self.kernel_initializer,
-                            name=f"down_s{si}_b{bi}_attn",
                         )
                     )
 
-            self.down_stages.append(blocks)
+            stage_name = f"down_stage_{si}"
+            setattr(self, stage_name, blocks)
+            self.down_stage_names.append(stage_name)
             self.downsamples.append(
                 DownSample2D(
                     width=self.widths[si + 1] if si < len(self.widths) - 1 else self.transformer_width,
                     mode=self.down_mode,
-                    name=f"down_s{si}_ds",
                 )
             )
 
-        # --- bottleneck ---
         self.pos_emb = None
-        self.trans_blocks: list[keras.Layer] = []
+        self.trans_blocks = []
         for i in range(self.transformer_blocks):
             self.trans_blocks.append(
                 TransformerBlock2D(
@@ -216,15 +210,13 @@ class UViT(keras.Layer):
                     mlp_dropout=self.transformer_dropout,
                     mlp_use_film=self.use_film,
                     kernel_initializer=self.kernel_initializer,
-                    name=f"mid_trans_{i}",
                 )
             )
 
-        # --- up path ---
-        self.upsamples: list[keras.Layer] = []
-        self.up_stages: list[list[keras.Layer]] = []
-        self.crops: list[keras.Layer] = []
-        # build decoder stages in reverse order
+        self.upsamples = []
+        self.up_stage_names = []
+        self.crops = []
+
         for ri, ch in enumerate(reversed(self.widths)):
             si = (len(self.widths) - 1) - ri
             self.upsamples.append(
@@ -232,10 +224,9 @@ class UViT(keras.Layer):
                     width=self.widths[si],
                     kernel_size=self.up_kernel_size,
                     conv_first=self.up_conv_first,
-                    name=f"up_s{si}_us",
                 )
             )
-            blocks: list[keras.Layer] = []
+            blocks = []
             for bi in range(self.res_blocks[si]):
                 blocks.append(
                     ResidualBlock2D(
@@ -247,7 +238,6 @@ class UViT(keras.Layer):
                         kernel_initializer=self.kernel_initializer,
                         use_film=self.use_film,
                         skip_fuse_case="add_sqrt2",
-                        name=f"up_s{si}_b{bi}",
                     )
                 )
                 if self.attn_stage[si]:
@@ -257,20 +247,13 @@ class UViT(keras.Layer):
                             groups=self.groups,
                             residual="norm",
                             kernel_initializer=self.kernel_initializer,
-                            name=f"up_s{si}_b{bi}_attn",
                         )
                     )
-            self.up_stages.append(blocks)
+            stage_name = f"up_stage_{ri}"
+            setattr(self, stage_name, blocks)
+            self.up_stage_names.append(stage_name)
 
-        # --- head ---
-        self.out_norm = SimpleNorm(
-            method=self.norm,
-            groups=self.groups,
-            center=True,
-            scale=True,
-            name="out_norm",
-        )
-        self.out_act = keras.layers.Activation(self.activation, name="out_act")
+        self.out_norm = SimpleNorm(method=self.norm, groups=self.groups, center=True, scale=True)
         self.out_conv = None
 
     @classmethod
@@ -288,6 +271,8 @@ class UViT(keras.Layer):
             "num_heads": self.num_heads,
             "time_emb_dim": self.time_emb_dim,
             "time_emb": self.time_emb,
+            "time_emb_include_identity": self.time_emb_include_identity,
+            "time_emb_use_residual_mlp": self.time_emb_use_residual_mlp,
             "use_film": self.use_film,
             "activation": self.activation,
             "kernel_initializer": self.kernel_initializer,
@@ -318,27 +303,29 @@ class UViT(keras.Layer):
         h_shape = list(x_shape)
         h_shape[-1] = x_shape[-1] + cond_shape[-1]
         h_shape = tuple(h_shape)
-        self.proj_in.build(h_shape)
-        h_shape = self.proj_in.compute_output_shape(h_shape)
+        self.input_projector.build(h_shape)
+        h_shape = self.input_projector.compute_output_shape(h_shape)
 
         # down
         skip_shapes = []
         padding = []
-        for si, blocks in enumerate(self.down_stages):
+        #for si, blocks in enumerate(self.down_stages):
+        for si, stage_name in enumerate(self.down_stage_names):
+            blocks = getattr(self, stage_name)
             for layer in blocks:
                 if isinstance(layer, ResidualBlock2D):
                     layer.build((h_shape, t_emb_shape))
                     h_shape = layer.compute_output_shape((h_shape, t_emb_shape))
                     if self.attn_stage[si]:
                         continue
-                else:  # self-attention
+                else:
                     layer.build(h_shape)
                 skip_shapes.append(h_shape)
             # Downsampling and Pad
             pad_h = h_shape[1] % 2 != 0
             pad_w = h_shape[2] % 2 != 0
             padding.append((pad_h, pad_w))
-            layer = keras.layers.ZeroPadding2D(padding=((0, int(pad_h)), (0, int(pad_w))), name=f"down_s{si}_pad")
+            layer = keras.layers.ZeroPadding2D(padding=((0, int(pad_h)), (0, int(pad_w))))
             layer.build(h_shape)
             h_shape = layer.compute_output_shape(h_shape)
             self.paddings.append(layer)
@@ -350,41 +337,38 @@ class UViT(keras.Layer):
             shape=(1,) + tuple(h_shape[1:]),
             initializer=keras.initializers.RandomNormal(stddev=0.01),
             trainable=True,
-            name="pos_emb",
         )
         for ti, layer in enumerate(self.trans_blocks):
             layer.build((h_shape, t_emb_shape))
             h_shape = layer.compute_output_shape((h_shape, t_emb_shape))
 
         # up
-        for ri, blocks in enumerate(self.up_stages):
+        #for ri, blocks in enumerate(self.up_stages):
+        for ri, stage_name in enumerate(self.up_stage_names):
+            blocks = getattr(self, stage_name)
             si = (len(self.widths) - 1) - ri
-
             # Upsampling and Crop
             self.upsamples[ri].build(h_shape)
             h_shape = self.upsamples[ri].compute_output_shape(h_shape)
             pad_h, pad_w = padding[si]
-            layer = keras.layers.Cropping2D(((0, int(pad_h)), (0, int(pad_w))), name=f"up_s{si}_crop")
+            layer = keras.layers.Cropping2D(((0, int(pad_h)), (0, int(pad_w))))
             layer.build(h_shape)
             h_shape = layer.compute_output_shape(h_shape)
             self.crops.append(layer)
-
             for layer in blocks:
                 if isinstance(layer, ResidualBlock2D):
                     skip_shape = skip_shapes.pop()
                     layer.build((h_shape, t_emb_shape, skip_shape))
                     h_shape = layer.compute_output_shape((h_shape, t_emb_shape, skip_shape))
-                else:  # self-attention
+                else:
                     layer.build(h_shape)
 
         self.out_norm.build(h_shape)
-        self.out_act.build(h_shape)
         self.out_conv = keras.layers.Conv2D(
             filters=int(x_shape[-1]),
             kernel_size=3,
             padding="same",
             kernel_initializer="zeros",
-            name="out_conv_zero",
         )
         self.out_conv.build(h_shape)
 
@@ -393,53 +377,76 @@ class UViT(keras.Layer):
     def compute_output_shape(self, input_shape):
         return tuple(input_shape[0])
 
-    def call(
-        self,
-        inputs: tuple[Tensor, Tensor, Tensor],
-        training: bool | None = None,
-        mask=None,
-    ) -> Tensor:
-        assert len(inputs) == 3, "UViT expects inputs to be a tuple of (x, t, cond)"
+    def call(self, inputs: tuple[Tensor, Tensor, Tensor], training: bool = False) -> Tensor:
         x, t, cond = inputs
-        assert cond is not None, "UViT currently requires a condition input."
+        x = self._prepare_inputs(x, cond)
+        t_emb = self._compute_time_embedding(t, training=training)
 
-        t = keras.ops.reshape(t, (t.shape[0], -1))[:, :1]  # ensure t is (B, 1)
-        t_emb = self.time_emb(t, training=training)
+        x, skips = self.encode(x, t_emb, training=training)
+        x = self.bottleneck(x, t_emb, training=training)
+        x = self.decode(x, t_emb, skips, training=training)
 
-        x = concatenate_valid([x, cond], axis=-1)
-        x = self.proj_in(x, training=training)
+        x = self._project_output(x, training=training)
+        return x
 
-        # encoder
-        skips: list[Tensor] = []
-        for si, blocks in enumerate(self.down_stages):
-            for layer in blocks:
-                if isinstance(layer, ResidualBlock2D):
-                    x = layer((x, t_emb), training=training)
-                    if self.attn_stage[si]:
-                        continue
-                else:
-                    x = layer(x, training=training)
-                skips.append(x)
-            x = self.paddings[si](x, training=training)
-            x = self.downsamples[si](x, training=training)
+    def encode(self, x: Tensor, t_emb: Tensor, training: bool) -> tuple[Tensor, list[Tensor]]:
+        skips = []
 
-        # bottleneck
+        for idx in range(len(self.down_stage_names)):
+            x, skips = self._run_down_stage(idx, x, t_emb, skips, training=training)
+            x = self.paddings[idx](x, training=training)
+            x = self.downsamples[idx](x, training=training)
+
+        return x, skips
+
+    def bottleneck(self, x: Tensor, t_emb: Tensor, training: bool) -> Tensor:
         x = x + self.pos_emb
         for layer in self.trans_blocks:
             x = layer((x, t_emb), training=training)
-
-        # decoder (reverse skips)
-        for ri, blocks in enumerate(self.up_stages):
-            x = self.upsamples[ri](x, training=training)
-            x = self.crops[ri](x, training=training)
-            for layer in blocks:
-                if isinstance(layer, ResidualBlock2D):
-                    skip = skips.pop()
-                    x = layer((x, t_emb, skip), training=training)
-                else:  # self-attention
-                    x = layer(x, training=training)
-
-        x = self.out_norm(x, training=training)
-        x = self.out_act(x)
-        x = self.out_conv(x, training=training)
         return x
+
+    def decode(self, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool) -> Tensor:
+        for idx in range(len(self.up_stage_names)):
+            x = self.upsamples[idx](x, training=training)
+            x = self.crops[idx](x, training=training)
+
+            x = self._run_up_stage(idx, x, t_emb, skips, training=training)
+
+        return x
+
+    def _prepare_inputs(self, x: Tensor, cond: Tensor) -> Tensor:
+        x = concatenate_valid([x, cond], axis=-1)
+        return self.input_projector(x)
+
+
+    def _compute_time_embedding(self, t: Tensor, training: bool) -> Tensor:
+        # Ensure shape [B, 1] even if t comes in with extra dims.
+        t = keras.ops.reshape(t, (keras.ops.shape(t)[0], -1))[:, :1]
+        return self.time_emb(t, training=training)
+
+    def _run_down_stage(
+            self, idx: int, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool
+    ) -> tuple[Tensor, list[Tensor]]:
+        for layer in getattr(self, self.down_stage_names[idx]):
+            is_residual = isinstance(layer, ResidualBlock2D)
+
+            x = layer((x, t_emb), training=training) if is_residual else layer(x, training=training)
+
+            # Don't store the residual output because the next layer is attention.
+            if not (is_residual and self.attn_stage[idx]):
+                skips.append(x)
+
+        return x, skips
+
+    def _run_up_stage(self, idx: int, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool) -> Tensor:
+        for layer in getattr(self, self.up_stage_names[idx]):
+            if isinstance(layer, ResidualBlock2D):
+                skip = skips.pop()
+                x = layer((x, t_emb, skip), training=training)
+            else:
+                x = layer(x, training=training)
+        return x
+
+    def _project_output(self, x: Tensor, training: bool) -> Tensor:
+        x = self.out_norm(x, training=training)
+        return self.out_conv(x)

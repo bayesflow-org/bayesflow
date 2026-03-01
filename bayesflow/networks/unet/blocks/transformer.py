@@ -6,8 +6,8 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
-from bayesflow.networks.vision.blocks.attention import SelfAttention2D
-from bayesflow.networks.vision.blocks.time_dense import TimeDense2D
+from bayesflow.networks.unet.blocks.attention import SelfAttention2D
+from bayesflow.networks.unet.blocks.time_dense import TimeDense2D
 
 
 @serializable("bayesflow.networks")

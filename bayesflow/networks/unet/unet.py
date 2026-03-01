@@ -35,6 +35,8 @@ class UNet(keras.Layer):
         attn_stage: Sequence[bool] | None = (False, False, True, True),
         time_emb_dim: int = 32,
         time_emb: keras.Layer | None = None,
+        time_emb_include_identity: bool = True,
+        time_emb_use_residual_mlp: bool = True,
         use_film: bool = False,
         activation: str = "swish",
         kernel_initializer: str | keras.initializers.Initializer = "he_normal",
@@ -62,6 +64,11 @@ class UNet(keras.Layer):
             Dimensionality of the time embedding. If 1, time is used directly.
         time_emb : keras.layers.Layer or None, optional
             Custom global time embedding layer. If None, uses `DenseFourier` when `time_emb_dim > 1`.
+        time_emb_include_identity : bool, optional
+            Whether the time embedding includes the original time scalar concatenated to the Fourier features.
+            Default is True.
+        time_emb_use_residual_mlp : bool, optional
+            Whether the time embedding uses a residual MLP instead of a simple MLP. Default is True.
         use_film : bool, optional
             Whether residual blocks use FiLM or additive conditioning with the local time embedding.
         activation : str, optional
@@ -93,6 +100,8 @@ class UNet(keras.Layer):
         self.attn_stage = (False,) * len(self.widths) if attn_stage is None else attn_stage
 
         self.time_emb_dim = time_emb_dim
+        self.time_emb_include_identity = time_emb_include_identity
+        self.time_emb_use_residual_mlp = time_emb_use_residual_mlp
         self.use_film = use_film
         self.activation = activation
         self.kernel_initializer = kernel_initializer
@@ -106,8 +115,7 @@ class UNet(keras.Layer):
 
         self.norm = norm
 
-        check_lengths_same(self.res_blocks, self.widths, self.attn_stage)
-        check_lengths_same(self.dropout, self.widths)
+        check_lengths_same(self.widths, self.res_blocks, self.attn_stage, self.dropout)
 
         if time_emb is None:
             if self.time_emb_dim == 1:
@@ -115,8 +123,8 @@ class UNet(keras.Layer):
             else:
                 self.time_emb = DenseFourier(
                     emb_dim=self.time_emb_dim,
-                    include_identity=True,
-                    use_residual_mlp=True,
+                    include_identity=self.time_emb_include_identity,
+                    use_residual_mlp=self.time_emb_use_residual_mlp,
                     kernel_initializer=self.kernel_initializer,
                 )
         else:
@@ -129,8 +137,7 @@ class UNet(keras.Layer):
             kernel_initializer=self.kernel_initializer,
         )
 
-        # Down pathway
-        self.down_stages = []
+        self.down_stage_names = []
         self.downsamples = []
         self.paddings = []
 
@@ -158,7 +165,9 @@ class UNet(keras.Layer):
                         )
                     )
 
-            self.down_stages.append(blocks)
+            stage_name = f"down_stage_{si}"
+            setattr(self, stage_name, blocks)
+            self.down_stage_names.append(stage_name)
 
             if si < len(self.widths) - 1:
                 self.downsamples.append(DownSample2D(width=self.widths[si + 1], mode=self.down_mode))
@@ -189,7 +198,7 @@ class UNet(keras.Layer):
         )
 
         self.upsamples = []
-        self.up_stages = []
+        self.up_stage_names = []
         self.crops = []
 
         for ri, ch in enumerate(reversed(self.widths)):
@@ -217,7 +226,9 @@ class UNet(keras.Layer):
                         )
                     )
 
-            self.up_stages.append(blocks)
+            stage_name = f"up_stage_{ri}"
+            setattr(self, stage_name, blocks)
+            self.up_stage_names.append(stage_name)
 
             if ri != len(self.widths) - 1:
                 self.upsamples.append(
@@ -243,6 +254,8 @@ class UNet(keras.Layer):
             "attn_stage": self.attn_stage,
             "time_emb_dim": self.time_emb_dim,
             "time_emb": self.time_emb,
+            "time_emb_include_identity": self.time_emb_include_identity,
+            "time_emb_use_residual_mlp": self.time_emb_use_residual_mlp,
             "use_film": self.use_film,
             "activation": self.activation,
             "kernel_initializer": self.kernel_initializer,
@@ -279,21 +292,22 @@ class UNet(keras.Layer):
         # down
         skip_shapes = [h_shape]
         padding = []
-        for si, blocks in enumerate(self.down_stages):
+        for si, stage_name in enumerate(self.down_stage_names):
+            blocks = getattr(self, stage_name)
             for layer in blocks:
                 if isinstance(layer, ResidualBlock2D):
                     layer.build((h_shape, t_emb_shape))
                     h_shape = layer.compute_output_shape((h_shape, t_emb_shape))
                     if self.attn_stage[si]:
                         continue
-                else:  # self-attention
+                else:
                     layer.build(h_shape)
                 skip_shapes.append(h_shape)
             if si < len(self.widths) - 1:
                 pad_h = h_shape[1] % 2 != 0
                 pad_w = h_shape[2] % 2 != 0
                 padding.append((pad_h, pad_w))
-                layer = keras.layers.ZeroPadding2D(padding=((0, int(pad_h)), (0, int(pad_w))), name=f"down_s{si}_pad")
+                layer = keras.layers.ZeroPadding2D(padding=((0, int(pad_h)), (0, int(pad_w))))
                 layer.build(h_shape)
                 h_shape = layer.compute_output_shape(h_shape)
                 self.paddings.append(layer)
@@ -309,7 +323,8 @@ class UNet(keras.Layer):
         h_shape = self.mid2.compute_output_shape((h_shape, t_emb_shape))
 
         # up
-        for ri, blocks in enumerate(self.up_stages):
+        for ri, stage_name in enumerate(self.up_stage_names):
+            blocks = getattr(self, stage_name)
             si = (len(self.widths) - 1) - ri
             for layer in blocks:
                 if isinstance(layer, ResidualBlock2D):
@@ -326,7 +341,7 @@ class UNet(keras.Layer):
                 self.upsamples[ri].build(h_shape)
                 h_shape = self.upsamples[ri].compute_output_shape(h_shape)
                 pad_h, pad_w = padding[si - 1]
-                layer = keras.layers.Cropping2D(((0, int(pad_h)), (0, int(pad_w))), name=f"up_s{si}_crop")
+                layer = keras.layers.Cropping2D(((0, int(pad_h)), (0, int(pad_w))))
                 layer.build(h_shape)
                 h_shape = layer.compute_output_shape(h_shape)
                 self.crops.append(layer)
@@ -360,7 +375,7 @@ class UNet(keras.Layer):
     def encode(self, x: Tensor, t_emb: Tensor, training: bool) -> tuple[Tensor, list[Tensor]]:
         skips = [x]
 
-        for idx, blocks in enumerate(self.down_stages):
+        for idx in range(len(self.down_stage_names)):
             x, skips = self._run_down_stage(idx, x, t_emb, skips, training=training)
 
             if idx < len(self.downsamples):
@@ -377,7 +392,7 @@ class UNet(keras.Layer):
         return x
 
     def decode(self, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool) -> Tensor:
-        for idx, blocks in enumerate(self.up_stages):
+        for idx in range(len(self.up_stage_names)):
             x = self._run_up_stage(idx, x, t_emb, skips, training=training)
 
             if idx != len(self.widths) - 1:
@@ -398,7 +413,7 @@ class UNet(keras.Layer):
     def _run_down_stage(
         self, idx: int, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool
     ) -> tuple[Tensor, list[Tensor]]:
-        for layer in self.down_stages[idx]:
+        for layer in getattr(self, self.down_stage_names[idx]):
             is_residual = isinstance(layer, ResidualBlock2D)
 
             x = layer((x, t_emb), training=training) if is_residual else layer(x, training=training)
@@ -410,7 +425,7 @@ class UNet(keras.Layer):
         return x, skips
 
     def _run_up_stage(self, idx: int, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool) -> Tensor:
-        for layer in self.up_stages[idx]:
+        for layer in getattr(self, self.up_stage_names[idx]):
             if isinstance(layer, ResidualBlock2D):
                 skip = skips.pop()
                 x = concatenate_valid([x, skip], axis=-1)
@@ -421,5 +436,4 @@ class UNet(keras.Layer):
 
     def _project_output(self, x: Tensor, training: bool) -> Tensor:
         x = self.out_norm(x, training=training)
-        x = self.out_conv(x)
-        return x
+        return self.out_conv(x)

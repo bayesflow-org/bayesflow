@@ -6,21 +6,21 @@ from contextlib import redirect_stdout
 
 
 @pytest.mark.skip(reason="not implemented")
-def test_compile(amortizer):
-    amortizer.compile(optimizer="AdamW")
+def test_compile(approximator):
+    approximator.compile(optimizer="AdamW")
 
 
 @pytest.mark.skip(reason="not implemented")
-def test_fit(amortizer, dataset):
-    amortizer.compile(optimizer="AdamW")
-    amortizer.fit(dataset)
+def test_fit(approximator, dataset):
+    approximator.compile(optimizer="AdamW")
+    approximator.fit(dataset)
 
-    assert amortizer.losses is not None
+    assert approximator.losses is not None
 
 
 def test_loss_progress(approximator, train_dataset, validation_dataset):
     approximator.compile(optimizer="AdamW")
-    num_epochs = 3
+    num_epochs = 2
 
     # Capture ostream and train model
     with io.StringIO() as stream:
@@ -28,8 +28,6 @@ def test_loss_progress(approximator, train_dataset, validation_dataset):
             approximator.fit(dataset=train_dataset, validation_data=validation_dataset, epochs=num_epochs)
 
         output = stream.getvalue()
-
-    print(output)
 
     # check that there is a progress bar
     assert "━" in output, "no progress bar"

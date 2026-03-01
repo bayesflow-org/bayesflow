@@ -105,6 +105,7 @@ def mean_std_summary_network():
 @pytest.fixture(params=["continuous_approximator", "point_approximator", "model_comparison_approximator"])
 def approximator_with_summaries(request):
     from bayesflow.adapters import Adapter
+    from bayesflow.networks import MLP
 
     adapter = Adapter()
     match request.param:
@@ -120,7 +121,7 @@ def approximator_with_summaries(request):
             from bayesflow.approximators import ModelComparisonApproximator
 
             return ModelComparisonApproximator(
-                num_models=2, classifier_network=None, adapter=adapter, summary_network=None
+                num_models=2, classifier_network=MLP(widths=(8, 8)), adapter=adapter, summary_network=None
             )
         case _:
             raise ValueError("Invalid param for approximator class.")

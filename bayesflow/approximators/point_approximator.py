@@ -90,7 +90,7 @@ class PointApproximator(ContinuousApproximator):
         )
 
         # Unstandardize the network outputs
-        if "inference_variables" in self.standardize:
+        if "inference_variables" in self.standardizer.standardize:
             for score_key, score in self.inference_network.scores.items():
                 for head_key in estimates[score_key].keys():
                     transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")

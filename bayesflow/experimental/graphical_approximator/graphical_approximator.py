@@ -295,7 +295,7 @@ class GraphicalApproximator(Approximator):
             import tensorflow as tf
 
             if "simulator" in kwargs:
-                ds = GraphicalApproximator.build_dataset(**filter_kwargs(kwargs, GraphicalApproximator.build_dataset))
+                ds = self.build_dataset(**filter_kwargs(kwargs, self.build_dataset))
                 del kwargs["simulator"]
 
             elif "dataset" in kwargs:

@@ -46,7 +46,7 @@ def multivariate_normal_score():
 def mixture_of_multivariate_normal_scores():
     from bayesflow.scoring_rules import MvNormalScore, MixtureScore
 
-    return MixtureScore(dict(mvn1=MvNormalScore(), mvn2=MvNormalScore()))
+    return MixtureScore(mvn1=MvNormalScore(), mvn2=MvNormalScore())
 
 
 @pytest.fixture(

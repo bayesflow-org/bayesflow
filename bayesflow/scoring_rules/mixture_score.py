@@ -26,7 +26,7 @@ class MixtureScore(ParametricDistributionScore):
     Notes
     -----
     The score exposes a flat set of estimation heads so that a
-    :py:class:`ScoringRuleInferenceNetwork`` can build all required heads automatically.
+    :py:class:`ScoringRuleNetwork`` can build all required heads automatically.
 
     The exposed heads are:
 
@@ -38,33 +38,45 @@ class MixtureScore(ParametricDistributionScore):
         log w = log_softmax(logits / temperature)
 
     where ``temperature`` is a non-trainable ``keras.Variable`` (default: 1.0)
-    that can be updated externally with :py:meth:`set_temperature` (e.g. for scheduling).
+    that can be updated externally with :py:meth:`set_temperature`.
 
     Examples
     --------
     >>> # A network representing a mixture density of three MVN distributions
-    >>> inference_network = bf.networks.ScoringRuleInferenceNetwork(
-            scores=dict(mix=bf.scores.MixtureScore(
-                components=dict(
-                    mvn1=bf.scores.MvNormalScore(),
-                    mvn2=bf.scores.MvNormalScore(),
-                    mvn3=bf.scores.MvNormalScore(),
-                ),
-            ))
+    >>> from bayesflow.networks import ScoringRuleNetwork
+    >>> from bayesflow.scoring_rules import MvNormalScore, MixtureScore
+    >>> inference_network = ScoringRuleNetwork(
+            mix=MixtureScore(
+                mvn1=MvNormalScore(),
+                mvn2=MvNormalScore(),
+                mvn3=MvNormalScore(),
+            )
         )
     """
 
     def __init__(
         self,
-        components: dict[str, ParametricDistributionScore],
+        components: dict[str, ParametricDistributionScore] | None = None,
         weight_head: str = "mixture_logits",
         temperature: float = 1.0,
         **kwargs,
     ):
+        # Pull scoring rules passed directly as keyword args
+        kw_components = {k: v for k, v in list(kwargs.items()) if isinstance(v, ParametricDistributionScore)}
+        for k in kw_components:
+            kwargs.pop(k)
+
+        components = dict(components or {})
+
+        components.update(kw_components)
+
         super().__init__(**kwargs)
 
-        if not isinstance(components, dict) or len(components) < 2:
-            raise ValueError("`components` must be a dict with at least 2 ParametricDistributionScores.")
+        if not components or not isinstance(components, dict) or len(components) < 2:
+            raise ValueError(
+                "`MixtureScore` requires at least two `ParametricDistributionScore` components. "
+                "Provide them via `components={'name': score, ...}` or as direct keyword arguments."
+            )
 
         for name, score in components.items():
             if not isinstance(score, ParametricDistributionScore):

@@ -83,47 +83,6 @@ class DiffusionModel(InferenceNetwork):
         drop_target_prob: float = 0.0,
         **kwargs,
     ):
-<<<<<<< refactor_approx
-=======
-        """
-        Initializes a diffusion model with configurable subnet architecture, noise schedule,
-        and prediction/loss types for amortized Bayesian inference.
-
-        Note, that score-based diffusion is the most sluggish of all available samplers,
-        so expect slower inference times than flow matching and much slower than normalizing flows.
-
-        Parameters
-        ----------
-        subnet : str, type or keras.Layer, optional
-            A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
-            If a string is provided, it should be a registered name (e.g., "time_mlp").
-            If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
-        noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
-            Noise schedule controlling the diffusion dynamics. Can be a string identifier,
-            a schedule class, or a pre-initialized schedule instance. Default is "edm".
-        prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
-            Output format of the model's prediction. Default is "F".
-        loss_type : {'velocity', 'noise', 'F'}, optional
-            Loss function used to train the model. Default is "noise".
-        subnet_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the subnet constructor. Default is None.
-        schedule_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the noise schedule constructor. Default is None.
-        integrate_kwargs : dict[str, any], optional
-            Configuration dictionary for integration during training or inference. Default is None.
-        drop_cond_prob : float, optional
-            Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
-            and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
-            model during inference, set `unconditional_mode` to True.
-        drop_target_prob : float, optional
-            Probability of dropping the target during training. Default is 0.0. This can be used to train a model that
-            can be conditioned on partial targets. During inference, pass a `target_mask` and `targets_fixed` to specify
-            which parts of the target should be kept fixed to the values in `targets_fixed`.
-        **kwargs
-            Additional keyword arguments passed to the base class and internal components.
-        """
->>>>>>> dev
         super().__init__(base_distribution="normal", **kwargs)
 
         if prediction_type not in ["noise", "velocity", "F", "x"]:

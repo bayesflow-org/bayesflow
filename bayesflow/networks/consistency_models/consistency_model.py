@@ -71,40 +71,6 @@ class ConsistencyModel(InferenceNetwork):
         drop_cond_prob: float = 0.0,
         **kwargs,
     ):
-<<<<<<< refactor_approx
-=======
-        """Creates an instance of a consistency model (CM) to be used for standalone consistency training (CT).
-
-        Parameters
-        ----------
-        total_steps : int
-            The total number of training steps, must be calculated as number of epochs * number of batches
-            and cannot be inferred during construction time.
-        subnet      : str or type, optional, default: "time_mlp"
-            A neural network type for the consistency model, will be instantiated using subnet_kwargs.
-            If a string is provided, it should be a registered name (e.g., "time_mlp").
-            If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
-        max_time : int or float, optional, default: 80
-            The maximum time of the diffusion, equivalent to the maximum noise level (x_1=z*max_time).
-        sigma2      : float or Tensor of dimension (input_dim, 1), optional, default: 1.0
-            Controls the shape of the skip-function
-        eps         : float, optional, default: 0.001
-            The minimum time
-        s0          : int or float, optional, default: 10
-            Initial number of discretization steps
-        s1          : int or float, optional, default: 70
-            Final number of discretization steps
-        subnet_kwargs: dict[str, any], optional
-            Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
-        drop_cond_prob : float, optional
-            Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
-            and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
-            model during inference, set `unconditional_mode` to True.
-        **kwargs    : dict, optional, default: {}
-            Additional keyword arguments
-        """
->>>>>>> dev
         super().__init__(base_distribution="normal", **kwargs)
 
         self.total_steps = float(total_steps)
@@ -387,9 +353,4 @@ class ConsistencyModel(InferenceNetwork):
         loss = lam * (ops.sqrt(ops.square(teacher_out - student_out) + self.c_huber2) - self.c_huber)
         loss = weighted_mean(loss, sample_weight)
 
-<<<<<<< refactor_approx
         return {"loss": loss}
-=======
-        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
-        return base_metrics | {"loss": loss}
->>>>>>> dev

@@ -2,7 +2,7 @@ from bayesflow.utils.serialization import serializable
 from .normed_difference_score import NormedDifferenceScore
 
 
-@serializable("bayesflow.scores")
+@serializable("bayesflow.scoring_rules")
 class MedianScore(NormedDifferenceScore):
     r""":math:`S(\hat \theta, \theta) = | \hat \theta - \theta |`
 

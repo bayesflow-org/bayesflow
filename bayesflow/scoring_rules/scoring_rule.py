@@ -7,7 +7,7 @@ from bayesflow.utils import find_network
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
-@serializable("bayesflow.scores")
+@serializable("bayesflow.scoring_rules")
 class ScoringRule:
     """Base class for scoring rules.
 
@@ -21,7 +21,7 @@ class ScoringRule:
     Estimates are typically parameterized by projection heads consisting of a neural network component
     and a link to project into the correct output space.
 
-    A :py:class:`ScoringRule` can score estimates consisting of multiple parts. See :py:class:`MultivariateNormalScore`
+    A :py:class:`ScoringRule` can score estimates consisting of multiple parts. See :py:class:`MvNormalScore`
     for an example of a :py:class:`ParametricDistributionScore`. That score evaluates an estimated mean
     and covariance simultaneously.
     """
@@ -188,7 +188,7 @@ class ScoringRule:
         follow this pattern, only differing in the structure of the estimates dictionary.
 
         >>> import keras
-        >>> from bayesflow.scores import MeanScore
+        >>> from bayesflow.scoring_rules import MeanScore
         >>>
         >>> # batch of samples from a normal distribution
         >>> samples = keras.random.normal(shape=(100,))

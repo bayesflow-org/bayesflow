@@ -9,8 +9,8 @@ from bayesflow.utils.serialization import serializable
 from .parametric_distribution_score import ParametricDistributionScore
 
 
-@serializable("bayesflow.scores")
-class MultivariateNormalScore(ParametricDistributionScore):
+@serializable("bayesflow.scoring_rules")
+class MvNormalScore(ParametricDistributionScore):
     r""":math:`S(\hat p_{\mu, \Sigma}, \theta; k) = -\log( \mathcal N (\theta; \mu, \Sigma))`
 
     Scores a predicted mean and lower-triangular Cholesky factor :math:`L` of the precision matrix :math:`P`

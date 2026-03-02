@@ -36,12 +36,12 @@ def continuous_approximator(adapter, inference_network, summary_network):
 
 
 @pytest.fixture()
-def point_inference_network_without_parametric_score():
-    from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import NormedDifferenceScore, QuantileScore
+def scoring_rule_network():
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import NormedDifferenceScore, QuantileScore
 
-    return PointInferenceNetwork(
-        scores=dict(
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
             mean=NormedDifferenceScore(k=2),
             quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
         ),
@@ -51,47 +51,44 @@ def point_inference_network_without_parametric_score():
 
 
 @pytest.fixture()
-def point_inference_network_with_multiple_parametric_scores():
-    from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import QuantileScore, MultivariateNormalScore
+def scoring_rule_network_with_multiple_parametric_scores():
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import MvNormalScore
 
-    return PointInferenceNetwork(
-        scores=dict(
-            quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
-            mvn1=MultivariateNormalScore(),
-            mvn2=MultivariateNormalScore(),
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
+            mvn1=MvNormalScore(),
+            mvn2=MvNormalScore(),
         ),
     )
 
 
 @pytest.fixture()
-def point_approximator_without_parametric_score(
-    adapter, point_inference_network_without_parametric_score, summary_network
-):
-    from bayesflow import PointApproximator
+def scoring_rule_approximator_without_parametric_score(adapter, scoring_rule_network, summary_network):
+    from bayesflow import ScoringRuleApproximator
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
-        pytest.skip("point approximator does not support unconditional estimation")
+        pytest.skip("ScoringRuleApproximator does not support unconditional estimation")
 
-    return PointApproximator(
+    return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=point_inference_network_without_parametric_score,
+        inference_network=scoring_rule_network,
         summary_network=summary_network,
     )
 
 
 @pytest.fixture()
-def point_approximator_with_multiple_parametric_scores(
-    adapter, point_inference_network_with_multiple_parametric_scores, summary_network
+def scoring_rule_approximator_with_multiple_parametric_scores(
+    adapter, scoring_rule_network_with_multiple_parametric_scores, summary_network
 ):
-    from bayesflow import PointApproximator
+    from bayesflow import ScoringRuleApproximator
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
-        pytest.skip("point approximator does not support unconditional estimation")
+        pytest.skip("ScoringRuleApproximator does not support unconditional estimation")
 
-    return PointApproximator(
+    return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=point_inference_network_with_multiple_parametric_scores,
+        inference_network=scoring_rule_network_with_multiple_parametric_scores,
         summary_network=summary_network,
     )
 
@@ -99,33 +96,36 @@ def point_approximator_with_multiple_parametric_scores(
 @pytest.fixture()
 def ensemble_approximator(
     continuous_approximator,
-    point_approximator_without_parametric_score,
-    point_approximator_with_multiple_parametric_scores,
+    scoring_rule_approximator_without_parametric_score,
+    scoring_rule_approximator_with_multiple_parametric_scores,
 ):
     from bayesflow import EnsembleApproximator
 
     return EnsembleApproximator(
         dict(
             continuous_1=continuous_approximator,
-            point_1=point_approximator_without_parametric_score,
-            point_2=point_approximator_with_multiple_parametric_scores,
+            point_1=scoring_rule_approximator_without_parametric_score,
+            point_2=scoring_rule_approximator_with_multiple_parametric_scores,
         )
     )
 
 
 @pytest.fixture(
-    params=["point_approximator_without_parametric_score", "point_approximator_with_multiple_parametric_scores"]
+    params=[
+        "scoring_rule_approximator_without_parametric_score",
+        "scoring_rule_approximator_with_multiple_parametric_scores",
+    ]
 )
-def point_approximator(request):
+def scoring_rule_approximator(request):
     return request.getfixturevalue(request.param)
 
 
 @pytest.fixture(
     params=[
         "continuous_approximator",
+        "scoring_rule_approximator_without_parametric_score",
+        "scoring_rule_approximator_with_multiple_parametric_scores",
         "ensemble_approximator",
-        "point_approximator_without_parametric_score",
-        "point_approximator_with_multiple_parametric_scores",
     ],
     scope="function",
 )
@@ -218,7 +218,7 @@ def mean_std_summary_network():
     return MeanStdSummaryNetwork()
 
 
-@pytest.fixture(params=["continuous_approximator", "point_approximator", "model_comparison_approximator"])
+@pytest.fixture(params=["continuous_approximator", "scoring_rule_approximator", "model_comparison_approximator"])
 def approximator_with_summaries(request):
     from bayesflow.adapters import Adapter
 
@@ -229,14 +229,13 @@ def approximator_with_summaries(request):
             from bayesflow.networks import CouplingFlow
 
             return ContinuousApproximator(adapter=adapter, inference_network=CouplingFlow(), summary_network=None)
-        case "point_approximator":
-            from bayesflow.approximators import PointApproximator
-            from bayesflow.networks import PointInferenceNetwork
-            from bayesflow.scores import MeanScore
+        case "scoring_rule_approximator":
+            from bayesflow.approximators import ScoringRuleApproximator
+            from bayesflow.networks import PointNetwork
 
-            return PointApproximator(
+            return ScoringRuleApproximator(
                 adapter=adapter,
-                inference_network=PointInferenceNetwork(scores=dict(mean=MeanScore())),
+                inference_network=PointNetwork(points=["mean"]),
                 summary_network=None,
             )
         case "model_comparison_approximator":

@@ -6,7 +6,7 @@ import keras
 from tqdm.auto import tqdm
 
 from bayesflow.adapters import Adapter
-from bayesflow.networks import PointInferenceNetwork, SummaryNetwork
+from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     logging,
@@ -24,20 +24,21 @@ from .continuous_approximator import ContinuousApproximator
 
 
 @serializable("bayesflow.approximators")
-class PointApproximator(ContinuousApproximator):
+class ScoringRuleApproximator(ContinuousApproximator):
     """
-    A workflow for fast amortized point estimation of a conditional distribution.
+    A workflow for fast amortized Bayes risk minimization for arbitrary scoring rules.
 
-    The distribution is approximated by point estimators, parameterized by a feed-forward
-    :py:class:`~bayesflow.networks.PointInferenceNetwork`. Conditions can be compressed by an optional summary network
-    (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.
+    The distribution is approximated by point or variational distribution estimators, parameterized by a feed-forward
+    :py:class:`~bayesflow.networks.ScoringRuleNetwork`. Conditions can be compressed by an optional
+    summary network (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`)
+    or used directly as input to the inference network.
     """
 
     def __init__(
         self,
         *,
         adapter: Adapter,
-        inference_network: PointInferenceNetwork,
+        inference_network: ScoringRuleNetwork,
         summary_network: SummaryNetwork | None = None,
         standardize: str | Sequence[str] | None = "all",
         **kwargs,
@@ -52,7 +53,7 @@ class PointApproximator(ContinuousApproximator):
 
         # Infer which scoring rules induce distributions
         dist_keys = []
-        for score_key, score in self.inference_network.scores.items():
+        for score_key, score in self.inference_network.scoring_rules.items():
             has_sample = callable(getattr(score, "sample", None))
             has_log_prob = callable(getattr(score, "log_prob", None))
             if has_sample and has_log_prob:
@@ -120,7 +121,7 @@ class PointApproximator(ContinuousApproximator):
         estimates = self._estimate(**conditions, **kwargs)
 
         if "inference_variables" in self.standardize:
-            for score_key, score in self.inference_network.scores.items():
+            for score_key, score in self.inference_network.scoring_rules.items():
                 for head_key in estimates[score_key].keys():
                     transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
                     estimates[score_key][head_key] = self.standardize_layers["inference_variables"](
@@ -244,8 +245,8 @@ class PointApproximator(ContinuousApproximator):
         """
         Draws samples from parametric distributions based on parameter estimates for given input conditions.
 
-        These samples generally do not correspond to samples from the fully Bayesian posterior, since
-        they assume some parametric form (e.g., multivariate normal when using the MultivariateNormalScore).
+        These samples will generally not correspond to samples from the fully Bayesian posterior, since
+        they will assume some parametric form (e.g., multivariate normal when using the MvNormalScore).
 
         Parameters
         ----------
@@ -255,7 +256,7 @@ class PointApproximator(ContinuousApproximator):
             A batch of conditions to sample for. None for unconditional distributions.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
-            Currently not supported for :py:class:`PointApproximator`.
+            Currently not supported for :py:class:`ScoringRuleApproximator`.
         batch_size : int or None, optional
             If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
             sequentially. Can help with memory management for large sample sizes.
@@ -275,7 +276,7 @@ class PointApproximator(ContinuousApproximator):
         """
         self._check_has_distribution()
         if split:
-            raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
+            raise NotImplementedError("split=True is currently not supported for `ScoringRuleApproximator`.")
 
         # Adapt, optionally standardize and convert conditions to tensor.
         conditions = self._prepare_data(conditions, **kwargs)
@@ -422,7 +423,13 @@ class PointApproximator(ContinuousApproximator):
         log_prob : dict[str, np.ndarray]
             Log-probabilities of the distribution
             `p(inference_variables | inference_conditions, h(summary_conditions))` for all parametric scoring rules.
-            Each has shape (num_datasets,).
+
+            If only one parametric score is available, output is an array of log-probabilities.
+
+            Output is a dictionary if multiple parametric scoring rules are available.
+            Then, each key is the name of a score and values are corresponding log-probabilities.
+
+            Log-probabilities have shape (num_datasets,).
         """
         self._check_has_distribution()
 
@@ -473,7 +480,7 @@ class PointApproximator(ContinuousApproximator):
         for score_key, score_val in estimates.items():
             processed[score_key] = {}
             for head_key, estimate in score_val.items():
-                if head_key in self.inference_network.scores[score_key].NOT_TRANSFORMING_LIKE_VECTOR_WARNING:
+                if head_key in self.inference_network.scoring_rules[score_key].NOT_TRANSFORMING_LIKE_VECTOR_WARNING:
                     logging.warning(
                         f"Estimate '{score_key}.{head_key}' is marked to not transform like a vector. "
                         f"It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."

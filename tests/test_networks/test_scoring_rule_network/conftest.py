@@ -4,44 +4,44 @@ import numpy as np
 
 @pytest.fixture()
 def median_score():
-    from bayesflow.scores import MedianScore
+    from bayesflow.scoring_rules import MedianScore
 
     return MedianScore()
 
 
 @pytest.fixture()
 def median_score_subnet():
-    from bayesflow.scores import MedianScore
+    from bayesflow.scoring_rules import MedianScore
 
     return MedianScore(subnets=dict(value="mlp"))
 
 
 @pytest.fixture()
 def mean_score():
-    from bayesflow.scores import MeanScore
+    from bayesflow.scoring_rules import MeanScore
 
     return MeanScore()
 
 
 @pytest.fixture()
 def normed_diff_score():
-    from bayesflow.scores import NormedDifferenceScore
+    from bayesflow.scoring_rules import NormedDifferenceScore
 
     return NormedDifferenceScore(k=3)
 
 
 @pytest.fixture(scope="function")
 def quantile_score():
-    from bayesflow.scores import QuantileScore
+    from bayesflow.scoring_rules import QuantileScore
 
     return QuantileScore(q=[0.2, 0.3, 0.4, 0.5, 0.7])
 
 
 @pytest.fixture()
 def multivariate_normal_score():
-    from bayesflow.scores import MultivariateNormalScore
+    from bayesflow.scoring_rules import MvNormalScore
 
-    return MultivariateNormalScore()
+    return MvNormalScore()
 
 
 @pytest.fixture(
@@ -59,19 +59,19 @@ def scoring_rule(request):
 
 
 @pytest.fixture(scope="function")
-def point_inference_network(scoring_rule):
-    from bayesflow.networks import PointInferenceNetwork
+def scoring_rule_network(scoring_rule):
+    from bayesflow.networks import ScoringRuleNetwork
 
-    return PointInferenceNetwork(
-        scores=dict(dummy_name=scoring_rule),
+    return ScoringRuleNetwork(
+        scoring_rules=dict(dummy_name=scoring_rule),
     )
 
 
 @pytest.fixture(scope="function")
-def quantile_point_inference_network():
-    from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import QuantileScore
+def quantile_scoring_rule_network():
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import QuantileScore
 
-    return PointInferenceNetwork(
-        scores=dict(quantiles=QuantileScore(q=np.array([0.1, 0.4, 0.5, 0.7]), subnets=dict(value="mlp"))),
+    return ScoringRuleNetwork(
+        scoring_rules=dict(quantiles=QuantileScore(q=np.array([0.1, 0.4, 0.5, 0.7]), subnets=dict(value="mlp"))),
     )

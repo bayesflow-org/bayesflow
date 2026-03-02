@@ -29,17 +29,17 @@ def test_build_adapter():
     )
 
 
-def test_build_dataset(simulator, adapter):
-    from bayesflow.approximators import ModelComparisonApproximator
+def test_build_dataset(simulator, approximator, adapter):
     from bayesflow.datasets import OnlineDataset
 
-    dataset = ModelComparisonApproximator.build_dataset(
+    dataset = approximator.build_dataset(
         simulator=simulator,
         memory_budget="20 KiB",
         num_batches=2,
         num_models=2,
         classifier_conditions="foo",
         summary_variables=["x1", "x2"],
+        adapter=adapter,
     )
     assert isinstance(dataset, OnlineDataset)
 

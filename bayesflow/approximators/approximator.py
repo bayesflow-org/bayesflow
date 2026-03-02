@@ -17,6 +17,13 @@ from .backend_approximators import BackendApproximator
 
 
 class Approximator(BackendApproximator):
+    """Base class for all BayesFlow approximators."""
+
+    @property
+    def standardize_layers(self):
+        """Shortcut to the standardizer's per-variable layers."""
+        return self.standardizer.standardize_layers
+
     def build(self, data_shapes: Mapping[str, tuple[int] | Mapping[str, Mapping]]):
         """
         Template method for building all network components.

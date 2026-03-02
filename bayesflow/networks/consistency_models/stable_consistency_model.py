@@ -8,41 +8,45 @@ from bayesflow.utils import logging, jvp, find_network, expand_right_as, expand_
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..inference_network import InferenceNetwork
+from ..defaults import TIME_MLP_DEFAULTS, WEIGHT_MLP_DEFAULTS
 
 
 @serializable("bayesflow.networks")
 class StableConsistencyModel(InferenceNetwork):
-    """(IN) Implements an sCM (simple, stable, and scalable Consistency Model) with continuous-time Consistency Training
-    (CT) as described in [1]. The sampling procedure is taken from [2].
+    """Stable consistency model (sCM) for simulation-based inference.
 
-    [1] Lu, C., & Song, Y. (2024).
-    Simplifying, Stabilizing and Scaling Continuous-Time Consistency Models
-    arXiv preprint arXiv:2410.11081
+    Implements the simple, stable, and scalable Consistency Model with
+    continuous-time Consistency Training (CT) as described in [1].  The sampling
+    procedure is taken from [2].
 
-    [2] Song, Y., Dhariwal, P., Chen, M. & Sutskever, I. (2023).
-    Consistency Models. arXiv preprint arXiv:2303.01469
+    Parameters
+    ----------
+    subnet : str, type, or keras.Layer, optional
+        The neural network architecture used for the consistency model.  If a
+        string is provided, it should be a registered name (e.g., ``"time_mlp"``).
+        If a type or ``keras.Layer`` is provided, it will be directly instantiated
+        with the given *subnet_kwargs*.  Any subnet must accept a tuple of tensors
+        ``(target, time, conditions)``.  Default is ``"time_mlp"``.
+    sigma : float, optional
+        Standard deviation of the target distribution for the consistency loss.
+        Controls the scale of the noise injected during training.  Default is 1.0.
+    subnet_kwargs : dict[str, any], optional
+        Keyword arguments passed to the constructor of the chosen *subnet*
+        (e.g., number of hidden units, activation functions, or dropout settings).
+    weight_mlp_kwargs : dict[str, any], optional
+        Keyword arguments for an auxiliary MLP used to generate weights within the
+        consistency model (e.g., depth, hidden sizes, non-linearity choices).
+    **kwargs
+        Additional keyword arguments passed to the base ``InferenceNetwork``
+        (e.g., ``name``, ``dtype``, or ``trainable``).
+
+    References
+    ----------
+    [1] Lu, C., & Song, Y. (2024). Simplifying, Stabilizing and Scaling
+        Continuous-Time Consistency Models. arXiv:2410.11081.
+    [2] Song, Y., Dhariwal, P., Chen, M. & Sutskever, I. (2023). Consistency
+        Models. arXiv:2303.01469.
     """
-
-    TIME_MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-        "time_embedding_dim": 32,
-        "merge": "concat",
-        "norm": "layer",
-    }
-
-    WEIGHT_MLP_DEFAULT_CONFIG = {
-        "widths": (256,),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": False,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-    }
 
     EPS_WARN = 0.1
 
@@ -54,39 +58,17 @@ class StableConsistencyModel(InferenceNetwork):
         weight_mlp_kwargs: dict[str, any] = None,
         **kwargs,
     ):
-        """Creates an instance of an sCM to be used for consistency training (CT).
-
-        Parameters
-        ----------
-        subnet : str, type, or keras.Layer, optional, default="time_mlp"
-            The neural network architecture used for the consistency model.
-            If a string is provided, it should be a registered name (e.g., "time_mlp").
-            If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
-        sigma : float, optional, default=1.0
-            Standard deviation of the target distribution for the consistency loss.
-            Controls the scale of the noise injected during training.
-        subnet_kwargs : dict[str, any], optional, default=None
-            Keyword arguments passed to the constructor of the chosen ``subnet``. For example, number of hidden units,
-            activation functions, or dropout settings.
-        weight_mlp_kwargs : dict[str, any], optional, default=None
-            Keyword arguments for an auxiliary MLP used to generate weights within the consistency model. Typically,
-            includes depth, hidden sizes, and non-linearity choices.
-        **kwargs
-            Additional keyword arguments passed to the parent ``InferenceNetwork`` initializer
-            (e.g., ``name``, ``dtype``, or ``trainable``).
-        """
         super().__init__(base_distribution="normal", **kwargs)
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = StableConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.subnet_projector = None
 
         weight_mlp_kwargs = weight_mlp_kwargs or {}
-        weight_mlp_kwargs = StableConsistencyModel.WEIGHT_MLP_DEFAULT_CONFIG | weight_mlp_kwargs
+        weight_mlp_kwargs = WEIGHT_MLP_DEFAULTS | weight_mlp_kwargs
         self.weight_fn = find_network("mlp", **weight_mlp_kwargs)
 
         self.weight_fn_projector = keras.layers.Dense(
@@ -222,8 +204,6 @@ class StableConsistencyModel(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
-        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
-
         # $# Implements Algorithm 1 from [1]
 
         # generate noise vector
@@ -284,4 +264,4 @@ class StableConsistencyModel(InferenceNetwork):
             - w
         )
 
-        return base_metrics | {"loss": loss}
+        return {"loss": loss}

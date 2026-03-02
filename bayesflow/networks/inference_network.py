@@ -6,6 +6,56 @@ from bayesflow.utils.decorators import allow_batch_size
 
 
 class InferenceNetwork(keras.Layer):
+    """Abstract base class for all inference networks in BayesFlow.
+
+    An inference network learns a mapping between a data space and a latent space,
+    optionally conditioned on external variables.  Concrete subclasses power the
+    different approximation strategies (normalizing flows, diffusion models, flow
+    matching, consistency models, …).
+
+    Subclassing guide
+    -----------------
+    To implement a custom inference network, inherit from this class and override
+    **at minimum** the following methods:
+
+    ``_forward(x, conditions, density, training, **kwargs)``
+        Map data *x* → latent *z*.  When *density* is ``True`` the method must
+        return a tuple ``(z, log_prob)``; otherwise just *z*.
+
+    ``_inverse(z, conditions, density, training, **kwargs)``
+        Map latent *z* → data *x*.  Same density convention as ``_forward``.
+
+    ``compute_metrics(x, conditions, sample_weight, stage)``
+        Compute and return a ``dict[str, Tensor]`` of training metrics.  The dict
+        **must** contain at least a ``"loss"`` key. This is where you implement
+        the training objective for your custom inference network.
+
+    Optionally override:
+
+    ``build(xz_shape, conditions_shape)``
+        Allocate weights that depend on the concrete tensor shapes.  Call
+        ``super().build(...)`` to build the ``base_distribution`` and trigger a
+        forward pass for shape inference.
+
+    ``sample(batch_shape, conditions, **kwargs)``
+        Draw samples from the learned distribution.  The default implementation
+        samples from ``base_distribution`` and passes the result through
+        ``_inverse``.
+
+    ``log_prob(samples, conditions, **kwargs)``
+        Evaluate the log-density of *samples* under the learned distribution.
+        The default implementation calls ``_forward`` with ``density=True``.
+
+    Parameters
+    ----------
+    base_distribution : str, optional
+        Identifier for the base (latent) distribution, resolved via
+        :func:`~bayesflow.utils.find_distribution`.  Default is ``"normal"``.
+    **kwargs
+        Forwarded to ``keras.Layer`` after filtering with
+        :func:`~bayesflow.utils.layer_kwargs`.
+    """
+
     def __init__(self, base_distribution: str = "normal", **kwargs):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
@@ -57,18 +107,4 @@ class InferenceNetwork(keras.Layer):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
-        if not self.built:
-            xz_shape = keras.ops.shape(x)
-            conditions_shape = None if conditions is None else keras.ops.shape(conditions)
-            self.build(xz_shape, conditions_shape=conditions_shape)
-
-        metrics = {}
-
-        if stage != "training" and any(self.metrics):
-            # compute sample-based metrics
-            samples = self.sample((keras.ops.shape(x)[0],), conditions=conditions)
-
-            for metric in self.metrics:
-                metrics[metric.name] = metric(samples, x)
-
-        return metrics
+        raise NotImplementedError

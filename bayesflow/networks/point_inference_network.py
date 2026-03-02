@@ -9,8 +9,23 @@ from bayesflow.utils.decorators import allow_batch_size
 
 @serializable("bayesflow.networks")
 class PointInferenceNetwork(keras.Layer):
-    """Implements point estimation for user specified scoring rules by a shared feed forward architecture
-    with separate heads for each scoring rule.
+    """Point-estimation network with scoring-rule heads.
+
+    Implements point estimation for user-specified scoring rules by a shared
+    feed-forward architecture with separate heads for each scoring rule.
+
+    Parameters
+    ----------
+    scores : dict[str, ScoringRule]
+        A mapping from score names to :class:`~bayesflow.scores.ScoringRule`
+        instances.  Each score defines the heads that will be constructed during
+        :meth:`build`.
+    subnet : str or keras.Layer, optional
+        The shared body network.  Can be ``"mlp"`` or a custom ``keras.Layer``.
+        Default is ``"mlp"``.
+    **kwargs
+        Additional keyword arguments.  ``subnet_kwargs`` may be included to
+        configure the body network.
     """
 
     def __init__(
@@ -151,13 +166,6 @@ class PointInferenceNetwork(keras.Layer):
             score_value = score.score(output[score_key], x, sample_weight)
             metrics[score_key] = score_value
         neg_score = keras.ops.mean(list(metrics.values()))
-
-        if stage != "training" and any(self.metrics):
-            # compute sample-based metrics
-            samples = self.sample((keras.ops.shape(x)[0],), conditions=conditions)
-
-            for metric in self.metrics:
-                metrics[metric.name] = metric(samples, x)
 
         return metrics | {"loss": neg_score}
 

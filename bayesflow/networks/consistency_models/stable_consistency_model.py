@@ -285,4 +285,3 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         return {"loss": loss}
-      

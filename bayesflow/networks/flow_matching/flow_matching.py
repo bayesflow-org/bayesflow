@@ -176,7 +176,13 @@ class FlowMatching(InferenceNetwork):
         return out
 
     def _velocity_trace(
-        self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
+        self,
+        xz: Tensor,
+        time: Tensor,
+        conditions: Tensor = None,
+        max_steps: int = None,
+        training: bool = False,
+        **kwargs,
     ) -> tuple[Tensor, Tensor]:
         def f(x):
             return self.velocity(x, time=time, conditions=conditions, training=training, **kwargs)
@@ -276,7 +282,6 @@ class FlowMatching(InferenceNetwork):
             # already pre-configured
             x0, x1, t, x, target_velocity = x
         else:
-            # not pre-configured, resample
             x1 = x
             x0 = self.base_distribution.sample(keras.ops.shape(x1)[:-1])
 
@@ -300,6 +305,30 @@ class FlowMatching(InferenceNetwork):
 
             x = t * x1 + (1 - t) * x0
             target_velocity = x1 - x0
+
+        if self.drop_cond_prob > 0 and conditions is not None:
+            # generate random masks for every batch of the condition
+            cond_shape = keras.ops.shape(conditions)
+            batch = cond_shape[0]
+            rank = keras.ops.ndim(conditions)
+            mask_conditions = keras.random.uniform(
+                shape=(batch,), dtype=keras.ops.dtype(conditions), seed=self.seed_generator
+            )
+            mask_conditions = keras.ops.cast(mask_conditions > self.drop_cond_prob, dtype=keras.ops.dtype(conditions))
+
+            mask_shape = (batch,) + (1,) * (rank - 1)
+            mask_conditions = keras.ops.reshape(mask_conditions, mask_shape)
+            mask_conditions = keras.ops.broadcast_to(mask_conditions, cond_shape)
+
+            conditions = mask_conditions * conditions
+
+        if self.drop_target_prob > 0:
+            # generate random mask for every entry
+            mask_x = keras.random.uniform(shape=keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
+            mask_x = keras.ops.cast(mask_x > self.drop_target_prob, dtype=keras.ops.dtype(x))
+            x = mask_x * x + (1 - mask_x) * x1
+        else:
+            mask_x = 1.0
 
         predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training")
 

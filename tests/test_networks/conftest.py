@@ -114,33 +114,33 @@ def free_form_flow():
 
 
 @pytest.fixture()
-def typical_scoring_rule_inference_network():
-    from bayesflow.networks import ScoringRuleInferenceNetwork
-    from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+def typical_scoring_rule_network():
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore
 
-    return ScoringRuleInferenceNetwork(
-        scores=dict(
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
             mean=MeanScore(),
             median=MedianScore(),
             quantiles=QuantileScore([0.1, 0.2, 0.5, 0.65]),
-            mvn=MultivariateNormalScore(),  # currently not stable
+            mvn=MvNormalScore(),
         )
     )
 
 
 @pytest.fixture()
-def typical_scoring_rule_inference_network_subnet():
-    from bayesflow.networks import ScoringRuleInferenceNetwork
-    from bayesflow.scores import MeanScore, MedianScore, QuantileScore, MultivariateNormalScore
+def typical_scoring_rule_network_subnet():
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore
 
     subnet = MLP([16, 8])
 
-    return ScoringRuleInferenceNetwork(
-        scores=dict(
+    return ScoringRuleNetwork(
+        scoring_rules=dict(
             mean=MeanScore(subnets=dict(value=subnet)),
             median=MedianScore(subnets=dict(value=subnet)),
             quantiles=QuantileScore(subnets=dict(value=subnet)),
-            mvn=MultivariateNormalScore(subnets=dict(mean=subnet, covariance=subnet)),
+            mvn=MvNormalScore(subnets=dict(mean=subnet, covariance=subnet)),
         ),
         subnet=subnet,
     )
@@ -148,7 +148,7 @@ def typical_scoring_rule_inference_network_subnet():
 
 @pytest.fixture(
     params=[
-        "typical_scoring_rule_inference_network",
+        "typical_scoring_rule_network",
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
@@ -172,7 +172,7 @@ def inference_network(request):
 
 @pytest.fixture(
     params=[
-        "typical_scoring_rule_inference_network_subnet",
+        "typical_scoring_rule_network_subnet",
         "coupling_flow_subnet",
         "flow_matching_subnet",
         "free_form_flow_subnet",
@@ -224,6 +224,37 @@ def inference_network_subnet(request):
 )
 def generative_inference_network(request):
     return request.getfixturevalue(request.param)
+
+
+@pytest.fixture(
+    params=[
+        "flow_matching",
+        "consistency_model",
+        "stable_consistency_model",
+        "diffusion_model",
+    ],
+    scope="function",
+)
+def diffusion_type_inference_network(request):
+    if request.param == "flow_matching":
+        from bayesflow.networks import FlowMatching
+
+        network = FlowMatching
+    elif request.param == "consistency_model":
+        from bayesflow.networks import ConsistencyModel
+
+        network = ConsistencyModel
+    elif request.param == "stable_consistency_model":
+        from bayesflow.networks import StableConsistencyModel
+
+        network = StableConsistencyModel
+    elif request.param == "diffusion_model":
+        from bayesflow.networks import DiffusionModel
+
+        network = DiffusionModel
+    else:
+        raise ValueError(f"Unknown request param: {request.param}")
+    return network
 
 
 @pytest.fixture(scope="function")

@@ -22,9 +22,8 @@ class Approximator(BackendApproximator):
     def build_from_data(self, adapted_data: dict[str, any]) -> None:
         raise NotImplementedError
 
-    @classmethod
     def build_dataset(
-        cls,
+        self,
         *,
         batch_size: int = "auto",
         num_batches: int,
@@ -41,7 +40,7 @@ class Approximator(BackendApproximator):
             logging.info(f"Using a batch size of {batch_size}.")
 
         if adapter == "auto":
-            adapter = cls.build_adapter(**filter_kwargs(kwargs, cls.build_adapter))
+            adapter = self.build_adapter(**filter_kwargs(kwargs, self.build_adapter))
 
         if workers == "auto":
             workers = mp.cpu_count()
@@ -62,7 +61,7 @@ class Approximator(BackendApproximator):
     def call(self, *args, **kwargs):
         return self.compute_metrics(*args, **kwargs)
 
-    def fit(self, *, dataset: keras.utils.PyDataset = None, simulator: Simulator = None, **kwargs):
+    def fit(self, *, dataset: keras.utils.PyDataset | None = None, simulator: Simulator | None = None, **kwargs):
         """
         Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
         If `dataset` is not provided, a dataset is built from the `simulator`.
@@ -133,7 +132,6 @@ class Approximator(BackendApproximator):
             logging.info("Building on a test batch.")
             mock_data = dataset[0]
             mock_data = keras.tree.map_structure(keras.ops.convert_to_tensor, mock_data)
-            mock_data_shapes = keras.tree.map_structure(keras.ops.shape, mock_data)
-            self.build(mock_data_shapes)
+            self.build_from_data(mock_data)
 
         return super().fit(dataset=dataset, **kwargs)

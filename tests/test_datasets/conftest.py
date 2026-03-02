@@ -2,6 +2,8 @@ import keras
 import numpy as np
 import pytest
 
+from bayesflow.utils.decorators import allow_batch_size
+
 
 @pytest.fixture()
 def batch_size():
@@ -13,9 +15,36 @@ def num_batches():
     return 4
 
 
-@pytest.fixture(params=["online_dataset", "offline_dataset"])
-def dataset(request, online_dataset, offline_dataset):
+@pytest.fixture()
+def member_names():
+    return ["m1", "m2", "m3"]
+
+
+@pytest.fixture(params=[0.0, 0.5, 1.0])
+def data_reuse(request):
+    return request.param
+
+
+@pytest.fixture(params=["online_dataset", "offline_dataset", "ensemble_offline_dataset"])
+def any_dataset(request, online_dataset, offline_dataset, ensemble_offline_dataset):
     return request.getfixturevalue(request.param)
+
+
+@pytest.fixture(
+    params=[
+        "online_dataset",
+        "offline_dataset",
+    ]
+)  # TODO: cover "disk_dataset"
+def individual_dataset(request, online_dataset, offline_dataset):
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture()
+def ensemble_dataset(individual_dataset, member_names, data_reuse):
+    from bayesflow import EnsembleDataset
+
+    return EnsembleDataset(individual_dataset, member_names=member_names, data_reuse=data_reuse)
 
 
 @pytest.fixture()
@@ -47,6 +76,27 @@ def offline_dataset(simulator, batch_size, num_batches, workers, use_multiproces
 
 
 @pytest.fixture()
+def ensemble_offline_dataset(simulator, batch_size, num_batches, workers, use_multiprocessing, member_names):
+    from bayesflow import OfflineDataset, EnsembleDataset
+
+    # TODO: there is a bug in keras where if len(dataset) == 1 batch
+    #  fit will error because no logs are generated
+    #  the single batch is then skipped entirely
+    ensemble_size = len(member_names)
+    data = simulator.sample((batch_size * num_batches * ensemble_size,))
+    return EnsembleDataset(
+        OfflineDataset(
+            data=data,
+            batch_size=batch_size,
+            workers=workers,
+            use_multiprocessing=use_multiprocessing,
+            adapter=None,
+        ),
+        member_names=member_names,
+    )
+
+
+@pytest.fixture()
 def online_dataset(simulator, batch_size, num_batches, workers, use_multiprocessing):
     from bayesflow import OnlineDataset
 
@@ -64,6 +114,7 @@ def online_dataset(simulator, batch_size, num_batches, workers, use_multiprocess
 
 
 class Simulator:
+    @allow_batch_size
     def sample(self, batch_shape):
         return dict(x=np.random.standard_normal(size=batch_shape + (2,)).astype("float32"))
 

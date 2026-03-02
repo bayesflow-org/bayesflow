@@ -10,7 +10,7 @@ from bayesflow.links import OrderedQuantiles
 from .scoring_rule import ScoringRule
 
 
-@serializable("bayesflow.scores")
+@serializable("bayesflow.scoring_rules")
 class QuantileScore(ScoringRule):
     r""":math:`S(\hat \theta_i, \theta; \tau_i)
     = (\hat \theta_i - \theta)(\mathbf{1}_{\hat \theta - \theta > 0} - \tau_i)`
@@ -19,7 +19,7 @@ class QuantileScore(ScoringRule):
     to match the quantile levels :math:`\hat \tau_i`.
     """
 
-    def __init__(self, q: Sequence[float] = None, links=None, **kwargs):
+    def __init__(self, q: Sequence[float] | None = None, links=None, **kwargs):
         super().__init__(links=links, **kwargs)
         if q is None:
             q = [0.1, 0.5, 0.9]

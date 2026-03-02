@@ -3,7 +3,7 @@ import keras
 
 
 @singledispatch
-def find_network(arg, *args, **kwargs):
+def find_network(arg, *args, **kwargs) -> keras.Layer:
     raise TypeError(f"Cannot infer network from {arg!r}.")
 
 

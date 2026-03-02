@@ -103,7 +103,7 @@ class ModelComparisonApproximator(Approximator):
         self.built = True
 
     def build_from_data(self, adapted_data: dict[str, any]):
-        self.build(keras.tree.map_structure(keras.ops.shape(adapted_data)))
+        self.build(keras.tree.map_structure(keras.ops.shape, adapted_data))
 
     @classmethod
     def build_adapter(
@@ -132,9 +132,8 @@ class ModelComparisonApproximator(Approximator):
 
         return adapter
 
-    @classmethod
     def build_dataset(
-        cls,
+        self,
         *,
         dataset: keras.utils.PyDataset = None,
         simulator: ModelComparisonSimulator = None,

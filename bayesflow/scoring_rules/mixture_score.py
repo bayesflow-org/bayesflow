@@ -6,7 +6,7 @@ from bayesflow.utils.serialization import serializable, serialize, deserialize
 from .parametric_distribution_score import ParametricDistributionScore
 
 
-@serializable("bayesflow.scores")
+@serializable("bayesflow.scoring_rules")
 class MixtureScore(ParametricDistributionScore):
     r""":math:`S(\hat p_{\phi_{1\ldots K},w_{1\ldots K}},\theta)=-\sum_{k=1}^{K} \log w_k+\log(\hat p_{\phi_k}(\theta))`
 
@@ -46,9 +46,9 @@ class MixtureScore(ParametricDistributionScore):
     >>> inference_network = bf.networks.ScoringRuleInferenceNetwork(
             scores=dict(mix=bf.scores.MixtureScore(
                 components=dict(
-                    mvn1=bf.scores.MultivariateNormalScore(),
-                    mvn2=bf.scores.MultivariateNormalScore(),
-                    mvn3=bf.scores.MultivariateNormalScore(),
+                    mvn1=bf.scores.MvNormalScore(),
+                    mvn2=bf.scores.MvNormalScore(),
+                    mvn3=bf.scores.MvNormalScore(),
                 ),
             ))
         )

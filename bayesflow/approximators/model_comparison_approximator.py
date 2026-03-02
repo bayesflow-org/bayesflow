@@ -132,9 +132,8 @@ class ModelComparisonApproximator(Approximator):
 
         return adapter
 
-    @classmethod
     def build_dataset(
-        cls,
+        self,
         *,
         dataset: keras.utils.PyDataset = None,
         simulator: ModelComparisonSimulator = None,

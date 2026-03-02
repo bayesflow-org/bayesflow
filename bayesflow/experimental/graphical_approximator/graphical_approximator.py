@@ -97,9 +97,8 @@ class GraphicalApproximator(Approximator):
         if adapter == "auto":
             self.adapter = GraphicalApproximator.build_adapter()
 
-    @classmethod
     def build_dataset(
-        cls,
+        self,
         *,
         batch_size: int,
         num_batches: int,

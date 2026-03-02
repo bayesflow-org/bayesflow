@@ -2,6 +2,21 @@ import pytest
 from tests.utils import check_combination_simulator_adapter
 
 
+@pytest.fixture(autouse=True)
+def _validate_simulator_adapter_combination(request):
+    """Skip invalid simulator+adapter combinations early.
+
+    Automatically applied to all tests in test_approximators/ that request
+    both ``simulator`` and ``adapter`` fixtures, so individual tests don't
+    need to call ``check_combination_simulator_adapter`` manually.
+    """
+    if "simulator" in request.fixturenames and "adapter" in request.fixturenames:
+        check_combination_simulator_adapter(
+            request.getfixturevalue("simulator"),
+            request.getfixturevalue("adapter"),
+        )
+
+
 @pytest.fixture()
 def batch_size():
     return 8
@@ -77,8 +92,6 @@ def simulator(request):
 
 @pytest.fixture()
 def train_dataset(batch_size, adapter, simulator):
-    check_combination_simulator_adapter(simulator, adapter)
-
     from bayesflow import OfflineDataset
 
     num_batches = 4

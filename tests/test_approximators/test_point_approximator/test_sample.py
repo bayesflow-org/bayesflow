@@ -1,12 +1,9 @@
 import keras
 import numpy as np
 from bayesflow.scores import ParametricDistributionScore
-from tests.utils import check_combination_simulator_adapter
 
 
 def test_sample(point_approximator, simulator, batch_size, num_samples, adapter):
-    check_combination_simulator_adapter(simulator, adapter)
-
     data = simulator.sample((batch_size,))
 
     batch = adapter(data)

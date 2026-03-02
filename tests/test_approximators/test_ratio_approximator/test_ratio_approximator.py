@@ -17,6 +17,17 @@ def test_build(approximator, train_dataset):
         assert approximator.summary_network.built is True
 
 
+def test_build_from_data(approximator, train_dataset):
+    assert approximator.built is False
+
+    approximator.build_from_data(train_dataset[0])
+
+    assert approximator.built is True
+    assert approximator.classifier_network.built is True
+    if approximator.summary_network is not None:
+        assert approximator.summary_network.built is True
+
+
 def test_build_adapter():
     from bayesflow.approximators import RatioApproximator
 

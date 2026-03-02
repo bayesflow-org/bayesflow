@@ -46,7 +46,7 @@ class PointInferenceNetwork(keras.Layer):
             **kwargs,
         }
 
-    def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
+    def build(self, xz_shape: Shape, conditions_shape: Shape | None = None) -> None:
         """Builds all network components based on shapes of conditions and targets.
 
         For each score, corresponding estimation heads are constructed.
@@ -98,6 +98,9 @@ class PointInferenceNetwork(keras.Layer):
                 self.heads_flat[flat_key] = head
 
     def get_build_config(self):
+        if not self.built or self._input_shape is None or self._xz_shape is None:
+            return None
+
         build_config = {
             "conditions_shape": self._input_shape,
             "xz_shape": self._xz_shape,
@@ -115,6 +118,9 @@ class PointInferenceNetwork(keras.Layer):
         return build_config
 
     def build_from_config(self, config):
+        if config is None:
+            return
+
         self.build(xz_shape=config["xz_shape"], conditions_shape=config["conditions_shape"])
 
         for score_key in self.scores.keys():
@@ -135,8 +141,8 @@ class PointInferenceNetwork(keras.Layer):
 
     def call(
         self,
-        xz: Tensor = None,
-        conditions: Tensor = None,
+        xz: Tensor | None = None,
+        conditions: Tensor | None = None,
         training: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, Tensor]]:
@@ -170,7 +176,7 @@ class PointInferenceNetwork(keras.Layer):
         return metrics | {"loss": neg_score}
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape, conditions: Tensor = None) -> dict[str, Tensor]:
+    def sample(self, batch_shape: Shape, conditions: Tensor | None = None) -> dict[str, Tensor]:
         """
         Draw one sample per parameter set from each parametric scoring rule.
 

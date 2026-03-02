@@ -1,20 +1,4 @@
 import pytest
-from tests.utils import check_combination_simulator_adapter
-
-
-@pytest.fixture(autouse=True)
-def _validate_simulator_adapter_combination(request):
-    """Skip invalid simulator+adapter combinations early.
-
-    Automatically applied to all tests in test_approximators/ that request
-    both ``simulator`` and ``adapter`` fixtures, so individual tests don't
-    need to call ``check_combination_simulator_adapter`` manually.
-    """
-    if "simulator" in request.fixturenames and "adapter" in request.fixturenames:
-        check_combination_simulator_adapter(
-            request.getfixturevalue("simulator"),
-            request.getfixturevalue("adapter"),
-        )
 
 
 @pytest.fixture()
@@ -124,12 +108,19 @@ def approximator_with_summaries(request):
     match request.param:
         case "continuous_approximator":
             from bayesflow.approximators import ContinuousApproximator
+            from bayesflow.networks import CouplingFlow
 
-            return ContinuousApproximator(adapter=adapter, inference_network=None, summary_network=None)
+            return ContinuousApproximator(adapter=adapter, inference_network=CouplingFlow(), summary_network=None)
         case "point_approximator":
             from bayesflow.approximators import PointApproximator
+            from bayesflow.networks import PointInferenceNetwork
+            from bayesflow.scores import MeanScore
 
-            return PointApproximator(adapter=adapter, inference_network=None, summary_network=None)
+            return PointApproximator(
+                adapter=adapter,
+                inference_network=PointInferenceNetwork(scores=dict(mean=MeanScore())),
+                summary_network=None,
+            )
         case "model_comparison_approximator":
             from bayesflow.approximators import ModelComparisonApproximator
 

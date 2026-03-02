@@ -16,7 +16,7 @@ from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ContinuousApproximator, PointApproximator
 from bayesflow.types import Shape
-from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration
+from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration, filter_kwargs
 from bayesflow.diagnostics import metrics as bf_metrics
 from bayesflow.diagnostics import plots as bf_plots
 
@@ -26,19 +26,19 @@ from .workflow import Workflow
 class BasicWorkflow(Workflow):
     def __init__(
         self,
-        simulator: Simulator = None,
-        adapter: Adapter = None,
+        simulator: Simulator | None = None,
+        adapter: Adapter | None = None,
         inference_network: InferenceNetwork | str = "coupling_flow",
-        summary_network: SummaryNetwork | str = None,
+        summary_network: SummaryNetwork | str | None = None,
         initial_learning_rate: float = 5e-4,
-        optimizer: keras.optimizers.Optimizer | type = None,
-        checkpoint_filepath: str = None,
+        optimizer: keras.optimizers.Optimizer | type | None = None,
+        checkpoint_filepath: str | None = None,
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
         save_best_only: bool = False,
-        inference_variables: Sequence[str] | str = None,
-        inference_conditions: Sequence[str] | str = None,
-        summary_variables: Sequence[str] | str = None,
+        inference_variables: Sequence[str] | str | None = None,
+        inference_conditions: Sequence[str] | str | None = None,
+        summary_variables: Sequence[str] | str | None = None,
         standardize: Sequence[str] | str | None = "inference_variables",
         **kwargs,
     ):
@@ -110,14 +110,21 @@ class BasicWorkflow(Workflow):
             summary_network=self.summary_network,
             adapter=adapter,
             standardize=standardize,
+            **filter_kwargs(kwargs, keras.Model.__init__),
         )
 
+        self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
+        self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
+        self.history = None
+
+    def _init_optimizer(self, initial_learning_rate, optimizer, **kwargs):
         self.initial_learning_rate = initial_learning_rate
         if isinstance(optimizer, type):
             self.optimizer = optimizer(initial_learning_rate, **kwargs.get("optimizer_kwargs", {}))
         else:
             self.optimizer = optimizer
 
+    def _init_checkpointing(self, checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only):
         self.checkpoint_filepath = checkpoint_filepath
         self.checkpoint_name = checkpoint_name
         self.save_weights_only = save_weights_only
@@ -141,7 +148,6 @@ class BasicWorkflow(Workflow):
                     )
 
                 logging.warning(msg)
-        self.history = None
 
     @property
     def adapter(self):

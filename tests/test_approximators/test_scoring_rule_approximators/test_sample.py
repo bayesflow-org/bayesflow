@@ -4,23 +4,26 @@ from bayesflow.scoring_rules import ParametricDistributionScore
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_approximator_sample(scoring_rule_approximator, simulator, batch_size, num_samples, adapter):
+def test_approximator_sample(
+    scoring_rule_approximator_with_multiple_parametric_scores, simulator, batch_size, num_samples, adapter
+):
+    approx = scoring_rule_approximator_with_multiple_parametric_scores
     check_combination_simulator_adapter(simulator, adapter)
 
     data = simulator.sample((batch_size,))
 
     batch = adapter(data)
     batch_shapes = keras.tree.map_structure(keras.ops.shape, batch)
-    scoring_rule_approximator.build(batch_shapes)
+    approx.build(batch_shapes)
 
-    samples = scoring_rule_approximator.sample(num_samples=num_samples, conditions=data)
+    samples = approx.sample(num_samples=num_samples, conditions=data, merge_scores=False)
 
     assert isinstance(samples, dict)
 
     # Expect doubly nested sample dictionary if more than one samplable score is available.
     scoring_rules_for_sampling = [
         score
-        for score in scoring_rule_approximator.inference_network.scoring_rules.values()
+        for score in approx.inference_network.scoring_rules.values()
         if isinstance(score, ParametricDistributionScore)
     ]
 

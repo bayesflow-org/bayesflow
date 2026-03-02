@@ -3,18 +3,21 @@ from bayesflow.scoring_rules import ParametricDistributionScore
 from tests.utils import check_combination_simulator_adapter
 
 
-def test_approximator_log_prob(scoring_rule_approximator, simulator, batch_size, adapter):
+def test_approximator_log_prob(
+    scoring_rule_approximator_with_multiple_parametric_scores, simulator, batch_size, adapter
+):
+    approx = scoring_rule_approximator_with_multiple_parametric_scores
     check_combination_simulator_adapter(simulator, adapter)
 
     data = simulator.sample((batch_size,))
 
     batch = adapter(data)
-    scoring_rule_approximator.build_from_data(batch)
+    approx.build_from_data(batch)
 
-    log_prob = scoring_rule_approximator.log_prob(data=data)
+    log_prob = approx.log_prob(data=data, merge_scores=False)
     parametric_scoring_rules = [
         score
-        for score in scoring_rule_approximator.inference_network.scoring_rules.values()
+        for score in approx.inference_network.scoring_rules.values()
         if isinstance(score, ParametricDistributionScore)
     ]
 

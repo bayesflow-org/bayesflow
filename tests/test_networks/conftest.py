@@ -226,6 +226,37 @@ def generative_inference_network(request):
     return request.getfixturevalue(request.param)
 
 
+@pytest.fixture(
+    params=[
+        "flow_matching",
+        "consistency_model",
+        "stable_consistency_model",
+        "diffusion_model",
+    ],
+    scope="function",
+)
+def diffusion_type_inference_network(request):
+    if request.param == "flow_matching":
+        from bayesflow.networks import FlowMatching
+
+        network = FlowMatching
+    elif request.param == "consistency_model":
+        from bayesflow.networks import ConsistencyModel
+
+        network = ConsistencyModel
+    elif request.param == "stable_consistency_model":
+        from bayesflow.networks import StableConsistencyModel
+
+        network = StableConsistencyModel
+    elif request.param == "diffusion_model":
+        from bayesflow.networks import DiffusionModel
+
+        network = DiffusionModel
+    else:
+        raise ValueError(f"Unknown request param: {request.param}")
+    return network
+
+
 @pytest.fixture(scope="function")
 def time_series_network(summary_dim):
     from bayesflow.networks import TimeSeriesNetwork

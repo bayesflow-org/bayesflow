@@ -115,7 +115,13 @@ from . import (
 )
 
 from .adapters import Adapter
-from .approximators import ContinuousApproximator, ScoringRuleApproximator, RatioApproximator
-from .datasets import OfflineDataset, OnlineDataset, DiskDataset
+from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
+from .approximators import (
+    ContinuousApproximator,
+    ModelComparisonApproximator,
+    ScoringRuleApproximator,
+    EnsembleApproximator,
+    RatioApproximator,
+)
 from .simulators import make_simulator
-from .workflows import BasicWorkflow
+from .workflows import BasicWorkflow, EnsembleWorkflow

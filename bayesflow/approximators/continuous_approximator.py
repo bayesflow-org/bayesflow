@@ -56,7 +56,7 @@ class ContinuousApproximator(Approximator):
         *,
         adapter: Adapter,
         inference_network: InferenceNetwork,
-        summary_network: SummaryNetwork = None,
+        summary_network: SummaryNetwork | None = None,
         standardize: str | Sequence[str] | None = "all",
         **kwargs,
     ):
@@ -76,6 +76,8 @@ class ContinuousApproximator(Approximator):
             self.standardize_layers = None
         else:
             self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+
+        self.has_distribution = True
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
         # Build summary network and get output shape if present

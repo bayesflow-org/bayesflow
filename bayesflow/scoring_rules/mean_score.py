@@ -1,5 +1,5 @@
 from bayesflow.utils.serialization import serializable
-from .normed_difference_scoring_rule import NormedDifferenceScore
+from .normed_difference_score import NormedDifferenceScore
 
 
 @serializable("bayesflow.scoring_rules")

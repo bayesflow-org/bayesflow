@@ -6,7 +6,7 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.links import CholeskyFactor
 from bayesflow.utils.serialization import serializable
 
-from .parametric_distribution_scoring_rule import ParametricDistributionScore
+from .parametric_distribution_score import ParametricDistributionScore
 
 
 @serializable("bayesflow.scoring_rules")

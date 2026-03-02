@@ -38,13 +38,12 @@ def continuous_approximator(adapter, inference_network, summary_network):
 @pytest.fixture()
 def scoring_rule_network():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import NormedDifferenceScore, QuantileScore, MvNormalScore
+    from bayesflow.scoring_rules import NormedDifferenceScore, QuantileScore
 
     return ScoringRuleNetwork(
         scoring_rules=dict(
             mean=NormedDifferenceScore(k=2),
             quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
-            mvn=MvNormalScore(),
         ),
         subnet="mlp",
         subnet_kwargs=dict(widths=(32, 32)),
@@ -52,7 +51,7 @@ def scoring_rule_network():
 
 
 @pytest.fixture()
-def scoring_rule_network_with_multiple_parametric_scoring_rules():
+def scoring_rule_network_with_multiple_parametric_scores():
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import MvNormalScore
 
@@ -65,11 +64,11 @@ def scoring_rule_network_with_multiple_parametric_scoring_rules():
 
 
 @pytest.fixture()
-def scoring_rule_approximator_with_single_parametric_score(adapter, scoring_rule_network, summary_network):
+def scoring_rule_approximator_without_parametric_score(adapter, scoring_rule_network, summary_network):
     from bayesflow import ScoringRuleApproximator
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
-        pytest.skip("point approximator does not support unconditional estimation")
+        pytest.skip("ScoringRuleApproximator does not support unconditional estimation")
 
     return ScoringRuleApproximator(
         adapter=adapter,
@@ -79,25 +78,42 @@ def scoring_rule_approximator_with_single_parametric_score(adapter, scoring_rule
 
 
 @pytest.fixture()
-def scoring_rule_approximator_with_multiple_parametric_scoring_rules(
-    adapter, scoring_rule_network_with_multiple_parametric_scoring_rules, summary_network
+def scoring_rule_approximator_with_multiple_parametric_scores(
+    adapter, scoring_rule_network_with_multiple_parametric_scores, summary_network
 ):
     from bayesflow import ScoringRuleApproximator
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
-        pytest.skip("point approximator does not support unconditional estimation")
+        pytest.skip("ScoringRuleApproximator does not support unconditional estimation")
 
     return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=scoring_rule_network_with_multiple_parametric_scoring_rules,
+        inference_network=scoring_rule_network_with_multiple_parametric_scores,
         summary_network=summary_network,
+    )
+
+
+@pytest.fixture()
+def ensemble_approximator(
+    continuous_approximator,
+    scoring_rule_approximator_without_parametric_score,
+    scoring_rule_approximator_with_multiple_parametric_scores,
+):
+    from bayesflow import EnsembleApproximator
+
+    return EnsembleApproximator(
+        dict(
+            continuous_1=continuous_approximator,
+            point_1=scoring_rule_approximator_without_parametric_score,
+            point_2=scoring_rule_approximator_with_multiple_parametric_scores,
+        )
     )
 
 
 @pytest.fixture(
     params=[
-        "scoring_rule_approximator_with_single_parametric_score",
-        "scoring_rule_approximator_with_multiple_parametric_scoring_rules",
+        "scoring_rule_approximator_without_parametric_score",
+        "scoring_rule_approximator_with_multiple_parametric_scores",
     ]
 )
 def scoring_rule_approximator(request):
@@ -107,8 +123,9 @@ def scoring_rule_approximator(request):
 @pytest.fixture(
     params=[
         "continuous_approximator",
-        "scoring_rule_approximator_with_single_parametric_score",
-        "scoring_rule_approximator_with_multiple_parametric_scoring_rules",
+        "scoring_rule_approximator_without_parametric_score",
+        "scoring_rule_approximator_with_multiple_parametric_scores",
+        "ensemble_approximator",
     ],
     scope="function",
 )
@@ -209,12 +226,18 @@ def approximator_with_summaries(request):
     match request.param:
         case "continuous_approximator":
             from bayesflow.approximators import ContinuousApproximator
+            from bayesflow.networks import CouplingFlow
 
-            return ContinuousApproximator(adapter=adapter, inference_network=None, summary_network=None)
+            return ContinuousApproximator(adapter=adapter, inference_network=CouplingFlow(), summary_network=None)
         case "scoring_rule_approximator":
             from bayesflow.approximators import ScoringRuleApproximator
+            from bayesflow.networks import PointNetwork
 
-            return ScoringRuleApproximator(adapter=adapter, inference_network=None, summary_network=None)
+            return ScoringRuleApproximator(
+                adapter=adapter,
+                inference_network=PointNetwork(points=["mean"]),
+                summary_network=None,
+            )
         case "model_comparison_approximator":
             from bayesflow.approximators import ModelComparisonApproximator
 

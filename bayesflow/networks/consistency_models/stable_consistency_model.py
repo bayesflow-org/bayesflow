@@ -56,6 +56,7 @@ class StableConsistencyModel(InferenceNetwork):
         sigma: float = 1.0,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
+        drop_cond_prob: float = 0.0,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -79,6 +80,8 @@ class StableConsistencyModel(InferenceNetwork):
         self.p_mean = float(kwargs.get("p_mean", -1.0))
         self.p_std = float(kwargs.get("p_std", 1.6))
         self.c = float(kwargs.get("c", 0.1))
+        self.drop_cond_prob = drop_cond_prob
+        self.unconditional_mode = False
         self.seed_generator = keras.random.SeedGenerator()
 
     def get_config(self):
@@ -91,6 +94,7 @@ class StableConsistencyModel(InferenceNetwork):
             "p_mean": self.p_mean,
             "p_std": self.p_std,
             "c": self.c,
+            "drop_cond_prob": self.drop_cond_prob,
         }
 
         return base_config | serialize(config)
@@ -160,6 +164,10 @@ class StableConsistencyModel(InferenceNetwork):
         steps = kwargs.get("steps", 15)
         rho = kwargs.get("rho", 3.5)
 
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
+
         # noise distribution has variance sigma
         x = keras.ops.copy(z) * self.sigma
         discretized_time = keras.ops.flip(self._discretize_time(steps, rho=rho), axis=-1)
@@ -201,6 +209,22 @@ class StableConsistencyModel(InferenceNetwork):
         self, x: Tensor, conditions: Tensor = None, stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
         # $# Implements Algorithm 1 from [1]
+
+        if self.drop_cond_prob > 0 and conditions is not None:
+            # generate random masks for every batch of the condition
+            cond_shape = ops.shape(conditions)
+            batch = cond_shape[0]
+            rank = ops.ndim(conditions)
+            mask_conditions = keras.random.uniform(
+                shape=(batch,), dtype=ops.dtype(conditions), seed=self.seed_generator
+            )
+            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
+
+            mask_shape = (batch,) + (1,) * (rank - 1)
+            mask_conditions = ops.reshape(mask_conditions, mask_shape)
+            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
+
+            conditions = mask_conditions * conditions
 
         # generate noise vector
         z = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.sigma
@@ -261,3 +285,4 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         return {"loss": loss}
+      

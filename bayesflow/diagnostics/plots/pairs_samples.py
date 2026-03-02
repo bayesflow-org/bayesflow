@@ -23,6 +23,7 @@ def pairs_samples(
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     show_single_legend: bool = False,
+    place_legend_below: bool = False,
     markersize: float = 40,
     **kwargs,
 ) -> sns.PairGrid:
@@ -56,6 +57,11 @@ def pairs_samples(
     show_single_legend : bool, optional, default: False
         Optional toggle for the user to choose whether a single dataset
         should also display legend
+    place_legend_below : bool, optional, default: False
+        Optional toggle for the user to choose whether to place the legends
+        below the plot.
+        If set to True, then user-defined legend location, anchor, and ncol
+        will be ignored and overwritten by presets.
     markersize  : float, optional, default: 40
         Marker size in points**2 of the scatter plot.
     **kwargs    : dict, optional
@@ -83,6 +89,7 @@ def pairs_samples(
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
         show_single_legend=show_single_legend,
+        place_legend_below=place_legend_below,
         markersize=markersize,
         **kwargs,
     )
@@ -100,7 +107,11 @@ def _pairs_samples(
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
+    legend_location: str = "center left",
+    legend_anchor: tuple = (1, 0.5),
+    legend_ncol: int = 1,
     show_single_legend: bool = False,
+    place_legend_below: bool = False,
     markersize: float = 40,
     target_markersize: float = 40,
     target_color: str = "red",
@@ -222,9 +233,12 @@ def _pairs_samples(
         legend_fontsize=legend_fontsize,
         label=label,
         show_single_legend=show_single_legend,
-        markersize=markersize,
         target_markersize=target_markersize,
         target_color=target_color,
+        legend_location=legend_location,
+        legend_anchor=legend_anchor,
+        legend_ncol=legend_ncol,
+        place_legend_below=place_legend_below,
     )
 
     # Return figure

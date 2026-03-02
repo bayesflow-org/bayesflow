@@ -4,6 +4,7 @@ applications without having to worry about the internals.
 """
 
 from .basic_workflow import BasicWorkflow
+from .ensemble_workflow import EnsembleWorkflow
 
 from ..utils._docs import _add_imports_to_all
 

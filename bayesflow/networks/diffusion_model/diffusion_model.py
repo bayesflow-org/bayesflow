@@ -4,7 +4,6 @@ from typing import Literal, Callable
 import keras
 from keras import ops
 
-from ..inference_network import InferenceNetwork
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
@@ -18,36 +17,57 @@ from bayesflow.utils import (
     STOCHASTIC_METHODS,
     DETERMINISTIC_METHODS,
 )
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils.serialization import serialize, serializable
 
 from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
 
+from ..inference_network import InferenceNetwork
+from ..defaults import TIME_MLP_DEFAULTS, DIFFUSION_INTEGRATE_DEFAULTS
+
 
 @serializable("bayesflow.networks")
 class DiffusionModel(InferenceNetwork):
-    """Score-based diffusion model for simulation-based inference as described in [1]:
+    """Score-based diffusion model for simulation-based inference (SBI).
 
+    Implements a score-based diffusion model with configurable subnet architecture,
+    noise schedule, and prediction/loss types for amortized SBI as described in [1].
+
+    Note that score-based diffusion is the most sluggish of all available samplers,
+    so expect slower inference times than flow matching and much slower than
+    normalizing flows.
+
+    Parameters
+    ----------
+    subnet : str, type, or keras.Layer, optional
+        A neural network type for the diffusion model, will be instantiated using
+        *subnet_kwargs*.  If a string is provided, it should be a registered name
+        (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
+        be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+        accept a tuple of tensors ``(target, time, conditions)``.
+    noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
+        Noise schedule controlling the diffusion dynamics.  Can be a string
+        identifier, a schedule class, or a pre-initialised schedule instance.
+        Default is ``"edm"``.
+    prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
+        Output format of the model's prediction.  Default is ``"F"``.
+    loss_type : {'velocity', 'noise', 'F'}, optional
+        Loss function used to train the model.  Default is ``"noise"``.
+    subnet_kwargs : dict[str, any], optional
+        Additional keyword arguments passed to the subnet constructor.
+    schedule_kwargs : dict[str, any], optional
+        Additional keyword arguments passed to the noise schedule constructor.
+    integrate_kwargs : dict[str, any], optional
+        Configuration dictionary for the ODE/SDE integrator used at inference time.
+    **kwargs
+        Additional keyword arguments passed to the base ``InferenceNetwork``.
+
+    References
+    ----------
     [1] Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025).
-    Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.
+        Diffusion Models in Simulation-Based Inference: A Tutorial Review.
+        arXiv preprint arXiv:2512.20685.
     """
-
-    TIME_MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-        "time_embedding_dim": 32,
-        "merge": "concat",
-        "norm": "layer",
-    }
-
-    INTEGRATE_DEFAULT_CONFIG = {
-        "method": "two_step_adaptive",
-        "steps": "adaptive",
-    }
 
     def __init__(
         self,
@@ -61,36 +81,6 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs: dict[str, any] = None,
         **kwargs,
     ):
-        """
-        Initializes a diffusion model with configurable subnet architecture, noise schedule,
-        and prediction/loss types for amortized Bayesian inference.
-
-        Note, that score-based diffusion is the most sluggish of all available samplers,
-        so expect slower inference times than flow matching and much slower than normalizing flows.
-
-        Parameters
-        ----------
-        subnet : str, type or keras.Layer, optional
-            A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
-            If a string is provided, it should be a registered name (e.g., "time_mlp").
-            If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
-        noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
-            Noise schedule controlling the diffusion dynamics. Can be a string identifier,
-            a schedule class, or a pre-initialized schedule instance. Default is "edm".
-        prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
-            Output format of the model's prediction. Default is "F".
-        loss_type : {'velocity', 'noise', 'F'}, optional
-            Loss function used to train the model. Default is "noise".
-        subnet_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the subnet constructor. Default is None.
-        schedule_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the noise schedule constructor. Default is None.
-        integrate_kwargs : dict[str, any], optional
-            Configuration dictionary for integration during training or inference. Default is None.
-        **kwargs
-            Additional keyword arguments passed to the base class and internal components.
-        """
         super().__init__(base_distribution="normal", **kwargs)
 
         if prediction_type not in ["noise", "velocity", "F", "x"]:
@@ -112,17 +102,17 @@ class DiffusionModel(InferenceNetwork):
         self.noise_schedule = find_noise_schedule(noise_schedule, **schedule_kwargs)
         self.noise_schedule.validate()
 
-        self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
+        self.integrate_kwargs = DIFFUSION_INTEGRATE_DEFAULTS | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = DiffusionModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None
 
-    def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
+    def build(self, xz_shape: Shape, conditions_shape: Shape = None):
         if self.built:
             return
 
@@ -154,10 +144,6 @@ class DiffusionModel(InferenceNetwork):
             # we do not need to store subnet_kwargs
         }
         return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def convert_prediction_to_x(
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
@@ -378,7 +364,7 @@ class DiffusionModel(InferenceNetwork):
         max_steps: int = None,
         training: bool = False,
         **kwargs,
-    ) -> (Tensor, Tensor):
+    ) -> tuple[Tensor, Tensor]:
         def f(x):
             return self.velocity(
                 x, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
@@ -533,7 +519,7 @@ class DiffusionModel(InferenceNetwork):
 
     def compute_metrics(
         self,
-        x: Tensor | Sequence[Tensor, ...],
+        x: Tensor | Sequence[Tensor],
         conditions: Tensor = None,
         sample_weight: Tensor = None,
         stage: str = "training",
@@ -541,10 +527,6 @@ class DiffusionModel(InferenceNetwork):
         training = stage == "training"
         # use same noise schedule for training and validation to keep them comparable
         noise_schedule_training_stage = stage == "training" or stage == "validation"
-        if not self.built:
-            xz_shape = ops.shape(x)
-            conditions_shape = None if conditions is None else ops.shape(conditions)
-            self.build(xz_shape, conditions_shape)
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
         u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
@@ -595,8 +577,7 @@ class DiffusionModel(InferenceNetwork):
 
         loss = weighted_mean(loss, sample_weight)
 
-        base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
-        return base_metrics | {"loss": loss}
+        return {"loss": loss}
 
     def guidance_constraint_term(
         self,

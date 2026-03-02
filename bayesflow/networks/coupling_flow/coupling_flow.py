@@ -6,36 +6,72 @@ from bayesflow.utils import (
     layer_kwargs,
     weighted_mean,
 )
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 
 from .actnorm import ActNorm
 from .couplings import DualCoupling
+
 from ..inference_network import InferenceNetwork
 
 
 @serializable("bayesflow.networks")
 class CouplingFlow(InferenceNetwork):
-    """(IN) Implements a coupling flow as a sequence of dual couplings with permutations and activation
-    normalization. Incorporates ideas from [1-5].
+    """Coupling-based normalizing flow for simulation-based inference.
 
-    [1] Kingma, D. P., & Dhariwal, P. (2018).
-    Glow: Generative flow with invertible 1x1 convolutions.
-    Advances in Neural Information Processing Systems, 31.
+    Constructs a deep invertible architecture composed of multiple layers,
+    including ActNorm, learned permutations, and dual coupling layers.
+    Incorporates ideas from [1-5].
 
-    [2] Durkan, C., Bekasov, A., Murray, I., & Papamakarios, G. (2019).
-    Neural spline flows. Advances in Neural Information Processing Systems, 32.
+    The specific transformation applied in the coupling layers is determined by
+    *transform*, while the subnet type can be either an MLP or another callable
+    architecture specified by *subnet*.  If *use_actnorm* is ``True``, an ActNorm
+    layer is applied before each coupling layer.
 
-    [3] Ardizzone, L., Kruse, J., Lüth, C., Bracher, N., Rother, C., & Köthe, U. (2020).
-    Conditional invertible neural networks for diverse image-to-image translation.
-    In DAGM German Conference on Pattern Recognition (pp. 373-387). Springer, Cham.
+    The model can be initialised with a base distribution, such as a standard
+    normal, for density estimation.  It can also use more flexible distributions,
+    e.g., GMMs for highly multimodal, low-dimensional distributions or
+    Multivariate Student-*t* for heavy-tailed distributions.
 
-    [4] Radev, S. T., Mertens, U. K., Voss, A., Ardizzone, L., & Köthe, U. (2020).
-    BayesFlow: Learning complex stochastic simulators with invertible neural networks.
-    IEEE Transactions on Neural Networks and Learning Systems.
+    Parameters
+    ----------
+    subnet : str or type, optional
+        Architecture for the transformation network.  Can be ``"mlp"``, a custom
+        network class, or a ``Layer`` object, e.g.,
+        ``bayesflow.networks.MLP(widths=[32, 32])``.  Default is ``"mlp"``.
+    depth : int, optional
+        The number of invertible layers in the model.  Default is 6.
+    transform : str, optional
+        The type of transformation used in the coupling layers, such as
+        ``"affine"``.  Default is ``"affine"``.
+    permutation : str or None, optional
+        The type of permutation applied between layers.  Can be ``"orthogonal"``,
+        ``"random"``, ``"swap"``, or ``None`` (no permutation).  Default is
+        ``"random"``.
+    use_actnorm : bool, optional
+        Whether to apply ActNorm before each coupling layer.  Default is ``True``.
+    base_distribution : str, optional
+        The base probability distribution from which samples are drawn.
+        Default is ``"normal"``.
+    subnet_kwargs : dict[str, any], optional
+        Keyword arguments forwarded to the subnet (e.g., MLP) constructor within
+        each coupling layer, such as hidden sizes or activation choices.
+    transform_kwargs : dict[str, any], optional
+        Keyword arguments forwarded to the affine or spline transforms
+        (e.g., number of bins for splines).
+    **kwargs
+        Additional keyword arguments passed to the base ``InferenceNetwork``.
 
-    [5] Alexanderson, S., & Henter, G. E. (2020).
-    Robust model training and generalisation with Studentising flows.
-    arXiv preprint arXiv:2006.06599.
+    References
+    ----------
+    [1] Kingma, D. P., & Dhariwal, P. (2018). Glow: Generative flow with
+        invertible 1x1 convolutions. NeurIPS, 31.
+    [2] Durkan, C., et al. (2019). Neural spline flows. NeurIPS, 32.
+    [3] Ardizzone, L., et al. (2020). Conditional invertible neural networks for
+        diverse image-to-image translation. DAGM GCPR (pp. 373-387).
+    [4] Radev, S. T., et al. (2020). BayesFlow: Learning complex stochastic
+        models with invertible neural networks. IEEE TNNLS.
+    [5] Alexanderson, S., & Henter, G. E. (2020). Robust model training and
+        generalisation with Studentising flows. arXiv:2006.06599.
     """
 
     def __init__(
@@ -50,50 +86,6 @@ class CouplingFlow(InferenceNetwork):
         transform_kwargs: dict[str, any] = None,
         **kwargs,
     ):
-        """
-        Initializes an invertible flow-based model with a sequence of transformations.
-
-        This model constructs a deep invertible architecture composed of multiple
-        layers, including ActNorm, learned permutations, and coupling layers.
-
-        The specific transformation applied in the coupling layers is determined by
-        `transform`, while the subnet type can be either an MLP or another callable
-        architecture specified by `subnet`. If `use_actnorm` is set to True, an
-        ActNorm layer is applied before each coupling layer.
-
-        The model can be initialized with a base distribution, such as a standard normal, for
-        density estimation. It can also use more flexible distributions, e.g., GMMs for
-        highly multimodal, low-dimensional distributions or Multivariate Student-t for
-        heavy-tailed distributions.
-
-        Parameters
-        ----------
-        subnet : str or type optional
-            Architecture for the transformation network. Can be "mlp", a custom network class, or
-            a Layer object, e.g., `bayesflow.networks.MLP(widths=[32, 32])`. Default is "mlp".
-        depth : int, optional
-            The number of invertible layers in the model. Default is 6.
-        transform : str, optional
-            The type of transformation used in the coupling layers, such as "affine".
-            Default is "affine".
-        permutation : str or None, optional
-            The type of permutation applied between layers. Can be "orthogonal", "random", "swap", or None
-            (no permutation). Default is "random".
-        use_actnorm : bool, optional
-            Whether to apply ActNorm before each coupling layer. Default is True.
-        base_distribution : str, optional
-            The base probability distribution from which samples are drawn, such as
-            "normal". Default is "normal".
-        subnet_kwargs : dict of str to any, optional
-            Keyword arguments forwarded to the subnet (e.g., MLP) constructor within
-            each coupling layer, such as hidden sizes or activation choices.
-        transform_kwargs : dict of str to any, optional
-            Keyword arguments forwarded to the affine or spline transforms
-            (e.g., bins for splines)
-        **kwargs
-            Additional keyword arguments passed to `InvertibleLayer`.
-
-        """
         super().__init__(base_distribution=base_distribution, **kwargs)
 
         self.subnet = subnet
@@ -124,10 +116,6 @@ class CouplingFlow(InferenceNetwork):
             layer.build(xz_shape=xz_shape, conditions_shape=conditions_shape)
 
         self.base_distribution.build(xz_shape)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
@@ -181,9 +169,7 @@ class CouplingFlow(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
-        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
-
         z, log_density = self(x, conditions=conditions, inverse=False, density=True, training=stage == "training")
         loss = weighted_mean(-log_density, sample_weight)
 
-        return base_metrics | {"loss": loss}
+        return {"loss": loss}

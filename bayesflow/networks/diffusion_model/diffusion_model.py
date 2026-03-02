@@ -17,7 +17,7 @@ from bayesflow.utils import (
     STOCHASTIC_METHODS,
     DETERMINISTIC_METHODS,
 )
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils.serialization import serialize, serializable
 
 from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
@@ -144,10 +144,6 @@ class DiffusionModel(InferenceNetwork):
             # we do not need to store subnet_kwargs
         }
         return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def convert_prediction_to_x(
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
@@ -368,7 +364,7 @@ class DiffusionModel(InferenceNetwork):
         max_steps: int = None,
         training: bool = False,
         **kwargs,
-    ) -> (Tensor, Tensor):
+    ) -> tuple[Tensor, Tensor]:
         def f(x):
             return self.velocity(
                 x, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
@@ -523,7 +519,7 @@ class DiffusionModel(InferenceNetwork):
 
     def compute_metrics(
         self,
-        x: Tensor | Sequence[Tensor, ...],
+        x: Tensor | Sequence[Tensor],
         conditions: Tensor = None,
         sample_weight: Tensor = None,
         stage: str = "training",

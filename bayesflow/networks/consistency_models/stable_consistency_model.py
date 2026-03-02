@@ -5,7 +5,7 @@ from keras import ops
 
 from bayesflow.types import Tensor
 from bayesflow.utils import logging, jvp, find_network, expand_right_as, expand_right_to, layer_kwargs
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 
 from ..inference_network import InferenceNetwork
 from ..defaults import TIME_MLP_DEFAULTS, WEIGHT_MLP_DEFAULTS
@@ -80,10 +80,6 @@ class StableConsistencyModel(InferenceNetwork):
         self.p_std = float(kwargs.get("p_std", 1.6))
         self.c = float(kwargs.get("c", 0.1))
         self.seed_generator = keras.random.SeedGenerator()
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()

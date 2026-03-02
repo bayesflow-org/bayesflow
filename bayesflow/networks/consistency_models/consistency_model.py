@@ -5,7 +5,7 @@ from keras import ops
 
 from bayesflow.types import Tensor
 from bayesflow.utils import find_network, layer_kwargs, weighted_mean, expand_right_as, logging
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 
 from ..inference_network import InferenceNetwork
 from ..defaults import TIME_MLP_DEFAULTS
@@ -109,10 +109,6 @@ class ConsistencyModel(InferenceNetwork):
     @property
     def student(self):
         return self.subnet
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()

@@ -6,7 +6,7 @@ from bayesflow.utils import (
     layer_kwargs,
     weighted_mean,
 )
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 
 from .actnorm import ActNorm
 from .couplings import DualCoupling
@@ -116,10 +116,6 @@ class CouplingFlow(InferenceNetwork):
             layer.build(xz_shape=xz_shape, conditions_shape=conditions_shape)
 
         self.base_distribution.build(xz_shape)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()

@@ -13,7 +13,7 @@ from bayesflow.utils import (
     optimal_transport,
     weighted_mean,
 )
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils.serialization import serialize, serializable
 
 from ..inference_network import InferenceNetwork
 from ..defaults import TIME_MLP_DEFAULTS, FLOW_MATCHING_INTEGRATE_DEFAULTS, OPTIMAL_TRANSPORT_DEFAULTS
@@ -135,10 +135,6 @@ class FlowMatching(InferenceNetwork):
 
         self.output_projector.build(out_shape)
 
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
     def get_config(self):
         base_config = super().get_config()
         base_config = layer_kwargs(base_config)
@@ -165,7 +161,7 @@ class FlowMatching(InferenceNetwork):
 
     def _velocity_trace(
         self, xz: Tensor, time: Tensor, conditions: Tensor = None, max_steps: int = None, training: bool = False
-    ) -> (Tensor, Tensor):
+    ) -> tuple[Tensor, Tensor]:
         def f(x):
             return self.velocity(x, time=time, conditions=conditions, training=training)
 
@@ -231,7 +227,7 @@ class FlowMatching(InferenceNetwork):
 
     def compute_metrics(
         self,
-        x: Tensor | Sequence[Tensor, ...],
+        x: Tensor | Sequence[Tensor],
         conditions: Tensor = None,
         sample_weight: Tensor = None,
         stage: str = "training",

@@ -3,6 +3,7 @@ import keras
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.serialization import deserialize
 
 
 class InferenceNetwork(keras.Layer):
@@ -108,3 +109,7 @@ class InferenceNetwork(keras.Layer):
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
         raise NotImplementedError
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))

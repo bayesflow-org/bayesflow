@@ -6,7 +6,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.simulators.simulator import Simulator
 
-from ._augmentations import apply_augmentations
+from .helpers import apply_augmentations
 
 
 class OnlineDataset(keras.utils.PyDataset):

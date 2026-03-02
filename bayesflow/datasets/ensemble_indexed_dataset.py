@@ -7,7 +7,7 @@ import keras
 
 from bayesflow.utils import logging
 
-from ._ensemble_sharing import ring_starts, ring_window_indices
+from .helpers import ring_starts, ring_window_indices
 
 
 class EnsembleIndexedDataset(keras.utils.PyDataset):

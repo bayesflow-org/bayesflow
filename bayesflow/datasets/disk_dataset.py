@@ -9,7 +9,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.utils import tree_stack, pickle_load
 
-from ._augmentations import apply_augmentations
+from .helpers import apply_augmentations
 
 
 class DiskDataset(keras.utils.PyDataset):

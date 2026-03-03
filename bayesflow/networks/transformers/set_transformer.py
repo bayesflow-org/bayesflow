@@ -34,8 +34,8 @@ class SetTransformer(Transformer):
         kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
-        num_inducing_points: int = None,
-        seed_dim: int = None,
+        num_inducing_points: int | None = None,
+        seed_dim: int | None = None,
         **kwargs,
     ):
         """
@@ -83,7 +83,7 @@ class SetTransformer(Transformer):
         num_attention_layers = len(embed_dims)
 
         # Construct a series of set-attention blocks
-        self.attention_blocks = keras.Sequential()
+        self.attention_blocks = []
 
         global_attention_settings = dict(
             dropout=dropout,
@@ -107,7 +107,7 @@ class SetTransformer(Transformer):
                 isab_settings = dict(num_inducing_points=num_inducing_points)
                 block = InducedSetAttention(**(global_attention_settings | layer_attention_settings | isab_settings))
 
-            self.attention_blocks.add(block)
+            self.attention_blocks.append(block)
 
         # Pooling will be applied as a final step to the abstract representations obtained from set attention
         pooling_settings = dict(
@@ -145,7 +145,8 @@ class SetTransformer(Transformer):
         out : Tensor
             Output of shape (batch_size, summary_dim)
         """
-        summary = self.attention_blocks(x, training=training, attention_mask=attention_mask)
-        summary = self.pooling_by_attention(summary, training=training)
-        summary = self.output_projector(summary)
-        return summary
+        for layer in self.attention_blocks:
+            x = layer(x, training=training, attention_mask=attention_mask)
+        x = self.pooling_by_attention(x, training=training)
+        x = self.output_projector(x)
+        return x

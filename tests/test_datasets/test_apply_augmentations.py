@@ -1,5 +1,5 @@
 import pytest
-from bayesflow.datasets._augmentations import apply_augmentations
+from bayesflow.datasets.helpers import apply_augmentations
 
 
 def test_none_returns_same_object():

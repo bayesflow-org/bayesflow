@@ -27,7 +27,7 @@ class TimeSeriesTransformer(Transformer):
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
         time_axis: int = None,
-        return_sequences: bool = True,
+        return_sequences: bool = False,
         **kwargs,
     ):
         """(SN) Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time
@@ -64,7 +64,7 @@ class TimeSeriesTransformer(Transformer):
             The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into the embedding.
             If an embedding is provided and time_axis is None, a uniform time interval between [0, sequence_len]
             will be assumed.
-        return_sequences : bool, optional (default - True)
+        return_sequences : bool, optional (default - False)
             If True, acts as a many-to-many encoder (to be used for time-varying tasks).
             If False, acts as a many-to-one embedding network (to be used for compression tasks).
             In that case, the `summary_dim` argument denotes the dimension of the output sequence.

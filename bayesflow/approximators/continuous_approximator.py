@@ -8,10 +8,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import (
-    filter_kwargs,
-    split_arrays,
-)
+from bayesflow.utils import split_arrays
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
@@ -71,7 +68,9 @@ class ContinuousApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         sample_weight: Tensor = None,
+        summary_attention_mask: Tensor = None,
         summary_mask: Tensor = None,
+        inference_attention_mask: Tensor = None,
         inference_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
@@ -96,6 +95,14 @@ class ContinuousApproximator(Approximator):
             a summary network is present.
         sample_weight : Tensor, optional
             Weighting tensor for metric computation (default is None).
+        summary_attention_mask : Tensor, optional
+            Attention mask forwarded to the summary network (default is None).
+        summary_mask : Tensor, optional
+            Padding / key mask forwarded to the summary network (default is None).
+        inference_attention_mask : Tensor, optional
+            Attention mask forwarded to the inference network (default is None).
+        inference_mask : Tensor, optional
+            Padding / key mask forwarded to the inference network (default is None).
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").
@@ -112,9 +119,14 @@ class ContinuousApproximator(Approximator):
             inference_variables, key="inference_variables", stage=stage
         )
 
-        summary_kwargs = {"attention_mask": summary_mask} if summary_mask is not None else {}
-        inference_kwargs = {"attention_mask": inference_mask} if inference_mask is not None else {}
-        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.compute_metrics)
+        masks = dict(
+            summary_attention_mask=summary_attention_mask,
+            summary_mask=summary_mask,
+            inference_attention_mask=inference_attention_mask,
+            inference_mask=inference_mask,
+        )
+        summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, masks)
+        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, masks)
 
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
             inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
@@ -227,10 +239,7 @@ class ContinuousApproximator(Approximator):
 
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions)
 
-        inference_kwargs = kwargs | (
-            {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
-        )
-        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.sample)
+        inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         samples = self.sampler.sample(
             inference_network=self.inference_network,
@@ -285,7 +294,7 @@ class ContinuousApproximator(Approximator):
         adapted, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
-        summary_kwargs = {"attention_mask": adapted["summary_mask"]} if "summary_mask" in adapted else {}
+        summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
 
         resolved_conditions, _ = self._standardize_and_resolve(
             adapted.get("inference_conditions"),
@@ -301,10 +310,7 @@ class ContinuousApproximator(Approximator):
         log_det_jac = log_det_jac.get("inference_variables", 0.0)
         log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
 
-        inference_kwargs = kwargs | (
-            {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
-        )
-        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.log_prob)
+        inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         log_prob = self.inference_network.log_prob(
             inference_variables,

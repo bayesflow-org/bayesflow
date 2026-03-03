@@ -162,6 +162,10 @@ class EnsembleApproximator(Approximator):
         inference_conditions: dict[str, Tensor] | Tensor | None = None,
         summary_variables: dict[str, Tensor] | Tensor | None = None,
         sample_weight: dict[str, Tensor] | Tensor | None = None,
+        summary_attention_mask: dict[str, Tensor] | Tensor | None = None,
+        summary_mask: dict[str, Tensor] | Tensor | None = None,
+        inference_attention_mask: dict[str, Tensor] | Tensor | None = None,
+        inference_mask: dict[str, Tensor] | Tensor | None = None,
         stage: str = "training",
     ) -> dict[str, dict[str, Tensor]]:
         metrics = {}
@@ -177,6 +181,10 @@ class EnsembleApproximator(Approximator):
                 inference_conditions=select(inference_conditions, name),
                 summary_variables=select(summary_variables, name),
                 sample_weight=select(sample_weight, name),
+                summary_attention_mask=select(summary_attention_mask, name),
+                summary_mask=select(summary_mask, name),
+                inference_attention_mask=select(inference_attention_mask, name),
+                inference_mask=select(inference_mask, name),
                 stage=stage,
             )
 

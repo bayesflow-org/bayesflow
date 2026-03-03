@@ -19,6 +19,26 @@ from .backend_approximators import BackendApproximator
 class Approximator(BackendApproximator):
     """Base class for all BayesFlow approximators."""
 
+    # Mask routing: {data_key → network_kwarg_name}.
+    # Subclasses can narrow these to the masks they actually support.
+    _SUMMARY_MASK_KEYS: dict[str, str] = {
+        "summary_attention_mask": "attention_mask",
+        "summary_mask": "mask",
+    }
+    _INFERENCE_MASK_KEYS: dict[str, str] = {
+        "inference_attention_mask": "attention_mask",
+        "inference_mask": "mask",
+    }
+
+    @staticmethod
+    def _collect_mask_kwargs(mapping: dict[str, str], source: Mapping) -> dict:
+        """Build a kwargs dict from a ``{source_key: target_kwarg_name}`` mapping.
+
+        Looks up each *source_key* in *source*; when the value is not ``None``,
+        it is added to the result under *target_kwarg_name*.
+        """
+        return {target: source[key] for key, target in mapping.items() if source.get(key) is not None}
+
     @property
     def standardize_layers(self):
         """Shortcut to the standardizer's per-variable layers."""
@@ -127,7 +147,7 @@ class Approximator(BackendApproximator):
         adapted = self.adapter(data, strict=False, **adapter_kwargs)
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
-        summary_kwargs = {"attention_mask": adapted["summary_mask"]} if "summary_mask" in adapted else {}
+        summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
 
         resolved_conditions, summary_outputs = self._standardize_and_resolve(
             adapted.get("inference_conditions"),
@@ -197,7 +217,9 @@ class Approximator(BackendApproximator):
         inference_conditions: str | Sequence[str] = None,
         summary_variables: str | Sequence[str] = None,
         sample_weight: str = None,
+        summary_attention_mask: str = None,
         summary_mask: str = None,
+        inference_attention_mask: str = None,
         inference_mask: str = None,
     ) -> Adapter:
         """Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.
@@ -217,14 +239,18 @@ class Approximator(BackendApproximator):
             Names of the summary variables in the data dict.
         sample_weight : str, optional
             Name of the sample weight variable.
-        summary_mask : str, optional
+        summary_attention_mask : str, optional
             Name of the attention mask for the summary network.
-            Forwarded as ``attention_mask`` to the summary network's
-            ``call`` and ``compute_metrics`` methods.
-        inference_mask : str, optional
+            Forwarded as ``attention_mask`` to the summary network.
+        summary_mask : str, optional
+            Name of the padding/key mask for the summary network.
+            Forwarded as ``mask`` to the summary network.
+        inference_attention_mask : str, optional
             Name of the attention mask for the inference network.
-            Forwarded as ``attention_mask`` to the inference network's
-            ``call``, ``sample``, and ``log_prob`` methods.
+            Forwarded as ``attention_mask`` to the inference network.
+        inference_mask : str, optional
+            Name of the padding/key mask for the inference network.
+            Forwarded as ``mask`` to the inference network.
         """
 
         if isinstance(inference_variables, str):
@@ -251,13 +277,15 @@ class Approximator(BackendApproximator):
 
         keep = ["inference_variables", "inference_conditions", "summary_variables", "sample_weight"]
 
-        if summary_mask is not None:
-            adapter.rename(summary_mask, "summary_mask")
-            keep.append("summary_mask")
-
-        if inference_mask is not None:
-            adapter.rename(inference_mask, "inference_mask")
-            keep.append("inference_mask")
+        for canonical_name, user_name in {
+            "summary_attention_mask": summary_attention_mask,
+            "summary_mask": summary_mask,
+            "inference_attention_mask": inference_attention_mask,
+            "inference_mask": inference_mask,
+        }.items():
+            if user_name is not None:
+                adapter.rename(user_name, canonical_name)
+                keep.append(canonical_name)
 
         adapter.keep(keep)
 

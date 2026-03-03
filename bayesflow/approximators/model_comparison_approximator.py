@@ -96,7 +96,9 @@ class ModelComparisonApproximator(Approximator):
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
         sample_weight: Tensor = None,
+        summary_attention_mask: Tensor = None,
         summary_mask: Tensor = None,
+        inference_attention_mask: Tensor = None,
         inference_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
@@ -120,6 +122,14 @@ class ModelComparisonApproximator(Approximator):
             network is present.
         sample_weight : Tensor, optional
             Weighting tensor for metric computation (default is None).
+        summary_attention_mask : Tensor, optional
+            Attention mask forwarded to the summary network (default is None).
+        summary_mask : Tensor, optional
+            Padding / key mask forwarded to the summary network (default is None).
+        inference_attention_mask : Tensor, optional
+            Accepted for API consistency but unused (model comparison uses an MLP classifier).
+        inference_mask : Tensor, optional
+            Padding / key mask forwarded to the classifier network (default is None).
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             certain metric computations (default is "training").
@@ -132,9 +142,14 @@ class ModelComparisonApproximator(Approximator):
             indicate its source.
         """
 
-        summary_kwargs = {"attention_mask": summary_mask} if summary_mask is not None else {}
-        inference_kwargs = {"attention_mask": inference_mask} if inference_mask is not None else {}
-        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.compute_metrics)
+        masks = dict(
+            summary_attention_mask=summary_attention_mask,
+            summary_mask=summary_mask,
+            inference_attention_mask=inference_attention_mask,
+            inference_mask=inference_mask,
+        )
+        summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, masks)
+        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, masks)
 
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
             inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
@@ -261,8 +276,7 @@ class ModelComparisonApproximator(Approximator):
 
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions, **kwargs)
 
-        inference_kwargs = {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
-        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.call)
+        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         output = self.inference_network(xz=None, conditions=resolved_conditions, **inference_kwargs)
         logits = output["cross_entropy"]["logits"]

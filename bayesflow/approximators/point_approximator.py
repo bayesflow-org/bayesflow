@@ -9,7 +9,6 @@ from bayesflow.networks import PointInferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     logging,
-    filter_kwargs,
     split_arrays,
     squeeze_inner_estimates_dict,
 )
@@ -48,7 +47,7 @@ class PointApproximator(ContinuousApproximator):
         adapter: Adapter,
         inference_network: PointInferenceNetwork,
         summary_network: SummaryNetwork | None = None,
-        standardize: str | Sequence[str] | None = "all",
+        standardize: str | Sequence[str] | None = "summary_variables",
         **kwargs,
     ):
         super().__init__(
@@ -120,10 +119,7 @@ class PointApproximator(ContinuousApproximator):
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions)
 
-        inference_kwargs = kwargs | (
-            {"attention_mask": adapted["inference_mask"]} if "inference_mask" in adapted else {}
-        )
-        inference_kwargs = filter_kwargs(inference_kwargs, self.inference_network.call)
+        inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         estimates = self.inference_network(
             conditions=resolved_conditions,

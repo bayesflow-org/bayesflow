@@ -94,13 +94,16 @@ class Sampler:
         batches = []
         for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
             batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
+            batch_kwargs = {
+                k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v for k, v in kwargs.items()
+            }
 
             batch_samples = self._sample_batch(
                 inference_network=inference_network,
                 num_samples=num_samples,
                 conditions=batch_conditions,
                 sample_shape=sample_shape,
-                **kwargs,
+                **batch_kwargs,
             )
             batches.append(batch_samples)
 
@@ -116,6 +119,12 @@ class Sampler:
         **kwargs,
     ):
         conditions = self.repeat_and_flatten_conditions(conditions, num_samples)
+
+        # Keep tensor-valued kwargs (e.g. masks) aligned with the flattened conditions.
+        kwargs = {
+            k: self.repeat_and_flatten_conditions(v, num_samples) if hasattr(v, "shape") else v
+            for k, v in kwargs.items()
+        }
 
         if conditions is None:
             batch_shape = (num_samples,)

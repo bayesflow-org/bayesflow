@@ -5,7 +5,7 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.adapters import Adapter
-from bayesflow.utils import expand_tile, concatenate_valid_shapes
+from bayesflow.utils import expand_tile, concatenate_valid_shapes, weighted_mean
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
@@ -104,7 +104,11 @@ class RatioApproximator(Approximator):
         inference_variables: Tensor,
         inference_conditions: Tensor = None,
         summary_variables: Tensor = None,
+        sample_weight: Tensor = None,
+        summary_attention_mask: Tensor = None,
         summary_mask: Tensor = None,
+        inference_attention_mask: Tensor = None,
+        inference_mask: Tensor = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -117,7 +121,14 @@ class RatioApproximator(Approximator):
             inference_variables, key="inference_variables", stage=stage
         )
 
-        summary_kwargs = {"attention_mask": summary_mask} if summary_mask is not None else {}
+        masks = dict(
+            summary_attention_mask=summary_attention_mask,
+            summary_mask=summary_mask,
+            inference_attention_mask=inference_attention_mask,
+            inference_mask=inference_mask,
+        )
+        summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, masks)
+        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, masks)
 
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
             inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
@@ -140,8 +151,12 @@ class RatioApproximator(Approximator):
         # Get (batch_size, K, dim) conditions (already resolved from condition builder)
         conditions = expand_tile(resolved_conditions, n=self.K, axis=1)
 
-        marginal_logits = self.logits(bootstrap_inference_variables[:, 1:, :], conditions, stage=stage)
-        joint_logits = self.logits(bootstrap_inference_variables[:, :-1, :], conditions, stage=stage)
+        marginal_logits = self.logits(
+            bootstrap_inference_variables[:, 1:, :], conditions, stage=stage, **inference_kwargs
+        )
+        joint_logits = self.logits(
+            bootstrap_inference_variables[:, :-1, :], conditions, stage=stage, **inference_kwargs
+        )
 
         # Eq. 7 (https://arxiv.org/abs/2210.06170) - we use a trick for numerical stability:
         # log(K + gamma * sum_{i=1}^{K} exp(h_i)) = log(exp(log K) + sum_{i=1}^{K} exp(h_i + log gamma))
@@ -161,7 +176,7 @@ class RatioApproximator(Approximator):
         marginal_loss = log_denominator_marginal - log_numerator_marginal
 
         loss = marginal_weight * marginal_loss + joint_weight * joint_loss
-        inference_loss = keras.ops.mean(loss)
+        inference_loss = weighted_mean(loss, sample_weight)
 
         # Handle summary network metrics if present
         if "loss" in summary_metrics:
@@ -229,16 +244,15 @@ class RatioApproximator(Approximator):
             adapted.get("inference_variables"), key="inference_variables", stage="inference"
         )
 
-        # NOTE: inference_mask is not threaded here because logits() concatenates
-        # inference_variables with conditions and passes them through a plain MLP,
-        # which does not use attention.
-        log_ratio = self.logits(inference_variables, resolved_conditions, stage="inference")
+        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
+
+        log_ratio = self.logits(inference_variables, resolved_conditions, stage="inference", **inference_kwargs)
         return log_ratio
 
-    def logits(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str) -> Tensor:
+    def logits(self, inference_variables: Tensor, inference_conditions: Tensor, stage: str, **kwargs) -> Tensor:
         """Computes logits for K batches of variables-conditions pairs."""
         classifier_inputs = keras.ops.concatenate([inference_variables, inference_conditions], axis=-1)
-        logits = self.inference_network(classifier_inputs, training=stage == "training")
+        logits = self.inference_network(classifier_inputs, training=stage == "training", **kwargs)
         logits = self.projector(logits)
         logits = keras.ops.squeeze(logits, axis=-1)
         return logits

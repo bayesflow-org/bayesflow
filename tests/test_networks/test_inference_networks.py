@@ -43,12 +43,13 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
             # consistency models don't implement .forward
             with pytest.raises(NotImplementedError):
                 inference_network(new_input, conditions=new_conditions)
-        else: 
+        else:
             inference_network(new_input, conditions=new_conditions)
 
         # scoring rule networks don't have an inverse
         if not isinstance(inference_network, ScoringRuleNetwork):
             inference_network(new_input, conditions=new_conditions, inverse=True)
+
 
 @pytest.mark.parametrize("density", [True, False])
 def test_output_structure(density, generative_inference_network, random_samples, random_conditions):

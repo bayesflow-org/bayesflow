@@ -125,6 +125,18 @@ def test_nested_accuracy_forward():
     np.testing.assert_allclose(np.std(standardized["b"], axis=tuple(range(standardized["b"].ndim - 1))), 1.0, atol=1e-4)
 
 
+def test_transformation_type_identity():
+    x = keras.random.normal((2, 2))
+    y = keras.random.normal((2, 2))
+
+    layer = Standardization()
+    _ = layer(x, stage="training", forward=True)
+
+    should_be_unchanged = layer(y, stage="inference", forward=False, transformation_type="identity")
+
+    np.testing.assert_allclose(y, should_be_unchanged, atol=1e-4)
+
+
 def test_transformation_type_both_sides_scale():
     # Fix a known covariance and mean in original (not standardized space)
     covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")

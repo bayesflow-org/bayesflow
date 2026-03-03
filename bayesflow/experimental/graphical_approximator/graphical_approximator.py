@@ -7,7 +7,7 @@ import keras
 from bayesflow.approximators import Approximator
 from bayesflow.experimental.graphical_approximator.shape_operations import resolve_shapes
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
-from bayesflow.utils import filter_kwargs, logging
+from bayesflow.utils import logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter
@@ -137,6 +137,7 @@ class GraphicalApproximator(Approximator):
             workers=workers,
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,
+            augmentations=lambda x: dict(x),
         )
 
     @classmethod
@@ -296,44 +297,43 @@ class GraphicalApproximator(Approximator):
             If both `dataset` and `simulator` are provided or neither is provided.
         """
         if "dataset" in kwargs:
-            kwargs["dataset"] = OfflineDataset(
-                kwargs["dataset"],
+            dataset = OfflineDataset(
+                kwargs.pop("dataset"),
                 batch_size=kwargs.get("batch_size"),  # type: ignore[invalid-argument-type]
                 num_samples=kwargs.get("num_samples"),  # type: ignore[invalid-argument-type]
                 adapter=self.adapter,
                 augmentations=self.subset_data,
             )
 
+            def generator():
+                for i in range(dataset.num_batches or 0):
+                    yield dataset[i]
+
         if "simulator" in kwargs:
-            kwargs["dataset"] = self.build_dataset(
-                simulator=kwargs["simulator"],
+            dataset = self.build_dataset(
+                simulator=kwargs.pop("simulator"),
                 adapter=kwargs.get("adapter"),
                 batch_size=kwargs["batch_size"],
                 num_batches=kwargs["num_batches"],
             )
-            data_shapes = self._data_shapes(kwargs["dataset"][0])
-            del kwargs["simulator"]
+            def generator():
+                i = 0
+                while True:
+                    yield dataset[i]
+                    i += 1
 
-            # for tensorflow, we need to pass an output_signature with the correct dynamic shapes,
-            # otherwise it assumes variable shape dimensions from the simulator as fixed and errors.
-            if keras.backend.backend() == "tensorflow":
-                import tensorflow as tf
+        if keras.backend.backend() == "tensorflow":
+            import tensorflow as tf
 
-                signature = {}
-                for element in data_shapes.keys():
-                    shape = [None] * (len(data_shapes[element]) - 1) + [data_shapes[element][-1]]
-                    signature[element] = tf.TensorSpec(shape=shape, dtype=tf.float32)
-
-                online_dataset = kwargs["dataset"]
-
-                def generator():
-                    i = 0
-                    while True:
-                        yield online_dataset[i]
-                        i += 1
-
-                kwargs["dataset"] = tf.data.Dataset.from_generator(generator, output_signature=signature)
-                kwargs.setdefault("steps_per_epoch", kwargs["num_batches"])
+            data_shapes = self._data_shapes(dataset[0])
+            signature = {
+                k: tf.TensorSpec(shape=[None] * (len(v) - 1) + [v[-1]], dtype=tf.float32)
+                for k, v in data_shapes.items()
+            }
+            kwargs.setdefault("steps_per_epoch", dataset.num_batches)
+            kwargs["dataset"] = tf.data.Dataset.from_generator(generator, output_signature=signature)
+        else:
+            kwargs["dataset"] = dataset
 
         return super().fit(*args, **kwargs, adapter=self.adapter)
 

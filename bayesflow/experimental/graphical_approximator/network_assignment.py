@@ -1,11 +1,9 @@
 from typing import TYPE_CHECKING
 
 import keras
-import keras.ops as ops
 from bayesflow.experimental.graphs.utils import sort_nodes_topologically
 
 from .shape_inference import inference_variable_shapes_by_network, summary_output_shapes_by_network
-from .shape_operations import concatenate_shapes
 from .tensor_concatenation import concatenate
 
 if TYPE_CHECKING:
@@ -93,7 +91,7 @@ def summary_inputs_by_network(approximator: "GraphicalApproximator", adapted_dat
 def data_conditions_by_network(approximator: "GraphicalApproximator", adapted_data: dict) -> dict[int, Tensor]:
     """ ""
     Returns a dictionary where the keys are integers denoting network indices
-    and the values are data condition shapes of that inference network.
+    and the values are data conditions of that inference network.
     """
     inference_variables = inference_variables_by_network(approximator, adapted_data)
     summary_outputs = summary_outputs_by_network(approximator, adapted_data)

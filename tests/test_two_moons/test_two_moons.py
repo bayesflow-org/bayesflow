@@ -51,8 +51,6 @@ def test_fit(approximator, train_dataset, validation_dataset, batch_size):
         # TODO: this is too flaky
         # assert trained_metrics[metric] <= untrained_metrics[metric]
 
-    pytest.skip("Marking as skipped because metrics are currently untested.")
-
 
 def test_serialize_deserialize(tmp_path, approximator, train_dataset):
     mock_data = train_dataset[0]

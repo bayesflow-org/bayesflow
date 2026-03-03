@@ -504,6 +504,7 @@ def test_inference_conditions_single_level(single_level_simulator, single_level_
     from bayesflow.experimental.graphical_approximator.network_assignment import (
         inference_conditions_by_network,
         summary_outputs_by_network,
+        summary_input,
     )
 
     data = single_level_simulator.sample(2)
@@ -515,12 +516,18 @@ def test_inference_conditions_single_level(single_level_simulator, single_level_
     conditions = inference_conditions_by_network(approximator, data)
 
     # output has the correct shape
-    expected_shape = (2, 10)
+    expected_shape = (2, 11)
     assert keras.ops.shape(conditions[0]) == expected_shape
 
     # output is as expected
     summary_outputs = summary_outputs_by_network(approximator, data)
-    expected_output = summary_outputs[0]
+    data_conditions = summary_outputs[0]
+
+    node_reps = summary_input(approximator, data).shape[1:-1]
+    squared = keras.ops.sqrt(node_reps)
+    expanded = keras.ops.expand_dims(squared, axis=0)
+    expected_output = concatenate([data_conditions, expanded])
+
     assert keras.ops.all(conditions[0] == expected_output)
 
 

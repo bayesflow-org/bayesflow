@@ -31,6 +31,9 @@ def value_and_grad(fn, argnums=0, has_aux=False):
 
         dydx = tape.gradient(y, args)
 
+        if len(argnums) == 1:
+            dydx = dydx[0]
+
         if has_aux:
             return (y, aux), dydx
 

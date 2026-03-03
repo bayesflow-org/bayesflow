@@ -5,10 +5,13 @@ from contextlib import redirect_stdout
 import keras
 
 from tests.utils.assertions import assert_models_equal
+from tests.utils.check_combinations import check_combination_simulator_adapter
 
 
 def check_build(approximator, simulator, batch_size, adapter):
     """Verify that an approximator builds correctly from simulated data."""
+    check_combination_simulator_adapter(simulator, adapter)
+
     num_batches = 4
     data = simulator.sample((num_batches * batch_size,))
 

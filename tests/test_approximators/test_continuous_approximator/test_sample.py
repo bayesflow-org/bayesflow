@@ -1,8 +1,11 @@
 import pytest
 import keras
+from tests.utils import check_combination_simulator_adapter
 
 
 def test_sample(continuous_approximator, simulator, batch_size, adapter):
+    check_combination_simulator_adapter(simulator, adapter)
+
     num_batches = 4
     data = simulator.sample((num_batches * batch_size,))
 

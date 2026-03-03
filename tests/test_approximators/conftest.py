@@ -77,6 +77,9 @@ def simulator(request):
 @pytest.fixture()
 def train_dataset(batch_size, adapter, simulator):
     from bayesflow import OfflineDataset
+    from tests.utils import check_combination_simulator_adapter
+
+    check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
     data = simulator.sample((num_batches * batch_size,))
@@ -86,6 +89,9 @@ def train_dataset(batch_size, adapter, simulator):
 @pytest.fixture()
 def validation_dataset(batch_size, adapter, simulator):
     from bayesflow import OfflineDataset
+    from tests.utils import check_combination_simulator_adapter
+
+    check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 2
     data = simulator.sample((num_batches * batch_size,))

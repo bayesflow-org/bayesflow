@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.fixture()
-def point_inference_network():
+def scoring_rule_inference_network():
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import NormedDifferenceScore, QuantileScore, MvNormalScore
 
@@ -18,7 +18,7 @@ def point_inference_network():
 
 
 @pytest.fixture()
-def point_inference_network_with_multiple_parametric_scores():
+def scoring_rule_inference_network_with_multiple_parametric_scores():
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import MvNormalScore
 
@@ -31,7 +31,7 @@ def point_inference_network_with_multiple_parametric_scores():
 
 
 @pytest.fixture()
-def point_approximator_with_single_parametric_score(adapter, point_inference_network, summary_network):
+def scoring_rule_approximator_with_single_parametric_score(adapter, scoring_rule_inference_network, summary_network):
     from bayesflow import ScoringRuleApproximator
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
@@ -39,14 +39,14 @@ def point_approximator_with_single_parametric_score(adapter, point_inference_net
 
     return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=point_inference_network,
+        inference_network=scoring_rule_inference_network,
         summary_network=summary_network,
     )
 
 
 @pytest.fixture()
-def point_approximator_with_multiple_parametric_scores(
-    adapter, point_inference_network_with_multiple_parametric_scores, summary_network
+def scoring_rule_approximator_with_multiple_parametric_scores(
+    adapter, scoring_rule_inference_network_with_multiple_parametric_scores, summary_network
 ):
     from bayesflow import ScoringRuleApproximator
 
@@ -55,13 +55,16 @@ def point_approximator_with_multiple_parametric_scores(
 
     return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=point_inference_network_with_multiple_parametric_scores,
+        inference_network=scoring_rule_inference_network_with_multiple_parametric_scores,
         summary_network=summary_network,
     )
 
 
 @pytest.fixture(
-    params=["point_approximator_with_single_parametric_score", "point_approximator_with_multiple_parametric_scores"]
+    params=[
+        "scoring_rule_approximator_with_single_parametric_score",
+        "scoring_rule_approximator_with_multiple_parametric_scores",
+    ]
 )
 def scoring_rule_approximator(request):
     return request.getfixturevalue(request.param)
@@ -70,9 +73,9 @@ def scoring_rule_approximator(request):
 @pytest.fixture(
     params=[
         "point_approximator_without_parametric_score",
-        "point_approximator_with_single_parametric_score",
-        "point_approximator_with_multiple_parametric_scores",
+        "scoring_rule_approximator_with_single_parametric_score",
+        "scoring_rule_approximator_with_multiple_parametric_scores",
     ]
 )
-def point_approximator(request):
+def scoring_rule_approximator_any(request):
     return request.getfixturevalue(request.param)

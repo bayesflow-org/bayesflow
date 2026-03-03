@@ -1,9 +1,9 @@
 import numpy as np
-from bayesflow.scores import ParametricDistributionScore
+from bayesflow.scoring_rules import ParametricDistributionScore
 
 
 def test_log_prob(point_approximator, simulator, batch_size, num_samples, adapter):
-    data = simulator.sample((batch_size,))
+    data = simulator.sample(batch_size)
 
     batch = adapter(data)
     point_approximator.build_from_data(batch)

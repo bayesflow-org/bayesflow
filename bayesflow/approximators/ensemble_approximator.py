@@ -338,10 +338,9 @@ class EnsembleApproximator(Approximator):
             Whether to split output arrays, by default False.
         groupby : {"member", "variable"}, default "member"
             Controls the top-level nesting of the returned dictionary.
-
             - "member": return estimates as ``member -> variable -> score (-> head) -> array``.
             - "variable": return estimates as ``variable -> score (-> head) -> member -> array``.
-              See also :py:meth:`~bayesflow.PointApproximator.estimate`.
+              See also :py:meth:`~bayesflow.ScoringRuleApproximator.estimate`.
         **kwargs
             Additional arguments passed to approximator.estimate().
 

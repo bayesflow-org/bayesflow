@@ -113,19 +113,18 @@ def continuous_approximator(adapter, summary_network):
 
 @pytest.fixture()
 def point_approximator_without_parametric_score(adapter, summary_network):
-    from bayesflow import PointApproximator
-    from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import NormedDifferenceScore
+    from bayesflow import ScoringRuleApproximator
+    from bayesflow.networks import PointNetwork
 
     if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
-        pytest.skip("point approximator does not support unconditional estimation")
+        pytest.skip("Scoring rule approximator does not support unconditional estimation")
 
-    return PointApproximator(
+    return ScoringRuleApproximator(
         adapter=adapter,
-        inference_network=PointInferenceNetwork(
-            scores=dict(mean=NormedDifferenceScore(k=2)),
+        inference_network=PointNetwork(
+            points="mean",
             subnet="mlp",
-            subnet_kwargs=dict(widths=(32, 32)),
+            subnet_kwargs=dict(widths=(8, 8)),
         ),
         summary_network=summary_network,
     )
@@ -147,7 +146,7 @@ def approximator(request):
     return request.getfixturevalue(request.param)
 
 
-@pytest.fixture(params=["continuous_approximator", "point_approximator", "model_comparison_approximator"])
+@pytest.fixture(params=["continuous_approximator", "scoring_rule_approximator", "model_comparison_approximator"])
 def approximator_with_summaries(request):
     from bayesflow.adapters import Adapter
     from bayesflow.networks import MLP

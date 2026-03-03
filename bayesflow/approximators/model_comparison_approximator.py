@@ -65,7 +65,7 @@ class ModelComparisonApproximator(Approximator):
         self.adapter = adapter
 
         self.inference_network = ScoringRuleNetwork(
-            scores={"cross_entropy": CrossEntropyScore()},
+            scoring_rules={"cross_entropy": CrossEntropyScore()},
             subnet=classifier_network,
         )
 
@@ -104,10 +104,10 @@ class ModelComparisonApproximator(Approximator):
         """
         Computes loss and tracks metrics for the classifier and summary networks.
 
-        This method coordinates summary metric computation (if present), combines summary outputs with
-        inference conditions, computes classifier logits and cross-entropy loss via the
-        :class:`~bayesflow.scores.CrossEntropyScore`, and aggregates all tracked metrics into a single
-        dictionary.
+        This method coordinates summary metric computation (if present), combines
+        summary outputs with inference conditions, computes classifier logits and
+        cross-entropy loss via the :class:`~bayesflow.scoring_rules.CrossEntropyScore`,
+        and aggregates all tracked metrics into a single dictionary.
 
         Parameters
         ----------

@@ -122,8 +122,6 @@ class Standardization(keras.Layer):
                         out = val / std
                     case "identity":
                         out = val
-                    case _:
-                        out = val
 
             outputs.append(out)
 

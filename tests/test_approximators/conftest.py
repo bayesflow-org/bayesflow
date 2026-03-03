@@ -1,15 +1,4 @@
 import pytest
-from tests.utils import check_combination_simulator_adapter
-
-
-@pytest.fixture(autouse=True)
-def _validate_simulator_adapter_combination(request):
-    """Skip invalid simulator+adapter combinations early."""
-    if "simulator" in request.fixturenames and "adapter" in request.fixturenames:
-        check_combination_simulator_adapter(
-            request.getfixturevalue("simulator"),
-            request.getfixturevalue("adapter"),
-        )
 
 
 @pytest.fixture()
@@ -108,11 +97,6 @@ def mean_std_summary_network():
     from tests.utils import MeanStdSummaryNetwork
 
     return MeanStdSummaryNetwork()
-
-
-# ---------------------------------------------------------------------------
-# Concrete approximator fixtures (used by sub-directories and top-level tests)
-# ---------------------------------------------------------------------------
 
 
 @pytest.fixture()

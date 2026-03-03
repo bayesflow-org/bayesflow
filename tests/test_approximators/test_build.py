@@ -15,7 +15,7 @@ def test_build(approximator, simulator, batch_size, adapter):
 
     def ensure_standardize_layers_built(approximator):
         if hasattr(approximator, "standardizer"):
-            for layer in approximator.standardizer.values():
+            for layer in approximator.standardize_layers.values():
                 assert layer.built
                 for count in layer.count:
                     assert count == 0.0

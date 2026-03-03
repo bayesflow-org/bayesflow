@@ -159,14 +159,13 @@ def approximator_with_summaries(request):
             from bayesflow.networks import CouplingFlow
 
             return ContinuousApproximator(adapter=adapter, inference_network=CouplingFlow(), summary_network=None)
-        case "point_approximator":
-            from bayesflow.approximators import PointApproximator
-            from bayesflow.networks import PointInferenceNetwork
-            from bayesflow.scores import MeanScore
+        case "scoring_rule_approximator":
+            from bayesflow.approximators import ScoringRuleApproximator
+            from bayesflow.networks import PointNetwork
 
-            return PointApproximator(
+            return ScoringRuleApproximator(
                 adapter=adapter,
-                inference_network=PointInferenceNetwork(scores=dict(mean=MeanScore())),
+                inference_network=PointNetwork(points=["mean"]),
                 summary_network=None,
             )
         case "model_comparison_approximator":

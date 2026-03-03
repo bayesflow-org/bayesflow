@@ -5,7 +5,7 @@ from scipy.special import logsumexp
 import keras
 
 from bayesflow.adapters import Adapter
-from bayesflow.networks import PointInferenceNetwork, SummaryNetwork
+from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     logging,
@@ -18,12 +18,12 @@ from .continuous_approximator import ContinuousApproximator
 
 
 @serializable("bayesflow.approximators")
-class PointApproximator(ContinuousApproximator):
+class ScoringRuleApproximator(ContinuousApproximator):
     """
-    A workflow for fast amortized point estimation of a conditional distribution.
+    A workflow for fast amortized Bayes risk minimization for arbitrary scoring rules.
 
     Inherits from :class:`ContinuousApproximator` and adapts the sample, log_prob, and estimate
-    interfaces for the nested output structure of :class:`~bayesflow.networks.PointInferenceNetwork`.
+    interfaces for the nested output structure of :class:`~bayesflow.networks.ScoringRuleNetwork`.
 
     Parameters
     ----------
@@ -45,7 +45,7 @@ class PointApproximator(ContinuousApproximator):
         self,
         *,
         adapter: Adapter,
-        inference_network: PointInferenceNetwork,
+        inference_network: ScoringRuleNetwork,
         summary_network: SummaryNetwork | None = None,
         standardize: str | Sequence[str] | None = "summary_variables",
         **kwargs,
@@ -271,7 +271,7 @@ class PointApproximator(ContinuousApproximator):
             A dictionary mapping variable names to arrays representing the conditions.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
-            Currently not supported for :py:class:`PointApproximator`.
+            Currently not supported for :py:class:`ScoringRuleApproximator`.
         batch_size : int or None, optional
             If provided, the conditions are split into batches of size `batch_size`,
             for which samples are generated sequentially.
@@ -286,7 +286,7 @@ class PointApproximator(ContinuousApproximator):
         """
 
         if split:
-            raise NotImplementedError("split=True is currently not supported for `PointApproximator`.")
+            raise NotImplementedError("split=True is currently not supported for `ScoringRuleApproximator`.")
 
         self._check_has_distribution()
 
@@ -423,7 +423,7 @@ class PointApproximator(ContinuousApproximator):
         for score_key, score_val in estimates.items():
             processed[score_key] = {}
             for head_key, estimate in score_val.items():
-                if head_key in self.inference_network.scores[score_key].NOT_TRANSFORMING_LIKE_VECTOR_WARNING:
+                if head_key in self.inference_network.scoring_rules[score_key].NOT_TRANSFORMING_LIKE_VECTOR_WARNING:
                     logging.warning(
                         f"Estimate '{score_key}.{head_key}' is marked to not transform like a vector. "
                         f"It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."

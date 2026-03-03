@@ -92,8 +92,8 @@ def test_ensemble_workflow(tmp_path):
     workflow = bf.EnsembleWorkflow(
         inference_networks=dict(
             nf="coupling_flow",
-            parametric=bf.networks.PointInferenceNetwork(scores=dict(mvn=bf.scores.MultivariateNormalScore())),
-            point=bf.networks.PointInferenceNetwork(scores=dict(mean=bf.scores.MeanScore())),
+            parametric=bf.networks.ScoringRuleNetwork(scoring_rules=dict(mvn=bf.scoring_rules.MvNormalScore())),
+            point=bf.networks.ScoringRuleNetwork(scoring_rules=dict(mean=bf.scoring_rules.MeanScore())),
         ),
         summary_networks=dict(
             nf=bf.networks.TimeSeriesNetwork(),

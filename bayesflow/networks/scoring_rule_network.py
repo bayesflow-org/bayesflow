@@ -3,21 +3,22 @@ import keras
 from bayesflow.utils import model_kwargs, find_network
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Shape, Tensor
-from bayesflow.scores import ScoringRule, ParametricDistributionScore
+from bayesflow.scoring_rules import ScoringRule, ParametricDistributionScore
 from bayesflow.utils.decorators import allow_batch_size
 
 
 @serializable("bayesflow.networks")
-class PointInferenceNetwork(keras.Layer):
-    """Point-estimation network with scoring-rule heads.
+class ScoringRuleNetwork(keras.Layer):
+    """(IN) Implements Bayes risk minimization for user specified scoring rules by a shared feed forward architecture
+    with separate heads for each scoring rule.
 
     Implements point estimation for user-specified scoring rules by a shared
     feed-forward architecture with separate heads for each scoring rule.
 
     Parameters
     ----------
-    scores : dict[str, ScoringRule]
-        A mapping from score names to :class:`~bayesflow.scores.ScoringRule`
+    scoring_rules : dict[str, ScoringRule]
+        A mapping from score names to :class:`~bayesflow.scoring_rules.ScoringRule`
         instances.  Each score defines the heads that will be constructed during
         :meth:`build`.
     subnet : str or keras.Layer, optional
@@ -30,19 +31,35 @@ class PointInferenceNetwork(keras.Layer):
 
     def __init__(
         self,
-        scores: dict[str, ScoringRule],
+        *,
+        scoring_rules: dict[str, ScoringRule] | None = None,
         subnet: str | keras.Layer = "mlp",
         **kwargs,
     ):
+        # Pull scoring rules passed directly as keyword args
+        kw_scoring_rules = {k: v for k, v in list(kwargs.items()) if isinstance(v, ScoringRule)}
+        for k in kw_scoring_rules:
+            kwargs.pop(k)
+
+        scoring_rules = dict(scoring_rules or {})
+
+        scoring_rules.update(kw_scoring_rules)
+
+        if not scoring_rules:
+            raise ValueError(
+                "`ScoringRuleNetwork` requires at least one scoring rule. "
+                "Provide them via `scoring_rules={'name': rule, ...}` or as direct keyword argument."
+            )
+
         super().__init__(**model_kwargs(kwargs))
 
-        self.scores = scores
+        self.scoring_rules = scoring_rules
 
         self.subnet = find_network(subnet, **kwargs.get("subnet_kwargs", {}))
 
         self.config = {
             "subnet": serialize(subnet),
-            "scores": serialize(scores),
+            "scoring_rules": serialize(scoring_rules),
             **kwargs,
         }
 
@@ -74,7 +91,7 @@ class PointInferenceNetwork(keras.Layer):
         self.heads = dict()
         self.heads_flat = dict()  # see comment regarding heads_flat below
 
-        for score_key, score in self.scores.items():
+        for score_key, score in self.scoring_rules.items():
             head_shapes = score.get_head_shapes_from_target_shape(xz_shape)
 
             self.heads[score_key] = {}
@@ -123,7 +140,7 @@ class PointInferenceNetwork(keras.Layer):
 
         self.build(xz_shape=config["xz_shape"], conditions_shape=config["conditions_shape"])
 
-        for score_key in self.scores.keys():
+        for score_key in self.scoring_rules.keys():
             for head_key, head in self.heads[score_key].items():
                 head.name = config["heads"][score_key][head_key]
 
@@ -135,7 +152,7 @@ class PointInferenceNetwork(keras.Layer):
     @classmethod
     def from_config(cls, config):
         config = config.copy()
-        config["scores"] = deserialize(config["scores"])
+        config["scoring_rules"] = deserialize(config["scoring_rules"])
         config["subnet"] = deserialize(config["subnet"])
         return cls(**config)
 
@@ -167,8 +184,8 @@ class PointInferenceNetwork(keras.Layer):
         output = self(x, conditions, training=stage == "training")
 
         metrics = {}
-        # calculate negative score as mean over all scores
-        for score_key, score in self.scores.items():
+        # calculate negative score as mean over all scoring_rules
+        for score_key, score in self.scoring_rules.items():
             score_value = score.score(output[score_key], x, sample_weight)
             metrics[score_key] = score_value
         neg_score = keras.ops.mean(list(metrics.values()))
@@ -203,7 +220,7 @@ class PointInferenceNetwork(keras.Layer):
         output = self.subnet(conditions)
         samples = {}
 
-        for score_key, score in self.scores.items():
+        for score_key, score in self.scoring_rules.items():
             if isinstance(score, ParametricDistributionScore):
                 parameters = {head_key: head(output) for head_key, head in self.heads[score_key].items()}
 
@@ -223,7 +240,7 @@ class PointInferenceNetwork(keras.Layer):
         output = self.subnet(conditions)
         log_probs = {}
 
-        for score_key, score in self.scores.items():
+        for score_key, score in self.scoring_rules.items():
             if isinstance(score, ParametricDistributionScore):
                 parameters = {head_key: head(output) for head_key, head in self.heads[score_key].items()}
                 log_probs[score_key] = score.log_prob(x=samples, **parameters)

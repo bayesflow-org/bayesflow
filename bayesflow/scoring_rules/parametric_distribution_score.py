@@ -5,7 +5,7 @@ from bayesflow.utils.serialization import serializable
 from .scoring_rule import ScoringRule
 
 
-@serializable("bayesflow.scores")
+@serializable("bayesflow.scoring_rules")
 class ParametricDistributionScore(ScoringRule):
     r""":math:`S(\hat p_\phi, \theta; k) = -\log(\hat p_\phi(\theta))`
 

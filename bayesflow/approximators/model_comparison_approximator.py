@@ -6,9 +6,8 @@ import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
-from bayesflow.networks import SummaryNetwork
-from bayesflow.networks.point_inference_network import PointInferenceNetwork
-from bayesflow.scores import CrossEntropyScore
+from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
+from bayesflow.scoring_rules import CrossEntropyScore
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, logging
@@ -26,8 +25,8 @@ class ModelComparisonApproximator(Approximator):
     Defines an approximator for model (simulator) comparison, where the (discrete) posterior model probabilities are
     learned with a classifier.
 
-    Uses a :class:`~bayesflow.networks.PointInferenceNetwork` with a
-    :class:`~bayesflow.scores.CrossEntropyScore` to map summary/condition inputs
+    Uses a :class:`~bayesflow.networks.ScoringRuleNetwork` with a
+    :class:`~bayesflow.scoring_rules.CrossEntropyScore` to map summary/condition inputs
     to class logits and train via categorical cross-entropy.
 
     Parameters
@@ -38,9 +37,9 @@ class ModelComparisonApproximator(Approximator):
         Number of models (simulators) that the approximator will compare.
     classifier_network : keras.Layer
         The network backbone (e.g., an MLP) that is used for model classification.
-        Internally wrapped in a :class:`~bayesflow.networks.PointInferenceNetwork`
-        with a :class:`~bayesflow.scores.CrossEntropyScore`.
-        The input of the classifier network is created by concatenating ``inference_conditions``
+        Internally wrapped in a :class:`~bayesflow.networks.ScoringRuleNetwork`
+        with a :class:`~bayesflow.scoring_rules.CrossEntropyScore`.
+        The input to the classifier network is created by concatenating ``inference_conditions``
         and (optional) output of the ``summary_network``.
     summary_network : bf.networks.SummaryNetwork, optional
         The summary network used for data summarization (default is None).
@@ -65,7 +64,7 @@ class ModelComparisonApproximator(Approximator):
         self.num_models = num_models
         self.adapter = adapter
 
-        self.inference_network = PointInferenceNetwork(
+        self.inference_network = ScoringRuleNetwork(
             scores={"cross_entropy": CrossEntropyScore()},
             subnet=classifier_network,
         )
@@ -148,6 +147,7 @@ class ModelComparisonApproximator(Approximator):
             inference_attention_mask=inference_attention_mask,
             inference_mask=inference_mask,
         )
+
         summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, masks)
         inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, masks)
 

@@ -8,10 +8,10 @@ import keras
 
 from bayesflow.datasets import OnlineDataset, OfflineDataset, DiskDataset
 from bayesflow.datasets.ensemble_dataset import EnsembleDataset
-from bayesflow.networks import InferenceNetwork, PointInferenceNetwork, SummaryNetwork
+from bayesflow.networks import InferenceNetwork, ScoringRuleNetwork, SummaryNetwork
 from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
-from bayesflow.approximators import EnsembleApproximator, ContinuousApproximator, PointApproximator
+from bayesflow.approximators import EnsembleApproximator, ContinuousApproximator, ScoringRuleApproximator
 from bayesflow.utils import find_inference_network, find_summary_network, logging, filter_kwargs
 
 from .basic_workflow import BasicWorkflow
@@ -90,8 +90,8 @@ class EnsembleWorkflow(BasicWorkflow):
 
         approximators = {}
         for k, v in _inference_networks.items():
-            if isinstance(v, PointInferenceNetwork):
-                constructor = PointApproximator
+            if isinstance(v, ScoringRuleNetwork):
+                constructor = ScoringRuleApproximator
             else:
                 constructor = ContinuousApproximator
 

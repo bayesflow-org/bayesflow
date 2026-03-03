@@ -12,6 +12,7 @@ from bayesflow.utils import (
     jacobian_trace,
     layer_kwargs,
     optimal_transport,
+    randomly_mask_conditions,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serialize, serializable
@@ -307,20 +308,7 @@ class FlowMatching(InferenceNetwork):
             target_velocity = x1 - x0
 
         if self.drop_cond_prob > 0 and conditions is not None:
-            # generate random masks for every batch of the condition
-            cond_shape = keras.ops.shape(conditions)
-            batch = cond_shape[0]
-            rank = keras.ops.ndim(conditions)
-            mask_conditions = keras.random.uniform(
-                shape=(batch,), dtype=keras.ops.dtype(conditions), seed=self.seed_generator
-            )
-            mask_conditions = keras.ops.cast(mask_conditions > self.drop_cond_prob, dtype=keras.ops.dtype(conditions))
-
-            mask_shape = (batch,) + (1,) * (rank - 1)
-            mask_conditions = keras.ops.reshape(mask_conditions, mask_shape)
-            mask_conditions = keras.ops.broadcast_to(mask_conditions, cond_shape)
-
-            conditions = mask_conditions * conditions
+            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
 
         if self.drop_target_prob > 0:
             # generate random mask for every entry

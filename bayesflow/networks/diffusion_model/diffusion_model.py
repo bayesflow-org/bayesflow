@@ -10,6 +10,7 @@ from bayesflow.utils import (
     find_network,
     jacobian_trace,
     layer_kwargs,
+    randomly_mask_conditions,
     weighted_mean,
     integrate,
     integrate_stochastic,
@@ -324,7 +325,7 @@ class DiffusionModel(InferenceNetwork):
         score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training, **kwargs)
 
         # compute velocity f, g of the SDE or ODE
-        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
+        f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
 
         if stochastic_solver:
             # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
@@ -335,8 +336,8 @@ class DiffusionModel(InferenceNetwork):
 
         if self.drop_target_prob > 0 and not training:
             target_mask = kwargs.get("target_mask", None)
-            if target_mask is not None:
-                out = target_mask * out  # velocity is zero where target is fixed
+            out = target_mask * out if target_mask is not None else out
+
         return out
 
     def diffusion_term(
@@ -365,13 +366,13 @@ class DiffusionModel(InferenceNetwork):
         """
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t)
+        g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t)
         g = ops.sqrt(g_squared)
 
         if self.drop_target_prob > 0 and not training:
             target_mask = kwargs.get("target_mask", None)
-            if target_mask is not None:
-                g = target_mask * g
+            g = target_mask * g if target_mask is not None else g
+
         return g
 
     def _velocity_trace(
@@ -571,20 +572,7 @@ class DiffusionModel(InferenceNetwork):
         noise_schedule_training_stage = stage == "training" or stage == "validation"
 
         if self.drop_cond_prob > 0 and conditions is not None:
-            # generate random masks for every batch of the condition
-            cond_shape = ops.shape(conditions)
-            batch = cond_shape[0]
-            rank = ops.ndim(conditions)
-            mask_conditions = keras.random.uniform(
-                shape=(batch,), dtype=ops.dtype(conditions), seed=self.seed_generator
-            )
-            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
-
-            mask_shape = (batch,) + (1,) * (rank - 1)
-            mask_conditions = ops.reshape(mask_conditions, mask_shape)
-            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
-
-            conditions = mask_conditions * conditions
+            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
         u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)

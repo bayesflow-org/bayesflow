@@ -4,7 +4,16 @@ import keras
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils import logging, jvp, find_network, expand_right_as, expand_right_to, layer_kwargs
+from bayesflow.utils import (
+    logging,
+    jvp,
+    find_network,
+    expand_right_as,
+    expand_right_to,
+    layer_kwargs,
+    randomly_mask_conditions,
+    weighted_mean,
+)
 from bayesflow.utils.serialization import serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -206,25 +215,10 @@ class StableConsistencyModel(InferenceNetwork):
         return out
 
     def compute_metrics(
-        self, x: Tensor, conditions: Tensor = None, stage: str = "training", **kwargs
+        self, x: Tensor, conditions: Tensor = None, stage: str = "training", sample_weight: Tensor = None, **kwargs
     ) -> dict[str, Tensor]:
-        # $# Implements Algorithm 1 from [1]
-
         if self.drop_cond_prob > 0 and conditions is not None:
-            # generate random masks for every batch of the condition
-            cond_shape = ops.shape(conditions)
-            batch = cond_shape[0]
-            rank = ops.ndim(conditions)
-            mask_conditions = keras.random.uniform(
-                shape=(batch,), dtype=ops.dtype(conditions), seed=self.seed_generator
-            )
-            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
-
-            mask_shape = (batch,) + (1,) * (rank - 1)
-            mask_conditions = ops.reshape(mask_conditions, mask_shape)
-            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
-
-            conditions = mask_conditions * conditions
+            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
 
         # generate noise vector
         z = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.sigma
@@ -277,11 +271,9 @@ class StableConsistencyModel(InferenceNetwork):
         D = ops.shape(x)[-1]
 
         loss = ops.mean(
-            (ops.exp(w) / D)
-            * ops.mean(
-                ops.reshape(((student_out - teacher_output - g) ** 2), (ops.shape(teacher_output)[0], -1)), axis=-1
-            )
-            - w
+            ops.reshape(((student_out - teacher_output - g) ** 2), (ops.shape(teacher_output)[0], -1)), axis=-1
         )
+        loss = (ops.exp(w) / D) * loss - w
+        loss = weighted_mean(loss, sample_weight)
 
         return {"loss": loss}

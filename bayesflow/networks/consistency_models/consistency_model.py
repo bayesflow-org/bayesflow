@@ -4,7 +4,14 @@ import keras
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, layer_kwargs, weighted_mean, expand_right_as, logging
+from bayesflow.utils import (
+    find_network,
+    layer_kwargs,
+    randomly_mask_conditions,
+    weighted_mean,
+    expand_right_as,
+    logging,
+)
 from bayesflow.utils.serialization import serializable, serialize
 
 from ..inference_network import InferenceNetwork
@@ -309,20 +316,7 @@ class ConsistencyModel(InferenceNetwork):
         discretized_time = ops.take(self.discretized_times, discretization_index, axis=0)
 
         if self.drop_cond_prob > 0 and conditions is not None:
-            # generate random masks for every batch of the condition
-            cond_shape = ops.shape(conditions)
-            batch = cond_shape[0]
-            rank = ops.ndim(conditions)
-            mask_conditions = keras.random.uniform(
-                shape=(batch,), dtype=ops.dtype(conditions), seed=self.seed_generator
-            )
-            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
-
-            mask_shape = (batch,) + (1,) * (rank - 1)
-            mask_conditions = ops.reshape(mask_conditions, mask_shape)
-            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
-
-            conditions = mask_conditions * conditions
+            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
 
         # Randomly sample t_n and t_[n+1] and reshape to (batch_size, 1)
         # adapted noise schedule from [2], Section 3.5

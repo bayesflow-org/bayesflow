@@ -42,7 +42,9 @@ class Approximator(BackendApproximator):
     @property
     def standardize_layers(self):
         """Shortcut to the standardizer's per-variable layers."""
-        return self.standardizer.standardize_layers
+
+        if hasattr(self, "standardizer"):
+            return self.standardizer.standardize_layers
 
     def build(self, data_shapes: Mapping[str, tuple[int] | Mapping[str, Mapping]]):
         """

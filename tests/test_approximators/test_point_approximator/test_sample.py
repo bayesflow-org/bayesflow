@@ -12,7 +12,7 @@ def test_sample(point_approximator, simulator, batch_size, num_samples, adapter)
 
     scores_for_sampling = {
         key: score
-        for key, score in point_approximator.inference_network.scores.items()
+        for key, score in point_approximator.inference_network.scoring_rules.items()
         if isinstance(score, ParametricDistributionScore)
     }
 

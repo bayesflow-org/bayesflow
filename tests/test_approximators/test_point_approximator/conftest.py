@@ -13,7 +13,7 @@ def point_inference_network():
             mvn=MvNormalScore(),
         ),
         subnet="mlp",
-        subnet_kwargs=dict(widths=(32, 32)),
+        subnet_kwargs=dict(widths=(8, 8)),
     )
 
 

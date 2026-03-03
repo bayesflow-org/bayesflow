@@ -59,7 +59,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         )
 
         self.distribution_keys = []
-        for score_key, score in self.inference_network.scores.items():
+        for score_key, score in self.inference_network.scoring_rules.items():
             has_sample = callable(getattr(score, "sample", None))
             has_log_prob = callable(getattr(score, "log_prob", None))
             if has_sample and has_log_prob:
@@ -127,7 +127,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         )
 
         # Unstandardize the network outputs
-        for score_key, score in self.inference_network.scores.items():
+        for score_key, score in self.inference_network.scoring_rules.items():
             for head_key in estimates[score_key].keys():
                 transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
                 estimates[score_key][head_key] = self.standardizer.maybe_standardize(

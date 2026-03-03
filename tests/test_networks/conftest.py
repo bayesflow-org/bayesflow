@@ -200,7 +200,8 @@ def time_series_network(summary_dim):
 def time_series_transformer(summary_dim):
     from bayesflow.networks import TimeSeriesTransformer
 
-    return TimeSeriesTransformer(summary_dim=summary_dim)
+    # return_sequences=False to act as a regular summary (compression) network
+    return TimeSeriesTransformer(summary_dim=summary_dim, return_sequences=False)
 
 
 @pytest.fixture(scope="function")

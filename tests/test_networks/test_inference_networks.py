@@ -23,6 +23,8 @@ def test_build(inference_network, random_samples, random_conditions):
 
 
 def test_variable_batch_size(inference_network, random_samples, random_conditions):
+    from bayesflow.networks import ScoringRuleNetwork, ConsistencyModel
+
     # build with one batch size
     samples_shape = keras.ops.shape(random_samples)
     conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
@@ -37,13 +39,16 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
         else:
             new_conditions = keras.ops.zeros((bs,) + keras.ops.shape(random_conditions)[1:])
 
-        try:
+        if isinstance(inference_network, ConsistencyModel):
+            # consistency models don't implement .forward
+            with pytest.raises(NotImplementedError):
+                inference_network(new_input, conditions=new_conditions)
+        else: 
             inference_network(new_input, conditions=new_conditions)
-        except NotImplementedError:
-            # network is not invertible
-            pass
-        inference_network(new_input, conditions=new_conditions, inverse=True)
 
+        # scoring rule networks don't have an inverse
+        if not isinstance(inference_network, ScoringRuleNetwork):
+            inference_network(new_input, conditions=new_conditions, inverse=True)
 
 @pytest.mark.parametrize("density", [True, False])
 def test_output_structure(density, generative_inference_network, random_samples, random_conditions):

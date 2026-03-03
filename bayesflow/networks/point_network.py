@@ -1,10 +1,13 @@
-import keras
 from typing import Sequence
+
+import keras
 
 from bayesflow.networks.scoring_rule_network import ScoringRuleNetwork
 from bayesflow.scoring_rules import ScoringRule, MeanScore, QuantileScore
+from bayesflow.utils.serialization import deserialize, serializable
 
 
+@serializable("bayesflow.networks")
 class PointNetwork(ScoringRuleNetwork):
     """
     (IN) Implements Bayesian estimation of point estimates like mean and quantiles using a
@@ -54,3 +57,15 @@ class PointNetwork(ScoringRuleNetwork):
                     raise ValueError(f"{key} must be either `mean` or `quantiles`")
 
         return scoring_rules
+
+    @classmethod
+    def from_config(cls, config):
+        # PointNetwork.__init__ expects `points`, but the serialized config
+        # contains `scoring_rules` from the parent's get_config. Bypass
+        # PointNetwork.__init__ and call ScoringRuleNetwork.__init__ directly.
+        config = config.copy()
+        config["scoring_rules"] = deserialize(config["scoring_rules"])
+        config["subnet"] = deserialize(config["subnet"])
+        instance = cls.__new__(cls)
+        ScoringRuleNetwork.__init__(instance, **config)
+        return instance

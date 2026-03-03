@@ -47,7 +47,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         adapter: Adapter,
         inference_network: ScoringRuleNetwork,
         summary_network: SummaryNetwork | None = None,
-        standardize: str | Sequence[str] | None = "summary_variables",
+        standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
         super().__init__(

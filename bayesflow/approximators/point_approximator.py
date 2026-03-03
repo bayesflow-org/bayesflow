@@ -66,10 +66,7 @@ class PointApproximator(ContinuousApproximator):
             if has_sample and has_log_prob:
                 self.distribution_keys.append(score_key)
 
-    @property
-    def has_distribution(self) -> bool:
-        """Whether the approximator has at least one parametric score that allows sampling and log_prob."""
-        return len(self.distribution_keys) > 0
+        self.has_distribution = len(self.distribution_keys) > 0
 
     def estimate(
         self,
@@ -223,6 +220,11 @@ class PointApproximator(ContinuousApproximator):
 
         score_weights = self._resolve_score_weights(score_weights)
 
+        # Single score: _sample_separate already squeezed to a plain result,
+        # and mixing with uniform weight is an identity operation.
+        if len(self.distribution_keys) == 1:
+            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
+
         # Allocate samples per score and draw only as many as needed (max over scores).
         num_samples_per_score = np.random.multinomial(num_samples, list(score_weights.values()))
         max_k = int(np.max(num_samples_per_score))
@@ -352,6 +354,11 @@ class PointApproximator(ContinuousApproximator):
                     "Set `merge_scores=True` to compute the weighted mixture log-probability."
                 )
             return log_probs
+
+        # Single score: _log_prob_separate already squeezed to a plain array,
+        # and merging with uniform weight is an identity operation.
+        if len(self.distribution_keys) == 1:
+            return np.asarray(log_probs)
 
         score_weights = self._resolve_score_weights(score_weights)
 

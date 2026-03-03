@@ -47,6 +47,8 @@ class ContinuousApproximator(Approximator):
         Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.
     """
 
+    has_distribution: bool = True
+
     def __init__(
         self,
         *,

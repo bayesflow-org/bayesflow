@@ -74,9 +74,8 @@ class ModelComparisonApproximator(Approximator):
         self.condition_builder = ConditionBuilder()
         self.standardizer = Standardization(standardize)
 
-    @classmethod
     def build_dataset(
-        cls,
+        self,
         *,
         dataset: keras.utils.PyDataset = None,
         simulator: ModelComparisonSimulator = None,

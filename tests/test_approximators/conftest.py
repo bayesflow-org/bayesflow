@@ -1,4 +1,15 @@
 import pytest
+from tests.utils import check_combination_simulator_adapter
+
+
+@pytest.fixture(autouse=True)
+def _validate_simulator_adapter_combination(request):
+    """Skip invalid simulator+adapter combinations early."""
+    if "simulator" in request.fixturenames and "adapter" in request.fixturenames:
+        check_combination_simulator_adapter(
+            request.getfixturevalue("simulator"),
+            request.getfixturevalue("adapter"),
+        )
 
 
 @pytest.fixture()
@@ -97,6 +108,59 @@ def mean_std_summary_network():
     from tests.utils import MeanStdSummaryNetwork
 
     return MeanStdSummaryNetwork()
+
+
+# ---------------------------------------------------------------------------
+# Concrete approximator fixtures (used by sub-directories and top-level tests)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def continuous_approximator(adapter, summary_network):
+    from bayesflow import ContinuousApproximator
+    from bayesflow.networks import CouplingFlow
+
+    return ContinuousApproximator(
+        adapter=adapter,
+        inference_network=CouplingFlow(subnet="mlp", depth=2, subnet_kwargs=dict(widths=(32, 32))),
+        summary_network=summary_network,
+    )
+
+
+@pytest.fixture()
+def point_approximator_without_parametric_score(adapter, summary_network):
+    from bayesflow import PointApproximator
+    from bayesflow.networks import PointInferenceNetwork
+    from bayesflow.scores import NormedDifferenceScore
+
+    if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
+        pytest.skip("point approximator does not support unconditional estimation")
+
+    return PointApproximator(
+        adapter=adapter,
+        inference_network=PointInferenceNetwork(
+            scores=dict(mean=NormedDifferenceScore(k=2)),
+            subnet="mlp",
+            subnet_kwargs=dict(widths=(32, 32)),
+        ),
+        summary_network=summary_network,
+    )
+
+
+@pytest.fixture()
+def ensemble_approximator_continuous_and_point(continuous_approximator, point_approximator_without_parametric_score):
+    from bayesflow import EnsembleApproximator
+
+    return EnsembleApproximator(
+        dict(cont_approx=continuous_approximator, point_approx=point_approximator_without_parametric_score)
+    )
+
+
+@pytest.fixture(
+    params=["continuous_approximator", "ensemble_approximator_continuous_and_point"],
+)
+def approximator(request):
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture(params=["continuous_approximator", "point_approximator", "model_comparison_approximator"])

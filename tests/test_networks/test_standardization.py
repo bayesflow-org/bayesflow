@@ -10,9 +10,9 @@ from tests.utils import assert_layers_equal
 
 def test_forward_standardization_training():
     random_input = keras.random.normal((8, 4))
-    random_input_shapes = dict(inference_variables = random_input.shape)
+    random_input_shapes = dict(inference_variables=random_input.shape)
 
-    std = Standardization(standardize = "all")
+    std = Standardization(standardize="all")
     std.build(random_input_shapes)
     layer = std.standardize_layers["inference_variables"]
 
@@ -31,9 +31,9 @@ def test_forward_standardization_training():
 
 def test_forward_standardization_training_constant_batch():
     constant_input = keras.ops.ones((8, 4))
-    constant_input_shapes = dict(a = constant_input.shape)
+    constant_input_shapes = dict(a=constant_input.shape)
 
-    std = Standardization(standardize = "a")
+    std = Standardization(standardize="a")
     std.build(constant_input_shapes)
     layer = std.standardize_layers["a"]
 
@@ -53,9 +53,9 @@ def test_forward_standardization_training_constant_batch():
 
 def test_inverse_standardization_ldj():
     random_input = keras.random.normal((1, 3))
-    random_input_shapes = dict(a = random_input.shape)
+    random_input_shapes = dict(a=random_input.shape)
 
-    std = Standardization(standardize = "a", momentum=0.0)
+    std = Standardization(standardize="a", momentum=0.0)
     std.build(random_input_shapes)
     layer = std.standardize_layers["a"]
 
@@ -68,9 +68,9 @@ def test_inverse_standardization_ldj():
 
 def test_consistency_forward_inverse():
     random_input = keras.random.normal((4, 20, 5))
-    random_input_shapes = dict(z = random_input.shape)
+    random_input_shapes = dict(z=random_input.shape)
 
-    std = Standardization(standardize = "z")
+    std = Standardization(standardize="z")
     std.build(random_input_shapes)
     layer = std.standardize_layers["z"]
 
@@ -94,17 +94,17 @@ def test_nested_consistency_forward_inverse():
     std = Standardization(standardize=["a", "b"])
     std.build(random_input_shapes)
 
-    _ = std.maybe_standardize(random_input["a"], key = "a", stage="training", forward=True)
-    _ = std.maybe_standardize(random_input["b"], key = "b", stage="training", forward=True)
-    
+    _ = std.maybe_standardize(random_input["a"], key="a", stage="training", forward=True)
+    _ = std.maybe_standardize(random_input["b"], key="b", stage="training", forward=True)
+
     standardized = {
-        "a": std.maybe_standardize(random_input["a"], key = "a", stage="inference", forward=True),
-        "b": std.maybe_standardize(random_input["b"], key = "b", stage="inference", forward=True)
+        "a": std.maybe_standardize(random_input["a"], key="a", stage="inference", forward=True),
+        "b": std.maybe_standardize(random_input["b"], key="b", stage="inference", forward=True),
     }
 
     recovered = {
-        "a": std.maybe_standardize(standardized["a"], key = "a", stage="inference", forward=False),
-        "b": std.maybe_standardize(standardized["b"], key = "b", stage="inference", forward=False)
+        "a": std.maybe_standardize(standardized["a"], key="a", stage="inference", forward=False),
+        "b": std.maybe_standardize(standardized["b"], key="b", stage="inference", forward=False),
     }
 
     random_input = keras.tree.map_structure(keras.ops.convert_to_numpy, random_input)
@@ -116,6 +116,7 @@ def test_nested_consistency_forward_inverse():
 
 def test_nested_accuracy_forward():
     from bayesflow.utils import tree_concatenate
+
     # create inputs for two training passes
     random_input_a_1 = keras.random.normal((2, 3, 5))
     random_input_b_1 = keras.random.normal((4, 3))
@@ -139,7 +140,7 @@ def test_nested_accuracy_forward():
     # standardize the full combined input at inference
     standardized = {
         "a": std.maybe_standardize(random_input["a"], key="a", stage="inference", forward=True),
-        "b": std.maybe_standardize(random_input["b"], key="b", stage="inference", forward=True)
+        "b": std.maybe_standardize(random_input["b"], key="b", stage="inference", forward=True),
     }
     standardized = keras.tree.map_structure(keras.ops.convert_to_numpy, standardized)
     np.testing.assert_allclose(
@@ -222,7 +223,7 @@ def test_transformation_type_one_side_scale(transformation_type):
 
 
 def test_serialize_deserialize():
-    layer = Standardization(standardize = "a", momentum=0.0)
+    layer = Standardization(standardize="a", momentum=0.0)
     layer.build({"a": (32, 5)})
 
     serialized = serialize(layer)
@@ -233,7 +234,7 @@ def test_serialize_deserialize():
 
 
 def test_save_and_load(tmp_path):
-    layer = Standardization(standardize = "a", momentum=0.0)
+    layer = Standardization(standardize="a", momentum=0.0)
     layer.build({"a": (32, 5)})
 
     keras.saving.save_model(layer, tmp_path / "model.keras")

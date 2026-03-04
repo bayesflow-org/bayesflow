@@ -116,7 +116,6 @@ class TransformerBlock2D(keras.Layer):
             attn_dropout=self.attn_dropout,
             residual="none",
             kernel_initializer=self.kernel_initializer,
-            name="attn",
         )
 
         self.mlp = TimeDense2D(
@@ -129,7 +128,6 @@ class TransformerBlock2D(keras.Layer):
             residual="none",
             kernel_initializer=self.kernel_initializer,
             use_film=self.mlp_use_film,
-            name="mlp",
         )
 
     @classmethod

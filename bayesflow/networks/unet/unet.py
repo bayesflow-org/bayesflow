@@ -43,7 +43,7 @@ class UNet(keras.Layer):
         dropout: Sequence[float] | float = 0.0,
         groups: int = 8,
         num_heads: int = 1,
-        down_mode: Literal["average", "conv"] = "conv",
+        down_mode: Literal["average", "conv"] = "average",
         up_kernel_size: Literal[1, 3] = 3,
         up_conv_first: bool = False,
         norm: Literal["layer", "group"] = "group",

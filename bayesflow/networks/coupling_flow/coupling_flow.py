@@ -169,9 +169,7 @@ class CouplingFlow(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
-        metrics = super().compute_metrics(x=x, conditions=conditions, sample_weight=sample_weight, stage=stage)
-
-        z, log_density = self(x, conditions=conditions, inverse=False, density=True, training=stage == "training")
+        _, log_density = self(x, conditions=conditions, inverse=False, density=True, training=stage == "training")
         loss = weighted_mean(-log_density, sample_weight)
 
-        return metrics | {"loss": loss}
+        return {"loss": loss}

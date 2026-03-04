@@ -108,16 +108,7 @@ class InferenceNetwork(keras.Layer):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
-        metrics = {}
-
-        if stage != "training" and any(self.metrics):
-            # compute sample-based metrics
-            samples = self.sample((keras.ops.shape(x)[0],), conditions=conditions)
-
-            for metric in self.metrics:
-                metrics[metric.name] = metric(samples, x)
-
-        return metrics
+        raise NotImplementedError
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

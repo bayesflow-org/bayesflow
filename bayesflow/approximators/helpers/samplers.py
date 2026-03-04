@@ -121,8 +121,10 @@ class Sampler:
         conditions = self.repeat_and_flatten_conditions(conditions, num_samples)
 
         # Keep tensor-valued kwargs (e.g. masks) aligned with the flattened conditions.
+        # Only repeat tensors that have a batch dimension (ndim >= 2); feature-level
+        # tensors like target_mask (shape [feature_dim]) are passed through unchanged.
         kwargs = {
-            k: self.repeat_and_flatten_conditions(v, num_samples) if hasattr(v, "shape") else v
+            k: self.repeat_and_flatten_conditions(v, num_samples) if hasattr(v, "shape") and len(v.shape) >= 2 else v
             for k, v in kwargs.items()
         }
 

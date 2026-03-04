@@ -402,7 +402,7 @@ class ResidualUViT(keras.Layer):
         return x
 
     def decode(
-            self, x: Tensor, t_emb: Tensor, pos_skips: list[Tensor], neg_skips: list[Tensor], training: bool
+        self, x: Tensor, t_emb: Tensor, pos_skips: list[Tensor], neg_skips: list[Tensor], training: bool
     ) -> Tensor:
         for idx in range(len(self.up_stage_names)):
             x = x - neg_skips.pop()

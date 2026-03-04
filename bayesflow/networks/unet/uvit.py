@@ -309,7 +309,7 @@ class UViT(keras.Layer):
         # down
         skip_shapes = []
         padding = []
-        #for si, blocks in enumerate(self.down_stages):
+        # for si, blocks in enumerate(self.down_stages):
         for si, stage_name in enumerate(self.down_stage_names):
             blocks = getattr(self, stage_name)
             for layer in blocks:
@@ -343,7 +343,7 @@ class UViT(keras.Layer):
             h_shape = layer.compute_output_shape((h_shape, t_emb_shape))
 
         # up
-        #for ri, blocks in enumerate(self.up_stages):
+        # for ri, blocks in enumerate(self.up_stages):
         for ri, stage_name in enumerate(self.up_stage_names):
             blocks = getattr(self, stage_name)
             si = (len(self.widths) - 1) - ri
@@ -418,14 +418,13 @@ class UViT(keras.Layer):
         x = concatenate_valid([x, cond], axis=-1)
         return self.input_projector(x)
 
-
     def _compute_time_embedding(self, t: Tensor, training: bool) -> Tensor:
         # Ensure shape [B, 1] even if t comes in with extra dims.
         t = keras.ops.reshape(t, (keras.ops.shape(t)[0], -1))[:, :1]
         return self.time_emb(t, training=training)
 
     def _run_down_stage(
-            self, idx: int, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool
+        self, idx: int, x: Tensor, t_emb: Tensor, skips: list[Tensor], training: bool
     ) -> tuple[Tensor, list[Tensor]]:
         for layer in getattr(self, self.down_stage_names[idx]):
             is_residual = isinstance(layer, ResidualBlock2D)

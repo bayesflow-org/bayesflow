@@ -218,7 +218,7 @@ def test_masking(diffusion_type_inference_network):
             )
         )
         targets_fixed = test_conditions_adapted["inference_variables"][0]  # one set of parameters
-        if "inference_variables" in workflow.approximator.standardize:
+        if "inference_variables" in workflow.approximator.standardize_layers:
             targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
 
         fixed_samples = workflow.sample(

@@ -29,6 +29,34 @@ class TimeDense2D(keras.Layer):
         - "norm": x_n + h
 
     [1] Hoogeboom et al. (2023), simple diffusion: End-to-end diffusion for high-resolution images
+
+    Parameters
+    ----------
+    width : int
+        Hidden width of the pointwise MLP (the intermediate channel size after `dense_up`).
+    activation : str
+        Activation after conditioning injection. Default "swish".
+    norm : {"layer","group"}
+        Pre-norm applied to `x` before the MLP. Default "layer".
+    norm_with_bias : bool
+        Whether the norm uses a bias/center term (e.g., LayerNorm/GroupNorm center). Default False.
+    groups : int | None
+        Number of groups if `norm="group"` (ignored for layer norm). Let `SimpleNorm` adjust/validate. Default 8.
+    dropout : float | None
+        Dropout rate applied after activation. Default 0.0 (None treated as 0.0).
+    residual : {"none","input","norm"}
+        Output mode:
+            - "none": return delta
+            - "input": return x + delta
+            - "norm": return norm(x) + delta
+        Default "none".
+    kernel_initializer : str | keras.Initializer
+        Initializer for `dense_up` and `emb_proj`. The output `dense_down` is always zero-init. Default "he_normal".
+    use_film : bool
+        If True, inject time via FiLM (scale+shift), requiring `emb_proj` to output `2*width`.
+        If False, inject additively, requiring `emb_proj` to output `width`. Default True.
+    **kwargs
+        Additional keyword arguments passed to `keras.Layer`.
     """
 
     def __init__(
@@ -45,48 +73,19 @@ class TimeDense2D(keras.Layer):
         use_film: bool = True,
         **kwargs,
     ):
-        """
-        Parameters
-        ----------
-        width : int
-            Hidden width of the pointwise MLP (the intermediate channel size after `dense_up`).
-        activation : str
-            Activation after conditioning injection. Default "swish".
-        norm : {"layer","group"}
-            Pre-norm applied to `x` before the MLP. Default "layer".
-        norm_with_bias : bool
-            Whether the norm uses a bias/center term (e.g., LayerNorm/GroupNorm center). Default False.
-        groups : int | None
-            Number of groups if `norm="group"` (ignored for layer norm). Let `SimpleNorm` adjust/validate. Default 8.
-        dropout : float | None
-            Dropout rate applied after activation. Default 0.0 (None treated as 0.0).
-        residual : {"none","input","norm"}
-            Output mode:
-              - "none": return delta
-              - "input": return x + delta
-              - "norm": return norm(x) + delta
-            Default "none".
-        kernel_initializer : str | keras.Initializer
-            Initializer for `dense_up` and `emb_proj`. The output `dense_down` is always zero-init. Default "he_normal".
-        use_film : bool
-            If True, inject time via FiLM (scale+shift), requiring `emb_proj` to output `2*width`.
-            If False, inject additively, requiring `emb_proj` to output `width`. Default True.
-        **kwargs
-            Additional keyword arguments passed to `keras.Layer`.
-        """
         super().__init__(**layer_kwargs(kwargs))
-        self.width = int(width)
+        self.width = width
 
-        self.activation = str(activation)
-        self.norm = str(norm)
-        self.norm_with_bias = bool(norm_with_bias)
-        self.groups = groups  # let SimpleNorm handle group adjustment / divisibility
+        self.activation = activation
+        self.norm = norm
+        self.norm_with_bias = norm_with_bias
+        self.groups = groups
 
-        self.dropout = 0.0 if dropout is None else float(dropout)
-        self.residual = str(residual)
+        self.dropout = 0.0 if dropout is None else dropout
+        self.residual = residual
         self.kernel_initializer = kernel_initializer
 
-        self.use_film = bool(use_film)
+        self.use_film = use_film
 
         self.norm_layer = SimpleNorm(
             method=self.norm,
@@ -94,21 +93,18 @@ class TimeDense2D(keras.Layer):
             axis=-1,
             center=self.norm_with_bias,
             scale=True,
-            name="norm",
         )
         self.dense_up = keras.layers.Dense(
             self.width,
             kernel_initializer=self.kernel_initializer,
-            name="dense_up",
         )
         emb_out = (2 * self.width) if self.use_film else self.width
         self.emb_proj = keras.layers.Dense(
             emb_out,
             kernel_initializer=self.kernel_initializer,
-            name="emb_proj",
         )
-        self.act = keras.layers.Activation(self.activation, name="act")
-        self.drop = keras.layers.Dropout(self.dropout, name="dropout")
+        self.act = keras.layers.Activation(self.activation)
+        self.drop = keras.layers.Dropout(self.dropout)
 
         # created/built in build()
         self.dense_down = None
@@ -139,15 +135,12 @@ class TimeDense2D(keras.Layer):
         # input_shape: (x_shape, emb_shape)
         x_shape, emb_shape = input_shape
         c_in = x_shape[-1]
+
         if c_in is None:
             raise ValueError("TimeDense2D requires a known channel dimension C in x_shape.")
         c_in = int(c_in)
 
-        self.dense_down = keras.layers.Dense(
-            c_in,
-            kernel_initializer="zeros",
-            name="dense_down_zero",
-        )
+        self.dense_down = keras.layers.Dense(c_in, kernel_initializer="zeros")
 
         # build sublayers
         self.norm_layer.build(x_shape)
@@ -159,8 +152,6 @@ class TimeDense2D(keras.Layer):
         self.act.build(h_shape)
         self.drop.build(h_shape)
         self.dense_down.build(h_shape)
-
-        super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
         x_shape, _ = input_shape

@@ -27,6 +27,15 @@ class DownSample2D(keras.Layer):
     [1] Hoogeboom et al. (2024) Simpler Diffusion (SiD2): 1.5 FID on ImageNet512 with pixel-space diffusion
 
     [2] Nain (2022) Keras example: Denoising Diffusion Probabilistic Model (https://keras.io/examples/generative/ddpm/)
+
+    Parameters
+    ----------
+    width : int
+        Number of output channels after downsampling.
+    kernel_initializer : str or keras.Initializer, optional
+        Initialization strategy for convolution kernel weights. Default is "he_normal".
+    **kwargs
+        Additional keyword arguments passed to `keras.Layer`.
     """
 
     def __init__(
@@ -37,18 +46,6 @@ class DownSample2D(keras.Layer):
         kernel_initializer: str | keras.Initializer = "he_normal",
         **kwargs,
     ):
-        """
-        Implements a spatial downsampling layer for (B, H, W, C) tensors.
-
-        Parameters
-        ----------
-        width : int
-            Number of output channels after downsampling.
-        kernel_initializer : str or keras.Initializer, optional
-            Initialization strategy for convolution kernel weights. Default is "he_normal".
-        **kwargs
-            Additional keyword arguments passed to `keras.Layer`.
-        """
         super().__init__(**layer_kwargs(kwargs))
         self.width = int(width)
         self.kernel_initializer = kernel_initializer
@@ -62,18 +59,16 @@ class DownSample2D(keras.Layer):
                     strides=2,
                     padding="same",
                     kernel_initializer=self.kernel_initializer,
-                    name="down",
                 )
             case "average":
                 self.down = Sequential(
                     [
-                        keras.layers.AveragePooling2D(pool_size=2, strides=2, padding="same", name="avg_pool"),
+                        keras.layers.AveragePooling2D(pool_size=2, strides=2, padding="same"),
                         keras.layers.Conv2D(
                             filters=self.width,
                             kernel_size=1,
                             padding="same",
                             kernel_initializer=self.kernel_initializer,
-                            name="conv_proj",
                         ),
                     ]
                 )
@@ -97,7 +92,6 @@ class DownSample2D(keras.Layer):
         if self.built:
             return
         self.down.build(input_shape)
-        super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
         return self.down.compute_output_shape(input_shape)

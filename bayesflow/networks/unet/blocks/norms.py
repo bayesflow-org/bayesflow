@@ -16,6 +16,25 @@ class SimpleNorm(keras.Layer):
       - LayerNorm (method="layer")
       - GroupNorm (method="group")
 
+    Parameters
+    ----------
+    method : {"layer", "group"}, optional
+        Type of normalization to apply. "layer" uses Layer Normalization; "group" uses Group Normalization.
+        Default is "group".
+    groups : int or None, optional
+        Number of groups for Group Normalization. Only used when `method="group"`. At build time, if the
+        requested value does not divide the number of channels, it is reduced to the largest valid divisor
+        <= `groups`. Default is 8.
+    axis : int, optional
+        Channel axis along which normalization is applied. For channels-last tensors (B,H,W,C), use -1.
+        Default is -1.
+    center : bool, optional
+        Whether to include a learnable offset (beta). Default is True.
+    scale : bool, optional
+        Whether to include a learnable scale (gamma). Default is True.
+    **kwargs
+        Additional keyword arguments passed to `keras.Layer`.
+
     Notes
     -----
     For GroupNorm, `groups` must divide the number of channels along `axis`.
@@ -33,28 +52,6 @@ class SimpleNorm(keras.Layer):
         scale: bool = True,
         **kwargs,
     ):
-        """
-        Implements a lightweight normalization wrapper for vision backbones.
-
-        Parameters
-        ----------
-        method : {"layer", "group"}, optional
-            Type of normalization to apply. "layer" uses Layer Normalization; "group" uses Group Normalization.
-            Default is "group".
-        groups : int or None, optional
-            Number of groups for Group Normalization. Only used when `method="group"`. At build time, if the
-            requested value does not divide the number of channels, it is reduced to the largest valid divisor
-            <= `groups`. Default is 8.
-        axis : int, optional
-            Channel axis along which normalization is applied. For channels-last tensors (B,H,W,C), use -1.
-            Default is -1.
-        center : bool, optional
-            Whether to include a learnable offset (beta). Default is True.
-        scale : bool, optional
-            Whether to include a learnable scale (gamma). Default is True.
-        **kwargs
-            Additional keyword arguments passed to `keras.Layer`.
-        """
         super().__init__(**layer_kwargs(kwargs))
         self.method = method
         self.groups = groups
@@ -121,8 +118,6 @@ class SimpleNorm(keras.Layer):
                         scale=self.scale,
                     )
         self.norm.build(input_shape)
-
-        super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
         return input_shape

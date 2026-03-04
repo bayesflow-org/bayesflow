@@ -24,6 +24,31 @@ class ResidualBlock2D(keras.Layer):
     controlled via `skip_fuse="add_sqrt2"` (see [1] for details.)
 
     [1] Hoogeboom et al. (2023), simple diffusion: End-to-end diffusion for high-resolution images
+
+    Parameters
+    ----------
+    width : int
+        Number of output channels produced by the block.
+    activation : str, optional
+        Activation function used inside the block. Default is "swish".
+    norm : {"layer", "group"}, optional
+        Normalization type. Default is "group".
+    groups : int or None, optional
+        Number of groups for group normalization. Adjusted in `build()` if needed
+        to divide the channel dimension. Default is 8.
+    dropout : float, optional
+        Dropout rate applied before the second convolution. Default is 0.0.
+    kernel_initializer : str or keras.initializers.Initializer, optional
+        Initializer for conv1 and embedding projection. conv2 uses zero init to start
+        near-identity (common in diffusion U-Nets). Default is "he_normal".
+    use_film : bool, optional
+        If True, uses FiLM-style scale-and-shift from t_emb.
+        If False, uses additive embedding. Default is True.
+    skip_fuse_case : {"add_sqrt2"} or None, optional
+        If "add_sqrt2" and `skip_h` is passed at call time, fuses `x` and `skip_h` as
+        (Norm(x) + Norm(skip_h)) / sqrt(2) before conv1. Default is "add_sqrt2".
+    **kwargs
+        Additional keyword arguments passed to `keras.Layer`.
     """
 
     def __init__(
@@ -39,32 +64,6 @@ class ResidualBlock2D(keras.Layer):
         skip_fuse_case: Literal["add_sqrt2"] | None = None,
         **kwargs,
     ):
-        """
-        Parameters
-        ----------
-        width : int
-            Number of output channels produced by the block.
-        activation : str, optional
-            Activation function used inside the block. Default is "swish".
-        norm : {"layer", "group"}, optional
-            Normalization type. Default is "group".
-        groups : int or None, optional
-            Number of groups for group normalization. Adjusted in `build()` if needed
-            to divide the channel dimension. Default is 8.
-        dropout : float, optional
-            Dropout rate applied before the second convolution. Default is 0.0.
-        kernel_initializer : str or keras.initializers.Initializer, optional
-            Initializer for conv1 and embedding projection. conv2 uses zero init to start
-            near-identity (common in diffusion U-Nets). Default is "he_normal".
-        use_film : bool, optional
-            If True, uses FiLM-style scale-and-shift from t_emb.
-            If False, uses additive embedding. Default is True.
-        skip_fuse_case : {"add_sqrt2"} or None, optional
-            If "add_sqrt2" and `skip_h` is passed at call time, fuses `x` and `skip_h` as
-            (Norm(x) + Norm(skip_h)) / sqrt(2) before conv1. Default is "add_sqrt2".
-        **kwargs
-            Additional keyword arguments passed to `keras.Layer`.
-        """
         super().__init__(**layer_kwargs(kwargs))
         self.width = int(width)
         self.activation = str(activation)
@@ -193,8 +192,6 @@ class ResidualBlock2D(keras.Layer):
                     f"skip_fuse_case='{self.skip_fuse_case}' requires skip_h input, but skip_h shape is {skip_shape}."
                 )
             self.skip_norm.build(x_shape)
-
-        super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
         if len(input_shape) == 2:

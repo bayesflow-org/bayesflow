@@ -21,6 +21,34 @@ class SelfAttention2D(keras.Layer):
       - Dot-product attention over spatial positions (HW tokens)
       - Final projection uses zero-init so the block starts near-identity when used with residual adds
 
+    Parameters
+    ----------
+    num_heads : int, optional
+        Number of attention heads. Set to 1 for single-head attention. Default is 4.
+    norm : {"group", "layer"}, optional
+        Normalization applied to the input before projecting Q/K/V. Default is "group".
+    norm_with_bias : bool, optional
+        If True, applies a bias term in the input normalization (e.g., GroupNorm with center=True) to match the
+        pattern from [1]. Default is False since as in [2].
+    groups : int, optional
+        Number of groups for GroupNorm. Ignored for LayerNorm. If given, may be adjusted in build()
+        by SimpleNorm to divide C. Default is 8.
+    qk_norm : bool, optional
+        If True, applies LayerNorm-with-bias to Q and K (per-head, over head_dim), matching the
+        "NormalizeWithBias(Q/K)" pattern. Default is True.
+    attn_dropout : float or None, optional
+        Dropout applied to attention weights after softmax. Default is 0.0.
+    residual : {"none", "input", "norm"}, optional
+        Controls what the layer returns:
+            - "none": returns only the attention projection (delta) with shape (B,H,W,C)
+            - "input": returns x + delta (residual on raw input)
+            - "norm": returns input_norm(x) + delta (matches Keras DDPM example [2]: returns normalized inputs + proj)
+        Default is "none" (best for `x += attn(x)`).
+    kernel_initializer : str or keras.Initializer, optional
+        Initializer for Q/K/V projections. The output projection is zero-initialized.
+    **kwargs
+        Additional keyword arguments passed to `keras.Layer`.
+
     Notes:
         - This layer does not change the channel dimension; it infers C at build time from the input.
         - Differences between [1] and [2] are (single head; no Q/K norm) and (multi-head; Q/K norms) explicitly.
@@ -28,7 +56,6 @@ class SelfAttention2D(keras.Layer):
     [1] Nain (2022) Keras example: Denoising Diffusion Probabilistic Model (https://keras.io/examples/generative/ddpm/)
 
     [2] Hoogeboom et al. (2023), simple diffusion: End-to-end diffusion for high-resolution images
-
     """
 
     def __init__(
@@ -45,45 +72,16 @@ class SelfAttention2D(keras.Layer):
         kernel_initializer: str | keras.Initializer = "he_normal",
         **kwargs,
     ):
-        """
-        Parameters
-        ----------
-        num_heads : int, optional
-            Number of attention heads. Set to 1 for single-head attention. Default is 4.
-        norm : {"group", "layer"}, optional
-            Normalization applied to the input before projecting Q/K/V. Default is "group".
-        norm_with_bias : bool, optional
-            If True, applies a bias term in the input normalization (e.g., GroupNorm with center=True) to match the
-            pattern from [1]. Default is False since as in [2].
-        groups : int, optional
-            Number of groups for GroupNorm. Ignored for LayerNorm. If given, may be adjusted in build()
-            by SimpleNorm to divide C. Default is 8.
-        qk_norm : bool, optional
-            If True, applies LayerNorm-with-bias to Q and K (per-head, over head_dim), matching the
-            "NormalizeWithBias(Q/K)" pattern. Default is True.
-        attn_dropout : float or None, optional
-            Dropout applied to attention weights after softmax. Default is 0.0.
-        residual : {"none", "input", "norm"}, optional
-            Controls what the layer returns:
-              - "none": returns only the attention projection (delta) with shape (B,H,W,C)
-              - "input": returns x + delta (residual on raw input)
-              - "norm": returns input_norm(x) + delta (matches Keras DDPM example [2]: returns normalized inputs + proj)
-            Default is "none" (best for `x += attn(x)`).
-        kernel_initializer : str or keras.Initializer, optional
-            Initializer for Q/K/V projections. The output projection is zero-initialized.
-        **kwargs
-            Additional keyword arguments passed to `keras.Layer`.
-        """
         super().__init__(**layer_kwargs(kwargs))
         self.num_heads = int(num_heads)
 
-        self.norm = str(norm)
-        self.groups = int(groups)
-        self.norm_with_bias = bool(norm_with_bias)
-        self.qk_norm = bool(qk_norm)
-        self.qk_norm_type = str(qk_norm_type)
-        self.attn_dropout = 0.0 if attn_dropout is None else float(attn_dropout)
-        self.residual = "none" if residual is None else str(residual)
+        self.norm = norm
+        self.groups = groups
+        self.norm_with_bias = norm_with_bias
+        self.qk_norm = qk_norm
+        self.qk_norm_type = qk_norm_type
+        self.attn_dropout = 0.0 if attn_dropout is None else attn_dropout
+        self.residual = "none" if residual is None else residual
         self.kernel_initializer = kernel_initializer
 
         # Input norm (pre-norm attention)
@@ -93,7 +91,6 @@ class SelfAttention2D(keras.Layer):
             axis=-1,
             center=self.norm_with_bias,
             scale=True,
-            name="x_norm",
         )
 
         # set at build time when channel_dim is known
@@ -108,27 +105,26 @@ class SelfAttention2D(keras.Layer):
         if self.qk_norm:
             if self.qk_norm_type != "layer":
                 raise ValueError("SelfAttention2D currently only supports qk_norm='layer'.")
+
             # normalize over head_dim (last axis of (B, HW, heads, head_dim))
             self.q_norm = SimpleNorm(
                 method="layer",
                 axis=-1,
                 center=True,
                 scale=True,
-                name="q_norm",
             )
             self.k_norm = SimpleNorm(
                 method="layer",
                 axis=-1,
                 center=True,
                 scale=True,
-                name="k_norm",
             )
         else:
             self.q_norm = None
             self.k_norm = None
 
-        self.softmax = keras.layers.Softmax(axis=-1, name="attn_softmax")
-        self.weights_dropout = keras.layers.Dropout(self.attn_dropout, name="attn_dropout")
+        self.softmax = keras.layers.Softmax(axis=-1)
+        self.weights_dropout = keras.layers.Dropout(self.attn_dropout)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -166,26 +162,13 @@ class SelfAttention2D(keras.Layer):
             )
         self.head_dim = self.channel_dim // self.num_heads
 
-        self.q_proj = keras.layers.Dense(
-            self.num_heads * self.head_dim,
-            kernel_initializer=self.kernel_initializer,
-            name="q_proj",
-        )
-        self.k_proj = keras.layers.Dense(
-            self.num_heads * self.head_dim,
-            kernel_initializer=self.kernel_initializer,
-            name="k_proj",
-        )
-        self.v_proj = keras.layers.Dense(
-            self.num_heads * self.head_dim,
-            kernel_initializer=self.kernel_initializer,
-            name="v_proj",
-        )
+        self.q_proj = keras.layers.Dense(self.num_heads * self.head_dim, kernel_initializer=self.kernel_initializer)
+        self.k_proj = keras.layers.Dense(self.num_heads * self.head_dim, kernel_initializer=self.kernel_initializer)
+        self.v_proj = keras.layers.Dense(self.num_heads * self.head_dim, kernel_initializer=self.kernel_initializer)
         # Output projection (zero-init like diffusion U-Nets)
         self.out_proj = keras.layers.Dense(
             self.channel_dim,
             kernel_initializer="zeros",
-            name="out_proj_zero",
         )
 
         self.x_norm.build(input_shape)
@@ -204,8 +187,6 @@ class SelfAttention2D(keras.Layer):
         self.weights_dropout.build(attn_shape)
 
         self.out_proj.build(tok_shape)
-
-        super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
         return input_shape

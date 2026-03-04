@@ -372,8 +372,6 @@ class UViT(keras.Layer):
         )
         self.out_conv.build(h_shape)
 
-        super().build(input_shape)
-
     def compute_output_shape(self, input_shape):
         return tuple(input_shape[0])
 

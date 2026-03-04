@@ -14,6 +14,27 @@ class DenseFourier(keras.Layer):
     Time embedding block for diffusion-style architectures (U-Net / U-ViT), mapping a scalar timestep `t` to a global
     conditiong vector.
 
+    Parameters
+    ----------
+    emb_dim : int
+        Fourier feature dim `D` (even). Output is `D` (no identity) or `D+1` (with identity).
+    fourier_scale : float
+        Frequency scale (period range). Default 30.0.
+    fourier_initializer : str
+        Initializer for Fourier frequencies. Default "random_normal".
+    fourier_trainable : bool
+        Whether Fourier frequencies are trainable. Default True.
+    include_identity : bool
+        If True, includes raw `t` as an extra coordinate. Default True.
+    use_residual_mlp : bool
+        If True, uses `out = e + MLP(e)` with zero-init last layer. Default True.
+    activation : str
+        Residual MLP activation. Default "mish".
+    kernel_initializer : str | keras.Initializer
+        Init for residual MLP (except final zero-init). Default "he_normal".
+    **kwargs
+        Passed to `keras.Layer` (e.g., name, dtype, trainable).
+
     Pattern:
         .. code-block:: text
 
@@ -29,41 +50,16 @@ class DenseFourier(keras.Layer):
         self,
         emb_dim: int = 32,
         *,
-        # fourier embedding
         fourier_scale: float = 30.0,
         fourier_initializer: str = "random_normal",
         fourier_trainable: bool = True,
         include_identity: bool = True,
-        # residual MLP
         use_residual_mlp: bool = True,
         activation: str = "mish",
         kernel_initializer: str | keras.initializers.Initializer = "he_normal",
         **kwargs,
     ):
-        """
-        Implements a time embedding block used for global conditioning in vision diffusion backbones.
-
-        Parameters
-        ----------
-        emb_dim : int
-            Fourier feature dim `D` (even). Output is `D` (no identity) or `D+1` (with identity).
-        fourier_scale : float
-            Frequency scale (period range). Default 30.0.
-        fourier_initializer : str
-            Initializer for Fourier frequencies. Default "random_normal".
-        fourier_trainable : bool
-            Whether Fourier frequencies are trainable. Default True.
-        include_identity : bool
-            If True, includes raw `t` as an extra coordinate. Default True.
-        use_residual_mlp : bool
-            If True, uses `out = e + MLP(e)` with zero-init last layer. Default True.
-        activation : str
-            Residual MLP activation. Default "mish".
-        kernel_initializer : str | keras.Initializer
-            Init for residual MLP (except final zero-init). Default "he_normal".
-        **kwargs
-            Passed to `keras.Layer` (e.g., name, dtype, trainable).
-        """
+        """Implements a time embedding block used for global conditioning in vision diffusion backbones."""
         super().__init__(**layer_kwargs(kwargs))
 
         self.emb_dim = int(emb_dim)
@@ -94,12 +90,10 @@ class DenseFourier(keras.Layer):
                         self.emb_dim + (1 if self.include_identity else 0),
                         activation=self.activation,
                         kernel_initializer=self.kernel_initializer,
-                        name="time_mlp_1",
                     ),
                     keras.layers.Dense(
                         self.emb_dim + (1 if self.include_identity else 0),
                         kernel_initializer="zeros",
-                        name="time_mlp_2",
                     ),
                 ]
             )

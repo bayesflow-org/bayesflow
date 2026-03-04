@@ -25,6 +25,21 @@ class UpSample2D(keras.Layer):
     [1] Hoogeboom et al. (2023), simple diffusion: End-to-end diffusion for high-resolution images
 
     [2] Nain (2022) Keras example: Denoising Diffusion Probabilistic Model (https://keras.io/examples/generative/ddpm/)
+
+    Parameters
+    ----------
+    width : int
+        Number of output channels after upsampling.
+    kernel_size : {1, 3}, optional
+        Kernel size for the convolution applied before or after upsampling. Default is 1.
+    conv_first : bool, optional
+        If True, applies convolution before upsampling, after upsampling otherwise. Default is True.
+    kernel_initializer : str or keras.Initializer, optional
+        Initialization strategy for convolution kernel weights. Default is "he_normal".
+    interpolation : {"nearest", "bilinear"}, optional
+        Interpolation mode used by `UpSampling2D`. Default is "nearest".
+    **kwargs
+        Additional keyword arguments passed to `keras.Layer`.
     """
 
     def __init__(
@@ -37,26 +52,8 @@ class UpSample2D(keras.Layer):
         interpolation: Literal["nearest", "bilinear"] = "nearest",
         **kwargs,
     ):
-        """
-        Implements a spatial upsampling layer for (B, H, W, C) tensors.
-
-        Parameters
-        ----------
-        width : int
-            Number of output channels after upsampling.
-        kernel_size : {1, 3}, optional
-            Kernel size for the convolution applied before or after upsampling. Default is 1.
-        conv_first : bool, optional
-            If True, applies convolution before upsampling, after upsampling otherwise. Default is True.
-        kernel_initializer : str or keras.Initializer, optional
-            Initialization strategy for convolution kernel weights. Default is "he_normal".
-        interpolation : {"nearest", "bilinear"}, optional
-            Interpolation mode used by `UpSampling2D`. Default is "nearest".
-        **kwargs
-            Additional keyword arguments passed to `keras.Layer`.
-        """
         super().__init__(**layer_kwargs(kwargs))
-        self.width = int(width)
+        self.width = width
         self.kernel_size = kernel_size
         self.conv_first = conv_first
         self.interpolation = interpolation
@@ -70,21 +67,19 @@ class UpSample2D(keras.Layer):
                         kernel_size=self.kernel_size,
                         padding="same",
                         kernel_initializer=self.kernel_initializer,
-                        name="conv",
                     ),
-                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation, name="up"),
+                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation),
                 ]
             )
         else:
             self.up = Sequential(
                 [
-                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation, name="up"),
+                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation),
                     keras.layers.Conv2D(
                         filters=self.width,
                         kernel_size=self.kernel_size,
                         padding="same",
                         kernel_initializer=self.kernel_initializer,
-                        name="conv",
                     ),
                 ]
             )
@@ -108,10 +103,9 @@ class UpSample2D(keras.Layer):
         if self.built:
             return
         self.up.build(input_shape)
-        super().build(input_shape)
 
     def compute_output_shape(self, input_shape):
         return self.up.compute_output_shape(input_shape)
 
-    def call(self, inputs: Tensor, training: bool | None = None, mask=None) -> Tensor:
+    def call(self, inputs: Tensor, training: bool | None = None, **kwargs) -> Tensor:
         return self.up(inputs, training=training)

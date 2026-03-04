@@ -16,6 +16,7 @@ def test_fit(approximator, train_dataset, validation_dataset, batch_size):
     mock_data = keras.tree.map_structure(keras.ops.convert_to_tensor, mock_data)
     mock_data_shapes = keras.tree.map_structure(keras.ops.shape, mock_data)
     approximator.build(mock_data_shapes)
+    approximator.compile()
 
     untrained_weights = copy.deepcopy(approximator.weights)
     untrained_metrics = approximator.evaluate(validation_dataset, return_dict=True)

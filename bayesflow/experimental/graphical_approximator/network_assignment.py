@@ -16,25 +16,32 @@ def inference_variables_by_network(approximator: "GraphicalApproximator", adapte
     Returns a dictionary where the keys are integers denoting network indices
     and the values are inference variables of that inference network.
     """
-    variable_names = approximator.variable_names
-
     result = {}
 
     for network_idx, _ in enumerate(approximator.inference_networks):
-        vars = []
-        for node in approximator.network_composition[network_idx]:
-            for name in variable_names[node]:
-                var = adapted_data[name]
-
-                # standardize inference variables if required
-                if name in approximator.standardize:
-                    var = approximator.standardize_layers[name](var, stage="validation")
-
-                vars.append(var)
-
-        result[network_idx] = concatenate(vars)
+        result[network_idx] = _prepare_inference_variables(approximator, adapted_data, network_idx)
 
     return result
+
+
+def _prepare_inference_variables(approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int) -> Tensor:
+    """
+    Returns the inference variable tensor for the inference network denoted by `network_idx`.
+    """
+    vars = []
+    for node in approximator.network_composition[network_idx]:
+        for name in approximator.variable_names[node]:
+            var = adapted_data[name]
+
+            # standardize inference variables if required
+            if name in approximator.standardize:
+                var = approximator.standardize_layers[name](var, stage="validation")
+
+            vars.append(var)
+
+    inference_variables = concatenate(vars)
+
+    return inference_variables
 
 
 def summary_input(approximator: "GraphicalApproximator", adapted_data: dict) -> Tensor:
@@ -94,30 +101,41 @@ def data_conditions_by_network(approximator: "GraphicalApproximator", adapted_da
     and the values are data conditions of that inference network.
     """
     inference_variables = inference_variables_by_network(approximator, adapted_data)
-    summary_outputs = summary_outputs_by_network(approximator, adapted_data)
-    inference_to_summary_map = match_inference_to_summary_networks(approximator)
 
     result = {}
 
     for network_idx, variable in inference_variables.items():
-        summary_idx = inference_to_summary_map[network_idx]
-        summary_output = summary_outputs[summary_idx]
-
-        if len(variable.shape) == len(summary_output.shape):
-            result[network_idx] = summary_output
-        else:
-            expanded = keras.ops.expand_dims(summary_output, axis=-2)
-            broadcasted = keras.ops.broadcast_to(
-                expanded,
-                (
-                    *keras.ops.shape(summary_output)[:-1],
-                    keras.ops.shape(variable)[-2],
-                    keras.ops.shape(summary_output)[-1],
-                ),
-            )
-            result[network_idx] = broadcasted
+        result[network_idx] = _prepare_data_conditions(approximator, adapted_data, network_idx)
 
     return result
+
+
+def _prepare_data_conditions(approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int) -> Tensor:
+    """
+    Returns the data condition tensor for the inference network denoted by `network_idx`.
+    """
+    inference_variables = _prepare_inference_variables(approximator, adapted_data, network_idx)
+    summary_outputs = summary_outputs_by_network(approximator, adapted_data)
+    inference_to_summary_map = match_inference_to_summary_networks(approximator)
+
+    summary_idx = inference_to_summary_map[network_idx]
+    summary_output = summary_outputs[summary_idx]
+
+    if len(inference_variables.shape) == len(summary_output.shape):
+        data_conditions = summary_output
+    else:
+        expanded = keras.ops.expand_dims(summary_output, axis=-2)
+        broadcasted = keras.ops.broadcast_to(
+            expanded,
+            (
+                *keras.ops.shape(summary_output)[:-1],
+                keras.ops.shape(inference_variables)[-2],
+                keras.ops.shape(summary_output)[-1],
+            ),
+        )
+        data_conditions = broadcasted
+
+    return data_conditions
 
 
 def match_inference_to_summary_networks(approximator: "GraphicalApproximator") -> dict[int, int]:
@@ -160,50 +178,55 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
     Returns a dictionary where the keys are integers denoting network indices
     and the values are inference variables of that inference network.
     """
-    variable_names = approximator.variable_names
-    data_conditions = data_conditions_by_network(approximator, adapted_data)
-    data_node = approximator.graph.simulation_graph.data_node()
-
     result = {}
 
     for network_idx, _ in enumerate(approximator.inference_networks):
-        vars = []
-
-        for node in sort_nodes_topologically(
-            approximator.graph.simulation_graph, approximator.network_conditions[network_idx]
-        ):
-            if node in data_node:
-                vars.append(data_conditions[network_idx])
-            else:
-                for name in variable_names[node]:
-                    var = adapted_data[name]
-
-                    # standardize inference variables if required
-                    if name in approximator.standardize:
-                        var = approximator.standardize_layers[name](var, stage="validation")
-
-                    # flatten group dimension if node is not amortizable
-                    if not approximator.graph.allows_amortization(node):
-                        # transpose last two dimensions before flattening
-                        # so unpacking in split_network_output becomes easier
-                        rank = keras.ops.ndim(var)
-                        perm = (*range(rank - 2), rank - 1, rank - 2)
-                        transpose = keras.ops.transpose(var, axes=tuple(perm))
-                        var = keras.ops.reshape(transpose, (*keras.ops.shape(transpose)[:-2], -1))
-
-                    vars.append(var)
-
-        conditions = concatenate(vars)
-
-        # add node repetitions
-        input = summary_input(approximator, adapted_data)
-        node_reps = keras.ops.shape(input)[1:-1]
-        if len(node_reps) >= 1:
-            squared = keras.ops.sqrt(node_reps)
-            expanded = keras.ops.expand_dims(squared, axis=0)
-            repeated = keras.ops.repeat(expanded, keras.ops.shape(input)[0], axis=0)
-            conditions = concatenate([conditions, repeated])
-
-        result[network_idx] = conditions
-
+        result[network_idx] = _prepare_inference_conditions(approximator, adapted_data, network_idx)
     return result
+
+
+def _prepare_inference_conditions(
+    approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int
+) -> Tensor:
+    data_node = approximator.graph.simulation_graph.data_node()
+    data_conditions = _prepare_data_conditions(approximator, adapted_data, network_idx)
+    variable_names = approximator.variable_names
+
+    vars = []
+
+    for node in sort_nodes_topologically(
+        approximator.graph.simulation_graph, approximator.network_conditions[network_idx]
+    ):
+        if node in data_node:
+            vars.append(data_conditions)
+        else:
+            for name in variable_names[node]:
+                var = adapted_data[name]
+
+                # standardize inference variables if required
+                if name in approximator.standardize:
+                    var = approximator.standardize_layers[name](var, stage="validation")
+
+                # flatten group dimension if node is not amortizable
+                if not approximator.graph.allows_amortization(node):
+                    # transpose last two dimensions before flattening
+                    # so unpacking in split_network_output becomes easier
+                    rank = keras.ops.ndim(var)
+                    perm = (*range(rank - 2), rank - 1, rank - 2)
+                    transpose = keras.ops.transpose(var, axes=tuple(perm))
+                    var = keras.ops.reshape(transpose, (*keras.ops.shape(transpose)[:-2], -1))
+
+                vars.append(var)
+
+    inference_conditions = concatenate(vars)
+
+    # add node repetitions
+    input = summary_input(approximator, adapted_data)
+    node_reps = keras.ops.shape(input)[1:-1]
+    if len(node_reps) >= 1:
+        squared = keras.ops.sqrt(node_reps)
+        expanded = keras.ops.expand_dims(squared, axis=0)
+        repeated = keras.ops.repeat(expanded, keras.ops.shape(input)[0], axis=0)
+        inference_conditions = concatenate([inference_conditions, repeated])
+
+    return inference_conditions

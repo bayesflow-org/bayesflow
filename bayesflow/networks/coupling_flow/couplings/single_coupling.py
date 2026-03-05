@@ -1,7 +1,7 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, find_network, model_kwargs
+from bayesflow.utils import filter_kwargs, find_network, model_kwargs, concatenate_valid
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ..invertible_layer import InvertibleLayer
@@ -113,8 +113,7 @@ class SingleCoupling(InvertibleLayer):
         """Applies the inner neural network to obtain the transformation parameters, for instance,
         if affine transformations, then [s, t] = NN(inputs), followed by a constraint, e.g., s = exp(s).
         """
-        if conditions is not None:
-            x = keras.ops.concatenate([x, conditions], axis=-1)
+        x = concatenate_valid([x, conditions], axis=-1)
 
         parameters = self.output_projector(self.subnet(x, training=training, **filter_kwargs(kwargs, self.subnet.call)))
         parameters = self.transform.split_parameters(parameters)

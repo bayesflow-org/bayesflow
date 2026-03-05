@@ -9,8 +9,7 @@ from bayesflow.utils.serialization import deserialize, serializable
 from .noise_schedule import NoiseSchedule
 
 
-# disable module check, use potential module after moving from experimental
-@serializable("bayesflow.networks", disable_module_check=True)
+@serializable("bayesflow.networks")
 class CosineNoiseSchedule(NoiseSchedule):
     """Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].
 

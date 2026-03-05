@@ -93,6 +93,7 @@ from .tensor_utils import (
     fill_triangular_matrix,
     pad,
     positive_diag,
+    randomly_mask_conditions,
     searchsorted,
     size_of,
     stack_valid,

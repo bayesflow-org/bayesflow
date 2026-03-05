@@ -17,6 +17,9 @@ def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor
     if not tensors:
         return None
 
+    if len(tensors) == 1:
+        return tensors[0]
+
     return keras.ops.concatenate(tensors, axis=axis)
 
 
@@ -405,3 +408,40 @@ def positive_diag(x: Tensor, method="default") -> Tensor:
     x = x_diag_positive + x_offdiag
 
     return x
+
+
+def randomly_mask_conditions(
+    conditions: Tensor, drop_prob: float, seed_generator: keras.random.SeedGenerator = None
+) -> Tensor:
+    """Randomly zero out entire samples in a condition tensor for classifier-free guidance.
+
+    Each sample in the batch is independently zeroed with probability ``drop_prob``.
+
+    Parameters
+    ----------
+    conditions : Tensor
+        Condition tensor with shape ``(batch, ...)``.
+    drop_prob : float
+        Probability of dropping (zeroing) each sample. Must be in ``[0, 1]``.
+    seed_generator : keras.random.SeedGenerator, optional
+        Seed generator used for randomness. Default is None, which means that the
+        default global seed generator will be used.
+
+    Returns
+    -------
+    Tensor
+        Tensor with the same shape as `conditions`, with some samples zeroed out.
+    """
+    cond_shape = keras.ops.shape(conditions)
+    batch = cond_shape[0]
+    rank = keras.ops.ndim(conditions)
+    dtype = keras.ops.dtype(conditions)
+
+    mask = keras.random.uniform(shape=(batch,), dtype=dtype, seed=seed_generator)
+    mask = keras.ops.cast(mask > drop_prob, dtype=dtype)
+
+    mask_shape = (batch,) + (1,) * (rank - 1)
+    mask = keras.ops.reshape(mask, mask_shape)
+    mask = keras.ops.broadcast_to(mask, cond_shape)
+
+    return mask * conditions

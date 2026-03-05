@@ -4,13 +4,13 @@ from typing import Literal, Callable
 import keras
 from keras import ops
 
-from ..inference_network import InferenceNetwork
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
     find_network,
     jacobian_trace,
     layer_kwargs,
+    randomly_mask_conditions,
     weighted_mean,
     integrate,
     integrate_stochastic,
@@ -18,36 +18,57 @@ from bayesflow.utils import (
     STOCHASTIC_METHODS,
     DETERMINISTIC_METHODS,
 )
-from bayesflow.utils.serialization import serialize, deserialize, serializable
+from bayesflow.utils.serialization import serialize, serializable
 
 from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
 
+from ..inference_network import InferenceNetwork
+from ..defaults import TIME_MLP_DEFAULTS, DIFFUSION_INTEGRATE_DEFAULTS
+
 
 @serializable("bayesflow.networks")
 class DiffusionModel(InferenceNetwork):
-    """Score-based diffusion model for simulation-based inference as described in [1]:
+    """Score-based diffusion model for simulation-based inference (SBI).
 
+    Implements a score-based diffusion model with configurable subnet architecture,
+    noise schedule, and prediction/loss types for amortized SBI as described in [1].
+
+    Note that score-based diffusion is the most sluggish of all available samplers,
+    so expect slower inference times than flow matching and much slower than
+    normalizing flows.
+
+    Parameters
+    ----------
+    subnet : str, type, or keras.Layer, optional
+        A neural network type for the diffusion model, will be instantiated using
+        *subnet_kwargs*.  If a string is provided, it should be a registered name
+        (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
+        be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+        accept a tuple of tensors ``(target, time, conditions)``.
+    noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
+        Noise schedule controlling the diffusion dynamics.  Can be a string
+        identifier, a schedule class, or a pre-initialised schedule instance.
+        Default is ``"edm"``.
+    prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
+        Output format of the model's prediction.  Default is ``"F"``.
+    loss_type : {'velocity', 'noise', 'F'}, optional
+        Loss function used to train the model.  Default is ``"noise"``.
+    subnet_kwargs : dict[str, any], optional
+        Additional keyword arguments passed to the subnet constructor.
+    schedule_kwargs : dict[str, any], optional
+        Additional keyword arguments passed to the noise schedule constructor.
+    integrate_kwargs : dict[str, any], optional
+        Configuration dictionary for the ODE/SDE integrator used at inference time.
+    **kwargs
+        Additional keyword arguments passed to the base ``InferenceNetwork``.
+
+    References
+    ----------
     [1] Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025).
-    Diffusion Models in Simulation-Based Inference: A Tutorial Review. arXiv preprint arXiv:2512.20685.
+        Diffusion Models in Simulation-Based Inference: A Tutorial Review.
+        arXiv preprint arXiv:2512.20685.
     """
-
-    TIME_MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-        "time_embedding_dim": 32,
-        "merge": "concat",
-        "norm": "layer",
-    }
-
-    INTEGRATE_DEFAULT_CONFIG = {
-        "method": "two_step_adaptive",
-        "steps": "adaptive",
-    }
 
     def __init__(
         self,
@@ -59,38 +80,10 @@ class DiffusionModel(InferenceNetwork):
         subnet_kwargs: dict[str, any] = None,
         schedule_kwargs: dict[str, any] = None,
         integrate_kwargs: dict[str, any] = None,
+        drop_cond_prob: float = 0.0,
+        drop_target_prob: float = 0.0,
         **kwargs,
     ):
-        """
-        Initializes a diffusion model with configurable subnet architecture, noise schedule,
-        and prediction/loss types for amortized Bayesian inference.
-
-        Note, that score-based diffusion is the most sluggish of all available samplers,
-        so expect slower inference times than flow matching and much slower than normalizing flows.
-
-        Parameters
-        ----------
-        subnet : str, type or keras.Layer, optional
-            A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
-            If a string is provided, it should be a registered name (e.g., "time_mlp").
-            If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
-        noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
-            Noise schedule controlling the diffusion dynamics. Can be a string identifier,
-            a schedule class, or a pre-initialized schedule instance. Default is "edm".
-        prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
-            Output format of the model's prediction. Default is "F".
-        loss_type : {'velocity', 'noise', 'F'}, optional
-            Loss function used to train the model. Default is "noise".
-        subnet_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the subnet constructor. Default is None.
-        schedule_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the noise schedule constructor. Default is None.
-        integrate_kwargs : dict[str, any], optional
-            Configuration dictionary for integration during training or inference. Default is None.
-        **kwargs
-            Additional keyword arguments passed to the base class and internal components.
-        """
         super().__init__(base_distribution="normal", **kwargs)
 
         if prediction_type not in ["noise", "velocity", "F", "x"]:
@@ -112,17 +105,20 @@ class DiffusionModel(InferenceNetwork):
         self.noise_schedule = find_noise_schedule(noise_schedule, **schedule_kwargs)
         self.noise_schedule.validate()
 
-        self.integrate_kwargs = self.INTEGRATE_DEFAULT_CONFIG | (integrate_kwargs or {})
+        self.integrate_kwargs = DIFFUSION_INTEGRATE_DEFAULTS | (integrate_kwargs or {})
         self.seed_generator = keras.random.SeedGenerator()
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = DiffusionModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None
+        self.drop_cond_prob = drop_cond_prob
+        self.unconditional_mode = False
+        self.drop_target_prob = drop_target_prob
 
-    def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
+    def build(self, xz_shape: Shape, conditions_shape: Shape = None):
         if self.built:
             return
 
@@ -151,13 +147,11 @@ class DiffusionModel(InferenceNetwork):
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
+            "drop_cond_prob": self.drop_cond_prob,
+            "drop_target_prob": self.drop_target_prob,
             # we do not need to store subnet_kwargs
         }
         return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def convert_prediction_to_x(
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
@@ -331,7 +325,7 @@ class DiffusionModel(InferenceNetwork):
         score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training, **kwargs)
 
         # compute velocity f, g of the SDE or ODE
-        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
+        f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
 
         if stochastic_solver:
             # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
@@ -340,6 +334,10 @@ class DiffusionModel(InferenceNetwork):
             # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
             out = f - 0.5 * g_squared * score
 
+        if self.drop_target_prob > 0 and not training:
+            target_mask = kwargs.get("target_mask", None)
+            out = target_mask * out if target_mask is not None else out
+
         return out
 
     def diffusion_term(
@@ -347,6 +345,7 @@ class DiffusionModel(InferenceNetwork):
         xz: Tensor,
         time: float | Tensor,
         training: bool = False,
+        **kwargs,
     ) -> Tensor:
         """
         Compute the diffusion term (standard deviation of the noise) at a given time.
@@ -367,8 +366,14 @@ class DiffusionModel(InferenceNetwork):
         """
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t)
-        return ops.sqrt(g_squared)
+        g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t)
+        g = ops.sqrt(g_squared)
+
+        if self.drop_target_prob > 0 and not training:
+            target_mask = kwargs.get("target_mask", None)
+            g = target_mask * g if target_mask is not None else g
+
+        return g
 
     def _velocity_trace(
         self,
@@ -378,7 +383,7 @@ class DiffusionModel(InferenceNetwork):
         max_steps: int = None,
         training: bool = False,
         **kwargs,
-    ) -> (Tensor, Tensor):
+    ) -> tuple[Tensor, Tensor]:
         def f(x):
             return self.velocity(
                 x, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
@@ -416,10 +421,21 @@ class DiffusionModel(InferenceNetwork):
             )
             integrate_kwargs["method"] = "tsit5"
 
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
+            x = target_mask * x + (1 - target_mask) * targets_fixed
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
+
         if density:
 
             def deltas(time, xz):
-                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training)
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training, **kwargs)
                 return {"xz": v, "trace": trace}
 
             state = {
@@ -439,7 +455,9 @@ class DiffusionModel(InferenceNetwork):
 
         def deltas(time, xz):
             return {
-                "xz": self.velocity(xz, time=time, stochastic_solver=False, conditions=conditions, training=training)
+                "xz": self.velocity(
+                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+                )
             }
 
         state = {"xz": x}
@@ -460,6 +478,17 @@ class DiffusionModel(InferenceNetwork):
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
+
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
+            z = target_mask * z + (1 - target_mask) * targets_fixed
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
@@ -496,7 +525,7 @@ class DiffusionModel(InferenceNetwork):
                 }
 
             def diffusion(time, xz):
-                return {"xz": self.diffusion_term(xz, time=time, training=training)}
+                return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
 
             score_fn = None
             if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
@@ -533,7 +562,7 @@ class DiffusionModel(InferenceNetwork):
 
     def compute_metrics(
         self,
-        x: Tensor | Sequence[Tensor, ...],
+        x: Tensor | Sequence[Tensor],
         conditions: Tensor = None,
         sample_weight: Tensor = None,
         stage: str = "training",
@@ -541,10 +570,9 @@ class DiffusionModel(InferenceNetwork):
         training = stage == "training"
         # use same noise schedule for training and validation to keep them comparable
         noise_schedule_training_stage = stage == "training" or stage == "validation"
-        if not self.built:
-            xz_shape = ops.shape(x)
-            conditions_shape = None if conditions is None else ops.shape(conditions)
-            self.build(xz_shape, conditions_shape)
+
+        if self.drop_cond_prob > 0 and conditions is not None:
+            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
 
         # sample training diffusion time as low discrepancy sequence to decrease variance
         u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
@@ -562,6 +590,13 @@ class DiffusionModel(InferenceNetwork):
 
         # diffuse x
         diffused_x = alpha_t * x + sigma_t * eps_t
+        if self.drop_target_prob > 0:
+            # generate random mask for every entry
+            mask_x = keras.random.uniform(shape=ops.shape(x), dtype=ops.dtype(x), seed=self.seed_generator)
+            mask_x = ops.cast(mask_x > self.drop_target_prob, dtype=ops.dtype(x))
+            diffused_x = mask_x * diffused_x + (1 - mask_x) * x
+        else:
+            mask_x = 1.0
 
         # calculate output of the network
         subnet_out = self.subnet((diffused_x, self._transform_log_snr(log_snr_t), conditions), training=training)
@@ -575,12 +610,12 @@ class DiffusionModel(InferenceNetwork):
         match self._loss_type:
             case "noise":
                 noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
-                loss = weights_for_snr * ops.mean((noise_pred - eps_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(mask_x * (noise_pred - eps_t) ** 2, axis=-1)
 
             case "velocity":
                 velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
                 v_t = alpha_t * eps_t - sigma_t * x
-                loss = weights_for_snr * ops.mean((velocity_pred - v_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(mask_x * (velocity_pred - v_t) ** 2, axis=-1)
 
             case "F":
                 sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
@@ -588,15 +623,14 @@ class DiffusionModel(InferenceNetwork):
                 x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
                 f_pred = x1 * x_pred - x2 * diffused_x
                 f_t = x1 * x - x2 * diffused_x
-                loss = weights_for_snr * ops.mean((f_pred - f_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(mask_x * (f_pred - f_t) ** 2, axis=-1)
 
             case _:
                 raise ValueError(f"Unknown loss type: {self._loss_type}")
 
         loss = weighted_mean(loss, sample_weight)
 
-        base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
-        return base_metrics | {"loss": loss}
+        return {"loss": loss}
 
     def guidance_constraint_term(
         self,

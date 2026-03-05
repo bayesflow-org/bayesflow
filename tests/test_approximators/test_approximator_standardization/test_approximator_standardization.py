@@ -6,7 +6,7 @@ def test_save_and_load(tmp_path, approximator, train_dataset, validation_dataset
     # to save, the model must be built
     data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
     approximator.build(data_shapes)
-    for layer in approximator.standardize_layers.values():
+    for layer in approximator.standardizer.standardize_layers.values():
         assert layer.built
         for count in layer.count:
             assert count == 0.0

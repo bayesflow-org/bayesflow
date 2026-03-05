@@ -1,7 +1,9 @@
+from typing import Any
 from collections.abc import Callable, MutableSequence, Sequence
 
 import numpy as np
 
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serialize, serializable
 
 from .transforms import (
@@ -41,6 +43,18 @@ class Adapter(MutableSequence[Transform]):
     Defines an adapter to apply various transforms to data.
 
     Where possible, the transforms also supply an inverse transform.
+    An adapter can also have no transformers, in which case it simply
+    returns a shallow copy of the input data. This can be useful
+    for example to ensure that no side effects occur when the same data
+    dictionary is passed to downstream consumers.
+
+    Note: most ready-made transforms are rather simple and currently
+    support only numpy operations. However, the adapter is designed to
+    be flexible and can accommodate arbitrary Tensors (e.g., ``torch.Tensor``).
+
+    In the latter cases, users can implement custom transforms by inheriting
+    from the base :class:`~bayesflow.adapters.Transform` class and overriding
+    the ``forward`` and ``inverse`` methods.
 
     Parameters
     ----------
@@ -86,13 +100,13 @@ class Adapter(MutableSequence[Transform]):
         return serialize(config)
 
     def forward(
-        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
-    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+        self, data: dict[str, Any], *, log_det_jac: bool = False, **kwargs
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the forward direction.
 
         Parameters
         ----------
-        data : dict[str, any]
+        data : dict[str, Any]
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
@@ -120,7 +134,7 @@ class Adapter(MutableSequence[Transform]):
 
     def inverse(
         self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
-    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
@@ -152,7 +166,7 @@ class Adapter(MutableSequence[Transform]):
 
     def __call__(
         self, data: dict[str, any], *, inverse: bool = False, **kwargs
-    ) -> dict[str, np.ndarray] | tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
         Parameters
@@ -304,8 +318,8 @@ class Adapter(MutableSequence[Transform]):
         self,
         include: str | Sequence[str] = None,
         *,
-        forward: Callable[[np.ndarray, ...], np.ndarray],
-        inverse: Callable[[np.ndarray, ...], np.ndarray],
+        forward: Callable[[Tensor], Tensor],
+        inverse: Callable[[Tensor], Tensor],
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
@@ -518,8 +532,8 @@ class Adapter(MutableSequence[Transform]):
         self,
         keys: str | Sequence[str],
         *,
-        lower: int | float | np.ndarray = None,
-        upper: int | float | np.ndarray = None,
+        lower: int | float | Tensor = None,
+        upper: int | float | Tensor = None,
         method: str = "default",
         inclusive: str = "both",
         epsilon: float = 1e-15,
@@ -742,7 +756,7 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(Rename(from_key, to_key))
         return self
 
-    def scale(self, keys: str | Sequence[str], by: float | np.ndarray):
+    def scale(self, keys: str | Sequence[str], by: float | Tensor):
         from .transforms import Scale
 
         if isinstance(keys, str):
@@ -751,7 +765,7 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(MapTransform({key: Scale(scale=by) for key in keys}))
         return self
 
-    def shift(self, keys: str | Sequence[str], by: float | np.ndarray):
+    def shift(self, keys: str | Sequence[str], by: float | Tensor):
         from .transforms import Shift
 
         if isinstance(keys, str):
@@ -809,8 +823,8 @@ class Adapter(MutableSequence[Transform]):
         self,
         include: str | Sequence[str] = None,
         *,
-        mean: int | float | np.ndarray,
-        std: int | float | np.ndarray,
+        mean: int | float | Tensor,
+        std: int | float | Tensor,
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
         **kwargs,

@@ -27,10 +27,12 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
     Parameters
     ----------
-    adapter : bayesflow.adapters.Adapter
-        Adapter for data processing. You can use :py:meth:`build_adapter` to create it.
     inference_network : InferenceNetwork
         The inference network used for point estimation.
+    adapter : bayesflow.adapters.Adapter, optional
+        Adapter for data processing. You can use :py:meth:`build_adapter`
+        to create it. If ``None`` (default), an identity adapter is used
+        that makes a shallow copy and passes data through unchanged.
     summary_network : SummaryNetwork, optional
         The summary network used for data summarization (default is None).
     standardize : str | Sequence[str] | None
@@ -44,8 +46,8 @@ class ScoringRuleApproximator(ContinuousApproximator):
     def __init__(
         self,
         *,
-        adapter: Adapter,
         inference_network: ScoringRuleNetwork,
+        adapter: Adapter = None,
         summary_network: SummaryNetwork | None = None,
         standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
@@ -62,6 +64,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         for score_key, score in self.inference_network.scoring_rules.items():
             has_sample = callable(getattr(score, "sample", None))
             has_log_prob = callable(getattr(score, "log_prob", None))
+
             if has_sample and has_log_prob:
                 self.distribution_keys.append(score_key)
 

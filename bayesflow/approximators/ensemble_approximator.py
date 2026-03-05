@@ -18,7 +18,30 @@ from .approximator import Approximator
 
 @serializable("bayesflow.approximators")
 class EnsembleApproximator(Approximator):
-    def __init__(self, approximators: dict[str, Approximator], **kwargs):
+    """Combines multiple approximators into a single ensemble.
+
+    An ``EnsembleApproximator`` wraps a named collection of
+    :class:`~bayesflow.approximators.Approximator` instances and trains them
+    jointly.  At inference time it can produce
+    *per-member* results or *merged* results (weighted mixture for
+    :meth:`sample` and :meth:`log_prob`).
+
+    The adapter is inherited from the first member approximator and is assumed
+    to be the same across all members (this is **not** enforced).
+
+    Parameters
+    ----------
+    approximators : Mapping[str, Approximator]
+        A mapping from member names to approximator instances.  Each member
+        is trained on its own slice of the data during :meth:`fit` and is
+        addressed by name in :meth:`sample`, :meth:`log_prob`, and
+        :meth:`estimate`.
+    **kwargs : dict, optional
+        Additional arguments forwarded to the
+        :class:`~bayesflow.approximators.Approximator` base class.
+    """
+
+    def __init__(self, approximators: Mapping[str, Approximator], **kwargs):
         super().__init__(**kwargs)
         self._warn_if_shared_approximator_components(approximators)
         self.approximators = approximators

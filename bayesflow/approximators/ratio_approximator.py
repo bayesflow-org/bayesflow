@@ -24,12 +24,13 @@ class RatioApproximator(Approximator):
 
     Parameters
     ----------
-    adapter : bayesflow.adapters.Adapter
-        Adapter for data processing. You can use :py:meth:`build_adapter`
-        to create it.
     inference_network : keras.Layer
         A network backbone to perform contrastive learning. Last logits layer
         is automatically added on top of the inference network.
+    adapter : bayesflow.adapters.Adapter, optional
+        Adapter for data processing. You can use :py:meth:`build_adapter`
+        to create it. If ``None`` (default), an identity adapter is used
+        that makes a shallow copy and passes data through unchanged.
     summary_network : SummaryNetwork, optional
         The summary network used for data summarization of summary_variables (default is None).
         When present, summary outputs are automatically concatenated with inference_conditions.
@@ -49,8 +50,9 @@ class RatioApproximator(Approximator):
 
     def __init__(
         self,
-        adapter: Adapter,
+        *,
         inference_network: keras.Layer,
+        adapter: Adapter = None,
         summary_network: keras.Layer = None,
         gamma: float = 1.0,
         K: int = 5,
@@ -59,7 +61,7 @@ class RatioApproximator(Approximator):
     ):
         super().__init__(**kwargs)
 
-        self.adapter = adapter
+        self.adapter = adapter if adapter is not None else Adapter()
         self.inference_network = inference_network
         self.summary_network = summary_network
         self.condition_builder = ConditionBuilder()

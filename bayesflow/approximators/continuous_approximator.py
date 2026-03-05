@@ -29,11 +29,12 @@ class ContinuousApproximator(Approximator):
 
     Parameters
     ----------
-    adapter : bayesflow.adapters.Adapter
-        Adapter for data processing. You can use :py:meth:`build_adapter`
-        to create it.
     inference_network : InferenceNetwork
         The inference network used for posterior or likelihood approximation.
+    adapter : bayesflow.adapters.Adapter, optional
+        Adapter for data processing. You can use :py:meth:`build_adapter`
+        to create it. If ``None`` (default), an identity adapter is used
+        that makes a shallow copy and passes data through unchanged.
     summary_network : SummaryNetwork, optional
         The summary network used for data summarization (default is None).
     standardize : str | Sequence[str] | None
@@ -47,14 +48,14 @@ class ContinuousApproximator(Approximator):
     def __init__(
         self,
         *,
-        adapter: Adapter,
         inference_network: InferenceNetwork,
+        adapter: Adapter = None,
         summary_network: SummaryNetwork = None,
         standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.adapter = adapter
+        self.adapter = adapter if adapter is not None else Adapter()
         self.inference_network = inference_network
         self.summary_network = summary_network
         self.sampler = Sampler()

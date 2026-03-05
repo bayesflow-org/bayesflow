@@ -31,8 +31,6 @@ class ModelComparisonApproximator(Approximator):
 
     Parameters
     ----------
-    adapter : bf.adapters.Adapter
-        Adapter for data pre-processing.
     num_models : int
         Number of models (simulators) that the approximator will compare.
     classifier_network : keras.Layer
@@ -41,6 +39,9 @@ class ModelComparisonApproximator(Approximator):
         with a :class:`~bayesflow.scoring_rules.CrossEntropyScore`.
         The input to the classifier network is created by concatenating ``inference_conditions``
         and (optional) output of the ``summary_network``.
+    adapter : bf.adapters.Adapter, optional
+        Adapter for data pre-processing. If ``None`` (default), an identity
+        adapter is used that makes a shallow copy and passes data through unchanged.
     summary_network : bf.networks.SummaryNetwork, optional
         The summary network used for data summarization (default is None).
         The input of the summary network is ``summary_variables``.
@@ -55,14 +56,14 @@ class ModelComparisonApproximator(Approximator):
         *,
         num_models: int,
         classifier_network: keras.Layer,
-        adapter: Adapter,
+        adapter: Adapter = None,
         summary_network: SummaryNetwork = None,
         standardize: str | Sequence[str] | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.num_models = num_models
-        self.adapter = adapter
+        self.adapter = adapter if adapter is not None else Adapter()
 
         self.inference_network = ScoringRuleNetwork(
             scoring_rules={"cross_entropy": CrossEntropyScore()},

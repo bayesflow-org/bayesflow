@@ -188,6 +188,9 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
 def _prepare_inference_conditions(
     approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int
 ) -> Tensor:
+    """
+    Returns the inference condition tensor for the inference network denoted by `network_idx`.
+    """
     data_node = approximator.graph.simulation_graph.data_node()
     data_conditions = _prepare_data_conditions(approximator, adapted_data, network_idx)
     variable_names = approximator.variable_names

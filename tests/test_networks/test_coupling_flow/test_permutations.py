@@ -75,43 +75,26 @@ def test_orthogonal_permutation_build_and_call(input_tensor):
     np.testing.assert_allclose(log_det_inv_np, -log_det_np, rtol=1e-5, atol=1e-5)
 
 
-def test_random_permutation_build_and_call(input_tensor):
-    layer = RandomPermutation()
-    input_shape = keras.ops.shape(input_tensor)
-    layer.build(input_shape)
+def test_random_permutation_and_swap_build_and_call(input_tensor):
+    """Test RandomPermutation and Swap share same index-consistency + cycle checks."""
+    for cls in [RandomPermutation, Swap]:
+        layer = cls()
+        input_shape = keras.ops.shape(input_tensor)
+        layer.build(input_shape)
 
-    # Assert forward_indices and inverse_indices are set and consistent
-    fwd = keras.ops.convert_to_numpy(layer.forward_indices)
-    inv = keras.ops.convert_to_numpy(layer.inverse_indices)
-    # Applying inv on fwd must yield ordered indices
-    reordered = fwd[inv]
-    np.testing.assert_array_equal(np.arange(len(fwd)), reordered)
+        # Assert forward_indices and inverse_indices are set and consistent
+        fwd = keras.ops.convert_to_numpy(layer.forward_indices)
+        inv = keras.ops.convert_to_numpy(layer.inverse_indices)
+        reordered = fwd[inv]
+        np.testing.assert_array_equal(np.arange(len(fwd)), reordered)
 
-    z, log_det = layer(input_tensor)
-    x_inv, log_det_inv = layer(z, inverse=True)
+        z, log_det = layer(input_tensor)
+        x_inv, log_det_inv = layer(z, inverse=True)
 
-    assert z.shape == input_tensor.shape
-    assert x_inv.shape == input_tensor.shape
-    np.testing.assert_allclose(keras.ops.convert_to_numpy(x_inv), keras.ops.convert_to_numpy(input_tensor), atol=1e-5)
-    assert tuple(log_det.shape) == input_shape[:-1]
-    assert tuple(log_det_inv.shape) == input_shape[:-1]
-
-
-def test_swap_build_and_call(input_tensor):
-    layer = Swap()
-    input_shape = keras.ops.shape(input_tensor)
-    layer.build(input_shape)
-
-    fwd = keras.ops.convert_to_numpy(layer.forward_indices)
-    inv = keras.ops.convert_to_numpy(layer.inverse_indices)
-    reordered = fwd[inv]
-    np.testing.assert_array_equal(np.arange(len(fwd)), reordered)
-
-    z, log_det = layer(input_tensor)
-    x_inv, log_det_inv = layer(z, inverse=True)
-
-    assert z.shape == input_tensor.shape
-    assert x_inv.shape == input_tensor.shape
-    np.testing.assert_allclose(keras.ops.convert_to_numpy(x_inv), keras.ops.convert_to_numpy(input_tensor), atol=1e-5)
-    assert tuple(log_det.shape) == input_shape[:-1]
-    assert tuple(log_det_inv.shape) == input_shape[:-1]
+        assert z.shape == input_tensor.shape
+        assert x_inv.shape == input_tensor.shape
+        np.testing.assert_allclose(
+            keras.ops.convert_to_numpy(x_inv), keras.ops.convert_to_numpy(input_tensor), atol=1e-5
+        )
+        assert tuple(log_det.shape) == input_shape[:-1]
+        assert tuple(log_det_inv.shape) == input_shape[:-1]

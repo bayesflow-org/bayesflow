@@ -22,6 +22,7 @@ from .mean_score import MeanScore
 from .median_score import MedianScore
 from .quantile_score import QuantileScore
 from .mv_normal_score import MvNormalScore
+from .cross_entropy_score import CrossEntropyScore
 
 from ..utils._docs import _add_imports_to_all
 

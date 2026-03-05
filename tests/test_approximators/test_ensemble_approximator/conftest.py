@@ -3,17 +3,6 @@ from tests.utils import check_combination_simulator_adapter
 
 
 @pytest.fixture()
-def ensemble_approximator_continuous_and_point(
-    continuous_approximator, scoring_rule_approximator_without_parametric_score
-):
-    from bayesflow import EnsembleApproximator
-
-    return EnsembleApproximator(
-        dict(cont_approx=continuous_approximator, point_approx=scoring_rule_approximator_without_parametric_score)
-    )
-
-
-@pytest.fixture()
 def train_dataset_for_ensemble(batch_size, adapter, simulator, ensemble_approximator_continuous_and_point):
     check_combination_simulator_adapter(simulator, adapter)
 

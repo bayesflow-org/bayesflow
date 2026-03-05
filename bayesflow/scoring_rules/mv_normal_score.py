@@ -102,44 +102,29 @@ class MvNormalScore(ParametricDistributionScore):
         """
         Generate samples from a multivariate Gaussian distribution.
 
-        Independent standard normal samples are transformed using the Cholesky factor of the precision matrix
-        to generate correlated samples.
+        Draws one sample per parameter set by transforming standard normal samples
+        using the Cholesky factor of the covariance matrix.
 
         Parameters
         ----------
         batch_shape : Shape
-            A tuple specifying the batch size and the number of samples to generate.
+            Ignored. Retained for interface compatibility. The output shape
+            is determined by the shape of the parameters.
         mean : Tensor
             A tensor representing the mean of the multivariate Gaussian distribution.
-            Must have shape (batch_size, D), where D is the dimensionality of the distribution.
+            Shape: ``(..., D)``.
         precision_cholesky_factor : Tensor
             A tensor representing the lower-triangular Cholesky factor of the precision matrix
             of the multivariate Gaussian distribution.
-            Must have shape (batch_size, D, D), where D is the dimensionality.
+            Shape: ``(..., D, D)``.
 
         Returns
         -------
         Tensor
-            A tensor of shape (batch_size, num_samples, D) containing the generated samples.
+            Samples with the same shape as ``mean``.
         """
         covariance_cholesky_factor = keras.ops.inv(precision_cholesky_factor)
-        if len(batch_shape) == 1:
-            batch_shape = (1,) + tuple(batch_shape)
-        batch_size, num_samples = batch_shape
-        dim = keras.ops.shape(mean)[-1]
-        if keras.ops.shape(mean) != (batch_size, dim):
-            raise ValueError(f"mean must have shape (batch_size, {dim}), but got {keras.ops.shape(mean)}")
-
-        if keras.ops.shape(precision_cholesky_factor) != (batch_size, dim, dim):
-            raise ValueError(
-                f"covariance Cholesky factor must have shape (batch_size, {dim}, {dim}),"
-                f"but got {keras.ops.shape(precision_cholesky_factor)}"
-            )
-
-        # Use Cholesky decomposition to generate samples
-        normal_samples = keras.random.normal((*batch_shape, dim))
-
-        scaled_normal = keras.ops.einsum("ijk,ilk->ilj", covariance_cholesky_factor, normal_samples)
-        samples = mean[:, None, :] + scaled_normal
-
+        normal_samples = keras.random.normal(keras.ops.shape(mean))
+        scaled_normal = keras.ops.einsum("...ij,...j->...i", covariance_cholesky_factor, normal_samples)
+        samples = mean + scaled_normal
         return samples

@@ -14,9 +14,7 @@ def test_serialize_deserialize_noise_schedule(noise_schedule):
         t, training=training
     )
     assert noise_schedule.derivative_log_snr(t, training=False) == deserialized.derivative_log_snr(t, training=False)
-    assert noise_schedule.get_drift_diffusion(t, x, training=False) == deserialized.get_drift_diffusion(
-        t, x, training=False
-    )
+    assert noise_schedule.get_drift(t, x, training=False) == deserialized.get_drift(t, x, training=False)
     assert noise_schedule.get_alpha_sigma(t) == deserialized.get_alpha_sigma(t)
     assert noise_schedule.get_weights_for_snr(t) == deserialized.get_weights_for_snr(t)
 

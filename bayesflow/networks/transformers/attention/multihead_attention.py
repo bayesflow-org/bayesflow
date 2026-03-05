@@ -3,13 +3,13 @@ from keras import layers
 
 from bayesflow.networks import MLP
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, filter_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
 
 @serializable("bayesflow.networks")
-class MultiHeadAttentionBlock(keras.Layer):
+class MultiHeadAttention(keras.Layer):
     """Implements the MAB block from [1] which represents learnable cross-attention.
 
     In particular, it uses a so-called "Post-LN" transformer block [2] which applies
@@ -86,23 +86,31 @@ class MultiHeadAttentionBlock(keras.Layer):
         self.output_projector = layers.Dense(units=embed_dim, name="output_projector")
         self.ln_post = layers.LayerNormalization(name="layer_norm_post") if layer_norm else None
 
-    def call(self, seq_x: Tensor, seq_y: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(
+        self,
+        x: Tensor,
+        y: Tensor,
+        training: bool = False,
+        attention_mask: Tensor = None,
+    ) -> Tensor:
         """Performs the forward pass through the attention layer.
 
         Parameters
         ----------
-        seq_x    : Tensor (e.g., np.ndarray, tf.Tensor, ...)
+        x        : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, seq_size_x, input_dim), which will
             play the role of a query (Q).
-        seq_y    : Tensor
+        y        : Tensor
             Input of shape (batch_size, seq_size_y, input_dim), which will
             play the role of key (K) and value (V).
         training : boolean, optional (default - True)
             Passed to the optional internal dropout and spectral normalization
             layers to distinguish between train and test time behavior.
-        **kwargs : dict, optional (default - {})
-            Additional keyword arguments passed to the internal attention layer,
-            such as ``attention_mask`` or ``return_attention_scores``
+        attention_mask: a boolean mask of shape `(B, T, T)`, that prevents
+            attention to certain positions. The boolean mask specifies which
+            query elements can attend to which key elements, 1 indicates
+            attention and 0 indicates no attention. Broadcasting can happen for
+            the missing batch dimensions and the head dimension.
 
         Returns
         -------
@@ -110,8 +118,12 @@ class MultiHeadAttentionBlock(keras.Layer):
             Output of shape (batch_size, set_size_x, output_dim)
         """
 
-        h = self.input_projector(seq_x) + self.attention(
-            query=seq_x, key=seq_y, value=seq_y, training=training, **filter_kwargs(kwargs, self.attention.call)
+        h = self.input_projector(x) + self.attention(
+            query=x,
+            key=y,
+            value=y,
+            training=training,
+            attention_mask=attention_mask,
         )
         if self.ln_pre is not None:
             h = self.ln_pre(h, training=training)
@@ -124,9 +136,9 @@ class MultiHeadAttentionBlock(keras.Layer):
 
     # noinspection PyMethodOverriding
     @sanitize_input_shape
-    def build(self, seq_x_shape, seq_y_shape):
-        self.call(keras.ops.zeros(seq_x_shape), keras.ops.zeros(seq_y_shape))
+    def build(self, x_shape, y_shape):
+        self.call(keras.ops.zeros(x_shape), keras.ops.zeros(y_shape))
 
     @sanitize_input_shape
-    def compute_output_shape(self, seq_x_shape, seq_y_shape):
-        return keras.ops.shape(self.call(keras.ops.zeros(seq_x_shape), keras.ops.zeros(seq_y_shape)))
+    def compute_output_shape(self, x_shape, y_shape):
+        return keras.ops.shape(self.call(keras.ops.zeros(x_shape), keras.ops.zeros(y_shape)))

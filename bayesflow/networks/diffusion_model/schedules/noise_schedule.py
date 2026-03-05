@@ -7,8 +7,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serializable
 
 
-# disable module check, use potential module after moving from experimental
-@serializable("bayesflow.networks", disable_module_check=True)
+@serializable("bayesflow.networks")
 class NoiseSchedule(ABC):
     r"""Noise schedule for diffusion models. We follow the notation from [1].
 
@@ -68,9 +67,7 @@ class NoiseSchedule(ABC):
         r"""Compute \beta(t) = d/dt log(1 + e^(-snr(t))). This is usually used for the reverse SDE."""
         pass
 
-    def get_drift_diffusion(
-        self, log_snr_t: Tensor, x: Tensor = None, training: bool = False
-    ) -> Tensor | tuple[Tensor, Tensor]:
+    def get_drift(self, log_snr_t: Tensor, x: Tensor = None, training: bool = False) -> Tensor | tuple[Tensor, Tensor]:
         r"""Compute the drift and optionally the squared diffusion term for the reverse SDE.
         It can be derived from the derivative of the schedule:
 
@@ -156,7 +153,7 @@ class NoiseSchedule(ABC):
             return ops.sigmoid(-log_snr_t + 2)
         elif self._weighting == "likelihood_weighting":
             # likelihood weighting based on Song et al. (2021)
-            g_squared = self.get_drift_diffusion(log_snr_t)
+            g_squared = self.get_drift(log_snr_t)
             _, sigma_t = self.get_alpha_sigma(log_snr_t)
             return g_squared / ops.square(sigma_t)
         else:

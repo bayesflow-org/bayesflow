@@ -9,23 +9,51 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.utils import tree_stack, pickle_load
 
-from ._augmentations import apply_augmentations
+from .helpers import apply_augmentations
 
 
 class DiskDataset(keras.utils.PyDataset):
-    """
-    A dataset used to load pre-simulated files from disk.
-    The training strategy will be offline.
+    """A dataset that loads pre-simulated files from disk for offline training.
 
-    By default, the expected file structure is as follows:
-    root
-    ├── ...
-    ├── sample_1.[ext]
-    ├── ...
-    └── sample_n.[ext]
+    By default, the expected file structure is as follows::
 
-    where each file contains a complete sample (e.g., a dictionary of numpy arrays) or
+        root
+        ├── ...
+        ├── sample_1.[ext]
+        ├── ...
+        └── sample_n.[ext]
+
+    where each file contains a complete sample (e.g., a dictionary of NumPy arrays) or
     is converted into a complete sample using a custom loader function.
+
+    Parameters
+    ----------
+    root : os.PathLike
+        Root directory containing the sample files.
+    pattern : str, default="*.pkl"
+        Glob pattern to match sample files.
+    batch_size : int
+        Number of samples per batch.
+    load_fn : Callable, optional
+        Function to load a single file into a sample. Defaults to ``pickle_load``.
+    adapter : Adapter or None
+        Optional adapter to transform the loaded batch.
+    augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
+        A single augmentation function, dictionary of augmentation functions, or sequence
+        of augmentation functions to apply to the batch.
+
+        If you provide a dictionary of functions, each function should accept one element
+        of your output batch and return the corresponding transformed element.
+
+        Otherwise, your function should accept the entire dictionary output and return a dictionary.
+
+        Note: augmentations are applied before the adapter is called and are generally
+        transforms that you only want to apply during training.
+    shuffle : bool, optional
+        Whether to shuffle the dataset at initialization and at the end of each epoch.
+        Default is ``True``.
+    **kwargs
+        Additional keyword arguments passed to the base ``PyDataset``.
     """
 
     def __init__(
@@ -40,38 +68,6 @@ class DiskDataset(keras.utils.PyDataset):
         shuffle: bool = True,
         **kwargs,
     ):
-        """
-        Initialize a DiskDataset instance for offline training using a set of simulations that
-        do not fit on disk.
-
-        Parameters
-        ----------
-        root : os.PathLike
-            Root directory containing the sample files.
-        pattern : str, default="*.pkl"
-            Glob pattern to match sample files.
-        batch_size : int
-            Number of samples per batch.
-        load_fn : Callable, optional
-            Function to load a single file into a sample. Defaults to `pickle_load`.
-        adapter : Adapter or None
-            Optional adapter to transform the loaded batch.
-        augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
-            A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
-            to apply to the batch.
-
-            If you provide a dictionary of functions, each function should accept one element
-            of your output batch and return the corresponding transformed element.
-
-            Otherwise, your function should accept the entire dictionary output and return a dictionary.
-
-            Note - augmentations are applied before the adapter is called and are generally
-            transforms that you only want to apply during training.
-        shuffle : bool, optional
-            Whether to shuffle the dataset at initialization and at the end of each epoch. Default is True.
-        **kwargs
-            Additional keyword arguments passed to the base `PyDataset`.
-        """
         super().__init__(**kwargs)
         self.batch_size = batch_size
         self.root = pl.Path(root)

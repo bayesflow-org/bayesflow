@@ -41,8 +41,9 @@ def adapter():
         .sqrt("n")
         .broadcast("n", to="x")
         .as_set("x")
-        .rename("n", "classifier_conditions")
+        .rename("n", "inference_conditions")
         .rename("x", "summary_variables")
+        .rename("model_indices", "inference_variables")
         .drop("mu")
         .convert_dtype("float64", "float32")
     )
@@ -59,7 +60,7 @@ def summary_network():
 def classifier_network():
     from bayesflow.networks import MLP
 
-    return MLP(widths=[32, 32])
+    return MLP(widths=(8, 8))
 
 
 @pytest.fixture
@@ -76,7 +77,7 @@ def approximator(adapter, classifier_network, summary_network, simulator, standa
 
 
 @pytest.fixture(
-    params=["all", None, "classifier_conditions", "summary_variables", ("classifier_conditions", "summary_variables")]
+    params=["all", None, "inference_conditions", "summary_variables", ("inference_conditions", "summary_variables")]
 )
 def standardize(request):
     return request.param

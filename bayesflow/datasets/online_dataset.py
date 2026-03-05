@@ -6,12 +6,35 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.simulators.simulator import Simulator
 
-from ._augmentations import apply_augmentations
+from .helpers import apply_augmentations
 
 
 class OnlineDataset(keras.utils.PyDataset):
-    """
-    A dataset that generates simulations on-the-fly.
+    """A dataset that generates simulations on-the-fly.
+
+    Parameters
+    ----------
+    simulator : Simulator
+        A simulator object with a ``.sample(batch_shape)`` method to generate data.
+    batch_size : int
+        Number of samples per batch.
+    num_batches : int
+        Total number of batches in the dataset.
+    adapter : Adapter or None
+        Optional adapter to transform the simulated batch.
+    augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
+        A single augmentation function, dictionary of augmentation functions, or sequence
+        of augmentation functions to apply to the batch.
+
+        If you provide a dictionary of functions, each function should accept one element
+        of your output batch and return the corresponding transformed element.
+
+        Otherwise, your function should accept the entire dictionary output and return a dictionary.
+
+        Note: augmentations are applied before the adapter is called and are generally
+        transforms that you only want to apply during training.
+    **kwargs
+        Additional keyword arguments passed to the base ``PyDataset``.
     """
 
     def __init__(
@@ -24,33 +47,6 @@ class OnlineDataset(keras.utils.PyDataset):
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         **kwargs,
     ):
-        """
-        Initialize an OnlineDataset instance for infinite stream training.
-
-        Parameters
-        ----------
-        simulator : Simulator
-            A simulator object with a `.sample(batch_shape)` method to generate data.
-        batch_size : int
-            Number of samples per batch.
-        num_batches : int
-            Total number of batches in the dataset.
-        adapter : Adapter or None
-            Optional adapter to transform the simulated batch.
-        augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
-            A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
-            to apply to the batch.
-
-            If you provide a dictionary of functions, each function should accept one element
-            of your output batch and return the corresponding transformed element.
-
-            Otherwise, your function should accept the entire dictionary output and return a dictionary.
-
-            Note - augmentations are applied before the adapter is called and are generally
-            transforms that you only want to apply during training.
-        **kwargs
-            Additional keyword arguments passed to the base `PyDataset`.
-        """
         super().__init__(**kwargs)
 
         self.batch_size = batch_size

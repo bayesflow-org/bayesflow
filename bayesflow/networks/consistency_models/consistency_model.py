@@ -4,37 +4,66 @@ import keras
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils import find_network, layer_kwargs, weighted_mean, expand_right_as, logging
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils import (
+    find_network,
+    layer_kwargs,
+    randomly_mask_conditions,
+    weighted_mean,
+    expand_right_as,
+    logging,
+)
+from bayesflow.utils.serialization import serializable, serialize
 
 from ..inference_network import InferenceNetwork
+from ..defaults import TIME_MLP_DEFAULTS
 
 
 @serializable("bayesflow.networks")
 class ConsistencyModel(InferenceNetwork):
-    """(IN) Implements a Consistency Model with Consistency Training (CT) as described in [1-2].
-    The adaptations to CT described in [2] were taken into account in our implementation for ABI [3].
+    """Consistency model with consistency training (CT) for simulation-based inference.
 
-    [1] Song, Y., Dhariwal, P., Chen, M. & Sutskever, I. (2023). Consistency Models. arXiv preprint arXiv:2303.01469
+    Implements a Consistency Model as described in [1-2], with the adaptations to
+    CT from [2] incorporated for amortised Bayesian inference [3].
 
-    [2] Song, Y., & Dhariwal, P. (2023). Improved Techniques for Training Consistency Models.
-    arXiv preprint arXiv:2310.14189. Discussion: https://openreview.net/forum?id=WNzy9bRDvG
+    Parameters
+    ----------
+    total_steps : int or float
+        The total number of training steps, must be calculated as
+        ``num_epochs * num_batches`` and cannot be inferred during construction.
+    subnet : str or keras.Layer, optional
+        A neural network type for the consistency model, will be instantiated using
+        *subnet_kwargs*.  If a string is provided, it should be a registered name
+        (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
+        be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+        accept a tuple of tensors ``(target, time, conditions)``.
+        Default is ``"time_mlp"``.
+    max_time : int or float, optional
+        The maximum time of the diffusion, equivalent to the maximum noise level
+        (``x_1 = z * max_time``).  Default is 80.
+    sigma2 : float, optional
+        Controls the shape of the skip-function.  Default is 1.0.
+    eps : float, optional
+        The minimum time.  Default is 0.001.
+    s0 : int or float, optional
+        Initial number of discretisation steps.  Default is 10.
+    s1 : int or float, optional
+        Final number of discretisation steps.  Default is 150.
+    subnet_kwargs : dict[str, any], optional
+        Keyword arguments passed to the subnet constructor or used to update the
+        default MLP settings.
+    **kwargs
+        Additional keyword arguments passed to the base ``InferenceNetwork``.
 
-    [3] Schmitt, M., Pratz, V., Köthe, U., Bürkner, P. C., & Radev, S. T. (2023). Consistency models for scalable and
-    fast simulation-based inference. arXiv preprint arXiv:2312.05440.
+    References
+    ----------
+    [1] Song, Y., Dhariwal, P., Chen, M. & Sutskever, I. (2023). Consistency
+        Models. arXiv:2303.01469.
+    [2] Song, Y., & Dhariwal, P. (2023). Improved Techniques for Training
+        Consistency Models. arXiv:2310.14189.
+    [3] Schmitt, M., Pratz, V., Köthe, U., Bürkner, P. C., & Radev, S. T.
+        (2023). Consistency models for scalable and fast simulation-based
+        inference. arXiv:2312.05440.
     """
-
-    TIME_MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-        "time_embedding_dim": 32,
-        "merge": "concat",
-        "norm": "layer",
-    }
 
     def __init__(
         self,
@@ -49,44 +78,13 @@ class ConsistencyModel(InferenceNetwork):
         drop_cond_prob: float = 0.0,
         **kwargs,
     ):
-        """Creates an instance of a consistency model (CM) to be used for standalone consistency training (CT).
-
-        Parameters
-        ----------
-        total_steps : int
-            The total number of training steps, must be calculated as number of epochs * number of batches
-            and cannot be inferred during construction time.
-        subnet      : str or type, optional, default: "time_mlp"
-            A neural network type for the consistency model, will be instantiated using subnet_kwargs.
-            If a string is provided, it should be a registered name (e.g., "time_mlp").
-            If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
-        max_time : int or float, optional, default: 80
-            The maximum time of the diffusion, equivalent to the maximum noise level (x_1=z*max_time).
-        sigma2      : float or Tensor of dimension (input_dim, 1), optional, default: 1.0
-            Controls the shape of the skip-function
-        eps         : float, optional, default: 0.001
-            The minimum time
-        s0          : int or float, optional, default: 10
-            Initial number of discretization steps
-        s1          : int or float, optional, default: 70
-            Final number of discretization steps
-        subnet_kwargs: dict[str, any], optional
-            Keyword arguments passed to the subnet constructor or used to update the default MLP settings.
-        drop_cond_prob : float, optional
-            Probability of dropping a condition during training. Default is 0.0. Can be used to train a conditional
-            and an unconditional model at the same time. Common choice is a value of 0.1. To use the unconditional
-            model during inference, set `unconditional_mode` to True.
-        **kwargs    : dict, optional, default: {}
-            Additional keyword arguments
-        """
         super().__init__(base_distribution="normal", **kwargs)
 
         self.total_steps = float(total_steps)
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = ConsistencyModel.TIME_MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
 
         self.output_projector = None
@@ -121,10 +119,6 @@ class ConsistencyModel(InferenceNetwork):
     @property
     def student(self):
         return self.subnet
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
@@ -322,20 +316,7 @@ class ConsistencyModel(InferenceNetwork):
         discretized_time = ops.take(self.discretized_times, discretization_index, axis=0)
 
         if self.drop_cond_prob > 0 and conditions is not None:
-            # generate random masks for every batch of the condition
-            cond_shape = ops.shape(conditions)
-            batch = cond_shape[0]
-            rank = ops.ndim(conditions)
-            mask_conditions = keras.random.uniform(
-                shape=(batch,), dtype=ops.dtype(conditions), seed=self.seed_generator
-            )
-            mask_conditions = ops.cast(mask_conditions > self.drop_cond_prob, dtype=ops.dtype(conditions))
-
-            mask_shape = (batch,) + (1,) * (rank - 1)
-            mask_conditions = ops.reshape(mask_conditions, mask_shape)
-            mask_conditions = ops.broadcast_to(mask_conditions, cond_shape)
-
-            conditions = mask_conditions * conditions
+            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
 
         # Randomly sample t_n and t_[n+1] and reshape to (batch_size, 1)
         # adapted noise schedule from [2], Section 3.5
@@ -366,5 +347,4 @@ class ConsistencyModel(InferenceNetwork):
         loss = lam * (ops.sqrt(ops.square(teacher_out - student_out) + self.c_huber2) - self.c_huber)
         loss = weighted_mean(loss, sample_weight)
 
-        base_metrics = super().compute_metrics(x, conditions=conditions, stage=stage)
-        return base_metrics | {"loss": loss}
+        return {"loss": loss}

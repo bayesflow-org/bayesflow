@@ -7,8 +7,8 @@ import keras
 
 from bayesflow.utils import logging
 
-from ._augmentations import apply_augmentations
-from ._ensemble_sharing import ring_starts, ring_window_indices
+from .helpers import apply_augmentations
+from .helpers import ring_starts, ring_window_indices
 
 
 class EnsembleOnlineDataset(keras.utils.PyDataset):

@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from typing import Literal
 
 import keras
@@ -8,22 +7,26 @@ from bayesflow.utils import model_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
-# disable module check, use potential module after moving from experimental
-@serializable("bayesflow.networks", disable_module_check=True)
+@serializable("bayesflow.networks")
 class DoubleConv(keras.Sequential):
+    """A double-convolution block with configurable normalization ordering.
+
+    Uses pre-activation ordering (Norm -> Act -> Conv) by default, switching
+    to post-activation ordering (Conv -> Act -> BN) when ``norm="batch"``.
+    The last layer is zero-initialized so the block starts as near-identity
+    when used inside a residual wrapper.
+    """
+
     def __init__(
         self,
         width: int,
         norm: Literal["layer", "group", "batch"] | None = "group",
         groups: int | None = 8,
         dropout: float = None,
-        activation: str = "swish",
-        residual: bool = True,
+        activation: str = "mish",
         **kwargs,
     ):
-
         if norm == "batch":
-            last_norm_kwargs = {"gamma_initializer": "zeros"} if residual else {}
             # Post-activation: Conv → Act → BN
             # https://github.com/keras-team/keras/issues/1802#issuecomment-187966878
             layers = [
@@ -32,11 +35,10 @@ class DoubleConv(keras.Sequential):
                 SimpleNorm(method=norm),
                 keras.layers.Conv2D(width, 3, padding="same"),
                 keras.layers.Activation(activation),
-                SimpleNorm(method=norm, **last_norm_kwargs),
+                SimpleNorm(method=norm, gamma_initializer="zeros"),
                 keras.layers.Dropout(0.0 if dropout is None else dropout),
             ]
         else:
-            last_conv_init = "zeros" if residual else "glorot_uniform"
             # Pre-activation: Norm → Act → Conv
             layers = [
                 SimpleNorm(method=norm, groups=groups, center=True, scale=True),
@@ -45,7 +47,7 @@ class DoubleConv(keras.Sequential):
                 SimpleNorm(method=norm, groups=groups, center=True, scale=True),
                 keras.layers.Activation(activation),
                 keras.layers.Dropout(0.0 if dropout is None else dropout),
-                keras.layers.Conv2D(width, 3, padding="same", kernel_initializer=last_conv_init),
+                keras.layers.Conv2D(width, 3, padding="same", kernel_initializer="zeros"),
             ]
 
         super().__init__(layers, **model_kwargs(kwargs))
@@ -55,7 +57,6 @@ class DoubleConv(keras.Sequential):
         self.groups = groups
         self.dropout = dropout
         self.activation = activation
-        self.residual = residual
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -69,16 +70,6 @@ class DoubleConv(keras.Sequential):
             "norm": self.norm,
             "dropout": self.dropout,
             "activation": self.activation,
-            "residual": self.residual,
         }
 
         return base_config | serialize(config)
-
-    def build(self, input_shape=None):
-        # set the padding so the output is max-poolable
-        *batch_shape, height, width, channels = input_shape
-
-        padding = [height % 2, width % 2]
-        self._layers.insert(0, keras.layers.ZeroPadding2D(padding=padding))
-
-        super().build(input_shape)

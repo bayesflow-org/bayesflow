@@ -4,7 +4,7 @@ from typing import Literal
 import keras
 
 from bayesflow.utils import layer_kwargs, logging
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 
 from ..residual import Residual
 from ..summary_network import SummaryNetwork
@@ -79,7 +79,6 @@ class ConvolutionalNetwork(SummaryNetwork):
         down_mode: Literal["max_pool", "avg_pool", "conv"] = "avg_pool",
         pool_head: Literal["flatten", "global_avg", "global_max", "attention"] | keras.Layer = "global_avg",
         pool_num_heads: int = 4,
-        hidden: int | None = None,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -109,10 +108,7 @@ class ConvolutionalNetwork(SummaryNetwork):
         self.down_mode = down_mode
         self.pool_head = pool_head
         self.pool_num_heads = pool_num_heads
-        self.hidden = hidden or widths[-1]
-
-        self.stage_layers = self._build_stages()
-        self.head_layers = self._build_head()
+        self.layers = self._build_stages() + self._build_head()
 
     def _build_stages(self):
         layers = []
@@ -149,7 +145,6 @@ class ConvolutionalNetwork(SummaryNetwork):
 
     def _build_head(self):
         layers = self._make_pool_layers()
-        layers.append(keras.layers.Dense(self.hidden, activation=self.activation))
         layers.append(keras.layers.Dense(self.summary_dim))
         return layers
 
@@ -167,23 +162,16 @@ class ConvolutionalNetwork(SummaryNetwork):
                 return [
                     keras.layers.Reshape((-1, self.widths[-1])),
                     PoolingByMultiHeadAttention(
-                        num_seeds=1,
-                        embed_dim=self.widths[-1],
-                        num_heads=self.pool_num_heads,
-                        dropout=self.dropout,
+                        num_seeds=1, embed_dim=self.widths[-1], num_heads=self.pool_num_heads, dropout=self.dropout
                     ),
                 ]
             case _:
                 raise ValueError(f"Unsupported pooling head: {self.pool_head!r}")
 
     def call(self, x, training=False, **kwargs):
-        for layer in list(self.stage_layers) + list(self.head_layers):
+        for layer in self.layers:
             x = layer(x, training=training)
         return x
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
@@ -199,6 +187,5 @@ class ConvolutionalNetwork(SummaryNetwork):
             "down_mode": self.down_mode,
             "pool_head": self.pool_head,
             "pool_num_heads": self.pool_num_heads,
-            "hidden": self.hidden,
         }
         return base_config | serialize(config)

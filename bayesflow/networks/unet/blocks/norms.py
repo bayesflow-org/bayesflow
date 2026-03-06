@@ -3,7 +3,7 @@ from typing import Literal
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs
+from bayesflow.utils import layer_kwargs, logging
 from bayesflow.utils.serialization import serialize, serializable, deserialize
 
 
@@ -71,13 +71,7 @@ class SimpleNorm(keras.Layer):
                     gamma_initializer=gamma_initializer,
                 )
             case "group":
-                self.norm = keras.layers.GroupNormalization(
-                    groups=groups,
-                    axis=axis,
-                    center=center,
-                    scale=scale,
-                    gamma_initializer=gamma_initializer,
-                )
+                self.norm = None
             case "batch":
                 self.norm = keras.layers.BatchNormalization(
                     axis=axis,
@@ -112,27 +106,27 @@ class SimpleNorm(keras.Layer):
             return
 
         if self.method == "group":
+            adjusted_groups = self.groups
             # infer channels along the normalization axis
             channels = input_shape[self.axis]
             if channels is not None:
-                g = min(int(self.groups), int(channels))
+                adjusted_groups = min(self.groups, channels)
                 # find largest divisor <= requested groups
-                while g > 1 and channels % g != 0:
-                    g -= 1
-                if channels % g != 0:
-                    raise ValueError(
-                        f"GroupNormalization: channels={channels} not divisible by any valid groups "
-                        f"(requested groups={self.groups})."
-                    )
-                if g != self.groups:
+                while adjusted_groups > 1 and channels % adjusted_groups != 0:
+                    adjusted_groups -= 1
+
+                if adjusted_groups != self.groups:
                     # update stored value and recreate the layer
-                    self.groups = g
-                    self.norm = keras.layers.GroupNormalization(
-                        groups=self.groups,
-                        axis=self.axis,
-                        center=self.center,
-                        scale=self.scale,
+                    logging.warning(
+                        f"Adjusted groups from {self.groups} to {adjusted_groups} to fit input channels {channels}."
                     )
+
+            self.norm = keras.layers.GroupNormalization(
+                groups=adjusted_groups,
+                axis=self.axis,
+                center=self.center,
+                scale=self.scale,
+            )
         self.norm.build(input_shape)
 
     def compute_output_shape(self, input_shape):

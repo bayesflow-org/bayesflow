@@ -9,7 +9,7 @@
 BayesFlow is a Python library for efficient Bayesian inference with deep learning.
 It provides users with:
 
-- A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2409.04332)
+- A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2602.07098)
 - A rich collection of generative models, from [diffusion]((https://arxiv.org/abs/2512.20685)) to [consistency models](https://arxiv.org/abs/2312.05440)
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
@@ -96,7 +96,7 @@ For an in-depth exposition, check out our expanding list of resources below.
 
 ### Books
 
-Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bayesmodels.com/) by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
+Many examples from *Bayesian Cognitive Modeling: A Practical Course* by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
 
 ### Videos
 
@@ -174,13 +174,12 @@ I am getting `ModuleNotFoundError: No module named 'tensorflow'` when I try to i
 
 **Answer:**
 One of these applies:
+
 - You want to use tensorflow as your backend, but you have not installed it.
 See [here](https://www.tensorflow.org/install).
 
-
 - You want to use a backend other than tensorflow, but have not set the environment variable correctly.
 See [here](https://keras.io/getting_started/#configuring-your-backend).
-
 
 - You have set the environment variable, but it is not being picked up by Python.
 This can happen silently in some development environments (e.g., VSCode or PyCharm).
@@ -203,6 +202,6 @@ If you are interested in a curated list of resources, including reviews, softwar
 
 ## Acknowledgments
 
-This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the National Science Foundation (NSF, Award Number 2448380) and the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation, Projects 528702768 and 508399956).
+This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the National Science Foundation (NSF) Award Number 2448380 and the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) Projects 528702768 and 508399956 as well as DFG Collaborative Research Center 391.
 
 BayesFlow is a [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects).

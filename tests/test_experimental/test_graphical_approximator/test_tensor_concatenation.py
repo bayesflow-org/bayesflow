@@ -1,5 +1,4 @@
 import keras
-import bayesflow
 
 
 def test_expand_to_target_rank():

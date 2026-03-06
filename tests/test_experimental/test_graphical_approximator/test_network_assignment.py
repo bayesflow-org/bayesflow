@@ -205,8 +205,8 @@ def test_summary_input_crossed_design_irt(crossed_design_irt_simulator, crossed_
 
 def test_summary_outputs_by_network_single_level(single_level_simulator, single_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_outputs_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_output_shapes_by_network
 
@@ -229,8 +229,8 @@ def test_summary_outputs_by_network_single_level(single_level_simulator, single_
 
 def test_summary_outputs_by_network_two_level(two_level_simulator, two_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_outputs_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_output_shapes_by_network
 
@@ -254,8 +254,8 @@ def test_summary_outputs_by_network_two_level(two_level_simulator, two_level_app
 
 def test_summary_outputs_by_network_three_level(three_level_simulator, three_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_outputs_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_output_shapes_by_network
 
@@ -280,8 +280,8 @@ def test_summary_outputs_by_network_three_level(three_level_simulator, three_lev
 
 def test_summary_outputs_by_network_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_outputs_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_output_shapes_by_network
 
@@ -305,8 +305,8 @@ def test_summary_outputs_by_network_crossed_design_irt(crossed_design_irt_simula
 
 def test_summary_inputs_by_network_single_level(single_level_simulator, single_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_inputs_by_network,
         summary_input,
+        summary_inputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_input_shapes_by_network
 
@@ -328,8 +328,8 @@ def test_summary_inputs_by_network_single_level(single_level_simulator, single_l
 
 def test_summary_inputs_by_network_two_level(two_level_simulator, two_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_inputs_by_network,
         summary_input,
+        summary_inputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_input_shapes_by_network
 
@@ -352,8 +352,8 @@ def test_summary_inputs_by_network_two_level(two_level_simulator, two_level_appr
 
 def test_summary_inputs_by_network_three_level(three_level_simulator, three_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_inputs_by_network,
         summary_input,
+        summary_inputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_input_shapes_by_network
 
@@ -377,8 +377,8 @@ def test_summary_inputs_by_network_three_level(three_level_simulator, three_leve
 
 def test_summary_inputs_by_network_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        summary_inputs_by_network,
         summary_input,
+        summary_inputs_by_network,
     )
     from bayesflow.experimental.graphical_approximator.shape_inference import summary_input_shapes_by_network
 
@@ -503,8 +503,8 @@ def test_data_conditions_by_network_crossed_design_irt(crossed_design_irt_simula
 def test_inference_conditions_single_level(single_level_simulator, single_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
         inference_conditions_by_network,
-        summary_outputs_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
 
     data = single_level_simulator.sample(2)
@@ -534,8 +534,8 @@ def test_inference_conditions_single_level(single_level_simulator, single_level_
 def test_inference_conditions_two_level(two_level_simulator, two_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
         inference_conditions_by_network,
-        summary_outputs_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
 
     data = two_level_simulator.sample(2)
@@ -573,8 +573,8 @@ def test_inference_conditions_two_level(two_level_simulator, two_level_approxima
 def test_inference_conditions_three_level(three_level_simulator, three_level_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
         inference_conditions_by_network,
-        summary_outputs_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
 
     data = three_level_simulator.sample(2)
@@ -641,10 +641,10 @@ def test_inference_conditions_three_level(three_level_simulator, three_level_app
 
 def test_inference_conditions_crossed_design_irt(crossed_design_irt_simulator, crossed_design_irt_approximator):
     from bayesflow.experimental.graphical_approximator.network_assignment import (
-        inference_conditions_by_network,
         data_conditions_by_network,
-        summary_outputs_by_network,
+        inference_conditions_by_network,
         summary_input,
+        summary_outputs_by_network,
     )
 
     data = crossed_design_irt_simulator.sample(2)

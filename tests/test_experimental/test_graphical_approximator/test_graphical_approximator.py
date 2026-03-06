@@ -28,14 +28,14 @@ def test_graphical_approximator_single_level():
 
     fit = approximator.fit(simulator=single_level_simulator, batch_size=3, num_batches=1, epochs=1)
     assert isinstance(fit, History)
-    # new_data = single_level_approximator.adapter(single_level_simulator.sample(3))
-    #
-    # samples = approximator.sample(num_samples=10, conditions=new_data)
-    # assert isinstance(samples, dict)
-    #
-    # assert approximator._batch_size_from_data(new_data) == 3
-    # assert isinstance(approximator._data_shapes(new_data), dict)
-    # assert approximator.log_prob(data)
+    new_data = single_level_approximator.adapter(single_level_simulator.sample(3))
+
+    samples = approximator.sample(num_samples=10, conditions=new_data)
+    assert isinstance(samples, dict)
+
+    assert approximator._batch_size_from_data(new_data) == 3
+    assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)
 
 
 def test_graphical_approximator_two_level():
@@ -63,16 +63,16 @@ def test_graphical_approximator_two_level():
     fit = approximator.fit(simulator=two_level_simulator, batch_size=3, num_batches=1, epochs=1)
     assert isinstance(fit, History)
 
-    # new_data = two_level_approximator.adapter(two_level_simulator.sample(3))
-    # samples = approximator.sample(num_samples=10, conditions=new_data)
-    # assert isinstance(samples, dict)
-    #
-    # samples_2 = approximator.sample(num_samples=3, conditions={"y": new_data["y"]})
-    # assert isinstance(samples_2, dict)
-    #
-    # assert approximator._batch_size_from_data(new_data) == 3
-    # assert isinstance(approximator._data_shapes(new_data), dict)
-    # assert approximator.log_prob(data)
+    new_data = two_level_approximator.adapter(two_level_simulator.sample(3))
+    samples = approximator.sample(num_samples=10, conditions=new_data)
+    assert isinstance(samples, dict)
+
+    samples_2 = approximator.sample(num_samples=3, conditions={"y": new_data["y"]})
+    assert isinstance(samples_2, dict)
+
+    assert approximator._batch_size_from_data(new_data) == 3
+    assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)
 
 
 def test_graphical_approximator_three_level():
@@ -100,16 +100,16 @@ def test_graphical_approximator_three_level():
     fit = approximator.fit(simulator=three_level_simulator, batch_size=3, num_batches=1, epochs=1)
     assert isinstance(fit, History)
 
-    # new_data = three_level_approximator.adapter(three_level_simulator.sample(3))
-    # samples = approximator.sample(num_samples=10, conditions=new_data)
-    # assert isinstance(samples, dict)
-    #
-    # samples_2 = approximator.sample(num_samples=3, conditions={"y": new_data["y"]})
-    # assert isinstance(samples_2, dict)
-    #
-    # assert approximator._batch_size_from_data(new_data) == 3
-    # assert isinstance(approximator._data_shapes(new_data), dict)
-    # assert approximator.log_prob(data)
+    new_data = three_level_approximator.adapter(three_level_simulator.sample(3))
+    samples = approximator.sample(num_samples=10, conditions=new_data)
+    assert isinstance(samples, dict)
+
+    samples_2 = approximator.sample(num_samples=3, conditions={"y": new_data["y"]})
+    assert isinstance(samples_2, dict)
+
+    assert approximator._batch_size_from_data(new_data) == 3
+    assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)
 
 
 def test_graphical_approximator_crossed_design_irt():
@@ -137,16 +137,16 @@ def test_graphical_approximator_crossed_design_irt():
     fit = approximator.fit(simulator=crossed_design_irt_simulator, batch_size=3, num_batches=1, epochs=1)
     assert isinstance(fit, History)
 
-    # new_data = crossed_design_irt_approximator.adapter(crossed_design_irt_simulator.sample(3))
-    # samples = approximator.sample(num_samples=10, conditions=new_data)
-    # assert isinstance(samples, dict)
-    #
-    # samples_2 = approximator.sample(num_samples=3, conditions={"obs": new_data["obs"]})
-    # assert isinstance(samples_2, dict)
-    #
-    # assert approximator._batch_size_from_data(new_data) == 3
-    # assert isinstance(approximator._data_shapes(new_data), dict)
-    # assert approximator.log_prob(data)
+    new_data = crossed_design_irt_approximator.adapter(crossed_design_irt_simulator.sample(3))
+    samples = approximator.sample(num_samples=10, conditions=new_data)
+    assert isinstance(samples, dict)
+
+    samples_2 = approximator.sample(num_samples=3, conditions={"obs": new_data["obs"]})
+    assert isinstance(samples_2, dict)
+
+    assert approximator._batch_size_from_data(new_data) == 3
+    assert isinstance(approximator._data_shapes(new_data), dict)
+    assert approximator.log_prob(data)
 
 
 def test_custom_standardize():
@@ -241,51 +241,50 @@ def test_serialization(simulator, approximator, request):
     assert isinstance(GraphicalApproximator.from_config(config), GraphicalApproximator)
 
 
-# def test_log_prob():
-#     from bayesflow.adapters import Adapter
-#     from bayesflow.experimental.graphical_approximator import GraphicalApproximator
-#     from bayesflow.experimental.graphical_approximator.example_approximators import crossed_design_irt_approximator
-#     from bayesflow.experimental.graphical_simulator.example_simulators import crossed_design_irt_simulator
-#     from bayesflow.networks import CouplingFlow, DeepSet
-#
-#     crossed_design_irt_simulator = crossed_design_irt_simulator()
-#     crossed_design_irt_approximator = crossed_design_irt_approximator()
-#
-#     adapter = Adapter()
-#     adapter.to_array()
-#     adapter.convert_dtype("float64", "float32")
-#     adapter.log(["question_mean"])
-#
-#     summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
-#     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
-#
-#     inverted_graph = crossed_design_irt_simulator.graph.invert()
-#     approximator = GraphicalApproximator(
-#         inverted_graph,
-#         adapter=adapter,
-#         inference_networks=inference_networks,
-#         summary_networks=summary_networks,
-#         standardize="question_mean",
-#     )
-#
-#     data = crossed_design_irt_simulator.sample(2)
-#     data_shapes = approximator._data_shapes(data)
-#     approximator.build(data_shapes)
-#     approximator.compile()
-#
-#     assert approximator.log_prob(data) is not None
-#
-#
-# def test_subset_data():
-#     from bayesflow.experimental.graphical_approximator.example_approximators import crossed_design_irt_approximator
-#     from bayesflow.experimental.graphical_simulator.example_simulators import crossed_design_irt_simulator
-#
-#     crossed_design_irt_simulator = crossed_design_irt_simulator()
-#     crossed_design_irt_approximator = crossed_design_irt_approximator()
-#
-#     data = crossed_design_irt_simulator.sample(2, meta={"num_questions": 15, "num_students": 200})
-#     assert isinstance(crossed_design_irt_approximator.subset_data(data), dict)
-#
-#     data["additional_key"] = keras.random.normal((2, 1))
-#     with pytest.raises(KeyError):
-#         crossed_design_irt_approximator.subset_data(data)
+def test_log_prob():
+    from bayesflow.adapters import Adapter
+    from bayesflow.experimental.graphical_approximator import GraphicalApproximator
+    from bayesflow.experimental.graphical_approximator.example_approximators import crossed_design_irt_approximator
+    from bayesflow.experimental.graphical_simulator.example_simulators import crossed_design_irt_simulator
+    from bayesflow.networks import CouplingFlow, DeepSet
+
+    crossed_design_irt_simulator = crossed_design_irt_simulator()
+    crossed_design_irt_approximator = crossed_design_irt_approximator()
+
+    adapter = Adapter()
+    adapter.to_array()
+    adapter.convert_dtype("float64", "float32")
+
+    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
+    inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
+
+    inverted_graph = crossed_design_irt_simulator.graph.invert()
+    approximator = GraphicalApproximator(
+        inverted_graph,
+        adapter=adapter,
+        inference_networks=inference_networks,
+        summary_networks=summary_networks,
+        standardize="question_mean",
+    )
+
+    data = crossed_design_irt_simulator.sample(2)
+    data_shapes = approximator._data_shapes(data)
+    approximator.build(data_shapes)
+    approximator.compile()
+
+    assert approximator.log_prob(data) is not None
+
+
+def test_subset_data():
+    from bayesflow.experimental.graphical_approximator.example_approximators import crossed_design_irt_approximator
+    from bayesflow.experimental.graphical_simulator.example_simulators import crossed_design_irt_simulator
+
+    crossed_design_irt_simulator = crossed_design_irt_simulator()
+    crossed_design_irt_approximator = crossed_design_irt_approximator()
+
+    data = crossed_design_irt_simulator.sample(2, meta={"num_questions": 15, "num_students": 200})
+    assert isinstance(crossed_design_irt_approximator.subset_data(data), dict)
+
+    data["additional_key"] = keras.random.normal((2, 1))
+    with pytest.raises(KeyError):
+        crossed_design_irt_approximator.subset_data(data)

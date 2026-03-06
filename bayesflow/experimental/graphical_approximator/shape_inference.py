@@ -160,14 +160,14 @@ def inference_variable_shapes_by_network(
         data_shapes = approximator.output_shapes
 
     output_shapes = resolve_shapes(data_shapes, meta_dict)
-
     result = {}
 
     for i, _ in enumerate(approximator.inference_networks):
         variable_shapes = []
         for node in approximator.network_composition[i]:
             for variable in approximator.variable_names[node]:
-                variable_shapes.append(output_shapes[variable])
+                if variable in output_shapes:
+                    variable_shapes.append(output_shapes[variable])
 
         result[i] = concatenate_shapes(variable_shapes)
 

@@ -3,6 +3,8 @@ import warnings
 from typing import Literal, Sequence
 
 import keras
+import numpy as np
+import sympy as sp
 
 from bayesflow.approximators import Approximator
 from bayesflow.experimental.graphical_approximator.shape_operations import resolve_shapes
@@ -16,6 +18,7 @@ from ...networks.standardization import Standardization
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .network_assignment import (
+    _prepare_inference_conditions,
     inference_conditions_by_network,
     inference_variables_by_network,
     summary_inputs_by_network,
@@ -316,6 +319,7 @@ class GraphicalApproximator(Approximator):
                 batch_size=kwargs["batch_size"],
                 num_batches=kwargs["num_batches"],
             )
+
             def generator():
                 i = 0
                 while True:
@@ -336,6 +340,77 @@ class GraphicalApproximator(Approximator):
             kwargs["dataset"] = dataset
 
         return super().fit(*args, **kwargs, adapter=self.adapter)
+
+    def sample(self, *, num_samples: int, conditions: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        meta_dict = self._meta_dict_from_data(conditions)
+
+        variable_names = self.graph.simulation_graph.variable_names()
+        data_node = self.graph.simulation_graph.data_node()
+        batch_size = self._batch_size_from_data(conditions)
+        batch_n = batch_size * num_samples
+
+        # Use template shapes so all latent variable shapes are available regardless of what conditions contains
+        variable_shapes = inference_variable_shapes_by_network(self, meta_dict=meta_dict)
+
+        data_variables = variable_names[data_node]
+
+        inference_conditions = {}
+
+        # add num_samples as repeats across the batch dimension
+        for name in data_variables:
+            inference_conditions[name] = keras.ops.repeat(conditions[name], num_samples, axis=0)
+
+        # build new inference conditions incrementally
+        for i, inference_network in enumerate(self.inference_networks):
+            cond = _prepare_inference_conditions(self, inference_conditions, i, meta_dict=meta_dict)
+            variable_shape = list(variable_shapes[i])
+            variable_shape[0] = batch_n
+
+            samples = inference_network.sample(tuple(variable_shape[:-1]), conditions=cond)
+
+            j = 0
+            for node in self.network_composition[i]:
+                for variable in variable_names[node]:
+                    var_dim = int(self.output_shapes[variable][-1])
+                    inference_conditions[variable] = samples[..., j : (j + var_dim)]
+                    j += var_dim
+
+        # reshape samples
+        result = {}
+        for k, v in inference_conditions.items():
+            if k not in data_variables:
+                result[k] = keras.ops.convert_to_numpy(
+                    keras.ops.reshape(v, (batch_size, num_samples, *keras.ops.shape(v)[1:]))
+                )
+
+        return result
+
+    def log_prob(self, data):
+        variable_names = self.graph.simulation_graph.variable_names()
+        adapted, ldj_adapter = self.adapter(data, log_det_jac=True)
+        batch_size = self._batch_size_from_data(data)
+        log_prob = keras.ops.zeros(batch_size)
+
+        variables = inference_variables_by_network(self, adapted)
+        conditions = inference_conditions_by_network(self, adapted)
+
+        # log_probs
+        for i, inference_network in enumerate(self.inference_networks):
+            log_prob_i = inference_network.log_prob(variables[i], conditions[i])
+            log_prob += keras.ops.sum(keras.ops.reshape(log_prob_i, (batch_size, -1)), axis=-1)
+
+        # log_det_jac for standardization layers
+        for node, variable_names in variable_names.items():
+            for variable_name in variable_names:
+                if variable_name in self.standardize_layers:
+                    result, ldj = self.standardize_layers[variable_name](adapted[variable_name], log_det_jac=True)
+                    log_prob += keras.ops.sum(keras.ops.reshape(ldj, (batch_size, -1)), axis=-1)
+
+        # log_det_jac for adapter
+        for key in ldj_adapter:
+            log_prob += keras.ops.sum(keras.ops.reshape(ldj_adapter[key], (batch_size, -1)), axis=-1)
+
+        return log_prob
 
     def subset_data(self, data, meta_fn=None):
         output_shapes = self.graph.simulation_graph.output_shapes()
@@ -364,6 +439,25 @@ class GraphicalApproximator(Approximator):
                 output[k] = keras.ops.convert_to_numpy(keras.ops.slice(v, begin, output_shape))
 
         return output
+
+
+def _meta_dict_from_data(self, data: dict[str, np.ndarray]) -> dict[str, Shape]:
+    """
+    Infers meta information (sympy symbol → concrete value) from data shapes by comparing
+    the symbolic template shapes against the concrete shapes of the observed data.
+    """
+    meta_dict = {}
+    data_shapes = self._data_shapes(data)
+    output_shapes = self.graph.simulation_graph.output_shapes()
+
+    for k, v in data_shapes.items():
+        for dim_t, dim_c in zip(output_shapes.get(k, ()), v):
+            if isinstance(dim_t, sp.Expr):
+                for sym in dim_t.free_symbols:
+                    if sym not in meta_dict:
+                        meta_dict[sym] = dim_c
+
+    return meta_dict
 
     def _batch_size_from_data(self, data):
         """

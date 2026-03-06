@@ -110,18 +110,29 @@ def data_conditions_by_network(approximator: "GraphicalApproximator", adapted_da
     return result
 
 
-def _prepare_data_conditions(approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int) -> Tensor:
+def _prepare_data_conditions(
+    approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int, meta_dict: dict | None = None
+) -> Tensor:
     """
     Returns the data condition tensor for the inference network denoted by `network_idx`.
     """
-    inference_variables = _prepare_inference_variables(approximator, adapted_data, network_idx)
+    if meta_dict is not None:
+        # we pass meta_dict only if sampling from approximator
+        inference_variable_shapes = inference_variable_shapes_by_network(approximator, meta_dict=meta_dict)
+        inference_var_rank = len(inference_variable_shapes[network_idx])
+        inference_group_dim = inference_variable_shapes[network_idx][-2]
+    else:
+        inference_vars = _prepare_inference_variables(approximator, adapted_data, network_idx)
+        inference_var_rank = keras.ops.ndim(inference_vars)
+        inference_group_dim = keras.ops.shape(inference_vars)[-2]
+
     summary_outputs = summary_outputs_by_network(approximator, adapted_data)
     inference_to_summary_map = match_inference_to_summary_networks(approximator)
 
     summary_idx = inference_to_summary_map[network_idx]
     summary_output = summary_outputs[summary_idx]
 
-    if len(inference_variables.shape) == len(summary_output.shape):
+    if inference_var_rank == len(summary_output.shape):
         data_conditions = summary_output
     else:
         expanded = keras.ops.expand_dims(summary_output, axis=-2)
@@ -129,7 +140,7 @@ def _prepare_data_conditions(approximator: "GraphicalApproximator", adapted_data
             expanded,
             (
                 *keras.ops.shape(summary_output)[:-1],
-                keras.ops.shape(inference_variables)[-2],
+                inference_group_dim,
                 keras.ops.shape(summary_output)[-1],
             ),
         )
@@ -186,13 +197,13 @@ def inference_conditions_by_network(approximator: "GraphicalApproximator", adapt
 
 
 def _prepare_inference_conditions(
-    approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int
+    approximator: "GraphicalApproximator", adapted_data: dict, network_idx: int, meta_dict: dict | None = None
 ) -> Tensor:
     """
     Returns the inference condition tensor for the inference network denoted by `network_idx`.
     """
     data_node = approximator.graph.simulation_graph.data_node()
-    data_conditions = _prepare_data_conditions(approximator, adapted_data, network_idx)
+    data_conditions = _prepare_data_conditions(approximator, adapted_data, network_idx, meta_dict=meta_dict)
     variable_names = approximator.variable_names
 
     vars = []

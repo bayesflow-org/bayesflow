@@ -15,20 +15,6 @@ def single_level_simulator():
 def single_level_approximator():
     from bayesflow.experimental.graphical_approximator.example_approximators import single_level_approximator
 
-    # simulator = single_level_simulator()
-    #
-    # adapter = Adapter()
-    # adapter.to_array()
-    # adapter.convert_dtype("float64", "float32")
-    #
-    # summary_networks = [DeepSet(summary_dim=10)]
-    # inference_networks = [CouplingFlow()]
-    #
-    # inverted_graph = simulator.graph.invert()
-    # approximator = GraphicalApproximator(
-    #     inverted_graph, adapter=adapter, inference_networks=inference_networks, summary_networks=summary_networks
-    # )
-    #
     return single_level_approximator()
 
 
@@ -43,20 +29,6 @@ def two_level_simulator():
 def two_level_approximator():
     from bayesflow.experimental.graphical_approximator.example_approximators import two_level_approximator
 
-    # simulator = two_level_simulator()
-    #
-    # adapter = Adapter()
-    # adapter.to_array()
-    # adapter.convert_dtype("float64", "float32")
-    #
-    # summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
-    # inference_networks = [CouplingFlow(), CouplingFlow()]
-    #
-    # inverted_graph = simulator.graph.invert()
-    # approximator = GraphicalApproximator(
-    #     inverted_graph, adapter=adapter, inference_networks=inference_networks, summary_networks=summary_networks
-    # )
-    #
     return two_level_approximator()
 
 
@@ -99,20 +71,6 @@ def three_level_simulator():
 def three_level_approximator():
     from bayesflow.experimental.graphical_approximator.example_approximators import three_level_approximator
 
-    # simulator = three_level_simulator()
-    #
-    # adapter = Adapter()
-    # adapter.to_array()
-    # adapter.convert_dtype("float64", "float32")
-    #
-    # summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20), DeepSet(summary_dim=30)]
-    # inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
-    #
-    # inverted_graph = simulator.graph.invert()
-    # approximator = GraphicalApproximator(
-    #     inverted_graph, adapter=adapter, inference_networks=inference_networks, summary_networks=summary_networks
-    # )
-
     return three_level_approximator()
 
 
@@ -127,18 +85,4 @@ def crossed_design_irt_simulator():
 def crossed_design_irt_approximator():
     from bayesflow.experimental.graphical_approximator.example_approximators import crossed_design_irt_approximator
 
-    # simulator = crossed_design_irt_simulator()
-    #
-    # adapter = Adapter()
-    # adapter.to_array()
-    # adapter.convert_dtype("float64", "float32")
-    #
-    # summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
-    # inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
-    #
-    # inverted_graph = simulator.graph.invert()
-    # approximator = GraphicalApproximator(
-    #     inverted_graph, adapter=adapter, inference_networks=inference_networks, summary_networks=summary_networks
-    # )
-    #
     return crossed_design_irt_approximator()

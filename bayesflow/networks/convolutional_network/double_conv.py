@@ -26,10 +26,12 @@ class DoubleConv(keras.Layer):
         activation: str = "mish",
         **kwargs,
     ):
+        super().__init__(**layer_kwargs(kwargs))
+
         if norm == "batch":
             # Post-activation: Conv → Act → BN
             # https://github.com/keras-team/keras/issues/1802#issuecomment-187966878
-            layers = [
+            conv_layers = [
                 keras.layers.Conv2D(width, 3, padding="same"),
                 keras.layers.Activation(activation),
                 SimpleNorm(method=norm),
@@ -40,7 +42,7 @@ class DoubleConv(keras.Layer):
             ]
         else:
             # Pre-activation: Norm → Act → Conv
-            layers = [
+            conv_layers = [
                 SimpleNorm(method=norm, groups=groups, center=True, scale=True),
                 keras.layers.Activation(activation),
                 keras.layers.Conv2D(width, 3, padding="same"),
@@ -50,8 +52,7 @@ class DoubleConv(keras.Layer):
                 keras.layers.Conv2D(width, 3, padding="same", kernel_initializer="zeros"),
             ]
 
-        super().__init__(layers, **layer_kwargs(kwargs))
-
+        self.conv_layers = conv_layers
         self.width = width
         self.norm = norm
         self.groups = groups
@@ -73,3 +74,21 @@ class DoubleConv(keras.Layer):
         }
 
         return base_config | serialize(config)
+
+    def build(self, input_shape):
+        shape = input_shape
+        for layer in self.conv_layers:
+            layer.build(shape)
+            shape = layer.compute_output_shape(shape)
+        super().build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+        shape = input_shape
+        for layer in self.conv_layers:
+            shape = layer.compute_output_shape(shape)
+        return shape
+
+    def call(self, x, training=False, **kwargs):
+        for layer in self.conv_layers:
+            x = layer(x, training=training)
+        return x

@@ -3,12 +3,12 @@ from typing import Literal
 import keras
 
 from bayesflow.networks.unet.blocks import SimpleNorm
-from bayesflow.utils import model_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
 @serializable("bayesflow.networks")
-class DoubleConv(keras.Sequential):
+class DoubleConv(keras.Layer):
     """A double-convolution block with configurable normalization ordering.
 
     Uses pre-activation ordering (Norm -> Act -> Conv) by default, switching
@@ -50,7 +50,7 @@ class DoubleConv(keras.Sequential):
                 keras.layers.Conv2D(width, 3, padding="same", kernel_initializer="zeros"),
             ]
 
-        super().__init__(layers, **model_kwargs(kwargs))
+        super().__init__(layers, **layer_kwargs(kwargs))
 
         self.width = width
         self.norm = norm

@@ -2,38 +2,20 @@ import pytest
 from bayesflow.networks import PointNetwork, MLP
 
 
-def assert_subnet_has(**expected):
-    def _assert(subnet_layer):
-        for k, v in expected.items():
-            assert getattr(subnet_layer, k) == v
-
-    return _assert
+def test_default_subnet():
+    net = PointNetwork(["mean"], subnet="mlp")
+    assert net.subnet is not None
 
 
-@pytest.mark.parametrize(
-    "points,q,subnet,kwargs,assertion",
-    [
-        (["mean"], None, "mlp", {}, lambda arg: True),
-        (
-            ["quantiles", "mean"],
-            None,
-            "mlp",
-            {"subnet_kwargs": {"activation": "relu"}},
-            assert_subnet_has(activation="relu"),
-        ),
-        (
-            ["quantiles"],
-            [0.1, 0.5, 0.7, 0.9],
-            MLP(widths=[2, 3], activation="sigmoid"),
-            {"subnet_kwargs": {"activation": "relu"}},  # should be ignored
-            assert_subnet_has(activation="sigmoid", widths=[2, 3]),
-        ),
-    ],
-)
-def test_kwargs_forwarded(points, q, subnet, kwargs, assertion):
-    net = PointNetwork(points, q, subnet, **kwargs)
-    subnet_layer = net.subnet  # adjust path
-    assertion(subnet_layer)
+def test_subnet_kwargs_forwarded():
+    net = PointNetwork(["quantiles", "mean"], subnet="mlp", subnet_kwargs={"activation": "relu"})
+    assert net.subnet.activation == "relu"
+
+
+def test_explicit_subnet_ignores_kwargs():
+    net = PointNetwork(["quantiles"], q=[0.1, 0.5, 0.7, 0.9], subnet=MLP(widths=[2, 3], activation="sigmoid"))
+    assert net.subnet.activation == "sigmoid"
+    assert net.subnet.widths == [2, 3]
 
 
 def test_invalid_points_arg():

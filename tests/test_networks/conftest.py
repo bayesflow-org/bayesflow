@@ -3,70 +3,35 @@ import pytest
 from bayesflow.networks import MLP
 
 
-@pytest.fixture()
-def diffusion_model_edm_F():
+def _make_diffusion_model(noise_schedule, prediction_type):
+    """Factory for DiffusionModel instances, avoiding 6 near-identical fixtures."""
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=[8, 8]),
-        noise_schedule="edm",
-        prediction_type="F",
+        noise_schedule=noise_schedule,
+        prediction_type=prediction_type,
     )
+
+
+@pytest.fixture()
+def diffusion_model_edm_F():
+    return _make_diffusion_model("edm", "F")
 
 
 @pytest.fixture()
 def diffusion_model_edm_velocity():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet_kwargs=dict(widths=[8, 8]),
-        noise_schedule="edm",
-        prediction_type="velocity",
-    )
-
-
-@pytest.fixture()
-def diffusion_model_edm_noise():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet_kwargs=dict(widths=[8, 8]),
-        noise_schedule="edm",
-        prediction_type="noise",
-    )
-
-
-@pytest.fixture()
-def diffusion_model_cosine_F():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet_kwargs=dict(widths=[8, 8]),
-        noise_schedule="cosine",
-        prediction_type="F",
-    )
+    return _make_diffusion_model("edm", "velocity")
 
 
 @pytest.fixture()
 def diffusion_model_cosine_velocity():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet_kwargs=dict(widths=[8, 8]),
-        noise_schedule="cosine",
-        prediction_type="velocity",
-    )
+    return _make_diffusion_model("cosine", "velocity")
 
 
 @pytest.fixture()
 def diffusion_model_cosine_noise():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet_kwargs=dict(widths=[8, 8]),
-        noise_schedule="cosine",
-        prediction_type="noise",
-    )
+    return _make_diffusion_model("cosine", "noise")
 
 
 @pytest.fixture()
@@ -155,13 +120,7 @@ def typical_scoring_rule_network_subnet():
         "free_form_flow",
         "consistency_model",
         pytest.param("diffusion_model_edm_F"),
-        pytest.param(
-            "diffusion_model_edm_noise", marks=[pytest.mark.slow, pytest.mark.skip("skip to reduce load on CI.")]
-        ),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
-        pytest.param(
-            "diffusion_model_cosine_F", marks=[pytest.mark.slow, pytest.mark.skip("skip to reduce load on CI.")]
-        ),
         pytest.param("diffusion_model_cosine_noise", marks=pytest.mark.slow),
     ],
     scope="function",
@@ -191,34 +150,7 @@ def inference_network_subnet(request):
         "free_form_flow",
         "consistency_model",
         pytest.param("diffusion_model_edm_F"),
-        pytest.param(
-            "diffusion_model_edm_noise",
-            marks=[
-                pytest.mark.slow,
-                pytest.mark.skip("noise prediction not testable without prior training for numerical reasons."),
-            ],
-        ),
-        pytest.param(
-            "diffusion_model_cosine_F",
-            marks=[
-                pytest.mark.slow,
-                pytest.mark.skip("skip to reduce load on CI."),
-            ],
-        ),
-        pytest.param(
-            "diffusion_model_cosine_noise",
-            marks=[
-                pytest.mark.slow,
-                pytest.mark.skip("noise prediction not testable without prior training for numerical reasons."),
-            ],
-        ),
-        pytest.param(
-            "diffusion_model_cosine_velocity",
-            marks=[
-                pytest.mark.slow,
-                pytest.mark.skip("skip to reduce load on CI."),
-            ],
-        ),
+        pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
     ],
     scope="function",
 )
@@ -268,7 +200,8 @@ def time_series_network(summary_dim):
 def time_series_transformer(summary_dim):
     from bayesflow.networks import TimeSeriesTransformer
 
-    return TimeSeriesTransformer(summary_dim=summary_dim)
+    # return_sequences=False to act as a regular summary (compression) network
+    return TimeSeriesTransformer(summary_dim=summary_dim, return_sequences=False)
 
 
 @pytest.fixture(scope="function")

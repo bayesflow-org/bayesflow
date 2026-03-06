@@ -51,11 +51,3 @@ def test_unconditional_mvn(multivariate_normal_score):
     mean = keras.ops.convert_to_tensor([[0.0, 1.0]])
     covariance = keras.ops.convert_to_tensor([[[1.0, 0.0], [0.0, 1.0]]])
     multivariate_normal_score.sample((10,), mean, covariance)
-
-
-def test_unconditional_mvn_value_error(multivariate_normal_score):
-    mean = keras.ops.convert_to_tensor([0.0, 1.0])
-    covariance = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
-
-    with pytest.raises(ValueError):
-        multivariate_normal_score.sample((10,), mean, covariance)

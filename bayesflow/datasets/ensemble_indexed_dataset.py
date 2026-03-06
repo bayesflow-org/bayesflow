@@ -7,7 +7,7 @@ import keras
 
 from bayesflow.utils import logging
 
-from ._ensemble_sharing import ring_starts, ring_window_indices
+from .helpers import ring_starts, ring_window_indices
 
 
 class EnsembleIndexedDataset(keras.utils.PyDataset):
@@ -40,14 +40,12 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
         self.window_size = int(math.ceil(self.num_samples * self.reduction_factor))
         self.steps_per_epoch = int(math.ceil(self.window_size / self.batch_size))
 
-        # pool fixed as arange(num_samples)
         pool = np.arange(self.num_samples, dtype="int64")
 
         starts = ring_starts(self.num_samples, self.ensemble_size)
         idx2d = ring_window_indices(self.num_samples, self.window_size, starts)  # (E, W)
         self.member_indices = {name: pool[idx2d[k]].copy() for k, name in enumerate(self.member_names)}
 
-        # initial shuffle of member subdatasets (member_indices)
         self.on_epoch_end()
 
         logging.info(

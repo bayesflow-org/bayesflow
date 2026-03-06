@@ -6,14 +6,43 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.utils import logging
 
-from ._augmentations import apply_augmentations
+from .helpers import apply_augmentations
 
 
 class OfflineDataset(keras.utils.PyDataset):
-    """
-    A dataset that is pre-simulated and stored in memory. When storing and loading data from disk, it is recommended to
-    save any pre-simulated data in raw form and create the `OfflineDataset` object only after loading in the raw data.
-    See the `DiskDataset` class for handling large datasets that are split into multiple smaller files.
+    """A dataset that is pre-simulated and stored in memory.
+
+    When storing and loading data from disk, it is recommended to save any pre-simulated
+    data in raw form and create the ``OfflineDataset`` object only after loading in the raw
+    data. See :class:`DiskDataset` for handling large datasets that are split into multiple
+    smaller files.
+
+    Parameters
+    ----------
+    data : Mapping[str, np.ndarray]
+        Pre-simulated data stored in a dictionary, where each key maps to a NumPy array.
+    batch_size : int
+        Number of samples per batch.
+    adapter : Adapter or None
+        Optional adapter to transform the batch.
+    num_samples : int, optional
+        Number of samples in the dataset. If ``None``, it will be inferred from the data.
+    augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
+        A single augmentation function, dictionary of augmentation functions, or sequence
+        of augmentation functions to apply to the batch.
+
+        If you provide a dictionary of functions, each function should accept one element
+        of your output batch and return the corresponding transformed element.
+
+        Otherwise, your function should accept the entire dictionary output and return a dictionary.
+
+        Note: augmentations are applied before the adapter is called and are generally
+        transforms that you only want to apply during training.
+    shuffle : bool, optional
+        Whether to shuffle the dataset at initialization and at the end of each epoch.
+        Default is ``True``.
+    **kwargs
+        Additional keyword arguments passed to the base ``PyDataset``.
     """
 
     def __init__(
@@ -27,35 +56,6 @@ class OfflineDataset(keras.utils.PyDataset):
         shuffle: bool = True,
         **kwargs,
     ):
-        """
-        Initialize an OfflineDataset instance for offline training with optional data augmentations.
-
-        Parameters
-        ----------
-        data : Mapping[str, np.ndarray]
-            Pre-simulated data stored in a dictionary, where each key maps to a NumPy array.
-        batch_size : int
-            Number of samples per batch.
-        adapter : Adapter or None
-            Optional adapter to transform the batch.
-        num_samples : int, optional
-            Number of samples in the dataset. If None, it will be inferred from the data.
-        augmentations : Callable or Mapping[str, Callable] or Sequence[Callable], optional
-            A single augmentation function, dictionary of augmentation functions, or sequence of augmentation functions
-            to apply to the batch.
-
-            If you provide a dictionary of functions, each function should accept one element
-            of your output batch and return the corresponding transformed element.
-
-            Otherwise, your function should accept the entire dictionary output and return a dictionary.
-
-            Note - augmentations are applied before the adapter is called and are generally
-            transforms that you only want to apply during training.
-        shuffle : bool, optional
-            Whether to shuffle the dataset at initialization and at the end of each epoch. Default is True.
-        **kwargs
-            Additional keyword arguments passed to the base `PyDataset`.
-        """
         super().__init__(**kwargs)
         self.batch_size = batch_size
         self.data = data

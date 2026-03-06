@@ -3,20 +3,14 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 from scipy.special import logsumexp
 import keras
-from tqdm.auto import tqdm
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     logging,
-    filter_kwargs,
     split_arrays,
-    slice_maybe_nested,
-    dim_maybe_nested,
     squeeze_inner_estimates_dict,
-    concatenate_valid,
-    tree_concatenate,
 )
 from bayesflow.utils.serialization import serializable
 
@@ -28,19 +22,34 @@ class ScoringRuleApproximator(ContinuousApproximator):
     """
     A workflow for fast amortized Bayes risk minimization for arbitrary scoring rules.
 
-    The distribution is approximated by point or variational distribution estimators, parameterized by a feed-forward
-    :py:class:`~bayesflow.networks.ScoringRuleNetwork`. Conditions can be compressed by an optional
-    summary network (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`)
-    or used directly as input to the inference network.
+    Inherits from :class:`ContinuousApproximator` and adapts the sample, log_prob, and estimate
+    interfaces for the nested output structure of :class:`~bayesflow.networks.ScoringRuleNetwork`.
+
+    Parameters
+    ----------
+    inference_network : InferenceNetwork
+        The inference network used for point estimation.
+    adapter : bayesflow.adapters.Adapter, optional
+        Adapter for data processing. You can use :py:meth:`build_adapter`
+        to create it. If ``None`` (default), an identity adapter is used
+        that makes a shallow copy and passes data through unchanged.
+    summary_network : SummaryNetwork, optional
+        The summary network used for data summarization (default is None).
+    standardize : str | Sequence[str] | None
+        The variables to standardize before passing to the networks. Can be either
+        "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].
+        (default is "inference_variables").
+    **kwargs : dict, optional
+        Additional arguments passed to the :py:class:`ContinuousApproximator` class.
     """
 
     def __init__(
         self,
         *,
-        adapter: Adapter,
         inference_network: ScoringRuleNetwork,
+        adapter: Adapter = None,
         summary_network: SummaryNetwork | None = None,
-        standardize: str | Sequence[str] | None = "all",
+        standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
         super().__init__(
@@ -51,18 +60,15 @@ class ScoringRuleApproximator(ContinuousApproximator):
             **kwargs,
         )
 
-        # Infer which scoring rules induce distributions
-        dist_keys = []
+        self.distribution_keys = []
         for score_key, score in self.inference_network.scoring_rules.items():
             has_sample = callable(getattr(score, "sample", None))
             has_log_prob = callable(getattr(score, "log_prob", None))
-            if has_sample and has_log_prob:
-                dist_keys.append(score_key)
-        self.distribution_keys = dist_keys
 
-        # Update attribute to mark whether it has at least one score that represents a distribution
-        if len(self.distribution_keys) == 0:
-            self.has_distribution = False
+            if has_sample and has_log_prob:
+                self.distribution_keys.append(score_key)
+
+        self.has_distribution = len(self.distribution_keys) > 0
 
     def estimate(
         self,
@@ -114,29 +120,35 @@ class ScoringRuleApproximator(ContinuousApproximator):
         split: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
-        conditions = self._prepare_data(conditions, **kwargs)
-        # Remove any superfluous keys, just retain actual conditions.
-        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
+        resolved_conditions, adapted, _ = self._prepare_conditions(conditions)
 
-        estimates = self._estimate(**conditions, **kwargs)
+        inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
-        if "inference_variables" in self.standardize:
-            for score_key, score in self.inference_network.scoring_rules.items():
-                for head_key in estimates[score_key].keys():
-                    transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
-                    estimates[score_key][head_key] = self.standardize_layers["inference_variables"](
-                        estimates[score_key][head_key], forward=False, transformation_type=transformation_type
-                    )
+        estimates = self.inference_network(
+            conditions=resolved_conditions,
+            **inference_kwargs,
+        )
+
+        # Unstandardize the network outputs
+        for score_key, score in self.inference_network.scoring_rules.items():
+            for head_key in estimates[score_key].keys():
+                transformation_type = score.TRANSFORMATION_TYPE.get(head_key, "location_scale")
+                estimates[score_key][head_key] = self.standardizer.maybe_standardize(
+                    estimates[score_key][head_key],
+                    key="inference_variables",
+                    stage="inference",
+                    forward=False,
+                    transformation_type=transformation_type,
+                )
 
         estimates = self._apply_inverse_adapter_to_estimates(estimates, **kwargs)
 
-        # Optionally split the arrays along the last axis.
         if split:
             estimates = split_arrays(estimates, axis=-1)
 
         return estimates
 
-    def sample(  # type: ignore[override]
+    def sample(
         self,
         *,
         num_samples: int,
@@ -205,7 +217,12 @@ class ScoringRuleApproximator(ContinuousApproximator):
                 )
             return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
-        score_weights: Mapping[str, float] = self._resolve_score_weights(score_weights)
+        score_weights = self._resolve_score_weights(score_weights)
+
+        # Single score: _sample_separate already squeezed to a plain result,
+        # and mixing with uniform weight is an identity operation.
+        if len(self.distribution_keys) == 1:
+            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
         # Allocate samples per score and draw only as many as needed (max over scores).
         num_samples_per_score = np.random.multinomial(num_samples, list(score_weights.values()))
@@ -241,25 +258,26 @@ class ScoringRuleApproximator(ContinuousApproximator):
         split: bool = False,
         batch_size: int | None = None,
         **kwargs,
-    ) -> dict[str, dict[str, np.ndarray]]:
+    ) -> dict[str, np.ndarray | dict[str, np.ndarray]]:
         """
-        Draws samples from parametric distributions based on parameter estimates for given input conditions.
+        Draws samples from a parametric distribution based on point estimates.
 
-        These samples will generally not correspond to samples from the fully Bayesian posterior, since
-        they will assume some parametric form (e.g., multivariate normal when using the MvNormalScore).
+        Uses :meth:`ContinuousApproximator.sample` for condition resolution, sampling,
+        unstandardization, and inverse adapter, then squeezes the nested score-major
+        output structure.
 
         Parameters
         ----------
         num_samples : int
             The number of samples to generate.
-        conditions : Mapping[str, np.ndarray] or None,
-            A batch of conditions to sample for. None for unconditional distributions.
+        conditions : Mapping[str, np.ndarray]
+            A dictionary mapping variable names to arrays representing the conditions.
         split : bool, optional
             If True, the sampled arrays are split along the last axis, by default False.
             Currently not supported for :py:class:`ScoringRuleApproximator`.
         batch_size : int or None, optional
-            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
-            sequentially. Can help with memory management for large sample sizes.
+            If provided, the conditions are split into batches of size `batch_size`,
+            for which samples are generated sequentially.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
@@ -267,86 +285,26 @@ class ScoringRuleApproximator(ContinuousApproximator):
         -------
         samples : dict[str, dict[str, np.ndarray]]
             Samples for all inference variables and all parametric scoring rules in a nested dictionary.
-
-            1. Each first-level key is the name of a parametric score.
-            2. Each second-level key is the name of an inference variable.
-
-            Each output (i.e., dictionary value that is not itself a dictionary) is an array
-            of shape (num_datasets, num_samples, ...).
+            Shape: (num_datasets, num_samples, variable_block_size).
         """
-        self._check_has_distribution()
+
         if split:
             raise NotImplementedError("split=True is currently not supported for `ScoringRuleApproximator`.")
 
-        # Adapt, optionally standardize and convert conditions to tensor.
-        conditions = self._prepare_data(conditions, **kwargs)
-        conditions = {k: v for k, v in conditions.items() if k in self.CONDITION_KEYS}
+        self._check_has_distribution()
 
-        num_conditions = dim_maybe_nested(conditions, axis=0) if len(conditions) > 0 else 1
-
-        # If no batching requested, pretend everything is one batch
-        if batch_size is None:
-            batch_size = num_conditions
-
-        samples = []
-        for i in tqdm(range(0, num_conditions, batch_size), desc="Sampling", unit="batch"):
-            if len(conditions) == 0:
-                batch_conditions = {}
-            else:
-                batch_conditions = slice_maybe_nested(conditions, i, i + batch_size)
-
-            batch_samples = self._sample(num_samples=num_samples, **batch_conditions, **kwargs)
-            samples.append(batch_samples)
-
-        samples = tree_concatenate(samples, axis=0)
-
-        # Optionally unstandardize and back-transform samples via adapter
-        samples = self._post_process_samples(samples)
-
-        return samples
-
-    def _post_process_samples(self, samples: Tensor | Mapping[str, np.ndarray], **kwargs) -> Mapping[str, np.ndarray]:
-        """Undo optional standardization and make dict of samples."""
-        if "inference_variables" in self.standardize:
-            for score_key in samples.keys():
-                samples[score_key] = self.standardize_layers["inference_variables"](samples[score_key], forward=False)
-
-        samples = self._apply_inverse_adapter_to_samples(samples, **kwargs)
-        return samples
-
-    def _sample(
-        self,
-        num_samples: int,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        **kwargs,
-    ) -> Tensor:
-        if self.summary_network is None:
-            if summary_variables is not None:
-                raise ValueError("Cannot use summary variables without a summary network.")
-        else:
-            if summary_variables is None:
-                raise ValueError("Summary variables are required when a summary network is present.")
-
-        if self.summary_network is not None:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-
-            inference_conditions = concatenate_valid([inference_conditions, summary_outputs], axis=-1)
-
-        if inference_conditions is not None:
-            batch_shape = (keras.ops.shape(inference_conditions)[0], num_samples)
-        else:
-            batch_shape = (num_samples,)
-
-        samples = self.inference_network.sample(
-            batch_shape, conditions=inference_conditions, **filter_kwargs(kwargs, self.inference_network.sample)
+        # Delegate to parent for condition resolution, sampling, unstandardization, and inverse adapter
+        samples = super().sample(
+            num_samples=num_samples,
+            conditions=conditions,
+            split=False,
+            batch_size=batch_size,
+            **kwargs,
         )
 
-        return samples
+        return self._squeeze_parametric_score_major_dict(samples)
 
-    def log_prob(  # type: ignore[override]
+    def log_prob(
         self,
         data: Mapping[str, np.ndarray],
         score_weights: Mapping[str, float] | None = None,
@@ -396,6 +354,11 @@ class ScoringRuleApproximator(ContinuousApproximator):
                 )
             return log_probs
 
+        # Single score: _log_prob_separate already squeezed to a plain array,
+        # and merging with uniform weight is an identity operation.
+        if len(self.distribution_keys) == 1:
+            return np.asarray(log_probs)
+
         score_weights = self._resolve_score_weights(score_weights)
 
         stacked = np.stack([np.asarray(log_probs[score_key]) for score_key in self.distribution_keys], axis=-1)
@@ -409,42 +372,25 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
     def _log_prob_separate(self, data: Mapping[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
         """
-        Computes the log-probability of given data under the parametric distribution(s) for given input conditions.
+        Computes the log-probability of given data under the parametric distribution(s).
 
         Parameters
         ----------
         data : dict[str, np.ndarray]
-            A dictionary mapping variable names to arrays representing the inference conditions and variables.
+            A dictionary mapping variable names to arrays representing the data.
         **kwargs
             Additional keyword arguments passed to underlying processing functions.
 
         Returns
         -------
-        log_prob : dict[str, np.ndarray]
-            Log-probabilities of the distribution
-            `p(inference_variables | inference_conditions, h(summary_conditions))` for all parametric scoring rules.
-
-            If only one parametric score is available, output is an array of log-probabilities.
-
-            Output is a dictionary if multiple parametric scoring rules are available.
-            Then, each key is the name of a score and values are corresponding log-probabilities.
-
-            Log-probabilities have shape (num_datasets,).
+        log_prob : np.ndarray or dict[str, np.ndarray]
+            Log-probabilities of the distribution for all parametric scoring rules.
+            If only one parametric score is available, returns an array.
+            Otherwise, returns a dictionary with score names as keys.
+            Shape: (num_datasets,)
         """
-        self._check_has_distribution()
-
-        # Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac
-        data, log_det_jac = self._prepare_data(data, log_det_jac=True, **kwargs)
-
-        # Pass data to networks and convert back to numpy array
-        log_prob = self._log_prob(**data, **kwargs)
-        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
-
-        # Change of variables formula, respecting log_prob to be a dictionary
-        if log_det_jac is not None:
-            log_prob = keras.tree.map_structure(lambda x: x + log_det_jac, log_prob)
-
-        return log_prob
+        log_prob = super().log_prob(data, **kwargs)
+        return self._squeeze_parametric_score_major_dict(log_prob)
 
     def _check_has_distribution(self):
         if not self.has_distribution:
@@ -495,27 +441,11 @@ class ScoringRuleApproximator(ContinuousApproximator):
                 processed[score_key][head_key] = adapted
         return processed
 
-    def _apply_inverse_adapter_to_samples(
-        self, samples: Mapping[str, Tensor], **kwargs
-    ) -> dict[str, dict[str, np.ndarray]]:
-        """Applies the inverse adapter to a dictionary of samples."""
-        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
-        processed = {}
-        for score_key, score_value in samples.items():
-            processed[score_key] = self.adapter(
-                {"inference_variables": score_value},
-                inverse=True,
-                strict=False,
-                **kwargs,
-            )
-        return processed
-
     @staticmethod
     def _reorder_estimates(
         estimates: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]],
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         """Reorders the nested dictionary so that the inference variable names become the top-level keys."""
-        # Grab the variable names from one sample inner dictionary.
         sample_inner = next(iter(next(iter(estimates.values())).values()))
         variable_names = sample_inner.keys()
         reordered = {}
@@ -538,22 +468,9 @@ class ScoringRuleApproximator(ContinuousApproximator):
             }
         return squeezed
 
-    def _estimate(
-        self,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        **kwargs,
-    ) -> dict[str, dict[str, Tensor]]:
-        if (self.summary_network is None) != (summary_variables is None):
-            raise ValueError("Summary variables and summary network must be used together.")
-
-        if self.summary_network is not None:
-            summary_outputs = self.summary_network(
-                summary_variables, **filter_kwargs(kwargs, self.summary_network.call)
-            )
-            inference_conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
-
-        return self.inference_network(
-            conditions=inference_conditions,
-            **filter_kwargs(kwargs, self.inference_network.call),
-        )
+    @staticmethod
+    def _squeeze_parametric_score_major_dict(samples: Mapping[str, np.ndarray]) -> np.ndarray | dict[str, np.ndarray]:
+        """Squeezes the dictionary to just the value if there is only one key-value pair."""
+        if len(samples) == 1:
+            return next(iter(samples.values()))
+        return samples

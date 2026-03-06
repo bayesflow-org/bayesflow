@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from bayesflow.datasets._ensemble_sharing import ring_starts, ring_window_indices
+from bayesflow.datasets.helpers import ring_starts, ring_window_indices
 
 
 def test_ring_starts_rejects_invalid_args():

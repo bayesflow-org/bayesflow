@@ -16,7 +16,55 @@ from .lambda_simulator import LambdaSimulator
 
 
 class ModelComparisonSimulator(Simulator):
-    """Wraps a sequence of simulators for use with a model comparison approximator."""
+    """A multimodel simulator useful for model comparison tasks.
+
+    This class wraps multiple :class:`~bayesflow.simulators.Simulator` instances and
+    produces batched outputs that include a one-hot ``inference_variables`` vector
+    indicating which simulator generated each sample. It supports two sampling
+    modes:
+
+    * **mixed batches** (default) - each element in the batch may originate from
+      a different simulator; the number of draws per model is drawn from a
+      multinomial with probabilities given by ``softmax(logits)``.
+    * **single-model batches** - the entire batch is drawn from a single
+      simulator chosen according to the model probabilities.
+
+    A shared simulator may optionally provide additional data that is passed to
+    every model's sampling call. Key-conflict policies control how incompatible
+    outputs across simulators are handled (drop, fill, or error).
+
+    Parameters
+    ----------
+    simulators : Sequence[Simulator]
+        A sequence of simulator instances, each representing a different model.
+    p : Sequence[float], optional
+        A sequence of probabilities associated with each simulator. Must sum to 1.
+        Mutually exclusive with ``logits``.
+    logits : Sequence[float], optional
+        A sequence of logits corresponding to model probabilities. Mutually
+        exclusive with ``p``. If neither ``p`` nor ``logits`` is provided,
+        uniform logits are assumed.
+    use_mixed_batches : bool, optional
+        Whether to draw samples in a batch from different models.
+
+        * If ``True`` (default), each sample in a batch may come from a different
+          model.
+        * If ``False``, the entire batch is drawn from a single model selected
+          according to the model probabilities.
+    key_conflicts : {"drop", "fill", "error"}, optional
+        Policy for handling keys missing from some model outputs when mixing
+        batches.
+
+        * ``"drop"`` (default): drop conflicting keys from the batch output.
+        * ``"fill"``: fill missing keys with ``fill_value``.
+        * ``"error"``: raise an error on conflicts.
+    fill_value : float, optional
+        If ``key_conflicts=="fill"``, missing keys are filled with this value.
+    shared_simulator : Simulator or Callable, optional
+        A shared simulator providing outputs to every model. If a callable is
+        passed it is wrapped in a
+        :class:`~bayesflow.simulators.LambdaSimulator` with batching enabled.
+    """
 
     def __init__(
         self,
@@ -28,36 +76,7 @@ class ModelComparisonSimulator(Simulator):
         fill_value: float = np.nan,
         shared_simulator: Simulator | Callable[[Sequence[int]], dict[str, any]] = None,
     ):
-        """
-        Initialize a multimodel simulator that can generate data for mixture / model comparison problems.
-
-        Parameters
-        ----------
-        simulators : Sequence[Simulator]
-            A sequence of simulator instances, each representing a different model.
-        p : Sequence[float], optional
-            A sequence of probabilities associated with each simulator. Must sum to 1.
-            Mutually exclusive with `logits`.
-        logits : Sequence[float], optional
-            A sequence of logits corresponding to model probabilities. Mutually exclusive with `p`.
-            If neither `p` nor `logits` is provided, defaults to uniform logits.
-        use_mixed_batches : bool, optional
-            Whether to draw samples in a batch from different models.
-
-            - If True (default), each sample in a batch may come from a different model.
-            - If False, the entire batch is drawn from a single model, selected according to model probabilities.
-        key_conflicts : str, optional
-            Policy for handling keys that are missing in the output of some models, when using mixed batches.
-
-            - "drop" (default): Drop conflicting keys from the batch output.
-            - "fill": Fill missing keys with the specified value.
-            - "error": An error is raised when key conflicts are detected.
-        fill_value : float, optional
-            If `key_conflicts=="fill"`, the missing keys will be filled with the value of this argument.
-        shared_simulator : Simulator or Callable, optional
-            A shared simulator whose outputs are passed to all model simulators. If a function is
-            provided, it is wrapped in a :py:class:`~bayesflow.simulators.LambdaSimulator` with batching enabled.
-        """
+        # constructor body unchanged
         self.simulators = simulators
 
         if isinstance(shared_simulator, FunctionType):
@@ -106,7 +125,7 @@ class ModelComparisonSimulator(Simulator):
             A dictionary containing the sampled outputs. Includes:
               - outputs from the selected simulator(s)
               - optionally, outputs from the shared simulator
-              - "model_indices": a one-hot encoded array indicating the model origin of each sample
+              - "inference_variables": an array indicating the model origin of each sample
         """
         data = {}
         if self.shared_simulator:
@@ -180,14 +199,14 @@ class ModelComparisonSimulator(Simulator):
 
             if self.key_conflicts == "drop":
                 logging.info(
-                    f"Incompatible simulator output. \
-The following keys will be dropped: {', '.join(sorted(all_keys - common_keys))}."
+                    f"Incompatible simulator output. "
+                    f"The following keys will be dropped: {', '.join(sorted(all_keys - common_keys))}."
                 )
             elif self.key_conflicts == "fill":
                 logging.info(
-                    f"Incompatible simulator output. \
-Attempting to replace keys: {', '.join(sorted(all_keys - common_keys))}, where missing, \
-with value {self.fill_value}."
+                    f"Incompatible simulator output. "
+                    f"Attempting to replace keys: {', '.join(sorted(all_keys - common_keys))}, where missing "
+                    f"with value {self.fill_value}."
                 )
 
         return keys, all_keys, common_keys, missing_keys

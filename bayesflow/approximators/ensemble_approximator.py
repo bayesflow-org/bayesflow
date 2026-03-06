@@ -10,7 +10,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import logging, filter_kwargs
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.datasets import EnsembleDataset
 
 from .approximator import Approximator
@@ -18,7 +18,30 @@ from .approximator import Approximator
 
 @serializable("bayesflow.approximators")
 class EnsembleApproximator(Approximator):
-    def __init__(self, approximators: dict[str, Approximator], **kwargs):
+    """Combines multiple approximators into a single ensemble.
+
+    An ``EnsembleApproximator`` wraps a named collection of
+    :class:`~bayesflow.approximators.Approximator` instances and trains them
+    jointly.  At inference time it can produce
+    *per-member* results or *merged* results (weighted mixture for
+    :meth:`sample` and :meth:`log_prob`).
+
+    The adapter is inherited from the first member approximator and is assumed
+    to be the same across all members (this is **not** enforced).
+
+    Parameters
+    ----------
+    approximators : Mapping[str, Approximator]
+        A mapping from member names to approximator instances.  Each member
+        is trained on its own slice of the data during :meth:`fit` and is
+        addressed by name in :meth:`sample`, :meth:`log_prob`, and
+        :meth:`estimate`.
+    **kwargs : dict, optional
+        Additional arguments forwarded to the
+        :class:`~bayesflow.approximators.Approximator` base class.
+    """
+
+    def __init__(self, approximators: Mapping[str, Approximator], **kwargs):
         super().__init__(**kwargs)
         self._warn_if_shared_approximator_components(approximators)
         self.approximators = approximators
@@ -64,6 +87,14 @@ class EnsembleApproximator(Approximator):
                         members=members,
                     )
 
+    @classmethod
+    def _warn_ignored_member_weights(cls, member_weights: Mapping[str, float] | None, merge_members: bool):
+        if member_weights is not None and not merge_members:
+            logging.warning(
+                "`member_weights` is ignored when `merge_members=False`. "
+                "Set `merge_members=True` to use a weighted mixture."
+            )
+
     @property
     def adapter(self) -> Adapter:
         # Defer to any adapter of the approximators,
@@ -71,7 +102,7 @@ class EnsembleApproximator(Approximator):
         # self.adapter will only be used when super().fit calls build_dataset(..., adapter=self.adapter).
         return next(iter(self.approximators.values())).adapter
 
-    def build_dataset(  # type: ignore[override]
+    def build_dataset(
         self,
         *,
         batch_size: int = "auto",
@@ -101,10 +132,6 @@ class EnsembleApproximator(Approximator):
             member_names=self.members,
             **filter_kwargs(kwargs, keras.utils.PyDataset.__init__),
         )
-
-    def build_from_data(self, adapted_data: dict[str, Any]):
-        data_shapes = keras.tree.map_structure(keras.ops.shape, adapted_data)
-        self.build(data_shapes)
 
     def build(self, data_shapes: dict) -> None:
         for approx_name, approximator in self.approximators.items():
@@ -158,6 +185,10 @@ class EnsembleApproximator(Approximator):
         inference_conditions: dict[str, Tensor] | Tensor | None = None,
         summary_variables: dict[str, Tensor] | Tensor | None = None,
         sample_weight: dict[str, Tensor] | Tensor | None = None,
+        summary_attention_mask: dict[str, Tensor] | Tensor | None = None,
+        summary_mask: dict[str, Tensor] | Tensor | None = None,
+        inference_attention_mask: dict[str, Tensor] | Tensor | None = None,
+        inference_mask: dict[str, Tensor] | Tensor | None = None,
         stage: str = "training",
     ) -> dict[str, dict[str, Tensor]]:
         metrics = {}
@@ -173,6 +204,10 @@ class EnsembleApproximator(Approximator):
                 inference_conditions=select(inference_conditions, name),
                 summary_variables=select(summary_variables, name),
                 sample_weight=select(sample_weight, name),
+                summary_attention_mask=select(summary_attention_mask, name),
+                summary_mask=select(summary_mask, name),
+                inference_attention_mask=select(inference_attention_mask, name),
+                inference_mask=select(inference_mask, name),
                 stage=stage,
             )
 
@@ -326,10 +361,9 @@ class EnsembleApproximator(Approximator):
             Whether to split output arrays, by default False.
         groupby : {"member", "variable"}, default "member"
             Controls the top-level nesting of the returned dictionary.
-
             - "member": return estimates as ``member -> variable -> score (-> head) -> array``.
             - "variable": return estimates as ``variable -> score (-> head) -> member -> array``.
-              See also :py:meth:`~bayesflow.PointApproximator.estimate`.
+              See also :py:meth:`~bayesflow.ScoringRuleApproximator.estimate`.
         **kwargs
             Additional arguments passed to approximator.estimate().
 
@@ -416,13 +450,6 @@ class EnsembleApproximator(Approximator):
             raise ValueError(f"Unknown/unsupported members for capability={capability!r}: {unknown}")
         return members_t
 
-    def _warn_ignored_member_weights(self, member_weights: Mapping[str, float] | None, merge_members: bool):
-        if member_weights is not None and not merge_members:
-            logging.warning(
-                "`member_weights` is ignored when `merge_members=False`. "
-                "Set `merge_members=True` to use a weighted mixture."
-            )
-
     def _resolve_member_weights(self, member_weights: Mapping[str, float] | None) -> Mapping[str, float]:
         if member_weights is None:
             member_weights = {k: 1.0 for k in self.distribution_members}
@@ -453,10 +480,6 @@ class EnsembleApproximator(Approximator):
         base_config = super().get_config()
         config = {"approximators": self.approximators}
         return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def build_from_config(self, config):
         # the approximators are already built

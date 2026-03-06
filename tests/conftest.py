@@ -56,11 +56,6 @@ def summary_dim(request):
     return request.param
 
 
-@pytest.fixture(params=["two_moons"], scope="session")
-def dataset(request):
-    return request.getfixturevalue(request.param)
-
-
 @pytest.fixture(params=[2, 3], scope="session")
 def feature_size(request):
     return request.param

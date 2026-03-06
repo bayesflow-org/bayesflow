@@ -56,7 +56,7 @@ class ResidualBlock2D(keras.Layer):
         width: int,
         *,
         activation: str = "swish",
-        norm: Literal["layer", "group"] = "group",
+        norm: Literal["layer", "group"] | None = "group",
         groups: int | None = 8,
         dropout: Literal[0, None] | float = 0.0,
         kernel_initializer: str | keras.initializers.Initializer = "he_normal",
@@ -65,13 +65,13 @@ class ResidualBlock2D(keras.Layer):
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
-        self.width = int(width)
-        self.activation = str(activation)
-        self.norm = str(norm)
+        self.width = width
+        self.activation = activation
+        self.norm = norm
         self.groups = groups
-        self.dropout = 0.0 if dropout is None else float(dropout)
+        self.dropout = 0.0 if dropout is None else dropout
         self.kernel_initializer = kernel_initializer
-        self.use_film = bool(use_film)
+        self.use_film = use_film
         self.skip_fuse_case = skip_fuse_case
 
         match self.skip_fuse_case:
@@ -83,7 +83,6 @@ class ResidualBlock2D(keras.Layer):
                     groups=self.groups,
                     center=True,
                     scale=True,
-                    name="skip_norm",
                 )
             case _:
                 self.skip_fuse = None
@@ -95,22 +94,19 @@ class ResidualBlock2D(keras.Layer):
             groups=self.groups,
             center=True,
             scale=True,
-            name="norm1",
         )
-        self.act1 = keras.layers.Activation(self.activation, name="act1")
+        self.act1 = keras.layers.Activation(self.activation)
         self.conv1 = keras.layers.Conv2D(
             filters=self.width,
             kernel_size=3,
             padding="same",
             kernel_initializer=self.kernel_initializer,
-            name="conv1",
         )
 
         emb_out = 2 * self.width if self.use_film else self.width
         self.emb_proj = keras.layers.Dense(
             emb_out,
             kernel_initializer=self.kernel_initializer,
-            name="emb_proj",
         )
 
         self.norm2 = SimpleNorm(
@@ -118,16 +114,14 @@ class ResidualBlock2D(keras.Layer):
             groups=self.groups,
             center=True,
             scale=True,
-            name="norm2",
         )
-        self.act2 = keras.layers.Activation(self.activation, name="act2")
-        self.drop = keras.layers.Dropout(rate=self.dropout, name="dropout")
+        self.act2 = keras.layers.Activation(self.activation)
+        self.drop = keras.layers.Dropout(rate=self.dropout)
         self.conv2 = keras.layers.Conv2D(
             filters=self.width,
             kernel_size=3,
             padding="same",
             kernel_initializer="zeros",
-            name="conv2_zero",
         )
 
         # residual projection if channels mismatch (created in build)

@@ -1,6 +1,9 @@
 from collections.abc import Callable
+from typing import Literal
+
 import keras
 
+from bayesflow.networks.unet.blocks import SimpleNorm
 from bayesflow.utils import model_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
@@ -11,40 +14,48 @@ class DoubleConv(keras.Sequential):
     def __init__(
         self,
         width: int,
-        use_batchnorm: bool = True,
+        norm: Literal["layer", "group", "batch"] | None = "group",
+        groups: int | None = 8,
         dropout: float = None,
-        activation: str | Callable[[], keras.Layer] = "relu",
+        activation: str = "swish",
+        residual: bool = True,
         **kwargs,
     ):
-        layers = []
 
-        layers.append(keras.layers.Conv2D(width, 3, padding="same"))
-
-        activation = keras.activations.get(activation)
-        if not isinstance(activation, keras.Layer):
-            activation = keras.layers.Activation(activation)
-
-        layers.append(activation)
-
-        if use_batchnorm:
-            # we apply this after the activation due to
+        if norm == "batch":
+            last_norm_kwargs = {"gamma_initializer": "zeros"} if residual else {}
+            # Post-activation: Conv → Act → BN
             # https://github.com/keras-team/keras/issues/1802#issuecomment-187966878
-            layers.append(keras.layers.BatchNormalization())
-
-        if dropout is not None and dropout > 0:
-            layers.append(keras.layers.Dropout(dropout))
-
-        layers.append(keras.layers.Conv2D(width, 3, padding="same"))
-
-        if use_batchnorm:
-            layers.append(keras.layers.BatchNormalization())
+            layers = [
+                keras.layers.Conv2D(width, 3, padding="same"),
+                keras.layers.Activation(activation),
+                SimpleNorm(method=norm),
+                keras.layers.Conv2D(width, 3, padding="same"),
+                keras.layers.Activation(activation),
+                SimpleNorm(method=norm, **last_norm_kwargs),
+                keras.layers.Dropout(0.0 if dropout is None else dropout),
+            ]
+        else:
+            last_conv_init = "zeros" if residual else "glorot_uniform"
+            # Pre-activation: Norm → Act → Conv
+            layers = [
+                SimpleNorm(method=norm, groups=groups, center=True, scale=True),
+                keras.layers.Activation(activation),
+                keras.layers.Conv2D(width, 3, padding="same"),
+                SimpleNorm(method=norm, groups=groups, center=True, scale=True),
+                keras.layers.Activation(activation),
+                keras.layers.Dropout(0.0 if dropout is None else dropout),
+                keras.layers.Conv2D(width, 3, padding="same", kernel_initializer=last_conv_init),
+            ]
 
         super().__init__(layers, **model_kwargs(kwargs))
 
         self.width = width
-        self.use_batchnorm = use_batchnorm
+        self.norm = norm
+        self.groups = groups
         self.dropout = dropout
         self.activation = activation
+        self.residual = residual
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -55,9 +66,10 @@ class DoubleConv(keras.Sequential):
 
         config = {
             "width": self.width,
-            "use_batchnorm": self.use_batchnorm,
+            "norm": self.norm,
             "dropout": self.dropout,
             "activation": self.activation,
+            "residual": self.residual,
         }
 
         return base_config | serialize(config)

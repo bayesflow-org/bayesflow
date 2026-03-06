@@ -32,6 +32,8 @@ class SimpleNorm(keras.Layer):
         Whether to include a learnable offset (beta). Default is True.
     scale : bool, optional
         Whether to include a learnable scale (gamma). Default is True.
+    gamma_initializer : str, optional
+        Initializer for the gamma weights when `scale=True`. Default is "ones".
     **kwargs
         Additional keyword arguments passed to `keras.Layer`.
 
@@ -44,12 +46,13 @@ class SimpleNorm(keras.Layer):
 
     def __init__(
         self,
-        method: Literal["layer", "group"] = "group",
+        method: Literal["layer", "group", "batch"] | None = "group",
         *,
         groups: int | None = 8,
         axis: int = -1,
         center: bool = True,
         scale: bool = True,
+        gamma_initializer: str = "ones",
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -58,12 +61,14 @@ class SimpleNorm(keras.Layer):
         self.axis = axis
         self.center = center
         self.scale = scale
+        self.gamma_initializer = gamma_initializer
         match method:
             case "layer":
                 self.norm = keras.layers.LayerNormalization(
                     axis=axis,
                     center=center,
                     scale=scale,
+                    gamma_initializer=gamma_initializer,
                 )
             case "group":
                 self.norm = keras.layers.GroupNormalization(
@@ -71,7 +76,17 @@ class SimpleNorm(keras.Layer):
                     axis=axis,
                     center=center,
                     scale=scale,
+                    gamma_initializer=gamma_initializer,
                 )
+            case "batch":
+                self.norm = keras.layers.BatchNormalization(
+                    axis=axis,
+                    center=center,
+                    scale=scale,
+                    gamma_initializer=gamma_initializer,
+                )
+            case None:
+                self.norm = keras.layers.Identity()
             case _:
                 raise ValueError(f"Unsupported normalization method: {method}")
 
@@ -88,6 +103,7 @@ class SimpleNorm(keras.Layer):
             "axis": self.axis,
             "center": self.center,
             "scale": self.scale,
+            "gamma_initializer": self.gamma_initializer,
         }
         return base | serialize(cfg)
 

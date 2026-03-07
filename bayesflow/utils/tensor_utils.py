@@ -461,7 +461,7 @@ def random_mask(shape: Shape, drop_prob: float, seed_generator: keras.random.See
     if drop_prob <= 0:
         return 1.0
 
-    dtype = keras.ops.dtype(1.0)
+    dtype = keras.backend.floatx()
     random_vals = keras.random.uniform(shape=shape, dtype=dtype, seed=seed_generator)
     return keras.ops.cast(random_vals > drop_prob, dtype=dtype)
 

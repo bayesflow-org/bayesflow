@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Mapping
 from typing import Any, Literal, Callable
 
 import keras
@@ -6,11 +6,13 @@ from keras import ops
 
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
+    mask_tensor,
     expand_right_as,
     find_network,
     jacobian_trace,
     layer_kwargs,
-    randomly_mask_conditions,
+    random_mask,
+    randomly_mask_along_axis,
     weighted_mean,
     integrate,
     integrate_stochastic,
@@ -60,6 +62,12 @@ class DiffusionModel(InferenceNetwork):
         Additional keyword arguments passed to the noise schedule constructor.
     integrate_kwargs : dict[str, Any], optional
         Configuration dictionary for the ODE/SDE integrator used at inference time.
+    drop_cond_prob : float, optional
+        Probability of dropping conditions during training (i.e., classifier-free guidance).
+        Default is 0.0.
+    drop_target_prob : float, optional
+        Probability of dropping target values during training (i.e., learning arbitrary
+        distributions). Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -69,9 +77,6 @@ class DiffusionModel(InferenceNetwork):
         Diffusion Models in Simulation-Based Inference: A Tutorial Review.
         arXiv preprint arXiv:2512.20685.
     """
-
-    # Guidance-related kwargs that should be passed to score/velocity methods
-    _GUIDANCE_KWARGS_KEYS = {"guidance_constraints", "guidance_function"}
 
     def __init__(
         self,
@@ -121,6 +126,81 @@ class DiffusionModel(InferenceNetwork):
         self.unconditional_mode = False
         self.drop_target_prob = drop_target_prob
 
+    def compute_metrics(
+        self,
+        x: Tensor | Sequence[Tensor],
+        conditions: Tensor = None,
+        sample_weight: Tensor = None,
+        stage: str = "training",
+        **kwargs,
+    ) -> dict[str, Tensor]:
+        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+
+        training = stage == "training"
+        noise_schedule_training_stage = stage == "training" or stage == "validation"
+
+        if conditions is not None:
+            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
+
+        # Sample training diffusion time as a low discrepancy sequence to decrease variance
+        u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
+        i = ops.arange(0, ops.shape(x)[0], dtype=ops.dtype(x))
+        t = (u0 + i / ops.cast(ops.shape(x)[0], dtype=ops.dtype(x))) % 1
+
+        # Calculate the noise level
+        log_snr_t = self.noise_schedule.get_log_snr(t, training=noise_schedule_training_stage)
+        log_snr_t = expand_right_as(log_snr_t, x)
+
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+        weights_for_snr = self.noise_schedule.get_weights_for_snr(log_snr_t=log_snr_t)
+
+        # Generate noise vector
+        eps_t = keras.random.normal(ops.shape(x), dtype=ops.dtype(x), seed=self.seed_generator)
+
+        # Diffuse x to get noisy input to the network
+        diffused_x = alpha_t * x + sigma_t * eps_t
+
+        # Generate optional target dropout mask
+        mask_x = random_mask(ops.shape(x), self.drop_target_prob, self.seed_generator)
+        diffused_x = mask_tensor(diffused_x, mask=mask_x, replacement=x)
+
+        # Obtain output of the network and transform to prediction of the clean signal x
+        norm_log_snr_t = self._transform_log_snr(log_snr_t)
+        subnet_out = self.subnet((diffused_x, norm_log_snr_t, conditions), training=training, **subnet_kwargs)
+        pred = self.output_projector(subnet_out)
+
+        x_pred = self.convert_prediction_to_x(
+            pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
+        )
+
+        # Finly, compute the loss according to the configured loss type.  Note that the standard weighting
+        # functions are defined for the noise prediction loss, so if you use a different loss type, you might want
+        # to adjust the weighting accordingly.
+        match self._loss_type:
+            case "noise":
+                noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
+                loss = weights_for_snr * ops.mean(mask_x * (noise_pred - eps_t) ** 2, axis=-1)
+
+            case "velocity":
+                velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
+                v_t = alpha_t * eps_t - sigma_t * x
+                loss = weights_for_snr * ops.mean(mask_x * (velocity_pred - v_t) ** 2, axis=-1)
+
+            case "F":
+                sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
+                x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
+                x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
+                f_pred = x1 * x_pred - x2 * diffused_x
+                f_t = x1 * x - x2 * diffused_x
+                loss = weights_for_snr * ops.mean(mask_x * (f_pred - f_t) ** 2, axis=-1)
+
+            case _:
+                raise ValueError(f"Unknown loss type: {self._loss_type}")
+
+        loss = weighted_mean(loss, sample_weight)
+
+        return {"loss": loss}
+
     def build(self, xz_shape: Shape, conditions_shape: Shape = None):
         if self.built:
             return
@@ -150,546 +230,6 @@ class DiffusionModel(InferenceNetwork):
             "drop_target_prob": self.drop_target_prob,
         }
         return base_config | serialize(config)
-
-    def _generate_target_mask(self, shape: Shape, seed=None) -> Tensor:
-        """Generate a random binary mask for target dropout.
-
-        Returns a mask where 1.0 = keep, 0.0 = drop, based on drop_target_prob.
-        If drop_target_prob is 0, returns 1.0 (keep all).
-        """
-        if self.drop_target_prob <= 0:
-            return 1.0
-
-        random_vals = keras.random.uniform(shape=shape, dtype=keras.ops.dtype(1.0), seed=seed)
-        return ops.cast(random_vals > self.drop_target_prob, dtype=keras.ops.dtype(1.0))
-
-    def _apply_target_mask(self, data: Tensor, mask: Tensor | None = None, replacement: Tensor = None) -> Tensor:
-        """Apply a target mask to data.
-
-        Parameters
-        ----------
-        data : Tensor
-            The data to mask
-        mask : Tensor or None, optional
-            Binary mask where 1.0 = keep, 0.0 = drop. If None, returns data unchanged.
-        replacement : Tensor, optional
-            Values to use where mask is 0. If None, uses original data.
-
-        Returns
-        -------
-        Tensor
-            Masked data: mask * data + (1 - mask) * replacement, or data if mask is None
-        """
-        if mask is None:
-            return data
-
-        if replacement is None:
-            replacement = data
-        return mask * data + (1 - mask) * replacement
-
-    def convert_prediction_to_x(
-        self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
-    ) -> Tensor:
-        """
-        Converts the neural network prediction into the denoised data `x`, depending on
-        the prediction type configured for the model.
-
-        Parameters
-        ----------
-        pred : Tensor
-            The output prediction from the neural network, typically representing noise,
-            velocity, or a transformation of the clean signal.
-        z : Tensor
-            The noisy latent variable `z` to be denoised.
-        alpha_t : Tensor
-            The noise schedule's scaling factor for the clean signal at time `t`.
-        sigma_t : Tensor
-            The standard deviation of the noise at time `t`.
-        log_snr_t : Tensor
-            The log signal-to-noise ratio at time `t`.
-
-        Returns
-        -------
-        Tensor
-            The reconstructed clean signal `x` from the model prediction.
-        """
-
-        match self._prediction_type:
-            case "velocity":
-                return alpha_t * z - sigma_t * pred
-
-            case "noise":
-                return (z - sigma_t * pred) / alpha_t
-
-            case "F":
-                sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
-                x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
-                x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
-                return x1 * z + x2 * pred
-
-            case "x":
-                return pred
-
-            case "score":
-                return (z + sigma_t**2 * pred) / alpha_t
-
-            case _:
-                raise ValueError(f"Unknown prediction type {self._prediction_type}.")
-
-    def score(
-        self,
-        xz: Tensor,
-        time: float | Tensor = None,
-        log_snr_t: Tensor = None,
-        conditions: Tensor = None,
-        training: bool = False,
-        **kwargs,
-    ) -> Tensor:
-        """
-        Computes the score of the target or latent variable `xz`.
-
-        Parameters
-        ----------
-        xz : Tensor
-            The current state of the latent variable `z`, typically of shape (..., D),
-            where D is the dimensionality of the latent space.
-        time : float or Tensor
-            Scalar or tensor representing the time (or noise level) at which the velocity
-            should be computed. Will be broadcasted to xz. If None, log_snr_t must be provided.
-        log_snr_t : Tensor
-            The log signal-to-noise ratio at time `t`. If None, time must be provided.
-        conditions : Tensor, optional
-            Conditional inputs to the network, such as conditioning variables
-            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
-        training : bool, optional
-            Whether the model is in training mode. Affects behavior of dropout, batch norm,
-            or other stochastic layers. Default is False.
-        **kwargs
-            Subnet kwargs (e.g., attention_mask, mask) for the subnet layer.
-            Also supports guidance_constraints and guidance_function for custom guidance.
-
-        Returns
-        -------
-        Tensor
-            The velocity tensor of the same shape as `xz`, representing the right-hand
-            side of the probability-flow SDE or ODE at the given `time`.
-        """
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
-
-        if log_snr_t is None:
-            log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-            log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-
-        if time is None:
-            time = self.noise_schedule.get_t_from_log_snr(log_snr_t, training=training)
-
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-
-        norm_log_snr = self._transform_log_snr(log_snr_t)
-        subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
-        pred = self.output_projector(subnet_out)
-
-        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
-
-        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
-
-        # Optional constraints for guidance
-        guidance_constraints = kwargs.get("guidance_constraints", None)
-        if guidance_constraints is not None:
-            guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
-            score = score + guidance
-
-        # Optional guidance function
-        guidance_function = kwargs.get("guidance_function", None)
-        if guidance_function is not None:
-            guidance = guidance_function(x=x_pred, time=time)
-            score = score + guidance
-
-        return score
-
-    def velocity(
-        self,
-        xz: Tensor,
-        time: float | Tensor,
-        stochastic_solver: bool,
-        conditions: Tensor = None,
-        training: bool = False,
-        **kwargs,
-    ) -> Tensor:
-        """
-        Computes the velocity (i.e., time derivative) of the target or latent variable `xz` for either
-        a stochastic differential equation (SDE) or ordinary differential equation (ODE).
-
-        Parameters
-        ----------
-        xz : Tensor
-            The current state of the latent variable `z`, typically of shape (..., D),
-            where D is the dimensionality of the latent space.
-        time : float or Tensor
-            Scalar or tensor representing the time (or noise level) at which the velocity
-            should be computed. Will be broadcasted to xz.
-        stochastic_solver : bool
-            If True, computes the velocity for the stochastic formulation (SDE).
-            If False, uses the deterministic formulation (ODE).
-        conditions : Tensor, optional
-            Conditional inputs to the network, such as conditioning variables
-            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
-        training : bool, optional
-            Whether the model is in training mode. Affects behavior of dropout, batch norm,
-            or other stochastic layers. Default is False.
-
-        Returns
-        -------
-        Tensor
-            The velocity tensor of the same shape as `xz`, representing the right-hand
-            side of the SDE or ODE at the given `time`.
-        """
-
-        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-
-        score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training, **kwargs)
-
-        # compute velocity f, g of the SDE or ODE
-        f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
-
-        if stochastic_solver:
-            # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
-            out = f - g_squared * score
-        else:
-            # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
-            out = f - 0.5 * g_squared * score
-
-        # Zero out velocity where target is fixed (during inference only)
-        target_mask = kwargs.get("target_mask", None)
-        if self.drop_target_prob > 0 and not training and target_mask is not None:
-            out = self._apply_target_mask(out, mask=target_mask, replacement=ops.zeros_like(out))
-
-        return out
-
-    def diffusion_term(
-        self,
-        xz: Tensor,
-        time: float | Tensor,
-        training: bool = False,
-        **kwargs,
-    ) -> Tensor:
-        """
-        Compute the diffusion term (standard deviation of the noise) at a given time.
-
-        Parameters
-        ----------
-        xz : Tensor
-            Input tensor of shape (..., D), typically representing the target or latent variables at given time.
-        time : float or Tensor
-            The diffusion time step(s). Can be a scalar or a tensor broadcastable to the shape of `xz`.
-        training : bool, optional
-            Whether to use the training noise schedule (default is False).
-
-        Returns
-        -------
-        Tensor
-            The diffusion term tensor with shape matching `xz` except for the last dimension, which is set to 1.
-        """
-        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t)
-        g = ops.sqrt(g_squared)
-
-        # Zero out diffusion where target is fixed (during inference only)
-        target_mask = kwargs.get("target_mask", None)
-        if self.drop_target_prob > 0 and not training and target_mask is not None:
-            g = self._apply_target_mask(g, mask=target_mask, replacement=ops.zeros_like(g))
-
-        return g
-
-    def _velocity_trace(
-        self,
-        xz: Tensor,
-        time: Tensor,
-        conditions: Tensor = None,
-        max_steps: int = None,
-        training: bool = False,
-        **kwargs,
-    ) -> tuple[Tensor, Tensor]:
-        def f(x):
-            return self.velocity(
-                x, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
-            )
-
-        v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
-
-        return v, ops.expand_dims(trace, axis=-1)
-
-    def _transform_log_snr(self, log_snr: Tensor) -> Tensor:
-        """Transform the log_snr to the range [-1, 1] for the diffusion process."""
-        log_snr_min = self.noise_schedule.log_snr_min
-        log_snr_max = self.noise_schedule.log_snr_max
-        normalized_snr = (log_snr - log_snr_min) / (log_snr_max - log_snr_min)
-        scaled_value = 2 * normalized_snr - 1
-        return scaled_value
-
-    def _forward(
-        self,
-        x: Tensor,
-        conditions: Tensor = None,
-        density: bool = False,
-        training: bool = False,
-        **kwargs,
-    ) -> Tensor | tuple[Tensor, Tensor]:
-        # Extract subnet masks and guidance kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
-        guidance_kwargs = {k: kwargs[k] for k in self._GUIDANCE_KWARGS_KEYS if k in kwargs}
-        subnet_and_guidance_kwargs = subnet_kwargs | guidance_kwargs
-
-        # Remaining kwargs go to the integrator
-        integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
-        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
-        integrate_kwargs = integrate_kwargs | {k: v for k, v in kwargs.items() if k in DIFFUSION_INTEGRATE_DEFAULTS}
-
-        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
-            logging.warning(
-                "Stochastic methods are not supported for density evaluation."
-                " Falling back to tsit5 ODE solver."
-                " To suppress this warning, explicitly pass a method from " + str(DETERMINISTIC_METHODS) + "."
-            )
-            integrate_kwargs["method"] = "tsit5"
-
-        # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
-        targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
-            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = self._apply_target_mask(x, target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
-
-        if density:
-
-            def deltas(time, xz):
-                v, trace = self._velocity_trace(
-                    xz, time=time, conditions=conditions, training=training, **subnet_and_guidance_kwargs
-                )
-                return {"xz": v, "trace": trace}
-
-            state = {
-                "xz": x,
-                "trace": ops.zeros(ops.shape(x)[:-1] + (1,), dtype=ops.dtype(x)),
-            }
-            state = integrate(
-                deltas,
-                state,
-                **integrate_kwargs,
-            )
-
-            z = state["xz"]
-            log_density = self.base_distribution.log_prob(z) + ops.squeeze(state["trace"], axis=-1)
-
-            return z, log_density
-
-        def deltas(time, xz):
-            return {
-                "xz": self.velocity(
-                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
-                )
-            }
-
-        state = {"xz": x}
-        state = integrate(
-            deltas,
-            state,
-            **integrate_kwargs,
-        )
-        z = state["xz"]
-        return z
-
-    def _inverse(
-        self,
-        z: Tensor,
-        conditions: Tensor = None,
-        density: bool = False,
-        training: bool = False,
-        **kwargs,
-    ) -> Tensor | tuple[Tensor, Tensor]:
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
-
-        # Extract guidance kwargs
-        guidance_kwargs = {k: kwargs[k] for k in self._GUIDANCE_KWARGS_KEYS if k in kwargs}
-
-        # Remaining kwargs go to the integrator
-        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
-        integrate_kwargs = integrate_kwargs | self.integrate_kwargs
-        integrate_kwargs = integrate_kwargs | {k: v for k, v in kwargs.items() if k in DIFFUSION_INTEGRATE_DEFAULTS}
-
-        # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
-        targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
-            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = self._apply_target_mask(z, target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
-
-        if density:
-            if integrate_kwargs["method"] in STOCHASTIC_METHODS:
-                logging.warning(
-                    "Stochastic methods are not supported for density computation."
-                    " Falling back to ODE solver."
-                    " Use one of the deterministic methods: " + str(DETERMINISTIC_METHODS) + "."
-                )
-                integrate_kwargs["method"] = "tsit5"
-
-            def deltas(time, xz):
-                v, trace = self._velocity_trace(
-                    xz, time=time, conditions=conditions, training=training, **subnet_and_guidance_kwargs
-                )
-                return {"xz": v, "trace": trace}
-
-            state = {
-                "xz": z,
-                "trace": ops.zeros(ops.shape(z)[:-1] + (1,), dtype=ops.dtype(z)),
-            }
-            state = integrate(deltas, state, **integrate_kwargs)
-
-            x = state["xz"]
-            log_density = self.base_distribution.log_prob(z) - ops.squeeze(state["trace"], axis=-1)
-
-            return x, log_density
-
-        state = {"xz": z}
-        # Combine subnet and guidance kwargs for closures
-        subnet_and_guidance_kwargs = subnet_kwargs | guidance_kwargs
-
-        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
-
-            def deltas(time, xz):
-                return {
-                    "xz": self.velocity(
-                        xz, time=time, stochastic_solver=True, conditions=conditions, training=training, **kwargs
-                    )
-                }
-
-            def diffusion(time, xz):
-                return {"xz": self.diffusion_term(xz, time=time, training=training, **subnet_kwargs)}
-
-            score_fn = None
-            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
-
-                def score_fn(time, xz):
-                    return {
-                        "xz": self.score(
-                            xz, time=time, conditions=conditions, training=training, **subnet_and_guidance_kwargs
-                        )
-                    }
-
-            state = integrate_stochastic(
-                drift_fn=deltas,
-                diffusion_fn=diffusion,
-                score_fn=score_fn,
-                noise_schedule=self.noise_schedule,
-                state=state,
-                seed=self.seed_generator,
-                **integrate_kwargs,
-            )
-        else:
-
-            def deltas(time, xz):
-                return {
-                    "xz": self.velocity(
-                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
-                    )
-                }
-
-            state = integrate(
-                deltas,
-                state,
-                **integrate_kwargs,
-            )
-
-        x = state["xz"]
-        return x
-
-    def compute_metrics(
-        self,
-        x: Tensor | Sequence[Tensor],
-        conditions: Tensor = None,
-        sample_weight: Tensor = None,
-        stage: str = "training",
-        **kwargs,
-    ) -> dict[str, Tensor]:
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
-
-        training = stage == "training"
-        # use same noise schedule for training and validation to keep them comparable
-        noise_schedule_training_stage = stage == "training" or stage == "validation"
-
-        if self.drop_cond_prob > 0 and conditions is not None:
-            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
-
-        # sample training diffusion time as low discrepancy sequence to decrease variance
-        u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
-        i = ops.arange(0, ops.shape(x)[0], dtype=ops.dtype(x))
-        t = (u0 + i / ops.cast(ops.shape(x)[0], dtype=ops.dtype(x))) % 1
-
-        # calculate the noise level
-        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t, training=noise_schedule_training_stage), x)
-
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-        weights_for_snr = self.noise_schedule.get_weights_for_snr(log_snr_t=log_snr_t)
-
-        # generate noise vector
-        eps_t = keras.random.normal(ops.shape(x), dtype=ops.dtype(x), seed=self.seed_generator)
-
-        # diffuse x
-        diffused_x = alpha_t * x + sigma_t * eps_t
-
-        # Generate target dropout mask
-        mask_x = self._generate_target_mask(ops.shape(x), seed=self.seed_generator)
-        diffused_x = self._apply_target_mask(diffused_x, mask=mask_x, replacement=x)
-
-        # calculate output of the network
-        norm_log_snr_t = self._transform_log_snr(log_snr_t)
-        subnet_out = self.subnet((diffused_x, norm_log_snr_t, conditions), training=training, **subnet_kwargs)
-        pred = self.output_projector(subnet_out)
-
-        x_pred = self.convert_prediction_to_x(
-            pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
-        )
-
-        # convert predicted target (x_pred) to corresponding diffusion prediction
-        match self._loss_type:
-            case "noise":
-                noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
-                loss = weights_for_snr * ops.mean(mask_x * (noise_pred - eps_t) ** 2, axis=-1)
-
-            case "velocity":
-                velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
-                v_t = alpha_t * eps_t - sigma_t * x
-                loss = weights_for_snr * ops.mean(mask_x * (velocity_pred - v_t) ** 2, axis=-1)
-
-            case "F":
-                sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
-                x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
-                x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
-                f_pred = x1 * x_pred - x2 * diffused_x
-                f_t = x1 * x - x2 * diffused_x
-                loss = weights_for_snr * ops.mean(mask_x * (f_pred - f_t) ** 2, axis=-1)
-
-            case _:
-                raise ValueError(f"Unknown loss type: {self._loss_type}")
-
-        loss = weighted_mean(loss, sample_weight)
-
-        return {"loss": loss}
 
     def guidance_constraint_term(
         self,
@@ -776,3 +316,403 @@ class DiffusionModel(InferenceNetwork):
                 raise NotImplementedError(f"Unsupported backend: {backend}")
 
         return guidance_strength * grad
+
+    def convert_prediction_to_x(
+        self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
+    ) -> Tensor:
+        """
+        Converts the neural network prediction into the denoised data `x`, depending on
+        the prediction type configured for the model.
+
+        Parameters
+        ----------
+        pred : Tensor
+            The output prediction from the neural network, typically representing noise,
+            velocity, or a transformation of the clean signal.
+        z : Tensor
+            The noisy latent variable `z` to be denoised.
+        alpha_t : Tensor
+            The noise schedule's scaling factor for the clean signal at time `t`.
+        sigma_t : Tensor
+            The standard deviation of the noise at time `t`.
+        log_snr_t : Tensor
+            The log signal-to-noise ratio at time `t`.
+
+        Returns
+        -------
+        Tensor
+            The reconstructed clean signal `x` from the model prediction.
+        """
+
+        match self._prediction_type:
+            case "velocity":
+                return alpha_t * z - sigma_t * pred
+
+            case "noise":
+                return (z - sigma_t * pred) / alpha_t
+
+            case "F":
+                sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
+                x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
+                x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
+                return x1 * z + x2 * pred
+
+            case "x":
+                return pred
+
+            case "score":
+                return (z + sigma_t**2 * pred) / alpha_t
+
+            case _:
+                raise ValueError(f"Unknown prediction type {self._prediction_type}.")
+
+    def score(
+        self,
+        xz: Tensor,
+        time: float | Tensor = None,
+        log_snr_t: Tensor = None,
+        conditions: Tensor = None,
+        training: bool = False,
+        guidance_constraints: Mapping[str, Any] = None,
+        guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Computes the score of the target or latent variable `xz`.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable `z`, typically of shape (..., D),
+            where D is the dimensionality of the latent space.
+        time : float or Tensor
+            Scalar or tensor representing the time (or noise level) at which the velocity
+            should be computed. Will be broadcasted to xz. If None, log_snr_t must be provided.
+        log_snr_t : Tensor
+            The log signal-to-noise ratio at time `t`. If None, time must be provided.
+        conditions : Tensor, optional
+            Conditional inputs to the network, such as conditioning variables
+            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
+        training : bool, optional
+            Whether the model is in training mode. Affects behavior of dropout, batch norm,
+            or other stochastic layers. Default is False.
+        guidance_constraints : dict[str, Any], optional
+            A dictionary of parameters for computing a guidance constraint term, which is
+            added to the score for guided sampling. The specific keys and values depend on
+            the implementation of `guidance_constraint_term`.
+        guidance_function : Callable[[Tensor, Tensor], Tensor], optional
+            A custom function for computing a guidance term, which is added to the score
+            for guided sampling. The function should accept the predicted clean signal
+            `x_pred` and the current time `time` as inputs and return a tensor of the same
+            shape as `xz`.
+        **kwargs
+            Subnet kwargs (e.g., attention_mask, mask) for the subnet layer.
+            Also supports guidance_constraints and guidance_function for custom guidance.
+
+        Returns
+        -------
+        Tensor
+            The velocity tensor of the same shape as `xz`, representing the right-hand
+            side of the probability-flow SDE or ODE at the given `time`.
+        """
+        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+
+        if log_snr_t is None:
+            log_snr_t = self.noise_schedule.get_log_snr(t=time, training=training)
+            log_snr_t = expand_right_as(log_snr_t, xz)
+            log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
+        if time is None:
+            time = self.noise_schedule.get_t_from_log_snr(log_snr_t, training=training)
+
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+
+        norm_log_snr = self._transform_log_snr(log_snr_t)
+        subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
+        pred = self.output_projector(subnet_out)
+
+        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
+
+        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+
+        if guidance_constraints is not None:
+            guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
+            score = score + guidance
+
+        if guidance_function is not None:
+            guidance = guidance_function(x=x_pred, time=time)
+            score = score + guidance
+
+        return score
+
+    def velocity(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        conditions: Tensor = None,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Computes the velocity (i.e., time derivative) of the target or latent variable `xz` for either
+        a stochastic differential equation (SDE) or ordinary differential equation (ODE).
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable `z`, typically of shape (..., D),
+            where D is the dimensionality of the latent space.
+        time : float or Tensor
+            Scalar or tensor representing the time (or noise level) at which the velocity
+            should be computed. Will be broadcasted to xz.
+        stochastic_solver : bool
+            If True, computes the velocity for the stochastic formulation (SDE).
+            If False, uses the deterministic formulation (ODE).
+        conditions : Tensor, optional
+            Conditional inputs to the network, such as conditioning variables
+            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
+        training : bool, optional
+            Whether the model is in training mode. Affects behavior of dropout, batch norm,
+            or other stochastic layers. Default is False.
+
+        Returns
+        -------
+        Tensor
+            The velocity tensor of the same shape as `xz`, representing the right-hand
+            side of the SDE or ODE at the given `time`.
+        """
+
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
+        score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training, **kwargs)
+
+        # compute velocity f, g of the SDE or ODE
+        f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
+
+        if stochastic_solver:
+            # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
+            out = f - g_squared * score
+        else:
+            # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
+            out = f - 0.5 * g_squared * score
+
+        # Zero out velocity where target is fixed (during inference only)
+        target_mask = kwargs.get("target_mask", None)
+        if self.drop_target_prob > 0 and not training and target_mask is not None:
+            out = mask_tensor(out, mask=target_mask)
+
+        return out
+
+    def diffusion_term(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Compute the diffusion term (standard deviation of the noise) at a given time.
+
+        Parameters
+        ----------
+        xz : Tensor
+            Input tensor of shape (..., D), typically representing the target or latent variables at given time.
+        time : float or Tensor
+            The diffusion time step(s). Can be a scalar or a tensor broadcastable to the shape of `xz`.
+        training : bool, optional
+            Whether to use the training noise schedule (default is False).
+
+        Returns
+        -------
+        Tensor
+            The diffusion term tensor with shape matching `xz` except for the last dimension, which is set to 1.
+        """
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t)
+        g = ops.sqrt(g_squared)
+
+        # Zero out diffusion where target is fixed (during inference only)
+        target_mask = kwargs.get("target_mask", None)
+        if self.drop_target_prob > 0 and not training and target_mask is not None:
+            g = mask_tensor(g, mask=target_mask)
+
+        return g
+
+    def _velocity_trace(
+        self,
+        xz: Tensor,
+        time: Tensor,
+        conditions: Tensor = None,
+        max_steps: int = None,
+        training: bool = False,
+        **kwargs,
+    ) -> tuple[Tensor, Tensor]:
+        def f(x):
+            return self.velocity(
+                x, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+            )
+
+        v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
+
+        return v, ops.expand_dims(trace, axis=-1)
+
+    def _transform_log_snr(self, log_snr: Tensor) -> Tensor:
+        """Transform the log_snr to the range [-1, 1] for the diffusion process."""
+        log_snr_min = self.noise_schedule.log_snr_min
+        log_snr_max = self.noise_schedule.log_snr_max
+        normalized_snr = (log_snr - log_snr_min) / (log_snr_max - log_snr_min)
+        scaled_value = 2 * normalized_snr - 1
+        return scaled_value
+
+    def _forward(
+        self,
+        x: Tensor,
+        conditions: Tensor = None,
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        # Note: integrators will cherry-pick necessary kwargs, so
+        # we can be general (i.e., sloppy) here
+        integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
+        integrate_kwargs |= self.integrate_kwargs
+        integrate_kwargs |= kwargs
+
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
+            logging.warning(
+                "Stochastic methods are not supported for density evaluation."
+                " Falling back to tsit5 ODE solver."
+                " To suppress this warning, explicitly pass a method from " + str(DETERMINISTIC_METHODS) + "."
+            )
+            integrate_kwargs["method"] = "tsit5"
+
+        # Apply user-provided target mask if available
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
+            x = mask_tensor(x, target_mask, replacement=targets_fixed)
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
+
+        if density:
+
+            def deltas(time, xz):
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training, **kwargs)
+                return {"xz": v, "trace": trace}
+
+            state = {
+                "xz": x,
+                "trace": ops.zeros(ops.shape(x)[:-1] + (1,), dtype=ops.dtype(x)),
+            }
+            state = integrate(deltas, state, **integrate_kwargs)
+
+            z = state["xz"]
+            log_density = self.base_distribution.log_prob(z) + ops.squeeze(state["trace"], axis=-1)
+
+            return z, log_density
+
+        def deltas(time, xz):
+            return {
+                "xz": self.velocity(
+                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+                )
+            }
+
+        state = {"xz": x}
+        state = integrate(deltas, state, **integrate_kwargs)
+        z = state["xz"]
+        return z
+
+    def _inverse(
+        self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        # Build integrate kwargs: hardcoded defaults → instance config → call-time overrides
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
+        integrate_kwargs |= self.integrate_kwargs
+        integrate_kwargs |= kwargs
+
+        # Apply user-provided target mask if available
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
+            z = mask_tensor(z, target_mask, replacement=targets_fixed)
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
+
+        if density:
+            if integrate_kwargs["method"] in STOCHASTIC_METHODS:
+                logging.warning(
+                    "Stochastic methods are not supported for density computation."
+                    " Falling back to ODE solver."
+                    " Use one of the deterministic methods: " + str(DETERMINISTIC_METHODS) + "."
+                )
+                integrate_kwargs["method"] = "tsit5"
+
+            def deltas(time, xz):
+                v, trace = self._velocity_trace(xz, time=time, conditions=conditions, training=training, **kwargs)
+                return {"xz": v, "trace": trace}
+
+            state = {
+                "xz": z,
+                "trace": ops.zeros(ops.shape(z)[:-1] + (1,), dtype=ops.dtype(z)),
+            }
+            state = integrate(deltas, state, **integrate_kwargs)
+
+            x = state["xz"]
+            log_density = self.base_distribution.log_prob(z) - ops.squeeze(state["trace"], axis=-1)
+
+            return x, log_density
+
+        state = {"xz": z}
+
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
+
+            def deltas(time, xz):
+                return {
+                    "xz": self.velocity(
+                        xz, time=time, stochastic_solver=True, conditions=conditions, training=training, **kwargs
+                    )
+                }
+
+            def diffusion(time, xz):
+                return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
+
+            score_fn = None
+            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
+
+                def score_fn(time, xz):
+                    return {"xz": self.score(xz, time=time, conditions=conditions, training=training, **kwargs)}
+
+            state = integrate_stochastic(
+                drift_fn=deltas,
+                diffusion_fn=diffusion,
+                score_fn=score_fn,
+                noise_schedule=self.noise_schedule,
+                state=state,
+                seed=self.seed_generator,
+                **integrate_kwargs,
+            )
+        else:
+
+            def deltas(time, xz):
+                return {
+                    "xz": self.velocity(
+                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+                    )
+                }
+
+            state = integrate(deltas, state, **integrate_kwargs)
+
+        x = state["xz"]
+        return x

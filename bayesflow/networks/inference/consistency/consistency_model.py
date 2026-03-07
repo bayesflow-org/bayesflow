@@ -7,7 +7,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils import (
     find_network,
     layer_kwargs,
-    randomly_mask_conditions,
+    randomly_mask_along_axis,
     weighted_mean,
     expand_right_as,
     logging,
@@ -334,7 +334,7 @@ class ConsistencyModel(InferenceNetwork):
         discretized_time = ops.take(self.discretized_times, discretization_index, axis=0)
 
         if self.drop_cond_prob > 0 and conditions is not None:
-            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
+            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
 
         # Randomly sample t_n and t_[n+1] and reshape to (batch_size, 1)
         # adapted noise schedule from [2], Section 3.5

@@ -5,6 +5,7 @@ import keras
 from bayesflow.distributions import Distribution
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
+    mask_tensor,
     logging,
     expand_right_as,
     find_network,
@@ -12,7 +13,8 @@ from bayesflow.utils import (
     jacobian_trace,
     layer_kwargs,
     optimal_transport,
-    randomly_mask_conditions,
+    random_mask,
+    randomly_mask_along_axis,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serialize, serializable
@@ -121,6 +123,54 @@ class FlowMatching(InferenceNetwork):
         self.unconditional_mode = False
         self.drop_target_prob = drop_target_prob
 
+    def compute_metrics(
+        self,
+        x: Tensor | Sequence[Tensor],
+        conditions: Tensor = None,
+        sample_weight: Tensor = None,
+        stage: str = "training",
+        **kwargs,
+    ) -> dict[str, Tensor]:
+        if isinstance(x, Sequence):
+            x0, x1, t, x, target_velocity = x
+        else:
+            x1 = x
+            x0 = self.base_distribution.sample(keras.ops.shape(x1)[:-1])
+
+            if self.use_optimal_transport:
+                # we must choose between resampling x0 or x1
+                # since the data is possibly noisy and may contain outliers, it is better
+                # to possibly drop some samples from x1 than from x0
+                # in the marginal over multiple batches, this is not a problem
+                x0, x1, conditions = optimal_transport(
+                    x0,
+                    x1,
+                    conditions=conditions,
+                    seed=self.seed_generator,
+                    **self.optimal_transport_kwargs,
+                )
+
+            u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
+            # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform
+            t = u ** (1 + self.time_power_law_alpha)
+            t = expand_right_as(t, x0)
+
+            x = t * x1 + (1 - t) * x0
+            target_velocity = x1 - x0
+
+        if self.drop_cond_prob > 0 and conditions is not None:
+            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
+
+        mask_x = random_mask(keras.ops.shape(x), self.drop_target_prob, self.seed_generator)
+        x = mask_tensor(x, mask=mask_x, replacement=x1)
+
+        predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training", **kwargs)
+
+        loss = self.loss_fn(mask_x * target_velocity, mask_x * predicted_velocity)
+        loss = weighted_mean(loss, sample_weight)
+
+        return {"loss": loss}
+
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
             # building when the network is already built can cause issues with serialization
@@ -161,44 +211,6 @@ class FlowMatching(InferenceNetwork):
 
         return base_config | serialize(config)
 
-    def _generate_target_mask(self, shape: Shape, seed=None) -> Tensor:
-        """Generate a random binary mask for target dropout.
-
-        Returns a mask where 1.0 = keep, 0.0 = drop, based on drop_target_prob.
-        If drop_target_prob is 0, returns 1.0 (keep all).
-        """
-        from keras import ops
-
-        if self.drop_target_prob <= 0:
-            return 1.0
-
-        random_vals = keras.random.uniform(shape=shape, dtype=keras.ops.dtype(1.0), seed=seed)
-        return ops.cast(random_vals > self.drop_target_prob, dtype=keras.ops.dtype(1.0))
-
-    def _apply_target_mask(self, data: Tensor, mask: Tensor | None = None, replacement: Tensor = None) -> Tensor:
-        """Apply a target mask to data.
-
-        Parameters
-        ----------
-        data : Tensor
-            The data to mask
-        mask : Tensor or None, optional
-            Binary mask where 1.0 = keep, 0.0 = drop. If None, returns data unchanged.
-        replacement : Tensor, optional
-            Values to use where mask is 0. If None, uses original data.
-
-        Returns
-        -------
-        Tensor
-            Masked data: mask * data + (1 - mask) * replacement, or data if mask is None
-        """
-        if mask is None:
-            return data
-
-        if replacement is None:
-            replacement = data
-        return mask * data + (1 - mask) * replacement
-
     def velocity(
         self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False, **kwargs
     ) -> Tensor:
@@ -214,7 +226,7 @@ class FlowMatching(InferenceNetwork):
         # Zero out velocity where target is fixed (during inference only)
         target_mask = kwargs.get("target_mask", None)
         if self.drop_target_prob > 0 and not training and target_mask is not None:
-            out = self._apply_target_mask(out, mask=target_mask, replacement=keras.ops.zeros_like(out))
+            out = mask_tensor(out, mask=target_mask)
         return out
 
     def _velocity_trace(
@@ -236,10 +248,8 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        # Remaining kwargs go to the integrator
-        integrate_kwargs = self.integrate_kwargs | {
-            k: v for k, v in kwargs.items() if k in FLOW_MATCHING_INTEGRATE_DEFAULTS
-        }
+        # Build integrate kwargs: instance config → call-time overrides
+        integrate_kwargs = self.integrate_kwargs | kwargs
 
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
@@ -247,7 +257,7 @@ class FlowMatching(InferenceNetwork):
         if self.drop_target_prob > 0 and target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = self._apply_target_mask(x, target_mask, replacement=targets_fixed)
+            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
@@ -280,10 +290,8 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        # Remaining kwargs go to the integrator
-        integrate_kwargs = self.integrate_kwargs | {
-            k: v for k, v in kwargs.items() if k in FLOW_MATCHING_INTEGRATE_DEFAULTS
-        }
+        # Build integrate kwargs: instance config → call-time overrides
+        integrate_kwargs = self.integrate_kwargs | kwargs
 
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
@@ -291,7 +299,7 @@ class FlowMatching(InferenceNetwork):
         if self.drop_target_prob > 0 and target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = self._apply_target_mask(z, target_mask, replacement=targets_fixed)
+            z = mask_tensor(z, mask=target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
@@ -320,58 +328,3 @@ class FlowMatching(InferenceNetwork):
         x = state["xz"]
 
         return x
-
-    def compute_metrics(
-        self,
-        x: Tensor | Sequence[Tensor],
-        conditions: Tensor = None,
-        sample_weight: Tensor = None,
-        stage: str = "training",
-        **kwargs,
-    ) -> dict[str, Tensor]:
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
-
-        if isinstance(x, Sequence):
-            # already pre-configured
-            x0, x1, t, x, target_velocity = x
-        else:
-            x1 = x
-            x0 = self.base_distribution.sample(keras.ops.shape(x1)[:-1])
-
-            if self.use_optimal_transport:
-                # we must choose between resampling x0 or x1
-                # since the data is possibly noisy and may contain outliers, it is better
-                # to possibly drop some samples from x1 than from x0
-                # in the marginal over multiple batches, this is not a problem
-                x0, x1, conditions = optimal_transport(
-                    x0,
-                    x1,
-                    conditions=conditions,
-                    seed=self.seed_generator,
-                    **self.optimal_transport_kwargs,
-                )
-
-            u = keras.random.uniform((keras.ops.shape(x0)[0],), seed=self.seed_generator)
-            # p(t) ∝ t^(1/(1+α)), the inverse CDF: F^(-1)(u) = u^(1+α), α=0 is uniform
-            t = u ** (1 + self.time_power_law_alpha)
-            t = expand_right_as(t, x0)
-
-            x = t * x1 + (1 - t) * x0
-            target_velocity = x1 - x0
-
-        if self.drop_cond_prob > 0 and conditions is not None:
-            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
-
-        # Generate target dropout mask
-        mask_x = self._generate_target_mask(keras.ops.shape(x), seed=self.seed_generator)
-        x = self._apply_target_mask(x, mask=mask_x, replacement=x1)
-
-        predicted_velocity = self.velocity(
-            x, time=t, conditions=conditions, training=stage == "training", **subnet_kwargs
-        )
-
-        loss = self.loss_fn(mask_x * target_velocity, mask_x * predicted_velocity)
-        loss = weighted_mean(loss, sample_weight)
-
-        return {"loss": loss}

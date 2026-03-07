@@ -11,7 +11,7 @@ from bayesflow.utils import (
     expand_right_as,
     expand_right_to,
     layer_kwargs,
-    randomly_mask_conditions,
+    randomly_mask_along_axis,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serializable, serialize
@@ -225,7 +225,7 @@ class StableConsistencyModel(InferenceNetwork):
         subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
 
         if self.drop_cond_prob > 0 and conditions is not None:
-            conditions = randomly_mask_conditions(conditions, self.drop_cond_prob, self.seed_generator)
+            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
 
         # generate noise vector
         z = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.sigma

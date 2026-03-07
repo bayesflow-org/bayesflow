@@ -78,6 +78,7 @@ from .plot_utils import (
 from .serialization import serialize_value_or_type, deserialize_value_or_type
 
 from .tensor_utils import (
+    mask_tensor,
     concatenate_valid,
     concatenate_valid_shapes,
     expand,
@@ -93,7 +94,8 @@ from .tensor_utils import (
     fill_triangular_matrix,
     pad,
     positive_diag,
-    randomly_mask_conditions,
+    random_mask,
+    randomly_mask_along_axis,
     searchsorted,
     size_of,
     stack_valid,

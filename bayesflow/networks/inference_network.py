@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import keras
 
 from bayesflow.types import Shape, Tensor
@@ -57,9 +59,21 @@ class InferenceNetwork(keras.Layer):
         :func:`~bayesflow.utils.layer_kwargs`.
     """
 
+    # Valid mask keys to pass to subnet
+    _SUBNET_MASK_KEYS = {"attention_mask", "mask"}
+
     def __init__(self, base_distribution: str = "normal", **kwargs):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
+
+    @staticmethod
+    def _collect_mask_kwargs(keys: Sequence[str], source: dict) -> dict:
+        """Extract mask kwargs from source dict.
+
+        Looks up each key in *keys* and includes it in the result if its value
+        is not ``None``.
+        """
+        return {key: source[key] for key in keys if source.get(key) is not None}
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
         if self.built:
@@ -106,7 +120,7 @@ class InferenceNetwork(keras.Layer):
         return log_density
 
     def compute_metrics(
-        self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
+        self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
         raise NotImplementedError
 

@@ -2,7 +2,7 @@ import pytest
 import keras
 import numpy as np
 
-from bayesflow.networks.embeddings import FourierEmbedding, RecurrentEmbedding, Time2Vec, FiLM
+from bayesflow.networks.components.embeddings import FourierEmbedding, RecurrentEmbedding, Time2Vec, FiLM
 
 
 def test_fourier_embedding_output_shape_and_type():
@@ -106,7 +106,7 @@ def test_film_modulation():
 
 def test_film_integration_with_conditional_residual():
     """Test FiLM works correctly when used in ConditionalResidual."""
-    from bayesflow.networks.residual import ConditionalResidual
+    from bayesflow.networks.components.residual import ConditionalResidual
 
     width = 32
     batch_size = 4

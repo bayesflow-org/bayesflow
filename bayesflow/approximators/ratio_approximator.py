@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import serialize, serializable
 from .approximator import Approximator
 from .helpers import ConditionBuilder
 
-from ..networks.standardization import Standardization
+from ..networks.components.standardization import Standardization
 
 
 @serializable("bayesflow.approximators")

@@ -3,14 +3,14 @@ import pytest
 
 @pytest.fixture()
 def actnorm():
-    from bayesflow.networks.coupling_flow.actnorm import ActNorm
+    from bayesflow.networks.inference.coupling.actnorm import ActNorm
 
     return ActNorm()
 
 
 @pytest.fixture()
 def dual_coupling(request, transform):
-    from bayesflow.networks.coupling_flow.couplings import DualCoupling
+    from bayesflow.networks.inference.coupling.layers import DualCoupling
 
     return DualCoupling(transform=transform)
 
@@ -22,7 +22,7 @@ def invertible_layer(request, transform):
 
 @pytest.fixture()
 def single_coupling(request, transform):
-    from bayesflow.networks.coupling_flow.couplings import SingleCoupling
+    from bayesflow.networks.inference.coupling.layers import SingleCoupling
 
     return SingleCoupling(transform=transform)
 

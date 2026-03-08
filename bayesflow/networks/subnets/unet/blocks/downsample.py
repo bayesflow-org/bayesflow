@@ -6,7 +6,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
-from ... import Sequential
+from ....helpers import Sequential
 
 
 @serializable("bayesflow.networks")

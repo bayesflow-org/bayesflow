@@ -6,8 +6,8 @@ import keras
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize
 
-from ..sequential import Sequential
-from ..residual import Residual
+from ...helpers import Sequential
+from ...helpers import Residual
 
 
 @serializable("bayesflow.networks")

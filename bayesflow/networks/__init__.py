@@ -22,10 +22,9 @@ from .summary import FusionNetwork
 from .summary import TimeSeriesNetwork
 from .summary import SetTransformer, TimeSeriesTransformer, FusionTransformer
 
-# Components (reusable building blocks)
-from .components import MLP, TimeMLP
-from .components import Sequential
-from .components import UViT, UNet, ResidualUViT
+# Subnets (backbones for inference / summary networks)
+from .subnets import MLP, TimeMLP
+from .subnets import UViT, UNet, ResidualUViT
 
 from ..utils._docs import _add_imports_to_all
 

@@ -7,7 +7,7 @@ from bayesflow.utils.serialization import serializable
 from .attention import MultiHeadAttention
 from .transformer import Transformer
 
-from ...components.embeddings import Time2Vec, RecurrentEmbedding
+from ...helpers import Time2Vec, RecurrentEmbedding
 
 
 @serializable("bayesflow.networks")

@@ -1,10 +1,10 @@
 import keras
 
-from bayesflow.networks.components.mlp import MLP
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
+from ....subnets import MLP
 
 from .multihead_attention import MultiHeadAttention
 

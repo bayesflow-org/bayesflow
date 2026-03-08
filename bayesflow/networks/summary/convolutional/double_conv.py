@@ -2,9 +2,10 @@ from typing import Literal
 
 import keras
 
-from bayesflow.networks.components.unet.blocks import SimpleNorm
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
+
+from ...helpers import SimpleNorm
 
 
 @serializable("bayesflow.networks")

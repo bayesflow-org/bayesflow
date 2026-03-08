@@ -7,7 +7,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
-from bayesflow.networks.components.unet.blocks.norms import SimpleNorm
+from ....helpers import SimpleNorm
 
 
 @serializable("bayesflow.networks")

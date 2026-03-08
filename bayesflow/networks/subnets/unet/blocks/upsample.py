@@ -2,10 +2,11 @@ from typing import Literal
 
 import keras
 
-from bayesflow.networks.components.sequential import Sequential
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize, deserialize
+
+from ....helpers import Sequential
 
 
 @serializable("bayesflow.networks")

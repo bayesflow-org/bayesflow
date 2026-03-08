@@ -1,11 +1,10 @@
 import keras
 
-from bayesflow.networks.components.sequential import Sequential
+
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-
-from bayesflow.networks.components.embeddings import FourierEmbedding
+from ....helpers import Sequential, FourierEmbedding
 
 
 @serializable("bayesflow.networks")

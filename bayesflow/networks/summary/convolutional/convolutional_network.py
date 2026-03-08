@@ -7,10 +7,12 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs, logging
 from bayesflow.utils.serialization import serializable, serialize
 
-from ...components.residual import Residual
-from ...summary_network import SummaryNetwork
-from ..transformers.attention import PoolingByMultiHeadAttention
 from .double_conv import DoubleConv
+
+from ..transformers.attention import PoolingByMultiHeadAttention
+
+from ...helpers import Residual
+from ...summary_network import SummaryNetwork
 
 
 @serializable("bayesflow.networks")

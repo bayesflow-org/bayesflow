@@ -8,7 +8,7 @@ from bayesflow.utils import find_pooling
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
-from ...components.mlp import MLP
+from ...subnets import MLP
 
 
 @serializable("bayesflow.networks")

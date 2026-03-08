@@ -1,11 +1,12 @@
 import keras
 from keras import layers
 
-from bayesflow.networks.components.mlp import MLP
+
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
+from ....subnets import MLP
 
 
 @serializable("bayesflow.networks")

@@ -1,6 +1,6 @@
 import pytest
 
-from bayesflow.networks.components.residual import Residual, ConditionalResidual
+from bayesflow.networks.helpers.residual import Residual, ConditionalResidual
 
 
 @pytest.fixture()

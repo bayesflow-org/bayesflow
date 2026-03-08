@@ -4,7 +4,8 @@ import keras
 
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-from bayesflow.networks.components.embeddings import FiLM
+
+from ..embeddings import FiLM
 
 
 @serializable("bayesflow.networks")

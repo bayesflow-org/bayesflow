@@ -2,11 +2,12 @@ from typing import Literal, Callable, Sequence
 
 import keras
 
-from bayesflow.networks.components.embeddings import FourierEmbedding
-from bayesflow.networks.components.residual import ConditionalResidual
 from bayesflow.types import Tensor
 from bayesflow.utils import concatenate_valid, layer_kwargs
 from bayesflow.utils.serialization import serialize, serializable, deserialize
+
+from ...helpers import FourierEmbedding
+from ...helpers import ConditionalResidual
 
 
 @serializable("bayesflow.networks")

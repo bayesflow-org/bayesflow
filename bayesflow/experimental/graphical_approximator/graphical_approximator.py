@@ -9,6 +9,7 @@ import sympy as sp
 from bayesflow.approximators import Approximator
 from bayesflow.experimental.graphical_approximator.shape_operations import resolve_shapes
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
+from bayesflow.types import Shape
 from bayesflow.utils import logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
@@ -440,24 +441,23 @@ class GraphicalApproximator(Approximator):
 
         return output
 
+    def _meta_dict_from_data(self, data: dict[str, np.ndarray]) -> dict[str, Shape]:
+        """
+        Infers meta information (sympy symbol → concrete value) from data shapes by comparing
+        the symbolic template shapes against the concrete shapes of the observed data.
+        """
+        meta_dict = {}
+        data_shapes = self._data_shapes(data)
+        output_shapes = self.graph.simulation_graph.output_shapes()
 
-def _meta_dict_from_data(self, data: dict[str, np.ndarray]) -> dict[str, Shape]:
-    """
-    Infers meta information (sympy symbol → concrete value) from data shapes by comparing
-    the symbolic template shapes against the concrete shapes of the observed data.
-    """
-    meta_dict = {}
-    data_shapes = self._data_shapes(data)
-    output_shapes = self.graph.simulation_graph.output_shapes()
+        for k, v in data_shapes.items():
+            for dim_t, dim_c in zip(output_shapes.get(k, ()), v):
+                if isinstance(dim_t, sp.Expr):
+                    for sym in dim_t.free_symbols:
+                        if sym not in meta_dict:
+                            meta_dict[sym] = dim_c
 
-    for k, v in data_shapes.items():
-        for dim_t, dim_c in zip(output_shapes.get(k, ()), v):
-            if isinstance(dim_t, sp.Expr):
-                for sym in dim_t.free_symbols:
-                    if sym not in meta_dict:
-                        meta_dict[sym] = dim_c
-
-    return meta_dict
+        return meta_dict
 
     def _batch_size_from_data(self, data):
         """

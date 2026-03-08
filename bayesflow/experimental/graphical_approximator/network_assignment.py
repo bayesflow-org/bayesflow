@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import keras
+
 from bayesflow.experimental.graphs.utils import sort_nodes_topologically
 
 from .shape_inference import inference_variable_shapes_by_network, summary_output_shapes_by_network

@@ -18,6 +18,8 @@ from .sequential import Sequential
 from .summary_network import SummaryNetwork
 from .time_series_network import TimeSeriesNetwork
 from .transformers import SetTransformer, TimeSeriesTransformer, FusionTransformer
+from .convolutional_network import ConvolutionalNetwork
+from .unet import UViT, UNet, ResidualUViT
 
 from ..utils._docs import _add_imports_to_all
 

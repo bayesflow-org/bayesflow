@@ -1,1 +1,2 @@
-from .autograd import grad, value_and_grad
+from .autodiff import grad, value_and_grad
+from .jit import jit

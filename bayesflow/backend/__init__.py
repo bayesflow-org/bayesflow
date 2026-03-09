@@ -4,6 +4,7 @@ import importlib
 try:
     backend = importlib.import_module(f"._{keras.backend.backend()}", package=__name__)
 
+    jit = backend.jit
     grad = backend.grad
     value_and_grad = backend.value_and_grad
 

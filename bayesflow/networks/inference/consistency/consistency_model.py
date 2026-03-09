@@ -264,10 +264,11 @@ class ConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
 
         steps = int(kwargs.get("steps", self.s0 + 1))
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+
         if steps not in self.unique_n:
             logging.warning(
                 "The number of discretization steps is not equal to the number of unique steps used during training. "
@@ -278,42 +279,23 @@ class ConsistencyModel(InferenceNetwork):
         discretized_time = keras.ops.flip(self._discretize_time(steps), axis=-1)
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
 
-        # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
-        targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
-            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
-
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
             logging.info("Condition masking is applied: conditions are set to zero.")
 
-        x = self.consistency_function(
-            x,
-            t,
-            conditions=conditions,
-            training=training,
-            target_mask=target_mask,
-            targets_fixed=targets_fixed,
-            **subnet_kwargs,
-        )
+        x = self.consistency_function(x, t, conditions=conditions, training=training, **kwargs)
+
+        if target_mask is not None and self.drop_target_prob > 0:
+            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
             x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
-            x_n = mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
             t = keras.ops.full_like(t, discretized_time[n])
-            x = self.consistency_function(
-                x_n,
-                t,
-                conditions=conditions,
-                training=training,
-                target_mask=target_mask,
-                targets_fixed=targets_fixed,
-                **subnet_kwargs,
-            )
+            x = self.consistency_function(x_n, t, conditions=conditions, training=training, **kwargs)
+
+            if target_mask is not None and self.drop_target_prob > 0:
+                x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         return x
 
@@ -340,9 +322,11 @@ class ConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional
             Additional keyword arguments to pass to the subnet.
         """
-        target_mask = kwargs.pop("target_mask", None)
-        targets_fixed = kwargs.pop("targets_fixed", None)
-        subnet_out = self.subnet((x, t / self.max_time, conditions), training=training, **kwargs)
+
+        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+
+        subnet_out = self.subnet((x, t / self.max_time, conditions), training=training, **subnet_kwargs)
+
         f = self.output_projector(subnet_out)
 
         # Compute skip and out parts (vectorized, since self.sigma2 is of shape (1, input_dim)
@@ -353,18 +337,12 @@ class ConsistencyModel(InferenceNetwork):
 
         out = skip * x + out * f
 
-        # during inference apply target masking to keep output the same for masked entries
-        if not training and self.drop_target_prob > 0 and target_mask is not None:
-            out = mask_tensor(out, mask=target_mask, replacement=targets_fixed)
         return out
 
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
         training = stage == "training"
-
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
 
         # The discretization schedule requires the number of passed training steps.
         # To be independent of external information, we track it here.
@@ -397,16 +375,16 @@ class ConsistencyModel(InferenceNetwork):
         # generate noise vector
         noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
 
-        # Generate optional target dropout mask
+        # Generate optional target dropout mask (or return 1.0 if drop_target_prob is 0)
         mask_x = random_mask(ops.shape(x), self.drop_target_prob, self.seed_generator)
 
         teacher_out = self._forward_train(
-            x, noise, t1, conditions=conditions, training=training, mask_x=mask_x, **subnet_kwargs
+            x, noise, t1, conditions=conditions, training=training, mask_x=mask_x, **kwargs
         )
         # difference between teacher and student: different time, and no gradient for the teacher
         teacher_out = ops.stop_gradient(teacher_out)
         student_out = self._forward_train(
-            x, noise, t2, conditions=conditions, training=training, mask_x=mask_x, **subnet_kwargs
+            x, noise, t2, conditions=conditions, training=training, mask_x=mask_x, **kwargs
         )
 
         # weighting function, see [2], Section 3.1

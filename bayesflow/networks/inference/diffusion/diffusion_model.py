@@ -173,7 +173,7 @@ class DiffusionModel(InferenceNetwork):
             pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
         )
 
-        # Finly, compute the loss according to the configured loss type.  Note that the standard weighting
+        # Finally, compute the loss according to the configured loss type.  Note that the standard weighting
         # functions are defined for the noise prediction loss, so if you use a different loss type, you might want
         # to adjust the weighting accordingly.
         match self._loss_type:
@@ -210,7 +210,7 @@ class DiffusionModel(InferenceNetwork):
         self.output_projector = keras.layers.Dense(units=xz_shape[-1], bias_initializer="zeros")
 
         # construct input shape for subnet and subnet projector
-        time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+        time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 

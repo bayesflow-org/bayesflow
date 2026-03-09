@@ -5,12 +5,14 @@ from keras import ops
 
 from bayesflow.types import Tensor
 from bayesflow.utils import (
+    mask_tensor,
     logging,
     jvp,
     find_network,
     expand_right_as,
     expand_right_to,
     layer_kwargs,
+    random_mask,
     randomly_mask_along_axis,
     weighted_mean,
 )
@@ -91,6 +93,7 @@ class StableConsistencyModel(InferenceNetwork):
         self.c = float(kwargs.get("c", 0.1))
         self.drop_cond_prob = drop_cond_prob
         self.unconditional_mode = False
+        self.drop_target_prob = float(kwargs.get("drop_target_prob", 0.0))
         self.seed_generator = keras.random.SeedGenerator()
 
     def get_config(self):
@@ -135,7 +138,7 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         # construct input shape for subnet and subnet projector
-        time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+        time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         input_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
         self.subnet_projector.build(input_shape)
@@ -177,22 +180,36 @@ class StableConsistencyModel(InferenceNetwork):
         steps = kwargs.get("steps", 15)
         rho = kwargs.get("rho", 3.5)
 
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
-
         # noise distribution has variance sigma
         x = keras.ops.copy(z) * self.sigma
         discretized_time = keras.ops.flip(self._discretize_time(steps, rho=rho), axis=-1)
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
-        x = self.consistency_function(x, t, conditions=conditions, **subnet_kwargs)
+
+        # Apply user-provided target mask if available
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if self.drop_target_prob > 0 and target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
+            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
+
+        # apply consistency function at t_1
+        x = self.consistency_function(
+            x, t, conditions=conditions, target_mask=target_mask, targets_fixed=targets_fixed, **subnet_kwargs
+        )
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
             x_n = ops.cos(t) * x + ops.sin(t) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x = self.consistency_function(x_n, t, conditions=conditions, **subnet_kwargs)
-
+            x_n = mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
+            x = self.consistency_function(
+                x_n, t, conditions=conditions, target_mask=target_mask, targets_fixed=targets_fixed, **subnet_kwargs
+            )
         return x
 
     def consistency_function(
@@ -213,14 +230,22 @@ class StableConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional
             Additional keyword arguments to pass to the subnet.
         """
+        target_mask = kwargs.pop("target_mask", None)
+        targets_fixed = kwargs.pop("targets_fixed", None)
         subnet_out = self.subnet((x / self.sigma, t, conditions), training=training, **kwargs)
         f = self.subnet_projector(subnet_out)
         out = ops.cos(t) * x - ops.sin(t) * self.sigma * f
+
+        # during inference apply target masking to keep output the same for masked entries
+        if not training and self.drop_target_prob > 0 and target_mask is not None:
+            out = mask_tensor(out, mask=target_mask, replacement=targets_fixed)
         return out
 
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, stage: str = "training", sample_weight: Tensor = None, **kwargs
     ) -> dict[str, Tensor]:
+        training = stage == "training"
+
         # Extract subnet masks from kwargs
         subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
 
@@ -241,13 +266,18 @@ class StableConsistencyModel(InferenceNetwork):
         # generate noisy sample
         xt = ops.cos(t) * x + ops.sin(t) * z
 
+        # Generate optional target dropout mask
+        mask_x = random_mask(ops.shape(xt), self.drop_target_prob, self.seed_generator)
+        xt = mask_tensor(xt, mask=mask_x, replacement=x)
+
         # calculate estimator for dx_t/dt
         dxtdt = ops.cos(t) * z - ops.sin(t) * x
+        dxtdt = mask_tensor(dxtdt, mask=mask_x)  # replace with zeros
 
         r = 1.0  # TODO: if consistency distillation training (not supported yet) is unstable, add schedule here
 
         def f_teacher(x, t):
-            o = self.subnet((x, t, conditions), training=stage == "training", **subnet_kwargs)
+            o = self.subnet((x, t, conditions), training=training, **subnet_kwargs)
             return self.subnet_projector(o)
 
         primals = (xt / self.sigma, t)
@@ -261,7 +291,7 @@ class StableConsistencyModel(InferenceNetwork):
         cos_sin_dFdt = ops.stop_gradient(cos_sin_dFdt)
 
         # calculate output of the network
-        subnet_out = self.subnet((xt / self.sigma, t, conditions), training=stage == "training", **subnet_kwargs)
+        subnet_out = self.subnet((xt / self.sigma, t, conditions), training=training, **subnet_kwargs)
         student_out = self.subnet_projector(subnet_out)
 
         # calculate the tangent
@@ -278,7 +308,7 @@ class StableConsistencyModel(InferenceNetwork):
         D = ops.shape(x)[-1]
 
         loss = ops.mean(
-            ops.reshape(((student_out - teacher_output - g) ** 2), (ops.shape(teacher_output)[0], -1)), axis=-1
+            ops.reshape((mask_x * (student_out - teacher_output - g) ** 2), (ops.shape(teacher_output)[0], -1)), axis=-1
         )
         loss = (ops.exp(w) / D) * loss - w
         loss = weighted_mean(loss, sample_weight)

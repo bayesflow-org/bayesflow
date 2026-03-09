@@ -188,44 +188,49 @@ def test_masking(diffusion_type_inference_network):
     from bayesflow import BasicWorkflow
     from bayesflow.simulators import TwoMoons
 
+    num_samples = 3
+    batch_size = 2
+    num_batches_per_epoch = 2
+    epochs = 5
     workflow = BasicWorkflow(
         inference_network=diffusion_type_inference_network(
             subnet_kwargs=dict(widths=(8, 8)),
             drop_cond_prob=0.1,
-            # consistency model cannot do drop_target_prob
-            **filter_kwargs(dict(drop_target_prob=0.5, total_steps=100), diffusion_type_inference_network),
+            drop_target_prob=0.5,
+            **filter_kwargs(
+                dict(total_steps=epochs * num_batches_per_epoch, s0=3, s1=10, eps=1e-8),
+                diffusion_type_inference_network,
+            ),
         ),
         inference_variables=["parameters"],
         inference_conditions=["observables"],
         simulator=TwoMoons(),
     )
 
-    workflow.fit_online(epochs=2, batch_size=2, num_batches_per_epoch=2, verbose=0)
-    test_conditions = workflow.simulate(5)
-    samples = workflow.sample(num_samples=2, conditions=test_conditions)["parameters"]
+    workflow.fit_online(epochs=epochs, batch_size=batch_size, num_batches_per_epoch=num_batches_per_epoch)
+    test_conditions = workflow.simulate((5,))
+    samples = workflow.sample(num_samples=num_samples, conditions=test_conditions)["parameters"]
 
     workflow.approximator.inference_network.unconditional_mode = True
-    unconditional_samples = workflow.sample(num_samples=2, conditions=test_conditions)["parameters"]
+    unconditional_samples = workflow.sample(num_samples=num_samples, conditions=test_conditions)["parameters"]
+    assert not np.isnan(unconditional_samples).any()
     assert samples.shape == unconditional_samples.shape
     workflow.approximator.inference_network.unconditional_mode = False
 
-    if hasattr(workflow.approximator.inference_network, "drop_target_prob"):
-        test_conditions_adapted = workflow.adapter(test_conditions)
-        target_mask = keras.ops.concatenate(
-            (
-                keras.ops.ones(1),  # param 1 is inferred
-                keras.ops.zeros(1),  # param 2 is fixed
-            )
+    test_conditions_adapted = workflow.adapter(test_conditions)
+    target_mask = keras.ops.concatenate(
+        (
+            keras.ops.ones(1),  # param 1 is inferred
+            keras.ops.zeros(1),  # param 2 is fixed
         )
-        targets_fixed = test_conditions_adapted["inference_variables"][0]  # one set of parameters
-        if "inference_variables" in workflow.approximator.standardize_layers:
-            targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
+    )
+    targets_fixed = test_conditions_adapted["inference_variables"][0]  # one set of parameters
+    if "inference_variables" in workflow.approximator.standardize_layers:
+        targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
 
-        fixed_samples = workflow.sample(
-            conditions=test_conditions, num_samples=2, targets_fixed=targets_fixed, target_mask=target_mask
-        )["parameters"]
-        assert samples.shape == fixed_samples.shape
-        assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][0, 1]) < 1e-6).all()
-        assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][0, 0]) > 0.1).any()  # should vary
-    else:
-        pytest.skip(reason="Inference network does not support target masking.")
+    fixed_samples = workflow.sample(
+        conditions=test_conditions, num_samples=num_samples, targets_fixed=targets_fixed, target_mask=target_mask
+    )["parameters"]
+    assert samples.shape == fixed_samples.shape
+    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][0, 1]) < 1e-6).all()
+    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][0, 0]) > 0.1).any()  # should vary

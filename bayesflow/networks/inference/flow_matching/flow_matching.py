@@ -186,7 +186,7 @@ class FlowMatching(InferenceNetwork):
         )
 
         # construct input shape for subnet and subnet projector
-        time_shape = tuple(xz_shape[:-1]) + (1,)  # same batch/sequence dims, 1 feature
+        time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 

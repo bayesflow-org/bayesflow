@@ -224,6 +224,7 @@ class MixtureScore(ParametricDistributionScore):
         comp_samples = []
         for c in self.component_names:
             c_est = self._component_estimates(estimates, c)
+            c_est = {k: keras.ops.repeat(keras.ops.expand_dims(v, 1), num_samples, axis=1) for k, v in c_est.items()}
             s = self.components[c].sample((batch_size, num_samples), **c_est)
             comp_samples.append(s)
 

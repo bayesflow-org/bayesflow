@@ -157,10 +157,13 @@ def test_transformation_type_identity():
     x = keras.random.normal((2, 2))
     y = keras.random.normal((2, 2))
 
-    layer = Standardization()
-    _ = layer(x, stage="training", forward=True)
+    std = Standardization(standardize=["x"])
+    std.build({"x": x.shape})
+    _ = std.maybe_standardize(x, key="x", stage="training", forward=True)
 
-    should_be_unchanged = layer(y, stage="inference", forward=False, transformation_type="identity")
+    should_be_unchanged = std.maybe_standardize(
+        y, key="x", stage="inference", forward=False, transformation_type="identity"
+    )
 
     np.testing.assert_allclose(y, should_be_unchanged, atol=1e-4)
 

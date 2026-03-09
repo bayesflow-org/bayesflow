@@ -198,18 +198,18 @@ class StableConsistencyModel(InferenceNetwork):
             logging.info("Condition masking is applied: conditions are set to zero.")
 
         # apply consistency function at t_1
-        x = self.consistency_function(
-            x, t, conditions=conditions, target_mask=target_mask, targets_fixed=targets_fixed, **subnet_kwargs
-        )
+        x = self.consistency_function(x, t, conditions=conditions, **subnet_kwargs)
+        if target_mask is not None and self.drop_target_prob > 0:
+            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
             x_n = ops.cos(t) * x + ops.sin(t) * noise
             t = keras.ops.full_like(t, discretized_time[n])
             x_n = mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
-            x = self.consistency_function(
-                x_n, t, conditions=conditions, target_mask=target_mask, targets_fixed=targets_fixed, **subnet_kwargs
-            )
+            x = self.consistency_function(x_n, t, conditions=conditions, **subnet_kwargs)
+            if target_mask is not None and self.drop_target_prob > 0:
+                x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(
@@ -230,15 +230,9 @@ class StableConsistencyModel(InferenceNetwork):
         **kwargs    : dict, optional
             Additional keyword arguments to pass to the subnet.
         """
-        target_mask = kwargs.pop("target_mask", None)
-        targets_fixed = kwargs.pop("targets_fixed", None)
         subnet_out = self.subnet((x / self.sigma, t, conditions), training=training, **kwargs)
         f = self.subnet_projector(subnet_out)
         out = ops.cos(t) * x - ops.sin(t) * self.sigma * f
-
-        # during inference apply target masking to keep output the same for masked entries
-        if not training and self.drop_target_prob > 0 and target_mask is not None:
-            out = mask_tensor(out, mask=target_mask, replacement=targets_fixed)
         return out
 
     def compute_metrics(

@@ -1,5 +1,7 @@
 import sympy as sp
 
+from bayesflow.experimental.graphical_approximator.network_assignment import summary_inputs_by_network
+
 from ..graphical_approximator.shape_operations import concatenate_shapes
 from .inverted_graph import InvertedGraph
 
@@ -168,6 +170,33 @@ def first_stage_condition_shapes_by_network(graph: InvertedGraph) -> dict[int, t
         result[i] = list(concatenate_shapes(condition_shapes))
         result[i][-1] += len(summary_input[1:-1])  # add node repetitions
         result[i] = tuple(x for x in result[i])
+
+    return result
+
+
+def inference_condition_shapes_by_network(graph: InvertedGraph) -> dict[int, tuple[int | sp.Expr, ...]]:
+    """
+    Returns the required inference condition shapes for each network.
+    """
+    summary_inputs = summary_input_shapes_by_network(graph)
+    summary_outputs = summary_output_shapes_by_network(graph)
+    variable_shapes = inference_variable_shapes_by_network(graph)
+
+    summary_map = {}
+
+    for k, v in summary_inputs.items():
+        if v in variable_shapes.values():
+            summary_map[sp.prod(v[-2:])] = summary_outputs[k][-1]
+
+    # replace non-exchangeable variables in last dimension by their summary
+    condition_shapes = first_stage_condition_shapes_by_network(graph)
+    result = {}
+
+    for k, v in condition_shapes.items():
+        if not isinstance(v[-1], sp.Basic):
+            result[k] = v
+        else:
+            result[k] = (*v[:-1], v[-1].subs(summary_map))
 
     return result
 

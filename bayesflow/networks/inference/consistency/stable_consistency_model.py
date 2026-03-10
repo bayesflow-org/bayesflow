@@ -5,13 +5,13 @@ from keras import ops
 
 from bayesflow.types import Tensor
 from bayesflow.utils import (
-    mask_tensor,
-    logging,
-    jvp,
-    find_network,
     expand_right_as,
     expand_right_to,
+    find_network,
+    jvp,
     layer_kwargs,
+    logging,
+    maybe_mask_tensor,
     random_mask,
     randomly_mask_along_axis,
     weighted_mean,
@@ -195,7 +195,7 @@ class StableConsistencyModel(InferenceNetwork):
         if target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
@@ -203,15 +203,15 @@ class StableConsistencyModel(InferenceNetwork):
 
         # apply consistency function at t_1
         x = self.consistency_function(x, t, conditions=conditions, **subnet_kwargs)
-        x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+        x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
             x_n = ops.cos(t) * x + ops.sin(t) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x_n = mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
+            x_n = maybe_mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, **subnet_kwargs)
-            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(
@@ -264,11 +264,11 @@ class StableConsistencyModel(InferenceNetwork):
 
         # Generate optional target dropout mask
         mask_x = random_mask(ops.shape(xt), self.drop_target_prob, self.seed_generator)
-        xt = mask_tensor(xt, mask=mask_x, replacement=x)
+        xt = maybe_mask_tensor(xt, mask=mask_x, replacement=x)
 
         # calculate estimator for dx_t/dt
         dxtdt = ops.cos(t) * z - ops.sin(t) * x
-        dxtdt = mask_tensor(dxtdt, mask=mask_x)  # replace with zeros
+        dxtdt = maybe_mask_tensor(dxtdt, mask=mask_x)  # replace with zeros
 
         r = 1.0  # TODO: if consistency distillation training (not supported yet) is unstable, add schedule here
 

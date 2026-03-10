@@ -7,8 +7,8 @@ from bayesflow.experimental.graphs import approximator_helpers
 if TYPE_CHECKING:
     from .graphical_approximator import GraphicalApproximator
 
-from .shape_operations import replace_placeholders, resolve_shapes
 from ..graphs.approximator_helpers import _summary_input_shape
+from .shape_operations import replace_placeholders, resolve_shapes
 
 Dim = int | sp.Expr
 Shape = tuple[Dim, ...]
@@ -98,7 +98,7 @@ def inference_condition_shapes_by_network(
 
     data_shapes = resolve_shapes(data_shapes, meta_dict)
 
-    result = approximator_helpers.first_stage_condition_shapes_by_network(approximator.graph)
+    result = approximator_helpers.inference_condition_shapes_by_network(approximator.graph)
     result = resolve_shapes(result, data_shapes)
 
     return result

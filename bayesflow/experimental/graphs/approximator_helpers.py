@@ -1,7 +1,5 @@
 import sympy as sp
 
-from bayesflow.experimental.graphical_approximator.network_assignment import summary_inputs_by_network
-
 from ..graphical_approximator.shape_operations import concatenate_shapes
 from .inverted_graph import InvertedGraph
 
@@ -121,12 +119,12 @@ def data_condition_shapes_by_network(graph: InvertedGraph) -> dict[int, tuple[in
     result = {}
 
     for network_idx, variable_shape in inference_variable_shapes.items():
-        for k, v in summary_output_shapes.items():
+        for v in summary_output_shapes.values():
             if variable_shape[:-1] == v[:-1]:
                 result[network_idx] = v
 
         if network_idx not in result:
-            for k, v in summary_output_shapes.items():
+            for v in summary_output_shapes.values():
                 try:
                     concatenate_shapes([variable_shape, v])
                     result[network_idx] = (variable_shape[:-1] + (v[-1],),)

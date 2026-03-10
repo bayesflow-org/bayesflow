@@ -5,13 +5,13 @@ import keras
 from bayesflow.distributions import Distribution
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
-    mask_tensor,
-    logging,
     expand_right_as,
     find_network,
     integrate,
     jacobian_trace,
     layer_kwargs,
+    logging,
+    maybe_mask_tensor,
     optimal_transport,
     random_mask,
     randomly_mask_along_axis,
@@ -62,6 +62,12 @@ class FlowMatching(InferenceNetwork):
         Changes the distribution of sampled times during training.  Time is sampled
         from a power-law distribution ``p(t) ~ t^(1/(1+alpha))``, where
         ``alpha`` is the provided value.  Default is 0 (uniform sampling).
+    drop_cond_prob : float, optional
+        Probability of dropping conditions during training (i.e., classifier-free guidance).
+        Default is 0.0.
+    drop_target_prob : float, optional
+        Probability of dropping target values during training (i.e., learning arbitrary
+        distributions). Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -162,7 +168,7 @@ class FlowMatching(InferenceNetwork):
             conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
 
         mask_x = random_mask(keras.ops.shape(x), self.drop_target_prob, self.seed_generator)
-        x = mask_tensor(x, mask=mask_x, replacement=x1)
+        x = maybe_mask_tensor(x, mask=mask_x, replacement=x1)
 
         predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training", **kwargs)
 
@@ -224,9 +230,9 @@ class FlowMatching(InferenceNetwork):
         out = self.output_projector(subnet_out)
 
         # Zero out velocity where target is fixed (during inference only)
-        target_mask = kwargs.get("target_mask", None)
-        if self.drop_target_prob > 0 and not training and target_mask is not None:
-            out = mask_tensor(out, mask=target_mask)
+        if not training:
+            target_mask = kwargs.get("target_mask", None)
+            out = maybe_mask_tensor(out, mask=target_mask)
         return out
 
     def _velocity_trace(
@@ -254,10 +260,10 @@ class FlowMatching(InferenceNetwork):
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
+        if target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
@@ -296,10 +302,10 @@ class FlowMatching(InferenceNetwork):
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
+        if target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = mask_tensor(z, mask=target_mask, replacement=targets_fixed)
+            z = maybe_mask_tensor(z, mask=target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)

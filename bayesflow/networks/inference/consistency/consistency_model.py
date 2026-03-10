@@ -53,6 +53,9 @@ class ConsistencyModel(InferenceNetwork):
     subnet_kwargs : dict[str, any], optional
         Keyword arguments passed to the subnet constructor or used to update the
         default MLP settings.
+    drop_cond_prob : float, optional
+        Probability of dropping conditions during training (i.e., classifier-free guidance).
+        Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -139,6 +142,7 @@ class ConsistencyModel(InferenceNetwork):
             "p_mean": self.p_mean,
             "p_std": self.p_std,
             "drop_cond_prob": self.drop_cond_prob,
+            "drop_target_prob": self.drop_target_prob,
             # we do not need to store subnet_kwargs
         }
 
@@ -281,7 +285,7 @@ class ConsistencyModel(InferenceNetwork):
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
+        if target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
             x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
@@ -291,8 +295,7 @@ class ConsistencyModel(InferenceNetwork):
             logging.info("Condition masking is applied: conditions are set to zero.")
 
         x = self.consistency_function(x, t, conditions=conditions, training=training, **subnet_kwargs)
-        if target_mask is not None and self.drop_target_prob > 0:
-            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+        x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
@@ -300,8 +303,7 @@ class ConsistencyModel(InferenceNetwork):
             t = keras.ops.full_like(t, discretized_time[n])
             x_n = mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, training=training, **subnet_kwargs)
-            if target_mask is not None and self.drop_target_prob > 0:
-                x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(

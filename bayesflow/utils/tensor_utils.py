@@ -10,8 +10,8 @@ from . import logging
 T = TypeVar("T")
 
 
-def mask_tensor(data: Tensor, mask: Tensor | None = None, replacement: Tensor = None) -> Tensor:
-    """Apply a binary mask to a tensor, blending with a replacement where masked.
+def maybe_mask_tensor(data: Tensor, mask: Tensor | None = None, replacement: Tensor = None) -> Tensor:
+    """Apply a binary mask to a tensor if a mask is passed, blending with a replacement where masked.
 
     Parameters
     ----------

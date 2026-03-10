@@ -6,17 +6,17 @@ from keras import ops
 
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
-    mask_tensor,
     expand_right_as,
     find_network,
+    integrate,
+    integrate_stochastic,
     jacobian_trace,
     layer_kwargs,
+    logging,
+    maybe_mask_tensor,
     random_mask,
     randomly_mask_along_axis,
     weighted_mean,
-    integrate,
-    integrate_stochastic,
-    logging,
     STOCHASTIC_METHODS,
     DETERMINISTIC_METHODS,
 )
@@ -162,7 +162,7 @@ class DiffusionModel(InferenceNetwork):
 
         # Generate optional target dropout mask
         mask_x = random_mask(ops.shape(x), self.drop_target_prob, self.seed_generator)
-        diffused_x = mask_tensor(diffused_x, mask=mask_x, replacement=x)
+        diffused_x = maybe_mask_tensor(diffused_x, mask=mask_x, replacement=x)
 
         # Obtain output of the network and transform to prediction of the clean signal x
         norm_log_snr_t = self._transform_log_snr(log_snr_t)
@@ -499,9 +499,9 @@ class DiffusionModel(InferenceNetwork):
             out = f - 0.5 * g_squared * score
 
         # Zero out velocity where target is fixed (during inference only)
-        target_mask = kwargs.get("target_mask", None)
-        if self.drop_target_prob > 0 and not training and target_mask is not None:
-            out = mask_tensor(out, mask=target_mask)
+        if not training:
+            target_mask = kwargs.get("target_mask", None)
+            out = maybe_mask_tensor(out, mask=target_mask)
 
         return out
 
@@ -535,9 +535,9 @@ class DiffusionModel(InferenceNetwork):
         g = ops.sqrt(g_squared)
 
         # Zero out diffusion where target is fixed (during inference only)
-        target_mask = kwargs.get("target_mask", None)
-        if self.drop_target_prob > 0 and not training and target_mask is not None:
-            g = mask_tensor(g, mask=target_mask)
+        if not training:
+            target_mask = kwargs.get("target_mask", None)
+            g = maybe_mask_tensor(g, mask=target_mask)
 
         return g
 
@@ -592,10 +592,10 @@ class DiffusionModel(InferenceNetwork):
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
+        if target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = mask_tensor(x, target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
@@ -641,10 +641,10 @@ class DiffusionModel(InferenceNetwork):
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if self.drop_target_prob > 0 and target_mask is not None:
+        if target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = mask_tensor(z, target_mask, replacement=targets_fixed)
+            z = maybe_mask_tensor(z, target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)

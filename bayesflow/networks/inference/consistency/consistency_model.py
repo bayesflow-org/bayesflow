@@ -5,14 +5,14 @@ from keras import ops
 
 from bayesflow.types import Tensor
 from bayesflow.utils import (
-    mask_tensor,
+    expand_right_as,
     find_network,
     layer_kwargs,
+    logging,
+    maybe_mask_tensor,
     random_mask,
     randomly_mask_along_axis,
     weighted_mean,
-    expand_right_as,
-    logging,
 )
 from bayesflow.utils.serialization import serializable, serialize
 
@@ -238,7 +238,7 @@ class ConsistencyModel(InferenceNetwork):
     ) -> Tensor:
         """Forward function for training. Calls consistency function with noisy input"""
         inp = x + t * noise
-        inp = mask_tensor(inp, mask=mask_x, replacement=x)
+        inp = maybe_mask_tensor(inp, mask=mask_x, replacement=x)
         return self.consistency_function(inp, t, conditions=conditions, training=training, **kwargs)
 
     def _forward(self, x: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:
@@ -288,22 +288,22 @@ class ConsistencyModel(InferenceNetwork):
         if target_mask is not None:
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         if self.unconditional_mode and conditions is not None:
             conditions = keras.ops.zeros_like(conditions)
             logging.info("Condition masking is applied: conditions are set to zero.")
 
         x = self.consistency_function(x, t, conditions=conditions, training=training, **subnet_kwargs)
-        x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+        x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
             x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x_n = mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
+            x_n = maybe_mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, training=training, **subnet_kwargs)
-            x = mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(

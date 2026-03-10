@@ -1,9 +1,11 @@
 from functools import reduce
 
 import sympy as sp
+from typing import TypeVar
 
 Dim = int | sp.Expr
 Shape = tuple[Dim, ...]
+K = TypeVar("K", str, int)
 
 
 def concatenate_shapes(shapes: list[Shape]) -> Shape:
@@ -18,7 +20,7 @@ def concatenate_shapes(shapes: list[Shape]) -> Shape:
     return reduce(stack_shapes, expanded)
 
 
-def resolve_shapes(x: dict[str, Shape], meta_dict: dict | None) -> dict[str, Shape]:
+def resolve_shapes(x: dict[K, Shape], meta_dict: dict | None) -> dict[K, Shape]:
     """
     Replaces string placeholders in a dictionary of shape tuples.
     >>> resolve_meta({"beta": ("B", "N_groups", 3)}, {"B": 10, "N_groups": 15})

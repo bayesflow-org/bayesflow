@@ -56,9 +56,10 @@ def check_fit(approximator, train_dataset, validation_dataset):
 def check_save_and_load(tmp_path, approximator, train_dataset):
     """Verify that an approximator can be saved and loaded."""
     # to save, the model must be built
-    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
+    batch = keras.tree.map_structure(keras.ops.convert_to_tensor, train_dataset[0])
+    data_shapes = keras.tree.map_structure(keras.ops.shape, batch)
     approximator.build(data_shapes)
-    approximator.compute_metrics(**train_dataset[0])
+    approximator.compute_metrics(**batch)
 
     keras.saving.save_model(approximator, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")

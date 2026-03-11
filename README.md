@@ -100,7 +100,7 @@ Many examples from *Bayesian Cognitive Modeling: A Practical Course* by Lee & Wa
 
 ### Videos
 
-A few tutorial videos are available as part of the [Learning Bayesian Statistics](https://learnbayesstats.com/) podcast:
+A few video tutorial videos are available as part of the [Learning Bayesian Statistics](https://learnbayesstats.com/) podcast:
 
 1. Marvin Schmitt on [Amortized Bayesian Inference with Neural Networks](https://www.youtube.com/watch?v=_lotzkvy6mY)
 2. Jonas Arruda on [Diffusion Models for Simulation-Based Inference](https://www.youtube.com/watch?v=ZlcEkHXgF5k)
@@ -108,8 +108,8 @@ A few tutorial videos are available as part of the [Learning Bayesian Statistics
 ### Tutorial notebooks
 
 1. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
-2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
-3. [Two moons](examples/Two_Moons_Starter.ipynb) - Explore different generative networks on a classical example.
+2. [Diffusion models](examples/Diffusion_Models.ipynb) - A tutorial on the power of diffusion models for SBI.
+3. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
 4. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
 5. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
 6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
@@ -117,6 +117,10 @@ A few tutorial videos are available as part of the [Learning Bayesian Statistics
 8. [Estimating likelihoods](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions.
 9. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
 10. [Ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
+
+### Tutorial papers
+
+1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685**. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

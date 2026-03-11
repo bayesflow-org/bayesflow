@@ -75,7 +75,7 @@ jobs:
         # - only on Ubuntu, Python 3.11, JAX Backend
         # - only on workflow_dispatch or pushes/PR to main branch
         if: |
-          {{
+          ${{
             matrix.os == 'ubuntu-latest'
             && matrix.python-version == '3.11'
             && matrix.backend == 'jax'

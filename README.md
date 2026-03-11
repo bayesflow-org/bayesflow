@@ -27,7 +27,7 @@ With BayesFlow, you can easily train neural networks for tasks like parameter es
 
 ## Install
 
-We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
+We currently support Python 3.11 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"
@@ -107,16 +107,18 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 
 ### Tutorial notebooks
 
-1. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
-2. [Diffusion models](examples/Diffusion_Models.ipynb) - A tutorial on the power of diffusion models for SBI.
-3. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+1. [Diffusion starter](examples/Diffusion_Models.ipynb) - A small tutorial on the power of diffusion models for SBI.
+2. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
+3. [Image data](examples/Spatial_Data_and_Parameters.ipynb) - Learn parameters from or generate image data.
 4. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
-5. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
-6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
-7. [Model comparison](examples/One_Sample_TTest.ipynb) - Learn Bayes factors using probabilistic classification.
-8. [Estimating likelihoods](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions.
-9. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
-10. [Ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
+5. [Model comparison](examples/One_Sample_TTest.ipynb) - Learn Bayes factors using probabilistic classification.
+6. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+7. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
+8. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
+9. [Estimating likelihoods](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions.
+10. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
+11. [Ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
+12. [Ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
 
 ### Tutorial papers
 

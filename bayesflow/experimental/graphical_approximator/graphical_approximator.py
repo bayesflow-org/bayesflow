@@ -13,7 +13,7 @@ from ...adapters import Adapter
 from ...approximators import Approximator
 from ...datasets import OfflineDataset, OnlineDataset
 from ...networks import InferenceNetwork, SummaryNetwork
-from ...networks.standardization import Standardization
+from ...networks.helpers import Standardization
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .utils import (

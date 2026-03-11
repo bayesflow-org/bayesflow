@@ -35,19 +35,9 @@ WEIGHT_MLP_DEFAULTS = MappingProxyType(
     }
 )
 
-DIFFUSION_INTEGRATE_DEFAULTS = MappingProxyType(
-    {
-        "method": "two_step_adaptive",
-        "steps": "adaptive",
-    }
-)
+DIFFUSION_INTEGRATE_DEFAULTS = MappingProxyType({"method": "two_step_adaptive", "steps": "adaptive"})
 
-FLOW_MATCHING_INTEGRATE_DEFAULTS = MappingProxyType(
-    {
-        "method": "tsit5",
-        "steps": "adaptive",
-    }
-)
+FLOW_MATCHING_INTEGRATE_DEFAULTS = MappingProxyType({"method": "tsit5", "steps": "adaptive"})
 
 OPTIMAL_TRANSPORT_DEFAULTS = MappingProxyType(
     {

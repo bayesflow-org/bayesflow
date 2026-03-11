@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import keras
 
-from bayesflow.networks.standardization import Standardization
+from bayesflow.networks.helpers import Standardization
 from bayesflow.utils.serialization import serialize, deserialize
 
 from tests.utils import assert_layers_equal

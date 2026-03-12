@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
 
 import keras
+import sympy as sp
 
+from bayesflow.experimental.graphs import approximator_helpers
 from bayesflow.experimental.graphs.utils import sort_nodes_topologically
 
 from .shape_inference import inference_variable_shapes_by_network, summary_output_shapes_by_network
@@ -84,14 +86,34 @@ def summary_inputs_by_network(approximator: "GraphicalApproximator", adapted_dat
     and the values are the inputs of that summary network.
     """
     input_tensor = summary_input(approximator, adapted_data)
+    input_shape = keras.ops.shape(input_tensor)
 
     result = {}
 
+    # regular summary networks
     for i, summary_network in enumerate(approximator.summary_networks or []):
         result[i] = input_tensor
         output_tensor = summary_network(input_tensor, training=False)
         # next summary network uses previous output as input
         input_tensor = output_tensor
+
+    # extra summary networks required for reshaped inputs
+    input_tensor = summary_input(approximator, adapted_data)
+    inference_variables = inference_variables_by_network(approximator, adapted_data)
+    variable_shapes = {k: keras.ops.shape(v) for k, v in inference_variables.items()}
+
+    network_idx = max(result.keys()) + 1
+    for i, variable_shape in variable_shapes.items():
+        if variable_shape[:-1] != input_shape[: len(variable_shape[:-1])]:
+            prefix = variable_shape[:-1]
+
+            reshaped_input = _permute_to_prefix(input_tensor, prefix)
+            result[network_idx] = reshaped_input
+
+            for i in range(len(prefix), len(reshaped_input) - 2):
+                print(i)
+                network_idx += 1
+                result[network_idx] = approximator.summary_networks[network_idx - 1](result[network_idx - 1])
 
     return result
 
@@ -150,39 +172,22 @@ def _prepare_data_conditions(
     return data_conditions
 
 
-def match_inference_to_summary_networks(approximator: "GraphicalApproximator") -> dict[int, int]:
-    """
-    Match each inference network to a summary network that outputs the necessary data conditions.
-    """
+def match_inference_to_summary_networks(approximator: "GraphicalApproximator"):
+    variable_shapes = approximator_helpers.inference_variable_shapes_by_network(approximator.graph)
+    condition_shapes = approximator_helpers.inference_condition_shapes_by_network(approximator.graph)
+    summary_inputs = approximator_helpers.summary_input_shapes_by_network(approximator.graph)
 
-    def num_equal_dims(a, b):
-        i = 0
-        for x, y in zip(a, b):
-            if x == y:
-                i += 1
-            else:
-                break
+    result = {}
 
-        return i
+    for k, v in condition_shapes.items():
+        if isinstance(v[-1], sp.Basic):
+            symbols = list(v[-1].free_symbols)
+            for symbol in symbols:
+                idx = int(symbol.name.split("_")[-1])
+                if summary_inputs[k] not in variable_shapes.values():
+                    result[k] = idx
 
-    inference_variable_shapes = inference_variable_shapes_by_network(approximator)
-    summary_output_shapes = summary_output_shapes_by_network(approximator)
-
-    summary_output_by_rank = {len(v): v for _, v in summary_output_shapes.items()}
-    network_idx_by_rank = {len(v): k for k, v in summary_output_shapes.items()}
-
-    inference_to_summary_map = {}
-
-    for k, v in inference_variable_shapes.items():
-        rank = len(v)
-        summary_output = summary_output_by_rank[rank]
-
-        if num_equal_dims(summary_output, v) == rank - 1:
-            inference_to_summary_map[k] = network_idx_by_rank[rank]
-        else:
-            inference_to_summary_map[k] = network_idx_by_rank[rank - 1]
-
-    return inference_to_summary_map
+    return result
 
 
 def inference_conditions_by_network(approximator: "GraphicalApproximator", adapted_data: dict) -> dict[int, Tensor]:
@@ -245,3 +250,19 @@ def _prepare_inference_conditions(
         inference_conditions = concatenate([inference_conditions, repeated])
 
     return inference_conditions
+
+
+def _permute_to_prefix(source_tensor, prefix_shape):
+    """
+    Mutates the source shape in such a way that it starts with `prefix`.
+    """
+    print(":")
+    print(keras.ops.shape(source_tensor))
+    print(prefix_shape)
+    source_shape = keras.ops.shape(source_tensor)
+    prefix_indices = [list(source_shape).index(s) for s in prefix_shape]
+    remaining_indices = [i for i in range(len(source_shape)) if i not in prefix_indices]
+
+    perm = prefix_indices + remaining_indices
+
+    return keras.ops.transpose(source_tensor, perm)

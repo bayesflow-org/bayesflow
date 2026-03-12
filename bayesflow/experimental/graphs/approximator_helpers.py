@@ -17,15 +17,13 @@ def print_network_summary(graph: InvertedGraph):
 
     print(f"The approximator requires {len(variable_shapes)} inference networks:")
     for k, v in variable_shapes.items():
-        print(f"  inference network {k}:")
-        print(f"    shape {v} for nodes {network_composition[k]})")
+        print(f"  {k}:  shape {v} for nodes {network_composition[k]})")
 
     print("")
 
     print(f"The approximator requires {len(summary_inputs)} summary networks:")
     for k, v in summary_inputs.items():
-        print(f"  summary network {k}:")
-        print(f"    {v} -> {summary_outputs[k]}")
+        print(f"  {k}:  {v} -> {summary_outputs[k]}")
 
 
 def inference_variable_shapes_by_network(graph: InvertedGraph) -> dict[int, tuple[int | sp.Expr, ...]]:

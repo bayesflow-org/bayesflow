@@ -7,6 +7,7 @@ from bayesflow.experimental.graphs import approximator_helpers
 from bayesflow.experimental.graphs.utils import sort_nodes_topologically
 
 from .shape_inference import inference_variable_shapes_by_network, summary_output_shapes_by_network
+from .shape_operations import concatenate_shapes
 from .tensor_concatenation import concatenate
 
 if TYPE_CHECKING:
@@ -150,37 +151,29 @@ def _prepare_data_conditions(
     """
     Returns the data condition tensor for the inference network denoted by `network_idx`.
     """
-    if meta_dict is not None:
-        # we pass meta_dict only if sampling from approximator
-        inference_variable_shapes = inference_variable_shapes_by_network(approximator, meta_dict=meta_dict)
-        inference_var_rank = len(inference_variable_shapes[network_idx])
-        inference_group_dim = inference_variable_shapes[network_idx][-2]
-    else:
-        inference_vars = _prepare_inference_variables(approximator, adapted_data, network_idx)
-        inference_var_rank = keras.ops.ndim(inference_vars)
-        inference_group_dim = keras.ops.shape(inference_vars)[-2]
-
+    variable_shapes = approximator_helpers.inference_variable_shapes_by_network(approximator.graph)[network_idx]
+    summary_output_shapes = approximator_helpers.summary_output_shapes_by_network(approximator.graph)
     summary_outputs = summary_outputs_by_network(approximator, adapted_data)
-    inference_to_summary_map = match_inference_to_summary_networks(approximator)
 
-    summary_idx = inference_to_summary_map[network_idx]
-    summary_output = summary_outputs[summary_idx]
+    result = None
 
-    if inference_var_rank == len(summary_output.shape):
-        data_conditions = summary_output
-    else:
-        expanded = keras.ops.expand_dims(summary_output, axis=-2)
-        broadcasted = keras.ops.broadcast_to(
-            expanded,
-            (
-                *keras.ops.shape(summary_output)[:-1],
-                inference_group_dim,
-                keras.ops.shape(summary_output)[-1],
-            ),
-        )
-        data_conditions = broadcasted
+    for i, v in summary_output_shapes.items():
+        if variable_shapes[:-1] == v[:-1]:
+            result = summary_outputs[i]
+            break
 
-    return data_conditions
+    if result is None:
+        for i, v in summary_output_shapes.items():
+            try:
+                concatenate_shapes([variable_shapes, v])
+                result = summary_outputs[i]
+            except Exception:
+                pass
+
+    if result is None:
+        raise RuntimeError(f"No matching summary output found for inference network with index {network_idx}.")
+
+    return result
 
 
 def match_inference_to_summary_networks(approximator: "GraphicalApproximator"):

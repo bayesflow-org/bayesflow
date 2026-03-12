@@ -10,6 +10,34 @@ from . import logging
 T = TypeVar("T")
 
 
+def maybe_mask_tensor(data: Tensor, mask: Tensor | None = None, replacement: Tensor = None) -> Tensor:
+    """Apply a binary mask to a tensor if a mask is passed, blending with a replacement where masked.
+
+    Parameters
+    ----------
+    data : Tensor
+        The tensor to mask.
+    mask : Tensor or None, optional
+        Binary mask where 1.0 = keep, 0.0 = replace. If ``None``, *data* is
+        returned unchanged.
+    replacement : Tensor, optional
+        Values to use where the mask is 0. If ``None``, zeros are used.
+
+    Returns
+    -------
+    Tensor
+        ``mask * data + (1 - mask) * replacement``, or *data* when *mask* is
+        ``None``.
+    """
+    if mask is None:
+        return data
+
+    if replacement is None:
+        return mask * data
+
+    return mask * data + (1 - mask) * replacement
+
+
 def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor | None:
     """Concatenate multiple tensors along axis, ignoring None values."""
     tensors = [t for t in tensors if t is not None]
@@ -410,38 +438,63 @@ def positive_diag(x: Tensor, method="default") -> Tensor:
     return x
 
 
-def randomly_mask_conditions(
-    conditions: Tensor, drop_prob: float, seed_generator: keras.random.SeedGenerator = None
-) -> Tensor:
-    """Randomly zero out entire samples in a condition tensor for classifier-free guidance.
+def random_mask(shape: Shape, drop_prob: float, seed_generator: keras.random.SeedGenerator = None) -> Tensor | float:
+    """Generate an element-wise random mask.
 
-    Each sample in the batch is independently zeroed with probability ``drop_prob``.
+    Each element is independently drawn as 1 (keep) with probability
+    ``1 - drop_prob`` and 0 (drop) with probability ``drop_prob``.
 
     Parameters
     ----------
-    conditions : Tensor
-        Condition tensor with shape ``(batch, ...)``.
+    shape : Shape
+        Shape of the mask to generate.
     drop_prob : float
-        Probability of dropping (zeroing) each sample. Must be in ``[0, 1]``.
+        Probability of dropping each element. Must be in ``[0, 1]``.
     seed_generator : keras.random.SeedGenerator, optional
-        Seed generator used for randomness. Default is None, which means that the
-        default global seed generator will be used.
+        Seed generator used for randomness.
+
+    Returns
+    -------
+    Tensor or float
+        A mask tensor of the given *shape*, or ``1.0`` when *drop_prob* <= 0.
+    """
+    if drop_prob <= 0:
+        return 1.0
+
+    dtype = keras.backend.floatx()
+    random_vals = keras.random.uniform(shape=shape, dtype=dtype, seed=seed_generator)
+    return keras.ops.cast(random_vals > drop_prob, dtype=dtype)
+
+
+def randomly_mask_along_axis(
+    x: Tensor, drop_prob: float, axis: int = 0, seed_generator: keras.random.SeedGenerator = None
+) -> Tensor:
+    """Randomly zero out entire slices of a tensor along an axis.
+
+    Each slice along *axis* is independently zeroed with probability
+    ``drop_prob``.  With ``axis=0`` (default) this drops entire batch
+    samples, which is the standard approach for classifier-free guidance.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    drop_prob : float
+        Probability of dropping each slice. Must be in ``[0, 1]``.
+    axis : int, optional
+        Axis along which to mask. Default is ``0`` (batch axis).
+    seed_generator : keras.random.SeedGenerator, optional
+        Seed generator used for randomness.
 
     Returns
     -------
     Tensor
-        Tensor with the same shape as `conditions`, with some samples zeroed out.
+        Tensor with the same shape as *x*, with some slices zeroed out.
     """
-    cond_shape = keras.ops.shape(conditions)
-    batch = cond_shape[0]
-    rank = keras.ops.ndim(conditions)
-    dtype = keras.ops.dtype(conditions)
+    if drop_prob <= 0:
+        return x
 
-    mask = keras.random.uniform(shape=(batch,), dtype=dtype, seed=seed_generator)
-    mask = keras.ops.cast(mask > drop_prob, dtype=dtype)
-
-    mask_shape = (batch,) + (1,) * (rank - 1)
-    mask = keras.ops.reshape(mask, mask_shape)
-    mask = keras.ops.broadcast_to(mask, cond_shape)
-
-    return mask * conditions
+    rank = keras.ops.ndim(x)
+    mask_shape = tuple(keras.ops.shape(x)[i] if i == axis else 1 for i in range(rank))
+    mask = random_mask(mask_shape, drop_prob, seed_generator)
+    return mask * x

@@ -2,7 +2,7 @@ import pytest
 import keras
 import numpy as np
 
-from bayesflow.networks.coupling_flow.permutations import (
+from bayesflow.networks.inference.coupling.permutations import (
     FixedPermutation,
     OrthogonalPermutation,
     RandomPermutation,

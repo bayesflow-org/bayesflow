@@ -27,7 +27,7 @@ With BayesFlow, you can easily train neural networks for tasks like parameter es
 
 ## Install
 
-We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
+We currently support Python 3.11 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"
@@ -100,23 +100,29 @@ Many examples from *Bayesian Cognitive Modeling: A Practical Course* by Lee & Wa
 
 ### Videos
 
-A few tutorial videos are available as part of the [Learning Bayesian Statistics](https://learnbayesstats.com/) podcast:
+A few video tutorial videos are available as part of the [Learning Bayesian Statistics](https://learnbayesstats.com/) podcast:
 
 1. Marvin Schmitt on [Amortized Bayesian Inference with Neural Networks](https://www.youtube.com/watch?v=_lotzkvy6mY)
 2. Jonas Arruda on [Diffusion Models for Simulation-Based Inference](https://www.youtube.com/watch?v=ZlcEkHXgF5k)
 
 ### Tutorial notebooks
 
-1. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
-2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
-3. [Two moons](examples/Two_Moons_Starter.ipynb) - Explore different generative networks on a classical example.
+1. [Diffusion starter](examples/Diffusion_Models.ipynb) - A small tutorial on the power of diffusion models for SBI.
+2. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
+3. [Image data](examples/Spatial_Data_and_Parameters.ipynb) - Learn parameters from or generate image data.
 4. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
-5. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
-6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
-7. [Model comparison](examples/One_Sample_TTest.ipynb) - Learn Bayes factors using probabilistic classification.
-8. [Estimating likelihoods](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions.
-9. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
-10. [Ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
+5. [Model comparison](examples/One_Sample_TTest.ipynb) - Learn Bayes factors using probabilistic classification.
+6. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+7. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
+8. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
+9. [Estimating likelihoods](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions.
+10. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
+11. [Ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
+12. [Ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
+
+### Tutorial papers
+
+1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685**. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

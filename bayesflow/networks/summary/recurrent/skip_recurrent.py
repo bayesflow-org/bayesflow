@@ -2,8 +2,7 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import find_recurrent_net, layer_kwargs
-from bayesflow.utils.decorators import sanitize_input_shape
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, serialize, deserialize
 
 
 @serializable("bayesflow.networks")
@@ -64,31 +63,66 @@ class SkipRecurrentNet(keras.Layer):
 
         recurrent_constructor = find_recurrent_net(recurrent_type)
 
-        recurrent = recurrent_constructor(
-            units=hidden_dim // 2 if bidirectional else hidden_dim,
-            dropout=dropout,
-        )
-        recurrent.name = "recurrent"
-
-        skip_recurrent = recurrent_constructor(
-            units=hidden_dim // 2 if bidirectional else hidden_dim,
-            dropout=dropout,
-        )
-        skip_recurrent.name = "skip_recurrent"
-
         if bidirectional:
-            recurrent = keras.layers.Bidirectional(recurrent, name="bidirectional_recurrent")
-            skip_recurrent = keras.layers.Bidirectional(skip_recurrent, name="bidirectional_skip_recurrent")
+            # Manually implement bidirectional to avoid Keras serialization issues with Bidirectional
+            forward_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            backward_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            self.recurrent_forward = forward_recurrent
+            self.recurrent_backward = backward_recurrent
 
-        self.recurrent = recurrent
-        self.skip_recurrent = skip_recurrent
+            # Same for skip recurrent
+            forward_skip = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            backward_skip = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            self.skip_recurrent_forward = forward_skip
+            self.skip_recurrent_backward = backward_skip
+
+        else:
+            self.recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            self.skip_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+
         self.input_channels = input_channels
+        self.hidden_dim = hidden_dim
+        self.recurrent_type = recurrent_type
+        self.bidirectional = bidirectional
+        self.skip_steps = skip_steps
+        self.dropout = dropout
 
     def call(self, time_series: Tensor, training: bool = False, **kwargs) -> Tensor:
-        direct_summary = self.recurrent(time_series, training=training)
-        skip_summary = self.skip_recurrent(self.skip_conv(time_series), training=training)
-        return keras.ops.concatenate((direct_summary, skip_summary), axis=-1)
+        if self.bidirectional:
+            # Forward pass for recurrent branch
+            forward_direct = self.recurrent_forward(time_series, training=training)
+            # Backward pass for recurrent branch using reversed time axis
+            backward_direct = self.recurrent_backward(keras.ops.flip(time_series, axis=1), training=training)
+            backward_direct = keras.ops.flip(backward_direct, axis=1)
+            direct_summary = forward_direct + backward_direct
 
-    @sanitize_input_shape
-    def build(self, input_shape):
-        super().build(input_shape)
+            # Forward pass for skip recurrent branch
+            skip_conv_output = self.skip_conv(time_series)
+            forward_skip = self.skip_recurrent_forward(skip_conv_output, training=training)
+
+            # Backward pass for skip recurrent branch
+            backward_skip = self.skip_recurrent_backward(keras.ops.flip(skip_conv_output, axis=1), training=training)
+            backward_skip = keras.ops.flip(backward_skip, axis=1)
+            skip_summary = forward_skip + backward_skip
+        else:
+            direct_summary = self.recurrent(time_series, training=training)
+            skip_summary = self.skip_recurrent(self.skip_conv(time_series), training=training)
+
+        return direct_summary + skip_summary
+
+    def get_config(self):
+        base_config = super().get_config()
+        config = {
+            "hidden_dim": self.hidden_dim,
+            "recurrent_type": self.recurrent_type,
+            "bidirectional": self.bidirectional,
+            "input_channels": self.input_channels,
+            "skip_steps": self.skip_steps,
+            "dropout": self.dropout,
+        }
+
+        return base_config | serialize(config)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))

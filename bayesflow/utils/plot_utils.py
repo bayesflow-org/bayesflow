@@ -516,8 +516,6 @@ def create_legends(
         Anchor coordinate to globally position the legends
     legend_ncol  : int, optional, default: 1
         Number of legend columns
-    markersize  : float, optional, default: 40
-        The marker size in points**2
     target_color : str, optional, default: "red"
         Color for the target label
     target_markersize : float, optional, default: 40

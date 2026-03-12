@@ -67,15 +67,13 @@ def summary_outputs_by_network(approximator: "GraphicalApproximator", adapted_da
     Returns a dictionary where the keys are integers denoting network indices
     and the values are the outputs of that summary network.
     """
-    input_tensor = summary_input(approximator, adapted_data)
+    summary_inputs = summary_inputs_by_network(approximator, adapted_data)
 
     result = {}
 
     for i, summary_network in enumerate(approximator.summary_networks or []):
-        output_tensor = summary_network(input_tensor, training=False)
+        output_tensor = summary_network(summary_inputs[i], training=False)
         result[i] = output_tensor
-
-        input_tensor = output_tensor
 
     return result
 
@@ -97,6 +95,9 @@ def summary_inputs_by_network(approximator: "GraphicalApproximator", adapted_dat
         # next summary network uses previous output as input
         input_tensor = output_tensor
 
+        if input_tensor.ndim == 2:
+            break
+
     # extra summary networks required for reshaped inputs
     input_tensor = summary_input(approximator, adapted_data)
     inference_variables = inference_variables_by_network(approximator, adapted_data)
@@ -110,10 +111,20 @@ def summary_inputs_by_network(approximator: "GraphicalApproximator", adapted_dat
             reshaped_input = _permute_to_prefix(input_tensor, prefix)
             result[network_idx] = reshaped_input
 
-            for i in range(len(prefix), len(reshaped_input) - 2):
-                print(i)
+            for i in range(len(prefix), len(reshaped_input.shape) - 2):
                 network_idx += 1
                 result[network_idx] = approximator.summary_networks[network_idx - 1](result[network_idx - 1])
+
+    # extra summary networks required for non-exchangeable nodes
+    network_composition = approximator.network_composition
+
+    network_idx = max(result.keys()) + 1
+    for i, composition in network_composition.items():
+        for node in composition:
+            if not approximator.graph.allows_amortization(node):
+                result[network_idx] = inference_variables[i]
+                network_idx += 1
+                continue
 
     return result
 
@@ -256,9 +267,6 @@ def _permute_to_prefix(source_tensor, prefix_shape):
     """
     Mutates the source shape in such a way that it starts with `prefix`.
     """
-    print(":")
-    print(keras.ops.shape(source_tensor))
-    print(prefix_shape)
     source_shape = keras.ops.shape(source_tensor)
     prefix_indices = [list(source_shape).index(s) for s in prefix_shape]
     remaining_indices = [i for i in range(len(source_shape)) if i not in prefix_indices]

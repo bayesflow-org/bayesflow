@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from .actnorm import ActNorm
 from .layers import DualCoupling
 
-from ...inference_network import InferenceNetwork
+from ...inference import InferenceNetwork
 
 
 @serializable("bayesflow.networks")

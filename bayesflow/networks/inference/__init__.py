@@ -1,3 +1,4 @@
+from .inference_network import InferenceNetwork
 from .consistency import ConsistencyModel, StableConsistencyModel
 from .coupling import CouplingFlow
 from .diffusion import DiffusionModel

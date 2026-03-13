@@ -1,7 +1,7 @@
 from bayesflow.utils.serialization import serializable
 from bayesflow.types import Tensor
 
-from ...summary_network import SummaryNetwork
+from ...summary import SummaryNetwork
 
 
 @serializable("bayesflow.networks")

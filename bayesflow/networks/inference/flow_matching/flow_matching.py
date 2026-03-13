@@ -19,7 +19,7 @@ from bayesflow.utils import (
 )
 from bayesflow.utils.serialization import serialize, serializable
 
-from ...inference_network import InferenceNetwork
+from ...inference import InferenceNetwork
 from ...defaults import TIME_MLP_DEFAULTS, FLOW_MATCHING_INTEGRATE_DEFAULTS, OPTIMAL_TRANSPORT_DEFAULTS
 
 

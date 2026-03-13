@@ -25,7 +25,7 @@ from bayesflow.utils.serialization import serialize, serializable
 from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
 
-from ...inference_network import InferenceNetwork
+from ...inference import InferenceNetwork
 from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_INTEGRATE_DEFAULTS
 
 

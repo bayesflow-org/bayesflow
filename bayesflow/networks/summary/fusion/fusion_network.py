@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from ...summary_network import SummaryNetwork
+from ...summary import SummaryNetwork
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Tensor, Shape
 import keras

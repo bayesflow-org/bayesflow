@@ -12,7 +12,7 @@ from .double_conv import DoubleConv
 from ..transformers.attention import PoolingByMultiHeadAttention
 
 from ...helpers import Residual
-from ...summary_network import SummaryNetwork
+from ...summary import SummaryNetwork
 
 
 @serializable("bayesflow.networks")

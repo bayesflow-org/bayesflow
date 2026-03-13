@@ -8,7 +8,7 @@ from bayesflow.utils.serialization import serializable
 from .equivariant_layer import EquivariantLayer
 from .invariant_layer import InvariantLayer
 
-from ...summary_network import SummaryNetwork
+from ...summary import SummaryNetwork
 
 
 @serializable("bayesflow.networks")

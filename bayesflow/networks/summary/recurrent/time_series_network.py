@@ -4,7 +4,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable
 
 from .skip_recurrent import SkipRecurrentNet
-from ...summary_network import SummaryNetwork
+from ...summary import SummaryNetwork
 
 
 @serializable("bayesflow.networks")

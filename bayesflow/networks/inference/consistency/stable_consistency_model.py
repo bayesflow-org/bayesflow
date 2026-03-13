@@ -18,7 +18,7 @@ from bayesflow.utils import (
 )
 from bayesflow.utils.serialization import serializable, serialize
 
-from ...inference_network import InferenceNetwork
+from ...inference import InferenceNetwork
 from ...defaults import TIME_MLP_DEFAULTS, WEIGHT_MLP_DEFAULTS
 
 

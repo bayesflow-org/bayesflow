@@ -210,17 +210,23 @@ def _permute_to_prefix(source_shape, prefix):
     return tuple(source_shape[i] for i in perm)
 
 
-def _summary_input_shape(graph: InvertedGraph) -> tuple[int | sp.Expr, ...]:
+def _summary_input_shape(
+    graph: InvertedGraph, data_shapes: dict | None = None, meta_dict: dict | None = None
+) -> tuple[int | sp.Expr, ...]:
     """
     Returns the input for the first summary network.
     """
     data_node = graph.simulation_graph.data_node()
     data_variables = graph.simulation_graph.variable_names()[data_node]
-    output_shapes = graph.simulation_graph.output_shapes()
+
+    if data_shapes:
+        shape_source = data_shapes
+    else:
+        shape_source = graph.simulation_graph.output_shapes(meta_dict)
 
     shapes = []
 
     for variable in data_variables:
-        shapes.append(output_shapes[variable])
+        shapes.append(shape_source[variable])
 
     return concatenate_shapes(shapes)

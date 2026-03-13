@@ -492,7 +492,7 @@ def test_data_conditions_by_network_crossed_design_irt(crossed_design_irt_simula
 
     assert keras.ops.all(conditions[0] == summary_outputs[1])
     assert keras.ops.all(conditions[1] == summary_outputs[0])
-    assert keras.ops.all(conditions[2][:, 0, :] == summary_outputs[1])
+    assert keras.ops.all(conditions[2] == summary_outputs[2])
 
     condition_shapes = data_condition_shapes_by_network(approximator, data_shapes)
 
@@ -696,45 +696,18 @@ def test_inference_conditions_crossed_design_irt(crossed_design_irt_simulator, c
     expected_shape = (
         2,
         data.meta["num_students"],
-        20 + data.meta["num_questions"] * 3 + 4 + 2,
+        30 + 40 + 4 + 2,
     )
     assert keras.ops.shape(conditions[2]) == expected_shape
 
     # output is as expected
     data_conditions = data_conditions_by_network(approximator, data)
-    # data_conditions = summary_outputs[1]
+    additional_conditions = summary_outputs[3]
+
     mu_question_mean = approximator.standardize_layers["mu_question_mean"](data["mu_question_mean"])
     sigma_question_mean = approximator.standardize_layers["sigma_question_mean"](data["sigma_question_mean"])
     mu_question_std = approximator.standardize_layers["mu_question_std"](data["mu_question_std"])
     sigma_question_std = approximator.standardize_layers["sigma_question_std"](data["sigma_question_std"])
-
-    question_mean = approximator.standardize_layers["question_mean"](data["question_mean"])
-    question_mean_rank = keras.ops.cast(keras.ops.ndim(question_mean), "int32")
-    question_mean_perm = (*range(question_mean_rank - 2), question_mean_rank - 1, question_mean_rank - 2)
-    question_mean_transpose = keras.ops.transpose(question_mean, axes=question_mean_perm)
-    question_mean_reshape = keras.ops.reshape(
-        question_mean_transpose, (*keras.ops.shape(question_mean_transpose)[:-2], -1)
-    )
-
-    question_std = approximator.standardize_layers["question_std"](data["question_std"])
-    question_std_rank = keras.ops.cast(keras.ops.ndim(question_std), "int32")
-    question_std_perm = (*range(question_std_rank - 2), question_std_rank - 1, question_std_rank - 2)
-    question_std_transpose = keras.ops.transpose(question_std, axes=question_std_perm)
-    question_std_reshape = keras.ops.reshape(
-        question_std_transpose, (*keras.ops.shape(question_std_transpose)[:-2], -1)
-    )
-
-    question_difficulty = approximator.standardize_layers["question_difficulty"](data["question_difficulty"])
-    question_difficulty_rank = keras.ops.cast(keras.ops.ndim(question_difficulty), "int32")
-    question_difficulty_perm = (
-        *range(question_difficulty_rank - 2),
-        question_difficulty_rank - 1,
-        question_difficulty_rank - 2,
-    )
-    question_difficulty_transpose = keras.ops.transpose(question_difficulty, axes=question_difficulty_perm)
-    question_difficulty_reshape = keras.ops.reshape(
-        question_difficulty_transpose, (*keras.ops.shape(question_mean_transpose)[:-2], -1)
-    )
 
     node_reps = summary_input(approximator, data).shape[1:-1]
     squared = keras.ops.sqrt(node_reps)
@@ -745,15 +718,10 @@ def test_inference_conditions_crossed_design_irt(crossed_design_irt_simulator, c
             sigma_question_mean,
             mu_question_std,
             sigma_question_std,
-            question_mean_reshape,
-            question_std_reshape,
-            question_difficulty_reshape,
             data_conditions[2],
+            additional_conditions,
             expanded,
         ]
     )
-    print("__")
-    print(expected_output.shape)
-    print(conditions[2].shape)
-    print("##")
+
     assert keras.ops.all(conditions[2] == expected_output)

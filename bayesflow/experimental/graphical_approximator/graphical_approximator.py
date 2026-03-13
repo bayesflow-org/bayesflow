@@ -446,8 +446,11 @@ class GraphicalApproximator(Approximator):
         Infers meta information (sympy symbol → concrete value) from data shapes by comparing
         the symbolic template shapes against the concrete shapes of the observed data.
         """
-        meta_dict = {}
         data_shapes = self._data_shapes(data)
+        return self._meta_dict_from_data_shapes(data_shapes)
+
+    def _meta_dict_from_data_shapes(self, data_shapes) -> dict[str, Shape]:
+        meta_dict = {}
         output_shapes = self.graph.simulation_graph.output_shapes()
 
         for k, v in data_shapes.items():

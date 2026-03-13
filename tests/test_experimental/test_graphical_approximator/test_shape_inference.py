@@ -6,7 +6,9 @@ def test_data_condition_shapes_by_network_single_level(single_level_simulator, s
 
     data = single_level_simulator.sample(1)
     data_shapes = single_level_approximator._data_shapes(data)
-    assert data_condition_shapes_by_network(single_level_approximator) == {0: (sp.Symbol("B"), 10)}
+    assert data_condition_shapes_by_network(single_level_approximator) == {
+        0: (sp.Symbol("B"), sp.Symbol("summary_dim_0"))
+    }
     assert data_condition_shapes_by_network(single_level_approximator, data_shapes) == {0: (1, 10)}
 
 
@@ -16,8 +18,8 @@ def test_data_condition_shapes_by_network_two_level(two_level_simulator, two_lev
     data = two_level_simulator.sample(1)
     data_shapes = two_level_approximator._data_shapes(data)
     assert data_condition_shapes_by_network(two_level_approximator) == {
-        0: (sp.Symbol("B"), 20),
-        1: (sp.Symbol("B"), 6, 10),
+        0: (sp.Symbol("B"), sp.Symbol("summary_dim_1")),
+        1: (sp.Symbol("B"), 6, sp.Symbol("summary_dim_0")),
     }
     assert data_condition_shapes_by_network(two_level_approximator, data_shapes) == {0: (1, 20), 1: (1, 6, 10)}
 
@@ -28,9 +30,9 @@ def test_data_condition_shapes_by_network_three_level(three_level_simulator, thr
     data = three_level_simulator.sample(1)
     data_shapes = three_level_approximator._data_shapes(data)
     assert data_condition_shapes_by_network(three_level_approximator) == {
-        0: (sp.Symbol("B"), 30),
-        1: (sp.Symbol("B"), sp.Symbol("N_classrooms"), 20),
-        2: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("N_students"), 10),
+        0: (sp.Symbol("B"), sp.Symbol("summary_dim_2")),
+        1: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("summary_dim_1")),
+        2: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("N_students"), sp.Symbol("summary_dim_0")),
     }
     assert data_condition_shapes_by_network(three_level_approximator, data_shapes) == {
         0: (1, 30),
@@ -47,14 +49,14 @@ def test_data_condition_shapes_by_network_crossed_design_irt(
     data = crossed_design_irt_simulator.sample(1)
     data_shapes = crossed_design_irt_approximator._data_shapes(data)
     assert data_condition_shapes_by_network(crossed_design_irt_approximator) == {
-        0: (sp.Symbol("B"), 20),
-        1: (sp.Symbol("B"), sp.Symbol("num_questions"), 10),
-        2: (sp.Symbol("B"), sp.Symbol("num_students"), 20),
+        0: (sp.Symbol("B"), sp.Symbol("summary_dim_1")),
+        1: (sp.Symbol("B"), sp.Symbol("num_questions"), sp.Symbol("summary_dim_0")),
+        2: (sp.Symbol("B"), sp.Symbol("num_students"), sp.Symbol("summary_dim_2")),
     }
     assert data_condition_shapes_by_network(crossed_design_irt_approximator, data_shapes) == {
         0: (1, 20),
         1: (1, data.meta["num_questions"], 10),
-        2: (1, data.meta["num_students"], 20),
+        2: (1, data.meta["num_students"], 30),
     }
 
 
@@ -63,7 +65,9 @@ def test_summary_output_shapes_by_network_single_level(single_level_simulator, s
 
     data = single_level_simulator.sample(1)
     data_shapes = single_level_approximator._data_shapes(data)
-    assert summary_output_shapes_by_network(single_level_approximator) == {0: (sp.Symbol("B"), 10)}
+    assert summary_output_shapes_by_network(single_level_approximator) == {
+        0: (sp.Symbol("B"), sp.Symbol("summary_dim_0"))
+    }
     assert summary_output_shapes_by_network(single_level_approximator, data_shapes) == {0: (1, 10)}
 
 
@@ -73,8 +77,8 @@ def test_summary_output_shapes_by_network_two_level(two_level_simulator, two_lev
     data = two_level_simulator.sample(1)
     data_shapes = two_level_approximator._data_shapes(data)
     assert summary_output_shapes_by_network(two_level_approximator) == {
-        0: (sp.Symbol("B"), 6, 10),
-        1: (sp.Symbol("B"), 20),
+        0: (sp.Symbol("B"), 6, sp.Symbol("summary_dim_0")),
+        1: (sp.Symbol("B"), sp.Symbol("summary_dim_1")),
     }
     assert summary_output_shapes_by_network(two_level_approximator, data_shapes) == {
         0: (1, 6, 10),
@@ -88,9 +92,9 @@ def test_summary_output_shapes_by_network_three_level(three_level_simulator, thr
     data = three_level_simulator.sample(1)
     data_shapes = three_level_approximator._data_shapes(data)
     assert summary_output_shapes_by_network(three_level_approximator) == {
-        0: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("N_students"), 10),
-        1: (sp.Symbol("B"), sp.Symbol("N_classrooms"), 20),
-        2: (sp.Symbol("B"), 30),
+        0: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("N_students"), sp.Symbol("summary_dim_0")),
+        1: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("summary_dim_1")),
+        2: (sp.Symbol("B"), sp.Symbol("summary_dim_2")),
     }
     assert summary_output_shapes_by_network(three_level_approximator, data_shapes) == {
         0: (1, data.meta["N_classrooms"], data.meta["N_students"], 10),
@@ -107,12 +111,16 @@ def test_summary_output_shapes_by_network_crossed_design_irt(
     data = crossed_design_irt_simulator.sample(1)
     data_shapes = crossed_design_irt_approximator._data_shapes(data)
     assert summary_output_shapes_by_network(crossed_design_irt_approximator) == {
-        0: (sp.Symbol("B"), sp.Symbol("num_questions"), 10),
-        1: (sp.Symbol("B"), 20),
+        0: (sp.Symbol("B"), sp.Symbol("num_questions"), sp.Symbol("summary_dim_0")),
+        1: (sp.Symbol("B"), sp.Symbol("summary_dim_1")),
+        2: (sp.Symbol("B"), sp.Symbol("num_students"), sp.Symbol("summary_dim_2")),
+        3: (sp.Symbol("B"), sp.Symbol("summary_dim_3")),
     }
     assert summary_output_shapes_by_network(crossed_design_irt_approximator, data_shapes) == {
         0: (1, data.meta["num_questions"], 10),
         1: (1, 20),
+        2: (1, data.meta["num_students"], 30),
+        3: (1, 40),
     }
 
 
@@ -131,7 +139,7 @@ def test_summary_input_shapes_by_network_two_level(two_level_simulator, two_leve
     data_shapes = two_level_approximator._data_shapes(data)
     assert summary_input_shapes_by_network(two_level_approximator) == {
         0: (sp.Symbol("B"), 6, 10, 1),
-        1: (sp.Symbol("B"), 6, 10),
+        1: (sp.Symbol("B"), 6, sp.Symbol("summary_dim_0")),
     }
     assert summary_input_shapes_by_network(two_level_approximator, data_shapes) == {
         0: (1, 6, 10, 1),
@@ -146,8 +154,8 @@ def test_summary_input_shapes_by_network_three_level(three_level_simulator, thre
     data_shapes = three_level_approximator._data_shapes(data)
     assert summary_input_shapes_by_network(three_level_approximator) == {
         0: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("N_students"), sp.Symbol("N_scores"), 1),
-        1: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("N_students"), 10),
-        2: (sp.Symbol("B"), sp.Symbol("N_classrooms"), 20),
+        1: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("N_students"), sp.Symbol("summary_dim_0")),
+        2: (sp.Symbol("B"), sp.Symbol("N_classrooms"), sp.Symbol("summary_dim_1")),
     }
     assert summary_input_shapes_by_network(three_level_approximator, data_shapes) == {
         0: (1, data.meta["N_classrooms"], data.meta["N_students"], data.meta["N_scores"], 1),
@@ -165,11 +173,15 @@ def test_summary_input_shapes_by_network_crossed_design_irt(
     data_shapes = crossed_design_irt_approximator._data_shapes(data)
     assert summary_input_shapes_by_network(crossed_design_irt_approximator) == {
         0: (sp.Symbol("B"), sp.Symbol("num_questions"), sp.Symbol("num_students"), 1),
-        1: (sp.Symbol("B"), sp.Symbol("num_questions"), 10),
+        1: (sp.Symbol("B"), sp.Symbol("num_questions"), sp.Symbol("summary_dim_0")),
+        2: (sp.Symbol("B"), sp.Symbol("num_students"), sp.Symbol("num_questions"), 1),
+        3: (sp.Symbol("B"), sp.Symbol("num_questions"), 3),
     }
     assert summary_input_shapes_by_network(crossed_design_irt_approximator, data_shapes) == {
         0: (1, data.meta["num_questions"], data.meta["num_students"], 1),
         1: (1, data.meta["num_questions"], 10),
+        2: (1, data.meta["num_students"], data.meta["num_questions"], 1),
+        3: (1, data.meta["num_questions"], 3),
     }
 
 
@@ -332,7 +344,7 @@ def test_inference_condition_shapes_by_network_crossed_design_irt(
         2: (
             2,
             data.meta["num_students"],
-            20 + data.meta["num_questions"] * 3 + 4 + 2,
+            30 + 40 + 4 + 2,
         ),  # 20 summary dimensions + num_questions * 3 + 4 variables + 2 node reps
     }
 

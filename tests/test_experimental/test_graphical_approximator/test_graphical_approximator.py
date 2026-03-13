@@ -163,7 +163,12 @@ def test_custom_standardize():
     adapter.to_array()
     adapter.convert_dtype("float64", "float32")
 
-    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
+    summary_networks = [
+        DeepSet(summary_dim=10),
+        DeepSet(summary_dim=20),
+        DeepSet(summary_dim=30),
+        DeepSet(summary_dim=40),
+    ]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 
     inverted_graph = crossed_design_irt_simulator.graph.invert()
@@ -197,7 +202,12 @@ def test_default_adapter():
     crossed_design_irt_simulator = crossed_design_irt_simulator()
     crossed_design_irt_approximator = crossed_design_irt_approximator()
 
-    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
+    summary_networks = [
+        DeepSet(summary_dim=10),
+        DeepSet(summary_dim=20),
+        DeepSet(summary_dim=30),
+        DeepSet(summary_dim=40),
+    ]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 
     inverted_graph = crossed_design_irt_simulator.graph.invert()
@@ -255,7 +265,12 @@ def test_log_prob():
     adapter.to_array()
     adapter.convert_dtype("float64", "float32")
 
-    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
+    summary_networks = [
+        DeepSet(summary_dim=10),
+        DeepSet(summary_dim=20),
+        DeepSet(summary_dim=30),
+        DeepSet(summary_dim=40),
+    ]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 
     inverted_graph = crossed_design_irt_simulator.graph.invert()

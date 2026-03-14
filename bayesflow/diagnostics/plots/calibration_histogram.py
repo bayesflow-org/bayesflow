@@ -9,6 +9,7 @@ from scipy.stats import binom
 from bayesflow.utils import logging
 from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_subplots
 from bayesflow.utils.dict_utils import compute_test_quantities
+from .plot import CellPlot
 
 
 def calibration_histogram(
@@ -168,3 +169,134 @@ def calibration_histogram(
     plot_data["fig"].tight_layout()
 
     return plot_data["fig"]
+
+
+class CalibrationHistogram(CellPlot):
+    """Class-based SBC calibration histogram with cell/grid interface.
+
+    Plots histograms of rank statistics for each variable as a subplot grid,
+    with binomial confidence bands as proposed by [1].
+
+    [1] Talts, S., Betancourt, M., Simpson, D., Vehtari, A., & Gelman, A.
+    (2018). Validating Bayesian inference algorithms with simulation-based
+    calibration. arXiv:1804.06788.
+
+    Parameters
+    ----------
+    variable_keys : Sequence[str], optional
+        Select keys from the input dictionaries. By default, all keys.
+    variable_names : Sequence[str], optional
+        Human-readable variable names for subplot titles.
+    test_quantities : dict[str, Callable], optional
+        Functions to compute test quantities before the main computation.
+    figsize : Sequence[float], optional
+        Overall figure size.
+    num_row : int, optional
+        Number of subplot rows. Inferred automatically if not set.
+    num_col : int, optional
+        Number of subplot columns. Inferred automatically if not set.
+    label_fontsize : int, optional (default = 16)
+        Font size for axis labels.
+    title_fontsize : int, optional (default = 18)
+        Font size for subplot titles.
+    tick_fontsize : int, optional (default = 12)
+        Font size for tick labels.
+    num_bins : int, optional (default = 10)
+        Number of histogram bins per variable. Inferred from data if None.
+    binomial_interval : float, optional (default = 0.99)
+        Width of the binomial confidence band.
+    color : str, optional (default = "#132a70")
+        Histogram bar color.
+    """
+
+    def __init__(
+        self,
+        variable_keys: Sequence[str] = None,
+        variable_names: Sequence[str] = None,
+        test_quantities: dict[str, Callable] = None,
+        figsize: Sequence[float] = None,
+        num_row: int = None,
+        num_col: int = None,
+        label_fontsize: int = 16,
+        title_fontsize: int = 18,
+        tick_fontsize: int = 12,
+        num_bins: int = 10,
+        binomial_interval: float = 0.99,
+        color: str = "#132a70",
+    ):
+        super().__init__(
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+            figsize=figsize,
+            num_row=num_row,
+            num_col=num_col,
+            label_fontsize=label_fontsize,
+            title_fontsize=title_fontsize,
+            tick_fontsize=tick_fontsize,
+            xlabel="Rank statistic",
+            ylabel="",
+        )
+        self.num_bins = num_bins
+        self.binomial_interval = binomial_interval
+        self.color = color
+
+    def plot_cell(
+        self,
+        ax: plt.Axes,
+        estimates_i: np.ndarray,
+        targets_i: np.ndarray,
+        variable_name: str = None,
+        *,
+        legend: bool = False,
+    ) -> plt.Axes:
+        """Draw the SBC rank histogram for a single variable.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes to draw on.
+        estimates_i : np.ndarray of shape (num_datasets, num_draws)
+            Posterior draws for one variable.
+        targets_i : np.ndarray of shape (num_datasets,)
+            Ground-truth values for one variable.
+        variable_name : str, optional
+            Name of the variable, used as the subplot title.
+        legend : bool, optional (default = False)
+            Unused; included for interface consistency.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+        """
+        num_sims = estimates_i.shape[0]
+        num_draws = estimates_i.shape[1]
+        ratio = int(num_sims / num_draws)
+
+        if ratio < 20:
+            logging.warning(
+                "The ratio of simulations / posterior draws should be > 20 "
+                f"for reliable variance reduction, but your ratio is {ratio}. "
+                "Confidence intervals might be unreliable!"
+            )
+
+        num_bins = self.num_bins
+        if num_bins is None:
+            num_bins = int(ratio / 2)
+            if num_bins == 1:
+                num_bins = 4
+
+        ranks_i = np.sum(estimates_i < targets_i[:, np.newaxis], axis=1)
+
+        endpoints = binom.interval(self.binomial_interval, num_sims, 1 / num_bins)
+        mean = num_sims / num_bins
+
+        ax.axhspan(endpoints[0], endpoints[1], facecolor="gray", alpha=0.3)
+        ax.axhline(mean, color="gray", zorder=0, alpha=0.9)
+        sns.histplot(ranks_i, kde=False, ax=ax, color=self.color, bins=num_bins, alpha=0.95)
+        ax.get_yaxis().set_ticks([])
+
+        if variable_name is not None:
+            ax.set_title(variable_name, fontsize=self.title_fontsize)
+
+        return ax

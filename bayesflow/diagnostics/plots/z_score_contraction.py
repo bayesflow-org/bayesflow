@@ -5,6 +5,7 @@ import numpy as np
 
 from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_subplots
 from bayesflow.utils.dict_utils import compute_test_quantities
+from .plot import CellPlot
 
 
 def z_score_contraction(
@@ -168,3 +169,119 @@ def z_score_contraction(
 
     plot_data["fig"].tight_layout()
     return plot_data["fig"]
+
+
+class ZScoreContraction(CellPlot):
+    """Class-based posterior z-score vs. contraction plot with cell/grid interface.
+
+    For each variable, plots the posterior z-score against the posterior
+    contraction as a graphical check for global model sensitivity, following [1].
+
+    The posterior z-score measures how many posterior standard deviations the
+    posterior mean is from the true value; the posterior contraction measures
+    how much the posterior has narrowed relative to the prior.
+
+    [1] Schad, D. J., Betancourt, M., & Vasishth, S. (2021). Toward a
+    principled Bayesian workflow in cognitive science. Psychological
+    methods, 26(1), 103. https://arxiv.org/abs/1904.12765
+
+    Parameters
+    ----------
+    variable_keys : Sequence[str], optional
+        Select keys from the input dictionaries. By default, all keys.
+    variable_names : Sequence[str], optional
+        Human-readable variable names for subplot titles.
+    test_quantities : dict[str, Callable], optional
+        Functions to compute test quantities before the main computation.
+    figsize : Sequence[float], optional
+        Overall figure size.
+    num_row : int, optional
+        Number of subplot rows. Inferred automatically if not set.
+    num_col : int, optional
+        Number of subplot columns. Inferred automatically if not set.
+    label_fontsize : int, optional (default = 16)
+        Font size for axis labels.
+    title_fontsize : int, optional (default = 18)
+        Font size for subplot titles.
+    tick_fontsize : int, optional (default = 12)
+        Font size for tick labels.
+    color : str, optional (default = "#132a70")
+        Color for the scatter points.
+    markersize : float, optional
+        Marker size in points**2.
+    """
+
+    def __init__(
+        self,
+        variable_keys: Sequence[str] = None,
+        variable_names: Sequence[str] = None,
+        test_quantities: dict[str, Callable] = None,
+        figsize: Sequence[float] = None,
+        num_row: int = None,
+        num_col: int = None,
+        label_fontsize: int = 16,
+        title_fontsize: int = 18,
+        tick_fontsize: int = 12,
+        color: str = "#132a70",
+        markersize: float = None,
+    ):
+        super().__init__(
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+            figsize=figsize,
+            num_row=num_row,
+            num_col=num_col,
+            label_fontsize=label_fontsize,
+            title_fontsize=title_fontsize,
+            tick_fontsize=tick_fontsize,
+            xlabel="Posterior contraction",
+            ylabel="Posterior z-score",
+        )
+        self.color = color
+        self.markersize = markersize
+
+    def plot_cell(
+        self,
+        ax: plt.Axes,
+        estimates_i: np.ndarray,
+        targets_i: np.ndarray,
+        variable_name: str = None,
+        *,
+        legend: bool = False,
+    ) -> plt.Axes:
+        """Draw the z-score vs. contraction scatter for a single variable.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes to draw on.
+        estimates_i : np.ndarray of shape (num_datasets, num_draws)
+            Posterior draws for one variable.
+        targets_i : np.ndarray of shape (num_datasets,)
+            Ground-truth values for one variable.
+        variable_name : str, optional
+            Name of the variable, used as the subplot title.
+        legend : bool, optional (default = False)
+            Unused; included for interface consistency.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+        """
+        post_mean = estimates_i.mean(axis=1)
+        post_var = estimates_i.var(axis=1, ddof=1)
+        post_std = np.sqrt(post_var)
+
+        prior_var = targets_i.var(ddof=1)
+
+        contraction = np.clip(1 - (post_var / prior_var), 0, 1)
+        z_score = (post_mean - targets_i) / post_std
+
+        ax.scatter(contraction, z_score, color=self.color, alpha=0.5, s=self.markersize)
+        ax.set_xlim([-0.05, 1.05])
+
+        if variable_name is not None:
+            ax.set_title(variable_name, fontsize=self.title_fontsize)
+
+        return ax

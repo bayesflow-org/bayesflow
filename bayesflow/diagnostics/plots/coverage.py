@@ -5,6 +5,7 @@ import numpy as np
 
 from bayesflow.utils import prepare_plot_data, add_titles_and_labels, prettify_subplots, compute_empirical_coverage
 from bayesflow.utils.dict_utils import compute_test_quantities
+from .plot import CellPlot
 
 
 def coverage(
@@ -205,3 +206,151 @@ def coverage(
 
     plot_data["fig"].tight_layout()
     return plot_data["fig"]
+
+
+class Coverage(CellPlot):
+    """Class-based posterior coverage plot with cell/grid interface.
+
+    For each variable, shows the empirical coverage of central posterior
+    credible intervals against ideal coverage, with a 95% credible band
+    computed via the Beta-Binomial model.
+
+    Parameters
+    ----------
+    variable_keys : Sequence[str], optional
+        Select keys from the input dictionaries. By default, all keys.
+    variable_names : Sequence[str], optional
+        Human-readable variable names for subplot titles.
+    test_quantities : dict[str, Callable], optional
+        Functions to compute test quantities before the main computation.
+    figsize : Sequence[float], optional
+        Overall figure size.
+    num_row : int, optional
+        Number of subplot rows. Inferred automatically if not set.
+    num_col : int, optional
+        Number of subplot columns. Inferred automatically if not set.
+    label_fontsize : int, optional (default = 16)
+        Font size for axis labels.
+    title_fontsize : int, optional (default = 18)
+        Font size for subplot titles.
+    tick_fontsize : int, optional (default = 12)
+        Font size for tick labels.
+    difference : bool, optional (default = False)
+        If True, plots coverage minus interval width, making deviations from
+        ideal calibration more visible.
+    color : str, optional (default = "#132a70")
+        Color for the empirical coverage line.
+    legend_fontsize : int, optional (default = 14)
+        Font size for the legend (shown on the first subplot only).
+    legend_location : str, optional (default = "lower right")
+        Location of the legend.
+    """
+
+    def __init__(
+        self,
+        variable_keys: Sequence[str] = None,
+        variable_names: Sequence[str] = None,
+        test_quantities: dict[str, Callable] = None,
+        figsize: Sequence[float] = None,
+        num_row: int = None,
+        num_col: int = None,
+        label_fontsize: int = 16,
+        title_fontsize: int = 18,
+        tick_fontsize: int = 12,
+        difference: bool = False,
+        color: str = "#132a70",
+        legend_fontsize: int = 14,
+        legend_location: str = "lower right",
+    ):
+        super().__init__(
+            variable_keys=variable_keys,
+            variable_names=variable_names,
+            test_quantities=test_quantities,
+            figsize=figsize,
+            num_row=num_row,
+            num_col=num_col,
+            label_fontsize=label_fontsize,
+            title_fontsize=title_fontsize,
+            tick_fontsize=tick_fontsize,
+            xlabel="Central interval width",
+            ylabel="Empirical coverage difference" if difference else "Empirical coverage",
+        )
+        self.difference = difference
+        self.color = color
+        self.legend_fontsize = legend_fontsize
+        self.legend_location = legend_location
+
+    def plot_cell(
+        self,
+        ax: plt.Axes,
+        estimates_i: np.ndarray,
+        targets_i: np.ndarray,
+        variable_name: str = None,
+        *,
+        legend: bool = False,
+    ) -> plt.Axes:
+        """Draw the coverage plot for a single variable.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes to draw on.
+        estimates_i : np.ndarray of shape (num_datasets, num_draws)
+            Posterior draws for one variable.
+        targets_i : np.ndarray of shape (num_datasets,)
+            Ground-truth values for one variable.
+        variable_name : str, optional
+            Name of the variable, used as the subplot title.
+        legend : bool, optional (default = False)
+            Whether to add a legend to this cell.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+        """
+        num_draws = estimates_i.shape[1]
+        widths = np.arange(0, num_draws + 2) / (num_draws + 1)
+
+        coverage_data = compute_empirical_coverage(
+            estimates=estimates_i[:, :, np.newaxis],
+            targets=targets_i[:, np.newaxis],
+            widths=widths,
+            prob=0.95,
+            interval_type="central",
+        )
+
+        width_rep = coverage_data["width_represented"][:, 0]
+        coverage_est = coverage_data["coverage_estimates"][:, 0]
+        coverage_low = coverage_data["coverage_lower"][:, 0]
+        coverage_high = coverage_data["coverage_upper"][:, 0]
+
+        if self.difference:
+            ax.fill_between(
+                width_rep,
+                coverage_low - width_rep,
+                coverage_high - width_rep,
+                color="grey",
+                alpha=0.33,
+                label="95% Credible Interval",
+            )
+            ax.axhline(y=0, color="black", linestyle="dashed", label="Ideal Coverage")
+            ax.plot(width_rep, coverage_est - width_rep, color=self.color, alpha=1.0, label="Coverage Difference")
+        else:
+            ax.fill_between(
+                width_rep,
+                coverage_low,
+                coverage_high,
+                color="grey",
+                alpha=0.33,
+                label="95% Credible Interval",
+            )
+            ax.plot([0, 1], [0, 1], color="black", linestyle="dashed", label="Ideal Coverage")
+            ax.plot(width_rep, coverage_est, color=self.color, alpha=1.0, label="Empirical Coverage")
+
+        if variable_name is not None:
+            ax.set_title(variable_name, fontsize=self.title_fontsize)
+
+        if legend:
+            ax.legend(fontsize=self.legend_fontsize, loc=self.legend_location)
+
+        return ax

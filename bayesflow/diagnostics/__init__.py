@@ -12,9 +12,17 @@ from .metrics import (
 )
 
 from .plots import (
+    Plot,
+    CellPlot,
+    CustomPlot,
+    PairPlot,
     calibration_ecdf,
+    CalibrationECDF,
     calibration_ecdf_from_quantiles,
     calibration_histogram,
+    CalibrationHistogram,
+    coverage,
+    Coverage,
     loss,
     mc_calibration,
     mc_confusion_matrix,
@@ -24,8 +32,10 @@ from .plots import (
     pairs_samples,
     plot_quantity,
     recovery,
+    Recovery,
     recovery_from_estimates,
     z_score_contraction,
+    ZScoreContraction,
 )
 
 from ..utils._docs import _add_imports_to_all

@@ -1,7 +1,13 @@
 r"""
 A rich collection of neural network architectures for use in :py:class:`~bayesflow.approximators.Approximator`\ s.
 
-The module features inference networks (IN), summary networks (SN), as well as general purpose components.
+Examples
+--------
+>>> import bayesflow as bf  # doctest: +SKIP
+>>> approximator = bf.ContinuousApproximator(  # doctest: +SKIP
+...     inference_network=bf.networks.CouplingFlow(),
+...     summary_network=bf.networks.DeepSet(),
+... )
 """
 
 # Base classes
@@ -29,6 +35,6 @@ from . import subnets
 from .subnets import MLP, TimeMLP
 from .subnets import UViT, UNet, ResidualUViT
 
-from ..utils._docs import _add_imports_to_all
+from . import defaults
 
 __all__ = ["inference", "summary", "subnets", "defaults"]

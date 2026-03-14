@@ -1,6 +1,7 @@
 from .point_network import PointNetwork
 from .scoring_rule_network import ScoringRuleNetwork
 
+from . import scoring_rules
 from .scoring_rules import (
     ScoringRule,
     MeanScore,
@@ -11,6 +12,4 @@ from .scoring_rules import (
     CrossEntropyScore,
 )
 
-from bayesflow.utils._docs import _add_imports_to_all
-
-_add_imports_to_all()
+__all__ = ["scoring_rules", "ScoringRuleNetwork", "PointNetwork"]

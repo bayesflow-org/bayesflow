@@ -1,3 +1,8 @@
+r"""
+Neural networks for learning maximally informative compressions of data modalities
+such as images, timeseries, sets and combinations thereof.
+"""
+
 from .summary_network import SummaryNetwork
 from .convolutional import ConvolutionalNetwork
 from .deep_set import DeepSet

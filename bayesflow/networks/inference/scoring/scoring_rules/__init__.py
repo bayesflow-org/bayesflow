@@ -26,4 +26,4 @@ from .cross_entropy_score import CrossEntropyScore
 
 from bayesflow.utils._docs import _add_imports_to_all
 
-_add_imports_to_all(include_modules=[])
+_add_imports_to_all()

@@ -23,16 +23,16 @@ class PointNetwork(ScoringRuleNetwork):
     --------
     The following two are equivalent:
 
-    .. code-block:: pycon
+    >>> inference_network = bf.networks.PointNetwork(
+    ...     ["mean", "quantiles"], q=[0.1, 0.3, 0.5, 0.7, 0.9]
+    ... )  # doctest: +SKIP
 
-        >>> inference_network = bf.networks.PointNetwork(["mean", "quantiles"], q=[0.1, 0.3, 0.5, 0.7, 0.9])
-
-        >>> from bayesflow.scoring_rules import MeanScore, QuantileScore
-        >>> inference_network = bf.networks.ScoringRuleNetwork(
-        ...     mean=MeanScore(),
-        ...     quantiles=QuantileScore([0.1, 0.3, 0.5, 0.7, 0.9]),
-        ...     # mvn=MvNormalScore(),  # not supported by PointNetwork
-        ... )
+    >>> from bayesflow.scoring_rules import MeanScore, QuantileScore  # doctest: +SKIP
+    >>> inference_network = bf.networks.ScoringRuleNetwork(  # doctest: +SKIP
+    ...     mean=MeanScore(),
+    ...     quantiles=QuantileScore([0.1, 0.3, 0.5, 0.7, 0.9]),
+    ...     # mvn=MvNormalScore(),  # not supported by PointNetwork
+    ... )
 
     ... but the latter supports passing any subclass of :py:class:`ScoringRule`, e.g. parametric distributions.
     """

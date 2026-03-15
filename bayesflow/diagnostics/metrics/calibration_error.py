@@ -24,10 +24,14 @@ def calibration_error(
 
     Parameters
     ----------
-    estimates  : np.ndarray of shape (num_datasets, num_draws, num_variables)
-        The random draws from the approximate posteriors over ``num_datasets``
-    targets : np.ndarray of shape (num_datasets, num_variables)
-        The corresponding ground-truth values sampled from the prior
+    estimates  : np.ndarray or dict[str, np.ndarray]
+        The random draws from the approximate posteriors, either as a NumPy array of
+        shape (num_datasets, num_draws, num_variables) or as a dictionary mapping variable
+        names to arrays, over ``num_datasets``.
+    targets : np.ndarray or dict[str, np.ndarray]
+        The corresponding ground-truth values sampled from the prior, either as a NumPy
+        array of shape (num_datasets, num_variables) or as a dictionary mapping variable
+        names to arrays.
     variable_keys : Sequence[str], optional (default = None)
        Select keys from the dictionaries provided in estimates and targets.
        By default, select all keys.

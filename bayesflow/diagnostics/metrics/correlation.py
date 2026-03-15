@@ -1,3 +1,4 @@
+from typing import Any
 from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
@@ -5,16 +6,17 @@ import numpy as np
 from ...utils.dict_utils import dicts_to_arrays, compute_test_quantities
 
 
-def posterior_contraction(
+def correlation(
     estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     test_quantities: dict[str, Callable] = None,
-    aggregation: Callable | None = np.median,
-) -> dict[str, any]:
+    aggregation: Callable = np.median,
+) -> dict[str, Any]:
     """
-    Computes the posterior contraction (PC) from prior to posterior for the given samples.
+    Computes the Pearson correlation between estimates and targets for each random
+    draw from the posterior distribution across datasets, separately for each variable.
 
     Parameters
     ----------
@@ -39,32 +41,23 @@ def posterior_contraction(
         The dict keys are automatically added to ``variable_keys``
         and ``variable_names``.
         Test quantity functions are expected to accept a dict of draws with
-        shape ``(batch_size, ...)`` as the first (typically only)
-        positional argument and return an NumPy array of shape
-        ``(batch_size,)``.
-        The functions do not have to deal with an additional
-        sample dimension, as appropriate reshaping is done internally.
-    aggregation    : callable or None, optional (default = np.median)
-        Function to aggregate the PC across draws. Typically `np.mean` or `np.median`.
-        If None is provided, the individual values are returned.
+        shape ``(batch_size, ...)`` as the first positional argument and return
+        a NumPy array of shape ``(batch_size,)``.
+    aggregation    : callable, optional (default = np.median)
+        Function to aggregate the correlations across posterior draws.
+        Typically `np.mean` or `np.median`.
 
     Returns
     -------
     result : dict
         Dictionary containing:
 
-        - "values" : float or np.ndarray
-            The (optionally aggregated) posterior contraction per variable
+        - "values" : np.ndarray
+            The aggregated Pearson correlation for each variable.
         - "metric_name" : str
-            The name of the metric ("Posterior Contraction").
+            The name of the metric ("Correlation").
         - "variable_names" : str
             The (inferred) variable names.
-
-    Notes
-    -----
-    Posterior contraction measures the reduction in uncertainty from the prior to the posterior.
-    Values close to 1 indicate strong contraction (high reduction in uncertainty), while values close to 0
-    indicate low contraction.
     """
 
     # Optionally, compute and prepend test quantities from draws
@@ -82,16 +75,31 @@ def posterior_contraction(
         targets = updated_data["targets"]
 
     samples = dicts_to_arrays(
-        estimates=estimates,
-        targets=targets,
-        variable_keys=variable_keys,
-        variable_names=variable_names,
+        estimates=estimates, targets=targets, variable_keys=variable_keys, variable_names=variable_names
     )
 
-    post_vars = samples["estimates"].var(axis=1, ddof=1)
-    prior_vars = samples["targets"].var(axis=0, keepdims=True, ddof=1)
-    contraction = np.clip(1 - (post_vars / prior_vars), 0, 1)
-    if aggregation is not None:
-        contraction = aggregation(contraction, axis=0)
+    est = np.asarray(samples["estimates"])
+    tgt = np.asarray(samples["targets"])
+
+    # Correlation across datasets, separately for each posterior draw and variable
+    est_centered = est - np.mean(est, axis=0, keepdims=True)
+    tgt_centered = tgt[:, None, :] - np.mean(tgt, axis=0, keepdims=True)[:, None, :]
+
+    numerator = np.sum(est_centered * tgt_centered, axis=0)
+    denominator = np.sqrt(np.sum(est_centered**2, axis=0) * np.sum(tgt_centered**2, axis=0))
+
+    corr = np.divide(
+        numerator,
+        denominator,
+        out=np.full_like(numerator, np.nan, dtype=float),
+        where=denominator != 0,
+    )
+
+    corr = aggregation(corr, axis=0)
+
     variable_names = samples["estimates"].variable_names
-    return {"values": contraction, "metric_name": "Posterior Contraction", "variable_names": variable_names}
+    return {
+        "values": corr,
+        "metric_name": "Correlation",
+        "variable_names": variable_names,
+    }

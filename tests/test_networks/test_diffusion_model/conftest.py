@@ -87,3 +87,61 @@ def diffusion_model_with_masking():
         drop_cond_prob=0.1,
         drop_target_prob=0.5,
     )
+
+
+@pytest.fixture
+def simple_diffusion_model():
+    """Create a simple diffusion model for testing compositional sampling."""
+    from bayesflow.networks import DiffusionModel
+
+    return DiffusionModel(
+        subnet_kwargs={"widths": (32, 32)},
+        noise_schedule="cosine",
+        prediction_type="noise",
+        loss_type="noise",
+    )
+
+
+@pytest.fixture
+def simple_compositional_diffusion_model():
+    """Create a simple diffusion model for testing compositional sampling."""
+    from bayesflow.networks import CompositionalDiffusionModel
+
+    return CompositionalDiffusionModel(
+        subnet_kwargs={"widths": (32, 32)},
+        noise_schedule="cosine",
+        prediction_type="noise",
+        loss_type="noise",
+    )
+
+
+@pytest.fixture
+def compositional_conditions():
+    """Create test conditions for compositional sampling."""
+    batch_size = 2
+    n_compositional = 3
+    n_samples = 4
+    condition_dim = 5
+
+    return keras.random.normal((batch_size, n_compositional, n_samples, condition_dim))
+
+
+@pytest.fixture
+def compositional_state():
+    """Create test state for compositional sampling."""
+    batch_size = 2
+    n_samples = 4
+    param_dim = 3
+
+    return keras.random.normal((batch_size, n_samples, param_dim))
+
+
+@pytest.fixture
+def mock_prior_score():
+    """Create a mock prior score function for testing."""
+
+    def prior_score_fn(theta):
+        # Simple quadratic prior: -0.5 * ||theta||^2
+        return -theta
+
+    return prior_score_fn

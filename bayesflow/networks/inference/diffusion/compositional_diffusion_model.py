@@ -7,13 +7,15 @@ from keras import ops
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     expand_right_as,
-    logging,
     integrate,
     integrate_stochastic,
+    logging,
+    maybe_mask_tensor,
     STOCHASTIC_METHODS,
     DETERMINISTIC_METHODS,
 )
 from bayesflow.utils.serialization import serializable
+
 from .diffusion_model import DiffusionModel
 from .schedules.noise_schedule import NoiseSchedule
 
@@ -23,29 +25,10 @@ from .schedules.noise_schedule import NoiseSchedule
 class CompositionalDiffusionModel(DiffusionModel):
     """Compositional Diffusion Model for Amortized Bayesian Inference. Allows to learn a single
     diffusion model one single i.i.d simulations that can perform inference for multiple simulations by leveraging a
-    compositional score function as in [2].
+    compositional score function as in [1].
 
-    [1] Score-Based Generative Modeling through Stochastic Differential Equations: Song et al. (2021)
-    [2] Compositional Score Modeling for Simulation-Based Inference: Geffner et al. (2023)
-    [3] Compositional amortized inference for large-scale hierarchical Bayesian models: Arruda et al. (2025)
+    [1] Compositional amortized inference for large-scale hierarchical Bayesian models: Arruda et al. (2025)
     """
-
-    TIME_MLP_DEFAULT_CONFIG = {
-        "widths": (256, 256, 256, 256, 256),
-        "activation": "mish",
-        "kernel_initializer": "he_normal",
-        "residual": True,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-        "time_embedding_dim": 32,
-        "merge": "concat",
-        "norm": "layer",
-    }
-
-    INTEGRATE_DEFAULT_CONFIG = {
-        "method": "two_step_adaptive",
-        "steps": "adaptive",
-    }
 
     def __init__(
         self,
@@ -60,34 +43,50 @@ class CompositionalDiffusionModel(DiffusionModel):
         **kwargs,
     ):
         """
-        Initializes a compositional diffusion model with configurable subnet architecture, noise schedule,
-        and prediction/loss types for amortized Bayesian inference.
+        Compositional score-based diffusion model for simulation-based inference (SBI).
 
-        Note, that score-based diffusion is the most sluggish of all available samplers,
-        so expect slower inference times than flow matching and much slower than normalizing flows.
+        Implements a score-based diffusion model with configurable subnet architecture,
+        noise schedule, and prediction/loss types for amortized SBI as described in [1].
+
+        Note that score-based diffusion is the most sluggish of all available samplers,
+        so expect slower inference times than flow matching and much slower than
+        normalizing flows.
 
         Parameters
         ----------
-        subnet : str, type or keras.Layer, optional
-            A neural network type for the diffusion model, will be instantiated using subnet_kwargs.
-            If a string is provided, it should be a registered name (e.g., "time_mlp").
-            If a type or keras.Layer is provided, it will be directly instantiated
-            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).
+        subnet : str, type, or keras.Layer, optional
+            A neural network type for the diffusion model, will be instantiated using
+            *subnet_kwargs*.  If a string is provided, it should be a registered name
+            (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
+            be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+            accept a tuple of tensors ``(target, time, conditions)``.
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
-            Noise schedule controlling the diffusion dynamics. Can be a string identifier,
-            a schedule class, or a pre-initialized schedule instance. Default is "edm".
+            Noise schedule controlling the diffusion dynamics.  Can be a string
+            identifier, a schedule class, or a pre-initialised schedule instance.
+            Default is ``"edm"``.
         prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
-            Output format of the model's prediction. Default is "F".
+            Output format of the model's prediction.  Default is ``"F"``.
         loss_type : {'velocity', 'noise', 'F'}, optional
-            Loss function used to train the model. Default is "noise".
-        subnet_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the subnet constructor. Default is None.
-        schedule_kwargs : dict[str, any], optional
-            Additional keyword arguments passed to the noise schedule constructor. Default is None.
-        integrate_kwargs : dict[str, any], optional
-            Configuration dictionary for integration during training or inference. Default is None.
+            Loss function used to train the model.  Default is ``"noise"``.
+        subnet_kwargs : dict[str, Any], optional
+            Additional keyword arguments passed to the subnet constructor.
+        schedule_kwargs : dict[str, Any], optional
+            Additional keyword arguments passed to the noise schedule constructor.
+        integrate_kwargs : dict[str, Any], optional
+            Configuration dictionary for the ODE/SDE integrator used at inference time.
+        drop_cond_prob : float, optional
+            Probability of dropping conditions during training (i.e., classifier-free guidance).
+            Default is 0.0.
+        drop_target_prob : float, optional
+            Probability of dropping target values during training (i.e., learning arbitrary
+            distributions). Default is 0.0.
         **kwargs
-            Additional keyword arguments passed to the base class and internal components.
+            Additional keyword arguments passed to the base ``InferenceNetwork``.
+
+        References
+        ----------
+        [1] Arruda et al. (2025). Compositional amortized inference for large-scale hierarchical Bayesian models.
+         ICLR 2026.
         """
         super().__init__(
             subnet=subnet,
@@ -99,6 +98,9 @@ class CompositionalDiffusionModel(DiffusionModel):
             integrate_kwargs=integrate_kwargs,
             **kwargs,
         )
+
+        self.compositional_bridge_d0 = 1.0
+        self.compositional_bridge_d1 = 1.0  # no bridge
 
     def compositional_bridge(self, time: Tensor) -> Tensor:
         """
@@ -172,16 +174,21 @@ class CompositionalDiffusionModel(DiffusionModel):
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
 
         # Compute velocity using standard drift-diffusion formulation
-        f, g_squared = self.noise_schedule.get_drift_diffusion(log_snr_t=log_snr_t, x=xz, training=training)
+        f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
 
         if stochastic_solver:
-            # SDE: dz = [f(z,t) - g(t)² * score(z,t)] dt + g(t) dW
-            velocity = f - g_squared * compositional_score
+            # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
+            out = f - g_squared * compositional_score
         else:
-            # ODE: dz = [f(z,t) - 0.5 * g(t)² * score(z,t)] dt
-            velocity = f - 0.5 * g_squared * compositional_score
+            # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
+            out = f - 0.5 * g_squared * compositional_score
 
-        return velocity
+        # Zero out velocity where target is fixed (during inference only)
+        if not training:
+            target_mask = kwargs.get("target_mask", None)
+            out = maybe_mask_tensor(out, mask=target_mask)
+
+        return out
 
     def compositional_score(
         self,
@@ -228,6 +235,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         # Calculate standard noise schedule components
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        time = ops.cast(time, dtype=ops.dtype(xz))
 
         # Compute individual dataset scores
         if mini_batch_size is not None and mini_batch_size < n_compositional:
@@ -243,10 +251,13 @@ class CompositionalDiffusionModel(DiffusionModel):
         dims = tuple(ops.shape(xz)[1:])
         snr_dims = tuple(ops.shape(log_snr_t)[1:])
         conditions_dims = tuple(ops.shape(conditions_batch)[2:])
-        xz_reshaped = ops.broadcast_to(ops.expand_dims(xz, 1), (batch_size, mini_batch_size) + dims)
-        log_snr_reshaped = ops.broadcast_to(ops.expand_dims(log_snr_t, 1), (batch_size, mini_batch_size) + snr_dims)
-        xz_reshaped = ops.reshape(xz_reshaped, (batch_size * mini_batch_size,) + dims)
-        log_snr_reshaped = ops.reshape(log_snr_reshaped, (batch_size * mini_batch_size,) + snr_dims)
+        xz_reshaped = ops.reshape(
+            ops.repeat(ops.expand_dims(xz, 1), mini_batch_size, axis=1), (batch_size * mini_batch_size,) + dims
+        )
+        log_snr_reshaped = ops.reshape(
+            ops.repeat(ops.expand_dims(log_snr_t, 1), mini_batch_size, axis=1),
+            (batch_size * mini_batch_size,) + snr_dims,
+        )
         conditions_flat = ops.reshape(conditions_batch, (batch_size * mini_batch_size,) + conditions_dims)
         scores_flat = self.score(
             xz_reshaped, log_snr_t=log_snr_reshaped, conditions=conditions_flat, training=training, **kwargs
@@ -261,9 +272,29 @@ class CompositionalDiffusionModel(DiffusionModel):
         summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
 
         # Combined score using compositional formula: (1-n)(1-t)∇log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
-        time_tensor = ops.cast(time, dtype=ops.dtype(xz))
-        compositional_score = self.compositional_bridge(time_tensor) * (weighted_prior_score + summed_individual_scores)
+        compositional_score = self.compositional_bridge(time) * (weighted_prior_score + summed_individual_scores)
         return compositional_score
+
+    def _inverse(
+        self,
+        z: Tensor,
+        conditions: Tensor = None,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        if compute_prior_score is None:
+            return super()._inverse(z=z, conditions=conditions, density=density, training=training, **kwargs)
+
+        return self._inverse_compositional(
+            z=z,
+            conditions=conditions,
+            compute_prior_score=compute_prior_score,
+            density=density,
+            training=training,
+            **kwargs,
+        )
 
     def _inverse_compositional(
         self,
@@ -277,21 +308,43 @@ class CompositionalDiffusionModel(DiffusionModel):
         """
         Inverse pass for compositional diffusion sampling.
         """
-        n_compositional = ops.shape(conditions)[1]
-        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | kwargs
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
+        integrate_kwargs |= self.integrate_kwargs
+        integrate_kwargs |= kwargs
 
+        n_compositional = ops.shape(conditions)[1]
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
         if "mini_batch_size" in kwargs:
             kwargs.pop("mini_batch_size")
         if mini_batch_size is None:
             mini_batch_size = n_compositional
         mini_batch_size = max(mini_batch_size, 1)
-        self.compositional_bridge_d0 = float(integrate_kwargs.pop("compositional_bridge_d0", 1.0))
-        self.compositional_bridge_d1 = float(integrate_kwargs.pop("compositional_bridge_d1", 1 / n_compositional))
+        if keras.backend.backend() == "jax" and mini_batch_size != n_compositional:
+            mini_batch_size = n_compositional
+            logging.warning("Setting mini_batch_size to n_compositional as jax does not support mini-batching yet.")
+
+        self.compositional_bridge_d0 = float(
+            integrate_kwargs.pop("compositional_bridge_d0", self.compositional_bridge_d0)
+        )
+        self.compositional_bridge_d1 = float(
+            integrate_kwargs.pop("compositional_bridge_d1", self.compositional_bridge_d1)
+        )
 
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))
         z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
+
+        # Apply user-provided target mask if available
+        target_mask = kwargs.get("target_mask", None)
+        targets_fixed = kwargs.get("targets_fixed", None)
+        if target_mask is not None:
+            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
+            z = maybe_mask_tensor(z, target_mask, replacement=targets_fixed)
+
+        if self.unconditional_mode and conditions is not None:
+            conditions = keras.ops.zeros_like(conditions)
+            logging.info("Condition masking is applied: conditions are set to zero.")
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
@@ -323,7 +376,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             state = integrate(deltas, state, **integrate_kwargs)
 
             x = state["xz"]
-            log_density = self.base_distribution.log_prob(ops.mean(z, axis=1)) - ops.squeeze(state["trace"], axis=-1)
+            log_density = self.base_distribution.log_prob(z) - ops.squeeze(state["trace"], axis=-1)
             return x, log_density
 
         state = {"xz": z}

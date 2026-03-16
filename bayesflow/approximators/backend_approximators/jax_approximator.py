@@ -1,3 +1,5 @@
+from typing import Any
+
 import jax
 import keras
 
@@ -5,93 +7,63 @@ from bayesflow.utils import filter_kwargs
 
 
 class JAXApproximator(keras.Model):
-    """
-    Base class for approximators using JAX and Keras' stateless training interface.
+    """Backend-specific base for the JAX stateless training loop.
 
-    This class enables stateless training and evaluation steps with JAX, supporting
-    JAX-compatible gradient computation and variable updates through the `StatelessScope`.
+    JAX requires a purely functional style: all state (trainable
+    weights, non-trainable variables, optimizer variables, metric
+    variables) is threaded explicitly through each step via
+    :class:`keras.StatelessScope`.
 
-    Notes
-    -----
-    Subclasses must implement:
-        - compute_metrics(self, *args, **kwargs) -> dict[str, jax.Array]
-        - _batch_size_from_data(self, data: dict[str, any]) -> int
+    Key methods:
+
+    - :meth:`stateless_compute_metrics` — the ``value_and_grad`` target.
+    - :meth:`stateless_train_step` / :meth:`stateless_test_step` —
+      orchestrate one optimisation / validation step.
+    - :meth:`train_step` / :meth:`test_step` — aliases required by
+      :meth:`keras.Model.fit`.
+
+    Subclasses must implement
+    :meth:`compute_metrics` and :meth:`_batch_size_from_data`
+    (see :class:`BackendApproximator` for details).
     """
 
     # noinspection PyMethodOverriding
     def compute_metrics(self, *args, **kwargs) -> dict[str, jax.Array]:
-        """
-        Compute and return a dictionary of metrics for the current batch.
-
-        This method is expected to be implemented by each subclass to compute
-        task-specific metrics using JAX arrays. It is compatible with stateless
-        execution and must be differentiable under JAX's `grad` system.
-
-        Parameters
-        ----------
-        *args : tuple
-            Positional arguments passed to the metric computation function.
-        **kwargs
-            Keyword arguments passed to the metric computation function.
-
-        Returns
-        -------
-        dict of str to jax.Array
-            Dictionary containing named metric values as JAX arrays.
-        """
         raise NotImplementedError
 
     def stateless_compute_metrics(
         self,
-        trainable_variables: any,
-        non_trainable_variables: any,
-        metrics_variables: any,
-        data: dict[str, any],
+        trainable_variables: Any,
+        non_trainable_variables: Any,
+        metrics_variables: Any,
+        data: dict[str, Any],
         stage: str = "training",
-    ) -> (jax.Array, tuple):
-        """
-        Stateless computation of metrics required for JAX autograd.
+    ) -> tuple[jax.Array, tuple]:
+        """Stateless forward pass used as the ``jax.value_and_grad`` target.
 
-        This method performs a stateless forward pass using the given model
-        variables and returns both the loss and auxiliary information for
-        further updates.
-
-        Things we do for specifically jax:
-
-        1. Accept trainable variables as the first argument
-            (can be at any position as indicated by the argnum parameter
-             in autograd, but needs to be an explicit arg)
-        2. Accept, potentially modify, and return other state variables
-        3. Return just the loss tensor as the first value
-        4. Return all other values in a tuple as the second value
-
-        This ensures:
-
-        1. The function is stateless
-        2. The function can be differentiated with jax autograd
+        All model state is injected via :class:`keras.StatelessScope` so
+        that JAX can differentiate through the computation.
 
         Parameters
         ----------
         trainable_variables : Any
-            Current values of the trainable weights.
+            Current trainable weight values.
         non_trainable_variables : Any
-            Current values of non-trainable variables (e.g., batch norm statistics).
+            Current non-trainable variable values (e.g. batch-norm statistics).
         metrics_variables : Any
-            Current values of metric tracking variables.
-        data : dict of str to any
-            Input data dictionary passed to `compute_metrics`.
-        stage : str, default="training"
-            Whether the computation is for "training" or "validation".
+            Current metric tracking variable values.
+        data : dict[str, Any]
+            Input data dictionary passed to :meth:`compute_metrics`.
+        stage : str, default ``"training"``
+            ``"training"`` or ``"validation"``.
 
         Returns
         -------
         loss : jax.Array
-            Scalar loss tensor for gradient computation.
+            Scalar loss for gradient computation.
         aux : tuple
-            Tuple containing:
-                - metrics (dict of str to jax.Array)
-                - updated non-trainable variables
-                - updated metrics variables
+            ``(metrics_dict, updated_non_trainable_variables,
+            updated_metrics_variables)``.
         """
         state_mapping = []
         state_mapping.extend(zip(self.trainable_variables, trainable_variables))
@@ -109,23 +81,22 @@ class JAXApproximator(keras.Model):
 
         return metrics["loss"], (metrics, non_trainable_variables, metrics_variables)
 
-    def stateless_test_step(self, state: tuple, data: dict[str, any]) -> (dict[str, jax.Array], tuple):
-        """
-        Stateless validation step compatible with JAX.
+    def stateless_test_step(self, state: tuple, data: dict[str, Any]) -> tuple[dict[str, jax.Array], tuple]:
+        """Stateless validation step.
 
         Parameters
         ----------
         state : tuple
-            Tuple of (trainable_variables, non_trainable_variables, metrics_variables).
-        data : dict of str to any
+            ``(trainable_variables, non_trainable_variables, metrics_variables)``.
+        data : dict[str, Any]
             Input data for validation.
 
         Returns
         -------
-        metrics : dict of str to jax.Array
-            Dictionary of computed evaluation metrics.
+        metrics : dict[str, jax.Array]
+            Computed evaluation metrics.
         state : tuple
-            Updated state tuple after evaluation.
+            Updated state tuple.
         """
         trainable_variables, non_trainable_variables, metrics_variables = state
 
@@ -139,25 +110,27 @@ class JAXApproximator(keras.Model):
         state = trainable_variables, non_trainable_variables, metrics_variables
         return metrics, state
 
-    def stateless_train_step(self, state: tuple, data: dict[str, any]) -> (dict[str, jax.Array], tuple):
-        """
-        Stateless training step compatible with JAX autograd and stateless optimization.
+    def stateless_train_step(self, state: tuple, data: dict[str, Any]) -> tuple[dict[str, jax.Array], tuple]:
+        """Stateless training step with ``jax.value_and_grad``.
 
-        Computes gradients and applies optimizer updates in a purely functional style.
+        Computes gradients via ``jax.value_and_grad`` on
+        :meth:`stateless_compute_metrics` and applies the optimizer
+        update statelessly.
 
         Parameters
         ----------
         state : tuple
-            Tuple of (trainable_variables, non_trainable_variables, optimizer_variables, metrics_variables).
-        data : dict of str to any
+            ``(trainable_variables, non_trainable_variables,
+            optimizer_variables, metrics_variables)``.
+        data : dict[str, Any]
             Input data for training.
 
         Returns
         -------
-        metrics : dict of str to jax.Array
-            Dictionary of computed training metrics.
+        metrics : dict[str, jax.Array]
+            Computed training metrics.
         state : tuple
-            Updated state tuple after training.
+            Updated state tuple.
         """
         trainable_variables, non_trainable_variables, optimizer_variables, metrics_variables = state
 
@@ -178,54 +151,32 @@ class JAXApproximator(keras.Model):
         return metrics, state
 
     def test_step(self, *args, **kwargs):
-        """
-        Alias to `stateless_test_step` for compatibility with `keras.Model`.
-
-        Parameters
-        ----------
-        *args, **kwargs : Any
-            Passed through to `stateless_test_step`.
-
-        Returns
-        -------
-        See `stateless_test_step`.
-        """
+        """Alias for :meth:`stateless_test_step` (required by :meth:`keras.Model.fit`)."""
         return self.stateless_test_step(*args, **kwargs)
 
     def train_step(self, *args, **kwargs):
-        """
-        Alias to `stateless_train_step` for compatibility with `keras.Model`.
-
-        Parameters
-        ----------
-        *args, **kwargs : Any
-            Passed through to `stateless_train_step`.
-
-        Returns
-        -------
-        See `stateless_train_step`.
-        """
+        """Alias for :meth:`stateless_train_step` (required by :meth:`keras.Model.fit`)."""
         return self.stateless_train_step(*args, **kwargs)
 
-    def _update_metrics(self, loss: jax.Array, metrics_variables: any, sample_weight: any = None) -> any:
-        """
-        Updates metric tracking variables in a stateless JAX-compatible way.
+    def _update_metrics(self, loss: jax.Array, metrics_variables: Any, sample_weight: Any = None) -> Any:
+        """Stateless metric update for JAX.
 
-        This method updates the loss tracker (and any other Keras metrics)
-        and returns updated metric variable states for downstream use.
+        Enters a :class:`keras.StatelessScope` to update the loss
+        tracker, then extracts and returns the new metric variable
+        states.
 
         Parameters
         ----------
         loss : jax.Array
-            Scalar loss used for metric tracking.
+            Scalar loss value.
         metrics_variables : Any
             Current metric variable states.
         sample_weight : Any, optional
-            Sample weights to apply during update.
+            Optional sample weights.
 
         Returns
         -------
-        metrics_variables : Any
+        Any
             Updated metrics variable states.
         """
         state_mapping = list(zip(self.metrics_variables, metrics_variables))
@@ -238,23 +189,7 @@ class JAXApproximator(keras.Model):
         return metrics_variables
 
     # noinspection PyMethodOverriding
-    def _batch_size_from_data(self, data: any) -> int:
-        """Obtain the batch size from a batch of data.
-
-        To properly weigh the metrics for batches of different sizes, the batch size of a given batch of data is
-        required. As the data structure differs between approximators, each concrete approximator has to specify
-        this method.
-
-        Parameters
-        ----------
-        data :
-            The data that are passed to `compute_metrics` as keyword arguments.
-
-        Returns
-        -------
-        batch_size : int
-            The batch size of the given data.
-        """
+    def _batch_size_from_data(self, data: Any) -> int:
         raise NotImplementedError(
             "Correct calculation of the metrics requires obtaining the batch size from the supplied data "
             "for proper weighting of metrics for batches with different sizes. Please implement the "

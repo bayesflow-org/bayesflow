@@ -57,7 +57,7 @@ def setup():
             chosen_backend = found_backends[0]
             os.environ["KERAS_BACKEND"] = chosen_backend.env_name
 
-            logging.warning(
+            logger.warning(
                 f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}).\n"
                 f"Defaulting to {chosen_backend.display_name}.\n"
                 "To override, set the KERAS_BACKEND environment variable before importing bayesflow.\n"
@@ -110,12 +110,19 @@ from . import (
     networks,
     simulators,
     utils,
+    scoring_rules,
     workflows,
     wrappers,
 )
 
 from .adapters import Adapter
-from .approximators import ContinuousApproximator, PointApproximator
-from .datasets import OfflineDataset, OnlineDataset, DiskDataset
+from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
+from .approximators import (
+    ContinuousApproximator,
+    ModelComparisonApproximator,
+    ScoringRuleApproximator,
+    EnsembleApproximator,
+    RatioApproximator,
+)
 from .simulators import make_simulator
-from .workflows import BasicWorkflow
+from .workflows import BasicWorkflow, EnsembleWorkflow

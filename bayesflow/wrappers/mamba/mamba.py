@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 import keras
 
-from bayesflow.networks.summary_network import SummaryNetwork
+from bayesflow.networks.summary import SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable
 

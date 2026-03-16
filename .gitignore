@@ -14,6 +14,8 @@ examples/checkpoints/
 build
 docs/
 
+# uv
+uv.lock
 
 # mypy
 .mypy_cache

@@ -3,8 +3,8 @@ import keras
 
 
 @singledispatch
-def find_summary_network(arg, *args, **kwargs):
-    raise TypeError(f"Cannot infer inference network from {arg!r}.")
+def find_summary_network(arg, *args, **kwargs) -> keras.Layer:
+    raise TypeError(f"Cannot infer summary network from {arg!r}.")
 
 
 @find_summary_network.register

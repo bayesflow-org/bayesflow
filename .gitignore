@@ -42,3 +42,6 @@ docs/
 
 # Rproj
 .Rproj.user
+
+# uv
+uv.lock

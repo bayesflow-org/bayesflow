@@ -111,7 +111,7 @@ class Standardize(keras.Layer):
                     case "right_side_scale_inverse":
                         # x_ij = x_ij' / sigma_j
                         out = val / std
-                    case _:
+                    case "identity":
                         out = val
 
             outputs.append(out)

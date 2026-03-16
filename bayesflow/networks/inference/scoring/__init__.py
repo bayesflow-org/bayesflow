@@ -8,6 +8,7 @@ from .scoring_rules import (
     MedianScore,
     QuantileScore,
     MvNormalScore,
+    MixtureScore,
     NormedDifferenceScore,
     CrossEntropyScore,
 )

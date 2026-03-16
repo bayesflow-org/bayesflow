@@ -14,6 +14,7 @@ from .scoring import (
     MedianScore,
     QuantileScore,
     MvNormalScore,
+    MixtureScore,
     NormedDifferenceScore,
     CrossEntropyScore,
 )

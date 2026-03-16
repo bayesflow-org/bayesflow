@@ -66,9 +66,8 @@ def random_conditions(batch_size, cond_dim):
 @pytest.fixture(
     params=[
         dict(noise_schedule="edm", prediction_type="F"),
-        dict(noise_schedule="edm", prediction_type="velocity"),
-        dict(noise_schedule="cosine", prediction_type="noise"),
         dict(noise_schedule="cosine", prediction_type="velocity"),
+        dict(noise_schedule="edm", prediction_type="potential"),
     ],
     ids=lambda d: f"{d['noise_schedule']}_{d['prediction_type']}",
 )
@@ -96,9 +95,6 @@ def simple_diffusion_model():
 
     return DiffusionModel(
         subnet_kwargs={"widths": (32, 32)},
-        noise_schedule="cosine",
-        prediction_type="noise",
-        loss_type="noise",
     )
 
 
@@ -109,9 +105,6 @@ def simple_compositional_diffusion_model():
 
     return CompositionalDiffusionModel(
         subnet_kwargs={"widths": (32, 32)},
-        noise_schedule="cosine",
-        prediction_type="noise",
-        loss_type="noise",
     )
 
 

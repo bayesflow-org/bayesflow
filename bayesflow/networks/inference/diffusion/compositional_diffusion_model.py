@@ -36,7 +36,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         *,
         subnet: str | type | keras.Layer = "time_mlp",
         noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "cosine",
-        prediction_type: Literal["velocity", "noise", "F", "x"] = "velocity",
+        prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "velocity",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
         subnet_kwargs: dict[str, any] = None,
         schedule_kwargs: dict[str, any] = None,
@@ -65,7 +65,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             Noise schedule controlling the diffusion dynamics.  Can be a string
             identifier, a schedule class, or a pre-initialised schedule instance.
             Default is ``"edm"``.
-        prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
+        prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}, optional
             Output format of the model's prediction.  Default is ``"F"``.
         loss_type : {'velocity', 'noise', 'F'}, optional
             Loss function used to train the model.  Default is ``"noise"``.

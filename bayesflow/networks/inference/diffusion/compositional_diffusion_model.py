@@ -1,4 +1,5 @@
-from typing import Literal, Callable
+from collections.abc import Mapping
+from typing import Literal, Callable, Any
 
 import keras
 import numpy as np
@@ -74,9 +75,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             Additional keyword arguments passed to the noise schedule constructor.
         integrate_kwargs : dict[str, Any], optional
             Configuration dictionary for the ODE/SDE integrator used at inference time.
-        drop_cond_prob : float, optional
-            Probability of dropping conditions during training (i.e., classifier-free guidance).
-            Default is 0.0.
         drop_target_prob : float, optional
             Probability of dropping target values during training (i.e., learning arbitrary
             distributions). Default is 0.0.
@@ -198,6 +196,8 @@ class CompositionalDiffusionModel(DiffusionModel):
         compute_prior_score: Callable[[Tensor], Tensor],
         mini_batch_size: int | None = None,
         training: bool = False,
+        guidance_constraints: Mapping[str, Any] = None,
+        guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
         **kwargs,
     ) -> Tensor:
         """
@@ -218,6 +218,15 @@ class CompositionalDiffusionModel(DiffusionModel):
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
             Whether in training mode
+        guidance_constraints : dict[str, Any], optional
+            A dictionary of parameters for computing a guidance constraint term, which is
+            added to the score for guided sampling. The specific keys and values depend on
+            the implementation of `guidance_constraint_term`.
+        guidance_function : Callable[[Tensor, Tensor], Tensor], optional
+            A custom function for computing a guidance term, which is added to the score
+            for guided sampling. The function should accept the predicted clean signal
+            `x_pred` and the current time `time` as inputs and return a tensor of the same
+            shape as `xz`.
         **kwargs
             Additional keyword arguments passed to the individual score computation
 
@@ -260,7 +269,12 @@ class CompositionalDiffusionModel(DiffusionModel):
         )
         conditions_flat = ops.reshape(conditions_batch, (batch_size * mini_batch_size,) + conditions_dims)
         scores_flat = self.score(
-            xz_reshaped, log_snr_t=log_snr_reshaped, conditions=conditions_flat, training=training, **kwargs
+            xz_reshaped,
+            log_snr_t=log_snr_reshaped,
+            conditions=conditions_flat,
+            training=training,
+            **kwargs,
+            # no guidance passed here, only applied once at the end
         )
         individual_scores = ops.reshape(scores_flat, (batch_size, mini_batch_size) + dims)
 
@@ -273,28 +287,21 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         # Combined score using compositional formula: (1-n)(1-t)∇log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
         compositional_score = self.compositional_bridge(time) * (weighted_prior_score + summed_individual_scores)
+
+        if guidance_constraints is not None or guidance_function is not None:
+            # x_pred = (z + sigma_t ** 2 * score) / alpha_t
+            alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+            x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
+
+            if guidance_constraints is not None:
+                guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
+                compositional_score = compositional_score + guidance
+
+            if guidance_function is not None:
+                guidance = guidance_function(x=x_pred, time=time)
+                compositional_score = compositional_score + guidance
+
         return compositional_score
-
-    def _inverse(
-        self,
-        z: Tensor,
-        conditions: Tensor = None,
-        compute_prior_score: Callable[[Tensor], Tensor] = None,
-        density: bool = False,
-        training: bool = False,
-        **kwargs,
-    ) -> Tensor | tuple[Tensor, Tensor]:
-        if compute_prior_score is None:
-            return super()._inverse(z=z, conditions=conditions, density=density, training=training, **kwargs)
-
-        return self._inverse_compositional(
-            z=z,
-            conditions=conditions,
-            compute_prior_score=compute_prior_score,
-            density=density,
-            training=training,
-            **kwargs,
-        )
 
     def _inverse_compositional(
         self,
@@ -341,10 +348,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
             z = maybe_mask_tensor(z, target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
@@ -398,7 +401,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                 }
 
             def diffusion(time, xz):
-                return {"xz": self.diffusion_term(xz, time=time, training=training)}
+                return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
 
             score_fn = None
             if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
@@ -406,7 +409,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                 def score_fn(time, xz):
                     return {
                         "xz": self.compositional_score(
-                            xz,
+                            xz=xz,
                             time=time,
                             conditions=conditions,
                             compute_prior_score=compute_prior_score,
@@ -430,14 +433,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             def deltas(time, xz):
                 return {
                     "xz": self.compositional_velocity(
-                        xz,
-                        time=time,
-                        stochastic_solver=False,
-                        conditions=conditions,
-                        compute_prior_score=compute_prior_score,
-                        mini_batch_size=mini_batch_size,
-                        training=training,
-                        **kwargs,
+                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
                     )
                 }
 

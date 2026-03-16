@@ -374,9 +374,6 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        # if keras.backend.backend() == "jax":
-        #    NotImplemented("Compositional sampling with JAX backend is not supported yet.")
-
         original_shapes = {}
         flattened_conditions = {}
         for key, value in conditions.items():  # Flatten compositional dimensions
@@ -407,6 +404,7 @@ class ContinuousApproximator(Approximator):
         compute_prior_score_pre = partial(self._compute_prior_score_pre, compute_prior_score=compute_prior_score)
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
+        inference_kwargs["compute_prior_score"] = compute_prior_score_pre
         if sample_shape == "infer":  # infer method cannot handle the compositional dimensions
             sample_shape = tuple(keras.ops.shape(resolved_conditions)[2:-1])
 
@@ -414,7 +412,6 @@ class ContinuousApproximator(Approximator):
             inference_network=self.inference_network,
             num_samples=num_samples,
             conditions=resolved_conditions,
-            compute_prior_score=compute_prior_score_pre,
             batch_size=batch_size,
             sample_shape=sample_shape,
             **inference_kwargs,

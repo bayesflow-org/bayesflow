@@ -77,6 +77,68 @@ def test_inverse_compositional_basic(
 # ---- Guidance (slow, trains a model) ----------------------------------------
 
 
+def test_compositional_masking():
+    from bayesflow.networks import CompositionalDiffusionModel
+    from bayesflow import BasicWorkflow
+    from bayesflow.simulators import TwoMoons
+
+    num_samples = 3
+    batch_size = 2
+    num_batches_per_epoch = 2
+    epochs = 5
+    workflow = BasicWorkflow(
+        inference_network=CompositionalDiffusionModel(
+            subnet_kwargs=dict(widths=(8, 8)),
+            drop_target_prob=0.5,
+        ),
+        inference_variables=["parameters"],
+        inference_conditions=["observables"],
+        simulator=TwoMoons(),
+    )
+
+    workflow.fit_online(epochs=epochs, batch_size=batch_size, num_batches_per_epoch=num_batches_per_epoch)
+    test_params = workflow.simulate(5)["parameters"]
+    test_conditions = {
+        "observables": np.array(
+            [
+                (TwoMoons().observation_model(t), TwoMoons().observation_model(t), TwoMoons().observation_model(t))
+                for t in test_params
+            ]
+        )
+    }
+    test_conditions.update({"parameters": test_params})
+
+    def prior_score_fn(theta):
+        # uniform prior (should be transformed to unbounded prior for a real application)
+        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+
+    samples = workflow.compositional_sample(
+        num_samples=num_samples, conditions=test_conditions, compute_prior_score=prior_score_fn
+    )["parameters"]
+
+    test_conditions_adapted = workflow.adapter(test_conditions)
+    target_mask = keras.ops.concatenate(
+        (
+            keras.ops.ones(1),  # param 1 is inferred
+            keras.ops.zeros(1),  # param 2 is fixed
+        )
+    )
+    targets_fixed = test_conditions_adapted["inference_variables"][0]  # one set of parameters
+    if "inference_variables" in workflow.approximator.standardize_layers:
+        targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
+
+    fixed_samples = workflow.compositional_sample(
+        conditions=test_conditions,
+        num_samples=num_samples,
+        compute_prior_score=prior_score_fn,
+        targets_fixed=targets_fixed,
+        target_mask=target_mask,
+    )["parameters"]
+    assert samples.shape == fixed_samples.shape
+    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][0, 1]) < 1e-6).all()
+    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][0, 0]) > 0.1).any()  # should vary
+
+
 @pytest.mark.slow
 def test_diffusion_compositional_guidance():
     from bayesflow.networks import CompositionalDiffusionModel

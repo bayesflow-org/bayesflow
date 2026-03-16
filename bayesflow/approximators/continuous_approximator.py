@@ -409,7 +409,12 @@ class ContinuousApproximator(Approximator):
         resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(conditions)
 
         # prepare score computation
-        compute_prior_score_pre = partial(prepare_compute_prior_score, compute_prior_score=compute_prior_score)
+        compute_prior_score_pre = partial(
+            prepare_compute_prior_score,
+            compute_prior_score=compute_prior_score,
+            adapter=self.adapter,
+            standardizer=self.standardizer,
+        )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
         inference_kwargs["compute_prior_score"] = compute_prior_score_pre

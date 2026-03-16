@@ -13,7 +13,7 @@ from bayesflow.utils import split_arrays
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
-from .helpers import Sampler, ConditionBuilder
+from .helpers import Sampler, ConditionBuilder, prepare_compute_prior_score
 
 from ..networks.helpers import Standardization
 
@@ -325,55 +325,9 @@ class ContinuousApproximator(Approximator):
 
         return log_prob
 
-    def compositional_sample(
-        self,
-        *,
-        num_samples: int,
-        conditions: Mapping[str, np.ndarray],
-        compute_prior_score: Callable[[Mapping[str, np.ndarray]], Mapping[str, np.ndarray]],
-        split: bool = False,
-        batch_size: int | None = None,
-        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
-        return_summaries: bool = False,
-        **kwargs,
-    ) -> dict[str, np.ndarray]:
-        """
-        Generates samples from the approximator given input conditions. The `conditions` dictionary is preprocessed
-        using the `adapter`. Samples are converted to NumPy arrays after inference.
-
-        Parameters
-        ----------
-        num_samples : int
-            Number of samples to generate.
-        conditions : dict[str, np.ndarray]
-            Dictionary of conditioning variables as NumPy arrays.
-        compute_prior_score : Callable[[Mapping[str, np.ndarray]], Mapping[str, np.ndarray]]
-            A function that computes the score of the log prior distribution.
-        split : bool, default=False
-            Whether to split the output arrays along the last axis and return one sample array per target variable.
-        batch_size : int or None, optional
-            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
-            sequentially. Can help with memory management for large sample sizes.
-        sample_shape : str or tuple of int, optional
-            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
-            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
-
-            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
-            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
-            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
-            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
-            `(num_conditions, num_samples, time, target_dim)`.
-        return_summaries: bool, optional
-            If set to True and a summary network is present, will return the learned summary statistics for
-            the provided conditions.
-        **kwargs : dict
-            Additional keyword arguments for the sampling process.
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Dictionary containing generated samples with the same keys as `conditions`.
-        """
+    def _prepare_compositional_conditions(
+        self, conditions: Mapping[str, np.ndarray]
+    ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
         original_shapes = {}
         flattened_conditions = {}
         for key, value in conditions.items():  # Flatten compositional dimensions
@@ -400,8 +354,61 @@ class ContinuousApproximator(Approximator):
             )
             + keras.ops.shape(resolved_conditions)[1:],
         )
+        return resolved_conditions, adapted, summary_outputs
+
+    def compositional_sample(
+        self,
+        *,
+        num_samples: int,
+        conditions: dict[str, np.ndarray],
+        compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]],
+        split: bool = False,
+        batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        return_summaries: bool = False,
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generates samples from the approximator given input conditions. The `conditions` dictionary is preprocessed
+        using the `adapter`. Samples are converted to NumPy arrays after inference.
+
+        Parameters
+        ----------
+        num_samples : int
+            Number of samples to generate.
+        conditions : dict[str, np.ndarray]
+            Dictionary of conditioning variables as NumPy arrays.
+        compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]]
+            A function that computes the score of the log prior distribution.
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
+        return_summaries: bool, optional
+            If set to True and a summary network is present, will return the learned summary statistics for
+            the provided conditions.
+        **kwargs : dict
+            Additional keyword arguments for the sampling process.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Dictionary containing generated samples with the same keys as `conditions`.
+        """
+        resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(conditions)
+
         # prepare score computation
-        compute_prior_score_pre = partial(self._compute_prior_score_pre, compute_prior_score=compute_prior_score)
+        compute_prior_score_pre = partial(prepare_compute_prior_score, compute_prior_score=compute_prior_score)
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
         inference_kwargs["compute_prior_score"] = compute_prior_score_pre
@@ -436,65 +443,3 @@ class ContinuousApproximator(Approximator):
             samples = split_arrays(samples, axis=-1)
 
         return samples
-
-    def _compute_prior_score_pre(
-        self, _samples: Tensor, compute_prior_score: Callable[[Mapping[str, np.ndarray]], Mapping[str, np.ndarray]]
-    ) -> Tensor:
-        _samples = keras.tree.map_structure(
-            lambda s: self.standardizer.maybe_standardize(
-                s, key="inference_variables", stage="inference", forward=False
-            ),
-            _samples,
-        )
-        if keras.backend.backend() != "torch":  # samples cannot be converted to numpy, otherwise it breaks
-            adapted_samples, log_det_jac = keras.tree.map_structure(
-                lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False, log_det_jac=True),
-                _samples,
-            )
-        else:  # samples need to be converted to numpy, adapter cannot use torch tensors
-            adapted_samples, log_det_jac = keras.tree.map_structure(
-                lambda s: self.adapter(
-                    {"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False, log_det_jac=True
-                ),
-                _samples,
-            )
-
-        if len(log_det_jac) > 0:
-            problematic_keys = [key for key in log_det_jac if log_det_jac[key] != 0.0]
-            raise NotImplementedError(
-                f"Cannot use compositional sampling with adapters "
-                f"that have non-zero log_det_jac. Problematic keys: {problematic_keys}"
-            )
-
-        prior_score = compute_prior_score(adapted_samples)
-        for key in adapted_samples:
-            prior_score[key] = keras.ops.cast(prior_score[key], "float32")
-
-        prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
-        out = keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
-
-        if "inference_variables" in self.standardizer.standardize:
-            # Apply jacobian correction from standardization
-            # For standardization T^{-1}(z) = z * std + mean, the jacobian is diagonal with std on diagonal
-            # The gradient of log|det(J)| w.r.t. z is 0 since log|det(J)| = sum(log(std)) is constant w.r.t. z
-            # But we need to transform the score: score_z = score_x * std where x = T^{-1}(z)
-            standardize_layer = self.standardizer.standardize_layers["inference_variables"]
-
-            # Compute the correct standard deviation for all components
-            std_components = []
-            for idx in range(len(standardize_layer.moving_mean)):
-                std_val = standardize_layer.moving_std(idx)
-                std_components.append(std_val)
-
-            # Concatenate std components to match the shape of out
-            if len(std_components) == 1:
-                std = std_components[0]
-            else:
-                std = keras.ops.concatenate(std_components, axis=-1)
-
-            # Expand std to match batch dimension of out
-            std_expanded = keras.ops.expand_dims(std, 0)  # Add batch dimensions
-
-            # Apply the jacobian: score_z = score_x * std
-            out = out * std_expanded
-        return out

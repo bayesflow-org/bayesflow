@@ -322,12 +322,99 @@ class BasicWorkflow(Workflow):
         logging.info(f"Sampling completed in {format_duration(elapsed)}.")
         return samples
 
+    def ancestral_sample(
+        self,
+        *,
+        conditions: Mapping[str, np.ndarray],
+        ancestral_conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Draws `num_samples` samples from the approximator given specified conditions.
+
+        Parameters
+        ----------
+        conditions : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
+            conditions during training should be present.
+        ancestral_conditions : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the ancestral conditions for sampling. These are used in ancestral sampling
+            scheme (e.g. a hierarchical model).
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
+        **kwargs : dict | str, optional
+            Additional keyword arguments passed to the approximator's sampling function.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary where keys correspond to variable names and
+            values are arrays containing the generated samples.
+        """
+        first_conditions_arr = np.asarray(next(iter(conditions.values())))
+        first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
+
+        n_datasets = first_conditions_arr.shape[0]
+        n_children = first_conditions_arr.shape[1]
+        n_parent_samples = first_ancestral_arr.shape[1]
+        flat_batch = n_datasets * n_children * n_parent_samples
+
+        # (n_datasets, n_parent_samples, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
+        expanded_ancestral = {}
+        for key, value in ancestral_conditions.items():
+            arr = np.asarray(value)
+            arr = np.expand_dims(arr, axis=1)  # (n_datasets, 1, n_parent_samples, ...)
+            arr = np.repeat(arr, n_children, axis=1)  # (n_datasets, n_children, n_parent_samples, ...)
+            expanded_ancestral[key] = arr.reshape(flat_batch, *arr.shape[3:])
+
+        # (n_datasets, n_children, ...) -> (n_datasets, n_children, N_SAMPLES, ...) -> (flat_batch, ...)
+        expanded_conditions = {}
+        for key, value in conditions.items():
+            arr = np.asarray(value)
+            arr = np.expand_dims(arr, axis=2)  # (n_datasets, n_children, 1, ...)
+            arr = np.repeat(arr, n_parent_samples, axis=2)  # (n_datasets, n_children, n_parent_samples, ...)
+            expanded_conditions[key] = arr.reshape(flat_batch, *arr.shape[3:])
+
+        merged_conditions = {**expanded_conditions, **expanded_ancestral}
+
+        start_time = time.perf_counter()
+        samples = self.approximator.sample(
+            num_samples=1,
+            conditions=merged_conditions,
+            split=split,
+            batch_size=batch_size,
+            sample_shape=sample_shape,
+            **kwargs,
+        )
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Sampling completed in {format_duration(elapsed)}.")
+
+        samples = {k: s.reshape((n_datasets, n_children, n_parent_samples, *s.shape[2:])) for k, s in samples.items()}
+        return samples
+
     def compositional_sample(
         self,
         *,
         num_samples: int,
-        conditions: Mapping[str, np.ndarray],
-        compute_prior_score: Callable[[Mapping[str, np.ndarray]], Mapping[str, np.ndarray]],
+        conditions: dict[str, np.ndarray],
+        compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]],
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",

@@ -28,7 +28,8 @@ class CompositionalDiffusionModel(DiffusionModel):
     diffusion model one single i.i.d simulations that can perform inference for multiple simulations by leveraging a
     compositional score function as in [1].
 
-    [1] Compositional amortized inference for large-scale hierarchical Bayesian models: Arruda et al. (2025)
+    [1] Arruda et al. (2026). Compositional amortized inference for large-scale hierarchical Bayesian models.
+     ICLR 2026.
     """
 
     def __init__(
@@ -83,7 +84,7 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         References
         ----------
-        [1] Arruda et al. (2025). Compositional amortized inference for large-scale hierarchical Bayesian models.
+        [1] Arruda et al. (2026). Compositional amortized inference for large-scale hierarchical Bayesian models.
          ICLR 2026.
         """
         super().__init__(

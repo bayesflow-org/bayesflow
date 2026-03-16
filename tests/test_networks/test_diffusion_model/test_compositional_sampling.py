@@ -74,7 +74,55 @@ def test_inverse_compositional_basic(
     )
 
 
-# ---- Guidance (slow, trains a model) ----------------------------------------
+def test_ancestral_sampling():
+    """
+    Hierarchical scenario:
+      global:  mu ~ N(0, 1)                      (shared across subjects)
+      local:   beta_i ~ N(mu, 0.1),  x_i = beta_i + noise
+
+    The local-level workflow approximates p(beta | mu, x).
+    Global posterior samples are passed as ancestral_conditions; per-subject
+    observations as conditions. The function should expand both and return
+    samples of shape (n_test, n_subjects, num_samples, 1).
+    """
+    from bayesflow.networks import ConsistencyModel
+    from bayesflow import BasicWorkflow
+    from bayesflow.simulators import Simulator
+
+    class LocalSimulator(Simulator):
+        def sample(self, n, local_n=1, **kwargs):
+            mu = np.random.randn(n, 1)
+            beta = mu + 0.1 * np.random.randn(n, local_n)
+            x = beta + 0.1 * np.random.randn(n, local_n)
+            return {"mu": mu, "beta": beta, "x": x}
+
+    workflow = BasicWorkflow(
+        inference_network=ConsistencyModel(subnet_kwargs=dict(widths=(8, 8)), total_steps=5 * 2),
+        inference_variables=["beta"],
+        inference_conditions=["mu", "x"],
+        simulator=LocalSimulator(),
+    )
+    workflow.fit_online(epochs=5, batch_size=4, num_batches_per_epoch=2, verbose=0)
+
+    n_test = 3
+    local_n = 4
+    num_samples = 2
+
+    # Global posterior samples from an upper-level approximator (pre-computed)
+    ancestral_conditions = {"mu": np.random.randn(n_test, num_samples, 1)}
+    # Per-subject local observations
+    conditions = {"x": np.random.randn(n_test, local_n, 1)}
+
+    samples = workflow.ancestral_sample(
+        conditions=conditions,
+        ancestral_conditions=ancestral_conditions,
+    )
+
+    assert "beta" in samples
+    assert samples["beta"].shape == (n_test, local_n, num_samples, 1)
+
+
+# ---- Guidance (slower) ----------------------------------------
 
 
 def test_compositional_masking():

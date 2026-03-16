@@ -333,7 +333,7 @@ class BasicWorkflow(Workflow):
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
-        Draws `num_samples` samples from the approximator given specified conditions.
+        Draws samples from the approximator given specified conditions and ancestral conditions.
 
         Parameters
         ----------
@@ -368,36 +368,10 @@ class BasicWorkflow(Workflow):
             A dictionary where keys correspond to variable names and
             values are arrays containing the generated samples.
         """
-        first_conditions_arr = np.asarray(next(iter(conditions.values())))
-        first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
-
-        n_datasets = first_conditions_arr.shape[0]
-        n_children = first_conditions_arr.shape[1]
-        n_parent_samples = first_ancestral_arr.shape[1]
-        flat_batch = n_datasets * n_children * n_parent_samples
-
-        # (n_datasets, n_parent_samples, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
-        expanded_ancestral = {}
-        for key, value in ancestral_conditions.items():
-            arr = np.asarray(value)
-            arr = np.expand_dims(arr, axis=1)  # (n_datasets, 1, n_parent_samples, ...)
-            arr = np.repeat(arr, n_children, axis=1)  # (n_datasets, n_children, n_parent_samples, ...)
-            expanded_ancestral[key] = arr.reshape(flat_batch, *arr.shape[3:])
-
-        # (n_datasets, n_children, ...) -> (n_datasets, n_children, N_SAMPLES, ...) -> (flat_batch, ...)
-        expanded_conditions = {}
-        for key, value in conditions.items():
-            arr = np.asarray(value)
-            arr = np.expand_dims(arr, axis=2)  # (n_datasets, n_children, 1, ...)
-            arr = np.repeat(arr, n_parent_samples, axis=2)  # (n_datasets, n_children, n_parent_samples, ...)
-            expanded_conditions[key] = arr.reshape(flat_batch, *arr.shape[3:])
-
-        merged_conditions = {**expanded_conditions, **expanded_ancestral}
-
         start_time = time.perf_counter()
-        samples = self.approximator.sample(
-            num_samples=1,
-            conditions=merged_conditions,
+        samples = self.approximator.ancestral_sample(
+            conditions=conditions,
+            ancestral_conditions=ancestral_conditions,
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,
@@ -405,8 +379,6 @@ class BasicWorkflow(Workflow):
         )
         elapsed = time.perf_counter() - start_time
         logging.info(f"Sampling completed in {format_duration(elapsed)}.")
-
-        samples = {k: s.reshape((n_datasets, n_children, n_parent_samples, *s.shape[2:])) for k, s in samples.items()}
         return samples
 
     def compositional_sample(

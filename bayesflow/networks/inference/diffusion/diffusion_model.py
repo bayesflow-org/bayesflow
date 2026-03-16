@@ -634,15 +634,21 @@ class DiffusionModel(InferenceNetwork):
             case "torch":
                 import torch
 
-                xz_leaf = xz.detach().requires_grad_(True)
-                subnet_out = self.subnet((xz_leaf, norm_log_snr, conditions), training=training, **subnet_kwargs)
-                phi = ops.sum(self.output_projector(subnet_out))
-                return torch.autograd.grad(
-                    outputs=phi,
-                    inputs=xz_leaf,
-                    create_graph=training,
-                    retain_graph=training,
-                )[0]
+                with torch.enable_grad():
+                    xz_leaf = xz.detach().requires_grad_(True)
+                    norm_log_snr_d = norm_log_snr.detach()
+                    conditions_d = conditions.detach() if conditions is not None else None
+                    subnet_out = self.subnet(
+                        (xz_leaf, norm_log_snr_d, conditions_d), training=training, **subnet_kwargs
+                    )
+                    phi = ops.sum(self.output_projector(subnet_out))
+                    score = torch.autograd.grad(
+                        outputs=phi,
+                        inputs=xz_leaf,
+                        create_graph=training,
+                        retain_graph=training,
+                    )[0]
+                return score
 
             case _:
                 raise NotImplementedError(f"Unsupported backend for potential prediction type: {backend}")

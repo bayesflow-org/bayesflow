@@ -117,6 +117,7 @@ class Approximator(BackendApproximator):
         data: Mapping[str, np.ndarray],
         *,
         stage: str = "inference",
+        batch_size: int | None = None,
         **adapter_kwargs,
     ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
         """Adapt raw user data, tensorize, standardize conditions, and resolve.
@@ -134,6 +135,8 @@ class Approximator(BackendApproximator):
             Raw user data dictionary.
         stage : str, optional
             Stage for standardization (default is ``"inference"``).
+        batch_size : int, optional
+            Batch size for the summary network (default is ``None``).
         **adapter_kwargs
             Extra keyword arguments forwarded to the adapter.
 
@@ -155,6 +158,7 @@ class Approximator(BackendApproximator):
             adapted.get("inference_conditions"),
             adapted.get("summary_variables"),
             stage=stage,
+            batch_size=batch_size,
             **summary_kwargs,
         )
         return resolved_conditions, adapted, summary_outputs
@@ -165,6 +169,7 @@ class Approximator(BackendApproximator):
         summary_variables: Tensor | None,
         *,
         stage: str,
+        batch_size: int | None = None,
         purpose: str = "call",
         **summary_kwargs,
     ):
@@ -181,6 +186,8 @@ class Approximator(BackendApproximator):
             Summary variables (pre-adapted tensors).
         stage : str
             Current stage (``"training"``, ``"validation"``, or ``"inference"``).
+        batch_size : int, optional
+            Batch size for the summary network (default is ``None``).
         purpose : str, optional
             Passed to :meth:`ConditionBuilder.resolve` — ``"call"`` for forward
             passes, ``"metrics"`` for training/validation (default is ``"call"``).
@@ -207,6 +214,7 @@ class Approximator(BackendApproximator):
             inference_conditions,
             summary_variables,
             stage=stage,
+            batch_size=batch_size,
             purpose=purpose,
             **summary_kwargs,
         )
@@ -500,7 +508,7 @@ class Approximator(BackendApproximator):
         if not hasattr(self, "adapter"):
             raise ValueError("Adapter is not available.")
 
-        _, _, summary_outputs = self._prepare_conditions(conditions)
+        _, _, summary_outputs = self._prepare_conditions(conditions, **filter_kwargs(kwargs, self._prepare_conditions))
 
         return keras.ops.convert_to_numpy(summary_outputs)
 

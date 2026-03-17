@@ -1,4 +1,4 @@
-# BayesFlow <img src="img/bayesflow_hex.png" style="float: right; width: 20%; height: 20%;" align="right" alt="BayesFlow Logo" />
+# BayesFlow
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/bayesflow-org/bayesflow/tests.yaml?style=for-the-badge&label=Tests)
 ![Codecov](https://img.shields.io/codecov/c/github/bayesflow-org/bayesflow?style=for-the-badge&link=https%3A%2F%2Fapp.codecov.io%2Fgh%2Fbayesflow-org%2Fbayesflow%2Ftree%2Fmain)
@@ -9,8 +9,8 @@
 BayesFlow is a Python library for efficient Bayesian inference with deep learning.
 It provides users with:
 
-- A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2409.04332)
-- A rich collection of [neural network architectures](https://arxiv.org/abs/2512.20685)
+- A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2602.07098)
+- A rich collection of generative models, from [diffusion]((https://arxiv.org/abs/2512.20685)) to [consistency models](https://arxiv.org/abs/2312.05440)
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
 ## Conceptual Overview
@@ -23,14 +23,11 @@ It provides users with:
 </picture>
 </div>
 
-A cornerstone idea of amortized Bayesian inference is to employ generative
-neural networks for parameter estimation, model comparison, and model validation
-when working with intractable simulators whose behavior as a whole is too
-complex to be described analytically.
+With BayesFlow, you can easily train neural networks for tasks like parameter estimation, model comparison, and validation. It works for both complex simulators that cannot be expressed as parametric models (i.e., simulation-based inference) as well as traditional statistical models. BayesFlow provides a streamlined workflow layer for inference, especially in situations where conventional methods are unavailable or inefficient.
 
 ## Install
 
-We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
+We currently support Python 3.11 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"
@@ -99,20 +96,33 @@ For an in-depth exposition, check out our expanding list of resources below.
 
 ### Books
 
-Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bayesmodels.com/) by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
+Many examples from *Bayesian Cognitive Modeling: A Practical Course* by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
+
+### Videos
+
+A few video tutorial videos are available as part of the [Learning Bayesian Statistics](https://learnbayesstats.com/) podcast:
+
+1. Marvin Schmitt on [Amortized Bayesian Inference with Neural Networks](https://www.youtube.com/watch?v=_lotzkvy6mY)
+2. Jonas Arruda on [Diffusion Models for Simulation-Based Inference](https://www.youtube.com/watch?v=ZlcEkHXgF5k)
 
 ### Tutorial notebooks
 
-1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
-2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
-3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
-4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation.ipynb)
-5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
-6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
-8. [Likelihood estimation](examples/Likelihood_Estimation.ipynb)
-9. [Multimodal data](examples/Multimodal_Data.ipynb)
-10. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
+1. [Diffusion starter](examples/Diffusion_Models.ipynb) - A small tutorial on the power of diffusion models for SBI.
+2. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
+3. [Image data](examples/Spatial_Data_and_Parameters.ipynb) - Learn parameters from or generate image data.
+4. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
+5. [Model comparison](examples/One_Sample_TTest.ipynb) - Learn Bayes factors using probabilistic classification.
+6. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+7. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
+8. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
+9. [Estimating likelihoods](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions.
+10. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
+11. [Ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
+12. [Ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
+
+### Tutorial papers
+
+1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685**. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 
@@ -130,47 +140,26 @@ Documentation is available at https://bayesflow.org. Please use the [BayesFlow F
 
 ## Citing BayesFlow
 
-You can cite BayesFlow along the lines of:
-
-- We approximated the posterior using neural posterior estimation (NPE) with learned summary statistics (Radev et al., 2020), as implemented in the BayesFlow framework for amortized Bayesian inference (Radev et al., 2023a).
-- We approximated the likelihood using neural likelihood estimation (NLE) without hand-crafted summary statistics (Papamakarios et al., 2019), leveraging its implementation in BayesFlow for efficient and flexible inference.
-
-1. Radev, S. T., Schmitt, M., Schumacher, L., Elsemüller, L., Pratz, V., Schälte, Y., Köthe, U., & Bürkner, P.-C. (2023a). BayesFlow: Amortized Bayesian workflows with neural networks. *The Journal of Open Source Software, 8(89)*, 5702.([arXiv](https://arxiv.org/abs/2306.16015))([JOSS](https://joss.theoj.org/papers/10.21105/joss.05702))
-2. Radev, S. T., Mertens, U. K., Voss, A., Ardizzone, L., Köthe, U. (2020). BayesFlow: Learning complex stochastic models with invertible neural networks. *IEEE Transactions on Neural Networks and Learning Systems, 33(4)*, 1452-1466. ([arXiv](https://arxiv.org/abs/2003.06281))([IEEE TNNLS](https://ieeexplore.ieee.org/document/9298920))
-3. Radev, S. T., Schmitt, M., Pratz, V., Picchini, U., Köthe, U., & Bürkner, P.-C. (2023b). JANA: Jointly amortized neural approximation of complex Bayesian models. *Proceedings of the Thirty-Ninth Conference on Uncertainty in Artificial Intelligence, 216*, 1695-1706. ([arXiv](https://arxiv.org/abs/2302.09125))([PMLR](https://proceedings.mlr.press/v216/radev23a.html))
+If you are using the new multi-backend version of BayesFlow, we recommend citing our new [software paper](https://arxiv.org/abs/2602.07098) (Kühmichel et al., 2026). For uses of the [legacy version](https://joss.theoj.org/papers/10.21105/joss.05702), you can still reference Radev et al., (2023).
 
 **BibTeX:**
 
 ```
+@article{kuhmichel2026bayesflow,
+  title={{BayesFlow} 2: Multi-backend amortized {B}ayesian inference in Python},
+  author={Kühmichel, Lars and Huang, Jerry M and Pratz, Valentin and Arruda, Jonas and Olischläger, Hans and Habermann, Daniel and Kucharsky, Simon and Elsemüller, Lasse and Mishra, Aayush and Bracher, Niels and Jedhoff, Svenja and Schmitt, Marvin and Bürkner, Paul-Christian and Radev, Stefan T},
+  journal={arXiv preprint arXiv:2602.07098},
+  year={2026}
+}
+
 @article{bayesflow_2023_software,
   title = {{BayesFlow}: Amortized {B}ayesian workflows with neural networks},
-  author = {Radev, Stefan T. and Schmitt, Marvin and Schumacher, Lukas and Elsemüller, Lasse and Pratz, Valentin and Schälte, Yannik and Köthe, Ullrich and Bürkner, Paul-Christian},
+  author = {Radev, Stefan T and Schmitt, Marvin and Schumacher, Lukas and Elsemüller, Lasse and Pratz, Valentin and Schälte, Yannik and Köthe, Ullrich and Bürkner, Paul-Christian},
   journal = {Journal of Open Source Software},
   volume = {8},
   number = {89},
   pages = {5702},
   year = {2023}
-}
-
-@article{bayesflow_2020_original,
-  title = {{BayesFlow}: Learning complex stochastic models with invertible neural networks},
-  author = {Radev, Stefan T. and Mertens, Ulf K. and Voss, Andreas and Ardizzone, Lynton and K{\"o}the, Ullrich},
-  journal = {IEEE transactions on neural networks and learning systems},
-  volume = {33},
-  number = {4},
-  pages = {1452--1466},
-  year = {2020}
-}
-
-@inproceedings{bayesflow_2023_jana,
-  title = {{JANA}: Jointly amortized neural approximation of complex {B}ayesian models},
-  author = {Radev, Stefan T. and Schmitt, Marvin and Pratz, Valentin and Picchini, Umberto and K\"othe, Ullrich and B\"urkner, Paul-Christian},
-  booktitle = {Proceedings of the Thirty-Ninth Conference on Uncertainty in Artificial Intelligence},
-  pages = {1695--1706},
-  year = {2023},
-  volume = {216},
-  series = {Proceedings of Machine Learning Research},
-  publisher = {PMLR}
 }
 ```
 
@@ -191,13 +180,12 @@ I am getting `ModuleNotFoundError: No module named 'tensorflow'` when I try to i
 
 **Answer:**
 One of these applies:
+
 - You want to use tensorflow as your backend, but you have not installed it.
 See [here](https://www.tensorflow.org/install).
 
-
 - You want to use a backend other than tensorflow, but have not set the environment variable correctly.
 See [here](https://keras.io/getting_started/#configuring-your-backend).
-
 
 - You have set the environment variable, but it is not being picked up by Python.
 This can happen silently in some development environments (e.g., VSCode or PyCharm).
@@ -207,58 +195,10 @@ in your Python script via `os.environ`.
 -------------
 
 **Question:**
-What is the difference between Bayesflow 2.0+ and previous versions?
+What is the difference between Bayesflow 2 and previous versions?
 
 **Answer:**
-BayesFlow 2.0+ is a complete rewrite of the library. It shares the same
-overall goals with previous versions, but has much better modularity
-and extensibility. What is more, the new BayesFlow has multi-backend support via Keras3,
-while the old version was based on TensorFlow.
-
--------------
-
-**Question:**
-Should I switch to BayesFlow 2.0+ now? Are there features that are still missing?
-
-**Answer:**
-In general, we recommend to switch, as the new version is easier to use and will continue
-to receive improvements and new features. However, a few features are still missing, so you
-might want to wait until everything you need has been ported to BayesFlow 2.0+.
-
-Depending on your needs, you might not want to upgrade yet if one of the following applies:
-
-- You have an ongoing project that uses BayesFlow 1.x, and you do not want to allocate
-  time for migrating it to the new API.
-- You have already trained models in BayesFlow 1.x, that you do not want to re-train
-  with the new version. Loading models from version 1.x in version 2.0+ is not supported.
-- You require a feature that was not ported to BayesFlow 2.0+ yet. To our knowledge,
-  this applies to:
-  * Two-level/Hierarchical models (planned for version 2.1): `TwoLevelGenerativeModel`, `TwoLevelPrior`.
-  * Sensitivity analysis (partially discontinued): functionality from the `bayesflow.sensitivity` module. This is still
-    possible, but we do no longer offer a special module for it. We plan to add a tutorial on this, see [#455](https://github.com/bayesflow-org/bayesflow/issues/455).
-  * MCMC (discontinued): The `bayesflow.mcmc` module. We are considering other options
-    to enable the use of BayesFlow in an MCMC setting.
-  * Networks: `EvidentialNetwork`.
-  * Model misspecification detection: MMD test in the summary space (see #384).
-
-If you encounter any functionality that is missing and not listed here, please let us
-know by opening an issue.
-
--------------
-
-**Question:**
-I still need the old BayesFlow for some of my projects. How can I install it?
-
-**Answer:**
-You can find and install the old Bayesflow version via the `stable-legacy` branch on GitHub.
-The corresponding [documentation](https://bayesflow.org/stable-legacy/index.html) can be
-accessed by selecting the "stable-legacy" entry in the version picker of the documentation.
-
-You can also install the latest version of BayesFlow v1.x from PyPI using
-
-```
-pip install "bayesflow<2.0"
-```
+BayesFlow 2.0+ is a complete rewrite of the library. It shares the same overall goals with previous versions, but has much better modularity and extensibility. What is more, the new BayesFlow has multi-backend support via Keras3, while the old version was based on TensorFlow.
 
 -------------
 
@@ -268,6 +208,6 @@ If you are interested in a curated list of resources, including reviews, softwar
 
 ## Acknowledgments
 
-This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the National Science Foundation (NSF, Award Number 2448380) and the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation, Projects 528702768 and 508399956).
+This project is currently managed by researchers from Rensselaer Polytechnic Institute, TU Dortmund University, and Heidelberg University. It is partially funded by the National Science Foundation (NSF) Award Number 2448380 and the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) Projects 528702768 and 508399956 as well as DFG Collaborative Research Center 391.
 
 BayesFlow is a [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects).

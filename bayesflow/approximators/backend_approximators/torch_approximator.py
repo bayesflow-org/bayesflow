@@ -1,3 +1,5 @@
+from typing import Any
+
 import keras
 import torch
 
@@ -17,7 +19,7 @@ class TorchApproximator(keras.Model):
     -----
     Subclasses must implement:
         - compute_metrics(self, *args, **kwargs) -> dict[str, torch.Tensor]
-        - _batch_size_from_data(self, data: dict[str, any]) -> int
+        - _batch_size_from_data(self, data: dict[str, Any]) -> int
     """
 
     # noinspection PyMethodOverriding
@@ -43,7 +45,7 @@ class TorchApproximator(keras.Model):
         """
         raise NotImplementedError
 
-    def test_step(self, data: dict[str, any]) -> dict[str, torch.Tensor]:
+    def test_step(self, data: dict[str, Any]) -> dict[str, torch.Tensor]:
         """
         Performs a single validation step.
 
@@ -52,13 +54,13 @@ class TorchApproximator(keras.Model):
 
         Parameters
         ----------
-        data : dict of str to any
+        data : dict of str to Any
             Input dictionary containing model inputs and possibly additional information
             such as sample_weight or mask.
 
         Returns
         -------
-        dict of str to tf.Tensor
+        dict of str to torch.Tensor
             Dictionary of computed validation metrics.
         """
         kwargs = filter_kwargs(data | {"stage": "validation"}, self.compute_metrics)
@@ -66,7 +68,7 @@ class TorchApproximator(keras.Model):
         self._update_metrics(metrics, self._batch_size_from_data(data))
         return metrics
 
-    def train_step(self, data: dict[str, any]) -> dict[str, torch.Tensor]:
+    def train_step(self, data: dict[str, Any]) -> dict[str, torch.Tensor]:
         """
         Performs a single training step with gradient update.
 
@@ -75,12 +77,12 @@ class TorchApproximator(keras.Model):
 
         Parameters
         ----------
-        data : dict of str to any
+        data : dict of str to Any
             Input dictionary containing model inputs and training targets.
 
         Returns
         -------
-        dict of str to tf.Tensor
+        dict of str to torch.Tensor
             Dictionary of computed training metrics.
         """
         with torch.enable_grad():
@@ -103,7 +105,7 @@ class TorchApproximator(keras.Model):
         self._update_metrics(metrics, self._batch_size_from_data(data))
         return metrics
 
-    def _update_metrics(self, metrics: dict[str, any], sample_weight: torch.Tensor = None):
+    def _update_metrics(self, metrics: dict[str, Any], sample_weight: torch.Tensor = None):
         """
         Updates internal Keras metric trackers using provided metric values.
 
@@ -112,7 +114,7 @@ class TorchApproximator(keras.Model):
 
         Parameters
         ----------
-        metrics : dict of str to any
+        metrics : dict of str to Any
             Dictionary of computed metrics for the current batch.
         sample_weight : torch.Tensor, optional
             Sample weights used during metric updates.
@@ -126,23 +128,7 @@ class TorchApproximator(keras.Model):
                 self._metrics[-1].update_state(value, sample_weight=sample_weight)
 
     # noinspection PyMethodOverriding
-    def _batch_size_from_data(self, data: any) -> int:
-        """Obtain the batch size from a batch of data.
-
-        To properly weigh the metrics for batches of different sizes, the batch size of a given batch of data is
-        required. As the data structure differs between approximators, each concrete approximator has to specify
-        this method.
-
-        Parameters
-        ----------
-        data :
-            The data that are passed to `compute_metrics` as keyword arguments.
-
-        Returns
-        -------
-        batch_size : int
-            The batch size of the given data.
-        """
+    def _batch_size_from_data(self, data: Any) -> int:
         raise NotImplementedError(
             "Correct calculation of the metrics requires obtaining the batch size from the supplied data "
             "for proper weighting of metrics for batches with different sizes. Please implement the "

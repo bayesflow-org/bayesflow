@@ -176,6 +176,7 @@ def classifier_two_sample_test(
             histories.append(history.history)
             classifiers.append(classifier)
 
+    scores = np.maximum(scores, 1 - np.array(scores))  # Ensure >= 0.5
     mean_score = float(np.mean(scores))
     if return_metric_only:
         return mean_score

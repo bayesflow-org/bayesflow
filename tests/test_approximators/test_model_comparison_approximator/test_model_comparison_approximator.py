@@ -13,7 +13,7 @@ def test_build(approximator, train_dataset):
     approximator.build(data_shapes)
 
     assert approximator.built is True
-    assert approximator.classifier_network.built is True
+    assert approximator.inference_network.built is True
     if approximator.summary_network is not None:
         assert approximator.summary_network.built is True
 
@@ -22,24 +22,20 @@ def test_build_adapter():
     from bayesflow.approximators import ModelComparisonApproximator
 
     _ = ModelComparisonApproximator.build_adapter(
-        num_models=2,
-        classifier_conditions=["foo", "bar"],
+        inference_conditions=["foo", "bar"],
         summary_variables=["observables"],
-        model_index_name=["indices"],
+        inference_variables=["indices"],
     )
 
 
-def test_build_dataset(simulator, adapter):
-    from bayesflow.approximators import ModelComparisonApproximator
+def test_build_dataset(approximator, simulator, adapter):
     from bayesflow.datasets import OnlineDataset
 
-    dataset = ModelComparisonApproximator.build_dataset(
+    dataset = approximator.build_dataset(
         simulator=simulator,
+        adapter=adapter,
         memory_budget="20 KiB",
         num_batches=2,
-        num_models=2,
-        classifier_conditions="foo",
-        summary_variables=["x1", "x2"],
     )
     assert isinstance(dataset, OnlineDataset)
 

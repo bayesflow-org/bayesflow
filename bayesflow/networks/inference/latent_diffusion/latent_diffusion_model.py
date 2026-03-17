@@ -13,7 +13,7 @@ from .decoder import Decoder
 
 @serializable("bayesflow.networks")
 class LatentDiffusionModel(InferenceNetwork):
-    """(IN) Latent Diffusion Model for amortized Bayesian inference.
+    """Latent Diffusion Model for amortized Bayesian inference.
 
     Combines a VAE (encoder/decoder) with an inference network operating in
     latent space. The model learns to approximate posterior distributions
@@ -49,9 +49,9 @@ class LatentDiffusionModel(InferenceNetwork):
         Additional arguments for encoder construction. Default is None.
     decoder_kwargs : dict[str, any], optional
         Additional arguments for decoder construction. Default is None.
-    inference_network : InferenceNetwork, optional
+    inference_network : InferenceNetwork or ``"auto"``, optional
         A pre-configured inference network to operate in latent space.
-        If None (default), a ``DiffusionModel`` is created using
+        If ``"auto"`` (default), a ``DiffusionModel`` is created using
         ``diffusion_subnet``, ``diffusion_subnet_kwargs``, ``noise_schedule``,
         ``schedule_kwargs``, and ``integrate_kwargs``.
     diffusion_subnet : str, type, or keras.Layer, optional
@@ -115,7 +115,7 @@ class LatentDiffusionModel(InferenceNetwork):
         decoder: str | type | keras.Layer = "mlp",
         encoder_kwargs: dict[str, any] = None,
         decoder_kwargs: dict[str, any] = None,
-        inference_network: InferenceNetwork = None,
+        inference_network: InferenceNetwork | str = "auto",
         diffusion_subnet: str | type | keras.Layer = "time_mlp",
         diffusion_subnet_kwargs: dict[str, any] = None,
         noise_schedule: str = "cosine",
@@ -161,9 +161,7 @@ class LatentDiffusionModel(InferenceNetwork):
         )
 
         # Latent-space inference network
-        if inference_network is not None:
-            self.inference_network = inference_network
-        else:
+        if inference_network == "auto":
             self.inference_network = DiffusionModel(
                 subnet=diffusion_subnet,
                 subnet_kwargs=diffusion_subnet_kwargs,
@@ -171,6 +169,13 @@ class LatentDiffusionModel(InferenceNetwork):
                 schedule_kwargs=schedule_kwargs,
                 integrate_kwargs=integrate_kwargs,
             )
+        elif isinstance(inference_network, str):
+            raise ValueError(
+            f"Unknown inference_network specification: {inference_network}. "
+            f"Expected 'auto' or an InferenceNetwork instance."
+            )
+        else:
+            self.inference_network = inference_network
 
         # Training step counter for warmup
         self._training_steps = self.add_weight(

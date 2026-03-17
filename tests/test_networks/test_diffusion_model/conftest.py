@@ -11,7 +11,7 @@ import pytest
 def cosine_noise_schedule():
     from bayesflow.networks.inference.diffusion.schedules import CosineNoiseSchedule
 
-    return CosineNoiseSchedule(min_log_snr=-12, max_log_snr=12, shift=0.1, weighting="sigmoid")
+    return CosineNoiseSchedule(min_log_snr=-12, max_log_snr=12, shift=0.1)
 
 
 @pytest.fixture()
@@ -66,9 +66,8 @@ def random_conditions(batch_size, cond_dim):
 @pytest.fixture(
     params=[
         dict(noise_schedule="edm", prediction_type="F"),
-        dict(noise_schedule="edm", prediction_type="velocity"),
-        dict(noise_schedule="cosine", prediction_type="noise"),
         dict(noise_schedule="cosine", prediction_type="velocity"),
+        dict(noise_schedule="edm", prediction_type="potential"),
     ],
     ids=lambda d: f"{d['noise_schedule']}_{d['prediction_type']}",
 )
@@ -87,3 +86,55 @@ def diffusion_model_with_masking():
         drop_cond_prob=0.1,
         drop_target_prob=0.5,
     )
+
+
+@pytest.fixture
+def simple_diffusion_model():
+    """Create a simple diffusion model for testing compositional sampling."""
+    from bayesflow.networks import DiffusionModel
+
+    return DiffusionModel(
+        subnet_kwargs={"widths": (32, 32)},
+    )
+
+
+@pytest.fixture
+def simple_compositional_diffusion_model():
+    """Create a simple diffusion model for testing compositional sampling."""
+    from bayesflow.networks import CompositionalDiffusionModel
+
+    return CompositionalDiffusionModel(
+        subnet_kwargs={"widths": (32, 32)},
+    )
+
+
+@pytest.fixture
+def compositional_conditions():
+    """Create test conditions for compositional sampling."""
+    batch_size = 2
+    n_compositional = 3
+    n_samples = 4
+    condition_dim = 5
+
+    return keras.random.normal((batch_size, n_compositional, n_samples, condition_dim))
+
+
+@pytest.fixture
+def compositional_state():
+    """Create test state for compositional sampling."""
+    batch_size = 2
+    n_samples = 4
+    param_dim = 3
+
+    return keras.random.normal((batch_size, n_samples, param_dim))
+
+
+@pytest.fixture
+def mock_prior_score():
+    """Create a mock prior score function for testing."""
+
+    def prior_score_fn(theta):
+        # Simple quadratic prior: -0.5 * ||theta||^2
+        return -theta
+
+    return prior_score_fn

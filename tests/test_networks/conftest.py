@@ -20,11 +20,6 @@ def diffusion_model_edm_F():
 
 
 @pytest.fixture()
-def diffusion_model_edm_velocity():
-    return _make_diffusion_model("edm", "velocity")
-
-
-@pytest.fixture()
 def diffusion_model_cosine_velocity():
     return _make_diffusion_model("cosine", "velocity")
 
@@ -32,6 +27,11 @@ def diffusion_model_cosine_velocity():
 @pytest.fixture()
 def diffusion_model_cosine_noise():
     return _make_diffusion_model("cosine", "noise")
+
+
+@pytest.fixture()
+def diffusion_model_edm_potential():
+    return _make_diffusion_model("edm", "potential")
 
 
 @pytest.fixture()
@@ -122,6 +122,7 @@ def typical_scoring_rule_network_subnet():
         pytest.param("diffusion_model_edm_F"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_noise", marks=pytest.mark.slow),
+        pytest.param("diffusion_model_edm_potential", marks=pytest.mark.slow),
     ],
     scope="function",
 )
@@ -151,6 +152,7 @@ def inference_network_subnet(request):
         "consistency_model",
         pytest.param("diffusion_model_edm_F"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
+        pytest.param("diffusion_model_edm_potential", marks=pytest.mark.slow),
     ],
     scope="function",
 )

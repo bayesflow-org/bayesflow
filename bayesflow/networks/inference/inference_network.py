@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Callable
 
 import keras
 
@@ -109,10 +109,24 @@ class InferenceNetwork(keras.Layer):
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
 
+    def _inverse_compositional(
+        self,
+        z: Tensor,
+        conditions: Tensor,
+        compute_prior_score: Callable[[Tensor], Tensor],
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        raise NotImplementedError
+
     @allow_batch_size
     def sample(self, batch_shape: Shape, conditions: Tensor = None, **kwargs) -> Tensor:
         samples = self.base_distribution.sample(batch_shape)
-        samples = self(samples, conditions=conditions, inverse=True, density=False, **kwargs)
+        if "compute_prior_score" in kwargs:
+            samples = self._inverse_compositional(samples, conditions=conditions, inverse=True, density=False, **kwargs)
+        else:
+            samples = self(samples, conditions=conditions, inverse=True, density=False, **kwargs)
         return samples
 
     def log_prob(self, samples: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:

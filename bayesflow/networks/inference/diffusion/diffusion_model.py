@@ -52,7 +52,7 @@ class DiffusionModel(InferenceNetwork):
         Noise schedule controlling the diffusion dynamics.  Can be a string
         identifier, a schedule class, or a pre-initialised schedule instance.
         Default is ``"edm"``.
-    prediction_type : {'velocity', 'noise', 'F', 'x'}, optional
+    prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}, optional
         Output format of the model's prediction.  Default is ``"F"``.
     loss_type : {'velocity', 'noise', 'F'}, optional
         Loss function used to train the model.  Default is ``"noise"``.
@@ -83,7 +83,7 @@ class DiffusionModel(InferenceNetwork):
         *,
         subnet: str | type | keras.Layer = "time_mlp",
         noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
-        prediction_type: Literal["velocity", "noise", "F", "x"] = "F",
+        prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "F",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
         subnet_kwargs: dict[str, Any] = None,
         schedule_kwargs: dict[str, Any] = None,
@@ -94,7 +94,7 @@ class DiffusionModel(InferenceNetwork):
     ):
         super().__init__(base_distribution="normal", **kwargs)
 
-        if prediction_type not in ["noise", "velocity", "F", "x"]:
+        if prediction_type not in ["noise", "velocity", "F", "x", "score", "potential"]:
             raise ValueError(f"Unknown prediction type: {prediction_type}")
 
         if loss_type not in ["noise", "velocity", "F"]:
@@ -207,7 +207,8 @@ class DiffusionModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.output_projector = keras.layers.Dense(units=xz_shape[-1], bias_initializer="zeros")
+        units = 1 if self._prediction_type == "potential" else xz_shape[-1]
+        self.output_projector = keras.layers.Dense(units=units, bias_initializer="zeros")
 
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
@@ -363,6 +364,10 @@ class DiffusionModel(InferenceNetwork):
             case "score":
                 return (z + sigma_t**2 * pred) / alpha_t
 
+            case "potential":
+                # Score is computed as ∇_z phi via _compute_score_from_potential.
+                raise RuntimeError("convert_prediction_to_x should not be called for prediction_type='potential'. ")
+
             case _:
                 raise ValueError(f"Unknown prediction type {self._prediction_type}.")
 
@@ -428,12 +433,19 @@ class DiffusionModel(InferenceNetwork):
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         norm_log_snr = self._transform_log_snr(log_snr_t)
-        subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
-        pred = self.output_projector(subnet_out)
 
-        x_pred = self.convert_prediction_to_x(pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t)
+        if self._prediction_type == "potential":
+            score = self._compute_score_from_potential(
+                xz=xz, norm_log_snr=norm_log_snr, conditions=conditions, training=training, **subnet_kwargs
+            )
+        else:
+            subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
+            pred = self.output_projector(subnet_out)
 
-        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+            x_pred = self.convert_prediction_to_x(
+                pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
+            )
+            score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
         if guidance_constraints is not None:
             guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
@@ -558,6 +570,104 @@ class DiffusionModel(InferenceNetwork):
         v, trace = jacobian_trace(f, xz, max_steps=max_steps, seed=self.seed_generator, return_output=True)
 
         return v, ops.expand_dims(trace, axis=-1)
+
+    def _compute_score_from_potential(
+        self,
+        xz: Tensor,
+        norm_log_snr: Tensor,
+        conditions: Tensor = None,
+        training: bool = False,
+        **subnet_kwargs,
+    ) -> Tensor:
+        """
+        Compute the score as the gradient of the predicted potential phi w.r.t. xz.
+
+        The network outputs a scalar potential phi(z, t, cond) per sample. The score is
+        then defined as ∇_z phi, i.e. the gradient of the potential w.r.t. the noisy input.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The noisy latent variable z at which to evaluate the score.
+        norm_log_snr : Tensor
+            Normalised log-SNR fed to the subnet as the time embedding.
+        conditions : Tensor, optional
+            Conditioning variables passed to the subnet. Default is None.
+        training : bool, optional
+            Whether the subnet is in training mode.
+        **subnet_kwargs
+            Additional keyword arguments forwarded to the subnet (e.g. attention masks).
+
+        Returns
+        -------
+        Tensor
+            Score tensor of the same shape as *xz*, equal to ∇_xz phi(xz, t, cond).
+        """
+        backend = keras.backend.backend()
+
+        match backend:
+            case "jax":
+                import jax
+                import jax.numpy as jnp
+
+                def phi_fn(x):
+                    subnet_out = self.subnet(
+                        (x, norm_log_snr, conditions),
+                        training=training,
+                        **subnet_kwargs,
+                    )
+                    return self.output_projector(subnet_out)
+
+                phi, vjp_fn = jax.vjp(phi_fn, xz)
+                score = vjp_fn(jnp.ones_like(phi))[0]
+                return score
+
+            case "tensorflow":
+                import tensorflow as tf
+
+                with tf.GradientTape() as tape:
+                    tape.watch(xz)
+                    subnet_out = self.subnet(
+                        (xz, norm_log_snr, conditions),
+                        training=training,
+                        **subnet_kwargs,
+                    )
+                    phi = self.output_projector(subnet_out)
+
+                score = tape.gradient(
+                    target=phi,
+                    sources=xz,
+                    output_gradients=tf.ones_like(phi),
+                )
+                return score
+
+            case "torch":
+                import torch
+
+                with torch.enable_grad():
+                    xz_leaf = xz.detach().requires_grad_(True)
+                    norm_log_snr_d = norm_log_snr.detach()
+                    conditions_d = conditions.detach() if conditions is not None else None
+
+                    subnet_out = self.subnet(
+                        (xz_leaf, norm_log_snr_d, conditions_d),
+                        training=training,
+                        **subnet_kwargs,
+                    )
+                    phi = self.output_projector(subnet_out)
+
+                    score = torch.autograd.grad(
+                        outputs=phi,
+                        inputs=xz_leaf,
+                        grad_outputs=torch.ones_like(phi),
+                        create_graph=training,
+                        retain_graph=training,
+                    )[0]
+
+                return score
+
+            case _:
+                raise NotImplementedError(f"Unsupported backend for potential prediction type: {backend}")
 
     def _transform_log_snr(self, log_snr: Tensor) -> Tensor:
         """Transform the log_snr to the range [-1, 1] for the diffusion process."""

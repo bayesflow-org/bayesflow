@@ -117,6 +117,7 @@ class Approximator(BackendApproximator):
         data: Mapping[str, np.ndarray],
         *,
         stage: str = "inference",
+        batch_size: int | None = None,
         **adapter_kwargs,
     ) -> tuple[dict[str, Tensor], Tensor | None, Tensor | None]:
         """Adapt raw user data, tensorize, standardize conditions, and resolve.
@@ -134,6 +135,8 @@ class Approximator(BackendApproximator):
             Raw user data dictionary.
         stage : str, optional
             Stage for standardization (default is ``"inference"``).
+        batch_size : int, optional
+            Batch size for the summary network (default is ``None``).
         **adapter_kwargs
             Extra keyword arguments forwarded to the adapter.
 
@@ -155,7 +158,41 @@ class Approximator(BackendApproximator):
             adapted.get("inference_conditions"),
             adapted.get("summary_variables"),
             stage=stage,
+            batch_size=batch_size,
             **summary_kwargs,
+        )
+        return resolved_conditions, adapted, summary_outputs
+
+    def _prepare_compositional_conditions(
+        self, conditions: Mapping[str, np.ndarray], batch_size: int | None = None
+    ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
+        original_shapes = {}
+        flattened_conditions = {}
+        for key, value in conditions.items():  # Flatten compositional dimensions
+            original_shapes[key] = value.shape
+            n_datasets, n_comp = value.shape[:2]
+            flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
+            flattened_conditions[key] = value.reshape(flattened_shape)
+        n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
+
+        if n_comp <= 1:
+            raise ValueError(
+                "At least two conditioning variables are required for compositional sampling, got "
+                f"{n_comp}. Use 'sample' instead."
+            )
+
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
+            flattened_conditions, batch_size=batch_size
+        )
+
+        # Reshape conditions tensor back to (n_datasets, n_compositional, ...)
+        resolved_conditions = keras.ops.reshape(
+            resolved_conditions,
+            (
+                n_datasets,
+                n_comp,
+            )
+            + keras.ops.shape(resolved_conditions)[1:],
         )
         return resolved_conditions, adapted, summary_outputs
 
@@ -165,6 +202,7 @@ class Approximator(BackendApproximator):
         summary_variables: Tensor | None,
         *,
         stage: str,
+        batch_size: int | None = None,
         purpose: str = "call",
         **summary_kwargs,
     ):
@@ -181,6 +219,8 @@ class Approximator(BackendApproximator):
             Summary variables (pre-adapted tensors).
         stage : str
             Current stage (``"training"``, ``"validation"``, or ``"inference"``).
+        batch_size : int, optional
+            Batch size for the summary network (default is ``None``).
         purpose : str, optional
             Passed to :meth:`ConditionBuilder.resolve` — ``"call"`` for forward
             passes, ``"metrics"`` for training/validation (default is ``"call"``).
@@ -207,6 +247,7 @@ class Approximator(BackendApproximator):
             inference_conditions,
             summary_variables,
             stage=stage,
+            batch_size=batch_size,
             purpose=purpose,
             **summary_kwargs,
         )
@@ -500,7 +541,7 @@ class Approximator(BackendApproximator):
         if not hasattr(self, "adapter"):
             raise ValueError("Adapter is not available.")
 
-        _, _, summary_outputs = self._prepare_conditions(conditions)
+        _, _, summary_outputs = self._prepare_conditions(conditions, **filter_kwargs(kwargs, self._prepare_conditions))
 
         return keras.ops.convert_to_numpy(summary_outputs)
 

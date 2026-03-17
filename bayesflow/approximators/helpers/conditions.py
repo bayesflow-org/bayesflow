@@ -1,10 +1,12 @@
 from typing import Literal
 
+from tqdm.auto import tqdm
+
 import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, deserialize
-from bayesflow.utils import concatenate_valid, filter_kwargs
+from bayesflow.utils import concatenate_valid, filter_kwargs, slice_maybe_nested, tree_concatenate
 
 
 @serializable("bayesflow.approximators")
@@ -27,6 +29,7 @@ class ConditionBuilder:
         summary_variables: Tensor | None,
         stage: str,
         purpose: Literal["call", "metrics"],
+        batch_size: int | None,
         **summary_kwargs,
     ):
         """Resolve inference conditions, optionally incorporating summary network outputs.
@@ -51,6 +54,8 @@ class ConditionBuilder:
         purpose : {"call", "metrics"}
             ``"call"``  — forward pass: returns raw summary outputs.
             ``"metrics"`` — training/validation: returns summary metric dict.
+        batch_size : int, optional
+            Batch size for the summary network (default is ``None``).
         **kwargs
             Extra keyword arguments forwarded to ``summary_network.call``
             (when ``purpose="call"``) or ``summary_network.compute_metrics``
@@ -83,7 +88,22 @@ class ConditionBuilder:
             raise ValueError("Summary variables are required when a summary network is present.")
 
         if purpose == "call":
-            outputs = summary_network(summary_variables, **filter_kwargs(summary_kwargs, summary_network.call))
+            batches = []
+            num_conditions = keras.ops.shape(summary_variables)[0]
+            if batch_size is None:
+                batch_size = num_conditions
+
+            for i in tqdm(range(0, num_conditions, batch_size), desc="Summarizing", unit="batch"):
+                batch_variables = slice_maybe_nested(summary_variables, i, i + batch_size)
+                batch_kwargs = {
+                    k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
+                    for k, v in summary_kwargs.items()
+                }
+
+                batch_outputs = summary_network(batch_variables, **filter_kwargs(batch_kwargs, summary_network.call))
+                batches.append(batch_outputs)
+
+            outputs = tree_concatenate(batches, axis=0)
             conditions = concatenate_valid((inference_conditions, outputs), axis=-1)
             return conditions, outputs
 

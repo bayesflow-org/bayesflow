@@ -163,6 +163,39 @@ class Approximator(BackendApproximator):
         )
         return resolved_conditions, adapted, summary_outputs
 
+    def _prepare_compositional_conditions(
+        self, conditions: Mapping[str, np.ndarray], batch_size: int | None = None
+    ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
+        original_shapes = {}
+        flattened_conditions = {}
+        for key, value in conditions.items():  # Flatten compositional dimensions
+            original_shapes[key] = value.shape
+            n_datasets, n_comp = value.shape[:2]
+            flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
+            flattened_conditions[key] = value.reshape(flattened_shape)
+        n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
+
+        if n_comp <= 1:
+            raise ValueError(
+                "At least two conditioning variables are required for compositional sampling, got "
+                f"{n_comp}. Use 'sample' instead."
+            )
+
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
+            flattened_conditions, batch_size=batch_size
+        )
+
+        # Reshape conditions tensor back to (n_datasets, n_compositional, ...)
+        resolved_conditions = keras.ops.reshape(
+            resolved_conditions,
+            (
+                n_datasets,
+                n_comp,
+            )
+            + keras.ops.shape(resolved_conditions)[1:],
+        )
+        return resolved_conditions, adapted, summary_outputs
+
     def _standardize_and_resolve(
         self,
         inference_conditions: Tensor | None,

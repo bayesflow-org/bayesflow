@@ -239,7 +239,7 @@ class ContinuousApproximator(Approximator):
             Dictionary containing generated samples with the same keys as `conditions`.
         """
 
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions)
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
@@ -302,6 +302,7 @@ class ContinuousApproximator(Approximator):
             adapted.get("inference_conditions"),
             adapted.get("summary_variables"),
             stage="inference",
+            batch_size=kwargs.get("batch_size", None),
             **summary_kwargs,
         )
 
@@ -324,37 +325,6 @@ class ContinuousApproximator(Approximator):
         log_prob = keras.tree.map_structure(lambda lp: lp + log_det_jac, log_prob)
 
         return log_prob
-
-    def _prepare_compositional_conditions(
-        self, conditions: Mapping[str, np.ndarray]
-    ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
-        original_shapes = {}
-        flattened_conditions = {}
-        for key, value in conditions.items():  # Flatten compositional dimensions
-            original_shapes[key] = value.shape
-            n_datasets, n_comp = value.shape[:2]
-            flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
-            flattened_conditions[key] = value.reshape(flattened_shape)
-        n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
-
-        if n_comp <= 1:
-            raise ValueError(
-                "At least two conditioning variables are required for compositional sampling, got "
-                f"{n_comp}. Use 'sample' instead."
-            )
-
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(flattened_conditions)
-
-        # Reshape conditions tensor back to (n_datasets, n_compositional, ...)
-        resolved_conditions = keras.ops.reshape(
-            resolved_conditions,
-            (
-                n_datasets,
-                n_comp,
-            )
-            + keras.ops.shape(resolved_conditions)[1:],
-        )
-        return resolved_conditions, adapted, summary_outputs
 
     def compositional_sample(
         self,
@@ -406,7 +376,9 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(conditions)
+        resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(
+            conditions, batch_size=batch_size
+        )
 
         # prepare score computation
         compute_prior_score_pre = partial(
@@ -526,7 +498,9 @@ class ContinuousApproximator(Approximator):
 
         merged_conditions = {**expanded_conditions, **expanded_ancestral}
 
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(merged_conditions)
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
+            merged_conditions, batch_size=batch_size
+        )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 

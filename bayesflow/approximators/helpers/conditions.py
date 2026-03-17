@@ -6,7 +6,7 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, deserialize
-from bayesflow.utils import concatenate_valid, filter_kwargs, slice_maybe_nested, tree_concatenate
+from bayesflow.utils import concatenate_valid, dim_maybe_nested, filter_kwargs, slice_maybe_nested, tree_concatenate
 
 
 @serializable("bayesflow.approximators")
@@ -89,7 +89,7 @@ class ConditionBuilder:
 
         if purpose == "call":
             batches = []
-            num_conditions = keras.ops.shape(summary_variables)[0]
+            num_conditions = dim_maybe_nested(summary_variables, axis=0)
             if batch_size is None:
                 batch_size = num_conditions
 

@@ -111,10 +111,8 @@ class MixtureScore(ParametricDistributionScore):
         return base_config | serialize(config)
 
     @classmethod
-    def from_config(cls, config):
-        cfg = config.copy()
-        cfg["components"] = deserialize(cfg["components"])
-        return cls(**cfg)
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
         """Return the head shapes required to parameterize the mixture."""

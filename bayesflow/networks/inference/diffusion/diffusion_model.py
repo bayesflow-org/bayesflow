@@ -611,23 +611,22 @@ class DiffusionModel(InferenceNetwork):
         """
         backend = keras.backend.backend()
 
-        # computing sums here to avoid loops over the batch
         match backend:
             case "jax":
                 import jax
                 import jax.numpy as jnp
 
-                def phi_sum_fn(x):
+                def phi_fn(x):
                     subnet_out = self.subnet(
                         (x, norm_log_snr, conditions),
                         training=training,
                         **subnet_kwargs,
                     )
-                    phi = self.output_projector(subnet_out)
-                    phi = jnp.reshape(phi, (x.shape[0],))  # [B]
-                    return jnp.sum(phi)
+                    return self.output_projector(subnet_out)
 
-                return jax.grad(phi_sum_fn)(xz)
+                phi, vjp_fn = jax.vjp(phi_fn, xz)
+                score = vjp_fn(jnp.ones_like(phi))[0]
+                return score
 
             case "tensorflow":
                 import tensorflow as tf
@@ -640,10 +639,13 @@ class DiffusionModel(InferenceNetwork):
                         **subnet_kwargs,
                     )
                     phi = self.output_projector(subnet_out)
-                    phi = tf.reshape(phi, [tf.shape(xz)[0]])  # [B]
-                    phi_sum = tf.reduce_sum(phi)
 
-                return tape.gradient(phi_sum, xz)
+                score = tape.gradient(
+                    target=phi,
+                    sources=xz,
+                    output_gradients=tf.ones_like(phi),
+                )
+                return score
 
             case "torch":
                 import torch
@@ -659,11 +661,11 @@ class DiffusionModel(InferenceNetwork):
                         **subnet_kwargs,
                     )
                     phi = self.output_projector(subnet_out)
-                    phi = phi.reshape(xz_leaf.shape[0])  # [B]
 
                     score = torch.autograd.grad(
-                        outputs=phi.sum(),
+                        outputs=phi,
                         inputs=xz_leaf,
+                        grad_outputs=torch.ones_like(phi),
                         create_graph=training,
                         retain_graph=training,
                     )[0]

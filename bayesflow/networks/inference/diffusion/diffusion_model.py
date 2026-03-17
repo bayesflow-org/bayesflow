@@ -166,12 +166,17 @@ class DiffusionModel(InferenceNetwork):
 
         # Obtain output of the network and transform to prediction of the clean signal x
         norm_log_snr_t = self._transform_log_snr(log_snr_t)
-        subnet_out = self.subnet((diffused_x, norm_log_snr_t, conditions), training=training, **subnet_kwargs)
-        pred = self.output_projector(subnet_out)
-
-        x_pred = self.convert_prediction_to_x(
-            pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
-        )
+        if self._prediction_type == "potential":
+            score = self._compute_score_from_potential(
+                xz=diffused_x, norm_log_snr=norm_log_snr_t, conditions=conditions, training=training, **subnet_kwargs
+            )
+            x_pred = (diffused_x + sigma_t**2 * score) / alpha_t
+        else:
+            subnet_out = self.subnet((diffused_x, norm_log_snr_t, conditions), training=training, **subnet_kwargs)
+            pred = self.output_projector(subnet_out)
+            x_pred = self.convert_prediction_to_x(
+                pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
+            )
 
         # Finally, compute the loss according to the configured loss type.  Note that the standard weighting
         # functions are defined for the noise prediction loss, so if you use a different loss type, you might want

@@ -238,8 +238,10 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
+        summary_batch_size = batch_size * num_samples if batch_size is None else batch_size
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
+            conditions, batch_size=summary_batch_size
+        )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
@@ -376,8 +378,9 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
+        summary_batch_size = batch_size * num_samples if batch_size is None else batch_size
         resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(
-            conditions, batch_size=batch_size
+            conditions, batch_size=summary_batch_size
         )
 
         # prepare score computation
@@ -498,8 +501,9 @@ class ContinuousApproximator(Approximator):
 
         merged_conditions = {**expanded_conditions, **expanded_ancestral}
 
+        summary_batch_size = batch_size * n_parent_samples if batch_size is None else batch_size
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
-            merged_conditions, batch_size=batch_size
+            merged_conditions, batch_size=summary_batch_size
         )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)

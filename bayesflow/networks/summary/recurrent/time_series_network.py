@@ -136,7 +136,7 @@ class TimeSeriesNetwork(SummaryNetwork):
         training : bool, optional
             Whether the model is in training mode, affecting layers like dropout and
             batch normalization. Default is False.
-         **kwargs
+        **kwargs
             Additional keyword arguments passed to the layers.
 
         Returns

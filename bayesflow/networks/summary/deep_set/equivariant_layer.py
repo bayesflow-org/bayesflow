@@ -104,7 +104,7 @@ class EquivariantLayer(keras.Layer):
     def build(self, input_shape):
         self.call(keras.ops.zeros(input_shape))
 
-    def call(self, input_set: Tensor, training: bool = False) -> Tensor:
+    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
         """Performs the forward pass of a learnable equivariant transform.
 
         Parameters
@@ -114,6 +114,8 @@ class EquivariantLayer(keras.Layer):
             (batch_size, ..., set_size, input_dim).
         training : bool, optional
             A flag indicating whether the model is in training mode. Default is False.
+        **kwargs
+            Additional keyword arguments for compatibility with other functions.
 
         Returns
         -------

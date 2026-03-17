@@ -120,7 +120,7 @@ class TimeSeriesNetwork(SummaryNetwork):
 
         self.summary_dim = summary_dim
 
-    def call(self, x: Tensor, training: bool = False) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         """
         Performs the forward pass of the hybrid convolutional-recurrent network.
 
@@ -136,6 +136,8 @@ class TimeSeriesNetwork(SummaryNetwork):
         training : bool, optional
             Whether the model is in training mode, affecting layers like dropout and
             batch normalization. Default is False.
+         **kwargs
+            Additional keyword arguments passed to the layers.
 
         Returns
         -------

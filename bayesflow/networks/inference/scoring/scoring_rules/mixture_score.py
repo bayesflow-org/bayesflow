@@ -78,10 +78,6 @@ class MixtureScore(ParametricDistributionScore):
                 "Provide them via `components={'name': score, ...}` or as direct keyword arguments."
             )
 
-        for name, score in components.items():
-            if not isinstance(score, ParametricDistributionScore):
-                raise TypeError(f"Component '{name}' must be a ParametricDistributionScore, got {type(score)}.")
-
         self.components = components
         self.component_names = list(components.keys())
         self.K = len(self.component_names)

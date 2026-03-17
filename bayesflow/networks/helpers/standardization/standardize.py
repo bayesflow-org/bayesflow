@@ -113,6 +113,10 @@ class Standardize(keras.Layer):
                         out = val / std
                     case "identity":
                         out = val
+                    case str() as other:
+                        raise NotImplementedError(f"No implementation for transformation type {other!r}")
+                    case other:
+                        raise TypeError(f"Unexpected type for transformation_type {other!r} of type {type(other)!r}")
 
             outputs.append(out)
 

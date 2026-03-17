@@ -119,7 +119,7 @@ class Approximator(BackendApproximator):
         stage: str = "inference",
         batch_size: int | None = None,
         **adapter_kwargs,
-    ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
+    ) -> tuple[dict[str, Tensor], Tensor | None, Tensor | None]:
         """Adapt raw user data, tensorize, standardize conditions, and resolve.
 
         Standard inference-time pipeline shared across all approximators:

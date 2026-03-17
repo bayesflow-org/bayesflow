@@ -600,8 +600,7 @@ class DiffusionModel(InferenceNetwork):
         conditions : Tensor, optional
             Conditioning variables passed to the subnet. Default is None.
         training : bool, optional
-            Whether the subnet is in training mode. When True (PyTorch backend),
-            ``create_graph=True`` is used so gradients flow back to model parameters.
+            Whether the subnet is in training mode.
         **subnet_kwargs
             Additional keyword arguments forwarded to the subnet (e.g. attention masks).
 
@@ -612,24 +611,39 @@ class DiffusionModel(InferenceNetwork):
         """
         backend = keras.backend.backend()
 
+        # computing sums here to avoid loops over the batch
         match backend:
             case "jax":
                 import jax
+                import jax.numpy as jnp
 
-                def phi_fn(x):
-                    subnet_out = self.subnet((x, norm_log_snr, conditions), training=training, **subnet_kwargs)
-                    return ops.sum(self.output_projector(subnet_out))
+                def phi_sum_fn(x):
+                    subnet_out = self.subnet(
+                        (x, norm_log_snr, conditions),
+                        training=training,
+                        **subnet_kwargs,
+                    )
+                    phi = self.output_projector(subnet_out)
+                    phi = jnp.reshape(phi, (x.shape[0],))  # [B]
+                    return jnp.sum(phi)
 
-                return jax.grad(phi_fn)(xz)
+                return jax.grad(phi_sum_fn)(xz)
 
             case "tensorflow":
                 import tensorflow as tf
 
                 with tf.GradientTape() as tape:
                     tape.watch(xz)
-                    subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
+                    subnet_out = self.subnet(
+                        (xz, norm_log_snr, conditions),
+                        training=training,
+                        **subnet_kwargs,
+                    )
                     phi = self.output_projector(subnet_out)
-                return tape.gradient(phi, xz)
+                    phi = tf.reshape(phi, [tf.shape(xz)[0]])  # [B]
+                    phi_sum = tf.reduce_sum(phi)
+
+                return tape.gradient(phi_sum, xz)
 
             case "torch":
                 import torch
@@ -638,16 +652,22 @@ class DiffusionModel(InferenceNetwork):
                     xz_leaf = xz.detach().requires_grad_(True)
                     norm_log_snr_d = norm_log_snr.detach()
                     conditions_d = conditions.detach() if conditions is not None else None
+
                     subnet_out = self.subnet(
-                        (xz_leaf, norm_log_snr_d, conditions_d), training=training, **subnet_kwargs
+                        (xz_leaf, norm_log_snr_d, conditions_d),
+                        training=training,
+                        **subnet_kwargs,
                     )
-                    phi = ops.sum(self.output_projector(subnet_out))
+                    phi = self.output_projector(subnet_out)
+                    phi = phi.reshape(xz_leaf.shape[0])  # [B]
+
                     score = torch.autograd.grad(
-                        outputs=phi,
+                        outputs=phi.sum(),
                         inputs=xz_leaf,
                         create_graph=training,
                         retain_graph=training,
                     )[0]
+
                 return score
 
             case _:

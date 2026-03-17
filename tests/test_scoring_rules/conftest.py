@@ -42,8 +42,22 @@ def multivariate_normal_score():
     return MvNormalScore()
 
 
+@pytest.fixture()
+def mixture_of_multivariate_normal_scores():
+    from bayesflow.scoring_rules import MvNormalScore, MixtureScore
+
+    return MixtureScore(mvn1=MvNormalScore(), mvn2=MvNormalScore())
+
+
 @pytest.fixture(
-    params=["median_score", "mean_score", "normed_diff_score", "quantile_score", "multivariate_normal_score"],
+    params=[
+        "median_score",
+        "mean_score",
+        "normed_diff_score",
+        "quantile_score",
+        "multivariate_normal_score",
+        "mixture_of_multivariate_normal_scores",
+    ],
     scope="function",
 )
 def scoring_rule(request):

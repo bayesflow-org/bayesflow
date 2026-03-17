@@ -8,6 +8,7 @@ from bayesflow.networks.inference.scoring.scoring_rules import (  # noqa: F401
     MedianScore,
     QuantileScore,
     MvNormalScore,
+    MixtureScore,
     CrossEntropyScore,
 )
 

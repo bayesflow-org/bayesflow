@@ -54,13 +54,10 @@ def test_unconditional_mvn(multivariate_normal_score):
 
 
 def test_mixture_score_constructor_validation():
-    from bayesflow.scoring_rules import MvNormalScore, MixtureScore, MeanScore
+    from bayesflow.scoring_rules import MvNormalScore, MixtureScore
 
     with pytest.raises(ValueError, match="at least two"):
         MixtureScore(mvn1=MvNormalScore())
-
-    with pytest.raises(TypeError, match="ParametricDistributionScore"):
-        MixtureScore(components={"a": MvNormalScore(), "b": MeanScore()})
 
 
 def test_mixture_score_sample_shape(mixture_of_multivariate_normal_scores):

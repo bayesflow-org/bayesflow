@@ -100,15 +100,15 @@ class MixtureScore(ParametricDistributionScore):
                 not_transforming.append(f"{c}__{h}")
         self.NOT_TRANSFORMING_LIKE_VECTOR_WARNING = tuple(not_transforming)
 
-        self.config = {
-            "components": serialize(self.components),
-            "weight_head": self.weight_head,
-            "temperature": float(temperature),
-        }
-
     def get_config(self):
-        base = super().get_config()
-        return base | self.config
+        base_config = super().get_config()
+
+        config = {
+            "components": self.components,
+            "weight_head": self.weight_head,
+            "temperature": self.temperature.value,
+        }
+        return base_config | serialize(config)
 
     @classmethod
     def from_config(cls, config):

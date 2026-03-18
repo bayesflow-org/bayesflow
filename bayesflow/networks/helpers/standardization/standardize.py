@@ -111,8 +111,12 @@ class Standardize(keras.Layer):
                     case "right_side_scale_inverse":
                         # x_ij = x_ij' / sigma_j
                         out = val / std
-                    case _:
+                    case "identity":
                         out = val
+                    case str() as other:
+                        raise NotImplementedError(f"No implementation for transformation type {other!r}")
+                    case other:
+                        raise TypeError(f"Unexpected type for transformation_type {other!r} of type {type(other)!r}")
 
             outputs.append(out)
 

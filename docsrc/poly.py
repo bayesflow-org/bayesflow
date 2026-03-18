@@ -79,11 +79,10 @@ def data(driver, rev, env):
             latest = b
             break
 
-    # sort tags and branches by date, newest first
     return {
         "current": rev,
-        "tags": sorted(tags, reverse=True),
-        "branches": sorted(branches, reverse=True),
+        "tags": tags,
+        "branches": branches,
         "revisions": revisions,
         "latest": latest,
     }

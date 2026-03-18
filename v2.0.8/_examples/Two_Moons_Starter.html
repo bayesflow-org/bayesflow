@@ -1,0 +1,1029 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>3. Two Moons: Tackling Bimodal Posteriors &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Two_Moons_Starter';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Two_Moons_Starter.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4. Posterior Estimation for SIR-like Models" href="SIR_Posterior_Estimation.html" />
+    <link rel="prev" title="2. Moving from BayesFlow v1.1 to v2.0" href="From_BayesFlow_1.1_to_2.0.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Linear_Regression_Starter.html">1. Bayesian Linear Regression Starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_BayesFlow_1.1_to_2.0.html">2. Moving from BayesFlow v1.1 to v2.0</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">3. Two Moons: Tackling Bimodal Posteriors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">4. Posterior Estimation for SIR-like Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">5. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">7. Simple Model Comparison - One Sample T-Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">8. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">9. Likelihood Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">10. Posterior Estimation With Multimodal Data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">3. </span>Two Moons: Tackling Bimodal Posteriors</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="two-moons-tackling-bimodal-posteriors">
+<h1><span class="section-number">3. </span>Two Moons: Tackling Bimodal Posteriors<a class="headerlink" href="#two-moons-tackling-bimodal-posteriors" title="Link to this heading">#</a></h1>
+<p><em>Authors: Lars Kühmichel, Marvin Schmitt, Valentin Pratz, Stefan T. Radev</em></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;jax&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<section id="simulator">
+<h2><span class="section-number">3.1. </span>Simulator<a class="anchor" id="simulator"></a><a class="headerlink" href="#simulator" title="Link to this heading">#</a></h2>
+<p>This example will demonstrate amortized estimation of a somewhat strange Bayesian model, whose posterior evaluated at the origin <span class="math notranslate nohighlight">\(x = (0, 0)\)</span> of the “data” will resemble two crescent moons. The forward process is a noisy non-linear transformation on a 2D plane:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align}
+x_1 &amp;= -|\theta_1 + \theta_2|/\sqrt{2} + r \cos(\alpha) + 0.25\\
+x_2 &amp;= (-\theta_1 + \theta_2)/\sqrt{2} + r\sin{\alpha}
+\end{align}
+\end{split}\]</div>
+<p>with <span class="math notranslate nohighlight">\(x = (x_1, x_2)\)</span> playing the role of “observables” (data to be learned from), <span class="math notranslate nohighlight">\(\alpha \sim \text{Uniform}(-\pi/2, \pi/2)\)</span>, and <span class="math notranslate nohighlight">\(r \sim \text{Normal}(0.1, 0.01)\)</span> being latent variables creating noise in the data, and <span class="math notranslate nohighlight">\(\theta = (\theta_1, \theta_2)\)</span> being the parameters that we will later seek to infer from new <span class="math notranslate nohighlight">\(x\)</span>. We set their priors to</p>
+<div class="math notranslate nohighlight">
+\[
+\begin{align}
+\theta_1, \theta_2 \sim \text{Uniform}(-1, 1).
+\end{align}
+\]</div>
+<p>This model is typically used for benchmarking simulation-based inference (SBI) methods (see https://arxiv.org/pdf/2101.04653) and any method for amortized Bayesian inference should be capable of recovering the two moons posterior <em>without</em> using a gazillion of simulations. Note, that this is a considerably harder task than modeling the common unconditional two moons data set used often in the context of normalizing flows. However, free-form models (e.g., flow matching, diffusion) will tend to outperform normalizing flows on multimodal data sets.</p>
+<p>BayesFlow offers many ways to define your data generating process. Here, we use sequential functions to build a simulator object for online training. Within this composite simulator, each function has access to the outputs of the previous functions. This effectively allows you to define any generative graph.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">theta_prior</span><span class="p">():</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">forward_model</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.25</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">theta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Within the composite simulator, every simulator has access to the outputs of the previous simulators in the list. For example, the last simulator <code class="docutils literal notranslate"><span class="pre">forward_model</span></code> has access to the outputs of the three other simulators.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">theta_prior</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s generate some data to see what the simulator does:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># generate 3 random draws from the joint distribution p(r, alpha, theta, x)</span>
+<span class="n">sample_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Type of sample_data:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">sample_data</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keys of sample_data:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Types of sample_data values:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shapes of sample_data values:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Type of sample_data:
+	 &lt;class &#39;dict&#39;&gt;
+Keys of sample_data:
+	 dict_keys([&#39;theta&#39;, &#39;x&#39;])
+Types of sample_data values:
+	 {&#39;theta&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;, &#39;x&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;}
+Shapes of sample_data values:
+	 {&#39;theta&#39;: (3, 2), &#39;x&#39;: (3, 2)}
+</pre></div>
+</div>
+</div>
+</div>
+<p>BayesFlow also provides this simulator and a collection of others in the <code class="docutils literal notranslate"><span class="pre">bayesflow.benchmarks</span></code> module.</p>
+</section>
+<section id="adapter">
+<h2><span class="section-number">3.2. </span>Adapter<a class="headerlink" href="#adapter" title="Link to this heading">#</a></h2>
+<p>The next step is to tell BayesFlow how to deal with all the simulated variables. You may also think of this as informing BayesFlow about the data flow, i.e., which variables go into which network and what transformations needs to be performed prior to passing the simulator outputs into the networks. This is done via an adapter layer, which is implemented as a sequence of fixed, pseudo-invertible data transforms.</p>
+<p>Below, we define the data adapter by specifying the input and output keys and the transformations to be applied. This allows us full control over the data flow.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="c1"># convert any non-arrays to numpy arrays</span>
+    <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+    <span class="c1"># convert from numpy&#39;s default float64 to deep learning friendly float32</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="c1"># rename the variables to match the required approximator inputs</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">adapter</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ToArray -&gt; 1: ConvertDType -&gt; 2: Rename(&#39;theta&#39; -&gt; &#39;inference_variables&#39;) -&gt; 3: Rename(&#39;x&#39; -&gt; &#39;inference_conditions&#39;)])
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="dataset">
+<h2><span class="section-number">3.3. </span>Dataset<a class="headerlink" href="#dataset" title="Link to this heading">#</a></h2>
+<p>For this example, we will sample our training data ahead of time and use offline training with a very small number of epochs. In actual applications, you usually want to train much longer in order to max our performance.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_training_batches</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="n">num_validation_sets</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">50</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">training_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_training_batches</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">)</span>
+<span class="n">validation_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_validation_sets</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="training-a-neural-network-to-approximate-all-posteriors">
+<h2><span class="section-number">3.4. </span>Training a neural network to approximate all posteriors<a class="headerlink" href="#training-a-neural-network-to-approximate-all-posteriors" title="Link to this heading">#</a></h2>
+<p>The next step is to set up the neural network that will approximate the posterior <span class="math notranslate nohighlight">\(p(\theta\,|\,x)\)</span>.</p>
+<p>We choose <strong>Flow Matching</strong> [1, 2] as the backbone architecture for this example, as it can deal well with the multimodal nature of the posteriors that some observables imply.</p>
+<ul class="simple">
+<li><p>[1] Lipman, Y., Chen, R. T., Ben-Hamu, H., Nickel, M., &amp; Le, M. Flow Matching for Generative Modeling. In <em>The Eleventh International Conference on Learning Representations</em>.</p></li>
+<li><p>[2] Wildberger, J. B., Dax, M., Buchholz, S., Green, S. R., Macke, J. H., &amp; Schölkopf, B. Flow Matching for Scalable Simulation-Based Inference. In <em>Thirty-seventh Conference on Neural Information Processing Systems</em>.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flow_matching</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(</span>
+    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This inference network is just a general Flow Matching backbone, not yet adapted to the specific inference task at hand (i.e., posterior appproximation). To achieve this adaptation, we combine the network with our data adapter, which together form an <code class="docutils literal notranslate"><span class="pre">approximator</span></code>. In this case, we need a <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code> since the target we want to approximate is the posterior of the <em>continuous</em> parameter vector <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+<section id="basic-workflow">
+<h3><span class="section-number">3.4.1. </span>Basic Workflow<a class="headerlink" href="#basic-workflow" title="Link to this heading">#</a></h3>
+<p>We can hide many of the traditional deep learning steps (e.g., specifying a learning rate and an optimizer) within a <code class="docutils literal notranslate"><span class="pre">Workflow</span></code> object. This object just wraps everything together and includes some nice utility functions for training and <em>in silico</em> validation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flow_matching_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">flow_matching</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="training">
+<h3><span class="section-number">3.4.2. </span>Training<a class="headerlink" href="#training" title="Link to this heading">#</a></h3>
+<p>We are ready to train our deep posterior approximator on the two moons example. We use the utility function <code class="docutils literal notranslate"><span class="pre">fit_offline</span></code>, which wraps the approximator’s super flexible <code class="docutils literal notranslate"><span class="pre">fit</span></code> method.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">flow_matching_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span> 
+    <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span> 
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> 
+    <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="swapping-inference-networks">
+<h2><span class="section-number">3.5. </span>Swapping Inference Networks <a class="anchor" id="swapping"></a><a class="headerlink" href="#swapping-inference-networks" title="Link to this heading">#</a></h2>
+<p>Using BayesFlow, it is easy to switch to a different backbone architecture for the inference network. For instance, the code below demonstrates the use of a <strong>Consistency Model</strong>, which can allow for faster sampling during inference.</p>
+<section id="consistency-models-background">
+<h3><span class="section-number">3.5.1. </span>Consistency Models: Background<a class="headerlink" href="#consistency-models-background" title="Link to this heading">#</a></h3>
+<p>Consistency Models (CM; [1]) leverage the nice properties of score-based diffusion to enable few-step sampling. Score-based diffusion initially relied on a stochastic differential equation (SDE) for sampling, but there is also a ordinary (non-stochastic) differential equation (ODE)that has the same <em>marginal</em> distribution at each time step <span class="math notranslate nohighlight">\(t\)</span> [2]. This means that even though SDE and ODE produce different paths from the noise distribution to the target distribution, the resulting distributions when looking at many paths at time <span class="math notranslate nohighlight">\(t\)</span> is the same. The ODE is also called Probability Flow ODE.</p>
+<p>The goal of CMs is the following: each point at a time point <span class="math notranslate nohighlight">\(t\)</span> belongs to exactly one path, and we want to predict where this path will end up at <span class="math notranslate nohighlight">\(t=0\)</span>. The function that does this is called the <em>consistency function</em> <span class="math notranslate nohighlight">\(f\)</span>. If we have the correct function for all <span class="math notranslate nohighlight">\(t\in(0,T]\)</span>, we can just sample from the latent distribution (<span class="math notranslate nohighlight">\(t=T\)</span>) and use <span class="math notranslate nohighlight">\(f\)</span> to directly map to the corresponding point at <span class="math notranslate nohighlight">\(t=0\)</span>, which is in the target distribution. So for sampling from the target distribution, we avoid any integration and only need one evaluation of the consistency function. In practice, the one-step sampling does not work very well. Instead, we leverage a multi-step sampling method where we call <span class="math notranslate nohighlight">\(f\)</span> multiple times. Please check out the [1] for more background on this sampling procedure.</p>
+<p>When reading the above, you might wonder why we also learn the mapping to <span class="math notranslate nohighlight">\(t=0\)</span> of all intermediate time steps <span class="math notranslate nohighlight">\(t\in[0, T]\)</span>, and not only for <span class="math notranslate nohighlight">\(t=T\)</span>. The main answer is that for efficient training, we do not want to actually compute the two associated points explicitly. Doing so would require to do a precise integration at training time, which is often not feasible as it is too computationally costly. Learning all time steps opens up the possibility for a different training approach where we can avoid this. The details of this become a bit more complicated, and we advise you to take a look at [1] if you are interested in a more thorough and mathematical discussion. Below, we will give a rough description of the underlying concepts.</p>
+<p><strong>Training</strong> First, we know that at <span class="math notranslate nohighlight">\(t=0\)</span>, it holds that <span class="math notranslate nohighlight">\(f(\theta,t=0)=\theta\)</span>, as <span class="math notranslate nohighlight">\(\theta\)</span> is part of the path that ends at <span class="math notranslate nohighlight">\(\theta\)</span>. This <em>boundary condition</em> serves as an “anchor” for our training, this is the information that the network knows at the start of the training procedure (we encode it with a time-dependent skip-connection, so the network is forced to be the identity function at <span class="math notranslate nohighlight">\(t=0\)</span>). For training, we now somehow have to propagate this information to the rest of the part. The basic idea for this is simple. We just take a point <span class="math notranslate nohighlight">\(\theta_1\)</span> closer to the data distribution (smaller time <span class="math notranslate nohighlight">\(t_1\)</span>) and integrate for a small time step <span class="math notranslate nohighlight">\(dt\)</span> to a point <span class="math notranslate nohighlight">\(\theta_2\)</span> on the same path that is closer to the latent distribution (larger time <span class="math notranslate nohighlight">\(t_2=t_1+dt\)</span>). As we know that for <span class="math notranslate nohighlight">\(t=0\)</span> our network provides the correct output for our path, we want to propagate the information from smaller times to larger times. Our training goal is to move the output of <span class="math notranslate nohighlight">\(f(\theta_2, t=t_2)\)</span> towards the output of <span class="math notranslate nohighlight">\(f(\theta_1, t=t_1)\)</span>. How to choose <span class="math notranslate nohighlight">\(\theta_1\)</span>, <span class="math notranslate nohighlight">\(t_1\)</span> and <span class="math notranslate nohighlight">\(dt\)</span> is an empirical question, see the [1] for some thoughts on what works well.</p>
+<p><strong>Distilling inference</strong> In the case of <em>distillation</em>, we start with a trained score-based diffusion model. We can use it to integrate the Probability Flow ODE to get from <span class="math notranslate nohighlight">\(\theta_1\)</span> to <span class="math notranslate nohighlight">\(\theta_2\)</span>. If we do not have such a model, it seems as if we were stuck. We do not know which points lie on the same path, so we do not know which outputs to make similar. Fortunately, it turns out that there is an <em>unbiased approximator</em> that, if averaged over many samples (check out the paper for the exact description), will also give us the correct score. If we use this approximator instead of the score model, and use only a single Euler step to move along the path, we get an algorithm similar to the one described for distillation. It is called Consistency Training (CT) and allows us to train a consistency model using only <em>samples</em> from the data distribution. The algorithm for this was improved a lot in [3], and we have incorporated those improvements into our implementation.</p>
+<p><strong>Improving consistency training</strong> We have made several improvements to get to a standalone <em>consistency training</em> algorithm. As a consequence, the introduced hyperparameters and their choice unfortunately becomes somewhat unintuitive. We have to rely on empirical observations and heuristics to see what works. This was done in [4], we encourage you to use the values provided there as starting points. If you happen to find hyperparameters that work significantly better, please let us know (e.g., by opening an issue or sending an email). This will help others to find the correct region in the hyperparameter space.</p>
+<p>[1] Song, Y., Dhariwal, P., Chen, M., &amp; Sutskever, I. (2023). Consistency Models. <em>arXiv preprint</em>. <a class="reference external" href="https://doi.org/10.48550/arXiv.2303.01469">https://doi.org/10.48550/arXiv.2303.01469</a></p>
+<p>[2] Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). Score-Based Generative Modeling through Stochastic Differential Equations. In <em>International Conference on Learning Representations</em>. <a class="reference external" href="https://openreview.net/forum?id=PxTIG12RRHS">https://openreview.net/forum?id=PxTIG12RRHS</a></p>
+<p>[3] Song, Y., &amp; Dhariwal, P. (2023). Improved Techniques for Training Consistency Models. <em>arXiv preprint</em>. <a class="reference external" href="https://doi.org/10.48550/arXiv.2310.14189">https://doi.org/10.48550/arXiv.2310.14189</a></p>
+<p>[4] Schmitt, M., Pratz, V., Köthe, U., Bürkner, P.-C., &amp; Radev, S. T. (2024). Consistency Models for Scalable and Fast Simulation-Based Inference. <em>arXiv preprint</em>. <a class="reference external" href="https://doi.org/10.48550/arXiv.2312.05440">https://doi.org/10.48550/arXiv.2312.05440</a></p>
+</section>
+<section id="consistency-models-specification">
+<h3><span class="section-number">3.5.2. </span>Consistency Models: Specification<a class="headerlink" href="#consistency-models-specification" title="Link to this heading">#</a></h3>
+<p>We can now go ahead and define our new inference network backbone. Apart from the usual parameters like learning rate and batch size, CMs come with a number of different hyperparameters. Unfortunately, they can heavily interact, so they can be hard to tune. The main hyperparameters are:</p>
+<ul class="simple">
+<li><p>Maximum time <code class="docutils literal notranslate"><span class="pre">max_time</span></code>: This also serves as the standard deviation of the latent distribution. You can experiment with this, values from 10-200 seem to work well. In any case, it should be larger than the standard deviation of the target distribution.</p></li>
+<li><p>Minimum/maximum number of discretization steps during training <code class="docutils literal notranslate"><span class="pre">s0</span></code>/<code class="docutils literal notranslate"><span class="pre">s1</span></code>: The effect of those is hard to grasp. 10 works well for <code class="docutils literal notranslate"><span class="pre">s0</span></code>. Intuitively, increasing <code class="docutils literal notranslate"><span class="pre">s1</span></code> along with the number of epochs should lead to better result, but in practice we sometimes observe a breakdown for high values of <code class="docutils literal notranslate"><span class="pre">s1</span></code>. This seems to be problem-dependent, so just try it out.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sigma2</span></code> modifies the time-dependency of the skip connection. Its effect on the training is unclear, we recommend leaving it at 1.0 or setting it to the approximate variance of the target distribution.</p></li>
+<li><p>Smallest time value <code class="docutils literal notranslate"><span class="pre">eps</span></code> (<span class="math notranslate nohighlight">\(t=\epsilon\)</span> is used instead of <span class="math notranslate nohighlight">\(t=0\)</span> for numerical reasons): No large effect in our experiments, as long as it is kept small enough. Probably not worth tuning.</p></li>
+</ul>
+<p>You may find that different hyperparameter values work better for your tasks.</p>
+<p>A short note on dropout: in our experiments, dropout usually lead to worse performance, so generally we recommend setting the droput rate to <span class="math notranslate nohighlight">\(0.0\)</span>. Consistency training takes advantage of a noisy estimator of the score, so probably the training is already sufficiently noisy and extra dropout for regularization is not necessary.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">consistency_model</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ConsistencyModel</span><span class="p">(</span>
+    <span class="n">total_steps</span><span class="o">=</span><span class="n">num_training_batches</span><span class="o">*</span><span class="n">epochs</span><span class="p">,</span>
+    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">},</span>
+    <span class="n">max_time</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="c1"># this probably needs to be tuned for a novel application</span>
+    <span class="n">sigma2</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># the approximator standardizes our parameters, so set to 1.0</span>
+<span class="p">)</span>
+
+<span class="c1"># Workflow for consistency model</span>
+<span class="n">consistency_model_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">consistency_model</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="consistency-training">
+<h3><span class="section-number">3.5.3. </span>Consistency Training<a class="headerlink" href="#consistency-training" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">consistency_model_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span> 
+    <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span> 
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> 
+    <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="good-ol-coupling-flows">
+<h2><span class="section-number">3.6. </span>Good ‘ol Coupling Flows<a class="headerlink" href="#good-ol-coupling-flows" title="Link to this heading">#</a></h2>
+<p>Of course, BayesFlow also supports established coupling flow models with a variety of parameters, including the timeless <em>affine</em> and <em>spline</em> flows.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">affine_flow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">()</span>
+
+<span class="n">affine_flow_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">affine_flow</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use a shallower spline coupling flow (default depth is 6)</span>
+<span class="n">spline_flow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="n">spline_flow_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">spline_flow</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="coupling-flow-training">
+<h3><span class="section-number">3.6.1. </span>Coupling Flow Training<a class="headerlink" href="#coupling-flow-training" title="Link to this heading">#</a></h3>
+<p>First, we train the classic coupling flow:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">affine_flow_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Next, we train a spline flow for fewer epochs. Spline flows will generally outperform affine flows on multi-modal, low-dimensional problems.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">spline_flow_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="validation">
+<h2><span class="section-number">3.7. </span>Validation<a class="headerlink" href="#validation" title="Link to this heading">#</a></h2>
+<section id="two-moons-posterior">
+<h3><span class="section-number">3.7.1. </span>Two Moons Posterior<a class="headerlink" href="#two-moons-posterior" title="Link to this heading">#</a></h3>
+<p>The two moons posterior at point <span class="math notranslate nohighlight">\(x = (0, 0)\)</span> should resemble two crescent shapes. Below, we plot the corresponding posterior samples and posterior density.</p>
+<p>These results suggest that these generative networks can approximate the true posterior well. You can achieve an even better fit if you use online training, more epochs, or better optimizer hyperparameters.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the number of posterior draws you want to get</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="mi">3000</span>
+
+<span class="c1"># Obtain samples from amortized posterior</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)}</span>
+
+<span class="c1"># Prepare figure</span>
+<span class="n">f</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="c1"># Obtain samples from the approximators (can also use the workflows&#39; methods)</span>
+<span class="n">nets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">flow_matching_workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span> 
+    <span class="n">consistency_model_workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span>
+    <span class="n">affine_flow_workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span>
+    <span class="n">spline_flow_workflow</span><span class="o">.</span><span class="n">approximator</span>
+<span class="p">]</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Flow Matching&quot;</span><span class="p">,</span> <span class="s2">&quot;Consistency Model&quot;</span><span class="p">,</span> <span class="s2">&quot;Affine Coupling Flow&quot;</span><span class="p">,</span> <span class="s2">&quot;Spline Coupling Flow&quot;</span><span class="p">]</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;#153c7a&quot;</span><span class="p">,</span> <span class="s2">&quot;#7a1515&quot;</span><span class="p">,</span> <span class="s2">&quot;#157a2d&quot;</span><span class="p">,</span> <span class="s2">&quot;#7a6f15&quot;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">nets</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">colors</span><span class="p">):</span>
+
+    <span class="c1"># Obtain samples</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Plot samples</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s2">&quot;box&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\theta_1$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\theta_2$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="n">f</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/2e906d19f27b68d99aa7771d48b281ecc3bd89bb5eee67bafcc2903dd3b96f37.png" src="../_images/2e906d19f27b68d99aa7771d48b281ecc3bd89bb5eee67bafcc2903dd3b96f37.png" />
+</div>
+</div>
+<p>The posterior looks as we have expected in this case. However, in general, we do not know how the posterior is supposed to look like for any specific dataset. As such, we need diagnostics that validate the correctness of the inferred posterior. One such diagnostic is simulation-based calibration(SBC), which we can apply for free due to amortization. For more details on SBC and diagnostic plots, see:</p>
+<ol class="arabic simple">
+<li><p>Talts, S., Betancourt, M., Simpson, D., Vehtari, A., &amp; Gelman, A. (2018). Validating Bayesian inference algorithms with simulation-based calibration. <em>arXiv preprint</em>.</p></li>
+<li><p>Säilynoja, T., Bürkner, P. C., &amp; Vehtari, A. (2022). Graphical test for discrete uniformity and its applications in goodness-of-fit evaluation and multiple sample comparison. <em>Statistics and Computing</em>.</p></li>
+<li><p>The practical SBC interpretation guide by Martin Modrák: https://hyunjimoon.github.io/SBC/articles/rank_visualizations.html</p></li>
+</ol>
+<p>Check out the next tutorial for a detailed walkthrough of the workflow’s functionality.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="From_BayesFlow_1.1_to_2.0.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">2. </span>Moving from BayesFlow v1.1 to v2.0</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="SIR_Posterior_Estimation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">4. </span>Posterior Estimation for SIR-like Models</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulator">3.1. Simulator<a class="anchor" id="simulator"></a></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adapter">3.2. Adapter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dataset">3.3. Dataset</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training-a-neural-network-to-approximate-all-posteriors">3.4. Training a neural network to approximate all posteriors</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-workflow">3.4.1. Basic Workflow</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#training">3.4.2. Training</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#swapping-inference-networks">3.5. Swapping Inference Networks <a class="anchor" id="swapping"></a></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#consistency-models-background">3.5.1. Consistency Models: Background</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#consistency-models-specification">3.5.2. Consistency Models: Specification</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#consistency-training">3.5.3. Consistency Training</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#good-ol-coupling-flows">3.6. Good ‘ol Coupling Flows</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#coupling-flow-training">3.6.1. Coupling Flow Training</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation">3.7. Validation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#two-moons-posterior">3.7.1. Two Moons Posterior</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.8/docsrc/source/_examples/Two_Moons_Starter.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

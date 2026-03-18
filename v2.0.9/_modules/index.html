@@ -1,0 +1,709 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Overview: module code &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/index';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="canonical" href="https://www.bayesflow.org/_modules/index.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Overview: module code</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>All modules for which code is available</h1>
+<ul><li><a href="bayesflow/adapters/adapter.html">bayesflow.adapters.adapter</a></li>
+<li><a href="bayesflow/adapters/transforms/as_set.html">bayesflow.adapters.transforms.as_set</a></li>
+<li><a href="bayesflow/adapters/transforms/as_time_series.html">bayesflow.adapters.transforms.as_time_series</a></li>
+<li><a href="bayesflow/adapters/transforms/broadcast.html">bayesflow.adapters.transforms.broadcast</a></li>
+<li><a href="bayesflow/adapters/transforms/concatenate.html">bayesflow.adapters.transforms.concatenate</a></li>
+<li><a href="bayesflow/adapters/transforms/constrain.html">bayesflow.adapters.transforms.constrain</a></li>
+<li><a href="bayesflow/adapters/transforms/convert_dtype.html">bayesflow.adapters.transforms.convert_dtype</a></li>
+<li><a href="bayesflow/adapters/transforms/drop.html">bayesflow.adapters.transforms.drop</a></li>
+<li><a href="bayesflow/adapters/transforms/elementwise_transform.html">bayesflow.adapters.transforms.elementwise_transform</a></li>
+<li><a href="bayesflow/adapters/transforms/expand_dims.html">bayesflow.adapters.transforms.expand_dims</a></li>
+<li><a href="bayesflow/adapters/transforms/filter_transform.html">bayesflow.adapters.transforms.filter_transform</a></li>
+<li><a href="bayesflow/adapters/transforms/group.html">bayesflow.adapters.transforms.group</a></li>
+<li><a href="bayesflow/adapters/transforms/keep.html">bayesflow.adapters.transforms.keep</a></li>
+<li><a href="bayesflow/adapters/transforms/log.html">bayesflow.adapters.transforms.log</a></li>
+<li><a href="bayesflow/adapters/transforms/map_transform.html">bayesflow.adapters.transforms.map_transform</a></li>
+<li><a href="bayesflow/adapters/transforms/nan_to_num.html">bayesflow.adapters.transforms.nan_to_num</a></li>
+<li><a href="bayesflow/adapters/transforms/numpy_transform.html">bayesflow.adapters.transforms.numpy_transform</a></li>
+<li><a href="bayesflow/adapters/transforms/one_hot.html">bayesflow.adapters.transforms.one_hot</a></li>
+<li><a href="bayesflow/adapters/transforms/random_subsample.html">bayesflow.adapters.transforms.random_subsample</a></li>
+<li><a href="bayesflow/adapters/transforms/rename.html">bayesflow.adapters.transforms.rename</a></li>
+<li><a href="bayesflow/adapters/transforms/scale.html">bayesflow.adapters.transforms.scale</a></li>
+<li><a href="bayesflow/adapters/transforms/serializable_custom_transform.html">bayesflow.adapters.transforms.serializable_custom_transform</a></li>
+<li><a href="bayesflow/adapters/transforms/shift.html">bayesflow.adapters.transforms.shift</a></li>
+<li><a href="bayesflow/adapters/transforms/split.html">bayesflow.adapters.transforms.split</a></li>
+<li><a href="bayesflow/adapters/transforms/sqrt.html">bayesflow.adapters.transforms.sqrt</a></li>
+<li><a href="bayesflow/adapters/transforms/squeeze.html">bayesflow.adapters.transforms.squeeze</a></li>
+<li><a href="bayesflow/adapters/transforms/standardize.html">bayesflow.adapters.transforms.standardize</a></li>
+<li><a href="bayesflow/adapters/transforms/take.html">bayesflow.adapters.transforms.take</a></li>
+<li><a href="bayesflow/adapters/transforms/to_array.html">bayesflow.adapters.transforms.to_array</a></li>
+<li><a href="bayesflow/adapters/transforms/to_dict.html">bayesflow.adapters.transforms.to_dict</a></li>
+<li><a href="bayesflow/adapters/transforms/transform.html">bayesflow.adapters.transforms.transform</a></li>
+<li><a href="bayesflow/adapters/transforms/ungroup.html">bayesflow.adapters.transforms.ungroup</a></li>
+<li><a href="bayesflow/approximators/approximator.html">bayesflow.approximators.approximator</a></li>
+<li><a href="bayesflow/approximators/continuous_approximator.html">bayesflow.approximators.continuous_approximator</a></li>
+<li><a href="bayesflow/approximators/ensemble_approximator.html">bayesflow.approximators.ensemble_approximator</a></li>
+<li><a href="bayesflow/approximators/model_comparison_approximator.html">bayesflow.approximators.model_comparison_approximator</a></li>
+<li><a href="bayesflow/approximators/ratio_approximator.html">bayesflow.approximators.ratio_approximator</a></li>
+<li><a href="bayesflow/approximators/scoring_rule_approximator.html">bayesflow.approximators.scoring_rule_approximator</a></li>
+<li><a href="bayesflow/augmentations/nnpe.html">bayesflow.augmentations.nnpe</a></li>
+<li><a href="bayesflow/datasets/disk_dataset.html">bayesflow.datasets.disk_dataset</a></li>
+<li><a href="bayesflow/datasets/ensemble_dataset.html">bayesflow.datasets.ensemble_dataset</a></li>
+<li><a href="bayesflow/datasets/ensemble_indexed_dataset.html">bayesflow.datasets.ensemble_indexed_dataset</a></li>
+<li><a href="bayesflow/datasets/ensemble_online_dataset.html">bayesflow.datasets.ensemble_online_dataset</a></li>
+<li><a href="bayesflow/datasets/offline_dataset.html">bayesflow.datasets.offline_dataset</a></li>
+<li><a href="bayesflow/datasets/online_dataset.html">bayesflow.datasets.online_dataset</a></li>
+<li><a href="bayesflow/diagnostics/metrics/calibration_error.html">bayesflow.diagnostics.metrics.calibration_error</a></li>
+<li><a href="bayesflow/diagnostics/metrics/calibration_log_gamma.html">bayesflow.diagnostics.metrics.calibration_log_gamma</a></li>
+<li><a href="bayesflow/diagnostics/metrics/correlation.html">bayesflow.diagnostics.metrics.correlation</a></li>
+<li><a href="bayesflow/diagnostics/metrics/model_misspecification.html">bayesflow.diagnostics.metrics.model_misspecification</a></li>
+<li><a href="bayesflow/diagnostics/metrics/posterior_contraction.html">bayesflow.diagnostics.metrics.posterior_contraction</a></li>
+<li><a href="bayesflow/diagnostics/metrics/posterior_z_score.html">bayesflow.diagnostics.metrics.posterior_z_score</a></li>
+<li><a href="bayesflow/diagnostics/plots/calibration_ecdf.html">bayesflow.diagnostics.plots.calibration_ecdf</a></li>
+<li><a href="bayesflow/diagnostics/plots/calibration_ecdf_from_quantiles.html">bayesflow.diagnostics.plots.calibration_ecdf_from_quantiles</a></li>
+<li><a href="bayesflow/diagnostics/plots/calibration_histogram.html">bayesflow.diagnostics.plots.calibration_histogram</a></li>
+<li><a href="bayesflow/diagnostics/plots/loss.html">bayesflow.diagnostics.plots.loss</a></li>
+<li><a href="bayesflow/diagnostics/plots/mc_calibration.html">bayesflow.diagnostics.plots.mc_calibration</a></li>
+<li><a href="bayesflow/diagnostics/plots/mc_confusion_matrix.html">bayesflow.diagnostics.plots.mc_confusion_matrix</a></li>
+<li><a href="bayesflow/diagnostics/plots/mmd_hypothesis_test.html">bayesflow.diagnostics.plots.mmd_hypothesis_test</a></li>
+<li><a href="bayesflow/diagnostics/plots/pairs_posterior.html">bayesflow.diagnostics.plots.pairs_posterior</a></li>
+<li><a href="bayesflow/diagnostics/plots/pairs_quantity.html">bayesflow.diagnostics.plots.pairs_quantity</a></li>
+<li><a href="bayesflow/diagnostics/plots/pairs_samples.html">bayesflow.diagnostics.plots.pairs_samples</a></li>
+<li><a href="bayesflow/diagnostics/plots/plot_quantity.html">bayesflow.diagnostics.plots.plot_quantity</a></li>
+<li><a href="bayesflow/diagnostics/plots/recovery.html">bayesflow.diagnostics.plots.recovery</a></li>
+<li><a href="bayesflow/diagnostics/plots/recovery_from_estimates.html">bayesflow.diagnostics.plots.recovery_from_estimates</a></li>
+<li><a href="bayesflow/diagnostics/plots/z_score_contraction.html">bayesflow.diagnostics.plots.z_score_contraction</a></li>
+<li><a href="bayesflow/distributions/diagonal_normal.html">bayesflow.distributions.diagonal_normal</a></li>
+<li><a href="bayesflow/distributions/diagonal_student_t.html">bayesflow.distributions.diagonal_student_t</a></li>
+<li><a href="bayesflow/distributions/distribution.html">bayesflow.distributions.distribution</a></li>
+<li><a href="bayesflow/distributions/mixture.html">bayesflow.distributions.mixture</a></li>
+<li><a href="bayesflow/experimental/free_form_flow/free_form_flow.html">bayesflow.experimental.free_form_flow.free_form_flow</a></li>
+<li><a href="bayesflow/links/cholesky_factor.html">bayesflow.links.cholesky_factor</a></li>
+<li><a href="bayesflow/links/ordered.html">bayesflow.links.ordered</a></li>
+<li><a href="bayesflow/links/ordered_quantiles.html">bayesflow.links.ordered_quantiles</a></li>
+<li><a href="bayesflow/links/positive_definite.html">bayesflow.links.positive_definite</a></li>
+<li><a href="bayesflow/metrics/functional/maximum_mean_discrepancy.html">bayesflow.metrics.functional.maximum_mean_discrepancy</a></li>
+<li><a href="bayesflow/metrics/functional/root_mean_squared_error.html">bayesflow.metrics.functional.root_mean_squared_error</a></li>
+<li><a href="bayesflow/metrics/maximum_mean_discrepancy.html">bayesflow.metrics.maximum_mean_discrepancy</a></li>
+<li><a href="bayesflow/metrics/root_mean_squard_error.html">bayesflow.metrics.root_mean_squard_error</a></li>
+<li><a href="bayesflow/networks/inference/consistency/consistency_model.html">bayesflow.networks.inference.consistency.consistency_model</a></li>
+<li><a href="bayesflow/networks/inference/consistency/stable_consistency_model.html">bayesflow.networks.inference.consistency.stable_consistency_model</a></li>
+<li><a href="bayesflow/networks/inference/coupling/coupling_flow.html">bayesflow.networks.inference.coupling.coupling_flow</a></li>
+<li><a href="bayesflow/networks/inference/diffusion/diffusion_model.html">bayesflow.networks.inference.diffusion.diffusion_model</a></li>
+<li><a href="bayesflow/networks/inference/diffusion/dispatch.html">bayesflow.networks.inference.diffusion.dispatch</a></li>
+<li><a href="bayesflow/networks/inference/diffusion/schedules/cosine_noise_schedule.html">bayesflow.networks.inference.diffusion.schedules.cosine_noise_schedule</a></li>
+<li><a href="bayesflow/networks/inference/diffusion/schedules/edm_noise_schedule.html">bayesflow.networks.inference.diffusion.schedules.edm_noise_schedule</a></li>
+<li><a href="bayesflow/networks/inference/diffusion/schedules/noise_schedule.html">bayesflow.networks.inference.diffusion.schedules.noise_schedule</a></li>
+<li><a href="bayesflow/networks/inference/flow_matching/flow_matching.html">bayesflow.networks.inference.flow_matching.flow_matching</a></li>
+<li><a href="bayesflow/networks/inference/inference_network.html">bayesflow.networks.inference.inference_network</a></li>
+<li><a href="bayesflow/networks/inference/scoring/point_network.html">bayesflow.networks.inference.scoring.point_network</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rule_network.html">bayesflow.networks.inference.scoring.scoring_rule_network</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/cross_entropy_score.html">bayesflow.networks.inference.scoring.scoring_rules.cross_entropy_score</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/mean_score.html">bayesflow.networks.inference.scoring.scoring_rules.mean_score</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/median_score.html">bayesflow.networks.inference.scoring.scoring_rules.median_score</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/mv_normal_score.html">bayesflow.networks.inference.scoring.scoring_rules.mv_normal_score</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/normed_difference_score.html">bayesflow.networks.inference.scoring.scoring_rules.normed_difference_score</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/parametric_distribution_score.html">bayesflow.networks.inference.scoring.scoring_rules.parametric_distribution_score</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/quantile_score.html">bayesflow.networks.inference.scoring.scoring_rules.quantile_score</a></li>
+<li><a href="bayesflow/networks/inference/scoring/scoring_rules/scoring_rule.html">bayesflow.networks.inference.scoring.scoring_rules.scoring_rule</a></li>
+<li><a href="bayesflow/networks/subnets/mlp/mlp.html">bayesflow.networks.subnets.mlp.mlp</a></li>
+<li><a href="bayesflow/networks/subnets/mlp/time_mlp.html">bayesflow.networks.subnets.mlp.time_mlp</a></li>
+<li><a href="bayesflow/networks/subnets/unet/resuvit.html">bayesflow.networks.subnets.unet.resuvit</a></li>
+<li><a href="bayesflow/networks/subnets/unet/unet.html">bayesflow.networks.subnets.unet.unet</a></li>
+<li><a href="bayesflow/networks/subnets/unet/uvit.html">bayesflow.networks.subnets.unet.uvit</a></li>
+<li><a href="bayesflow/networks/summary/convolutional/convolutional_network.html">bayesflow.networks.summary.convolutional.convolutional_network</a></li>
+<li><a href="bayesflow/networks/summary/deep_set/deep_set.html">bayesflow.networks.summary.deep_set.deep_set</a></li>
+<li><a href="bayesflow/networks/summary/fusion/fusion_network.html">bayesflow.networks.summary.fusion.fusion_network</a></li>
+<li><a href="bayesflow/networks/summary/recurrent/time_series_network.html">bayesflow.networks.summary.recurrent.time_series_network</a></li>
+<li><a href="bayesflow/networks/summary/summary_network.html">bayesflow.networks.summary.summary_network</a></li>
+<li><a href="bayesflow/networks/summary/transformers/fusion_transformer.html">bayesflow.networks.summary.transformers.fusion_transformer</a></li>
+<li><a href="bayesflow/networks/summary/transformers/set_transformer.html">bayesflow.networks.summary.transformers.set_transformer</a></li>
+<li><a href="bayesflow/networks/summary/transformers/time_series_transformer.html">bayesflow.networks.summary.transformers.time_series_transformer</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/bernoulli_glm.html">bayesflow.simulators.benchmark_simulators.bernoulli_glm</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/bernoulli_glm_raw.html">bayesflow.simulators.benchmark_simulators.bernoulli_glm_raw</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/gaussian_linear.html">bayesflow.simulators.benchmark_simulators.gaussian_linear</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/gaussian_linear_uniform.html">bayesflow.simulators.benchmark_simulators.gaussian_linear_uniform</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/gaussian_mixture.html">bayesflow.simulators.benchmark_simulators.gaussian_mixture</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/inverse_kinematics.html">bayesflow.simulators.benchmark_simulators.inverse_kinematics</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/lotka_volterra.html">bayesflow.simulators.benchmark_simulators.lotka_volterra</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/sir.html">bayesflow.simulators.benchmark_simulators.sir</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/slcp.html">bayesflow.simulators.benchmark_simulators.slcp</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/slcp_distractors.html">bayesflow.simulators.benchmark_simulators.slcp_distractors</a></li>
+<li><a href="bayesflow/simulators/benchmark_simulators/two_moons.html">bayesflow.simulators.benchmark_simulators.two_moons</a></li>
+<li><a href="bayesflow/simulators/hierarchical_simulator.html">bayesflow.simulators.hierarchical_simulator</a></li>
+<li><a href="bayesflow/simulators/lambda_simulator.html">bayesflow.simulators.lambda_simulator</a></li>
+<li><a href="bayesflow/simulators/make_simulator.html">bayesflow.simulators.make_simulator</a></li>
+<li><a href="bayesflow/simulators/model_comparison_simulator.html">bayesflow.simulators.model_comparison_simulator</a></li>
+<li><a href="bayesflow/simulators/sequential_simulator.html">bayesflow.simulators.sequential_simulator</a></li>
+<li><a href="bayesflow/simulators/simulator.html">bayesflow.simulators.simulator</a></li>
+<li><a href="bayesflow/utils/callbacks.html">bayesflow.utils.callbacks</a></li>
+<li><a href="bayesflow/utils/classification/calibration_curve.html">bayesflow.utils.classification.calibration_curve</a></li>
+<li><a href="bayesflow/utils/classification/confusion_matrix.html">bayesflow.utils.classification.confusion_matrix</a></li>
+<li><a href="bayesflow/utils/devices.html">bayesflow.utils.devices</a></li>
+<li><a href="bayesflow/utils/dict_utils.html">bayesflow.utils.dict_utils</a></li>
+<li><a href="bayesflow/utils/dispatch/find_distribution.html">bayesflow.utils.dispatch.find_distribution</a></li>
+<li><a href="bayesflow/utils/dispatch/find_inference_network.html">bayesflow.utils.dispatch.find_inference_network</a></li>
+<li><a href="bayesflow/utils/dispatch/find_network.html">bayesflow.utils.dispatch.find_network</a></li>
+<li><a href="bayesflow/utils/dispatch/find_permutation.html">bayesflow.utils.dispatch.find_permutation</a></li>
+<li><a href="bayesflow/utils/dispatch/find_pooling.html">bayesflow.utils.dispatch.find_pooling</a></li>
+<li><a href="bayesflow/utils/dispatch/find_recurrent_net.html">bayesflow.utils.dispatch.find_recurrent_net</a></li>
+<li><a href="bayesflow/utils/dispatch/find_summary_network.html">bayesflow.utils.dispatch.find_summary_network</a></li>
+<li><a href="bayesflow/utils/ecdf/simultaneous_ecdf_bands.html">bayesflow.utils.ecdf.simultaneous_ecdf_bands</a></li>
+<li><a href="bayesflow/utils/functional.html">bayesflow.utils.functional</a></li>
+<li><a href="bayesflow/utils/hparam_utils.html">bayesflow.utils.hparam_utils</a></li>
+<li><a href="bayesflow/utils/integrate.html">bayesflow.utils.integrate</a></li>
+<li><a href="bayesflow/utils/io.html">bayesflow.utils.io</a></li>
+<li><a href="bayesflow/utils/jacobian/jacobian.html">bayesflow.utils.jacobian.jacobian</a></li>
+<li><a href="bayesflow/utils/jacobian/jacobian_trace.html">bayesflow.utils.jacobian.jacobian_trace</a></li>
+<li><a href="bayesflow/utils/jacobian/jvp.html">bayesflow.utils.jacobian.jvp</a></li>
+<li><a href="bayesflow/utils/jacobian/vjp.html">bayesflow.utils.jacobian.vjp</a></li>
+<li><a href="bayesflow/utils/keras_utils.html">bayesflow.utils.keras_utils</a></li>
+<li><a href="bayesflow/utils/logging.html">bayesflow.utils.logging</a></li>
+<li><a href="bayesflow/utils/numpy_utils.html">bayesflow.utils.numpy_utils</a></li>
+<li><a href="bayesflow/utils/optimal_transport/optimal_transport.html">bayesflow.utils.optimal_transport.optimal_transport</a></li>
+<li><a href="bayesflow/utils/plot_utils.html">bayesflow.utils.plot_utils</a></li>
+<li><a href="bayesflow/utils/serialization.html">bayesflow.utils.serialization</a></li>
+<li><a href="bayesflow/utils/tensor_utils.html">bayesflow.utils.tensor_utils</a></li>
+<li><a href="bayesflow/utils/tree.html">bayesflow.utils.tree</a></li>
+<li><a href="bayesflow/utils/validators.html">bayesflow.utils.validators</a></li>
+<li><a href="bayesflow/workflows/basic_workflow.html">bayesflow.workflows.basic_workflow</a></li>
+<li><a href="bayesflow/workflows/ensemble_workflow.html">bayesflow.workflows.ensemble_workflow</a></li>
+<li><a href="bayesflow/wrappers/mamba/mamba.html">bayesflow.wrappers.mamba.mamba</a></li>
+<li><a href="bayesflow/wrappers/mamba/mamba_block.html">bayesflow.wrappers.mamba.mamba_block</a></li>
+</ul>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

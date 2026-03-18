@@ -1,0 +1,1204 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>11. Ensembles &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"00217dc45b834194a67d3c4ce3e7e2af": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "00e011fb07774911981539c06c5e71db": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "01b0a13fa8d5437fa7978d9cbe0463dd": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_e432389fb54a412eaf3ea248646bbe3a", "max": 1, "style": "IPY_MODEL_30230dff71234b1a820d241805d01640", "value": 1}}, "03aed75d72b344abaab09e3c428d5f6c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "0408d5c1f2a044e3ba138de69a63263a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_edc311d5673d4a7ab541eb2a26d4e682", "max": 1, "style": "IPY_MODEL_e384059193c94844a7617fade4933382", "value": 1}}, "0480ee18a1ce4310b5fb4be29b69467e": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "0489ded134c04ce9b40849e6baa64b84": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "05a38a2b6cd24f428f833464103cbfe5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "086cae7e1ca64bcba5921eb3f47fd178": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_c04f3b4200fb4f8a8d5d648964b2ba01", "style": "IPY_MODEL_39d0afeebd23494cb3427776e0d0f73a", "value": "Sampling:\u2007100%"}}, "0a84974ebc6742e094dd2ab31b9be9d4": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "11a592c43216480ba1f209255d77d143": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_afcdf38f1f704db0965fb2c034a28352", "style": "IPY_MODEL_6a105117223840b28a4fb49bc8d53a03", "value": "\u20071/1\u2007[00:00&lt;00:00,\u2007\u20071.35batch/s]"}}, "1232d3cb21b14e8baf83b1197e981363": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "1630351d6125443785197ff7659c094f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_8c021503fd33481dabdb03a22c0e9e34", "max": 1, "style": "IPY_MODEL_3a87151b627d4d39beed3537e3540329", "value": 1}}, "16f89795f4b240299e7e44e338967a6c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_086cae7e1ca64bcba5921eb3f47fd178", "IPY_MODEL_6a0833f8da26496ebb365fdfb5ecff18", "IPY_MODEL_11a592c43216480ba1f209255d77d143"], "layout": "IPY_MODEL_71a85eb0f05d41818a771c4703d58433"}}, "1846977387f84fa3a313c6b4900e1696": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "187289284b8c41259ffec6ad365eb13b": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "18d6024b6c2047309ecf18ed1fa7cc60": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "191049138d0f49bca952163a78c33533": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "1a0725e83b9e436d8137d835789df80c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "1b1cc1e350594dd7bdffb6e2de003e37": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_469fb42740404c8691b71f74cb7616c7", "style": "IPY_MODEL_f091a4226e32491891c4e9118b4a23c6", "value": "\u20071/1\u2007[00:00&lt;00:00,\u2007\u20071.14batch/s]"}}, "1d938d877dfe446aaecac9cd7666ebaa": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "205e66e5d62445d9b4042113b469dec8": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "21663aeb73bb4431829dd73ff2767cd2": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_1846977387f84fa3a313c6b4900e1696", "style": "IPY_MODEL_05a38a2b6cd24f428f833464103cbfe5", "value": "\u20071/1\u2007[00:01&lt;00:00,\u2007\u20071.35s/batch]"}}, "22c8e3e8eab34527ab8f8dd218fbb863": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "23048c205a244be7bf0e071f16dfd876": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "2483adf6d5e247cc8dae7481f617cfc3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_b7f0eb1ef3be42f28981e1d5ae540fb4", "IPY_MODEL_8e70f577580140798fa43cf7116886d5", "IPY_MODEL_e8ee150263514020bba3939eb09f063c"], "layout": "IPY_MODEL_00217dc45b834194a67d3c4ce3e7e2af"}}, "24e889dea19d4bc98a42a75a0e2d24bf": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_a6b38d3ff8e7480d815c7da680eb16fd", "style": "IPY_MODEL_1232d3cb21b14e8baf83b1197e981363", "value": "Sampling:\u2007100%"}}, "26a2bea4f10842f197efc2b0e87ae20b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "27c956545fa1476cbc384f4478c2973d": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "27da39f2d24f4c3b8b18c4d12700c673": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "2877147996a74d4cbf33214885e1b628": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "295f00573bd8448fadcf3e6b3cfa2501": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "299bef434e394fb182423b7193e35b20": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "2b61e919a7f64338941afa14f23c9315": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "2c2bf959a0e84bd7bf4937ca47c3b437": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "2cb3166b22bf4b03827abf83cb231644": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "2e5cec250bb644889cb12df2e5815b31": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "30230dff71234b1a820d241805d01640": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "30f538c5dd734f019c3dee126434dd85": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "31be514931c04cdf9f1e71c37c745053": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "31ca8f4cb4eb4611ac60fa5980c85040": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "3274211dfcd243db8e0310a559b5b3b2": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_44cc7317983e4a2ba65e7cb596c8fc23", "max": 1, "style": "IPY_MODEL_49a09cda56ca4b27a3fcd8d08309d2a5", "value": 1}}, "355936cd0ab6468193a12b58d204e4e3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_6a131650682d44c68c17da597de0901b", "style": "IPY_MODEL_5a1a6fb635d14d2b8bb799777134d715", "value": "Sampling:\u2007100%"}}, "362e1a8ab35e4681a79d466fe7404ef1": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "3999b611c433426e8bb8285a648d259e": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "39d0afeebd23494cb3427776e0d0f73a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "3a87151b627d4d39beed3537e3540329": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "3e9c363f63264039a3944a9ebf9fe7f2": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "400f32391afb494c8d78f991d3f96dac": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_88ab1339f8f348a18b33bc9aab668b48", "max": 1, "style": "IPY_MODEL_1a0725e83b9e436d8137d835789df80c", "value": 1}}, "4149075a32f34c439828ae130d4af71b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_aaf5adcc611d406eaf660fe69e8c13fd", "style": "IPY_MODEL_5d55fa8f5abc4cf0b0f0563576019df2", "value": "Sampling:\u2007100%"}}, "4467a177777c45d895d077666b030f77": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "44cc7317983e4a2ba65e7cb596c8fc23": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "469fb42740404c8691b71f74cb7616c7": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "476753497f3d493592d757a722b9a149": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_6b609918e0aa4061950a8a63d4d0068d", "style": "IPY_MODEL_4467a177777c45d895d077666b030f77", "value": "\u20071/1\u2007[01:18&lt;00:00,\u200778.25s/batch]"}}, "49a09cda56ca4b27a3fcd8d08309d2a5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "4a15b4bf92224277be80b6722121fa10": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_31be514931c04cdf9f1e71c37c745053", "style": "IPY_MODEL_c5c1fb6a579f4dafb7a467052905c114", "value": "\u20071/1\u2007[00:02&lt;00:00,\u2007\u20072.42s/batch]"}}, "4c9e49b1786e4baf94baf9ee9179720f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_295f00573bd8448fadcf3e6b3cfa2501", "max": 1, "style": "IPY_MODEL_cee1e08c2ba841fdadf671ea0f5a5466", "value": 1}}, "4d12a47844a64ab69332a5fb2b56a60a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "4e5bd7f137454c488cac428a64de18ae": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_73e0625feb9d4ae384e972b63a9b3211", "style": "IPY_MODEL_4d12a47844a64ab69332a5fb2b56a60a", "value": "Sampling:\u2007100%"}}, "511c38721d864258a91efebc9633b417": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "52dc7c935ebe42d4bc5dbec3605cd51e": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "55d5d3d9ac134e3facd13bc762fc34dd": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_9ba38ba0c500492ea039612289ff86ae", "IPY_MODEL_400f32391afb494c8d78f991d3f96dac", "IPY_MODEL_b33ae9ba6a91408586f29009c7d1a67b"], "layout": "IPY_MODEL_f72202bdbfde4820856b71372fbc9dea"}}, "57bbbce0334c436692062ffee74e9b45": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "5885019c790b4fbab3cd46d43a6f821d": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_ba5ea02337674018b7c3f17abd90ef27", "max": 1, "style": "IPY_MODEL_853d14d7e29040638e8f9fad4a6bd53a", "value": 1}}, "599e8076542a46a8a898bbe16a4af713": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "5a1a6fb635d14d2b8bb799777134d715": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "5d55fa8f5abc4cf0b0f0563576019df2": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "5ea086cefafc4f5e8873f95bb7dd4850": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_27da39f2d24f4c3b8b18c4d12700c673", "style": "IPY_MODEL_2877147996a74d4cbf33214885e1b628", "value": "Sampling:\u2007100%"}}, "5fb694584ae1496289fefbfef3e38134": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_4149075a32f34c439828ae130d4af71b", "IPY_MODEL_8963df249a8f426ba0ce13b220b48969", "IPY_MODEL_9ca1b748fb9a44dd81ad02ef638639d0"], "layout": "IPY_MODEL_57bbbce0334c436692062ffee74e9b45"}}, "61aede007d4d4b8daed2c5f306a3f323": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "61f5d58dbd024da597f6ace2b1e1c726": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_7db4bb8b4712427587c7555d0243074d", "max": 1, "style": "IPY_MODEL_a23c3d0d3fc74658bb6ea0e1fe8c84a9", "value": 1}}, "628acb6d996543be9ea089544404417a": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "634101d7b8434b7a8f26b666ba4408f3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_0480ee18a1ce4310b5fb4be29b69467e", "style": "IPY_MODEL_0489ded134c04ce9b40849e6baa64b84", "value": "\u20071/1\u2007[00:01&lt;00:00,\u2007\u20071.12s/batch]"}}, "65a831bffee247af86bdccdaf36bf2f3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_db0328574ca24046b75387967eb54200", "style": "IPY_MODEL_984067ba309c4be7b66fc06b9fa610f0", "value": "\u20071/1\u2007[04:16&lt;00:00,\u2007256.97s/batch]"}}, "65c9ca2597144952b4dbd97600933211": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "666e5a862c784600954f7397621c2764": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_ba5fdab761724e9c901e5743654eec76", "max": 1, "style": "IPY_MODEL_26a2bea4f10842f197efc2b0e87ae20b", "value": 1}}, "684be8c616b34523bb77a3714cb9bcab": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "68fa1626c6a24bada084cff223ee7a38": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "6a0833f8da26496ebb365fdfb5ecff18": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_3999b611c433426e8bb8285a648d259e", "max": 1, "style": "IPY_MODEL_dc304beffe95477cb691c7104961a0e3", "value": 1}}, "6a105117223840b28a4fb49bc8d53a03": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "6a131650682d44c68c17da597de0901b": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "6b609918e0aa4061950a8a63d4d0068d": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "6c1142887908480a92e5e7ae2e900d2e": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "70bc6c76326d4b8eb6c9327b5f0e0121": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "71a85eb0f05d41818a771c4703d58433": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "721d4c9a6c624fb0b22497fa1087c657": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "722e1a675e014fdd8acf783615e24ae6": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "72a550144c87429aaf1d3871339059c2": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_9556f82eaa03425287de7f8c3f800e2f", "IPY_MODEL_bd7d863f4a3a44b3a62512efbdb60cbf", "IPY_MODEL_65a831bffee247af86bdccdaf36bf2f3"], "layout": "IPY_MODEL_1d938d877dfe446aaecac9cd7666ebaa"}}, "73e0625feb9d4ae384e972b63a9b3211": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "7405e5a701334436ab1d8798dcbf1e4a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_24e889dea19d4bc98a42a75a0e2d24bf", "IPY_MODEL_4c9e49b1786e4baf94baf9ee9179720f", "IPY_MODEL_634101d7b8434b7a8f26b666ba4408f3"], "layout": "IPY_MODEL_187289284b8c41259ffec6ad365eb13b"}}, "7415ee7b6d5e4ac385e8635c4d64cd23": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "76313c5bc18847c39552ec7be1cbfaba": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "78af9511db794ddf81f47578cb57fc44": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_27c956545fa1476cbc384f4478c2973d", "style": "IPY_MODEL_8db5dc460ef6406aae4f540c4e8b8834", "value": "Sampling:\u2007100%"}}, "7933c1876d6c47a2828729128576d8a6": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "79787b4a46674dad8e03e19b2fb0bf3a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "7a1ccfdf02614bdf8e2f623ef7e05c1b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_998c3366411245cc8f7fdb9b1500840a", "IPY_MODEL_1630351d6125443785197ff7659c094f", "IPY_MODEL_476753497f3d493592d757a722b9a149"], "layout": "IPY_MODEL_205e66e5d62445d9b4042113b469dec8"}}, "7ba66ccc9d46486ba1e6b29252b77080": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_fb9f70b107b84ed4bbb031f5c8b98b24", "IPY_MODEL_0408d5c1f2a044e3ba138de69a63263a", "IPY_MODEL_998e64248d764583acb759c120a94fd3"], "layout": "IPY_MODEL_68fa1626c6a24bada084cff223ee7a38"}}, "7db4bb8b4712427587c7555d0243074d": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "7defaf5e07254c08a59dbf82c3c8f592": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_fafc13a4edd74fcc8cc43b2fa7acdb5f", "style": "IPY_MODEL_76313c5bc18847c39552ec7be1cbfaba", "value": "Sampling:\u2007100%"}}, "815e1ba828c7439fb82a8caaae62ef8a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "8516cf8c13894130b8d943fa35632f13": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "853d14d7e29040638e8f9fad4a6bd53a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "88ab1339f8f348a18b33bc9aab668b48": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "8963df249a8f426ba0ce13b220b48969": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_e534d78a83de40e3a5591fe012fac0d0", "max": 1, "style": "IPY_MODEL_2cb3166b22bf4b03827abf83cb231644", "value": 1}}, "8bb83a2ebd4f4047a132695f7e4cacc2": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "8c021503fd33481dabdb03a22c0e9e34": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "8c1b439754a64cd581fec1597a303a7d": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "8db5dc460ef6406aae4f540c4e8b8834": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "8e70f577580140798fa43cf7116886d5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_511c38721d864258a91efebc9633b417", "max": 1, "style": "IPY_MODEL_2c2bf959a0e84bd7bf4937ca47c3b437", "value": 1}}, "8e75ddb06a0142beb012da94fc14aeb7": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "8e79fa0e33064d51a279954b02f50889": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_d045f8eae9c64b6eb2151390a4173fb4", "style": "IPY_MODEL_a430ad006947477badae0a45fc29f1e6", "value": "Sampling:\u2007100%"}}, "8f270aed54044302ad5ec7b92bf0f874": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "90a6a4ebe9e044a8857365978c727440": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_78af9511db794ddf81f47578cb57fc44", "IPY_MODEL_d04542c2199c4db19af32a0ad2a6bdd1", "IPY_MODEL_4a15b4bf92224277be80b6722121fa10"], "layout": "IPY_MODEL_191049138d0f49bca952163a78c33533"}}, "9556f82eaa03425287de7f8c3f800e2f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_362e1a8ab35e4681a79d466fe7404ef1", "style": "IPY_MODEL_e1c8653e995042fcb9b436e83eab34ea", "value": "Sampling:\u2007100%"}}, "96d54ef2f6f54b8ea3f0c2a90e2c70bf": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_355936cd0ab6468193a12b58d204e4e3", "IPY_MODEL_5885019c790b4fbab3cd46d43a6f821d", "IPY_MODEL_21663aeb73bb4431829dd73ff2767cd2"], "layout": "IPY_MODEL_8bb83a2ebd4f4047a132695f7e4cacc2"}}, "984067ba309c4be7b66fc06b9fa610f0": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "996cf111ec2b41bc80d1c0b105e3a1f1": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "998c3366411245cc8f7fdb9b1500840a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_8c1b439754a64cd581fec1597a303a7d", "style": "IPY_MODEL_9a2a8d83c217471288d6119282b3bcc2", "value": "Sampling:\u2007100%"}}, "998e64248d764583acb759c120a94fd3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_a48a2c18ffc64e0684d9fd7644dca767", "style": "IPY_MODEL_7415ee7b6d5e4ac385e8635c4d64cd23", "value": "\u20071/1\u2007[00:05&lt;00:00,\u2007\u20075.29s/batch]"}}, "9a2a8d83c217471288d6119282b3bcc2": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "9b020d8b38514301ad5f87747f45138a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_b4f443a4e5654400927e9df4cc8efd0f", "IPY_MODEL_3274211dfcd243db8e0310a559b5b3b2", "IPY_MODEL_e241cd00804647278c241486785c258d"], "layout": "IPY_MODEL_2b61e919a7f64338941afa14f23c9315"}}, "9ba38ba0c500492ea039612289ff86ae": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_70bc6c76326d4b8eb6c9327b5f0e0121", "style": "IPY_MODEL_daa29c6f92654e56829a4b09c647b584", "value": "Sampling:\u2007100%"}}, "9ca1b748fb9a44dd81ad02ef638639d0": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_52dc7c935ebe42d4bc5dbec3605cd51e", "style": "IPY_MODEL_d60315fd334c489a9f74ce7ce48f4f98", "value": "\u20071/1\u2007[00:00&lt;00:00,\u2007\u20072.74batch/s]"}}, "9d04e61636c544a6ac8de2e7a457ad7c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_b7dce4f861d84857aaae365292d1eb8b", "style": "IPY_MODEL_684be8c616b34523bb77a3714cb9bcab", "value": "Sampling:\u2007100%"}}, "9e4119207d57402eab204d2cca350c40": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_4e5bd7f137454c488cac428a64de18ae", "IPY_MODEL_d89cd23b0fd24f57a388bed89f19aa43", "IPY_MODEL_ba91003ff4f24065bf36c642a7f85669"], "layout": "IPY_MODEL_599e8076542a46a8a898bbe16a4af713"}}, "9f7a82660b17458589e9c0b4ac861c89": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "a1f961410fe94000a58b7388b0f3d20f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_7defaf5e07254c08a59dbf82c3c8f592", "IPY_MODEL_666e5a862c784600954f7397621c2764", "IPY_MODEL_b937f58571dd40c285ba870471e96166"], "layout": "IPY_MODEL_628acb6d996543be9ea089544404417a"}}, "a23c3d0d3fc74658bb6ea0e1fe8c84a9": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "a430ad006947477badae0a45fc29f1e6": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "a48a2c18ffc64e0684d9fd7644dca767": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "a6b38d3ff8e7480d815c7da680eb16fd": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "aaf5adcc611d406eaf660fe69e8c13fd": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "ae6caee0ef1044e387d8968e7e042958": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "ae6f0dd8f9cd4b23a887692ca375dbc9": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "afcdf38f1f704db0965fb2c034a28352": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "b2d46d9c79ba4d7893532ac37c5fdde7": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_b8177d4620524b1b8b3720ffcb67ea6c", "IPY_MODEL_01b0a13fa8d5437fa7978d9cbe0463dd", "IPY_MODEL_1b1cc1e350594dd7bdffb6e2de003e37"], "layout": "IPY_MODEL_61aede007d4d4b8daed2c5f306a3f323"}}, "b33ae9ba6a91408586f29009c7d1a67b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_c4537ec9acd44d49a945403e93b7b538", "style": "IPY_MODEL_18d6024b6c2047309ecf18ed1fa7cc60", "value": "\u20071/1\u2007[00:00&lt;00:00,\u2007\u20072.43batch/s]"}}, "b3ef776b65cc4d27b9e3d1b187016b8a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_722e1a675e014fdd8acf783615e24ae6", "style": "IPY_MODEL_6c1142887908480a92e5e7ae2e900d2e", "value": "\u20071/1\u2007[00:00&lt;00:00,\u2007\u20071.27batch/s]"}}, "b4f443a4e5654400927e9df4cc8efd0f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_cb22294e757f48ffbaf948dff6874e95", "style": "IPY_MODEL_79787b4a46674dad8e03e19b2fb0bf3a", "value": "Sampling:\u2007100%"}}, "b69ecc2d5f824b299573f8bfd526c0e0": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "b7612f12c3a04594a02310312461dd18": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "b7dce4f861d84857aaae365292d1eb8b": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "b7f0eb1ef3be42f28981e1d5ae540fb4": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_8f270aed54044302ad5ec7b92bf0f874", "style": "IPY_MODEL_23048c205a244be7bf0e071f16dfd876", "value": "Sampling:\u2007100%"}}, "b8177d4620524b1b8b3720ffcb67ea6c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_65c9ca2597144952b4dbd97600933211", "style": "IPY_MODEL_7933c1876d6c47a2828729128576d8a6", "value": "Sampling:\u2007100%"}}, "b937f58571dd40c285ba870471e96166": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_eb7f0db24e1c49df97c3eba90b2c1909", "style": "IPY_MODEL_721d4c9a6c624fb0b22497fa1087c657", "value": "\u20071/1\u2007[00:00&lt;00:00,\u2007\u20071.45batch/s]"}}, "ba5ea02337674018b7c3f17abd90ef27": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "ba5fdab761724e9c901e5743654eec76": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "ba91003ff4f24065bf36c642a7f85669": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_b69ecc2d5f824b299573f8bfd526c0e0", "style": "IPY_MODEL_e261171bb88941759d765146641a2e14", "value": "\u20071/1\u2007[00:00&lt;00:00,\u2007\u20071.42batch/s]"}}, "bd7d863f4a3a44b3a62512efbdb60cbf": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_ae6f0dd8f9cd4b23a887692ca375dbc9", "max": 1, "style": "IPY_MODEL_996cf111ec2b41bc80d1c0b105e3a1f1", "value": 1}}, "c04f3b4200fb4f8a8d5d648964b2ba01": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "c4537ec9acd44d49a945403e93b7b538": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "c5c1fb6a579f4dafb7a467052905c114": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "caff1e4f2ec74f7887952fba1703461c": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "cb22294e757f48ffbaf948dff6874e95": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "ce83725b8c474956a8a8661f9540ab79": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_8e79fa0e33064d51a279954b02f50889", "IPY_MODEL_d687c2c5acb44cbc86b5055c4a689725", "IPY_MODEL_d20f797aea0e40ebabfe8cff2479e718"], "layout": "IPY_MODEL_caff1e4f2ec74f7887952fba1703461c"}}, "cee1e08c2ba841fdadf671ea0f5a5466": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "d04542c2199c4db19af32a0ad2a6bdd1": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_d890673fc2c24d06a83516510483bc46", "max": 1, "style": "IPY_MODEL_d5c48d0269c84739a44d773c51e47614", "value": 1}}, "d045f8eae9c64b6eb2151390a4173fb4": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "d20f797aea0e40ebabfe8cff2479e718": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_8516cf8c13894130b8d943fa35632f13", "style": "IPY_MODEL_2e5cec250bb644889cb12df2e5815b31", "value": "\u20071/1\u2007[00:01&lt;00:00,\u2007\u20071.85s/batch]"}}, "d5c48d0269c84739a44d773c51e47614": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "d60315fd334c489a9f74ce7ce48f4f98": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "d687c2c5acb44cbc86b5055c4a689725": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_299bef434e394fb182423b7193e35b20", "max": 1, "style": "IPY_MODEL_00e011fb07774911981539c06c5e71db", "value": 1}}, "d890673fc2c24d06a83516510483bc46": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "d89cd23b0fd24f57a388bed89f19aa43": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_22c8e3e8eab34527ab8f8dd218fbb863", "max": 1, "style": "IPY_MODEL_ae6caee0ef1044e387d8968e7e042958", "value": 1}}, "daa29c6f92654e56829a4b09c647b584": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "db0328574ca24046b75387967eb54200": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "dc304beffe95477cb691c7104961a0e3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "dd4c557c6eeb4a33ae87912c0d882cb3": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "de7fce2b805e498a99a8088b941ba8f0": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_e90c8c72236c4835b6e82c9b198cd5ab", "style": "IPY_MODEL_0a84974ebc6742e094dd2ab31b9be9d4", "value": "\u20071/1\u2007[00:04&lt;00:00,\u2007\u20074.76s/batch]"}}, "e1c8653e995042fcb9b436e83eab34ea": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "e241cd00804647278c241486785c258d": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_9f7a82660b17458589e9c0b4ac861c89", "style": "IPY_MODEL_03aed75d72b344abaab09e3c428d5f6c", "value": "\u20071/1\u2007[00:02&lt;00:00,\u2007\u20072.09s/batch]"}}, "e261171bb88941759d765146641a2e14": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "e384059193c94844a7617fade4933382": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"description_width": ""}}, "e432389fb54a412eaf3ea248646bbe3a": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "e4db40022c044a4aaba54cd65554c758": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_9d04e61636c544a6ac8de2e7a457ad7c", "IPY_MODEL_ec684f11d22e49908b7e8ccd11ba428f", "IPY_MODEL_de7fce2b805e498a99a8088b941ba8f0"], "layout": "IPY_MODEL_31ca8f4cb4eb4611ac60fa5980c85040"}}, "e534d78a83de40e3a5591fe012fac0d0": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "e8ee150263514020bba3939eb09f063c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_dd4c557c6eeb4a33ae87912c0d882cb3", "style": "IPY_MODEL_b7612f12c3a04594a02310312461dd18", "value": "\u20071/1\u2007[00:02&lt;00:00,\u2007\u20072.63s/batch]"}}, "e90c8c72236c4835b6e82c9b198cd5ab": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "eb7f0db24e1c49df97c3eba90b2c1909": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "ec684f11d22e49908b7e8ccd11ba428f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"bar_style": "success", "layout": "IPY_MODEL_3e9c363f63264039a3944a9ebf9fe7f2", "max": 1, "style": "IPY_MODEL_30f538c5dd734f019c3dee126434dd85", "value": 1}}, "edc311d5673d4a7ab541eb2a26d4e682": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "f091a4226e32491891c4e9118b4a23c6": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"description_width": "", "font_size": null, "text_color": null}}, "f72202bdbfde4820856b71372fbc9dea": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "fafc13a4edd74fcc8cc43b2fa7acdb5f": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}, "fb9f70b107b84ed4bbb031f5c8b98b24": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"layout": "IPY_MODEL_8e75ddb06a0142beb012da94fc14aeb7", "style": "IPY_MODEL_815e1ba828c7439fb82a8caaae62ef8a", "value": "Sampling:\u2007100%"}}, "fc98c4b75dff4bb38f9dfbda4ff3ce32": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"children": ["IPY_MODEL_5ea086cefafc4f5e8873f95bb7dd4850", "IPY_MODEL_61f5d58dbd024da597f6ace2b1e1c726", "IPY_MODEL_b3ef776b65cc4d27b9e3d1b187016b8a"], "layout": "IPY_MODEL_fe690007e27246ecb084c92d3adb7d48"}}, "fe690007e27246ecb084c92d3adb7d48": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {}}}, "version_major": 2, "version_minor": 0}</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Ensembles';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Ensembles.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="12. Neural Likelihood-to-Evidence Ratio Estimation" href="Ratio_Estimation.html" />
+    <link rel="prev" title="10. Posterior Estimation With Multimodal Data" href="Multimodal_Data.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion Models In Simulation-Based Inference: A Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Linear_Regression_Starter.html">2. Bayesian Linear Regression Starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">3. Image data: Inference on Spatial Data and Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">4. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">5. Simple Model Comparison - One Sample T-Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">7. Posterior Estimation for SIR-like Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">8. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">9. Likelihood Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">10. Posterior Estimation With Multimodal Data</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">11. Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">12. Neural Likelihood-to-Evidence Ratio Estimation</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">11. </span>Ensembles</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="ensembles">
+<h1><span class="section-number">11. </span>Ensembles<a class="headerlink" href="#ensembles" title="Link to this heading">#</a></h1>
+<p><em>Author:</em></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:2026-02-27 21:31:10,372:jax._src.xla_bridge:834: Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:bayesflow:Using backend &#39;jax&#39;
+/home/space/Projects/bayesflow/.venv/lib/python3.13/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
+</pre></div>
+</div>
+</div>
+</div>
+<section id="simulator-and-adapter">
+<h2><span class="section-number">11.1. </span>Simulator and Adapter<a class="headerlink" href="#simulator-and-adapter" title="Link to this heading">#</a></h2>
+<p>As a quick demo, we use the widely overused Lotka-Volterra simulator.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">LotkaVolterra</span><span class="p">(</span><span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;observables&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;parameters&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="ensemble-creation-and-training">
+<h2><span class="section-number">11.2. </span>Ensemble Creation and Training<a class="headerlink" href="#ensemble-creation-and-training" title="Link to this heading">#</a></h2>
+<p>We have multiple ways of creating and training ensembles. Below, we first demonstrate the lower-level interface that simply represents a trainable container of approximators.</p>
+<section id="ensembleapproximator">
+<h3><span class="section-number">11.2.1. </span>EnsembleApproximator<a class="headerlink" href="#ensembleapproximator" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">EnsembleApproximator</span></code> is constructed with a dictionary where each value is either a <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code> or a <code class="docutils literal notranslate"><span class="pre">ScoringRuleApproximator</span></code>. Noticably, do not need to be trained yet untrained.
+Furthermore, we can pass references to the same network repeatedly to different approximators’ constructor arguments, so weights can be shared effortlessly.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We can either use separate or shared summary networks</span>
+<span class="c1"># In this case, we define a single, thus shared, summary network and initialize separate inference networks.</span>
+<span class="c1"># Note: This means that the summary network&#39;s gradients are the sum over all forward passes with the different inference networks.</span>
+<span class="c1">#       Since the gradients will not be aligned this will not really be an effective learning rate increase by factor 3,</span>
+<span class="c1">#       but still it will likely update faster than when training one with a single inference network.</span>
+
+
+<span class="n">summary_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesNetwork</span><span class="p">(</span><span class="n">kernel_sizes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">recurrent_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">skip_steps</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">approximators</span><span class="o">.</span><span class="n">EnsembleApproximator</span><span class="p">({</span>
+        <span class="s2">&quot;nf&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+            <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+            <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(),</span>
+            <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_network</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;cm&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+            <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+            <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">StableConsistencyModel</span><span class="p">(),</span>
+            <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_network</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;mvn&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ScoringRuleApproximator</span><span class="p">(</span>
+            <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+            <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ScoringRuleNetwork</span><span class="p">(</span>
+                <span class="n">scoring_rules</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">mvn</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">MvNormalScore</span><span class="p">())</span>
+            <span class="p">),</span>
+            <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_network</span><span class="p">,</span>
+        <span class="p">),</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:EnsembleApproximator contains shared component &#39;summary_network&#39; across members [&#39;nf&#39;, &#39;cm&#39;, &#39;mvn&#39;]. Deserialization of weights of shared components is not supported yet and may fail. Use separate component instances (e.g., clone networks) to be able to serialize the whole EnsembleApproximator object or serialize the approximators in the ensemble separately.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">OnlineDataset</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">EnsembleDataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">member_names</span><span class="o">=</span><span class="n">approximator</span><span class="o">.</span><span class="n">members</span><span class="p">,</span> <span class="n">data_reuse</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:EnsembleOnlineDataset: ensemble_size=3, batch_size=32, data_reuse=0.5 -&gt; reduction_factor=0.5, pool_size=64 (≈2.0*batch_size).
+Overlap is enforced per training step by splitting a pooled simulated batch into member windows.
+INFO:bayesflow:Fitting on dataset instance of EnsembleDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/2
+<span class=" -Color -Color-Bold">10/10</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">16s</span> 50ms/step - cm/loss: -0.5284 - loss: 9.1231 - mvn/loss: 4.7252 - mvn/mvn/inference_mvn: 4.7252 - nf/loss: 4.9263
+Epoch 2/2
+<span class=" -Color -Color-Bold">10/10</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">0s</span> 39ms/step - cm/loss: -0.5168 - loss: 8.6582 - mvn/loss: 4.1067 - mvn/mvn/inference_mvn: 4.1067 - nf/loss: 5.0683
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="ensembleworkflow">
+<h3><span class="section-number">11.2.2. </span>EnsembleWorkflow<a class="headerlink" href="#ensembleworkflow" title="Link to this heading">#</a></h3>
+<p>Just as the <code class="docutils literal notranslate"><span class="pre">BasicWorkflow</span></code> serves as a convenient high-level interface with sensible defaults for <code class="docutils literal notranslate"><span class="pre">ScoringRuleApproximator</span></code> and <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code>, the <code class="docutils literal notranslate"><span class="pre">EnsembleWorkflow</span></code> makes it even simpler to instantiate and work with <code class="docutils literal notranslate"><span class="pre">EnsembleApproximators</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">EnsembleWorkflow</span><span class="p">(</span>
+    <span class="n">inference_networks</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ScoringRuleNetwork</span><span class="p">(</span><span class="n">scoring_rules</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">MeanScore</span><span class="p">())),</span>
+    <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">summary_networks</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesNetwork</span><span class="p">(</span><span class="n">kernel_sizes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">recurrent_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">skip_steps</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">data_reuse</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:EnsembleApproximator contains shared component &#39;summary_network&#39; across members [&#39;0&#39;, &#39;1&#39;, &#39;2&#39;]. Deserialization of weights of shared components is not supported yet and may fail. Use separate component instances (e.g., clone networks) to be able to serialize the whole EnsembleApproximator object or serialize the approximators in the ensemble separately.
+INFO:bayesflow:EnsembleOnlineDataset: ensemble_size=3, batch_size=32, data_reuse=0.5 -&gt; reduction_factor=0.5, pool_size=64 (≈2.0*batch_size).
+Overlap is enforced per training step by splitting a pooled simulated batch into member windows.
+INFO:bayesflow:Fitting on dataset instance of EnsembleDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/2
+<span class=" -Color -Color-Bold">10/10</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">6s</span> 39ms/step - 0/loss: 1.3323 - 0/mean/inference_mean: 1.3323 - 1/loss: 1.2245 - 1/mean/inference_mean: 1.2245 - 2/loss: 1.5947 - 2/mean/inference_mean: 1.5947 - loss: 4.1515
+Epoch 2/2
+<span class=" -Color -Color-Bold">10/10</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">1s</span> 42ms/step - 0/loss: 1.1395 - 0/mean/inference_mean: 1.1395 - 1/loss: 1.0668 - 1/mean/inference_mean: 1.0668 - 2/loss: 1.5834 - 2/mean/inference_mean: 1.5834 - loss: 3.7897
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Training completed in 7.58 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<p>If a single network is passed to the <code class="docutils literal notranslate"><span class="pre">inference_networks</span></code> keyword argument (as above), each ensemble member still gets an independent clone of the network. If you are sure you want to share the inference networks, you can pass <code class="docutils literal notranslate"><span class="pre">share_inference_network=True</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">approximators</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inference_network</span> <span class="o">==</span> <span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">approximators</span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inference_network</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>False
+</pre></div>
+</div>
+</div>
+</div>
+<p>On the other hand, if we pass a single network to the <code class="docutils literal notranslate"><span class="pre">summary_networks</span></code> keyword argument, the summary network will be shared between ensemble members.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">approximators</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">summary_network</span> <span class="o">==</span> <span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">approximators</span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">summary_network</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>True
+</pre></div>
+</div>
+</div>
+</div>
+<p>To check that the learnt posterior is different for each ensemble member, we can estimate the same condition separately. Since <code class="docutils literal notranslate"><span class="pre">estimate</span></code> for a <code class="docutils literal notranslate"><span class="pre">ScoringRuleNetwork</span></code> is deterministic for a given condition this is sufficient to show that the approximators are different. Sampling generative approximators would not be.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pprint</span><span class="w"> </span><span class="kn">import</span> <span class="n">pprint</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pprint</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">groupby</span><span class="o">=</span><span class="s2">&quot;variable&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Estimating completed in 2.46 seconds.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;parameters&#39;: {&#39;mean&#39;: {&#39;0&#39;: array([[1.1417912 , 0.02183776, 0.8654297 , 0.064208  ]], dtype=float32),
+                         &#39;1&#39;: array([[1.7352594 , 0.03299244, 0.2355746 , 0.05657743]], dtype=float32),
+                         &#39;2&#39;: array([[1.4353998 , 0.06394689, 0.6043464 , 0.04782377]], dtype=float32)}}}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now let us use different architectures for the inference networks. Three generative approximators and one point estimation approximator will be trained at the same time and share an inference network.</p>
+<p>Moreover, we will train on a presimulated dataset, so training will be extremely fast.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_sims</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+<span class="n">val_sims</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">EnsembleWorkflow</span><span class="p">(</span>
+    <span class="n">inference_networks</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;nf&quot;</span><span class="p">:</span> <span class="s2">&quot;coupling_flow&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fm&quot;</span><span class="p">:</span> <span class="s2">&quot;flow_matching&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mvn&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ScoringRuleNetwork</span><span class="p">(</span><span class="n">scoring_rules</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">mvn</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">MvNormalScore</span><span class="p">())),</span>
+        <span class="s2">&quot;point&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ScoringRuleNetwork</span><span class="p">(</span><span class="n">scoring_rules</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">MeanScore</span><span class="p">())),</span>
+    <span class="p">},</span>
+    <span class="n">summary_networks</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesNetwork</span><span class="p">(</span><span class="n">kernel_sizes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">recurrent_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">skip_steps</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">train_sims</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">val_sims</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:EnsembleApproximator contains shared component &#39;summary_network&#39; across members [&#39;nf&#39;, &#39;fm&#39;, &#39;mvn&#39;, &#39;point&#39;]. Deserialization of weights of shared components is not supported yet and may fail. Use separate component instances (e.g., clone networks) to be able to serialize the whole EnsembleApproximator object or serialize the approximators in the ensemble separately.
+INFO:bayesflow:EnsembleIndexedDataset: ensemble_size=4, batch_size=32, num_samples=10000, data_reuse=1.0 -&gt; reduction_factor=1.00, window_size=10000, steps_per_epoch=313. Overlap is enforced at the subdataset level (member-specific windows into the global index pool).
+INFO:bayesflow:Fitting on dataset instance of EnsembleDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">40s</span> 84ms/step - fm/loss: 1.4180 - loss: 9.8347 - mvn/loss: 4.2006 - mvn/mvn/inference_mvn: 4.2006 - nf/loss: 3.5571 - point/loss: 0.6591 - point/mean/inference_mean: 0.6591 - val_fm/loss: 0.7607 - val_loss: 7.0113 - val_mvn/loss: 3.1376 - val_mvn/mvn/inference_mvn: 3.1376 - val_nf/loss: 2.8424 - val_point/loss: 0.2706 - val_point/mean/inference_mean: 0.2706
+Epoch 2/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 1.8549 - loss: 9.7546 - mvn/loss: 4.3944 - mvn/mvn/inference_mvn: 4.3944 - nf/loss: 2.5382 - point/loss: 0.9671 - point/mean/inference_mean: 0.9671 - val_fm/loss: 1.0970 - val_loss: 4.8089 - val_mvn/loss: 1.8103 - val_mvn/mvn/inference_mvn: 1.8103 - val_nf/loss: 1.6303 - val_point/loss: 0.2713 - val_point/mean/inference_mean: 0.2713
+Epoch 3/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.5462 - loss: 2.3241 - mvn/loss: 1.2360 - mvn/mvn/inference_mvn: 1.2360 - nf/loss: 0.2723 - point/loss: 0.2695 - point/mean/inference_mean: 0.2695 - val_fm/loss: 0.3084 - val_loss: -0.9321 - val_mvn/loss: -0.3310 - val_mvn/mvn/inference_mvn: -0.3310 - val_nf/loss: -0.9987 - val_point/loss: 0.0892 - val_point/mean/inference_mean: 0.0892
+Epoch 4/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3809 - loss: -1.1211 - mvn/loss: -0.0308 - mvn/mvn/inference_mvn: -0.0308 - nf/loss: -1.5938 - point/loss: 0.1225 - point/mean/inference_mean: 0.1225 - val_fm/loss: 0.3754 - val_loss: -1.8609 - val_mvn/loss: -0.9092 - val_mvn/mvn/inference_mvn: -0.9092 - val_nf/loss: -1.3811 - val_point/loss: 0.0540 - val_point/mean/inference_mean: 0.0540
+Epoch 5/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.7331 - loss: -1.1448 - mvn/loss: -0.6414 - mvn/mvn/inference_mvn: -0.6414 - nf/loss: -1.6589 - point/loss: 0.4224 - point/mean/inference_mean: 0.4224 - val_fm/loss: 0.9727 - val_loss: -0.5935 - val_mvn/loss: -0.3217 - val_mvn/mvn/inference_mvn: -0.3217 - val_nf/loss: -1.5062 - val_point/loss: 0.2617 - val_point/mean/inference_mean: 0.2617
+Epoch 6/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.4549 - loss: -1.8751 - mvn/loss: -0.5641 - mvn/mvn/inference_mvn: -0.5641 - nf/loss: -1.9123 - point/loss: 0.1465 - point/mean/inference_mean: 0.1465 - val_fm/loss: 0.4530 - val_loss: -1.0700 - val_mvn/loss: -0.5939 - val_mvn/mvn/inference_mvn: -0.5939 - val_nf/loss: -1.1186 - val_point/loss: 0.1894 - val_point/mean/inference_mean: 0.1894
+Epoch 7/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3170 - loss: -2.6725 - mvn/loss: -1.1492 - mvn/mvn/inference_mvn: -1.1492 - nf/loss: -1.9019 - point/loss: 0.0616 - point/mean/inference_mean: 0.0616 - val_fm/loss: 0.0976 - val_loss: -4.2327 - val_mvn/loss: -1.9557 - val_mvn/mvn/inference_mvn: -1.9557 - val_nf/loss: -2.4534 - val_point/loss: 0.0788 - val_point/mean/inference_mean: 0.0788
+Epoch 8/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.5389 - loss: -3.2932 - mvn/loss: -1.3921 - mvn/mvn/inference_mvn: -1.3921 - nf/loss: -2.5055 - point/loss: 0.0656 - point/mean/inference_mean: 0.0656 - val_fm/loss: 0.5263 - val_loss: -3.4317 - val_mvn/loss: -1.5829 - val_mvn/mvn/inference_mvn: -1.5829 - val_nf/loss: -2.4285 - val_point/loss: 0.0534 - val_point/mean/inference_mean: 0.0534
+Epoch 9/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.4498 - loss: -1.5650 - mvn/loss: -0.6243 - mvn/mvn/inference_mvn: -0.6243 - nf/loss: -1.5527 - point/loss: 0.1622 - point/mean/inference_mean: 0.1622 - val_fm/loss: 0.4488 - val_loss: -2.8916 - val_mvn/loss: -1.6185 - val_mvn/mvn/inference_mvn: -1.6185 - val_nf/loss: -1.9184 - val_point/loss: 0.1966 - val_point/mean/inference_mean: 0.1966
+Epoch 10/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.5641 - loss: -3.4484 - mvn/loss: -1.8679 - mvn/mvn/inference_mvn: -1.8679 - nf/loss: -2.2429 - point/loss: 0.0983 - point/mean/inference_mean: 0.0983 - val_fm/loss: 0.1074 - val_loss: -6.8887 - val_mvn/loss: -3.4628 - val_mvn/mvn/inference_mvn: -3.4628 - val_nf/loss: -3.5489 - val_point/loss: 0.0156 - val_point/mean/inference_mean: 0.0156
+Epoch 11/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3386 - loss: -2.7770 - mvn/loss: -0.6922 - mvn/mvn/inference_mvn: -0.6922 - nf/loss: -2.4838 - point/loss: 0.0605 - point/mean/inference_mean: 0.0605 - val_fm/loss: 0.3748 - val_loss: -3.9047 - val_mvn/loss: -1.9091 - val_mvn/mvn/inference_mvn: -1.9091 - val_nf/loss: -2.4956 - val_point/loss: 0.1252 - val_point/mean/inference_mean: 0.1252
+Epoch 12/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3221 - loss: -5.0538 - mvn/loss: -2.2640 - mvn/mvn/inference_mvn: -2.2640 - nf/loss: -3.1893 - point/loss: 0.0774 - point/mean/inference_mean: 0.0774 - val_fm/loss: 0.2082 - val_loss: -6.1261 - val_mvn/loss: -2.8945 - val_mvn/mvn/inference_mvn: -2.8945 - val_nf/loss: -3.4723 - val_point/loss: 0.0325 - val_point/mean/inference_mean: 0.0325
+Epoch 13/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.6300 - loss: -2.6784 - mvn/loss: -1.5390 - mvn/mvn/inference_mvn: -1.5390 - nf/loss: -1.9750 - point/loss: 0.2056 - point/mean/inference_mean: 0.2056 - val_fm/loss: 0.1888 - val_loss: -5.2860 - val_mvn/loss: -2.4779 - val_mvn/mvn/inference_mvn: -2.4779 - val_nf/loss: -3.0502 - val_point/loss: 0.0534 - val_point/mean/inference_mean: 0.0534
+Epoch 14/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.4036 - loss: -4.6774 - mvn/loss: -2.2985 - mvn/mvn/inference_mvn: -2.2985 - nf/loss: -2.8878 - point/loss: 0.1053 - point/mean/inference_mean: 0.1053 - val_fm/loss: 0.2175 - val_loss: -5.6910 - val_mvn/loss: -2.7957 - val_mvn/mvn/inference_mvn: -2.7957 - val_nf/loss: -3.1423 - val_point/loss: 0.0295 - val_point/mean/inference_mean: 0.0295
+Epoch 15/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3476 - loss: -5.1245 - mvn/loss: -2.3843 - mvn/mvn/inference_mvn: -2.3843 - nf/loss: -3.1373 - point/loss: 0.0494 - point/mean/inference_mean: 0.0494 - val_fm/loss: 0.4092 - val_loss: -3.2641 - val_mvn/loss: -1.6135 - val_mvn/mvn/inference_mvn: -1.6135 - val_nf/loss: -2.2540 - val_point/loss: 0.1943 - val_point/mean/inference_mean: 0.1943
+Epoch 16/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3765 - loss: -3.9331 - mvn/loss: -2.1722 - mvn/mvn/inference_mvn: -2.1722 - nf/loss: -2.2216 - point/loss: 0.0843 - point/mean/inference_mean: 0.0843 - val_fm/loss: 0.4591 - val_loss: -0.8823 - val_mvn/loss: -0.5192 - val_mvn/mvn/inference_mvn: -0.5192 - val_nf/loss: -1.0637 - val_point/loss: 0.2415 - val_point/mean/inference_mean: 0.2415
+Epoch 17/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3312 - loss: -4.8639 - mvn/loss: -2.2950 - mvn/mvn/inference_mvn: -2.2950 - nf/loss: -2.9665 - point/loss: 0.0664 - point/mean/inference_mean: 0.0664 - val_fm/loss: 0.3765 - val_loss: -8.8381 - val_mvn/loss: -4.3062 - val_mvn/mvn/inference_mvn: -4.3062 - val_nf/loss: -4.9251 - val_point/loss: 0.0168 - val_point/mean/inference_mean: 0.0168
+Epoch 18/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3601 - loss: -5.1956 - mvn/loss: -2.6567 - mvn/mvn/inference_mvn: -2.6567 - nf/loss: -2.9934 - point/loss: 0.0944 - point/mean/inference_mean: 0.0944 - val_fm/loss: 0.1093 - val_loss: -7.5079 - val_mvn/loss: -3.6244 - val_mvn/mvn/inference_mvn: -3.6244 - val_nf/loss: -4.0127 - val_point/loss: 0.0199 - val_point/mean/inference_mean: 0.0199
+Epoch 19/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.1921 - loss: -6.1381 - mvn/loss: -2.8537 - mvn/mvn/inference_mvn: -2.8537 - nf/loss: -3.5329 - point/loss: 0.0565 - point/mean/inference_mean: 0.0565 - val_fm/loss: 0.0510 - val_loss: -7.9574 - val_mvn/loss: -3.8499 - val_mvn/mvn/inference_mvn: -3.8499 - val_nf/loss: -4.1839 - val_point/loss: 0.0253 - val_point/mean/inference_mean: 0.0253
+Epoch 20/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.4532 - loss: -6.3507 - mvn/loss: -2.9588 - mvn/mvn/inference_mvn: -2.9588 - nf/loss: -3.9153 - point/loss: 0.0703 - point/mean/inference_mean: 0.0703 - val_fm/loss: 0.2921 - val_loss: -7.0346 - val_mvn/loss: -3.5370 - val_mvn/mvn/inference_mvn: -3.5370 - val_nf/loss: -3.8212 - val_point/loss: 0.0315 - val_point/mean/inference_mean: 0.0315
+Epoch 21/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3752 - loss: -5.8594 - mvn/loss: -2.7985 - mvn/mvn/inference_mvn: -2.7985 - nf/loss: -3.5263 - point/loss: 0.0903 - point/mean/inference_mean: 0.0903 - val_fm/loss: 0.1523 - val_loss: -5.3888 - val_mvn/loss: -2.8008 - val_mvn/mvn/inference_mvn: -2.8008 - val_nf/loss: -2.7765 - val_point/loss: 0.0363 - val_point/mean/inference_mean: 0.0363
+Epoch 22/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.3541 - loss: -5.8034 - mvn/loss: -3.0911 - mvn/mvn/inference_mvn: -3.0911 - nf/loss: -3.1431 - point/loss: 0.0768 - point/mean/inference_mean: 0.0768 - val_fm/loss: 0.1118 - val_loss: -7.4823 - val_mvn/loss: -3.6750 - val_mvn/mvn/inference_mvn: -3.6750 - val_nf/loss: -3.9444 - val_point/loss: 0.0253 - val_point/mean/inference_mean: 0.0253
+Epoch 23/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.2674 - loss: -6.3379 - mvn/loss: -2.9081 - mvn/mvn/inference_mvn: -2.9081 - nf/loss: -3.7599 - point/loss: 0.0627 - point/mean/inference_mean: 0.0627 - val_fm/loss: 0.3873 - val_loss: -7.5398 - val_mvn/loss: -3.8060 - val_mvn/mvn/inference_mvn: -3.8060 - val_nf/loss: -4.1529 - val_point/loss: 0.0318 - val_point/mean/inference_mean: 0.0318
+Epoch 24/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.4311 - loss: -5.0584 - mvn/loss: -2.4815 - mvn/mvn/inference_mvn: -2.4815 - nf/loss: -3.1119 - point/loss: 0.1039 - point/mean/inference_mean: 0.1039 - val_fm/loss: 0.0783 - val_loss: -8.6747 - val_mvn/loss: -4.1695 - val_mvn/mvn/inference_mvn: -4.1695 - val_nf/loss: -4.6094 - val_point/loss: 0.0259 - val_point/mean/inference_mean: 0.0259
+Epoch 25/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.2774 - loss: -6.9022 - mvn/loss: -3.2153 - mvn/mvn/inference_mvn: -3.2153 - nf/loss: -3.9978 - point/loss: 0.0336 - point/mean/inference_mean: 0.0336 - val_fm/loss: 0.5700 - val_loss: -5.8901 - val_mvn/loss: -3.0932 - val_mvn/mvn/inference_mvn: -3.0932 - val_nf/loss: -3.4830 - val_point/loss: 0.1160 - val_point/mean/inference_mean: 0.1160
+Epoch 26/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.4732 - loss: -4.2625 - mvn/loss: -1.8766 - mvn/mvn/inference_mvn: -1.8766 - nf/loss: -2.9376 - point/loss: 0.0784 - point/mean/inference_mean: 0.0784 - val_fm/loss: 0.2679 - val_loss: -7.8955 - val_mvn/loss: -3.7245 - val_mvn/mvn/inference_mvn: -3.7245 - val_nf/loss: -4.4763 - val_point/loss: 0.0373 - val_point/mean/inference_mean: 0.0373
+Epoch 27/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.2013 - loss: -7.6353 - mvn/loss: -3.6664 - mvn/mvn/inference_mvn: -3.6664 - nf/loss: -4.1972 - point/loss: 0.0270 - point/mean/inference_mean: 0.0270 - val_fm/loss: 0.2925 - val_loss: -9.5972 - val_mvn/loss: -4.8327 - val_mvn/mvn/inference_mvn: -4.8327 - val_nf/loss: -5.0703 - val_point/loss: 0.0133 - val_point/mean/inference_mean: 0.0133
+Epoch 28/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.2412 - loss: -6.6446 - mvn/loss: -3.1984 - mvn/mvn/inference_mvn: -3.1984 - nf/loss: -3.7397 - point/loss: 0.0524 - point/mean/inference_mean: 0.0524 - val_fm/loss: 0.3273 - val_loss: -11.1583 - val_mvn/loss: -5.3115 - val_mvn/mvn/inference_mvn: -5.3115 - val_nf/loss: -6.1835 - val_point/loss: 0.0093 - val_point/mean/inference_mean: 0.0093
+Epoch 29/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.2034 - loss: -7.4211 - mvn/loss: -3.6215 - mvn/mvn/inference_mvn: -3.6215 - nf/loss: -4.0506 - point/loss: 0.0475 - point/mean/inference_mean: 0.0475 - val_fm/loss: 0.3706 - val_loss: -7.2526 - val_mvn/loss: -3.6060 - val_mvn/mvn/inference_mvn: -3.6060 - val_nf/loss: -4.0445 - val_point/loss: 0.0273 - val_point/mean/inference_mean: 0.0273
+Epoch 30/30
+<span class=" -Color -Color-Bold">313/313</span> <span class=" -Color -Color-Green">━━━━━━━━━━━━━━━━━━━━</span> <span class=" -Color -Color-Bold">3s</span> 8ms/step - fm/loss: 0.2971 - loss: -3.7002 - mvn/loss: -1.5355 - mvn/mvn/inference_mvn: -1.5355 - nf/loss: -2.7855 - point/loss: 0.3237 - point/mean/inference_mean: 0.3237 - val_fm/loss: 0.1829 - val_loss: -8.5812 - val_mvn/loss: -3.9827 - val_mvn/mvn/inference_mvn: -3.9827 - val_nf/loss: -4.8583 - val_point/loss: 0.0770 - val_point/mean/inference_mean: 0.0770
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Training completed in 1.95 minutes.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">merge_members</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">samples</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling: 100%|██████████| 1/1 [00:02&lt;00:00,  2.60s/batch]
+Sampling: 100%|██████████| 1/1 [00:04&lt;00:00,  4.47s/batch]
+Sampling: 100%|██████████| 1/1 [00:01&lt;00:00,  1.64s/batch]
+INFO:bayesflow:Sampling completed in 8.82 seconds.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;fm&#39;: {&#39;parameters&#39;: (2, 100, 4)},
+ &#39;mvn&#39;: {&#39;parameters&#39;: (2, 100, 4)},
+ &#39;nf&#39;: {&#39;parameters&#39;: (2, 100, 4)}}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">member_weights</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">nf</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mvn</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">fm</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">samples</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling: 100%|██████████| 1/1 [00:01&lt;00:00,  1.56s/batch]
+Sampling: 100%|██████████| 1/1 [00:00&lt;00:00,  1.56batch/s]
+Sampling: 100%|██████████| 1/1 [00:04&lt;00:00,  4.34s/batch]
+INFO:bayesflow:Sampling completed in 6.69 seconds.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;parameters&#39;: (2, 100, 4)}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">groupby</span><span class="o">=</span><span class="s2">&quot;variable&quot;</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">estimates</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling: 100%|██████████| 1/1 [00:01&lt;00:00,  1.53s/batch]
+Sampling: 100%|██████████| 1/1 [00:04&lt;00:00,  4.94s/batch]
+WARNING:bayesflow:Estimate &#39;mvn.precision_cholesky_factor&#39; is marked to not transform like a vector. It was treated like a vector by the adapter. Handle &#39;precision_cholesky_factor&#39; estimates with care.
+INFO:bayesflow:Estimating completed in 7.42 seconds.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;parameters&#39;: {&#39;mean&#39;: {&#39;fm&#39;: (2, 1, 4), &#39;nf&#39;: (2, 1, 4), &#39;point&#39;: (2, 4)},
+                &#39;median&#39;: {&#39;fm&#39;: (2, 1, 4), &#39;nf&#39;: (2, 1, 4)},
+                &#39;mvn&#39;: {&#39;mean&#39;: {&#39;mvn&#39;: (2, 4)},
+                        &#39;precision_cholesky_factor&#39;: {&#39;mvn&#39;: (2, 4, 4)}},
+                &#39;quantiles&#39;: {&#39;fm&#39;: (2, 3, 4), &#39;nf&#39;: (2, 3, 4)}}}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_prob</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">merge_members</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">log_prob</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Computing log probability completed in 14.41 seconds.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;fm&#39;: (2,), &#39;mvn&#39;: (2,), &#39;nf&#39;: (2,)}
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="default-diagnostics-for-the-whole-ensemble">
+<h3><span class="section-number">11.2.3. </span>Default diagnostics for the whole ensemble<a class="headerlink" href="#default-diagnostics-for-the-whole-ensemble" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling: 100%|██████████| 1/1 [00:02&lt;00:00,  2.71s/batch]
+Sampling: 100%|██████████| 1/1 [00:04&lt;00:00,  4.87s/batch]
+Sampling: 100%|██████████| 1/1 [00:02&lt;00:00,  2.03s/batch]
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;losses&#39;: &lt;Figure size 1600x400 with 1 Axes&gt;,
+ &#39;recovery&#39;: &lt;Figure size 2000x500 with 4 Axes&gt;,
+ &#39;calibration_ecdf&#39;: &lt;Figure size 2000x500 with 4 Axes&gt;,
+ &#39;coverage&#39;: &lt;Figure size 2000x500 with 4 Axes&gt;,
+ &#39;z_score_contraction&#39;: &lt;Figure size 2000x500 with 4 Axes&gt;}
+</pre></div>
+</div>
+<img alt="../_images/cdcc397ce0dd8b785f5732dac6aceeb0c46a2236237d2948e5b2c3fe40974cb8.png" src="../_images/cdcc397ce0dd8b785f5732dac6aceeb0c46a2236237d2948e5b2c3fe40974cb8.png" />
+<img alt="../_images/b0e9d1a3f8f53535239828529f873dd0e57e55a35d4e73b0f4031c56ee51c86a.png" src="../_images/b0e9d1a3f8f53535239828529f873dd0e57e55a35d4e73b0f4031c56ee51c86a.png" />
+<img alt="../_images/c7ab27d6ff60d0d0eba28cbe1dd922b7d1cd14bd1d4b06c1550315fa4f0ba002.png" src="../_images/c7ab27d6ff60d0d0eba28cbe1dd922b7d1cd14bd1d4b06c1550315fa4f0ba002.png" />
+<img alt="../_images/3027283c0a50c8e5857b99e04d9ccdead273684199c0d2513054b661d7841279.png" src="../_images/3027283c0a50c8e5857b99e04d9ccdead273684199c0d2513054b661d7841279.png" />
+<img alt="../_images/414ed13119360b96e9fc214745b0864f1831da81b17527063b10dac2d1d3191c.png" src="../_images/414ed13119360b96e9fc214745b0864f1831da81b17527063b10dac2d1d3191c.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_samples</span> <span class="o">=</span> <span class="mi">500</span>
+
+<span class="c1"># Obtain posterior draws from all ensemble members (using the optional keyword arg member_weights).</span>
+<span class="n">marginal_draws</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">member_weights</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">nf</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">fm</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">mvn</span><span class="o">=</span><span class="mf">0.09</span><span class="p">))</span>
+
+<span class="c1"># post_draws is a dictionary of draws with one element per named parameters</span>
+<span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">marginal_draws</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling: 100%|██████████| 1/1 [00:03&lt;00:00,  3.15s/batch]
+Sampling: 100%|██████████| 1/1 [00:04&lt;00:00,  4.55s/batch]
+Sampling: 100%|██████████| 1/1 [00:01&lt;00:00,  1.30s/batch]
+INFO:bayesflow:Sampling completed in 9.21 seconds.
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;parameters&#39;: (200, 500, 4)}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Obtain posterior draws separately for each ensemble member.</span>
+<span class="n">post_draws</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">merge_members</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># post_draws is a dictionary of draws with one element per named parameters</span>
+<span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">post_draws</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling: 100%|██████████| 1/1 [00:01&lt;00:00,  1.89s/batch]
+Sampling: 100%|██████████| 1/1 [00:06&lt;00:00,  6.47s/batch]
+Sampling: 100%|██████████| 1/1 [00:00&lt;00:00,  1.34batch/s]
+INFO:bayesflow:Sampling completed in 9.18 seconds.
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;nf&#39;: {&#39;parameters&#39;: (200, 500, 4)},
+ &#39;fm&#39;: {&#39;parameters&#39;: (200, 500, 4)},
+ &#39;mvn&#39;: {&#39;parameters&#39;: (200, 500, 4)}}
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="diagnostics-per-ensemble-member">
+<h2><span class="section-number">11.3. </span>Diagnostics per ensemble member<a class="headerlink" href="#diagnostics-per-ensemble-member" title="Link to this heading">#</a></h2>
+<section id="recovery-per-ensemble-member">
+<h3><span class="section-number">11.3.1. </span>Recovery per ensemble member<a class="headerlink" href="#recovery-per-ensemble-member" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">title_args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">par_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\alpha$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\beta$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\gamma$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\delta$&quot;</span><span class="p">]</span>
+<span class="n">dataset_id</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">post_draws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">val_sims</span><span class="p">,</span> <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recovery - Ensemble Member </span><span class="si">{</span><span class="n">k</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">title_args</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/6a9d12d1bffccd8f5bc0935bf05a4d0b7fba1212160f4c5b6015fdd5ae3db913.png" src="../_images/6a9d12d1bffccd8f5bc0935bf05a4d0b7fba1212160f4c5b6015fdd5ae3db913.png" />
+<img alt="../_images/1eb8783f7313c958f9c3db26a54e67c3dbb7b1ce3880718d8bd72673adbad80a.png" src="../_images/1eb8783f7313c958f9c3db26a54e67c3dbb7b1ce3880718d8bd72673adbad80a.png" />
+<img alt="../_images/b859c7cf9ddc299cf76966eb49c1109965badd1890d1bf4d6eb0c92ac67e99fb.png" src="../_images/b859c7cf9ddc299cf76966eb49c1109965badd1890d1bf4d6eb0c92ac67e99fb.png" />
+</div>
+</div>
+</section>
+<section id="simulation-based-calibration-per-ensemble-member">
+<h3><span class="section-number">11.3.2. </span>Simulation-Based Calibration per ensemble member<a class="headerlink" href="#simulation-based-calibration-per-ensemble-member" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">post_draws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">val_sims</span><span class="p">,</span> <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span><span class="p">,</span> <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calibration - Ensemble Member </span><span class="si">{</span><span class="n">k</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">title_args</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/eb17ebf09f4904cbd590d426634bac5b3907a5ea1e28dcfc223808d713937b79.png" src="../_images/eb17ebf09f4904cbd590d426634bac5b3907a5ea1e28dcfc223808d713937b79.png" />
+<img alt="../_images/968f5fd6b3077d0bba10bd0ff7193af57b4b78ea70ebca73579a1887e5aa74d6.png" src="../_images/968f5fd6b3077d0bba10bd0ff7193af57b4b78ea70ebca73579a1887e5aa74d6.png" />
+<img alt="../_images/5acf7cd88b602492627cb5fa7bd5766335792b7fd5ccca84c08a32d04ed47953.png" src="../_images/5acf7cd88b602492627cb5fa7bd5766335792b7fd5ccca84c08a32d04ed47953.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="posterior-predictive-checks-for-the-whole-ensemble">
+<h2><span class="section-number">11.4. </span>Posterior Predictive Checks for the Whole Ensemble<a class="headerlink" href="#posterior-predictive-checks-for-the-whole-ensemble" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">idx</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">simulator</span><span class="o">.</span><span class="n">subsample</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">val_sims</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+<span class="n">draws_per_dataset</span> <span class="o">=</span> <span class="n">marginal_draws</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+
+<span class="n">resims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">draw</span><span class="p">)[</span><span class="s2">&quot;observables&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">draw</span> <span class="ow">in</span> <span class="n">draws_per_dataset</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">simulator</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">t_sim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">simulator</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">resims</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">mean</span> <span class="o">=</span> <span class="n">resims</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">std</span>  <span class="o">=</span> <span class="n">resims</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t_obs</span><span class="p">,</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Observed Prey&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t_obs</span><span class="p">,</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;maroon&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Observed Predators&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+
+<span class="c1"># Prey</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_sim</span><span class="p">,</span> <span class="n">mean</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Predicted Prey&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">t_sim</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">mean</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">std</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">mean</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">std</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Predators</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_sim</span><span class="p">,</span> <span class="n">mean</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;maroon&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Predicted Predators&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">t_sim</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">mean</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">std</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">mean</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">std</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;maroon&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x751a70394a50&gt;
+</pre></div>
+</div>
+<img alt="../_images/3ead107645a43c68a0ba19fc51ba7d029b40bd4955bae27ca426a454973ea093.png" src="../_images/3ead107645a43c68a0ba19fc51ba7d029b40bd4955bae27ca426a454973ea093.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Multimodal_Data.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">10. </span>Posterior Estimation With Multimodal Data</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Ratio_Estimation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">12. </span>Neural Likelihood-to-Evidence Ratio Estimation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulator-and-adapter">11.1. Simulator and Adapter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ensemble-creation-and-training">11.2. Ensemble Creation and Training</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ensembleapproximator">11.2.1. EnsembleApproximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ensembleworkflow">11.2.2. EnsembleWorkflow</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#default-diagnostics-for-the-whole-ensemble">11.2.3. Default diagnostics for the whole ensemble</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#diagnostics-per-ensemble-member">11.3. Diagnostics per ensemble member</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#recovery-per-ensemble-member">11.3.1. Recovery per ensemble member</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simulation-based-calibration-per-ensemble-member">11.3.2. Simulation-Based Calibration per ensemble member</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#posterior-predictive-checks-for-the-whole-ensemble">11.4. Posterior Predictive Checks for the Whole Ensemble</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.9/docsrc/source/_examples/Ensembles.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

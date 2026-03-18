@@ -17,11 +17,13 @@ logger.setLevel(logging.DEBUG)
 root = Git.root(Path(__file__).parent)
 
 #: CodeRegex matching the branches to build docs for
-BRANCH_REGEX = r"^(main|stable-legacy)$"
+# BRANCH_REGEX = r"^(main|stable-legacy)$"
+BRANCH_REGEX = r"^(stable-legacy)$"
 
 #: Regex matching the tags to build docs for
+TAG_REGEX = r"^v(?!1\.)(?!2\.0\.[0-6]$)([\d]+\.[\d]+\.[\d]+)$"
 # TAG_REGEX = r"^v((?!1\.)[\.0-9]*)$"
-TAG_REGEX = r""
+# TAG_REGEX = r""
 
 #: Output dir relative to project root
 OUTPUT_DIR = "_build_polyversion"

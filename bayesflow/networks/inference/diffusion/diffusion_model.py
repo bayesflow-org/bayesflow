@@ -673,12 +673,10 @@ class DiffusionModel(InferenceNetwork):
                 import torch
 
                 with torch.enable_grad():
-                    xz_leaf = xz.detach().requires_grad_(True)
-                    norm_log_snr_d = norm_log_snr.detach()
-                    conditions_d = conditions.detach() if conditions is not None else None
+                    xz_leaf = xz.requires_grad_(True)
 
                     subnet_out = self.subnet(
-                        (xz_leaf, norm_log_snr_d, conditions_d),
+                        (xz_leaf, norm_log_snr, conditions),
                         training=training,
                         **subnet_kwargs,
                     )

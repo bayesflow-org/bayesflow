@@ -73,6 +73,27 @@ def test_inverse_compositional_basic(
         f"Expected shape {expected_shape}, got {actual_shape}"
     )
 
+    # Test inverse sampling without prior score
+    result = simple_compositional_diffusion_model._inverse_compositional(
+        z=compositional_state,
+        conditions=compositional_conditions,
+        compute_prior_score=None,
+        density=False,
+        training=False,
+        method="euler_maruyama",
+        steps=5,
+        start_time=1.0,
+        stop_time=0.0,
+        mini_batch_size=1,
+    )
+
+    expected_shape = keras.ops.shape(compositional_state)
+    actual_shape = keras.ops.shape(result)
+
+    assert keras.ops.all(keras.ops.equal(expected_shape, actual_shape)), (
+        f"Expected shape {expected_shape}, got {actual_shape}"
+    )
+
 
 def test_ancestral_sampling():
     """

@@ -17,7 +17,7 @@ defaults:
 
 jobs:
   test:
-    name: Run Multi-Backend Tests
+    name: Run ${{ matrix.backend }} tests on ${{ matrix.os }}
 
     strategy:
       matrix:

@@ -1,23 +1,40 @@
 r"""
 A rich collection of neural network architectures for use in :py:class:`~bayesflow.approximators.Approximator`\ s.
 
-The module features inference networks (IN), summary networks (SN), as well as general purpose networks.
+Examples
+--------
+>>> import bayesflow as bf  # doctest: +SKIP
+>>> approximator = bf.ContinuousApproximator(  # doctest: +SKIP
+...     inference_network=bf.networks.CouplingFlow(),
+...     summary_network=bf.networks.DeepSet(),
+... )
 """
 
-from .consistency_models import ConsistencyModel, StableConsistencyModel
-from .coupling_flow import CouplingFlow
-from .deep_set import DeepSet
-from .diffusion_model import DiffusionModel
-from .flow_matching import FlowMatching
-from .inference_network import InferenceNetwork
-from .point_inference_network import PointInferenceNetwork
-from .mlp import MLP, TimeMLP
-from .fusion_network import FusionNetwork
-from .sequential import Sequential
-from .summary_network import SummaryNetwork
-from .time_series_network import TimeSeriesNetwork
-from .transformers import SetTransformer, TimeSeriesTransformer, FusionTransformer
+# Base classes
+from .inference import InferenceNetwork
+from .summary import SummaryNetwork
 
-from ..utils._docs import _add_imports_to_all
+# Inference networks
+from . import inference
+from .inference import ConsistencyModel, StableConsistencyModel
+from .inference import CouplingFlow
+from .inference import DiffusionModel
+from .inference import FlowMatching
+from .inference import PointNetwork, ScoringRuleNetwork
 
-_add_imports_to_all(include_modules=["diffusion_model"])
+# Summary networks
+from . import summary
+from .summary import ConvolutionalNetwork
+from .summary import DeepSet
+from .summary import FusionNetwork
+from .summary import TimeSeriesNetwork
+from .summary import SetTransformer, TimeSeriesTransformer, FusionTransformer
+
+# Subnets (backbones for inference / summary networks)
+from . import subnets
+from .subnets import MLP, TimeMLP
+from .subnets import UViT, UNet, ResidualUViT
+
+from . import defaults
+
+__all__ = ["inference", "summary", "subnets", "defaults"]

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesflow"
-version = "2.0.8"
+version = "2.0.9"
 authors = [{ name = "The BayesFlow Team" }]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -14,7 +14,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -29,7 +28,7 @@ dependencies = [
   "keras>=3.12.0",
   "matplotlib>=3.10.8",
   "networkx>=3.4.2",
-  "numpy>2.3.0,<2.4.0",
+  "numpy>=2.2.6",
   "pandas>=2.3.3",
   "scipy>=1.15.3",
   "seaborn>=0.13.2",
@@ -103,7 +102,7 @@ line-length = 120
 indent-width = 4
 
 # minimum target python version
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.

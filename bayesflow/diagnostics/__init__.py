@@ -9,6 +9,7 @@ from .metrics import (
     posterior_contraction,
     posterior_z_score,
     summary_space_comparison,
+    correlation,
 )
 
 from .plots import (

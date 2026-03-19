@@ -193,6 +193,25 @@ def test_pairs_posterior(random_estimates, random_targets, random_priors):
     assert out.axes[2, 2].get_xlabel() == "sigma"
     assert out.figure.legends[0].get_texts()[0]._text == "Prior"
 
+    # Test legend placement toggle
+    out = bf.diagnostics.plots.pairs_posterior(
+        estimates=random_estimates,
+        targets=random_targets,
+        dataset_id=1,
+        place_legend_below=True,
+    )
+    assert len(out.figure.legends) >= 1
+
+    # Placement should change location, number of columns, and anchor point
+    legends = out.figure.legends[0]
+    assert legends._loc == "upper center" or legends._loc == 9
+    assert legends._ncols == 3
+
+    bbox = legends.get_bbox_to_anchor()
+    anchor = getattr(bbox, "_bbox", bbox)
+    assert np.isclose(anchor.x0, 0.5)
+    assert np.isclose(anchor.y0, 0.0)
+
     with pytest.raises(ValueError):
         bf.diagnostics.plots.pairs_posterior(
             estimates=random_estimates,

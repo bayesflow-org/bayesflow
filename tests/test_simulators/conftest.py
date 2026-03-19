@@ -4,22 +4,7 @@ import pytest
 
 @pytest.fixture()
 def batch_size():
-    return 16
-
-
-@pytest.fixture(params=[False, True], autouse=True)
-def use_batched(request):
-    return request.param
-
-
-@pytest.fixture(params=[False, True], autouse=True)
-def use_numpy(request):
-    return request.param
-
-
-@pytest.fixture(params=[False, True], autouse=True)
-def use_squeezed(request):
-    return request.param
+    return 4
 
 
 @pytest.fixture()

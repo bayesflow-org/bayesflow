@@ -13,7 +13,11 @@ from ...adapters import Adapter
 from ...approximators import Approximator
 from ...datasets import OfflineDataset, OnlineDataset
 from ...networks import InferenceNetwork, SummaryNetwork
+<<<<<<< HEAD
 from ...networks.standardization import Standardization
+=======
+from ...networks.helpers import Standardization
+>>>>>>> dev
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .utils import (
@@ -97,9 +101,14 @@ class GraphicalApproximator(Approximator):
         if adapter == "auto":
             self.adapter = GraphicalApproximator.build_adapter()
 
+<<<<<<< HEAD
     @classmethod
     def build_dataset(
         cls,
+=======
+    def build_dataset(
+        self,
+>>>>>>> dev
         *,
         batch_size: int,
         num_batches: int,
@@ -296,7 +305,11 @@ class GraphicalApproximator(Approximator):
             import tensorflow as tf
 
             if "simulator" in kwargs:
+<<<<<<< HEAD
                 ds = GraphicalApproximator.build_dataset(**filter_kwargs(kwargs, GraphicalApproximator.build_dataset))
+=======
+                ds = self.build_dataset(**filter_kwargs(kwargs, self.build_dataset))
+>>>>>>> dev
                 del kwargs["simulator"]
 
             elif "dataset" in kwargs:

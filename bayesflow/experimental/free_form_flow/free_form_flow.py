@@ -207,7 +207,6 @@ class FreeFormFlow(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
     ) -> dict[str, Tensor]:
-        base_metrics = super().compute_metrics(x, conditions=conditions, sample_weight=sample_weight, stage=stage)
         # sample random vector
         v = self._sample_v(x)
 
@@ -232,7 +231,7 @@ class FreeFormFlow(InferenceNetwork):
         losses = maximum_likelihood_loss + self.beta * reconstruction_loss
         loss = weighted_mean(losses, sample_weight)
 
-        return base_metrics | {"loss": loss}
+        return {"loss": loss}
 
     @classmethod
     def from_config(cls, config, custom_objects=None):

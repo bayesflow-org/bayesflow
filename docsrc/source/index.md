@@ -24,7 +24,7 @@ complex to be described analytically.
 
 ## Install
 
-We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
+We currently support Python 3.11 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"
@@ -97,16 +97,18 @@ Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bay
 
 ### Tutorial notebooks
 
-1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
-2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
-3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
-4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation.ipynb)
-5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
-6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
-8. [Likelihood estimation](examples/Likelihood_Estimation.ipynb)
-9. [Multimodal data](examples/Multimodal_Data.ipynb)
-10. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
+1. {doc}`Diffusion starter <_examples/Diffusion_Models>` - A small tutorial on the power of diffusion models for SBI.
+2. {doc}`Linear regression <_examples/Linear_Regression_Starter>` - Fit your first Bayesian regression with varying sample size.
+3. {doc}`Image data <_examples/Spatial_Data_and_Parameters>` - Learn parameters from or generate image data.
+4. {doc}`Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>` - From simple point estimates to fully Bayesian inference.
+5. {doc}`Model comparison <_examples/One_Sample_TTest>` - Learn Bayes factors using probabilistic classification.
+6. {doc}`From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>` - Upgrade from sequential to amortized inference.
+7. {doc}`SIR <_examples/SIR_Posterior_Estimation>` - Model infectuous diseases through an end-to-end Bayesian workflow.
+8. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
+9. {doc}`Estimating likelihoods <_examples/Likelihood_Estimation>` - Learn synthetic likelihood functions.
+10. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
+11. {doc}`Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine inferences.
+12. {doc}`Ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling.
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

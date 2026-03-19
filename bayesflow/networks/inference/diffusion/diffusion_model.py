@@ -167,15 +167,27 @@ class DiffusionModel(InferenceNetwork):
         # Obtain output of the network and transform to prediction of the clean signal x
         norm_log_snr_t = self._transform_log_snr(log_snr_t)
         if self._prediction_type == "potential":
-            score = self._compute_score_from_potential(
+            pred = self._compute_grad_of_potential(
                 xz=diffused_x, norm_log_snr=norm_log_snr_t, conditions=conditions, training=training, **subnet_kwargs
             )
-            x_pred = (diffused_x + sigma_t**2 * score) / alpha_t
+            x_pred = self.convert_prediction_to_x(
+                pred=pred,
+                z=diffused_x,
+                alpha_t=alpha_t,
+                sigma_t=sigma_t,
+                log_snr_t=log_snr_t,
+                prediction_type="velocity",
+            )
         else:
             subnet_out = self.subnet((diffused_x, norm_log_snr_t, conditions), training=training, **subnet_kwargs)
             pred = self.output_projector(subnet_out)
             x_pred = self.convert_prediction_to_x(
-                pred=pred, z=diffused_x, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
+                pred=pred,
+                z=diffused_x,
+                alpha_t=alpha_t,
+                sigma_t=sigma_t,
+                log_snr_t=log_snr_t,
+                prediction_type=self._prediction_type,
             )
 
         # Finally, compute the loss according to the configured loss type.  Note that the standard weighting
@@ -324,7 +336,7 @@ class DiffusionModel(InferenceNetwork):
         return guidance_strength * grad
 
     def convert_prediction_to_x(
-        self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor
+        self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, prediction_type: str
     ) -> Tensor:
         """
         Converts the neural network prediction into the denoised data `x`, depending on
@@ -343,6 +355,9 @@ class DiffusionModel(InferenceNetwork):
             The standard deviation of the noise at time `t`.
         log_snr_t : Tensor
             The log signal-to-noise ratio at time `t`.
+        prediction_type : str
+            The type of prediction made by the model, which determines how to convert it to `x`.
+            Must be one of {'velocity', 'noise', 'F', 'x', 'score'}.
 
         Returns
         -------
@@ -350,7 +365,7 @@ class DiffusionModel(InferenceNetwork):
             The reconstructed clean signal `x` from the model prediction.
         """
 
-        match self._prediction_type:
+        match prediction_type:
             case "velocity":
                 return alpha_t * z - sigma_t * pred
 
@@ -370,11 +385,11 @@ class DiffusionModel(InferenceNetwork):
                 return (z + sigma_t**2 * pred) / alpha_t
 
             case "potential":
-                # Score is computed as ∇_z phi via _compute_score_from_potential.
+                # Score is computed as ∇_z phi via _compute_grad_of_potential.
                 raise RuntimeError("convert_prediction_to_x should not be called for prediction_type='potential'. ")
 
             case _:
-                raise ValueError(f"Unknown prediction type {self._prediction_type}.")
+                raise ValueError(f"Unknown prediction type {prediction_type}.")
 
     def score(
         self,
@@ -440,17 +455,25 @@ class DiffusionModel(InferenceNetwork):
         norm_log_snr = self._transform_log_snr(log_snr_t)
 
         if self._prediction_type == "potential":
-            score = self._compute_score_from_potential(
+            pred = self._compute_grad_of_potential(
                 xz=xz, norm_log_snr=norm_log_snr, conditions=conditions, training=training, **subnet_kwargs
+            )
+            x_pred = self.convert_prediction_to_x(
+                pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, prediction_type="velocity"
             )
         else:
             subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
             pred = self.output_projector(subnet_out)
 
             x_pred = self.convert_prediction_to_x(
-                pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t
+                pred=pred,
+                z=xz,
+                alpha_t=alpha_t,
+                sigma_t=sigma_t,
+                log_snr_t=log_snr_t,
+                prediction_type=self._prediction_type,
             )
-            score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
         if guidance_constraints is not None:
             guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
@@ -576,7 +599,7 @@ class DiffusionModel(InferenceNetwork):
 
         return v, ops.expand_dims(trace, axis=-1)
 
-    def _compute_score_from_potential(
+    def _compute_grad_of_potential(
         self,
         xz: Tensor,
         norm_log_snr: Tensor,
@@ -585,9 +608,9 @@ class DiffusionModel(InferenceNetwork):
         **subnet_kwargs,
     ) -> Tensor:
         """
-        Compute the score as the gradient of the predicted potential phi w.r.t. xz.
+        Compute the gradient of the predicted potential phi w.r.t. xz.
 
-        The network outputs a scalar potential phi(z, t, cond) per sample. The score is
+        The network outputs a scalar potential phi(z, t, cond) per sample. The output is
         then defined as ∇_z phi, i.e. the gradient of the potential w.r.t. the noisy input.
 
         Parameters
@@ -606,7 +629,7 @@ class DiffusionModel(InferenceNetwork):
         Returns
         -------
         Tensor
-            Score tensor of the same shape as *xz*, equal to ∇_xz phi(xz, t, cond).
+            Output of the same shape as *xz*, equal to some parameterization of ∇_xz phi(xz, t, cond).
         """
         backend = keras.backend.backend()
 
@@ -624,8 +647,8 @@ class DiffusionModel(InferenceNetwork):
                     return self.output_projector(subnet_out)
 
                 phi, vjp_fn = jax.vjp(phi_fn, xz)
-                score = vjp_fn(jnp.ones_like(phi))[0]
-                return score
+                out = vjp_fn(jnp.ones_like(phi))[0]
+                return out
 
             case "tensorflow":
                 import tensorflow as tf
@@ -639,12 +662,12 @@ class DiffusionModel(InferenceNetwork):
                     )
                     phi = self.output_projector(subnet_out)
 
-                score = tape.gradient(
+                out = tape.gradient(
                     target=phi,
                     sources=xz,
                     output_gradients=tf.ones_like(phi),
                 )
-                return score
+                return out
 
             case "torch":
                 import torch
@@ -661,7 +684,7 @@ class DiffusionModel(InferenceNetwork):
                     )
                     phi = self.output_projector(subnet_out)
 
-                    score = torch.autograd.grad(
+                    out = torch.autograd.grad(
                         outputs=phi,
                         inputs=xz_leaf,
                         grad_outputs=torch.ones_like(phi),
@@ -669,7 +692,7 @@ class DiffusionModel(InferenceNetwork):
                         retain_graph=training,
                     )[0]
 
-                return score
+                return out
 
             case _:
                 raise NotImplementedError(f"Unsupported backend for potential prediction type: {backend}")

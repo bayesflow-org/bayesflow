@@ -22,8 +22,8 @@ class ConditionBuilder:
     def __init__(self):
         super().__init__()
 
+    @staticmethod
     def resolve(
-        self,
         summary_network: keras.Layer | None,
         inference_conditions: Tensor | None,
         summary_variables: Tensor | None,
@@ -118,7 +118,89 @@ class ConditionBuilder:
         else:
             raise ValueError(f"Unknown purpose={purpose!r}.")
 
-    def get_config(self) -> dict:
+    @staticmethod
+    def resolve_ancestral(
+        summary_network: keras.Layer | None,
+        inference_conditions: Tensor | None,
+        child_summary_variables: Tensor | None,
+        n_datasets: int,
+        n_children: int,
+        n_parent_samples: int,
+        batch_size: int | None = None,
+        **summary_kwargs,
+    ) -> tuple[Tensor | None, Tensor | None]:
+        """Summarize child conditions before expansion, then concatenate with inference conditions.
+
+        The summary network runs on ``n_datasets * n_children`` samples rather than
+        ``n_datasets * n_children * n_parent_samples``, avoiding redundant forward passes.
+        The resulting summaries are then expanded along the parent-sample axis and
+        concatenated with the (already-expanded) inference conditions.
+
+        Parameters
+        ----------
+        summary_network : keras.Layer or None
+            The summary network.  If ``None``, ``child_summary_variables`` must also
+            be ``None`` and ``inference_conditions`` is returned as-is.
+        inference_conditions : Tensor or None, shape (flat_batch, ic_dim)
+            Already-expanded inference conditions from the merged adapter call.
+        child_summary_variables : Tensor or None, shape (n_datasets * n_children, sv_dim)
+            Un-expanded child summary variables to be summarized before expansion.
+        n_datasets : int
+            Number of independent datasets.
+        n_children : int
+            Number of child conditions per dataset.
+        n_parent_samples : int
+            Number of parent samples per dataset.
+        batch_size : int, optional
+            Batch size for the summary network forward pass.
+        **summary_kwargs
+            Extra keyword arguments forwarded to the summary network.
+
+        Returns
+        -------
+        resolved_conditions : Tensor or None
+            ``inference_conditions`` concatenated with expanded summary outputs.
+        summary_outputs : Tensor or None
+            Raw summary network outputs at child level ``(n_datasets * n_children, summary_dim)``,
+            or ``None`` if no summary network.
+        """
+        if summary_network is None:
+            if child_summary_variables is not None:
+                raise ValueError("Cannot use summary_variables without a summary network.")
+            return inference_conditions, None
+
+        if child_summary_variables is None:
+            raise ValueError("Summary variables are required when a summary network is present.")
+
+        flat_child_batch = n_datasets
+        if batch_size is None:
+            batch_size = flat_child_batch
+
+        batches = []
+        for i in tqdm(range(0, flat_child_batch, batch_size), desc="Summarizing", unit="batch"):
+            batch_variables = slice_maybe_nested(child_summary_variables, i, i + batch_size)
+            batch_kwargs = {
+                k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
+                for k, v in summary_kwargs.items()
+            }
+            batch_outputs = summary_network(batch_variables, **filter_kwargs(batch_kwargs, summary_network.call))
+            batches.append(batch_outputs)
+
+        child_summaries = tree_concatenate(batches, axis=0)  # (n_datasets * n_children, summary_dim)
+
+        # (n_datasets * n_children, summary_dim) -> (n_datasets, n_children, n_parent_samples, summary_dim)
+        # -> (flat_batch, summary_dim)
+        flat_batch = n_datasets * n_children * n_parent_samples
+        child_summaries = keras.ops.reshape(child_summaries, (n_datasets, n_children, -1))
+        expanded = keras.ops.expand_dims(child_summaries, axis=2)
+        expanded = keras.ops.repeat(expanded, n_parent_samples, axis=2)
+        expanded = keras.ops.reshape(expanded, (flat_batch, -1))
+
+        conditions = concatenate_valid((inference_conditions, expanded), axis=-1)
+        return conditions, child_summaries
+
+    @staticmethod
+    def get_config() -> dict:
         return {}
 
     @classmethod

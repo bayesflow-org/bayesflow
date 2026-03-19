@@ -125,7 +125,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         time: float | Tensor,
         stochastic_solver: bool,
         conditions: Tensor,
-        compute_prior_score: Callable[[Tensor], Tensor],
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
         **kwargs,
@@ -144,8 +144,8 @@ class CompositionalDiffusionModel(DiffusionModel):
             Whether to use stochastic (SDE) or deterministic (ODE) formulation
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
-        compute_prior_score: Callable
-            Function to compute the prior score ∇_θ log p(θ).
+        compute_prior_score: Callable, optional
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
@@ -194,7 +194,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         xz: Tensor,
         time: float | Tensor,
         conditions: Tensor,
-        compute_prior_score: Callable[[Tensor], Tensor],
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
         guidance_constraints: Mapping[str, Any] = None,
@@ -213,8 +213,8 @@ class CompositionalDiffusionModel(DiffusionModel):
             Time step for the diffusion process
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
-        compute_prior_score: Callable
-            Function to compute the prior score ∇_θ log p(θ).
+        compute_prior_score: Callable, optional
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
@@ -280,8 +280,17 @@ class CompositionalDiffusionModel(DiffusionModel):
         individual_scores = ops.reshape(scores_flat, (batch_size, mini_batch_size) + dims)
 
         # Compute prior score component
-        prior_score = compute_prior_score(xz)
-        weighted_prior_score = (1.0 - n_compositional) * (1.0 - time) * prior_score
+        if compute_prior_score is None:
+            prior_score = self.score(
+                xz,
+                log_snr_t=log_snr_t,
+                conditions=ops.take(conditions, 0, axis=1) * 0,  # unconditional score
+                training=training,
+                **kwargs,
+            )
+        else:
+            prior_score = (1.0 - time) * compute_prior_score(xz)
+        weighted_prior_score = (1.0 - n_compositional) * prior_score
 
         # Sum individual scores across compositional dimensions
         summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
@@ -308,7 +317,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         self,
         z: Tensor,
         conditions: Tensor,
-        compute_prior_score: Callable[[Tensor], Tensor],
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
         density: bool = False,
         training: bool = False,
         **kwargs,

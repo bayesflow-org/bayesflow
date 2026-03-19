@@ -113,7 +113,7 @@ class InferenceNetwork(keras.Layer):
         self,
         z: Tensor,
         conditions: Tensor,
-        compute_prior_score: Callable[[Tensor], Tensor],
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
         density: bool = False,
         training: bool = False,
         **kwargs,

@@ -164,7 +164,10 @@ class Approximator(BackendApproximator):
         return resolved_conditions, adapted, summary_outputs
 
     def _prepare_compositional_conditions(
-        self, conditions: Mapping[str, np.ndarray], batch_size: int | None = None
+        self,
+        conditions: Mapping[str, np.ndarray],
+        batch_size: int | None = None,
+        **adapter_kwargs,
     ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
         original_shapes = {}
         flattened_conditions = {}
@@ -182,7 +185,9 @@ class Approximator(BackendApproximator):
             )
 
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
-            flattened_conditions, batch_size=batch_size
+            flattened_conditions,
+            batch_size=batch_size,
+            **adapter_kwargs,
         )
 
         # Reshape conditions tensor back to (n_datasets, n_compositional, ...)
@@ -194,6 +199,77 @@ class Approximator(BackendApproximator):
             )
             + keras.ops.shape(resolved_conditions)[1:],
         )
+        return resolved_conditions, adapted, summary_outputs
+
+    def _prepare_ancestral_conditions(
+        self,
+        conditions: Mapping[str, np.ndarray],
+        ancestral_conditions: Mapping[str, np.ndarray],
+        batch_size: int | None = None,
+        **adapter_kwargs,
+    ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
+        first_conditions_arr = np.asarray(next(iter(conditions.values())))
+        first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
+
+        n_datasets = first_conditions_arr.shape[0]
+        n_children = first_conditions_arr.shape[1]
+        n_parent_samples = first_ancestral_arr.shape[1]
+
+        # If a summary network is present, summarize child conditions before expansion
+        summary_network = getattr(self, "summary_network", None)
+        if summary_network is not None:
+            flat_child_batch = n_datasets * n_children
+            flattened_conditions = {
+                key: np.asarray(value).reshape(flat_child_batch, *np.asarray(value).shape[2:])
+                for key, value in conditions.items()
+            }
+            adapted_child = self.adapter(flattened_conditions, strict=False, **adapter_kwargs)
+            adapted_child = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_child)
+
+            summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted_child)
+            child_summary_variables = self.standardizer.maybe_standardize(
+                adapted_child.get("summary_variables"), key="summary_variables", stage="inference"
+            )
+        else:
+            summary_kwargs = {}
+            child_summary_variables = None
+
+        flat_batch = n_datasets * n_children * n_parent_samples
+        # (n_datasets, n_parent_samples, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
+        expanded_ancestral = {}
+        for key, value in ancestral_conditions.items():
+            arr = np.asarray(value)
+            arr = np.expand_dims(arr, axis=1)  # (n_datasets, 1, n_parent_samples, ...)
+            arr = np.repeat(arr, n_children, axis=1)  # (n_datasets, n_children, n_parent_samples, ...)
+            expanded_ancestral[key] = arr.reshape(flat_batch, *arr.shape[3:])
+
+        # (n_datasets, n_children, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
+        expanded_conditions = {}
+        for key, value in conditions.items():
+            arr = np.asarray(value)
+            arr = np.expand_dims(arr, axis=2)  # (n_datasets, n_children, 1, ...)
+            arr = np.repeat(arr, n_parent_samples, axis=2)  # (n_datasets, n_children, n_parent_samples, ...)
+            expanded_conditions[key] = arr.reshape(flat_batch, *arr.shape[3:])
+
+        merged_conditions = {**expanded_conditions, **expanded_ancestral}
+        adapted = self.adapter(merged_conditions, strict=False, **adapter_kwargs)
+        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
+
+        inference_conditions = self.standardizer.maybe_standardize(
+            adapted.get("inference_conditions"), key="inference_conditions", stage="inference"
+        )
+
+        resolved_conditions, summary_outputs = self.condition_builder.resolve_ancestral(
+            summary_network,
+            inference_conditions,
+            child_summary_variables,
+            n_datasets=n_datasets,
+            n_children=n_children,
+            n_parent_samples=n_parent_samples,
+            batch_size=batch_size,
+            **summary_kwargs,
+        )
+
         return resolved_conditions, adapted, summary_outputs
 
     def _standardize_and_resolve(

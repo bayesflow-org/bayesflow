@@ -238,10 +238,7 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        summary_batch_size = batch_size * num_samples if batch_size is None else batch_size
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
-            conditions, batch_size=summary_batch_size
-        )
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
@@ -333,7 +330,7 @@ class ContinuousApproximator(Approximator):
         *,
         num_samples: int,
         conditions: dict[str, np.ndarray],
-        compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]],
+        compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]] = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
@@ -351,8 +348,9 @@ class ContinuousApproximator(Approximator):
             Number of samples to generate.
         conditions : dict[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
-        compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]]
+        compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]], optional
             A function that computes the score of the log prior distribution.
+            Otherwise, the unconditional score is used.
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one sample array per target variable.
         batch_size : int or None, optional
@@ -378,18 +376,20 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        summary_batch_size = batch_size * num_samples if batch_size is None else batch_size
         resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(
-            conditions, batch_size=summary_batch_size
+            conditions, batch_size=batch_size
         )
 
         # prepare score computation
-        compute_prior_score_pre = partial(
-            prepare_compute_prior_score,
-            compute_prior_score=compute_prior_score,
-            adapter=self.adapter,
-            standardizer=self.standardizer,
-        )
+        if compute_prior_score is None:
+            compute_prior_score_pre = None
+        else:
+            compute_prior_score_pre = partial(
+                prepare_compute_prior_score,
+                compute_prior_score=compute_prior_score,
+                adapter=self.adapter,
+                standardizer=self.standardizer,
+            )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
         inference_kwargs["compute_prior_score"] = compute_prior_score_pre
@@ -477,33 +477,12 @@ class ContinuousApproximator(Approximator):
         """
         first_conditions_arr = np.asarray(next(iter(conditions.values())))
         first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
-
         n_datasets = first_conditions_arr.shape[0]
         n_children = first_conditions_arr.shape[1]
         n_parent_samples = first_ancestral_arr.shape[1]
-        flat_batch = n_datasets * n_children * n_parent_samples
 
-        # (n_datasets, n_parent_samples, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
-        expanded_ancestral = {}
-        for key, value in ancestral_conditions.items():
-            arr = np.asarray(value)
-            arr = np.expand_dims(arr, axis=1)  # (n_datasets, 1, n_parent_samples, ...)
-            arr = np.repeat(arr, n_children, axis=1)  # (n_datasets, n_children, n_parent_samples, ...)
-            expanded_ancestral[key] = arr.reshape(flat_batch, *arr.shape[3:])
-
-        # (n_datasets, n_children, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
-        expanded_conditions = {}
-        for key, value in conditions.items():
-            arr = np.asarray(value)
-            arr = np.expand_dims(arr, axis=2)  # (n_datasets, n_children, 1, ...)
-            arr = np.repeat(arr, n_parent_samples, axis=2)  # (n_datasets, n_children, n_parent_samples, ...)
-            expanded_conditions[key] = arr.reshape(flat_batch, *arr.shape[3:])
-
-        merged_conditions = {**expanded_conditions, **expanded_ancestral}
-
-        summary_batch_size = batch_size * n_parent_samples if batch_size is None else batch_size
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
-            merged_conditions, batch_size=summary_batch_size
+        resolved_conditions, adapted, summary_outputs = self._prepare_ancestral_conditions(
+            conditions, ancestral_conditions=ancestral_conditions, batch_size=batch_size
         )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)

@@ -443,7 +443,14 @@ class CompositionalDiffusionModel(DiffusionModel):
             def deltas(time, xz):
                 return {
                     "xz": self.compositional_velocity(
-                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+                        xz,
+                        time=time,
+                        stochastic_solver=False,
+                        conditions=conditions,
+                        compute_prior_score=compute_prior_score,
+                        mini_batch_size=mini_batch_size,
+                        training=training,
+                        **kwargs,
                     )
                 }
 

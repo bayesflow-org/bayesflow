@@ -21,7 +21,7 @@ root = Git.root(Path(__file__).parent)
 BRANCH_REGEX = r"^(stable-legacy)$"
 
 #: Regex matching the tags to build docs for
-TAG_REGEX = r"^v(?!1\.)(?!2\.0\.[0-6]$)([\d]+\.[\d]+\.[\d]+)$"
+TAG_REGEX = r"^v(?!1\.)(?!2\.0\.[0-6]$)(?!2\.0\.9$)([\d]+\.[\d]+\.[\d]+)$"
 # TAG_REGEX = r"^v((?!1\.)[\.0-9]*)$"
 # TAG_REGEX = r""
 

@@ -10,7 +10,7 @@ def test_compositional_score_shape(
     # Build the model
     state_shape = keras.ops.shape(compositional_state)
     conditions_shape = keras.ops.shape(compositional_conditions)
-    simple_compositional_diffusion_model.build(state_shape, conditions_shape)
+    simple_compositional_diffusion_model.build(state_shape, (state_shape[0],) + conditions_shape[2:])
     simple_compositional_diffusion_model.compositional_bridge_d0 = 1
     simple_compositional_diffusion_model.compositional_bridge_d1 = 0.1
 
@@ -85,6 +85,28 @@ def test_inverse_compositional_basic(
         start_time=1.0,
         stop_time=0.0,
         mini_batch_size=1,
+    )
+
+    expected_shape = keras.ops.shape(compositional_state)
+    actual_shape = keras.ops.shape(result)
+
+    assert keras.ops.all(keras.ops.equal(expected_shape, actual_shape)), (
+        f"Expected shape {expected_shape}, got {actual_shape}"
+    )
+
+    # Test inverse sampling with jacobian approximation (expensive)
+    result = simple_compositional_diffusion_model._inverse_compositional(
+        z=compositional_state,
+        conditions=compositional_conditions,
+        compute_prior_score=None,
+        density=False,
+        training=False,
+        method="euler_maruyama",
+        steps=5,
+        start_time=1.0,
+        stop_time=0.0,
+        mini_batch_size=1,
+        use_jac=True,
     )
 
     expected_shape = keras.ops.shape(compositional_state)

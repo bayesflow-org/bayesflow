@@ -113,20 +113,18 @@ def compositional_conditions():
     """Create test conditions for compositional sampling."""
     batch_size = 2
     n_compositional = 3
-    n_samples = 4
     condition_dim = 5
 
-    return keras.random.normal((batch_size, n_compositional, n_samples, condition_dim))
+    return keras.random.normal((batch_size, n_compositional, condition_dim))
 
 
 @pytest.fixture
 def compositional_state():
     """Create test state for compositional sampling."""
     batch_size = 2
-    n_samples = 4
     param_dim = 3
 
-    return keras.random.normal((batch_size, n_samples, param_dim))
+    return keras.random.normal((batch_size, param_dim))
 
 
 @pytest.fixture

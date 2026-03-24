@@ -117,7 +117,7 @@ class Approximator(BackendApproximator):
         data: Mapping[str, np.ndarray] | None,
         *,
         stage: str = "inference",
-        **adapter_kwargs,
+        **kwargs,
     ) -> tuple[dict[str, Tensor], Tensor | None, Tensor | None]:
         """Adapt raw user data, tensorize, standardize conditions, and resolve.
 
@@ -134,8 +134,8 @@ class Approximator(BackendApproximator):
             Raw user data dictionary.
         stage : str, optional
             Stage for standardization (default is ``"inference"``).
-        **adapter_kwargs
-            Extra keyword arguments forwarded to the adapter.
+        **kwargs
+            Extra keyword arguments forwarded to the adapter and summary network.
 
         Returns
         -------
@@ -150,7 +150,7 @@ class Approximator(BackendApproximator):
         if not data:
             return None, {}, None
 
-        adapted = self.adapter(data, strict=False, **adapter_kwargs)
+        adapted = self.adapter(data, strict=False, **kwargs)
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
         summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
@@ -498,13 +498,16 @@ class Approximator(BackendApproximator):
         summaries : np.ndarray
             The learned summary statistics. Returns None if no summary network is present.
         """
+        if not conditions:
+            raise ValueError("No valid conditions provided for summarization.")
+
         if not hasattr(self, "summary_network") or self.summary_network is None:
             raise ValueError("Summary network is not available. This approximator does not support summarization.")
 
         if not hasattr(self, "adapter"):
             raise ValueError("Adapter is not available.")
 
-        _, _, summary_outputs = self._prepare_conditions(conditions)
+        _, _, summary_outputs = self._prepare_conditions(conditions, **kwargs)
 
         return keras.ops.convert_to_numpy(summary_outputs)
 

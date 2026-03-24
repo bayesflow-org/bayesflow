@@ -301,6 +301,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                 compositional_score = compositional_score + guidance
 
         compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
+        print(ops.mean(compositional_score))
         return compositional_score
 
     def _compositional_score_direct(
@@ -410,7 +411,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             # Combined score using compositional formula (1-beta) prior_score + beta posterior_score
             # Per-dimension variance across observations
             var_d = ops.sum((delta - ops.mean(delta, axis=1, keepdims=True)) ** 2, axis=1, keepdims=True) / (
-                mini_batch_size - 1.0
+                ops.maximum(mini_batch_size - 1.0, 1.0)
             )
             w_d = 1.0 / (var_d + eps_var)  # (B, 1, m)
             w_d_sum = ops.sum(w_d, axis=1)

@@ -9,7 +9,7 @@ from .simulator import Simulator
 
 
 @singledispatch
-def make_simulator(arg, *_, **__):
+def make_simulator(arg, *_, **__) -> Simulator:
     """
     This is a dispatch function that will accept a list of simulators (callables) returning
     dictionaries with simulated outputs. The outputs of simulators will be passed to following

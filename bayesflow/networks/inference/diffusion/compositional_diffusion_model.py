@@ -289,6 +289,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         mini_batch_size: int | None = None,
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
+        mean_variant: Literal["logarithmic"] | None = "logarithmic",
         guidance_constraints: Mapping[str, Any] = None,
         guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
         **kwargs,
@@ -313,6 +314,8 @@ class CompositionalDiffusionModel(DiffusionModel):
             Whether in training mode
         clip: (float, float), optional
             Whether to clip the predicted x for numerical stability at given values.
+        mean_variant: Literal["logarithmic"], optional
+            Instead of a standard mean of the scores use a "logarithmic" mean instead.
         guidance_constraints : dict[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
@@ -352,18 +355,27 @@ class CompositionalDiffusionModel(DiffusionModel):
             conditions_batch = conditions
             mini_batch_size = n_compositional
 
+        needs_network_prior = compute_prior_score is None
+        if needs_network_prior:
+            zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))  # (B, d)
+            cond_with_prior = ops.concatenate(
+                [conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1
+            )  # (B, n_obs+1, d)
+            n_total = mini_batch_size + 1
+        else:
+            cond_with_prior = conditions_batch
+            n_total = mini_batch_size
+
         # expand and flatten compositional dimension for score computation
         dims = tuple(ops.shape(xz)[1:])
         snr_dims = tuple(ops.shape(log_snr_t)[1:])
-        conditions_dims = tuple(ops.shape(conditions_batch)[2:])
-        xz_reshaped = ops.reshape(
-            ops.repeat(ops.expand_dims(xz, 1), mini_batch_size, axis=1), (batch_size * mini_batch_size,) + dims
-        )
+        conditions_dims = tuple(ops.shape(cond_with_prior)[2:])
+        xz_reshaped = ops.reshape(ops.repeat(ops.expand_dims(xz, 1), n_total, axis=1), (batch_size * n_total,) + dims)
         log_snr_reshaped = ops.reshape(
-            ops.repeat(ops.expand_dims(log_snr_t, 1), mini_batch_size, axis=1),
-            (batch_size * mini_batch_size,) + snr_dims,
+            ops.repeat(ops.expand_dims(log_snr_t, 1), n_total, axis=1),
+            (batch_size * n_total,) + snr_dims,
         )
-        conditions_flat = ops.reshape(conditions_batch, (batch_size * mini_batch_size,) + conditions_dims)
+        conditions_flat = ops.reshape(cond_with_prior, (batch_size * n_total,) + conditions_dims)
         scores_flat = self.score(
             xz_reshaped,
             log_snr_t=log_snr_reshaped,
@@ -372,23 +384,24 @@ class CompositionalDiffusionModel(DiffusionModel):
             **kwargs,
             # no guidance passed here, only applied once at the end
         )
-        individual_scores = ops.reshape(scores_flat, (batch_size, mini_batch_size) + dims)
+        all_scores = ops.reshape(scores_flat, (batch_size, n_total) + dims)
+        individual_scores = all_scores[:, :mini_batch_size]
 
-        # Compute prior score component
-        if compute_prior_score is None:
-            prior_score = self.score(
-                xz,
-                log_snr_t=log_snr_t,
-                conditions=ops.take(conditions, 0, axis=1) * 0,  # unconditional score
-                training=training,
-                **kwargs,
-            )
+        if needs_network_prior:
+            prior_score = all_scores[:, -1]
         else:
             prior_score = (1.0 - time) * compute_prior_score(xz)
         weighted_prior_score = (1.0 - n_compositional) * prior_score
 
         # Sum individual scores across compositional dimensions
-        summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
+        if mean_variant is None:
+            mean_scores = ops.mean(individual_scores, axis=1)
+        elif mean_variant == "logarithmic":
+            mean_scores = ops.log(ops.mean(ops.exp(individual_scores), axis=1))
+        else:
+            raise ValueError("mean_variant not recognized")
+
+        summed_individual_scores = n_compositional * mean_scores
 
         # Combined score using compositional formula: (1-n)(1-t)∇log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
         compositional_score = self.compositional_bridge(time) * (weighted_prior_score + summed_individual_scores)
@@ -497,33 +510,14 @@ class CompositionalDiffusionModel(DiffusionModel):
         batch_size, n_compositional = ops.shape(conditions)[:2]
         m = ops.shape(xz)[-1]
 
-        # --- noise schedule ----------------------------------------------------
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
         time = ops.cast(time, dtype=ops.dtype(xz))
 
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-        alpha_t_scalar = float(ops.convert_to_numpy(ops.reshape(alpha_t, (-1,))[0]))
-        upsilon_t_scalar = float(ops.convert_to_numpy(ops.reshape(sigma_t, (-1,))[0])) ** 2
-        upsilon_t_scalar = max(upsilon_t_scalar, 1e-8)
-        alpha_t_scalar = max(alpha_t_scalar, 1e-8)
+        upsilon_t = ops.maximum(ops.reshape(sigma_t, (-1,))[0] ** 2, 1e-8)
 
-        I_m = ops.eye(m, dtype=ops.dtype(xz))
-        I_m_batch = ops.broadcast_to(I_m, (batch_size, m, m))
-
-        def _get_score_prec(xz_in, cond_in, train_flag):
-            return self._score_and_precision(
-                xz=xz_in,
-                log_snr_t=log_snr_t,
-                conditions=cond_in,
-                alpha_t_scalar=alpha_t_scalar,
-                upsilon_t_scalar=upsilon_t_scalar,
-                I_m_batch=I_m_batch,
-                training=train_flag,
-                **kwargs,
-            )
-
-        # mini-batch observation selection
+        # mini-batch observation
         if mini_batch_size is not None and mini_batch_size < n_compositional:
             idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)[:mini_batch_size]
             conditions_batch = ops.take(conditions, idx, axis=1)
@@ -531,47 +525,86 @@ class CompositionalDiffusionModel(DiffusionModel):
             conditions_batch = conditions
             mini_batch_size = n_compositional
 
-        # individual posterior scores + precisions
-        sum_prec_score = ops.zeros_like(xz)  # (B, m)
-        sum_prec = ops.zeros((batch_size, m, m), dtype=ops.dtype(xz))
+        # append prior as extra observation (zero-conditioned)
+        zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))  # (B, d)
+        cond_with_prior = ops.concatenate([conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1)  # (B, n_obs+1, d)
 
-        for j in range(mini_batch_size):
-            cond_j = ops.take(conditions_batch, j, axis=1)  # (B, d)
-            s_j, prec_j = _get_score_prec(xz, cond_j, training)
+        n_total = mini_batch_size + 1  # observations + prior
 
-            prec_s_j = ops.squeeze(ops.matmul(prec_j, ops.expand_dims(s_j, -1)), axis=-1)
-            sum_prec_score = sum_prec_score + prec_s_j
-            sum_prec = sum_prec + prec_j
+        dims = tuple(ops.shape(xz)[1:])
+        snr_dims = tuple(ops.shape(log_snr_t)[1:])
+        cond_dims = tuple(ops.shape(cond_with_prior)[2:])
+
+        # Repeat xz and log_snr_t for each observation+prior
+        xz_rep = ops.reshape(
+            ops.repeat(ops.expand_dims(xz, 1), n_total, axis=1),
+            (batch_size * n_total,) + dims,
+        )
+        lsnr_rep = ops.reshape(
+            ops.repeat(ops.expand_dims(log_snr_t, 1), n_total, axis=1),
+            (batch_size * n_total,) + snr_dims,
+        )
+        cond_flat = ops.reshape(
+            cond_with_prior,
+            (batch_size * n_total,) + cond_dims,
+        )
+
+        all_scores, all_jacs = self._compute_score_and_jacobian(
+            xz=xz_rep,
+            log_snr_t=lsnr_rep,
+            conditions=cond_flat,
+            training=training,
+            **kwargs,
+        )
+
+        # Reshape: (B, n_total, m) and (B, n_total, m, m)
+        all_scores = ops.reshape(all_scores, (batch_size, n_total, m))
+        all_jacs = ops.reshape(all_jacs, (batch_size, n_total, m, m))
+
+        # --- compute P_k = (I + υ J_k)⁻¹ for all k at once ---------------
+        I_m = ops.eye(m, dtype=ops.dtype(xz))
+        I_4d = ops.broadcast_to(
+            ops.reshape(I_m, (1, 1, m, m)),
+            (batch_size, n_total, m, m),
+        )
+        A_all = I_4d + upsilon_t * all_jacs
+        P_all = ops.inv(A_all)
+
+        # P_k @ s_k for all k: (B, n_total, m, 1) → (B, n_total, m)
+        scores_col = ops.expand_dims(all_scores, -1)
+        Ps_all = ops.squeeze(ops.matmul(P_all, scores_col), axis=-1)  # (B, n_total, m)
+
+        # split observations and prior
+        P_obs = P_all[:, :mini_batch_size]  # (B, n_obs, m, m)
+        Ps_obs = Ps_all[:, :mini_batch_size]  # (B, n_obs, m)
+        P_lambda = P_all[:, -1]  # (B, m, m)
+
+        # Sum over observations
+        sum_P = ops.sum(P_obs, axis=1)  # (B, m, m)
+        sum_Ps = ops.sum(Ps_obs, axis=1)  # (B, m)
 
         # Scale for mini-batch estimator
         if mini_batch_size < n_compositional:
-            scale = float(n_compositional) / float(mini_batch_size)
-            sum_prec_score = scale * sum_prec_score
-            sum_prec = scale * sum_prec
+            scale = n_compositional / mini_batch_size
+            sum_P = scale * sum_P
+            sum_Ps = scale * sum_Ps
 
-        # score + precision from unconditional score
-        zero_cond = ops.take(conditions, 0, axis=1) * 0.0
-
-        s_lambda_uncond, prec_lambda = _get_score_prec(xz, zero_cond, training)
-
+        # prior score
         if compute_prior_score is not None:
             s_lambda = (1.0 - time) * compute_prior_score(xz)
+            P_lambda_s = ops.squeeze(ops.matmul(P_lambda, ops.expand_dims(s_lambda, -1)), axis=-1)
         else:
-            s_lambda = s_lambda_uncond
+            P_lambda_s = Ps_all[:, -1]  # already computed
 
-        # assemble Λ and s̃, solve
+        # solve: Λ x = s̃
         w_prior = 1 - n_compositional
-        prec_lambda_s = ops.squeeze(ops.matmul(prec_lambda, ops.expand_dims(s_lambda, -1)), axis=-1)
-        Lambda = sum_prec + w_prior * prec_lambda  # (B, m, m)
-        s_tilde = sum_prec_score + w_prior * prec_lambda_s  # (B, m)
+        I_m_batch = ops.broadcast_to(I_m, (batch_size, m, m))
 
-        # Tikhonov regularization
-        Lambda = Lambda + regularize_precision * I_m_batch
+        Lambda = sum_P + w_prior * P_lambda + regularize_precision * I_m_batch
+        s_tilde = sum_Ps + w_prior * P_lambda_s
 
-        # s_{1:n} = Λ⁻¹ s̃
         compositional_score = self._linsolve_batched(Lambda, s_tilde)
 
-        # --- optional guidance --------------------------------------------------
         if guidance_constraints is not None or guidance_function is not None:
             x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
 
@@ -593,16 +626,13 @@ class CompositionalDiffusionModel(DiffusionModel):
         x = ops.solve(Lambda, rhs_col)
         return ops.squeeze(x, axis=-1)
 
-    def _score_and_precision(
+    def _compute_score_and_jacobian(
         self,
         xz: Tensor,
         log_snr_t: Tensor,
         conditions: Tensor,
-        alpha_t_scalar: float,
-        upsilon_t_scalar: float,
-        I_m_batch: Tensor,
         training: bool = False,
-        **subnet_kwargs,
+        **kwargs,
     ) -> tuple[Tensor, Tensor]:
         """Compute score and JAC precision Σ̂⁻¹ for one conditioning input using full Jacobian J = ∇_{θ_t} s(θ_t).
 
@@ -626,24 +656,18 @@ class CompositionalDiffusionModel(DiffusionModel):
                         log_snr_t=log_snr_t,
                         conditions=conditions,
                         training=training,
-                        **subnet_kwargs,
+                        **kwargs,
                     )
 
-                # Forward pass + setup for VJP
                 score, vjp_fn = jax.vjp(phi_fn, xz)
 
-                # Build Jacobian row by row: row i = vjp(e_i)
-                # e_i has shape (B, m) with 1 in column i
                 rows = []
                 for i in range(m):
-                    e_i = jnp.zeros_like(score)
-                    e_i = e_i.at[:, i].set(1.0)
-                    # vjp_fn(e_i) returns (∂L/∂θ,) where L = e_i^T s
-                    # i.e. row_i[b, k] = ∂s_i/∂θ_k
+                    e_i = jnp.zeros_like(score).at[:, i].set(1.0)
                     (row_i,) = vjp_fn(e_i)
-                    rows.append(jnp.expand_dims(row_i, axis=1))  # (B, 1, m)
+                    rows.append(jnp.expand_dims(row_i, axis=1))
 
-                jacobian = jnp.concatenate(rows, axis=1)  # (B, m, m)
+                jacobian = jnp.concatenate(rows, axis=1)
 
             case "tensorflow":
                 import tensorflow as tf
@@ -655,25 +679,20 @@ class CompositionalDiffusionModel(DiffusionModel):
                         log_snr_t=log_snr_t,
                         conditions=conditions,
                         training=training,
-                        **subnet_kwargs,
+                        **kwargs,
                     )
 
-                # Build Jacobian row by row via output_gradients = e_i
-                rows = []
-                for i in range(m):
-                    e_i = tf.zeros_like(score)
-                    # Use tensor_scatter_nd_update for the column
-                    indices = tf.stack([tf.range(tf.shape(score)[0]), tf.fill([tf.shape(score)[0]], i)], axis=1)
-                    e_i = tf.tensor_scatter_nd_update(e_i, indices, tf.ones([tf.shape(score)[0]], dtype=score.dtype))
-                    row_i = tape.gradient(
-                        target=score,
-                        sources=xz,
-                        output_gradients=e_i,
-                    )
-                    rows.append(tf.expand_dims(row_i, axis=1))
+                if m <= 32:  # for larger dimension
+                    rows = []
+                    for i in range(m):
+                        e_i = tf.one_hot(tf.fill([tf.shape(score)[0]], i), depth=m, dtype=score.dtype)
+                        row_i = tape.gradient(score, xz, output_gradients=e_i)
+                        rows.append(tf.expand_dims(row_i, axis=1))
+                    jacobian = tf.concat(rows, axis=1)
+                else:
+                    jacobian = tape.batch_jacobian(score, xz, experimental_use_pfor=False)
 
                 del tape
-                jacobian = tf.concat(rows, axis=1)  # (B, m, m)
 
             case "torch":
                 import torch
@@ -681,38 +700,34 @@ class CompositionalDiffusionModel(DiffusionModel):
                 with torch.enable_grad():
                     xz_leaf = xz.detach().requires_grad_(True)
 
-                    score_val = self.score(
+                    score = self.score(
                         xz=xz_leaf,
                         log_snr_t=log_snr_t,
                         conditions=conditions,
                         training=training,
-                        **subnet_kwargs,
+                        **kwargs,
                     )
 
-                    # Build Jacobian row by row
                     rows = []
                     for i in range(m):
-                        e_i = torch.zeros_like(score_val)
+                        e_i = torch.zeros_like(score)
                         e_i[:, i] = 1.0
                         (row_i,) = torch.autograd.grad(
-                            outputs=score_val,
+                            outputs=score,
                             inputs=xz_leaf,
                             grad_outputs=e_i,
                             create_graph=False,
-                            retain_graph=(i < m - 1),  # keep graph for all but last
+                            retain_graph=(i < m - 1),
                         )
                         rows.append(row_i.unsqueeze(1))
 
-                score = score_val.detach()
-                jacobian = torch.cat(rows, dim=1)  # (B, m, m)
+                    jacobian = torch.cat(rows, dim=1)
+
+                score = score.detach()
 
             case _:
                 raise NotImplementedError(f"JAC Jacobian not implemented for backend '{backend}'. ")
-
-        A = I_m_batch + upsilon_t_scalar * jacobian
-        A_inv = ops.inv(A)
-        prec = (alpha_t_scalar / upsilon_t_scalar) * A_inv
-        return score, prec
+        return score, jacobian
 
     @staticmethod
     def _maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz):

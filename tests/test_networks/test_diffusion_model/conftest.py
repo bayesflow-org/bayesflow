@@ -112,7 +112,7 @@ def simple_compositional_diffusion_model():
 def compositional_conditions():
     """Create test conditions for compositional sampling."""
     batch_size = 2
-    n_compositional = 3
+    n_compositional = 4
     condition_dim = 5
 
     return keras.random.normal((batch_size, n_compositional, condition_dim))
@@ -122,7 +122,7 @@ def compositional_conditions():
 def compositional_state():
     """Create test state for compositional sampling."""
     batch_size = 2
-    param_dim = 3
+    param_dim = 10
 
     return keras.random.normal((batch_size, param_dim))
 

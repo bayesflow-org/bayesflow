@@ -63,7 +63,7 @@ def test_inverse_compositional_basic(
         steps=5,
         start_time=1.0,
         stop_time=0.0,
-        mini_batch_size=1,
+        mini_batch_size=2,
     )
 
     expected_shape = keras.ops.shape(compositional_state)
@@ -81,10 +81,10 @@ def test_inverse_compositional_basic(
         density=False,
         training=False,
         method="euler_maruyama",
-        steps=5,
+        steps=10,
         start_time=1.0,
         stop_time=0.0,
-        mini_batch_size=1,
+        mini_batch_size=2,
     )
 
     expected_shape = keras.ops.shape(compositional_state)
@@ -105,7 +105,7 @@ def test_inverse_compositional_basic(
         steps=5,
         start_time=1.0,
         stop_time=0.0,
-        mini_batch_size=1,
+        mini_batch_size=2,
         use_jac=True,
     )
 

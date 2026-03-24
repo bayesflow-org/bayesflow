@@ -237,11 +237,8 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-        if conditions is None:
-            resolved_conditions, summary_outputs = None, None
-            adapted = {}
-        else:
-            resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions)
+
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions)
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 

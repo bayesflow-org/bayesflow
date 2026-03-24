@@ -114,7 +114,7 @@ class Approximator(BackendApproximator):
 
     def _prepare_conditions(
         self,
-        data: Mapping[str, np.ndarray],
+        data: Mapping[str, np.ndarray] | None,
         *,
         stage: str = "inference",
         **adapter_kwargs,
@@ -141,11 +141,15 @@ class Approximator(BackendApproximator):
         -------
         resolved_conditions : Tensor or None
             Standardized inference conditions concatenated with summary outputs.
-        adapted : dict[str, Tensor]
-            The full adapted and tensorized dictionary.
+        adapted : dict[str, Tensor] or {}
+            The full adapted and tensorized dictionary or {} if data is None or empty.
         summary_outputs : Tensor or None
             Raw summary network outputs, or ``None`` if no summary network.
         """
+
+        if not data:
+            return None, {}, None
+
         adapted = self.adapter(data, strict=False, **adapter_kwargs)
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 

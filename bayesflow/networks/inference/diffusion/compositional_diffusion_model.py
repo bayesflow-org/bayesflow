@@ -12,8 +12,8 @@ from bayesflow.utils import (
     integrate_stochastic,
     logging,
     maybe_mask_tensor,
-    STOCHASTIC_METHODS,
     DETERMINISTIC_METHODS,
+    STOCHASTIC_METHODS,
 )
 from bayesflow.utils.serialization import serializable
 
@@ -21,7 +21,6 @@ from .diffusion_model import DiffusionModel
 from .schedules.noise_schedule import NoiseSchedule
 
 
-# disable module check, use potential module after moving from experimental
 @serializable("bayesflow.networks", disable_module_check=True)
 class CompositionalDiffusionModel(DiffusionModel):
     """Compositional Diffusion Model for Amortized Bayesian Inference. Allows to learn a single
@@ -207,6 +206,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
         use_jac: bool = False,
+        weight_individual_scores: bool = True,
         guidance_constraints: Mapping[str, Any] = None,
         guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
         **kwargs,
@@ -232,6 +232,9 @@ class CompositionalDiffusionModel(DiffusionModel):
             Whether to clip the predicted x for numerical stability at given values.
         use_jac: bool, optional
             Whether to use the Jacobian-based compositional score instead of the direct sum.
+        weight_individual_scores: bool
+            Whether to weight individual score updates instead of simply aggregating them.
+            Only applies, if use_jac=False.
         guidance_constraints : dict[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
@@ -252,101 +255,114 @@ class CompositionalDiffusionModel(DiffusionModel):
         if conditions is None:
             raise ValueError("Conditions are required for compositional sampling")
 
-        if use_jac:
-            compositional_score = self.compositional_score_jac(
+        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+        time = ops.cast(time, dtype=ops.dtype(xz))
+
+        if not use_jac:
+            compositional_score = self._compositional_score_direct(
                 xz=xz,
                 time=time,
+                log_snr_t=log_snr_t,
+                alpha_t=alpha_t,
+                sigma_t=sigma_t,
                 conditions=conditions,
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
+                weight_individual_scores=weight_individual_scores,
                 training=training,
-                clip=clip,
-                guidance_constraints=guidance_constraints,
-                guidance_function=guidance_function,
                 **kwargs,
             )
         else:
-            compositional_score = self.compositional_score_direct(
+            # uses a Gaussian approximation, can be very slow
+            compositional_score = self._compositional_score_jac(
                 xz=xz,
                 time=time,
+                log_snr_t=log_snr_t,
+                sigma_t=sigma_t,
                 conditions=conditions,
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
                 training=training,
-                clip=clip,
-                guidance_constraints=guidance_constraints,
-                guidance_function=guidance_function,
                 **kwargs,
             )
+
+        if guidance_constraints is not None or guidance_function is not None:
+            # x_pred = (z + sigma_t ** 2 * score) / alpha_t
+            x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
+
+            if guidance_constraints is not None:
+                guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
+                compositional_score = compositional_score + guidance
+
+            if guidance_function is not None:
+                guidance = guidance_function(x=x_pred, time=time)
+                compositional_score = compositional_score + guidance
+
+        compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
         return compositional_score
 
-    def compositional_score_direct(
+    def _compositional_score_direct(
         self,
         xz: Tensor,
         time: float | Tensor,
+        log_snr_t: Tensor,
+        alpha_t: Tensor,
+        sigma_t: Tensor,
         conditions: Tensor,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
+        weight_individual_scores: bool = True,
+        eps_var: float = 1e-8,
         training: bool = False,
-        clip: tuple[float, float] | None = (-3, 3),
-        guidance_constraints: Mapping[str, Any] = None,
-        guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
         **kwargs,
     ) -> Tensor:
         """
         Computes the compositional score for multiple datasets using the formula:
         s_ψ(θ,t,Y) = (1-n)(1-t) ∇_θ log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
+        with possible weighting of the scores.
 
         Parameters
         ----------
         xz : Tensor
             The current state of the latent variable, shape (n_datasets, n_compositional, ...)
         time : float or Tensor
-            Time step for the diffusion process
+            Time step for the diffusion process.
+        log_snr_t : Tensor
+            Log SNR at time t, broadcastable to shape of xz.
+        alpha_t : Tensor
+            Alpha component of noise schedule at time t, broadcastable to shape of xz.
+        sigma_t : Tensor
+            Sigma component of noise schedule at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
+        weight_individual_scores: bool
+            Whether to weight individual score updates instead of simply aggregating them.
+        eps_var: float
+            Small constant added to variance for numerical stability when weighting scores.
         training : bool, optional
-            Whether in training mode
-        clip: (float, float), optional
-            Whether to clip the predicted x for numerical stability at given values.
-        guidance_constraints : dict[str, Any], optional
-            A dictionary of parameters for computing a guidance constraint term, which is
-            added to the score for guided sampling. The specific keys and values depend on
-            the implementation of `guidance_constraint_term`.
-        guidance_function : Callable[[Tensor, Tensor], Tensor], optional
-            A custom function for computing a guidance term, which is added to the score
-            for guided sampling. The function should accept the predicted clean signal
-            `x_pred` and the current time `time` as inputs and return a tensor of the same
-            shape as `xz`.
+            Whether in training mode.
         **kwargs
-            Additional keyword arguments passed to the individual score computation
+            Additional keyword arguments passed to the individual score computation.
 
         Returns
         -------
         Tensor
             Compositional score of same shape as input xz
         """
-        if conditions is None:
-            raise ValueError("Conditions are required for compositional sampling")
-
         # Get shapes for compositional structure
         batch_size, n_compositional = ops.shape(conditions)[:2]
 
-        # Calculate standard noise schedule components
-        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-        time = ops.cast(time, dtype=ops.dtype(xz))
-
-        # Compute individual dataset scores
         if mini_batch_size is not None and mini_batch_size < n_compositional:
             # sample random indices for mini-batch processing
-            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)
-            mini_batch_idx = mini_batch_idx[:mini_batch_size]
+            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)[
+                :mini_batch_size
+            ]
             conditions_batch = ops.take(conditions, mini_batch_idx, axis=1)
         else:
             conditions_batch = conditions
@@ -362,6 +378,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         else:
             cond_with_prior = conditions_batch
             n_total = mini_batch_size
+        scale = n_compositional / mini_batch_size
 
         # expand and flatten compositional dimension for score computation
         dims = tuple(ops.shape(xz)[1:])
@@ -379,7 +396,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             conditions=conditions_flat,
             training=training,
             **kwargs,
-            # no guidance passed here, only applied once at the end
         )
         all_scores = ops.reshape(scores_flat, (batch_size, n_total) + dims)
         individual_scores = all_scores[:, :mini_batch_size]
@@ -388,41 +404,37 @@ class CompositionalDiffusionModel(DiffusionModel):
             prior_score = all_scores[:, -1]
         else:
             prior_score = (1.0 - time) * compute_prior_score(xz)
-        weighted_prior_score = (1.0 - n_compositional) * prior_score
 
-        # Sum individual scores across compositional dimensions
-        summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
+        delta = individual_scores - ops.expand_dims(prior_score, axis=1)
+        if weight_individual_scores:
+            # Combined score using compositional formula (1-beta) prior_score + beta posterior_score
+            # Per-dimension variance across observations
+            var_d = ops.sum((delta - ops.mean(delta, axis=1, keepdims=True)) ** 2, axis=1, keepdims=True) / (
+                mini_batch_size - 1.0
+            )
+            w_d = 1.0 / (var_d + eps_var)  # (B, 1, m)
+            w_d_sum = ops.sum(w_d, axis=1)
+            weighted_delta = scale * ops.sum(delta * w_d, axis=1) / w_d_sum
+            gamma = ops.square(alpha_t) / ops.square(sigma_t)
+            update_delta = gamma * weighted_delta / (1.0 + gamma * scale * w_d_sum)
+        else:
+            update_delta = scale * ops.sum(delta, axis=1)
 
-        # Combined score using compositional formula: (1-n)(1-t)∇log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
-        compositional_score = self.compositional_bridge(time) * (weighted_prior_score + summed_individual_scores)
-
-        if guidance_constraints is not None or guidance_function is not None:
-            # x_pred = (z + sigma_t ** 2 * score) / alpha_t
-            x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
-
-            if guidance_constraints is not None:
-                guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
-                compositional_score = compositional_score + guidance
-
-            if guidance_function is not None:
-                guidance = guidance_function(x=x_pred, time=time)
-                compositional_score = compositional_score + guidance
-
-        compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
+        # Combined score using compositional formula: (1-n) prior_score + Σᵢ₌₁ⁿ posterior_score
+        compositional_score = self.compositional_bridge(time) * (prior_score + update_delta)
         return compositional_score
 
-    def compositional_score_jac(
+    def _compositional_score_jac(
         self,
         xz: Tensor,
         time: float | Tensor,
+        log_snr_t: Tensor,
+        sigma_t: Tensor,
         conditions: Tensor,
         compute_prior_score: Callable[[Tensor], Tensor] | None = None,
         mini_batch_size: int | None = None,
         training: bool = False,
         regularize_precision: float = 1e-6,
-        clip: tuple[float, float] | None = (-3, 3),
-        guidance_constraints: Mapping[str, Any] | None = None,
-        guidance_function: Callable[[Tensor, Tensor], Tensor] | None = None,
         **kwargs,
     ) -> Tensor:
         """Stabilized version of JAC compositional score (Linhart et al. 2026) with mini-batching from
@@ -436,7 +448,11 @@ class CompositionalDiffusionModel(DiffusionModel):
         xz : Tensor
             The current state of the latent variable, shape (n_datasets, n_compositional, ...)
         time : float or Tensor
-            Time step for the diffusion process
+            Time step for the diffusion process.
+        log_snr_t : Tensor
+            Log SNR at time t, broadcastable to shape of xz.
+        sigma_t : Tensor
+            Sigma component of noise schedule at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
         compute_prior_score: Callable, optional
@@ -444,73 +460,27 @@ class CompositionalDiffusionModel(DiffusionModel):
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
-            Whether in training mode
+            Whether in training mode.
         regularize_precision : float
             Tikhonov regularization added to Λ before solving for numerical stability.
-        clip: (float, float), optional
-            Whether to clip the predicted x for numerical stability at given values.
-        guidance_constraints : dict[str, Any], optional
-            A dictionary of parameters for computing a guidance constraint term, which is
-            added to the score for guided sampling. The specific keys and values depend on
-            the implementation of `guidance_constraint_term`.
-        guidance_function : Callable[[Tensor, Tensor], Tensor], optional
-            A custom function for computing a guidance term, which is added to the score
-            for guided sampling. The function should accept the predicted clean signal
-            `x_pred` and the current time `time` as inputs and return a tensor of the same
-            shape as `xz`.
         **kwargs
-            Additional keyword arguments passed to the individual score computation
+            Additional keyword arguments passed to the individual score computation.
 
         Returns
         -------
         Tensor
             Compositional score of same shape as input xz
-        Parameters
-        ----------
-        xz : Tensor
-            Current latent state, shape (batch_size, m).
-        time : float or Tensor
-            Diffusion time in [0, 1].
-        conditions : Tensor
-            Conditioning observations, shape (batch_size, n_compositional, ...).
-        compute_prior_score : callable, optional
-            θ ↦ ∇_θ log λ(θ).  If provided, used for the score value (scaled
-            by 1−t); the unconditional Jacobian is still used for the prior
-            precision.  If None, the unconditional network score serves as both.
-        mini_batch_size : int, optional
-            Sub-sample observations for score computation.
-        training : bool
-        guidance_constraints : dict, optional
-        guidance_function : callable, optional
-        regularize_precision : float
-            Tikhonov regularization added to Λ before solving.
-        clip : tuple[float, float], optional
-            Whether to clip the predicted x for numerical stability at given values.
-        **kwargs
-            Forwarded to individual score evaluations.
-
-        Returns
-        -------
-        Tensor
-            Compositional score, same shape as xz.
         """
-        if conditions is None:
-            raise ValueError("Conditions are required for compositional sampling")
-
         batch_size, n_compositional = ops.shape(conditions)[:2]
         m = ops.shape(xz)[-1]
-
-        log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
-        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
-        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
-        time = ops.cast(time, dtype=ops.dtype(xz))
-
         upsilon_t = ops.maximum(ops.reshape(sigma_t, (-1,))[0] ** 2, 1e-8)
 
-        # mini-batch observation
         if mini_batch_size is not None and mini_batch_size < n_compositional:
-            idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)[:mini_batch_size]
-            conditions_batch = ops.take(conditions, idx, axis=1)
+            # sample random indices for mini-batch processing
+            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)[
+                :mini_batch_size
+            ]
+            conditions_batch = ops.take(conditions, mini_batch_idx, axis=1)
         else:
             conditions_batch = conditions
             mini_batch_size = n_compositional
@@ -590,30 +560,17 @@ class CompositionalDiffusionModel(DiffusionModel):
         w_prior = 1 - n_compositional
         I_m_batch = ops.broadcast_to(I_m, (batch_size, m, m))
 
-        Lambda = sum_P + w_prior * P_lambda + regularize_precision * I_m_batch
+        lambda_matrix = sum_P + w_prior * P_lambda + regularize_precision * I_m_batch
         s_tilde = sum_Ps + w_prior * P_lambda_s
 
-        compositional_score = self._linsolve_batched(Lambda, s_tilde)
-
-        if guidance_constraints is not None or guidance_function is not None:
-            x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
-
-            if guidance_constraints is not None:
-                guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
-                compositional_score = compositional_score + guidance
-
-            if guidance_function is not None:
-                guidance = guidance_function(x=x_pred, time=time)
-                compositional_score = compositional_score + guidance
-
-        compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
+        compositional_score = self._linsolve_batched(lambda_matrix, s_tilde)
         return compositional_score
 
     @staticmethod
-    def _linsolve_batched(Lambda: Tensor, rhs: Tensor) -> Tensor:
+    def _linsolve_batched(lambda_matrix: Tensor, rhs: Tensor) -> Tensor:
         """Solve Λ x = rhs for x, batched.  Lambda: (B,m,m), rhs: (B,m)."""
         rhs_col = ops.expand_dims(rhs, -1)
-        x = ops.solve(Lambda, rhs_col)
+        x = ops.solve(lambda_matrix, rhs_col)
         return ops.squeeze(x, axis=-1)
 
     def _compute_score_and_jacobian(

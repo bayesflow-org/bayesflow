@@ -17,8 +17,8 @@ from bayesflow.utils import (
     random_mask,
     randomly_mask_along_axis,
     weighted_mean,
-    STOCHASTIC_METHODS,
     DETERMINISTIC_METHODS,
+    STOCHASTIC_METHODS,
 )
 from bayesflow.utils.serialization import serialize, serializable
 

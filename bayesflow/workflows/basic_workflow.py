@@ -269,7 +269,7 @@ class BasicWorkflow(Workflow):
         self,
         *,
         num_samples: int,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
@@ -282,7 +282,7 @@ class BasicWorkflow(Workflow):
         ----------
         num_samples : int
             The number of samples to generate.
-        conditions : dict[str, np.ndarray]
+        conditions : dict[str, np.ndarray], optional
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
@@ -325,7 +325,7 @@ class BasicWorkflow(Workflow):
     def estimate(
         self,
         *,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
         """
@@ -333,7 +333,7 @@ class BasicWorkflow(Workflow):
 
         Parameters
         ----------
-        conditions : Mapping[str, np.ndarray]
+        conditions : Mapping[str, np.ndarray], optional
             A dictionary mapping variable names to arrays representing the conditions for the estimation process.
         **kwargs : dict | str
             Additional keyword arguments passed to underlying processing functions.

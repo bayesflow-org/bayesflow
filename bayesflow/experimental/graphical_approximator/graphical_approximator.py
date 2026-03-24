@@ -24,6 +24,7 @@ from .network_assignment import (
     inference_variables_by_network,
     summary_inputs_by_network,
 )
+from .non_exchangeable_wrapper import NonExchangeableWrapper
 from .shape_inference import (
     inference_condition_shapes_by_network,
     inference_variable_shapes_by_network,
@@ -48,9 +49,9 @@ class GraphicalApproximator(Approximator):
         graph: InvertedGraph,
         *,
         adapter: Adapter | Literal["auto"] = "auto",
-        inference_networks: Sequence[InferenceNetwork],
-        summary_networks: Sequence[SummaryNetwork] | None = None,
-        standardize: str | Sequence[str] | None = "all",
+        inference_networks: list[InferenceNetwork],
+        summary_networks: list[SummaryNetwork] | None = None,
+        standardize: str | list[str] | None = "all",
         **kwargs,
     ):
         """
@@ -103,6 +104,19 @@ class GraphicalApproximator(Approximator):
         if adapter == "auto":
             self.adapter = GraphicalApproximator.build_adapter()
 
+        summary_input_shapes = summary_input_shapes_by_network(self)
+        inference_variable_shapes = inference_variable_shapes_by_network(self)
+
+        # wrap inference network in NonExchangeableWrapper if node is not not exchangeable
+        exchangeable = self.graph.amortizable_nodes()
+        inference_variable_shapes = inference_variable_shapes_by_network(self)
+        shape_to_summary = {v: sk for sk, v in summary_input_shapes.items()}
+
+        for k, nodes in self.network_composition.items():
+            if any(node not in exchangeable for node in nodes):
+                summary_network = self.summary_networks[shape_to_summary[inference_variable_shapes[k]]]
+                self.inference_networks[k] = NonExchangeableWrapper(self.inference_networks[k], summary_network)
+
     @classmethod
     def build_adapter(
         cls,
@@ -142,6 +156,7 @@ class GraphicalApproximator(Approximator):
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,
             augmentations=lambda x: dict(x),
+            **kwargs,
         )
 
     @classmethod
@@ -430,7 +445,12 @@ class GraphicalApproximator(Approximator):
             begin = (0,) * len(keras.ops.shape(v))
 
             output_shape = list(output_shapes[k])
-            output_shape[0] = keras.ops.shape(v)[0]  # replace batch size placeholder
+            actual_shape = keras.ops.shape(v)
+            for j in range(len(output_shape)):
+                if isinstance(output_shape[j], sp.Expr):
+                    output_shape[j] = actual_shape[j]
+                else:
+                    output_shape[j] = min(output_shape[j], int(actual_shape[j]))
             output_shape = tuple(output_shape)
 
             # current keras version throws a deprecation warning when using keras.ops.slice even if

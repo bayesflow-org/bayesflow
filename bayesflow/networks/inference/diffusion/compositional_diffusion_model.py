@@ -289,7 +289,6 @@ class CompositionalDiffusionModel(DiffusionModel):
         mini_batch_size: int | None = None,
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
-        mean_variant: Literal["logarithmic"] | None = "logarithmic",
         guidance_constraints: Mapping[str, Any] = None,
         guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
         **kwargs,
@@ -314,8 +313,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             Whether in training mode
         clip: (float, float), optional
             Whether to clip the predicted x for numerical stability at given values.
-        mean_variant: Literal["logarithmic"], optional
-            Instead of a standard mean of the scores use a "logarithmic" mean instead.
         guidance_constraints : dict[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
@@ -394,14 +391,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         weighted_prior_score = (1.0 - n_compositional) * prior_score
 
         # Sum individual scores across compositional dimensions
-        if mean_variant is None:
-            mean_scores = ops.mean(individual_scores, axis=1)
-        elif mean_variant == "logarithmic":
-            mean_scores = ops.log(ops.mean(ops.exp(individual_scores), axis=1))
-        else:
-            raise ValueError("mean_variant not recognized")
-
-        summed_individual_scores = n_compositional * mean_scores
+        summed_individual_scores = n_compositional * ops.mean(individual_scores, axis=1)
 
         # Combined score using compositional formula: (1-n)(1-t)∇log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
         compositional_score = self.compositional_bridge(time) * (weighted_prior_score + summed_individual_scores)
@@ -561,7 +551,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         all_scores = ops.reshape(all_scores, (batch_size, n_total, m))
         all_jacs = ops.reshape(all_jacs, (batch_size, n_total, m, m))
 
-        # --- compute P_k = (I + υ J_k)⁻¹ for all k at once ---------------
+        # compute P_k = (I + υ J_k)⁻¹ for all k at once
         I_m = ops.eye(m, dtype=ops.dtype(xz))
         I_4d = ops.broadcast_to(
             ops.reshape(I_m, (1, 1, m, m)),

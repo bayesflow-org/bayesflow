@@ -117,6 +117,51 @@ def test_inverse_compositional_basic(
     )
 
 
+def test_compositional_sampling():
+    from bayesflow.networks import CompositionalDiffusionModel, TimeSeriesNetwork
+    from bayesflow import BasicWorkflow
+    from bayesflow.simulators import SIR
+
+    num_samples = 3
+    batch_size = 2
+    num_batches_per_epoch = 2
+    epochs = 5
+    workflow = BasicWorkflow(
+        inference_network=CompositionalDiffusionModel(
+            subnet_kwargs=dict(widths=(8, 8)),
+            drop_target_prob=0.5,
+        ),
+        summary_network=TimeSeriesNetwork(),
+        inference_variables=["parameters"],
+        summary_variables=["observables"],
+        simulator=SIR(subsample=None),
+    )
+
+    workflow.fit_online(epochs=epochs, batch_size=batch_size, num_batches_per_epoch=num_batches_per_epoch)
+    test_params = workflow.simulate(5)["parameters"]
+    test_conditions = {
+        "observables": np.array(
+            [(SIR().observation_model(t), SIR().observation_model(t), SIR().observation_model(t)) for t in test_params]
+        )
+    }
+    test_conditions.update({"parameters": test_params})
+
+    def prior_score_fn(theta):
+        # uniform prior (should be transformed to unbounded prior for a real application)
+        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+
+    samples = workflow.compositional_sample(
+        num_samples=num_samples, conditions=test_conditions, compute_prior_score=prior_score_fn, return_summaries=True
+    )
+    assert samples["parameters"].shape == (5, num_samples, 2)
+
+    # use precomputed summaries
+    samples = workflow.compositional_sample(
+        num_samples=num_samples, compute_prior_score=prior_score_fn, summaries=samples["_summaries"]
+    )
+    assert samples["parameters"].shape == (5, num_samples, 2)
+
+
 def test_ancestral_sampling():
     """
     Hierarchical scenario:

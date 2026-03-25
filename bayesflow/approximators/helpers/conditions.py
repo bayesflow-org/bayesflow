@@ -28,7 +28,7 @@ class ConditionBuilder:
         summary_network: keras.Layer | None,
         inference_conditions: Tensor | None,
         summary_variables: Tensor | None,
-        summary_output: Tensor | np.ndarray | None,
+        summary_outputs: Tensor | np.ndarray | None,
         stage: str,
         purpose: Literal["call", "metrics"],
         batch_size: int | None,
@@ -51,7 +51,7 @@ class ConditionBuilder:
         summary_variables : Tensor or None
             Input tensor(s) for the summary network.  Required when
             ``summary_network`` is not ``None``.
-        summary_output : Tensor or None
+        summary_outputs : Tensor or None
             If already computed, the output of the summary network. If provided, this will be used instead of
             computing summaries again from summary variables.
         stage : str
@@ -71,7 +71,7 @@ class ConditionBuilder:
         -------
         resolved_conditions : Tensor or None
             ``inference_conditions`` concatenated with summary outputs (if any).
-        summary_output : Tensor, dict, or None
+        summary_outputs : Tensor, dict, or None
             ``purpose="call"``:  summary network output tensor, or ``None``.
             ``purpose="metrics"``: dict of summary metrics (may be empty).
 
@@ -89,11 +89,11 @@ class ConditionBuilder:
             else:
                 return inference_conditions, {}
 
-        if summary_variables is None and summary_output is None:
+        if summary_variables is None and summary_outputs is None:
             raise ValueError("Summary variables are required when a summary network is present.")
 
         if purpose == "call":
-            if summary_output is None:
+            if summary_outputs is None:
                 batches = []
                 num_conditions = dim_maybe_nested(summary_variables, axis=0)
                 if batch_size is None:
@@ -111,18 +111,18 @@ class ConditionBuilder:
                     )
                     batches.append(batch_outputs)
 
-                summary_output = tree_concatenate(batches, axis=0)
+                summary_outputs = tree_concatenate(batches, axis=0)
             else:
-                summary_output = keras.ops.convert_to_tensor(summary_output)
-            conditions = concatenate_valid((inference_conditions, summary_output), axis=-1)
-            return conditions, summary_output
+                summary_outputs = keras.ops.convert_to_tensor(summary_outputs)
+            conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
+            return conditions, summary_outputs
 
         elif purpose == "metrics":
             metrics = summary_network.compute_metrics(
                 summary_variables, stage=stage, **filter_kwargs(summary_kwargs, summary_network.compute_metrics)
             )
-            summary_output = metrics.pop("outputs")
-            conditions = concatenate_valid((inference_conditions, summary_output), axis=-1)
+            summary_outputs = metrics.pop("outputs")
+            conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)
             return conditions, metrics
 
         else:
@@ -133,7 +133,7 @@ class ConditionBuilder:
         summary_network: keras.Layer | None,
         inference_conditions: Tensor | None,
         child_summary_variables: Tensor | None,
-        summary_output: Tensor | np.ndarray | None,
+        summary_outputs: Tensor | np.ndarray | None,
         n_datasets: int,
         n_children: int,
         n_parent_samples: int,
@@ -156,7 +156,7 @@ class ConditionBuilder:
             Already-expanded inference conditions from the merged adapter call.
         child_summary_variables : Tensor or None, shape (n_datasets * n_children, sv_dim)
             Un-expanded child summary variables to be summarized before expansion.
-        summary_output : Tensor or None
+        summary_outputs : Tensor or None
             If already computed, the output of the summary network. If provided, this will be used instead of
             computing summaries again from summary variables.
         n_datasets : int
@@ -190,7 +190,7 @@ class ConditionBuilder:
         if batch_size is None:
             batch_size = flat_child_batch
 
-        if summary_output is None:
+        if summary_outputs is None:
             batches = []
             for i in tqdm(range(0, flat_child_batch, batch_size), desc="Summarizing", unit="batch"):
                 batch_variables = slice_maybe_nested(child_summary_variables, i, i + batch_size)
@@ -204,7 +204,7 @@ class ConditionBuilder:
             child_summaries = tree_concatenate(batches, axis=0)  # (n_datasets * n_children, summary_dim)
             child_summaries = keras.ops.reshape(child_summaries, (n_datasets, n_children, -1))
         else:
-            child_summaries = keras.ops.convert_to_tensor(summary_output)
+            child_summaries = keras.ops.convert_to_tensor(summary_outputs)
 
         # (n_datasets * n_children, summary_dim) -> (n_datasets, n_children, n_parent_samples, summary_dim)
         # -> (flat_batch, summary_dim)

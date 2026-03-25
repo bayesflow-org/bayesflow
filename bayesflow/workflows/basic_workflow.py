@@ -326,7 +326,7 @@ class BasicWorkflow(Workflow):
         self,
         *,
         num_samples: int,
-        conditions: dict[str, np.ndarray],
+        conditions: dict[str, np.ndarray] | None = None,
         compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]] = None,
         summaries: Tensor | np.ndarray | None = None,
         split: bool = False,
@@ -342,7 +342,7 @@ class BasicWorkflow(Workflow):
         ----------
         num_samples : int
             The number of samples to generate.
-        conditions : dict[str, np.ndarray]
+        conditions : dict[str, np.ndarray], optional
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
@@ -384,7 +384,7 @@ class BasicWorkflow(Workflow):
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,
-            summary_output=summaries,
+            summary_outputs=summaries,
             **kwargs,
         )
         elapsed = time.perf_counter() - start_time
@@ -447,7 +447,7 @@ class BasicWorkflow(Workflow):
         samples = self.approximator.ancestral_sample(
             conditions=conditions,
             ancestral_conditions=ancestral_conditions,
-            summary_output=summaries,
+            summary_outputs=summaries,
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,

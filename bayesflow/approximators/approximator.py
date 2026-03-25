@@ -117,7 +117,7 @@ class Approximator(BackendApproximator):
         data: Mapping[str, np.ndarray] | None,
         *,
         stage: str = "inference",
-        summary_output: Tensor | np.ndarray | None = None,
+        summary_outputs: Tensor | np.ndarray | None = None,
         batch_size: int | None = None,
         **kwargs,
     ) -> tuple[dict[str, Tensor], Tensor | None, Tensor | None]:
@@ -136,7 +136,7 @@ class Approximator(BackendApproximator):
             Raw user data dictionary.
         stage : str, optional
             Stage for standardization (default is ``"inference"``).
-        summary_output: Tensor, optional
+        summary_outputs: Tensor, optional
             Summarized data from a summary network, if already computed. If provided, this will be used instead of
             summarizing the raw data.
         batch_size : int, optional
@@ -154,18 +154,21 @@ class Approximator(BackendApproximator):
             Raw summary network outputs, or ``None`` if no summary network.
         """
 
-        if not data and not summary_output:
+        if data is not None:
+            adapted = self.adapter(data, strict=False, **kwargs)
+            adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
+
+            summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
+        elif summary_outputs is not None:
+            adapted = {}
+            summary_kwargs = {}
+        else:
             return None, {}, None
-
-        adapted = self.adapter(data, strict=False, **kwargs)
-        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
-
-        summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
 
         resolved_conditions, summary_outputs = self._standardize_and_resolve(
             inference_conditions=adapted.get("inference_conditions"),
             summary_variables=adapted.get("summary_variables"),
-            summary_output=summary_output,
+            summary_outputs=summary_outputs,
             stage=stage,
             batch_size=batch_size,
             **summary_kwargs,
@@ -174,19 +177,30 @@ class Approximator(BackendApproximator):
 
     def _prepare_compositional_conditions(
         self,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None,
         batch_size: int | None = None,
-        summary_output: Tensor | np.ndarray | None = None,
+        summary_outputs: Tensor | np.ndarray | None = None,
         **kwargs,
     ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
-        original_shapes = {}
-        flattened_conditions = {}
-        for key, value in conditions.items():  # Flatten compositional dimensions
-            original_shapes[key] = value.shape
-            n_datasets, n_comp = value.shape[:2]
-            flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
-            flattened_conditions[key] = value.reshape(flattened_shape)
-        n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
+        if summary_outputs is not None:
+            n_datasets, n_comp = keras.ops.shape(summary_outputs)[:2]
+            summary_outputs = keras.ops.reshape(
+                summary_outputs, (n_datasets * n_comp,) + keras.ops.shape(summary_outputs)[2:]
+            )
+            flattened_conditions = None
+        elif conditions is not None:
+            original_shapes = {}
+            flattened_conditions = {}
+            for key, value in conditions.items():  # Flatten compositional dimensions
+                original_shapes[key] = value.shape
+                n_datasets, n_comp = value.shape[:2]
+                flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
+                flattened_conditions[key] = value.reshape(flattened_shape)
+            n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
+        else:
+            raise ValueError(
+                "At least one of 'conditions' or 'summary_outputs' must be provided for compositional sampling."
+            )
 
         if n_comp <= 1:
             raise ValueError(
@@ -194,14 +208,9 @@ class Approximator(BackendApproximator):
                 f"{n_comp}. Use 'sample' instead."
             )
 
-        if summary_output is not None:
-            summary_output = keras.ops.reshape(
-                summary_output, (n_datasets * n_comp,) + keras.ops.shape(summary_output)[2:]
-            )
-
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
             data=flattened_conditions,
-            summary_output=summary_output,
+            summary_outputs=summary_outputs,
             batch_size=batch_size,
             **kwargs,
         )
@@ -215,10 +224,15 @@ class Approximator(BackendApproximator):
             )
             + keras.ops.shape(resolved_conditions)[1:],
         )
-        summary_outputs = keras.ops.reshape(
-            summary_outputs,
-            (n_datasets, n_comp) + keras.ops.shape(summary_outputs)[1:],
-        )
+        if summary_outputs is not None:
+            summary_outputs = keras.ops.reshape(
+                summary_outputs,
+                (
+                    n_datasets,
+                    n_comp,
+                )
+                + keras.ops.shape(summary_outputs)[1:],
+            )
         return resolved_conditions, adapted, summary_outputs
 
     def _prepare_ancestral_conditions(
@@ -226,7 +240,7 @@ class Approximator(BackendApproximator):
         conditions: Mapping[str, np.ndarray],
         ancestral_conditions: Mapping[str, np.ndarray],
         batch_size: int | None = None,
-        summary_output: Tensor | np.ndarray | None = None,
+        summary_outputs: Tensor | np.ndarray | None = None,
         **kwargs,
     ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
         first_conditions_arr = np.asarray(next(iter(conditions.values())))
@@ -284,7 +298,7 @@ class Approximator(BackendApproximator):
             summary_network=summary_network,
             inference_conditions=inference_conditions,
             child_summary_variables=child_summary_variables,
-            summary_output=summary_output,
+            summary_outputs=summary_outputs,
             n_datasets=n_datasets,
             n_children=n_children,
             n_parent_samples=n_parent_samples,
@@ -300,7 +314,7 @@ class Approximator(BackendApproximator):
         summary_variables: Tensor | None,
         *,
         stage: str,
-        summary_output: Tensor | np.ndarray | None = None,
+        summary_outputs: Tensor | np.ndarray | None = None,
         batch_size: int | None = None,
         purpose: str = "call",
         **summary_kwargs,
@@ -318,7 +332,7 @@ class Approximator(BackendApproximator):
             Summary variables (pre-adapted tensors).
         stage : str
             Current stage (``"training"``, ``"validation"``, or ``"inference"``).
-        summary_output : Tensor or None
+        summary_outputs : Tensor or None
             If already computed, the output of the summary network. If provided, this will be used instead of
             computing summaries again from summary variables.
         batch_size : int, optional
@@ -336,7 +350,7 @@ class Approximator(BackendApproximator):
         -------
         resolved_conditions : Tensor or None
             Standardized inference conditions concatenated with summary outputs.
-        summary_output : Tensor, dict, or None
+        summary_outputs : Tensor, dict, or None
             For ``purpose="call"``: summary network output tensor or ``None``.
             For ``purpose="metrics"``: dict of summary metrics.
         """
@@ -344,17 +358,17 @@ class Approximator(BackendApproximator):
             inference_conditions, key="inference_conditions", stage=stage
         )
         summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
-        resolved_conditions, summary_output = self.condition_builder.resolve(
+        resolved_conditions, summary_outputs = self.condition_builder.resolve(
             summary_network=self.summary_network,
             inference_conditions=inference_conditions,
             summary_variables=summary_variables,
-            summary_output=summary_output,
+            summary_outputs=summary_outputs,
             stage=stage,
             batch_size=batch_size,
             purpose=purpose,
             **summary_kwargs,
         )
-        return resolved_conditions, summary_output
+        return resolved_conditions, summary_outputs
 
     @classmethod
     def build_adapter(

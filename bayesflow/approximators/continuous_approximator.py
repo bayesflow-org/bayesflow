@@ -329,13 +329,13 @@ class ContinuousApproximator(Approximator):
         self,
         *,
         num_samples: int,
-        conditions: dict[str, np.ndarray],
+        conditions: dict[str, np.ndarray] | None = None,
         compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]] = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
-        summary_output: Tensor | np.ndarray | None = None,
+        summary_outputs: Tensor | np.ndarray | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -347,7 +347,7 @@ class ContinuousApproximator(Approximator):
         ----------
         num_samples : int
             Number of samples to generate.
-        conditions : dict[str, np.ndarray]
+        conditions : dict[str, np.ndarray], optional
             Dictionary of conditioning variables as NumPy arrays.
         compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]], optional
             A function that computes the score of the log prior distribution.
@@ -369,7 +369,7 @@ class ContinuousApproximator(Approximator):
         return_summaries: bool, optional
             If set to True and a summary network is present, will return the learned summary statistics for
             the provided conditions.
-        summary_output : Tensor | np.ndarray | None, optional
+        summary_outputs : Tensor | np.ndarray | None, optional
             Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
             of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
         **kwargs : dict
@@ -381,7 +381,7 @@ class ContinuousApproximator(Approximator):
             Dictionary containing generated samples with the same keys as `conditions`.
         """
         resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(
-            conditions, batch_size=batch_size, summary_output=summary_output
+            conditions=conditions, batch_size=batch_size, summary_outputs=summary_outputs
         )
 
         # prepare score computation
@@ -438,7 +438,7 @@ class ContinuousApproximator(Approximator):
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
-        summary_output: Tensor | np.ndarray | None = None,
+        summary_outputs: Tensor | np.ndarray | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -471,7 +471,7 @@ class ContinuousApproximator(Approximator):
         return_summaries: bool, optional
             If set to True and a summary network is present, will return the learned summary statistics for
             the provided conditions.
-        summary_output : Tensor | np.ndarray | None, optional
+        summary_outputs : Tensor | np.ndarray | None, optional
             Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
             of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
         **kwargs : dict
@@ -490,7 +490,10 @@ class ContinuousApproximator(Approximator):
         n_parent_samples = first_ancestral_arr.shape[1]
 
         resolved_conditions, adapted, summary_outputs = self._prepare_ancestral_conditions(
-            conditions, ancestral_conditions=ancestral_conditions, batch_size=batch_size, summary_output=summary_output
+            conditions,
+            ancestral_conditions=ancestral_conditions,
+            batch_size=batch_size,
+            summary_outputs=summary_outputs,
         )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)

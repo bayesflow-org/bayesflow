@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from packaging.version import Version
 import shutil
 from subprocess import PIPE, CalledProcessError
 
@@ -17,6 +18,13 @@ import tempfile
 
 logging.basicConfig()
 logger = logging.getLogger("poly.py")
+
+
+def version_key(r):
+    try:
+        return (1, Version(r.name))
+    except Exception:
+        return (0, r.name)
 
 
 # adapted from Pip
@@ -74,7 +82,7 @@ class PyDataVersionEncoder(json.JSONEncoder):
     def transform(self, o: JSONable):
         output = []
         processed_names = []
-        for ref in sorted(o, key=lambda r: r.name, reverse=True):
+        for ref in sorted(o, key=version_key, reverse=True):
             if ref.name in processed_names:
                 continue
             output.append(

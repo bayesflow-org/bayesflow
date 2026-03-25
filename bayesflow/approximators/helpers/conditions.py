@@ -2,6 +2,7 @@ from typing import Literal
 
 from tqdm.auto import tqdm
 
+import numpy as np
 import keras
 
 from bayesflow.types import Tensor
@@ -27,6 +28,7 @@ class ConditionBuilder:
         summary_network: keras.Layer | None,
         inference_conditions: Tensor | None,
         summary_variables: Tensor | None,
+        summary_output: Tensor | np.ndarray | None,
         stage: str,
         purpose: Literal["call", "metrics"],
         batch_size: int | None,
@@ -49,6 +51,9 @@ class ConditionBuilder:
         summary_variables : Tensor or None
             Input tensor(s) for the summary network.  Required when
             ``summary_network`` is not ``None``.
+        summary_output : Tensor or None
+            If already computed, the output of the summary network. If provided, this will be used instead of
+            computing summaries again from summary variables.
         stage : str
             Current stage (``"training"``, ``"validation"``, or ``"inference"``).
         purpose : {"call", "metrics"}
@@ -56,7 +61,7 @@ class ConditionBuilder:
             ``"metrics"`` — training/validation: returns summary metric dict.
         batch_size : int, optional
             Batch size for the summary network (default is ``None``).
-        **kwargs
+        **summary_kwargs
             Extra keyword arguments forwarded to ``summary_network.call``
             (when ``purpose="call"``) or ``summary_network.compute_metrics``
             (when ``purpose="metrics"``).  Filtered via :func:`filter_kwargs`
@@ -84,35 +89,40 @@ class ConditionBuilder:
             else:
                 return inference_conditions, {}
 
-        if summary_variables is None:
+        if summary_variables is None and summary_output is None:
             raise ValueError("Summary variables are required when a summary network is present.")
 
         if purpose == "call":
-            batches = []
-            num_conditions = dim_maybe_nested(summary_variables, axis=0)
-            if batch_size is None:
-                batch_size = num_conditions
+            if summary_output is None:
+                batches = []
+                num_conditions = dim_maybe_nested(summary_variables, axis=0)
+                if batch_size is None:
+                    batch_size = num_conditions
 
-            for i in tqdm(range(0, num_conditions, batch_size), desc="Summarizing", unit="batch"):
-                batch_variables = slice_maybe_nested(summary_variables, i, i + batch_size)
-                batch_kwargs = {
-                    k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
-                    for k, v in summary_kwargs.items()
-                }
+                for i in tqdm(range(0, num_conditions, batch_size), desc="Summarizing", unit="batch"):
+                    batch_variables = slice_maybe_nested(summary_variables, i, i + batch_size)
+                    batch_kwargs = {
+                        k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
+                        for k, v in summary_kwargs.items()
+                    }
 
-                batch_outputs = summary_network(batch_variables, **filter_kwargs(batch_kwargs, summary_network.call))
-                batches.append(batch_outputs)
+                    batch_outputs = summary_network(
+                        batch_variables, **filter_kwargs(batch_kwargs, summary_network.call)
+                    )
+                    batches.append(batch_outputs)
 
-            outputs = tree_concatenate(batches, axis=0)
-            conditions = concatenate_valid((inference_conditions, outputs), axis=-1)
-            return conditions, outputs
+                summary_output = tree_concatenate(batches, axis=0)
+            else:
+                summary_output = keras.ops.convert_to_tensor(summary_output)
+            conditions = concatenate_valid((inference_conditions, summary_output), axis=-1)
+            return conditions, summary_output
 
         elif purpose == "metrics":
             metrics = summary_network.compute_metrics(
                 summary_variables, stage=stage, **filter_kwargs(summary_kwargs, summary_network.compute_metrics)
             )
-            outputs = metrics.pop("outputs")
-            conditions = concatenate_valid((inference_conditions, outputs), axis=-1)
+            summary_output = metrics.pop("outputs")
+            conditions = concatenate_valid((inference_conditions, summary_output), axis=-1)
             return conditions, metrics
 
         else:

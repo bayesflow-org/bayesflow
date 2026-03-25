@@ -335,6 +335,7 @@ class ContinuousApproximator(Approximator):
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
+        summary_output: Tensor | np.ndarray | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -368,6 +369,9 @@ class ContinuousApproximator(Approximator):
         return_summaries: bool, optional
             If set to True and a summary network is present, will return the learned summary statistics for
             the provided conditions.
+        summary_output : Tensor | np.ndarray | None, optional
+            Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
+            of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
@@ -377,7 +381,7 @@ class ContinuousApproximator(Approximator):
             Dictionary containing generated samples with the same keys as `conditions`.
         """
         resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(
-            conditions, batch_size=batch_size
+            conditions, batch_size=batch_size, summary_output=summary_output
         )
 
         # prepare score computation

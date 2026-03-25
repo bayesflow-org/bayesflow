@@ -15,7 +15,7 @@ from bayesflow.networks import InferenceNetwork, ScoringRuleNetwork, SummaryNetw
 from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ContinuousApproximator, ScoringRuleApproximator
-from bayesflow.types import Shape
+from bayesflow.types import Shape, Tensor
 from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration, filter_kwargs
 from bayesflow.diagnostics import metrics as bf_metrics
 from bayesflow.diagnostics import plots as bf_plots
@@ -328,6 +328,7 @@ class BasicWorkflow(Workflow):
         num_samples: int,
         conditions: dict[str, np.ndarray],
         compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]] = None,
+        summaries: Tensor | np.ndarray | None = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
@@ -349,6 +350,9 @@ class BasicWorkflow(Workflow):
         compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]], optional
             A function that computes the score of the log prior distribution.
             Otherwise, the unconditional score is used.
+        summaries : Tensor | np.ndarray | None, optional
+            Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
+            of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one sample array per target variable.
         batch_size : int or None, optional
@@ -380,6 +384,7 @@ class BasicWorkflow(Workflow):
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,
+            summary_output=summaries,
             **kwargs,
         )
         elapsed = time.perf_counter() - start_time

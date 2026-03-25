@@ -64,9 +64,9 @@ class CompositionalDiffusionModel(DiffusionModel):
         noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
             Noise schedule controlling the diffusion dynamics.  Can be a string
             identifier, a schedule class, or a pre-initialised schedule instance.
-            Default is ``"edm"``.
+            Default is ``"cosine"``.
         prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}, optional
-            Output format of the model's prediction.  Default is ``"F"``.
+            Output format of the model's prediction.  Default is ``"velocity"``.
         loss_type : {'velocity', 'noise', 'F'}, optional
             Loss function used to train the model.  Default is ``"noise"``.
         subnet_kwargs : dict[str, Any], optional
@@ -127,8 +127,6 @@ class CompositionalDiffusionModel(DiffusionModel):
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
-        clip: tuple[float, float] | None = (-3, 3),
-        use_jac: bool = False,
         **kwargs,
     ) -> Tensor:
         """
@@ -151,10 +149,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
             Whether in training mode
-        clip: (float, float), optional
-            Whether to clip the predicted x for numerical stability at given values.
-        use_jac: bool, optional
-            Whether to use the Jacobian-based compositional score instead of the direct sum.
         **kwargs
             Additional keyword arguments passed to the individual score computation.
 
@@ -170,8 +164,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             compute_prior_score=compute_prior_score,
             mini_batch_size=mini_batch_size,
             training=training,
-            clip=clip,
-            use_jac=use_jac,
             **kwargs,
         )
 
@@ -205,8 +197,8 @@ class CompositionalDiffusionModel(DiffusionModel):
         mini_batch_size: int | None = None,
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
+        mixture_weight: float = 0.9,
         use_jac: bool = False,
-        mixture_weight: float = 0.7,
         guidance_constraints: Mapping[str, Any] = None,
         guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
         **kwargs,
@@ -230,11 +222,11 @@ class CompositionalDiffusionModel(DiffusionModel):
             Whether in training mode
         clip: (float, float), optional
             Whether to clip the predicted x for numerical stability at given values.
-        use_jac: bool, optional
-            Whether to use the Jacobian-based compositional score instead of the direct sum.
         mixture_weight : float
             Weighting factor for combining unweighted and weighted scores.
             0 means only weighted, 1 means only unweighted. Only used, if 'use_jac=False'.
+        use_jac: bool, optional
+            Whether to use the Jacobian-based compositional score instead of the direct sum.
         guidance_constraints : dict[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
@@ -313,9 +305,9 @@ class CompositionalDiffusionModel(DiffusionModel):
         alpha_t: Tensor,
         sigma_t: Tensor,
         conditions: Tensor,
+        mixture_weight: float,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
-        mixture_weight: float = 0.7,
         eps_var: float = 1e-8,
         training: bool = False,
         **kwargs,
@@ -339,13 +331,13 @@ class CompositionalDiffusionModel(DiffusionModel):
             Sigma component of noise schedule at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
-        compute_prior_score: Callable, optional
-            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
-        mini_batch_size : int or None
-            Mini batch size for computing individual scores. If None, use all conditions.
         mixture_weight : float
             Weighting factor for combining unweighted and weighted scores.
             0 means only weighted, 1 means only unweighted.
+        compute_prior_score: Callable, optional
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is estimated.
+        mini_batch_size : int or None
+            Mini batch size for computing individual scores. If None, use all conditions.
         eps_var: float
             Small constant added to variance for numerical stability when weighting scores.
         training : bool, optional
@@ -720,9 +712,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         self.compositional_bridge_d0 = float(
             integrate_kwargs.pop("compositional_bridge_d0", self.compositional_bridge_d0)
         )
-        self.compositional_bridge_d1 = float(
-            integrate_kwargs.pop("compositional_bridge_d1", self.compositional_bridge_d1)
-        )
+        self.compositional_bridge_d1 = float(integrate_kwargs.pop("compositional_bridge_d1", 1.0 / n_compositional))
 
         # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
         scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))

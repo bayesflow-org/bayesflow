@@ -396,6 +396,7 @@ class BasicWorkflow(Workflow):
         *,
         conditions: Mapping[str, np.ndarray],
         ancestral_conditions: Mapping[str, np.ndarray],
+        summaries: Tensor | np.ndarray | None = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
@@ -410,10 +411,15 @@ class BasicWorkflow(Workflow):
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
+            Should have shape (n_datasets, n_conditions, ...).
         ancestral_conditions : dict[str, np.ndarray]
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the ancestral conditions for sampling. These are used in ancestral sampling
             scheme (e.g. a hierarchical model).
+            Should have shape (n_datasets, n_ancestral_conditions, ...).
+        summaries : Tensor | np.ndarray | None, optional
+            Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
+            of the conditions. Should have shape (n_datasets, n_conditions, ...).
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one sample array per target variable.
         batch_size : int or None, optional
@@ -441,6 +447,7 @@ class BasicWorkflow(Workflow):
         samples = self.approximator.ancestral_sample(
             conditions=conditions,
             ancestral_conditions=ancestral_conditions,
+            summary_output=summaries,
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,

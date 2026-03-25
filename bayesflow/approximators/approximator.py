@@ -196,7 +196,7 @@ class Approximator(BackendApproximator):
 
         if summary_output is not None:
             summary_output = keras.ops.reshape(
-                summary_output, (n_datasets * n_comp,) + keras.ops.shape(summary_output)[1:]
+                summary_output, (n_datasets * n_comp,) + keras.ops.shape(summary_output)[2:]
             )
 
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
@@ -226,7 +226,8 @@ class Approximator(BackendApproximator):
         conditions: Mapping[str, np.ndarray],
         ancestral_conditions: Mapping[str, np.ndarray],
         batch_size: int | None = None,
-        **adapter_kwargs,
+        summary_output: Tensor | np.ndarray | None = None,
+        **kwargs,
     ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
         first_conditions_arr = np.asarray(next(iter(conditions.values())))
         first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
@@ -243,7 +244,7 @@ class Approximator(BackendApproximator):
                 key: np.asarray(value).reshape(flat_child_batch, *np.asarray(value).shape[2:])
                 for key, value in conditions.items()
             }
-            adapted_child = self.adapter(flattened_conditions, strict=False, **adapter_kwargs)
+            adapted_child = self.adapter(flattened_conditions, strict=False, **kwargs)
             adapted_child = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_child)
 
             summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted_child)
@@ -272,7 +273,7 @@ class Approximator(BackendApproximator):
             expanded_conditions[key] = arr.reshape(flat_batch, *arr.shape[3:])
 
         merged_conditions = {**expanded_conditions, **expanded_ancestral}
-        adapted = self.adapter(merged_conditions, strict=False, **adapter_kwargs)
+        adapted = self.adapter(merged_conditions, strict=False, **kwargs)
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
         inference_conditions = self.standardizer.maybe_standardize(
@@ -280,9 +281,10 @@ class Approximator(BackendApproximator):
         )
 
         resolved_conditions, summary_outputs = self.condition_builder.resolve_ancestral(
-            summary_network,
-            inference_conditions,
-            child_summary_variables,
+            summary_network=summary_network,
+            inference_conditions=inference_conditions,
+            child_summary_variables=child_summary_variables,
+            summary_output=summary_output,
             n_datasets=n_datasets,
             n_children=n_children,
             n_parent_samples=n_parent_samples,

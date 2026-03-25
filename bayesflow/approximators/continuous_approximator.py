@@ -438,6 +438,7 @@ class ContinuousApproximator(Approximator):
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
+        summary_output: Tensor | np.ndarray | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -470,6 +471,9 @@ class ContinuousApproximator(Approximator):
         return_summaries: bool, optional
             If set to True and a summary network is present, will return the learned summary statistics for
             the provided conditions.
+        summary_output : Tensor | np.ndarray | None, optional
+            Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
+            of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
@@ -486,7 +490,7 @@ class ContinuousApproximator(Approximator):
         n_parent_samples = first_ancestral_arr.shape[1]
 
         resolved_conditions, adapted, summary_outputs = self._prepare_ancestral_conditions(
-            conditions, ancestral_conditions=ancestral_conditions, batch_size=batch_size
+            conditions, ancestral_conditions=ancestral_conditions, batch_size=batch_size, summary_output=summary_output
         )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)

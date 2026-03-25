@@ -133,6 +133,7 @@ class ConditionBuilder:
         summary_network: keras.Layer | None,
         inference_conditions: Tensor | None,
         child_summary_variables: Tensor | None,
+        summary_output: Tensor | np.ndarray | None,
         n_datasets: int,
         n_children: int,
         n_parent_samples: int,
@@ -155,6 +156,9 @@ class ConditionBuilder:
             Already-expanded inference conditions from the merged adapter call.
         child_summary_variables : Tensor or None, shape (n_datasets * n_children, sv_dim)
             Un-expanded child summary variables to be summarized before expansion.
+        summary_output : Tensor or None
+            If already computed, the output of the summary network. If provided, this will be used instead of
+            computing summaries again from summary variables.
         n_datasets : int
             Number of independent datasets.
         n_children : int
@@ -186,22 +190,25 @@ class ConditionBuilder:
         if batch_size is None:
             batch_size = flat_child_batch
 
-        batches = []
-        for i in tqdm(range(0, flat_child_batch, batch_size), desc="Summarizing", unit="batch"):
-            batch_variables = slice_maybe_nested(child_summary_variables, i, i + batch_size)
-            batch_kwargs = {
-                k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
-                for k, v in summary_kwargs.items()
-            }
-            batch_outputs = summary_network(batch_variables, **filter_kwargs(batch_kwargs, summary_network.call))
-            batches.append(batch_outputs)
+        if summary_output is None:
+            batches = []
+            for i in tqdm(range(0, flat_child_batch, batch_size), desc="Summarizing", unit="batch"):
+                batch_variables = slice_maybe_nested(child_summary_variables, i, i + batch_size)
+                batch_kwargs = {
+                    k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
+                    for k, v in summary_kwargs.items()
+                }
+                batch_outputs = summary_network(batch_variables, **filter_kwargs(batch_kwargs, summary_network.call))
+                batches.append(batch_outputs)
 
-        child_summaries = tree_concatenate(batches, axis=0)  # (n_datasets * n_children, summary_dim)
+            child_summaries = tree_concatenate(batches, axis=0)  # (n_datasets * n_children, summary_dim)
+            child_summaries = keras.ops.reshape(child_summaries, (n_datasets, n_children, -1))
+        else:
+            child_summaries = keras.ops.convert_to_tensor(summary_output)
 
         # (n_datasets * n_children, summary_dim) -> (n_datasets, n_children, n_parent_samples, summary_dim)
         # -> (flat_batch, summary_dim)
         flat_batch = n_datasets * n_children * n_parent_samples
-        child_summaries = keras.ops.reshape(child_summaries, (n_datasets, n_children, -1))
         expanded = keras.ops.expand_dims(child_summaries, axis=2)
         expanded = keras.ops.repeat(expanded, n_parent_samples, axis=2)
         expanded = keras.ops.reshape(expanded, (flat_batch, -1))

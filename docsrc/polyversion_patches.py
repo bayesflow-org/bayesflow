@@ -85,13 +85,14 @@ class PyDataVersionEncoder(json.JSONEncoder):
         for ref in sorted(o, key=version_key, reverse=True):
             if ref.name in processed_names:
                 continue
-            output.append(
-                {
-                    "name": ref.name,
-                    "version": ref.name,
-                    "url": f"/{ref.name}",
-                }
-            )
+            entry = {
+                "name": ref.name,
+                "version": ref.name,
+                "url": f"/{ref.name}/",
+            }
+            if len(output) == 0:
+                entry["preferred"] = True
+            output.append(entry)
             processed_names.append(ref.name)
         # do not use cast for performance reasons
         return output

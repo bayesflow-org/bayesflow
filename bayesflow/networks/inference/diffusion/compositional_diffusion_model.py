@@ -206,7 +206,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
         use_jac: bool = False,
-        weight_individual_scores: bool = True,
+        mixture_weight: float = 0.7,
         guidance_constraints: Mapping[str, Any] = None,
         guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
         **kwargs,
@@ -232,9 +232,9 @@ class CompositionalDiffusionModel(DiffusionModel):
             Whether to clip the predicted x for numerical stability at given values.
         use_jac: bool, optional
             Whether to use the Jacobian-based compositional score instead of the direct sum.
-        weight_individual_scores: bool
-            Whether to weight individual score updates instead of simply aggregating them.
-            Only applies, if use_jac=False.
+        mixture_weight : float
+            Weighting factor for combining unweighted and weighted scores.
+            0 means only weighted, 1 means only unweighted. Only used, if 'use_jac=False'.
         guidance_constraints : dict[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
@@ -270,7 +270,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                 conditions=conditions,
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
-                weight_individual_scores=weight_individual_scores,
+                mixture_weight=mixture_weight,
                 training=training,
                 **kwargs,
             )
@@ -315,7 +315,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         conditions: Tensor,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
-        weight_individual_scores: bool = True,
+        mixture_weight: float = 0.7,
         eps_var: float = 1e-8,
         training: bool = False,
         **kwargs,
@@ -343,8 +343,9 @@ class CompositionalDiffusionModel(DiffusionModel):
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
-        weight_individual_scores: bool
-            Whether to weight individual score updates instead of simply aggregating them.
+        mixture_weight : float
+            Weighting factor for combining unweighted and weighted scores.
+            0 means only weighted, 1 means only unweighted.
         eps_var: float
             Small constant added to variance for numerical stability when weighting scores.
         training : bool, optional
@@ -408,7 +409,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             prior_score = (1.0 - time) * compute_prior_score(xz)
 
         delta = individual_scores - ops.expand_dims(prior_score, axis=1)
-        if weight_individual_scores:
+        if mixture_weight < 1:
             # Combined score using compositional formula (1-beta) prior_score + beta posterior_score
             # Per-dimension variance across observations
             var_d = ops.sum((delta - ops.mean(delta, axis=1, keepdims=True)) ** 2, axis=1, keepdims=True) / (
@@ -419,6 +420,8 @@ class CompositionalDiffusionModel(DiffusionModel):
             weighted_delta = scale * ops.sum(delta * w_d, axis=1) / w_d_sum
             gamma = ops.square(alpha_t) / ops.square(sigma_t)
             update_delta = gamma * weighted_delta / (1.0 + gamma * scale * w_d_sum)
+
+            update_delta = update_delta * (1 - mixture_weight) + scale * ops.sum(delta, axis=1) * mixture_weight
         else:
             update_delta = scale * ops.sum(delta, axis=1)
 

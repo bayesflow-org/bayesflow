@@ -288,6 +288,8 @@ class CompositionalDiffusionModel(DiffusionModel):
                 **kwargs,
             )
 
+        compositional_score = self.compositional_bridge(time) * compositional_score
+
         if guidance_constraints is not None or guidance_function is not None:
             # x_pred = (z + sigma_t ** 2 * score) / alpha_t
             x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
@@ -301,7 +303,6 @@ class CompositionalDiffusionModel(DiffusionModel):
                 compositional_score = compositional_score + guidance
 
         compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
-        print(ops.mean(compositional_score))
         return compositional_score
 
     def _compositional_score_direct(
@@ -422,7 +423,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             update_delta = scale * ops.sum(delta, axis=1)
 
         # Combined score using compositional formula: (1-n) prior_score + Σᵢ₌₁ⁿ posterior_score
-        compositional_score = self.compositional_bridge(time) * (prior_score + update_delta)
+        compositional_score = prior_score + update_delta
         return compositional_score
 
     def _compositional_score_jac(

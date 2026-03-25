@@ -164,7 +164,7 @@ class Approximator(BackendApproximator):
 
         resolved_conditions, summary_outputs = self._standardize_and_resolve(
             inference_conditions=adapted.get("inference_conditions"),
-            summary_variable=adapted.get("summary_variables"),
+            summary_variables=adapted.get("summary_variables"),
             summary_output=summary_output,
             stage=stage,
             batch_size=batch_size,
@@ -201,8 +201,8 @@ class Approximator(BackendApproximator):
 
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
             data=flattened_conditions,
-            batch_size=batch_size,
             summary_output=summary_output,
+            batch_size=batch_size,
             **kwargs,
         )
 

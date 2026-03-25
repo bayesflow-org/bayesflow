@@ -83,8 +83,8 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
         Parameters
         ----------
-        conditions : Mapping[str, np.ndarray]
-            A batch of conditions to estimate. None for unconditional distributions.
+        conditions : Mapping[str, np.ndarray] | None
+            A batch of conditioning variables for the estimates. None for unconditional distributions.
         split : bool, optional
             If True, split estimated arrays along the last axis, by default False.
         groupby : {"variable", "score"}, default "variable"
@@ -116,7 +116,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
     def _estimate_byscore(
         self,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
         **kwargs,
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:

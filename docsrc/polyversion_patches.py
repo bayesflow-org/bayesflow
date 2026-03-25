@@ -74,7 +74,7 @@ class PyDataVersionEncoder(json.JSONEncoder):
     def transform(self, o: JSONable):
         output = []
         processed_names = []
-        for ref in o:
+        for ref in sorted(o, key=lambda r: r.name, reverse=True):
             if ref.name in processed_names:
                 continue
             output.append(

@@ -10,7 +10,7 @@ BayesFlow is a Python library for efficient Bayesian inference with deep learnin
 It provides users with:
 
 - A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2602.07098)
-- A rich collection of generative models, from [diffusion]((https://arxiv.org/abs/2512.20685)) to [consistency models](https://arxiv.org/abs/2312.05440)
+- A rich collection of generative models, [from diffusion to consistency models](https://bayesflow-org.github.io/diffusion-experiments/)
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
 ## Conceptual Overview
@@ -122,7 +122,7 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 
 ### Tutorial papers
 
-1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685**. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
+1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685*. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 

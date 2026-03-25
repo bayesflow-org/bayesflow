@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from pathlib import Path
-from docsrc.polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder
+from docsrc.polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder, version_key
 
 from sphinx_polyversion.api import apply_overrides
 from sphinx_polyversion.git import Git, GitRef, GitRefType, file_predicate, refs_by_type
@@ -75,7 +75,7 @@ VENV_DIR_NAME = ".docs_venvs"
 def data(driver, rev, env):
     revisions = driver.targets
     branches, tags = refs_by_type(revisions)
-    latest = max(tags or branches)
+    latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":
             latest = b
@@ -93,7 +93,7 @@ def data(driver, rev, env):
 def root_data(driver):
     revisions = driver.builds
     branches, tags = refs_by_type(revisions)
-    latest = max(tags or branches)
+    latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":
             latest = b

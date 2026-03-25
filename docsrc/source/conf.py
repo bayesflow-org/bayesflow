@@ -37,6 +37,8 @@ if "SOURCE_DATE_EPOCH" in os.environ:
 project = "BayesFlow"
 author = "The BayesFlow authors"
 copyright = "2023-%Y, BayesFlow authors (lead maintainer: Stefan T. Radev)"
+version = current
+release = current
 
 
 # -- General configuration ---------------------------------------------------
@@ -169,6 +171,7 @@ html_theme_options = {
         "version_match": current,
     },
     "check_switcher": False,
+    "show_version_warning_banner": True,
 }
 html_context = {
     "github_url": "https://github.com",  # or your GitHub Enterprise site

@@ -197,7 +197,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         mini_batch_size: int | None = None,
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
-        mixture_weight: float = 0.9,
+        mixture_weight: float = 1.0,
         use_jac: bool = False,
         guidance_constraints: Mapping[str, Any] = None,
         guidance_function: Callable[[Tensor, Tensor], Tensor] = None,

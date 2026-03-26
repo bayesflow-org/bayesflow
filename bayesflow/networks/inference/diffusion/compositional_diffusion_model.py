@@ -685,9 +685,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         )
 
         if integrate_kwargs["method"] == "langevin":
-            # x is sampled from a normal distribution, must be scaled with var 1/n_compositional for Langevin
-            scale_latent = self.compositional_bridge(ops.ones(1)) * n_compositional
-            z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
+            z = z / ops.sqrt(ops.cast(n_compositional, dtype=ops.dtype(z)))
 
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)

@@ -825,7 +825,7 @@ class DiffusionModel(InferenceNetwork):
                 return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
 
             score_fn = None
-            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
+            if "corrector_steps" in integrate_kwargs or integrate_kwargs["method"] == "langevin":
 
                 def score_fn(time, xz):
                     return {"xz": self.score(xz, time=time, conditions=conditions, training=training, **kwargs)}

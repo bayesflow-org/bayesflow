@@ -102,7 +102,7 @@ class CompositionalDiffusionModel(DiffusionModel):
 
     def compositional_bridge(self, time: Tensor) -> Tensor:
         """
-        Bridge function for compositional diffusion. In the simplest case, this is just 1 if d0 == d1.
+        Bridge function for compositional diffusion. In the simplest case, this is just 1 if d0 = d1 = 1.
         Otherwise, it can be used to scale the compositional score over time.
 
         Parameters
@@ -116,7 +116,9 @@ class CompositionalDiffusionModel(DiffusionModel):
             Bridge function value with same shape as time.
 
         """
-        return ops.exp(-np.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time)
+        return self.compositional_bridge_d0 * ops.exp(
+            -np.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time
+        )
 
     def compositional_velocity(
         self,
@@ -707,16 +709,19 @@ class CompositionalDiffusionModel(DiffusionModel):
         mini_batch_size = max(mini_batch_size, 1)
         if keras.backend.backend() == "jax" and mini_batch_size != n_compositional:
             mini_batch_size = n_compositional
-            logging.warning("Setting mini_batch_size to n_compositional as jax does not support mini-batching yet.")
+            logging.warning("Setting mini_batch_size to n_compositional as jax does not support mini-batching.")
 
         self.compositional_bridge_d0 = float(
             integrate_kwargs.pop("compositional_bridge_d0", self.compositional_bridge_d0)
         )
-        self.compositional_bridge_d1 = float(integrate_kwargs.pop("compositional_bridge_d1", 1.0 / n_compositional))
+        self.compositional_bridge_d1 = float(
+            integrate_kwargs.pop("compositional_bridge_d1", self.compositional_bridge_d1)
+        )
 
-        # x is sampled from a normal distribution, must be scaled with var 1/n_compositional
-        scale_latent = n_compositional * self.compositional_bridge(ops.ones(1))
-        z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
+        if integrate_kwargs["method"] == "langevin":
+            # x is sampled from a normal distribution, must be scaled with var 1/n_compositional for Langevin
+            scale_latent = self.compositional_bridge(ops.ones(1)) * n_compositional
+            z = z / ops.sqrt(ops.cast(scale_latent, dtype=ops.dtype(z)))
 
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
@@ -781,7 +786,7 @@ class CompositionalDiffusionModel(DiffusionModel):
                 return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
 
             score_fn = None
-            if "corrector_steps" in integrate_kwargs or integrate_kwargs.get("method") == "langevin":
+            if "corrector_steps" in integrate_kwargs or integrate_kwargs["method"] == "langevin":
 
                 def score_fn(time, xz):
                     return {

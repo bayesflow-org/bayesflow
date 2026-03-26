@@ -330,7 +330,7 @@ class ContinuousApproximator(Approximator):
         *,
         num_samples: int,
         conditions: dict[str, np.ndarray] | None = None,
-        compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]] = None,
+        compute_prior_score: Callable[[dict[str, np.ndarray], np.ndarray], dict[str, np.ndarray]] = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
@@ -349,7 +349,7 @@ class ContinuousApproximator(Approximator):
             Number of samples to generate.
         conditions : dict[str, np.ndarray], optional
             Dictionary of conditioning variables as NumPy arrays.
-        compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]], optional
+        compute_prior_score : Callable[[dict[str, np.ndarray], np.ndarray], dict[str, np.ndarray]], optional
             A function that computes the score of the log prior distribution.
             Otherwise, the unconditional score is used.
         split : bool, default=False

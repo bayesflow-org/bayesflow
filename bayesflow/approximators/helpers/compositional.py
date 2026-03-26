@@ -8,26 +8,27 @@ from bayesflow.types import Tensor
 
 
 def prepare_compute_prior_score(
-    _samples: Tensor,
-    compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]],
+    samples: Tensor,
+    time: Tensor,
+    compute_prior_score: Callable[[dict[str, np.ndarray], Tensor], dict[str, np.ndarray]],
     adapter: Adapter,
     standardizer,
 ) -> Tensor:
-    _samples = keras.tree.map_structure(
+    samples = keras.tree.map_structure(
         lambda s: standardizer.maybe_standardize(s, key="inference_variables", stage="inference", forward=False),
-        _samples,
+        samples,
     )
     if keras.backend.backend() != "torch":  # samples cannot be converted to numpy, otherwise it breaks
         adapted_samples, log_det_jac = keras.tree.map_structure(
             lambda s: adapter({"inference_variables": s}, inverse=True, strict=False, log_det_jac=True),
-            _samples,
+            samples,
         )
     else:  # samples need to be converted to numpy, adapter cannot use torch tensors
         adapted_samples, log_det_jac = keras.tree.map_structure(
             lambda s: adapter(
                 {"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False, log_det_jac=True
             ),
-            _samples,
+            samples,
         )
 
     if len(log_det_jac) > 0:
@@ -37,7 +38,7 @@ def prepare_compute_prior_score(
             f"that have non-zero log_det_jac. Problematic keys: {problematic_keys}"
         )
 
-    prior_score = compute_prior_score(adapted_samples)
+    prior_score = compute_prior_score(adapted_samples, time)
     for key in adapted_samples:
         prior_score[key] = keras.ops.cast(prior_score[key], "float32")
 

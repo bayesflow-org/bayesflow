@@ -146,9 +146,9 @@ def test_compositional_sampling():
     }
     test_conditions.update({"parameters": test_params})
 
-    def prior_score_fn(theta):
-        # uniform prior (should be transformed to unbounded prior for a real application)
-        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+    def prior_score_fn(theta, time):
+        # placeholder prior score
+        return {"parameters": (1 - time) * keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
 
     samples = workflow.compositional_sample(
         num_samples=num_samples, conditions=test_conditions, compute_prior_score=prior_score_fn, return_summaries=True
@@ -244,9 +244,9 @@ def test_compositional_masking():
     }
     test_conditions.update({"parameters": test_params})
 
-    def prior_score_fn(theta):
+    def prior_score_fn(theta, time):
         # uniform prior (should be transformed to unbounded prior for a real application)
-        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+        return {"parameters": (1 - time) * keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
 
     samples = workflow.compositional_sample(
         num_samples=num_samples, conditions=test_conditions, compute_prior_score=prior_score_fn
@@ -299,9 +299,9 @@ def test_diffusion_compositional_guidance():
         )
     }
 
-    def prior_score_fn(theta):
+    def prior_score_fn(theta, time):
         # uniform prior (should be transformed to unbounded prior for a real application)
-        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+        return {"parameters": (1 - time) * keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
 
     samples = workflow.compositional_sample(
         num_samples=2, conditions=test_conditions, compute_prior_score=prior_score_fn

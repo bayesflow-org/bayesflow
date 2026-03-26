@@ -131,8 +131,8 @@ def compositional_state():
 def mock_prior_score():
     """Create a mock prior score function for testing."""
 
-    def prior_score_fn(theta):
+    def prior_score_fn(theta, time):
         # Simple quadratic prior: -0.5 * ||theta||^2
-        return -theta
+        return (1.0 - time) * (-theta)
 
     return prior_score_fn

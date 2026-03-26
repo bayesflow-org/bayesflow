@@ -199,7 +199,6 @@ class CompositionalDiffusionModel(DiffusionModel):
         mini_batch_size: int | None = None,
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
-        mixture_weight: float = 1.0,
         use_jac: bool = False,
         guidance_constraints: Mapping[str, Any] = None,
         guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
@@ -224,9 +223,6 @@ class CompositionalDiffusionModel(DiffusionModel):
             Whether in training mode
         clip: (float, float), optional
             Whether to clip the predicted x for numerical stability at given values.
-        mixture_weight : float
-            Weighting factor for combining unweighted and weighted scores.
-            0 means only weighted, 1 means only unweighted. Only used, if 'use_jac=False'.
         use_jac: bool, optional
             Whether to use the Jacobian-based compositional score instead of the direct sum.
         guidance_constraints : dict[str, Any], optional
@@ -259,12 +255,9 @@ class CompositionalDiffusionModel(DiffusionModel):
                 xz=xz,
                 time=time,
                 log_snr_t=log_snr_t,
-                alpha_t=alpha_t,
-                sigma_t=sigma_t,
                 conditions=conditions,
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
-                mixture_weight=mixture_weight,
                 training=training,
                 **kwargs,
             )
@@ -304,13 +297,9 @@ class CompositionalDiffusionModel(DiffusionModel):
         xz: Tensor,
         time: float | Tensor,
         log_snr_t: Tensor,
-        alpha_t: Tensor,
-        sigma_t: Tensor,
         conditions: Tensor,
-        mixture_weight: float,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
-        eps_var: float = 1e-8,
         training: bool = False,
         **kwargs,
     ) -> Tensor:
@@ -327,21 +316,12 @@ class CompositionalDiffusionModel(DiffusionModel):
             Time step for the diffusion process.
         log_snr_t : Tensor
             Log SNR at time t, broadcastable to shape of xz.
-        alpha_t : Tensor
-            Alpha component of noise schedule at time t, broadcastable to shape of xz.
-        sigma_t : Tensor
-            Sigma component of noise schedule at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
-        mixture_weight : float
-            Weighting factor for combining unweighted and weighted scores.
-            0 means only weighted, 1 means only unweighted.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is estimated.
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
-        eps_var: float
-            Small constant added to variance for numerical stability when weighting scores.
         training : bool, optional
             Whether in training mode.
         **kwargs
@@ -400,26 +380,12 @@ class CompositionalDiffusionModel(DiffusionModel):
         if needs_network_prior:
             prior_score = all_scores[:, -1]
         else:
-            prior_score = (1.0 - time) * compute_prior_score(xz)
-
-        delta = individual_scores - ops.expand_dims(prior_score, axis=1)
-        if mixture_weight < 1:
-            # Combined score using compositional formula (1-beta) prior_score + beta posterior_score
-            # Per-dimension variance across observations
-            var_d = ops.sum((delta - ops.mean(delta, axis=1, keepdims=True)) ** 2, axis=1, keepdims=True) / (
-                ops.maximum(mini_batch_size - 1.0, 1.0)
-            )
-            w_d = 1.0 / (var_d + eps_var)  # (B, 1, m)
-            w_d_sum = ops.sum(w_d, axis=1)
-            weighted_delta = scale * ops.sum(delta * w_d, axis=1) / w_d_sum
-            gamma = ops.square(alpha_t) / ops.square(sigma_t)
-            update_delta = gamma * weighted_delta / (1.0 + gamma * scale * w_d_sum)
-
-            update_delta = update_delta * (1 - mixture_weight) + scale * ops.sum(delta, axis=1) * mixture_weight
-        else:
-            update_delta = scale * ops.sum(delta, axis=1)
+            # (1.0 - time) * prior_score
+            prior_score = compute_prior_score(xz, time)
 
         # Combined score using compositional formula: (1-n) prior_score + Σᵢ₌₁ⁿ posterior_score
+        delta = individual_scores - ops.expand_dims(prior_score, axis=1)
+        update_delta = scale * ops.sum(delta, axis=1)
         compositional_score = prior_score + update_delta
         return compositional_score
 
@@ -550,7 +516,7 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         # prior score
         if compute_prior_score is not None:
-            s_lambda = (1.0 - time) * compute_prior_score(xz)
+            s_lambda = compute_prior_score(xz, time)
             P_lambda_s = ops.squeeze(ops.matmul(P_lambda, ops.expand_dims(s_lambda, -1)), axis=-1)
         else:
             P_lambda_s = Ps_all[:, -1]  # already computed

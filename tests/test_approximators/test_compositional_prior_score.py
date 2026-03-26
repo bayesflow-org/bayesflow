@@ -5,13 +5,13 @@ import numpy as np
 from bayesflow import ContinuousApproximator
 
 
-def mock_prior_score_original_space(data_dict):
+def mock_prior_score_original_space(data_dict, time):
     """Mock prior score function that expects data in original space."""
     loc = data_dict["loc"]
 
     # Simple prior: N(0,1) for loc
     loc_score = -loc
-    return {"loc": loc_score}
+    return {"loc": (1.0 - time) * loc_score}
 
 
 def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, compositional_diffusion_network):

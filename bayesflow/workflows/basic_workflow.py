@@ -327,7 +327,7 @@ class BasicWorkflow(Workflow):
         *,
         num_samples: int,
         conditions: dict[str, np.ndarray] | None = None,
-        compute_prior_score: Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]] = None,
+        compute_prior_score: Callable[[dict[str, np.ndarray], np.ndarray], dict[str, np.ndarray]] = None,
         summaries: Tensor | np.ndarray | None = None,
         split: bool = False,
         batch_size: int | None = None,
@@ -347,7 +347,7 @@ class BasicWorkflow(Workflow):
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
             Should have shape (n_datasets, n_compositional_conditions, ...).
-        compute_prior_score : Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]], optional
+        compute_prior_score : Callable[[dict[str, np.ndarray], np.ndarray], dict[str, np.ndarray]], optional
             A function that computes the score of the log prior distribution.
             Otherwise, the unconditional score is used.
         summaries : Tensor | np.ndarray | None, optional

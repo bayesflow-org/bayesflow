@@ -337,10 +337,9 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         if mini_batch_size is not None and mini_batch_size < n_compositional:
             # sample random indices for mini-batch processing
-            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)[
-                :mini_batch_size
-            ]
-            conditions_batch = ops.take(conditions, mini_batch_idx, axis=1)
+            ranks = keras.random.uniform((batch_size, n_compositional), seed=self.seed_generator)
+            per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
+            conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
         else:
             conditions_batch = conditions
             mini_batch_size = n_compositional
@@ -442,10 +441,9 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         if mini_batch_size is not None and mini_batch_size < n_compositional:
             # sample random indices for mini-batch processing
-            mini_batch_idx = keras.random.shuffle(ops.arange(n_compositional), seed=self.seed_generator)[
-                :mini_batch_size
-            ]
-            conditions_batch = ops.take(conditions, mini_batch_idx, axis=1)
+            ranks = keras.random.uniform((batch_size, n_compositional), seed=self.seed_generator)
+            per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
+            conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
         else:
             conditions_batch = conditions
             mini_batch_size = n_compositional

@@ -186,13 +186,13 @@ class ConditionBuilder:
         if child_summary_variables is None:
             raise ValueError("Summary variables are required when a summary network is present.")
 
-        flat_child_batch = n_datasets
+        total_datasets = n_datasets * n_children
         if batch_size is None:
-            batch_size = flat_child_batch
+            batch_size = total_datasets
 
         if summary_outputs is None:
             batches = []
-            for i in tqdm(range(0, flat_child_batch, batch_size), desc="Summarizing", unit="batch"):
+            for i in tqdm(range(0, total_datasets, batch_size), desc="Summarizing", unit="batch"):
                 batch_variables = slice_maybe_nested(child_summary_variables, i, i + batch_size)
                 batch_kwargs = {
                     k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
@@ -201,7 +201,7 @@ class ConditionBuilder:
                 batch_outputs = summary_network(batch_variables, **filter_kwargs(batch_kwargs, summary_network.call))
                 batches.append(batch_outputs)
 
-            child_summaries = tree_concatenate(batches, axis=0)  # (n_datasets * n_children, summary_dim)
+            child_summaries = tree_concatenate(batches, axis=0)
             child_summaries = keras.ops.reshape(child_summaries, (n_datasets, n_children, -1))
         else:
             child_summaries = keras.ops.convert_to_tensor(summary_outputs)

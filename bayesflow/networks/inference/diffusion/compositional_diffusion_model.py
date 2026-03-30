@@ -665,7 +665,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         integrate_kwargs |= kwargs
 
         n_compositional = ops.shape(conditions)[1]
-        mini_batch_size = integrate_kwargs.pop("mini_batch_size", int(n_compositional * 0.1))
+        mini_batch_size = integrate_kwargs.pop("mini_batch_size", max(int(n_compositional * 0.1), 2))
         if "mini_batch_size" in kwargs:
             kwargs.pop("mini_batch_size")
         if mini_batch_size is None:
@@ -682,7 +682,7 @@ class CompositionalDiffusionModel(DiffusionModel):
             integrate_kwargs.pop("compositional_bridge_d1", self.compositional_bridge_d1)
         )
 
-        if integrate_kwargs["method"] == "langevin":
+        if integrate_kwargs["method"] == "langevin":  # Geffner et al. (2023)
             z = z / ops.sqrt(ops.cast(n_compositional, dtype=ops.dtype(z)))
 
         # Apply user-provided target mask if available

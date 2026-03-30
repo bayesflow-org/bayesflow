@@ -22,3 +22,4 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    _examples/Multimodal_Data
    _examples/Ensembles
    _examples/Ratio_Estimation
+   _examples/Compositional_Diffusion

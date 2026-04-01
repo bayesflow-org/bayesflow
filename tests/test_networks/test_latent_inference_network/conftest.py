@@ -34,28 +34,48 @@ def latent_dim(request):
     return request.param
 
 
-@pytest.fixture(
-    params=[
-        dict(noise_schedule="cosine"),
-        dict(noise_schedule="edm"),
-    ],
-    ids=["cosine", "edm"],
-)
-def latent_diffusion_model(request, latent_dim):
-    from bayesflow.networks import LatentDiffusionModel
+# --- Encoder / Decoder fixtures ---
 
-    return LatentDiffusionModel(
+
+@pytest.fixture()
+def encoder(latent_dim):
+    from bayesflow.networks import Encoder
+
+    return Encoder(latent_dim=latent_dim)
+
+
+@pytest.fixture()
+def encoder_auto():
+    from bayesflow.networks import Encoder
+
+    return Encoder(latent_dim="auto")
+
+
+@pytest.fixture()
+def decoder():
+    from bayesflow.networks import Decoder
+
+    return Decoder()
+
+
+# --- LatentInferenceNetwork fixtures ---
+
+
+@pytest.fixture()
+def lin_with_diffusion(latent_dim):
+    from bayesflow.networks import DiffusionModel, LatentInferenceNetwork
+
+    return LatentInferenceNetwork(
+        inference_network=DiffusionModel(subnet_kwargs=dict(widths=(8, 8))),
         latent_dim=latent_dim,
-        diffusion_subnet_kwargs=dict(widths=(8, 8)),
-        **request.param,
     )
 
 
 @pytest.fixture()
-def latent_diffusion_model_with_flow_matching(latent_dim):
-    from bayesflow.networks import FlowMatching, LatentDiffusionModel
+def lin_with_flow_matching(latent_dim):
+    from bayesflow.networks import FlowMatching, LatentInferenceNetwork
 
-    return LatentDiffusionModel(
-        latent_dim=latent_dim,
+    return LatentInferenceNetwork(
         inference_network=FlowMatching(subnet_kwargs=dict(widths=(8, 8))),
+        latent_dim=latent_dim,
     )

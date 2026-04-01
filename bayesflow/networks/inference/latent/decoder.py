@@ -9,7 +9,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 class Decoder(keras.Layer):
     """Decoder network that maps latent vectors back to the original space.
 
-    Can be used standalone or as part of a :py:class:`LatentDiffusionModel`.
+    Can be used standalone or as part of a :py:class:`LatentInferenceNetwork`.
     When used standalone, the decoder reconstructs data from a latent space
     produced by any inference network (e.g., ``FlowMatching``, ``DiffusionModel``).
 
@@ -17,7 +17,7 @@ class Decoder(keras.Layer):
     ----------
     output_dim : int or ``"auto"``, optional
         Dimension of the output space. If ``"auto"`` (default), must be set
-        before building (e.g., by the parent ``LatentDiffusionModel``).
+        before building (e.g., by the parent ``LatentInferenceNetwork``).
     subnet : str, type, or keras.Layer, optional
         The subnet architecture. Can be ``"mlp"``, a class, or a Layer instance.
         Default is ``"mlp"``.

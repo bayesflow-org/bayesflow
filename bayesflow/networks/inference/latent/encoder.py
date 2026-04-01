@@ -13,7 +13,7 @@ class Encoder(keras.Layer):
     Maps input x to latent distribution parameters (mean, log_var) and
     samples z using the reparameterization trick: z = mean + std * epsilon.
 
-    Can be used standalone or as part of a :py:class:`LatentDiffusionModel`.
+    Can be used standalone or as part of a :py:class:`LatentInferenceNetwork`.
     When used standalone, the encoder can compress data into a latent space
     for use with any inference network (e.g., ``FlowMatching``, ``DiffusionModel``).
 

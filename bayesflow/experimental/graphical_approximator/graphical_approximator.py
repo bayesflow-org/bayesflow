@@ -165,10 +165,16 @@ class GraphicalApproximator(Approximator):
 
     def get_config(self):
         base_config = super().get_config()
+        # Unwrap NonExchangeableWrapper so __init__ doesn't double-wrap on reload.
+        # The wrapping is re-applied by __init__ using the same summary_networks list.
+        inference_networks = [
+            n.inference_network if isinstance(n, NonExchangeableWrapper) else n
+            for n in self.inference_networks
+        ]
         config = {
             "graph": self.graph,
             "adapter": self.adapter,
-            "inference_networks": self.inference_networks,
+            "inference_networks": inference_networks,
             "summary_networks": self.summary_networks,
             "standardize": self.standardize,
         }

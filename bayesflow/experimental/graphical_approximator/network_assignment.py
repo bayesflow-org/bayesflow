@@ -162,15 +162,27 @@ def _prepare_data_conditions(
     """
     variable_shapes = approximator_helpers.inference_variable_shapes_by_network(approximator.graph)[network_idx]
     summary_output_shapes = approximator_helpers.summary_output_shapes_by_network(approximator.graph)
+    summary_input_shapes = approximator_helpers.summary_input_shapes_by_network(approximator.graph)
     summary_outputs = summary_outputs_by_network(approximator, adapted_data)
+    summary_inputs = summary_inputs_by_network(approximator, adapted_data)
 
     result = None
 
+    # Path 1: summary output shape prefix matches variable shape prefix
     for i, v in summary_output_shapes.items():
         if variable_shapes[:-1] == v[:-1]:
             result = summary_outputs[i]
             break
 
+    # Path 2: summary input shape prefix matches — use the input directly
+    # (e.g. per-group variables conditioned on per-group observations)
+    if result is None:
+        for i, v in summary_input_shapes.items():
+            if variable_shapes[:-1] == v[:-1]:
+                result = summary_inputs[i]
+                break
+
+    # Path 3: broadcastable summary output (fallback)
     if result is None:
         for i, v in summary_output_shapes.items():
             try:

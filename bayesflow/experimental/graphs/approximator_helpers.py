@@ -113,20 +113,31 @@ def data_condition_shapes_by_network(graph: InvertedGraph) -> dict[int, tuple[in
     """
     inference_variable_shapes = inference_variable_shapes_by_network(graph)
     summary_output_shapes = summary_output_shapes_by_network(graph)
+    summary_input_shapes = summary_input_shapes_by_network(graph)
 
     result = {}
 
     for network_idx, variable_shape in inference_variable_shapes.items():
+        # Path 1: summary output shape prefix matches variable shape prefix
         for v in summary_output_shapes.values():
             if variable_shape[:-1] == v[:-1]:
                 result[network_idx] = v
                 break
 
+        # Path 2: summary input shape prefix matches — use the input directly
+        # (e.g. per-group variables conditioned on per-group observations)
+        if network_idx not in result:
+            for v in summary_input_shapes.values():
+                if variable_shape[:-1] == v[:-1]:
+                    result[network_idx] = v
+                    break
+
+        # Path 3: broadcastable summary output (fallback)
         if network_idx not in result:
             for v in summary_output_shapes.values():
                 try:
                     concatenate_shapes([variable_shape, v])
-                    result[network_idx] = (variable_shape[:-1] + (v[-1],),)
+                    result[network_idx] = variable_shape[:-1] + (v[-1],)
                 except Exception:
                     pass
 

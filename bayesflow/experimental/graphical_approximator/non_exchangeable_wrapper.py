@@ -39,7 +39,8 @@ class NonExchangeableWrapper(InferenceNetwork):
             conditions_shape = (*xz_shape[:-2], 1, conditions_shape[-1] + summary_output_shape[-1])
 
         self._seq_len = xz_shape[-2]
-        self.inference_network.build((*xz_shape[:-2], 1, xz_shape[-1]), conditions_shape=conditions_shape)
+        if not self.inference_network.built:
+            self.inference_network.build((*xz_shape[:-2], 1, xz_shape[-1]), conditions_shape=conditions_shape)
         self.built = True
 
     def call(self, xz, conditions=None, inverse=False, density=False, training=False, **kwargs):

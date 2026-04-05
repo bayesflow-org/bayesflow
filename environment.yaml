@@ -12,7 +12,7 @@ dependencies:
   - pytest-cov
   - pytest-rerunfailures
   - pytest-xdist
-  - python >= 3.10, < 3.12
+  - python >= 3.11, < 3.13
   - ruff
   - seaborn
   - pandas

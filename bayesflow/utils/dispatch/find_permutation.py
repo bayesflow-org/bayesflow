@@ -11,15 +11,15 @@ def find_permutation(arg, *args, **kwargs):
 def _(name: str, *args, **kwargs):
     match name.lower():
         case "random":
-            from bayesflow.networks.coupling_flow.permutations import RandomPermutation
+            from bayesflow.networks.inference.coupling.permutations import RandomPermutation
 
             return RandomPermutation(*args, **kwargs)
         case "swap":
-            from bayesflow.networks.coupling_flow.permutations import Swap
+            from bayesflow.networks.inference.coupling.permutations import Swap
 
             return Swap(*args, **kwargs)
         case "learnable" | "orthogonal":
-            from bayesflow.networks.coupling_flow.permutations import OrthogonalPermutation
+            from bayesflow.networks.inference.coupling.permutations import OrthogonalPermutation
 
             return OrthogonalPermutation(*args, **kwargs)
 

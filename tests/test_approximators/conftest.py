@@ -1,5 +1,4 @@
 import pytest
-from tests.utils import check_combination_simulator_adapter
 
 
 @pytest.fixture()
@@ -15,102 +14,6 @@ def num_samples():
 @pytest.fixture()
 def summary_network():
     return None
-
-
-@pytest.fixture()
-def inference_network():
-    from bayesflow.networks import CouplingFlow
-
-    return CouplingFlow(subnet="mlp", depth=2, subnet_kwargs=dict(widths=(32, 32)))
-
-
-@pytest.fixture()
-def continuous_approximator(adapter, inference_network, summary_network):
-    from bayesflow import ContinuousApproximator
-
-    return ContinuousApproximator(
-        adapter=adapter,
-        inference_network=inference_network,
-        summary_network=summary_network,
-    )
-
-
-@pytest.fixture()
-def point_inference_network():
-    from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import NormedDifferenceScore, QuantileScore, MultivariateNormalScore
-
-    return PointInferenceNetwork(
-        scores=dict(
-            mean=NormedDifferenceScore(k=2),
-            quantiles=QuantileScore(q=[0.1, 0.5, 0.9]),
-            mvn=MultivariateNormalScore(),
-        ),
-        subnet="mlp",
-        subnet_kwargs=dict(widths=(32, 32)),
-    )
-
-
-@pytest.fixture()
-def point_inference_network_with_multiple_parametric_scores():
-    from bayesflow.networks import PointInferenceNetwork
-    from bayesflow.scores import MultivariateNormalScore
-
-    return PointInferenceNetwork(
-        scores=dict(
-            mvn1=MultivariateNormalScore(),
-            mvn2=MultivariateNormalScore(),
-        ),
-    )
-
-
-@pytest.fixture()
-def point_approximator_with_single_parametric_score(adapter, point_inference_network, summary_network):
-    from bayesflow import PointApproximator
-
-    if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
-        pytest.skip("point approximator does not support unconditional estimation")
-
-    return PointApproximator(
-        adapter=adapter,
-        inference_network=point_inference_network,
-        summary_network=summary_network,
-    )
-
-
-@pytest.fixture()
-def point_approximator_with_multiple_parametric_scores(
-    adapter, point_inference_network_with_multiple_parametric_scores, summary_network
-):
-    from bayesflow import PointApproximator
-
-    if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
-        pytest.skip("point approximator does not support unconditional estimation")
-
-    return PointApproximator(
-        adapter=adapter,
-        inference_network=point_inference_network_with_multiple_parametric_scores,
-        summary_network=summary_network,
-    )
-
-
-@pytest.fixture(
-    params=["point_approximator_with_single_parametric_score", "point_approximator_with_multiple_parametric_scores"]
-)
-def point_approximator(request):
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(
-    params=[
-        "continuous_approximator",
-        "point_approximator_with_single_parametric_score",
-        "point_approximator_with_multiple_parametric_scores",
-    ],
-    scope="function",
-)
-def approximator(request):
-    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture()
@@ -173,9 +76,10 @@ def simulator(request):
 
 @pytest.fixture()
 def train_dataset(batch_size, adapter, simulator):
-    check_combination_simulator_adapter(simulator, adapter)
-
     from bayesflow import OfflineDataset
+    from tests.utils import check_combination_simulator_adapter
+
+    check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 4
     data = simulator.sample((num_batches * batch_size,))
@@ -185,6 +89,9 @@ def train_dataset(batch_size, adapter, simulator):
 @pytest.fixture()
 def validation_dataset(batch_size, adapter, simulator):
     from bayesflow import OfflineDataset
+    from tests.utils import check_combination_simulator_adapter
+
+    check_combination_simulator_adapter(simulator, adapter)
 
     num_batches = 2
     data = simulator.sample((num_batches * batch_size,))
@@ -198,25 +105,79 @@ def mean_std_summary_network():
     return MeanStdSummaryNetwork()
 
 
-@pytest.fixture(params=["continuous_approximator", "point_approximator", "model_comparison_approximator"])
+@pytest.fixture()
+def continuous_approximator(adapter, summary_network):
+    from bayesflow import ContinuousApproximator
+    from bayesflow.networks import CouplingFlow
+
+    return ContinuousApproximator(
+        adapter=adapter,
+        inference_network=CouplingFlow(subnet="mlp", depth=2, subnet_kwargs=dict(widths=(32, 32))),
+        summary_network=summary_network,
+    )
+
+
+@pytest.fixture()
+def point_approximator_without_parametric_score(adapter, summary_network):
+    from bayesflow import ScoringRuleApproximator
+    from bayesflow.networks import PointNetwork
+
+    if "-> 'inference_conditions'" not in str(adapter) and "-> 'summary_conditions'" not in str(adapter):
+        pytest.skip("Scoring rule approximator does not support unconditional estimation")
+
+    return ScoringRuleApproximator(
+        adapter=adapter,
+        inference_network=PointNetwork(
+            points="mean",
+            subnet="mlp",
+            subnet_kwargs=dict(widths=(8, 8)),
+        ),
+        summary_network=summary_network,
+    )
+
+
+@pytest.fixture()
+def ensemble_approximator_continuous_and_point(continuous_approximator, point_approximator_without_parametric_score):
+    from bayesflow import EnsembleApproximator
+
+    return EnsembleApproximator(
+        dict(cont_approx=continuous_approximator, point_approx=point_approximator_without_parametric_score)
+    )
+
+
+@pytest.fixture(
+    params=["continuous_approximator", "ensemble_approximator_continuous_and_point"],
+)
+def approximator(request):
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture(params=["continuous_approximator", "scoring_rule_approximator", "model_comparison_approximator"])
 def approximator_with_summaries(request):
     from bayesflow.adapters import Adapter
+    from bayesflow.networks import MLP
 
     adapter = Adapter()
     match request.param:
         case "continuous_approximator":
             from bayesflow.approximators import ContinuousApproximator
+            from bayesflow.networks import CouplingFlow
 
-            return ContinuousApproximator(adapter=adapter, inference_network=None, summary_network=None)
-        case "point_approximator":
-            from bayesflow.approximators import PointApproximator
+            return ContinuousApproximator(adapter=adapter, inference_network=CouplingFlow(), summary_network=None)
+        case "scoring_rule_approximator":
+            from bayesflow.approximators import ScoringRuleApproximator
+            from bayesflow.networks import PointNetwork
 
-            return PointApproximator(adapter=adapter, inference_network=None, summary_network=None)
+            return ScoringRuleApproximator(
+                adapter=adapter,
+                inference_network=PointNetwork(points=["mean"]),
+                summary_network=None,
+            )
         case "model_comparison_approximator":
             from bayesflow.approximators import ModelComparisonApproximator
 
             return ModelComparisonApproximator(
-                num_models=2, classifier_network=None, adapter=adapter, summary_network=None
+                num_models=2, classifier_network=MLP(widths=(8, 8)), adapter=adapter, summary_network=None
             )
         case _:
             raise ValueError("Invalid param for approximator class.")

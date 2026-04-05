@@ -12,7 +12,18 @@ def test_build(approximator, train_dataset):
     approximator.build(data_shapes)
 
     assert approximator.built is True
-    assert approximator.classifier_network.built is True
+    assert approximator.inference_network.built is True
+    if approximator.summary_network is not None:
+        assert approximator.summary_network.built is True
+
+
+def test_build_from_data(approximator, train_dataset):
+    assert approximator.built is False
+
+    approximator.build_from_data(train_dataset[0])
+
+    assert approximator.built is True
+    assert approximator.inference_network.built is True
     if approximator.summary_network is not None:
         assert approximator.summary_network.built is True
 
@@ -26,11 +37,11 @@ def test_build_adapter():
     )
 
 
-def test_contrastive_sampling(random_seed, adapter, simulator, approximator):
-    joint_samples = simulator.sample(32)
+def test_contrastive_sampling(adapter, simulator, approximator):
+    joint_samples = simulator.sample(8)
     joint_samples = adapter(joint_samples)
     iv = joint_samples["inference_variables"]
-    civ = approximator._sample_from_batch(iv, seed=random_seed)
+    civ = approximator._sample_from_batch(iv)
 
     shape = list(keras.ops.shape(iv))
     shape.insert(1, approximator.K)
@@ -40,7 +51,7 @@ def test_contrastive_sampling(random_seed, adapter, simulator, approximator):
         assert not keras.ops.all(keras.ops.isclose(iv, civ[:, k]))
 
 
-def test_fit(random_seed, approximator, train_dataset, validation_dataset, simulator, adapter):
+def test_fit(approximator, train_dataset, validation_dataset):
     approximator.compile(optimizer="AdamW")
     num_epochs = 1
 

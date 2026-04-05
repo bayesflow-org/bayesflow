@@ -1,0 +1,19 @@
+coverage:
+  status:
+    patch:
+      dev:
+        target: 90%
+        branches:
+          - dev
+      main:
+        target: 90%
+        informational: true
+        branches:
+          - main
+      default:
+        target: 90%
+        informational: true
+    project:
+      default:
+        target: 90%
+        informational: true

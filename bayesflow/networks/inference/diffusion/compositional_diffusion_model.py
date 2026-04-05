@@ -1,8 +1,8 @@
 from collections.abc import Mapping
 from typing import Literal, Callable, Any
+import math
 
 import keras
-import numpy as np
 from keras import ops
 
 from bayesflow.types import Tensor
@@ -21,14 +21,51 @@ from .diffusion_model import DiffusionModel
 from .schedules.noise_schedule import NoiseSchedule
 
 
-@serializable("bayesflow.networks", disable_module_check=True)
+@serializable("bayesflow.networks")
 class CompositionalDiffusionModel(DiffusionModel):
-    """Compositional Diffusion Model for Amortized Bayesian Inference. Allows to learn a single
-    diffusion model one single i.i.d simulations that can perform inference for multiple simulations by leveraging a
-    compositional score function as in [1].
+    """Compositional score-based diffusion model for simulation-based inference (SBI).
 
-    [1] Arruda et al. (2026). Compositional amortized inference for large-scale hierarchical Bayesian models.
-     ICLR 2026.
+    Implements a score-based diffusion model with configurable subnet architecture,
+    noise schedule, and prediction/loss types for amortized SBI as described in [1],
+    implementing, stabilizing, and scaling initial ideas from [2] and [3].
+
+    Note that score-based diffusion is the most sluggish of all available samplers,
+    so expect slower inference times than flow matching and much slower than
+    normalizing flows.
+
+    Parameters
+    ----------
+    subnet : str, type, or keras.Layer, optional
+        A neural network type for the diffusion model, will be instantiated using
+        *subnet_kwargs*.  If a string is provided, it should be a registered name
+        (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
+        be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+        accept a tuple of tensors ``(target, time, conditions)``.
+    noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
+        Noise schedule controlling the diffusion dynamics.  Can be a string
+        identifier, a schedule class, or a pre-initialised schedule instance.
+        Default is ``"cosine"``.
+    prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}, optional
+        Output format of the model's prediction.  Default is ``"velocity"``.
+    loss_type : {'velocity', 'noise', 'F'}, optional
+        Loss function used to train the model.  Default is ``"noise"``.
+    subnet_kwargs : dict[str, Any], optional
+        Additional keyword arguments passed to the subnet constructor.
+    schedule_kwargs : dict[str, Any], optional
+        Additional keyword arguments passed to the noise schedule constructor.
+    integrate_kwargs : dict[str, Any], optional
+        Configuration dictionary for the ODE/SDE integrator used at inference time.
+    **kwargs
+        Additional keyword arguments passed to the base ``DiffusionModel``.
+
+    References
+    ----------
+    [1] Arruda et al., (2025). Compositional amortized inference for large-scale hierarchical Bayesian models.
+        https://arxiv.org/abs/2505.14429
+    [2] Geffner et al., (2023). Compositional score modeling for simulation-based inference.
+        https://arxiv.org/abs/2209.14249
+    [3] Linhart et al., (2024). Diffusion posterior sampling for simulation-based inference in tall data settings.
+        https://arxiv.org/abs/2404.07593
     """
 
     def __init__(
@@ -43,49 +80,6 @@ class CompositionalDiffusionModel(DiffusionModel):
         integrate_kwargs: dict[str, any] = None,
         **kwargs,
     ):
-        """
-        Compositional score-based diffusion model for simulation-based inference (SBI).
-
-        Implements a score-based diffusion model with configurable subnet architecture,
-        noise schedule, and prediction/loss types for amortized SBI as described in [1].
-
-        Note that score-based diffusion is the most sluggish of all available samplers,
-        so expect slower inference times than flow matching and much slower than
-        normalizing flows.
-
-        Parameters
-        ----------
-        subnet : str, type, or keras.Layer, optional
-            A neural network type for the diffusion model, will be instantiated using
-            *subnet_kwargs*.  If a string is provided, it should be a registered name
-            (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
-            be directly instantiated with the given *subnet_kwargs*.  Any subnet must
-            accept a tuple of tensors ``(target, time, conditions)``.
-        noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type, optional
-            Noise schedule controlling the diffusion dynamics.  Can be a string
-            identifier, a schedule class, or a pre-initialised schedule instance.
-            Default is ``"cosine"``.
-        prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}, optional
-            Output format of the model's prediction.  Default is ``"velocity"``.
-        loss_type : {'velocity', 'noise', 'F'}, optional
-            Loss function used to train the model.  Default is ``"noise"``.
-        subnet_kwargs : dict[str, Any], optional
-            Additional keyword arguments passed to the subnet constructor.
-        schedule_kwargs : dict[str, Any], optional
-            Additional keyword arguments passed to the noise schedule constructor.
-        integrate_kwargs : dict[str, Any], optional
-            Configuration dictionary for the ODE/SDE integrator used at inference time.
-        drop_target_prob : float, optional
-            Probability of dropping target values during training (i.e., learning arbitrary
-            distributions). Default is 0.0.
-        **kwargs
-            Additional keyword arguments passed to the base ``InferenceNetwork``.
-
-        References
-        ----------
-        [1] Arruda et al. (2026). Compositional amortized inference for large-scale hierarchical Bayesian models.
-         ICLR 2026.
-        """
         super().__init__(
             subnet=subnet,
             noise_schedule=noise_schedule,
@@ -101,9 +95,9 @@ class CompositionalDiffusionModel(DiffusionModel):
         self.compositional_bridge_d1 = 1.0  # no bridge
 
     def compositional_bridge(self, time: Tensor) -> Tensor:
-        """
-        Bridge function for compositional diffusion. In the simplest case, this is just 1 if d0 = d1 = 1.
-        Otherwise, it can be used to scale the compositional score over time.
+        """Bridge function for compositional diffusion. In the simplest case,
+        this is just 1 if d0 = d1 = 1. Otherwise, it can be used to stabilize the
+        compositional score over time.
 
         Parameters
         ----------
@@ -117,7 +111,7 @@ class CompositionalDiffusionModel(DiffusionModel):
 
         """
         return self.compositional_bridge_d0 * ops.exp(
-            -np.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time
+            -math.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time
         )
 
     def compositional_velocity(

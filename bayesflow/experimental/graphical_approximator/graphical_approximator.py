@@ -15,7 +15,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter
 from ...datasets import OfflineDataset, OnlineDataset
-from ...networks.standardization import Standardization
+from ...networks.helpers.standardization.standardize import Standardize
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .network_assignment import (
@@ -97,9 +97,9 @@ class GraphicalApproximator(Approximator):
             self.standardize = standardize or []
 
         if standardize == "all":
-            self.standardize_layers = None
+            self._standardize_layers = None
         else:
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+            self._standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
 
         if adapter == "auto":
             self.adapter = GraphicalApproximator.build_adapter()
@@ -114,8 +114,14 @@ class GraphicalApproximator(Approximator):
 
         for k, nodes in self.network_composition.items():
             if any(node not in exchangeable for node in nodes):
-                summary_network = self.summary_networks[shape_to_summary[inference_variable_shapes[k]]]
-                self.inference_networks[k] = NonExchangeableWrapper(self.inference_networks[k], summary_network)
+                summary_idx = shape_to_summary.get(inference_variable_shapes[k])
+                if summary_idx is not None and summary_idx < len(self.summary_networks or []):
+                    summary_network = self.summary_networks[summary_idx]
+                    self.inference_networks[k] = NonExchangeableWrapper(self.inference_networks[k], summary_network)
+
+    @property
+    def standardize_layers(self):
+        return self._standardize_layers
 
     @classmethod
     def build_adapter(
@@ -168,8 +174,7 @@ class GraphicalApproximator(Approximator):
         # Unwrap NonExchangeableWrapper so __init__ doesn't double-wrap on reload.
         # The wrapping is re-applied by __init__ using the same summary_networks list.
         inference_networks = [
-            n.inference_network if isinstance(n, NonExchangeableWrapper) else n
-            for n in self.inference_networks
+            n.inference_network if isinstance(n, NonExchangeableWrapper) else n for n in self.inference_networks
         ]
         config = {
             "graph": self.graph,
@@ -205,10 +210,10 @@ class GraphicalApproximator(Approximator):
 
         if self.standardize == "all":
             self.standardize = list(output_shapes.keys())
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+            self._standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
 
         for var in self.standardize:
-            self.standardize_layers[var].build(output_shapes[var])
+            self._standardize_layers[var].build(output_shapes[var])
 
         self.built = True
 
@@ -424,8 +429,8 @@ class GraphicalApproximator(Approximator):
         # log_det_jac for standardization layers
         for node, variable_names in variable_names.items():
             for variable_name in variable_names:
-                if variable_name in self.standardize_layers:
-                    result, ldj = self.standardize_layers[variable_name](adapted[variable_name], log_det_jac=True)
+                if variable_name in (self._standardize_layers or {}):
+                    result, ldj = self._standardize_layers[variable_name](adapted[variable_name], log_det_jac=True)
                     log_prob += keras.ops.sum(keras.ops.reshape(ldj, (batch_size, -1)), axis=-1)
 
         # log_det_jac for adapter

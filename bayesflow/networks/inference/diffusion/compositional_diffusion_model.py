@@ -415,9 +415,9 @@ class CompositionalDiffusionModel(DiffusionModel):
             Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
-        mini_batch_size : int or None
+        mini_batch_size : int or None, optional
             Mini batch size for computing individual scores. If None, use all conditions.
-        training : bool, optional
+        training : bool
             Whether in training mode.
         regularize_precision : float
             Tikhonov regularization added to Λ before solving for numerical stability.
@@ -659,7 +659,7 @@ class CompositionalDiffusionModel(DiffusionModel):
         integrate_kwargs |= kwargs
 
         n_compositional = ops.shape(conditions)[1]
-        mini_batch_size = integrate_kwargs.pop("mini_batch_size", max(int(n_compositional * 0.1), 2))
+        mini_batch_size = int(integrate_kwargs.pop("mini_batch_size", max(n_compositional * 0.1, 2)))
         if "mini_batch_size" in kwargs:
             kwargs.pop("mini_batch_size")
         if mini_batch_size is None:
@@ -677,7 +677,8 @@ class CompositionalDiffusionModel(DiffusionModel):
         )
 
         if integrate_kwargs["method"] == "langevin":  # Geffner et al. (2023)
-            z = z / ops.sqrt(ops.cast(n_compositional, dtype=ops.dtype(z)))
+            z_scaling = n_compositional * self.compositional_bridge_d1
+            z = z / ops.sqrt(ops.cast(z_scaling, dtype=ops.dtype(z)))
 
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)

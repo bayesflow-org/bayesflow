@@ -678,7 +678,7 @@ class BasicWorkflow(Workflow):
             dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
             then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
             `(num_conditions, num_samples, time, target_dim)`.
-        **kwargs : dict, optional
+        **kwargs : dict
             Additional keyword arguments passed to the approximator's sampling function.
 
         Returns

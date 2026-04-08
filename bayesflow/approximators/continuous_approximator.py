@@ -195,7 +195,7 @@ class ContinuousApproximator(Approximator):
         self,
         *,
         num_samples: int,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
@@ -210,7 +210,7 @@ class ContinuousApproximator(Approximator):
         ----------
         num_samples : int
             Number of samples to generate.
-        conditions : dict[str, np.ndarray]
+        conditions : dict[str, np.ndarray], optional
             Dictionary of conditioning variables as NumPy arrays.
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one sample array per target variable.

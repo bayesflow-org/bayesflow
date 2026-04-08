@@ -71,3 +71,16 @@ def test_basic_workflow_fusion(
     batched_samples = loaded_approximator.sample(conditions=test_conditions, num_samples=4, batch_size=2)
     assert samples["mean"].shape == (3, 4, 2)
     assert batched_samples["mean"].shape == samples["mean"].shape
+
+
+def test_unconditional_sampling(inference_network):
+    workflow = bf.BasicWorkflow(
+        inference_network=inference_network,
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+    )
+    workflow.fit_online(epochs=2, batch_size=3, num_batches_per_epoch=2, verbose=0)
+
+    # Get samples
+    samples = workflow.sample(conditions=None, num_samples=3)
+    assert samples["parameters"].shape == (3, 2)

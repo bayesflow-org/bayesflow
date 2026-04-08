@@ -23,11 +23,11 @@ class InferenceNetwork(keras.Layer):
     **at minimum** the following methods:
 
     ``_forward(x, conditions, density, training, **kwargs)``
-        Map data *x* → latent *z*.  When *density* is ``True`` the method must
+        Map data *x* -> latent *z*.  When *density* is ``True`` the method must
         return a tuple ``(z, log_prob)``; otherwise just *z*.
 
     ``_inverse(z, conditions, density, training, **kwargs)``
-        Map latent *z* → data *x*.  Same density convention as ``_forward``.
+        Map latent *z* -> data *x*.  Same density convention as ``_forward``.
 
     ``compute_metrics(x, conditions, sample_weight, stage)``
         Compute and return a ``dict[str, Tensor]`` of training metrics.  The dict

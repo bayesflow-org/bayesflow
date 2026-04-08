@@ -1,6 +1,7 @@
 import keras
 
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
 from .parametric_distribution_score import ParametricDistributionScore
@@ -185,7 +186,9 @@ class MixtureScore(ParametricDistributionScore):
 
         return keras.ops.logsumexp(log_w + logps, axis=-1)
 
-    def sample(self, batch_shape: Shape, **estimates: Tensor) -> Tensor:
+    def sample(
+        self, batch_shape: Shape, *, seed: int | keras.random.SeedGenerator | None = None, **estimates: Tensor
+    ) -> Tensor:
         """
         Draw samples from the mixture.
 
@@ -193,6 +196,8 @@ class MixtureScore(ParametricDistributionScore):
         ----------
         batch_shape : Shape
             A tuple (batch_size, num_samples).
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling, shared across component index selection and all component samples.
         **estimates : dict[str, Tensor]
             Flat dict containing mixture logits and all component parameter heads.
 
@@ -209,7 +214,8 @@ class MixtureScore(ParametricDistributionScore):
         probs = keras.ops.softmax(logits / self.temperature, axis=-1)  # (batch_size, K)
 
         # Sample component indices via inverse-CDF on uniform draws
-        u = keras.random.uniform((batch_size, num_samples, 1), dtype=probs.dtype)
+        sg = resolve_seed(seed)
+        u = keras.random.uniform((batch_size, num_samples, 1), dtype=probs.dtype, seed=sg)
         cdf = keras.ops.cumsum(probs, axis=-1)[:, None, :]  # (B, 1, K)
         cdf = keras.ops.broadcast_to(cdf, (batch_size, num_samples, self.K))  # (B, S, K)
         idx = keras.ops.argmax(keras.ops.cast(u <= cdf, "int32"), axis=-1)  # (B, S)
@@ -219,7 +225,7 @@ class MixtureScore(ParametricDistributionScore):
         for c in self.component_names:
             c_est = self._component_estimates(estimates, c)
             c_est = {k: keras.ops.repeat(keras.ops.expand_dims(v, 1), num_samples, axis=1) for k, v in c_est.items()}
-            s = self.components[c].sample((batch_size, num_samples), **c_est)
+            s = self.components[c].sample((batch_size, num_samples), seed=sg, **c_est)
             comp_samples.append(s)
 
         stacked = keras.ops.stack(comp_samples, axis=2)  # (B, S, K, ...)

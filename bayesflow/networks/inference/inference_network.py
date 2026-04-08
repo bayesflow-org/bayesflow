@@ -5,6 +5,7 @@ import keras
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import deserialize
 
 
@@ -110,9 +111,16 @@ class InferenceNetwork(keras.Layer):
         raise NotImplementedError
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape, conditions: Tensor = None, **kwargs) -> Tensor:
-        samples = self.base_distribution.sample(batch_shape)
-        samples = self(samples, conditions=conditions, inverse=True, density=False, **kwargs)
+    def sample(
+        self,
+        batch_shape: Shape,
+        conditions: Tensor = None,
+        seed: int | keras.random.SeedGenerator | None = None,
+        **kwargs,
+    ) -> Tensor:
+        seed = resolve_seed(seed)
+        samples = self.base_distribution.sample(batch_shape, seed=seed)
+        samples = self(samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs)
         return samples
 
     def log_prob(self, samples: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:

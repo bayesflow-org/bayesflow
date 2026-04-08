@@ -12,10 +12,13 @@ docsrc/source/_examples
 docsrc/source/contributing.md
 examples/checkpoints/
 build
-docs/
-
-# uv
-uv.lock
+docs/_build/
+docs/_build_polyversion
+docs/.docs_venvs
+docs/source/api/*
+!docs/source/api/index.rst
+docs/source/contributing.md
+examples/checkpoints/
 
 # mypy
 .mypy_cache

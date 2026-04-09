@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import keras
 import numpy as np
 
@@ -9,6 +10,18 @@ def resolve_seed(seed):
     if isinstance(seed, int):
         return keras.random.SeedGenerator(seed)
     return seed
+
+
+def keras_multinomial(
+    num_samples: int, probs: Sequence[float], *, seed: int | keras.random.SeedGenerator | None = None
+):
+    K = len(probs)
+    logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, K))
+    cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
+    one_hot = keras.ops.one_hot(cat_indices, K)
+    counts = keras.ops.sum(one_hot, axis=0)
+
+    return counts
 
 
 def inverse_shifted_softplus(x: Tensor, shift: float = np.log(np.e - 1), beta: float = 1.0, threshold: float = 20.0):

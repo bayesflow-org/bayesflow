@@ -20,3 +20,16 @@ def test_approximator_sample(ensemble_approximator, simulator, batch_size, adapt
 
     for samples_value in samples.values():
         assert isinstance(samples_value, np.ndarray)
+
+    samples_seed42_1 = ensemble_approximator.sample(num_samples=2, conditions=data, seed=42)
+    samples_seed42_2 = ensemble_approximator.sample(num_samples=2, conditions=data, seed=42)
+
+    for key in samples.keys():
+        assert np.allclose(
+            samples_seed42_1[key],
+            samples_seed42_2[key],
+        ), "samples differ for identical seed"
+        assert not np.allclose(
+            samples_seed42_1[key],
+            samples[key],
+        ), "samples do not differ in unseeded case"

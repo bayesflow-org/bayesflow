@@ -17,8 +17,10 @@ logger.setLevel(logging.DEBUG)
 root = Git.root(Path(__file__).parent)
 
 #: CodeRegex matching the branches to build docs for
-# BRANCH_REGEX = r"^(main|stable-legacy)$"
-BRANCH_REGEX = r"^(stable-legacy)$"
+# BRANCH_REGEX = r"^(docs-contributing-sphinx|stable-legacy)$"
+# BRANCH_REGEX = r"^(stable-legacy)$"
+# BRANCH_REGEX = r"fork/Masoumeh-Davoudi/restructure-docs"
+BRANCH_REGEX = r".*"
 
 #: Regex matching the tags to build docs for
 TAG_REGEX = r"^v(?!1\.)(?!2\.0\.[0-6]$)(?!2\.0\.9$)([\d]+\.[\d]+\.[\d]+)$"
@@ -75,6 +77,8 @@ VENV_DIR_NAME = ".docs_venvs"
 def data(driver, rev, env):
     revisions = driver.targets
     branches, tags = refs_by_type(revisions)
+    print(f"{branches=}, {tags=}")
+    exit(1)
     latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":
@@ -93,6 +97,8 @@ def data(driver, rev, env):
 def root_data(driver):
     revisions = driver.builds
     branches, tags = refs_by_type(revisions)
+    print(f"{branches=}, {tags=}")
+    exit(1)
     latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":

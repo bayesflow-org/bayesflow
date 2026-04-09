@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from datetime import datetime
@@ -21,11 +22,12 @@ logger.setLevel(logging.DEBUG)
 root = Git.root(Path(__file__).parent)
 
 #: CodeRegex matching the branches to build docs for
-BRANCH_REGEX = r"^(docs-contributing-sphinx|stable-legacy)$"
+BRANCH_REGEX = r"^(fork/Masoumeh-Davoudi/restructure-docs|stable-legacy)$"
+# BRANCH_REGEX = ".*"
 
 #: Regex matching the tags to build docs for
 TAG_REGEX = r"^v(?!1\.)(?!2\.0\.[0-6]$)(?!2\.0\.9$)([\d]+\.[\d]+\.[\d]+)$"
-#TAG_REGEX = r""
+# TAG_REGEX = r""
 
 #: Output dir relative to project root
 OUTPUT_DIR = "_build_polyversion"
@@ -94,8 +96,12 @@ def data(driver, rev, env):
 
 
 def root_data(driver):
+    # print(f"{[x for x in dir(driver) if not x.startswith("_")]}")
     revisions = driver.builds
+    # print(f"{revisions=}")
     branches, tags = refs_by_type(revisions)
+    # print(f"{branches=}, {tags=}")
+    # exit(1)
     latest = max(tags or branches)
     for b in branches:
         if b.name == "main":
@@ -118,7 +124,10 @@ vcs = Git(
 )
 
 
-creator = VenvWrapper(with_pip=True)
+# Do not require system `ensurepip`/`pip` during venv creation. We will
+# bootstrap pip inside the created venv when needed (see
+# `docs/polyversion_patches.py`), which avoids requiring a system pip
+creator = VenvWrapper(with_pip=False)
 
 
 async def selector(rev, keys):

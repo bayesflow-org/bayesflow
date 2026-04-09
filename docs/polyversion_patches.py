@@ -42,7 +42,69 @@ class DynamicPip(Pip):
         """
         await super(Pip, self).__aenter__()
 
-        logger.info("Running `pip install`...")
+        env = self.activate(self.apply_overrides(os.environ.copy()))
+
+        # Ensure `pip` is available inside the created environment. Some
+        # Python distributions (e.g. minimal/embedded builds or `uv`) do not
+        # include `ensurepip` or a system-wide `pip`. In that case we bootstrap
+        # pip inside the venv by downloading and running get-pip.py.
+        #
+        # First check whether `python -m pip --version` succeeds inside the
+        # environment. If it fails, download get-pip.py and run it with the
+        # venv's python to install pip locally.
+        self.logger.info("Checking for pip inside the environment...")
+
+        check = await asyncio.create_subprocess_exec(
+            "python",
+            "-m",
+            "pip",
+            "--version",
+            cwd=self.path,
+            env=env,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        await check.communicate()
+
+        if check.returncode != 0:
+            # No pip available; bootstrap it using get-pip.py
+            self.logger.info("No pip found in venv, bootstrapping via get-pip.py...")
+            try:
+                import urllib.request
+
+                tmp_dir = tempfile.mkdtemp()
+                get_pip_path = Path(tmp_dir) / "get-pip.py"
+                urllib.request.urlretrieve("https://bootstrap.pypa.io/get-pip.py", str(get_pip_path))
+
+                install_proc = await asyncio.create_subprocess_exec(
+                    "python",
+                    str(get_pip_path),
+                    cwd=self.path,
+                    env=env,
+                    stdout=PIPE,
+                    stderr=PIPE,
+                )
+                out, err = await install_proc.communicate()
+                out = out.decode(errors="ignore")
+                err = err.decode(errors="ignore")
+                if install_proc.returncode != 0:
+                    self.logger.error("Bootstrapping pip failed:\n %s", err)
+                    raise BuildError from CalledProcessError(
+                        returncode=install_proc.returncode,
+                        cmd=f"python {get_pip_path}",
+                        output=out,
+                        stderr=err,
+                    )
+            finally:
+                # try to clean up the temporary download
+                try:
+                    if get_pip_path and get_pip_path.exists():
+                        get_pip_path.unlink()
+                    Path(tmp_dir).rmdir()
+                except Exception:
+                    pass
+
+        self.logger.info("Running `pip install`...")
 
         cmd: list[str] = ["pip", "install"]
         cmd += self.args
@@ -50,7 +112,7 @@ class DynamicPip(Pip):
         process = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=self.path,
-            env=self.activate(self.apply_overrides(os.environ.copy())),
+            env=env,
             stdout=PIPE,
             stderr=PIPE,
         )

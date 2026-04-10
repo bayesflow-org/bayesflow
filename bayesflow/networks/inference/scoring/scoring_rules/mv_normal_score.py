@@ -102,7 +102,6 @@ class MvNormalScore(ParametricDistributionScore):
     def sample(
         self,
         batch_shape: Shape,
-        *,
         mean: Tensor,
         precision_cholesky_factor: Tensor,
         seed: int | keras.random.SeedGenerator | None = None,

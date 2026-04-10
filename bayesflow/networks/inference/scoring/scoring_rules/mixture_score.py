@@ -187,7 +187,7 @@ class MixtureScore(ParametricDistributionScore):
         return keras.ops.logsumexp(log_w + logps, axis=-1)
 
     def sample(
-        self, batch_shape: Shape, *, seed: int | keras.random.SeedGenerator | None = None, **estimates: Tensor
+        self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None, **estimates: Tensor
     ) -> Tensor:
         """
         Draw samples from the mixture.

@@ -22,11 +22,11 @@ def test_sample_seed_determinism(inference_network):
         if not has_distribution:
             pytest.skip("This ScoringRuleNetwork has no parametric distribution scores to sample from")
 
-    from bayesflow.networks import ConsistencyModel, DiffusionModel, FlowMatching
+    from bayesflow.networks import ConsistencyModel, StableConsistencyModel, DiffusionModel, FlowMatching
 
     sample_kwargs = dict(conditions=keras.random.normal(conditions_shape))
     # Pass steps=2 to iterative networks to keep the test fast
-    if isinstance(inference_network, (ConsistencyModel, DiffusionModel, FlowMatching)):
+    if isinstance(inference_network, (ConsistencyModel, StableConsistencyModel, DiffusionModel, FlowMatching)):
         sample_kwargs["steps"] = 2
 
     samples_seed42_1 = inference_network.sample(batch_shape, seed=42, **sample_kwargs)

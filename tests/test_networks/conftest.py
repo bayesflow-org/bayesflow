@@ -54,6 +54,16 @@ def consistency_model():
 
 
 @pytest.fixture()
+def stable_consistency_model():
+    from bayesflow.networks import StableConsistencyModel
+
+    return StableConsistencyModel(
+        total_steps=100,
+        subnet_kwargs=dict(widths=[8, 8]),
+    )
+
+
+@pytest.fixture()
 def affine_coupling_flow():
     from bayesflow.networks import CouplingFlow
 
@@ -121,6 +131,7 @@ def typical_scoring_rule_network_subnet():
         "flow_matching",
         "free_form_flow",
         "consistency_model",
+        "stable_consistency_model",
         pytest.param("diffusion_model_edm_F"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_noise", marks=pytest.mark.slow),
@@ -151,6 +162,7 @@ def inference_network_subnet(request):
         "flow_matching",
         "free_form_flow",
         "consistency_model",
+        "stable_consistency_model",
         pytest.param("diffusion_model_edm_F"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
     ],

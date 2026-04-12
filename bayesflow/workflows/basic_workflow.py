@@ -273,6 +273,7 @@ class BasicWorkflow(Workflow):
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -300,6 +301,10 @@ class BasicWorkflow(Workflow):
             dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
             then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
             `(num_conditions, num_samples, time, target_dim)`.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), each component uses its own instance seed generator or a global one.
         **kwargs : dict | str, optional
             Additional keyword arguments passed to the approximator's sampling function.
 
@@ -316,6 +321,7 @@ class BasicWorkflow(Workflow):
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,
+            seed=seed,
             **kwargs,
         )
         elapsed = time.perf_counter() - start_time

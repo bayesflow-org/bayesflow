@@ -81,7 +81,7 @@ def free_form_flow():
 @pytest.fixture()
 def typical_scoring_rule_network():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore
+    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore, MixtureScore
 
     return ScoringRuleNetwork(
         scoring_rules=dict(
@@ -89,6 +89,7 @@ def typical_scoring_rule_network():
             median=MedianScore(),
             quantiles=QuantileScore([0.1, 0.2, 0.5, 0.65]),
             mvn=MvNormalScore(),
+            mix=MixtureScore(mvn_c1=MvNormalScore(), mvn_c2=MvNormalScore()),
         )
     )
 
@@ -96,7 +97,7 @@ def typical_scoring_rule_network():
 @pytest.fixture()
 def typical_scoring_rule_network_subnet():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore
+    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore, MixtureScore
 
     subnet = MLP([16, 8])
 
@@ -106,6 +107,7 @@ def typical_scoring_rule_network_subnet():
             median=MedianScore(subnets=dict(value=subnet)),
             quantiles=QuantileScore(subnets=dict(value=subnet)),
             mvn=MvNormalScore(subnets=dict(mean=subnet, covariance=subnet)),
+            mix=MixtureScore(mvn_c1=MvNormalScore(), mvn_c2=MvNormalScore(), subnets=dict(mixture_logits=subnet)),
         ),
         subnet=subnet,
     )

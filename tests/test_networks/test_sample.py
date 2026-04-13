@@ -42,5 +42,13 @@ def test_sample_seed_determinism(inference_network):
         arr2 = keras.ops.convert_to_numpy(s2)
         arr_unseeded = keras.ops.convert_to_numpy(s_unseeded)
 
-        assert np.allclose(arr1, arr2), f"samples differ for identical seed ({inference_network})"
-        assert not np.allclose(arr1, arr_unseeded), f"seeded and unseeded samples are identical ({inference_network})"
+        np.testing.assert_allclose(
+            arr1,
+            arr2,
+            err_msg=f"{inference_network}: samples differ for identical seed",
+        )
+        with pytest.raises(AssertionError):
+            np.testing.assert_allclose(
+                arr1,
+                arr_unseeded,
+            )

@@ -12,7 +12,7 @@ from bayesflow.utils import (
     split_arrays,
     squeeze_inner_estimates_dict,
 )
-from bayesflow.utils.keras_utils import resolve_seed, keras_multinomial
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable
 
 from .continuous_approximator import ContinuousApproximator
@@ -63,8 +63,8 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
         self.distribution_keys = []
         for score_key, score in self.inference_network.scoring_rules.items():
-            has_sample = getattr(score, "sample", None)
-            has_log_prob = getattr(score, "log_prob", None)
+            has_sample = callable(getattr(score, "sample", None))
+            has_log_prob = callable(getattr(score, "log_prob", None))
 
             if has_sample and has_log_prob:
                 self.distribution_keys.append(score_key)
@@ -220,7 +220,6 @@ class ScoringRuleApproximator(ContinuousApproximator):
             return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
         seed_generator = resolve_seed(seed)
-        score_weights = self._resolve_score_weights(score_weights)
 
         # Single score: _sample_separate already squeezed to a plain result,
         # and mixing with uniform weight is an identity operation.
@@ -229,9 +228,19 @@ class ScoringRuleApproximator(ContinuousApproximator):
                 num_samples=num_samples, conditions=conditions, split=split, seed=seed_generator, **kwargs
             )
 
-        # Allocate samples per score and draw only as many as needed (max over scores).
+        # Allocate samples per score according to weights
+        score_weights = self._resolve_score_weights(score_weights)
         probs = np.array(list(score_weights.values()))
-        counts = keras_multinomial(num_samples, probs, seed=seed_generator)
+
+        # Sample counts from multinomial
+        K = len(probs)
+        logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, K))
+        cat_indices = keras.ops.squeeze(
+            keras.random.categorical(logits_broadcast, num_samples=1, seed=seed_generator), axis=-1
+        )
+        one_hot = keras.ops.one_hot(cat_indices, K)
+        counts = keras.ops.sum(one_hot, axis=0)
+
         max_count = int(keras.ops.max(counts))
         num_samples_per_score = {k: counts[i] for i, k in enumerate(score_weights.keys())}
 

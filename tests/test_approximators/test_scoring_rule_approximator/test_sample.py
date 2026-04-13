@@ -52,11 +52,13 @@ def test_sample(scoring_rule_approximator_any, simulator, batch_size, num_sample
     samples_seed42_2 = scoring_rule_approximator_any.sample(num_samples=num_samples, conditions=data, seed=42)
 
     for key in samples_merged.keys():
-        assert np.allclose(
+        np.testing.assert_allclose(
             samples_seed42_1[key],
             samples_seed42_2[key],
-        ), f"{key}: samples differ for identical seed"
-        assert not np.allclose(
-            samples_seed42_1[key],
-            samples_merged[key],
-        ), f"{key}: samples do not differ in unseeded case"
+            err_msg=f"{key}: samples differ for identical seed",
+        )
+        with pytest.raises(AssertionError):
+            np.testing.assert_allclose(
+                samples_seed42_1[key],
+                samples_merged[key],
+            )

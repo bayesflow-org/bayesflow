@@ -234,7 +234,7 @@ class ContinuousApproximator(Approximator):
         seed : int, keras.random.SeedGenerator, or None, optional
             Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
             and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
-            as-is. If ``None`` (default), each component uses its own instance seed generator or a global one.
+            as-is. If ``None`` (default), each component uses its own instance seed generator.
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 

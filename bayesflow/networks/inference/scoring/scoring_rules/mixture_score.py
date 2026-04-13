@@ -206,7 +206,9 @@ class MixtureScore(ParametricDistributionScore):
         Tensor
             Samples with shape (batch_size, num_samples, ...).
         """
-        assert len(batch_shape) == 1  # approximator.helpers.Sampler makes sure that batch_shape is flat
+        assert len(batch_shape) == 1, (
+            f"Got unexpected {batch_shape=}. Usually approximator.helpers.Sampler makes sure that batch_shape is flat"
+        )
         batch_size = batch_shape[0]
 
         logits = estimates[self.weight_head]  # (batch_size, K) typically

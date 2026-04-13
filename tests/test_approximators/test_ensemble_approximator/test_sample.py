@@ -1,3 +1,4 @@
+import pytest
 import keras
 import numpy as np
 from tests.utils import check_combination_simulator_adapter
@@ -25,11 +26,13 @@ def test_approximator_sample(ensemble_approximator, simulator, batch_size, adapt
     samples_seed42_2 = ensemble_approximator.sample(num_samples=2, conditions=data, seed=42)
 
     for key in samples.keys():
-        assert np.allclose(
+        np.testing.assert_allclose(
             samples_seed42_1[key],
             samples_seed42_2[key],
-        ), "samples differ for identical seed"
-        assert not np.allclose(
-            samples_seed42_1[key],
-            samples[key],
-        ), "samples do not differ in unseeded case"
+            err_msg=f"{key}: samples differ for identical seed",
+        )
+        with pytest.raises(AssertionError):
+            np.testing.assert_allclose(
+                samples_seed42_1[key],
+                samples[key],
+            )

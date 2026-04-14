@@ -35,13 +35,13 @@ class AffineTransform(Transform):
         parameters["scale"] = scale
         return parameters
 
-    def _forward(self, x: Tensor, parameters: dict[str, Tensor] = None) -> (Tensor, Tensor):
+    def _forward(self, x: Tensor, parameters: dict[str, Tensor] = None) -> tuple[Tensor, Tensor]:
         z = parameters["scale"] * x + parameters["shift"]
         log_det = ops.sum(ops.log(parameters["scale"]), axis=-1)
 
         return z, log_det
 
-    def _inverse(self, z: Tensor, parameters: dict[str, Tensor] = None) -> (Tensor, Tensor):
+    def _inverse(self, z: Tensor, parameters: dict[str, Tensor] = None) -> tuple[Tensor, Tensor]:
         x = (z - parameters["shift"]) / parameters["scale"]
         log_det = -ops.sum(ops.log(parameters["scale"]), axis=-1)
 

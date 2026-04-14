@@ -35,6 +35,16 @@ WEIGHT_MLP_DEFAULTS = MappingProxyType(
     }
 )
 
+COUPLING_MLP_DEFAULTS = MappingProxyType(
+    {
+        "activation": "hard_silu",
+        "kernel_initializer": "glorot_uniform",
+        "residual": False,
+        "dropout": 0.05,
+        "spectral_normalization": False,
+    }
+)
+
 DIFFUSION_INTEGRATE_DEFAULTS = MappingProxyType({"method": "two_step_adaptive", "steps": "adaptive"})
 
 FLOW_MATCHING_INTEGRATE_DEFAULTS = MappingProxyType({"method": "tsit5", "steps": "adaptive"})

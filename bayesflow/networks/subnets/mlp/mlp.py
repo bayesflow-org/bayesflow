@@ -4,45 +4,71 @@ from typing import Literal, Callable
 import keras
 
 from bayesflow.utils import layer_kwargs
-from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.utils.serialization import deserialize, serializable, serialize
 
-from ...helpers import Sequential
-from ...helpers import Residual
+from ...helpers import DenseBlock
+
+
+def _unpack_shape(input_shape):
+    """Unpack *input_shape* into ``(x_shape, conditions_shape)``.
+
+    Accepts plain shapes ``(batch, features)`` as well as structured shapes
+    ``((batch, features), (batch, cond_features))`` or
+    ``((batch, features), None)``.
+    """
+    if isinstance(input_shape, (tuple, list)) and len(input_shape) == 2:
+        if isinstance(input_shape[0], (tuple, list)):
+            x_shape = tuple(input_shape[0])
+            cond_shape = tuple(input_shape[1]) if input_shape[1] is not None else None
+            return x_shape, cond_shape
+    return tuple(input_shape) if isinstance(input_shape, list) else input_shape, None
+
+
+def _unpack_inputs(inputs):
+    """Unpack call-time *inputs* into ``(x, conditions)``."""
+    if isinstance(inputs, (tuple, list)) and len(inputs) == 2:
+        return inputs[0], inputs[1]
+    return inputs, None
 
 
 @serializable("bayesflow.networks")
-class MLP(Sequential):
-    """
-    Implements a flexible multi-layer perceptron (MLP) with optional residual connections, dropout, and
-    spectral normalization.
+class MLP(keras.Layer):
+    """Flexible multi-layer perceptron with optional conditional input,
+    residual connections, dropout, and spectral normalization.
 
-    This MLP can be used as a general-purpose feature extractor or function approximator, supporting configurable
-    depth, width, activation functions, and weight initializations. If used in conjunction with a coupling net,
-    a diffusion model, or a flow matching model, it assumes that the input and conditions are already concatenated.
+    Supports two input modes determined at build time:
 
-    If `residual` is enabled, each layer includes a skip connection for improved gradient flow [1]. The model also
-    supports dropout for regularization and spectral normalization for stability in learning smooth functions.
+    - **Unconditional** — ``build(x_shape)`` / ``call(x)``
+    - **Conditional** — ``build((x_shape, conditions_shape))`` /
+      ``call((x, conditions))``
 
-    [1] He et al. (2016), Deep Residual Learning for Image Recognition
+    In conditional mode the input and conditions are each projected into a
+    shared feature space, merged (via concatenation or addition), and then
+    passed through the hidden blocks.  Without conditions the input feeds
+    directly into the blocks.
 
     Parameters
     ----------
     widths : Sequence[int], optional
-        Defines the number of hidden units per layer, as well as the number of layers to be used.
-    activation : str, optional
-        Activation function applied in the hidden layers, such as "mish". Default is "mish".
-    kernel_initializer : str, optional
-        Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
+        Number of hidden units per layer, determining both width and depth.
+        Default is ``(256, 256)``.
+    activation : str or callable, optional
+        Activation function for hidden layers. Default is ``"mish"``.
+    kernel_initializer : str or keras.Initializer, optional
+        Weight initialization strategy. Default is ``"he_normal"``.
     residual : bool, optional
-        Whether to use residual connections for improved training stability. Default is True.
+        Whether to use residual (skip) connections. Default is ``True``.
     dropout : float or None, optional
-        Dropout rate applied within the MLP layers for regularization. Default is 0.05.
-    norm : str or keras.Layer, optional
-        Normalization applied after each hidden layer ("batch", "layer", or None). Default is None.
+        Dropout rate for regularization. Default is ``0.05``.
+    norm : ``"batch"``, ``"layer"``, keras.Layer, or None, optional
+        Normalization applied after each hidden layer. Default is ``None``.
     spectral_normalization : bool, optional
-        Whether to apply spectral normalization to stabilize training. Default is False.
+        Apply spectral normalization to Dense layers. Default is ``False``.
+    merge : ``"add"`` or ``"concat"``, optional
+        How to merge input and conditions in conditional mode.
+        Default is ``"concat"``.
     **kwargs
-        Additional keyword arguments passed to the Keras layer initialization.
+        Additional keyword arguments passed to ``keras.Layer``.
     """
 
     def __init__(
@@ -55,10 +81,15 @@ class MLP(Sequential):
         dropout: Literal[0, None] | float = 0.05,
         norm: Literal["batch", "layer"] | keras.Layer = None,
         spectral_normalization: bool = False,
+        merge: Literal["add", "concat"] = "concat",
         **kwargs,
     ):
+        super().__init__(**layer_kwargs(kwargs))
+
         if len(widths) == 0:
             raise ValueError("MLP requires at least one hidden width.")
+        if merge not in ("add", "concat"):
+            raise ValueError(f"Unknown merge mode: {merge!r} (expected 'add' or 'concat').")
 
         self.widths = list(widths)
         self.activation = activation
@@ -67,16 +98,37 @@ class MLP(Sequential):
         self.dropout = dropout
         self.norm = norm
         self.spectral_normalization = spectral_normalization
+        self.merge = merge
 
-        blocks = []
-
-        for width in widths:
-            block = self._make_block(
-                width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization
+        # Hidden blocks
+        self.blocks = [
+            DenseBlock(
+                width=width,
+                activation=activation,
+                kernel_initializer=kernel_initializer,
+                residual=residual,
+                dropout=dropout,
+                norm=norm,
+                spectral_normalization=spectral_normalization,
             )
-            blocks.append(block)
+            for width in self.widths
+        ]
 
-        super().__init__(*blocks, **kwargs)
+        # Input pathway — populated in build() when conditions are present
+        self.x_proj = None
+        self.c_proj = None
+        self.merge_proj = None
+
+        act = keras.activations.get(activation)
+        if not isinstance(act, keras.Layer):
+            act = keras.layers.Activation(act)
+        self.input_act = act
+
+    # -- Serialization -------------------------------------------------------
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def get_config(self):
         base_config = super().get_config()
@@ -90,42 +142,69 @@ class MLP(Sequential):
             "dropout": self.dropout,
             "norm": self.norm,
             "spectral_normalization": self.spectral_normalization,
+            "merge": self.merge,
         }
 
         return base_config | serialize(config)
 
-    @staticmethod
-    def _make_block(width, activation, kernel_initializer, residual, dropout, norm, spectral_normalization):
-        layers = []
+    # -- Build / call --------------------------------------------------------
 
-        dense = keras.layers.Dense(units=width, kernel_initializer=kernel_initializer)
-        if spectral_normalization:
-            dense = keras.layers.SpectralNormalization(dense)
-        layers.append(dense)
+    def build(self, input_shape):
+        if self.built:
+            return
 
-        if dropout is not None and dropout > 0:
-            layers.append(keras.layers.Dropout(dropout))
+        x_shape, conditions_shape = _unpack_shape(input_shape)
+        h_shape = x_shape
 
-        activation = keras.activations.get(activation)
-        if not isinstance(activation, keras.Layer):
-            activation = keras.layers.Activation(activation)
+        # Conditional pathway
+        if conditions_shape is not None:
+            self.x_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="x_proj")
+            self.x_proj.build(x_shape)
+            h_shape = self.x_proj.compute_output_shape(x_shape)
 
-        layers.append(activation)
+            self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="c_proj")
+            self.c_proj.build(conditions_shape)
 
-        if norm == "batch":
-            layers.append(keras.layers.BatchNormalization())
-        elif norm == "layer":
-            layers.append(keras.layers.LayerNormalization())
-        elif isinstance(norm, str):
-            raise ValueError(f"Unknown normalization strategy: {norm!r}.")
-        elif isinstance(norm, keras.Layer):
-            layers.append(norm)
-        elif norm is None:
-            pass
+            if self.merge == "concat":
+                merge_shape = h_shape[:-1] + (h_shape[-1] + self.widths[0],)
+            else:
+                merge_shape = h_shape
+
+            self.merge_proj = keras.layers.Dense(
+                self.widths[0], kernel_initializer=self.kernel_initializer, name="merge_proj"
+            )
+            self.merge_proj.build(merge_shape)
+            h_shape = self.merge_proj.compute_output_shape(merge_shape)
+
+        # Hidden blocks
+        for block in self.blocks:
+            block.build(h_shape)
+            h_shape = block.compute_output_shape(h_shape)
+
+        super().build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+        x_shape, _ = _unpack_shape(input_shape)
+        return x_shape[:-1] + (self.widths[-1],)
+
+    def call(self, inputs, training=None):
+        x, conditions = _unpack_inputs(inputs)
+
+        # Merge input and conditions (conditional mode)
+        if self.x_proj is not None:
+            h = self.x_proj(x)
+            if conditions is not None and self.c_proj is not None:
+                hc = self.c_proj(conditions)
+                if self.merge == "concat":
+                    h = keras.ops.concatenate([h, hc], axis=-1)
+                else:
+                    h = h + hc
+                h = self.merge_proj(self.input_act(h))
+            h = self.input_act(h)
         else:
-            raise TypeError(f"Cannot infer norm from {norm!r} of type {type(norm)}.")
+            h = x
 
-        if residual:
-            return Residual(*layers)
+        for block in self.blocks:
+            h = block(h, training=training)
 
-        return Sequential(layers)
+        return h

@@ -124,7 +124,7 @@ class SplineTransform(Transform):
 
         return constrained_parameters
 
-    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
+    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 
@@ -177,7 +177,7 @@ class SplineTransform(Transform):
 
         return z, log_det
 
-    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
+    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 

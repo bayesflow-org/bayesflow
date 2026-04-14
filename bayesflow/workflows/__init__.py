@@ -17,7 +17,7 @@ Examples
 
 from .basic_workflow import BasicWorkflow
 from .ensemble_workflow import EnsembleWorkflow
-from .compositional_workflow import CompositionalWorkflow
+from .compositional_workflow import CompositionalWorkflow, compositional_workflow_from_basic
 
 from ..utils._docs import _add_imports_to_all
 

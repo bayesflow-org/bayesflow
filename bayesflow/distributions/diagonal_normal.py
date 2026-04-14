@@ -7,6 +7,7 @@ from keras import ops
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable, serialize
 
 from .distribution import Distribution
@@ -21,7 +22,7 @@ class DiagonalNormal(Distribution):
         mean: int | float | np.ndarray | Tensor = 0.0,
         std: int | float | np.ndarray | Tensor = 1.0,
         trainable_parameters: bool = False,
-        seed_generator: keras.random.SeedGenerator = None,
+        seed_generator: keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         """
@@ -97,8 +98,9 @@ class DiagonalNormal(Distribution):
         return result
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape) -> Tensor:
-        z = keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)
+    def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
+        sg = resolve_seed(seed) or self.seed_generator
+        z = keras.random.normal(shape=batch_shape + (self.dim,), seed=sg)
         z = self._mean + self._std * z
         return z
 

@@ -61,7 +61,7 @@ def test_mixture_score_constructor_validation():
 
 
 def test_mixture_score_sample_shape(mixture_of_multivariate_normal_scores):
-    batch_size, num_samples, dim = 4, 10, 3
+    batch_size, dim = 4, 3
     mix = mixture_of_multivariate_normal_scores
     eye = keras.ops.broadcast_to(keras.ops.eye(dim)[None], (batch_size, dim, dim))
     estimates = {
@@ -72,9 +72,9 @@ def test_mixture_score_sample_shape(mixture_of_multivariate_normal_scores):
         "mvn2__precision_cholesky_factor": eye,
     }
 
-    samples = mix.sample((batch_size, num_samples), **estimates)
+    samples = mix.sample((batch_size,), **estimates)
 
-    assert samples.shape == (batch_size, num_samples, dim)
+    assert samples.shape == (batch_size, dim)
 
 
 def test_mixture_score_set_temperature(mixture_of_multivariate_normal_scores):

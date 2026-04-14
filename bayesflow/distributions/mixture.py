@@ -1,14 +1,14 @@
+import math
 from collections.abc import Sequence
-
-import numpy as np
 
 import keras
 from keras import ops
 
+from bayesflow.distributions import Distribution
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable, serialize
-from bayesflow.distributions import Distribution
 
 
 @serializable("bayesflow.distributions")
@@ -18,8 +18,9 @@ class Mixture(Distribution):
     def __init__(
         self,
         distributions: Sequence[Distribution],
-        mixture_logits: Sequence[float] = None,
+        mixture_logits: Sequence[float] | None = None,
         trainable_mixture: bool = False,
+        seed_generator: keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         """
@@ -35,6 +36,8 @@ class Mixture(Distribution):
         trainable_mixture : bool, optional
             Whether the mixture weights (`mixture_logits`) should be trainable.
             Default is `False`.
+        seed_generator : keras.random.SeedGenerator, optional
+            Seed generator for reproducible sampling. If ``None``, a new one is created.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
         """
@@ -49,15 +52,16 @@ class Mixture(Distribution):
             self.mixture_logits = ops.convert_to_tensor(mixture_logits)
 
         self.trainable_mixture = trainable_mixture
+        self.seed_generator = seed_generator or keras.random.SeedGenerator()
 
         self.dim = None
         self._mixture_logits = None
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape) -> Tensor:
+    def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
         """
         Draws samples from the mixture distribution by sampling a categorical index
-        for each entry in `batch_shape` according to the softmax of `mixture_logits`,
+        for each entry in `batch_shape` according to `mixture_logits`,
         then draws from the corresponding component distribution.
 
         Parameters
@@ -65,37 +69,36 @@ class Mixture(Distribution):
         batch_shape : Shape
             The desired sample batch shape (tuple of ints), not including the
             event dimension.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a
+            ``keras.random.SeedGenerator`` and shared across all random draws in
+            the call. A ``SeedGenerator`` is passed through as-is, advancing its
+            state with each use. If ``None`` (default), the instance seed
+            generator is used.
 
         Returns
         -------
-        samples: Tensor
-            A tensor of shape `batch_shape + dims` containing samples drawn
-            from the mixture.
+        Tensor
+            Samples with shape ``batch_shape + (event_dim,)``.
         """
-        # Will use numpy until keras adds support for N-D categorical sampling
-        pvals = keras.ops.convert_to_numpy(keras.ops.softmax(self._mixture_logits))
-        cat_samples = np.random.multinomial(n=1, pvals=pvals, size=batch_shape)
-        cat_samples = cat_samples.argmax(axis=-1)
+        sg = resolve_seed(seed) or self.seed_generator
+        K = len(self.distributions)
+        total = math.prod(batch_shape)
 
-        # Prepare array to fill and dtype to infer
-        samples = np.zeros(batch_shape + (self.dim,))
-        dtype = None
+        # Sample component indices: (total,)
+        logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(self._mixture_logits, 0), (total, K))
+        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=sg), axis=-1)
 
-        # Fill in array with vectorized sampling per component
-        for i in range(len(self.distributions)):
-            dist_mask = cat_samples == i
-            dist_indices = np.where(dist_mask)
-            num_dist_samples = np.sum(dist_mask)
-            dist_samples = keras.ops.convert_to_numpy(self.distributions[i].sample(num_dist_samples))
+        # Sample from all components and select via one-hot mask (avoids dynamic shapes)
+        all_flat = keras.ops.stack(
+            [keras.ops.reshape(dist.sample(batch_shape, seed=sg), (total, self.dim)) for dist in self.distributions]
+        )
+        all_flat = keras.ops.transpose(all_flat, (1, 0, 2))
 
-            samples[dist_indices] = dist_samples
+        one_hot = keras.ops.cast(keras.ops.one_hot(cat_indices, K), all_flat.dtype)  # (total, K)
+        selected = keras.ops.sum(all_flat * one_hot[..., None], axis=1)  # (total, dim)
 
-            dtype = dtype or keras.ops.dtype(dist_samples)
-
-        # Convert to keras for compatibility
-        samples = keras.ops.convert_to_tensor(samples, dtype=dtype)
-
-        return samples
+        return keras.ops.reshape(selected, batch_shape + (self.dim,))
 
     def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
         """
@@ -147,6 +150,7 @@ class Mixture(Distribution):
             "distributions": self.distributions,
             "mixture_logits": self.mixture_logits,
             "trainable_mixture": self.trainable_mixture,
+            "seed_generator": self.seed_generator,
         }
 
         return base_config | serialize(config)

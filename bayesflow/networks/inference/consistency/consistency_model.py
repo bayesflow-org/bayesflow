@@ -12,6 +12,7 @@ from bayesflow.utils import (
     maybe_mask_tensor,
     random_mask,
     randomly_mask_along_axis,
+    resolve_seed,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serializable, serialize
@@ -268,6 +269,7 @@ class ConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
+        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
         # Extract subnet masks from kwargs
         subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
         steps = int(kwargs.get("steps", self.s0 + 1))
@@ -298,7 +300,7 @@ class ConsistencyModel(InferenceNetwork):
         x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
-            noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
+            noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
             x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
             t = keras.ops.full_like(t, discretized_time[n])
             x_n = maybe_mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)

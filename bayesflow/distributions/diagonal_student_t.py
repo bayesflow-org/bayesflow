@@ -8,6 +8,7 @@ from keras import ops
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import expand_tile
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable, serialize
 
 from .distribution import Distribution
@@ -23,7 +24,7 @@ class DiagonalStudentT(Distribution):
         loc: int | float | np.ndarray | Tensor = 0.0,
         scale: int | float | np.ndarray | Tensor = 1.0,
         trainable_parameters: bool = False,
-        seed_generator: keras.random.SeedGenerator = None,
+        seed_generator: keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         """
@@ -111,18 +112,19 @@ class DiagonalStudentT(Distribution):
         return result
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape) -> Tensor:
+    def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
+        sg = resolve_seed(seed) or self.seed_generator
         # As of writing this code, keras does not support the chi-square distribution
         # nor does it support a scale or rate parameter in Gamma. Hence, we use the relation:
         # chi-square(df) = Gamma(shape = 0.5 * df, scale = 2) = Gamma(shape = 0.5 * df, scale = 1) * 2
-        chi2_samples = keras.random.gamma(batch_shape, alpha=0.5 * self.df, seed=self.seed_generator) * 2.0
+        chi2_samples = keras.random.gamma(batch_shape, alpha=0.5 * self.df, seed=sg) * 2.0
 
         # The chi-quare samples need to be repeated across self.dim
         # since for each element of batch_shape only one sample is created.
         chi2_samples = expand_tile(chi2_samples, n=self.dim, axis=-1)
         chi2_samples = keras.ops.reshape(chi2_samples, batch_shape + (self.dim,))
 
-        normal_samples = keras.random.normal(batch_shape + (self.dim,), seed=self.seed_generator)
+        normal_samples = keras.random.normal(batch_shape + (self.dim,), seed=sg)
 
         return self._loc + self._scale * normal_samples * ops.sqrt(self.df / chi2_samples)
 

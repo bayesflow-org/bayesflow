@@ -254,7 +254,7 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        # Build integrate kwargs: instance config → call-time overrides
+        # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs
 
         # Apply user-provided target mask if available
@@ -296,7 +296,8 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        # Build integrate kwargs: instance config → call-time overrides
+        kwargs.pop("seed", None)  # ODE integration is deterministic; seed only used for base distribution
+        # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs
 
         # Apply user-provided target mask if available

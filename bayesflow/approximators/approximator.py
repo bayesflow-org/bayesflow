@@ -19,7 +19,7 @@ from .backend_approximators import BackendApproximator
 class Approximator(BackendApproximator):
     """Base class for all BayesFlow approximators."""
 
-    # Mask routing: {data_key → network_kwarg_name}.
+    # Mask routing: {data_key -> network_kwarg_name}.
     # Subclasses can narrow these to the masks they actually support.
     _SUMMARY_MASK_KEYS: dict[str, str] = {
         "summary_attention_mask": "attention_mask",

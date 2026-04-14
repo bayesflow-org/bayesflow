@@ -1,6 +1,7 @@
 import keras
 
 from bayesflow.types import Shape, Tensor
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
 from .parametric_distribution_score import ParametricDistributionScore
@@ -185,14 +186,18 @@ class MixtureScore(ParametricDistributionScore):
 
         return keras.ops.logsumexp(log_w + logps, axis=-1)
 
-    def sample(self, batch_shape: Shape, **estimates: Tensor) -> Tensor:
+    def sample(
+        self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None, **estimates: Tensor
+    ) -> Tensor:
         """
         Draw samples from the mixture.
 
         Parameters
         ----------
         batch_shape : Shape
-            A tuple (batch_size, num_samples).
+            A tuple (batch_size * num_samples,).
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed or shared seed generator for reproducible sampling.
         **estimates : dict[str, Tensor]
             Flat dict containing mixture logits and all component parameter heads.
 
@@ -201,32 +206,32 @@ class MixtureScore(ParametricDistributionScore):
         Tensor
             Samples with shape (batch_size, num_samples, ...).
         """
-        if len(batch_shape) != 2:
-            raise ValueError("`batch_shape` must be a tuple (batch_size, num_samples).")
+        assert len(batch_shape) == 1, (
+            f"Got unexpected {batch_shape=}. Usually approximator.helpers.Sampler makes sure that batch_shape is flat"
+        )
+        batch_size = batch_shape[0]
 
-        batch_size, num_samples = batch_shape
         logits = estimates[self.weight_head]  # (batch_size, K) typically
         probs = keras.ops.softmax(logits / self.temperature, axis=-1)  # (batch_size, K)
 
         # Sample component indices via inverse-CDF on uniform draws
-        u = keras.random.uniform((batch_size, num_samples, 1), dtype=probs.dtype)
-        cdf = keras.ops.cumsum(probs, axis=-1)[:, None, :]  # (B, 1, K)
-        cdf = keras.ops.broadcast_to(cdf, (batch_size, num_samples, self.K))  # (B, S, K)
-        idx = keras.ops.argmax(keras.ops.cast(u <= cdf, "int32"), axis=-1)  # (B, S)
+        seed_generator = resolve_seed(seed)
+        u = keras.random.uniform((batch_size, 1), dtype=probs.dtype, seed=seed_generator)
+        cdf = keras.ops.cumsum(probs, axis=-1)
+        idx = keras.ops.argmax(keras.ops.cast(u <= cdf, "int32"), axis=-1)  # (B,)
 
         # Sample from all components and select via one-hot mask
         comp_samples = []
         for c in self.component_names:
             c_est = self._component_estimates(estimates, c)
-            c_est = {k: keras.ops.repeat(keras.ops.expand_dims(v, 1), num_samples, axis=1) for k, v in c_est.items()}
-            s = self.components[c].sample((batch_size, num_samples), **c_est)
+            s = self.components[c].sample((batch_size,), seed=seed_generator, **c_est)
             comp_samples.append(s)
 
-        stacked = keras.ops.stack(comp_samples, axis=2)  # (B, S, K, ...)
-        mask = keras.ops.one_hot(idx, self.K, dtype=stacked.dtype)  # (B, S, K)
+        stacked = keras.ops.stack(comp_samples, axis=0)  # (K, B, ...)
+        mask = keras.ops.one_hot(idx, self.K, axis=0, dtype=stacked.dtype)  # (K, B)
 
-        # Expand mask to match stacked rank: (B, S, K, 1, 1, ...)
+        # Expand mask to match stacked rank: (K, B, 1, 1, ...)
         while mask.ndim < stacked.ndim:
             mask = mask[..., None]
 
-        return keras.ops.sum(stacked * mask, axis=2)
+        return keras.ops.sum(stacked * mask, axis=0)

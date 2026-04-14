@@ -14,6 +14,39 @@ def prepare_compute_prior_score(
     adapter: Adapter,
     standardizer,
 ) -> Tensor:
+    """Prepare and compute prior score with adapter inverse transformation and standardization correction.
+
+    Transforms samples through an adapter's inverse operation and applies prior score computation
+    with proper jacobian adjustments for standardization.
+
+    Parameters
+    ----------
+    samples : Tensor
+        Input samples to be transformed, typically of shape (batch_size, num_samples, num_targets).
+    time : Tensor
+        Time parameter(s) to be passed to the prior score computation function.
+    compute_prior_score : Callable[[dict[str, np.ndarray], Tensor], dict[str, np.ndarray]]
+        Function that computes prior scores given adapted samples and time.
+        Takes a dictionary of samples and a time tensor, returns a dictionary of scores.
+    adapter : Adapter
+        Adapter object used to perform inverse transformation of samples.
+        Must have zero log_det_jac for all keys to be compatible with compositional sampling.
+    standardizer : object
+        Standardizer object that handles standardization/destandardization of samples.
+        Must have standardize dictionary and ``standardize_layers`` attributes.
+
+    Returns
+    -------
+    Tensor
+        Concatenated prior scores with shape (batch_size, total_score_dim) after
+        jacobian correction from standardization.
+
+    Raises
+    ------
+    NotImplementedError
+        If adapter has non-zero log_det_jac for any key, as compositional sampling
+        is incompatible with such transformations.
+    """
     samples = keras.tree.map_structure(
         lambda s: standardizer.maybe_standardize(s, key="inference_variables", stage="inference", forward=False),
         samples,
@@ -39,6 +72,7 @@ def prepare_compute_prior_score(
         )
 
     prior_score = compute_prior_score(adapted_samples, time)
+
     for key in adapted_samples:
         prior_score[key] = keras.ops.cast(prior_score[key], "float32")
 
@@ -65,7 +99,7 @@ def prepare_compute_prior_score(
             std = keras.ops.concatenate(std_components, axis=-1)
 
         # Expand std to match batch dimension of out
-        std_expanded = keras.ops.expand_dims(std, 0)  # Add batch dimensions
+        std_expanded = keras.ops.expand_dims(std, 0)
 
         # Apply the jacobian: score_z = score_x * std
         out = out * std_expanded

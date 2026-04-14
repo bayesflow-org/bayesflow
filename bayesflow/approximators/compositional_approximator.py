@@ -1,6 +1,8 @@
 from collections.abc import Sequence, Callable, Mapping
-from functools import partial
 from typing import Literal, Tuple
+
+from functools import partial
+
 
 import keras
 import numpy as np
@@ -10,6 +12,7 @@ from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import split_arrays
 from bayesflow.utils.serialization import serializable
+
 from .continuous_approximator import ContinuousApproximator
 from .helpers import prepare_compute_prior_score
 
@@ -114,7 +117,6 @@ class CompositionalApproximator(ContinuousApproximator):
             conditions=conditions, batch_size=batch_size, summary_outputs=summary_outputs
         )
 
-        # prepare score computation
         if compute_prior_score is None:
             compute_prior_score_pre = None
         else:
@@ -127,7 +129,9 @@ class CompositionalApproximator(ContinuousApproximator):
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
         inference_kwargs["compute_prior_score"] = compute_prior_score_pre
-        if sample_shape == "infer":  # infer method cannot handle the compositional dimensions
+
+        # NOTE: infer option of sample cannot handle the compositional dimensions
+        if sample_shape == "infer":
             sample_shape = tuple(keras.ops.shape(resolved_conditions)[2:-1])
 
         samples = self.sampler.sample(
@@ -167,29 +171,32 @@ class CompositionalApproximator(ContinuousApproximator):
         **kwargs,
     ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
         if summary_outputs is not None:
-            n_datasets, n_comp = keras.ops.shape(summary_outputs)[:2]
+            num_datasets, num_items = keras.ops.shape(summary_outputs)[:2]
             summary_outputs = keras.ops.reshape(
-                summary_outputs, (n_datasets * n_comp,) + keras.ops.shape(summary_outputs)[2:]
+                summary_outputs, (num_datasets * num_items,) + keras.ops.shape(summary_outputs)[2:]
             )
             flattened_conditions = None
+
         elif conditions is not None:
             original_shapes = {}
             flattened_conditions = {}
-            for key, value in conditions.items():  # Flatten compositional dimensions
+
+            for key, value in conditions.items():
                 original_shapes[key] = value.shape
-                n_datasets, n_comp = value.shape[:2]
-                flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
+                num_datasets, num_items = value.shape[:2]
+                flattened_shape = (num_datasets * num_items,) + value.shape[2:]
                 flattened_conditions[key] = value.reshape(flattened_shape)
-            n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
+            num_datasets, num_items = original_shapes[next(iter(original_shapes))][:2]
+
         else:
             raise ValueError(
                 "At least one of 'conditions' or 'summary_outputs' must be provided for compositional sampling."
             )
 
-        if n_comp <= 1:
+        if num_items <= 1:
             raise ValueError(
                 "At least two conditioning variables are required for compositional sampling, got "
-                f"{n_comp}. Use 'sample' instead."
+                f"{num_items}. Use 'sample' instead."
             )
 
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
@@ -199,22 +206,12 @@ class CompositionalApproximator(ContinuousApproximator):
             **kwargs,
         )
 
-        # Reshape tensors back to (n_datasets, n_compositional, ...)
-        resolved_conditions = keras.ops.reshape(
-            resolved_conditions,
-            (
-                n_datasets,
-                n_comp,
-            )
-            + keras.ops.shape(resolved_conditions)[1:],
-        )
+        # Reshape tensors back to (num_datasets, num_items, ...)
+        restored_shape = (num_datasets, num_items) + keras.ops.shape(resolved_conditions)[1:]
+
+        resolved_conditions = keras.ops.reshape(resolved_conditions, restored_shape)
+
         if summary_outputs is not None:
-            summary_outputs = keras.ops.reshape(
-                summary_outputs,
-                (
-                    n_datasets,
-                    n_comp,
-                )
-                + keras.ops.shape(summary_outputs)[1:],
-            )
+            summary_outputs = keras.ops.reshape(summary_outputs, restored_shape)
+
         return resolved_conditions, adapted, summary_outputs

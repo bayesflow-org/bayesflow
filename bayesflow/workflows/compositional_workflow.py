@@ -4,8 +4,8 @@ from typing import Literal, Tuple
 import time
 import copy
 
-import keras
 import numpy as np
+import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import CompositionalApproximator
@@ -13,6 +13,7 @@ from bayesflow.networks import InferenceNetwork, SummaryNetwork, DiffusionModel
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration, filter_kwargs
+
 from .basic_workflow import BasicWorkflow
 
 
@@ -196,7 +197,16 @@ class CompositionalWorkflow(BasicWorkflow):
             :class:`~bayesflow.networks.DiffusionModel`.
         **kwargs
             Override any constructor argument of :class:`CompositionalWorkflow`,
-            e.g. ``initial_learning_rate``, ``optimizer``, ``checkpoint_filepath``.
+            e.g. ``optimizer``, ``simulator``, ``adapter``, etc.
+
+            The following attributes pertaining to checkpointing will not be
+            transferred from the source workflow:
+            - ``checkpoint_filepath``
+            - ``checkpoint_name``
+            - ``save_weights_only``
+            - ``save_best_only``
+
+            They can be set via kwargs if needed.
 
         Returns
         -------
@@ -209,7 +219,7 @@ class CompositionalWorkflow(BasicWorkflow):
 
         approximator = workflow.approximator
 
-        # Clone the networks so the two workflows have independent weights.
+        # Clone the networks so the two workflows have independent weights
         cloned_inference_network = keras.models.clone_model(approximator.inference_network)
         cloned_inference_network.set_weights(approximator.inference_network.get_weights())
 
@@ -233,10 +243,6 @@ class CompositionalWorkflow(BasicWorkflow):
             summary_network=cloned_summary_network,
             initial_learning_rate=workflow.initial_learning_rate,
             optimizer=workflow.optimizer,
-            checkpoint_filepath=workflow.checkpoint_filepath,
-            checkpoint_name=workflow.checkpoint_name,
-            save_weights_only=workflow.save_weights_only,
-            save_best_only=workflow.save_best_only,
             standardize=approximator.standardizer.standardize,
         )
 

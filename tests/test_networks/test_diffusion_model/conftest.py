@@ -99,16 +99,6 @@ def simple_diffusion_model():
 
 
 @pytest.fixture
-def simple_compositional_diffusion_model():
-    """Create a simple diffusion model for testing compositional sampling."""
-    from bayesflow.networks import CompositionalDiffusionModel
-
-    return CompositionalDiffusionModel(
-        subnet_kwargs={"widths": (32, 32)},
-    )
-
-
-@pytest.fixture
 def compositional_conditions():
     """Create test conditions for compositional sampling."""
     batch_size = 2

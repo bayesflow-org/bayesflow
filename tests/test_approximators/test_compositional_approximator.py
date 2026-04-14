@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from bayesflow import ContinuousApproximator
+from bayesflow import CompositionalApproximator
 
 
 def mock_prior_score_original_space(data_dict, time):
@@ -16,7 +16,7 @@ def mock_prior_score_original_space(data_dict, time):
 
 def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, compositional_diffusion_network):
     # Create approximator with transforming adapter
-    approximator = ContinuousApproximator(
+    approximator = CompositionalApproximator(
         adapter=identity_adapter,
         inference_network=compositional_diffusion_network,
     )

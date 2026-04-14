@@ -175,66 +175,6 @@ class Approximator(BackendApproximator):
         )
         return resolved_conditions, adapted, summary_outputs
 
-    def _prepare_compositional_conditions(
-        self,
-        conditions: Mapping[str, np.ndarray] | None,
-        batch_size: int | None = None,
-        summary_outputs: Tensor | np.ndarray | None = None,
-        **kwargs,
-    ) -> tuple[Tensor | None, dict[str, Tensor], Tensor | None]:
-        if summary_outputs is not None:
-            n_datasets, n_comp = keras.ops.shape(summary_outputs)[:2]
-            summary_outputs = keras.ops.reshape(
-                summary_outputs, (n_datasets * n_comp,) + keras.ops.shape(summary_outputs)[2:]
-            )
-            flattened_conditions = None
-        elif conditions is not None:
-            original_shapes = {}
-            flattened_conditions = {}
-            for key, value in conditions.items():  # Flatten compositional dimensions
-                original_shapes[key] = value.shape
-                n_datasets, n_comp = value.shape[:2]
-                flattened_shape = (n_datasets * n_comp,) + value.shape[2:]
-                flattened_conditions[key] = value.reshape(flattened_shape)
-            n_datasets, n_comp = original_shapes[next(iter(original_shapes))][:2]
-        else:
-            raise ValueError(
-                "At least one of 'conditions' or 'summary_outputs' must be provided for compositional sampling."
-            )
-
-        if n_comp <= 1:
-            raise ValueError(
-                "At least two conditioning variables are required for compositional sampling, got "
-                f"{n_comp}. Use 'sample' instead."
-            )
-
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(
-            data=flattened_conditions,
-            summary_outputs=summary_outputs,
-            batch_size=batch_size,
-            **kwargs,
-        )
-
-        # Reshape tensors back to (n_datasets, n_compositional, ...)
-        resolved_conditions = keras.ops.reshape(
-            resolved_conditions,
-            (
-                n_datasets,
-                n_comp,
-            )
-            + keras.ops.shape(resolved_conditions)[1:],
-        )
-        if summary_outputs is not None:
-            summary_outputs = keras.ops.reshape(
-                summary_outputs,
-                (
-                    n_datasets,
-                    n_comp,
-                )
-                + keras.ops.shape(summary_outputs)[1:],
-            )
-        return resolved_conditions, adapted, summary_outputs
-
     def _prepare_ancestral_conditions(
         self,
         conditions: Mapping[str, np.ndarray],

@@ -246,6 +246,6 @@ def transforming_adapter():
 @pytest.fixture
 def compositional_diffusion_network():
     """Create a diffusion network for compositional sampling."""
-    from bayesflow.networks import CompositionalDiffusionModel
+    from bayesflow.networks import DiffusionModel
 
-    return CompositionalDiffusionModel(subnet_kwargs=dict(widths=[32, 32]))
+    return DiffusionModel(subnet_kwargs=dict(widths=[32, 32]))

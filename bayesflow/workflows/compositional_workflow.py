@@ -1,6 +1,8 @@
-import time
 from collections.abc import Sequence, Callable
 from typing import Literal, Tuple
+
+import time
+import copy
 
 import keras
 import numpy as np
@@ -175,74 +177,69 @@ class CompositionalWorkflow(BasicWorkflow):
         logging.info(f"Sampling completed in {format_duration(elapsed)}.")
         return samples
 
+    @classmethod
+    def from_basic_workflow(
+        cls,
+        workflow: BasicWorkflow,
+        **kwargs,
+    ) -> "CompositionalWorkflow":
+        """
+        Build a :class:`CompositionalWorkflow` from a trained :class:`BasicWorkflow`.
 
-def compositional_workflow_from_basic(
-    basic_workflow: BasicWorkflow,
-    simulator: Simulator | None = None,
-    **kwargs,
-) -> CompositionalWorkflow:
-    """
-    Build a :class:`CompositionalWorkflow` from a trained :class:`BasicWorkflow`.
+        The trained ``DiffusionModel`` inference network (and, if present, the summary
+        network) are transferred directly so no re-training is needed.
 
-    The trained ``DiffusionModel`` inference network (and, if present, the summary
-    network) are transferred directly — weights are shared, not copied — so no
-    re-training is needed.
+        Parameters
+        ----------
+        workflow : BasicWorkflow
+            A fitted workflow whose ``approximator.inference_network`` is a
+            :class:`~bayesflow.networks.DiffusionModel`.
+        **kwargs
+            Override any constructor argument of :class:`CompositionalWorkflow`,
+            e.g. ``initial_learning_rate``, ``optimizer``, ``checkpoint_filepath``.
 
-    Parameters
-    ----------
-    basic_workflow : BasicWorkflow
-        A fitted workflow whose ``approximator.inference_network`` is a
-        :class:`~bayesflow.networks.DiffusionModel`.
-    simulator : Simulator, optional
-        Simulator to attach to the new workflow.  Defaults to the one on
-        ``basic_workflow`` (which may be ``None``).
-    **kwargs
-        Forwarded verbatim to :class:`CompositionalWorkflow.__init__`.
-        You can use this to override ``initial_learning_rate``, ``optimizer``,
-        ``checkpoint_filepath``, etc.
+        Returns
+        -------
+        compositional_workflow: CompositionalWorkflow
+            The newly created compositional workflow with attributes from ``workflow`` and
+            ``kwargs``.
+        """
+        if not isinstance(workflow, BasicWorkflow):
+            raise TypeError(f"Expected a BasicWorkflow instance, got {type(workflow).__name__!r}.")
 
-    Returns
-    -------
-    CompositionalWorkflow
+        approximator = workflow.approximator
+        inference_network = approximator.inference_network
 
-    Raises
-    ------
-    TypeError
-        If ``basic_workflow`` is not a :class:`BasicWorkflow` instance.
-    ValueError
-        If the inference network is not a :class:`~bayesflow.networks.DiffusionModel`.
-    """
-    if not isinstance(basic_workflow, BasicWorkflow):
-        raise TypeError(f"Expected a BasicWorkflow instance, got {type(basic_workflow).__name__!r}.")
+        # Clone the inference network so the two workflows have independent weights.
+        cloned_network = keras.models.clone_model(inference_network)
+        cloned_network.set_weights(inference_network.get_weights())
 
-    import copy
+        if not isinstance(inference_network, DiffusionModel):
+            raise ValueError(
+                f"The inference network must be a DiffusionModel for compositional inference, "
+                f"got {type(inference_network).__name__!r}."
+            )
 
-    approximator = basic_workflow.approximator
-    inference_network = approximator.inference_network
-
-    if not isinstance(inference_network, DiffusionModel):
-        raise ValueError(
-            f"The inference network must be a DiffusionModel for compositional inference, "
-            f"got {type(inference_network).__name__!r}."
+        # Collect all attributes from the basic workflow that can be passed to the constructor.
+        init_kwargs = dict(
+            simulator=workflow.simulator,
+            adapter=approximator.adapter,
+            inference_network=cloned_network,
+            summary_network=approximator.summary_network,
+            initial_learning_rate=workflow.initial_learning_rate,
+            optimizer=workflow.optimizer,
+            checkpoint_filepath=workflow.checkpoint_filepath,
+            checkpoint_name=workflow.checkpoint_name,
+            save_weights_only=workflow.save_weights_only,
+            save_best_only=workflow.save_best_only,
+            standardize=approximator.standardizer.standardize,
         )
 
-    # Clone the inference network so the two workflows have independent weights.
-    cloned_network = keras.models.clone_model(inference_network)
-    cloned_network.set_weights(inference_network.get_weights())
+        # Override with caller-supplied kwargs and create new workflow
+        compositional_workflow = cls(**(init_kwargs | kwargs))
 
-    compositional_wf = CompositionalWorkflow(
-        simulator=simulator if simulator is not None else basic_workflow.simulator,
-        adapter=approximator.adapter,
-        inference_network=cloned_network,
-        summary_network=approximator.summary_network,
-        # Pass the variable list so CompositionalApproximator allocates the right layers;
-        # the standardizer is replaced below with a deep copy of the fitted one.
-        standardize=approximator.standardizer.standardize,
-        **kwargs,
-    )
+        # Replace the fresh (unfitted) standardizer with a deep copy of the source one so
+        # that the learned running mean / variance / count are preserved but independent.
+        compositional_workflow.approximator.standardizer = copy.deepcopy(approximator.standardizer)
 
-    # Replace the fresh (unfitted) standardizer with a deep copy of the source one so
-    # that the learned running mean / variance / count are preserved but independent.
-    compositional_wf.approximator.standardizer = copy.deepcopy(approximator.standardizer)
-
-    return compositional_wf
+        return compositional_workflow

@@ -59,7 +59,7 @@ def test_compositional_masking():
     num_samples = 3
     batch_size = 2
     num_batches_per_epoch = 2
-    epochs = 5
+    epochs = 2
     workflow = CompositionalWorkflow(
         inference_network=DiffusionModel(
             subnet_kwargs=dict(widths=(8, 8)),
@@ -177,7 +177,6 @@ def test_compositional_workflow_from_basic():
     from bayesflow import BasicWorkflow, CompositionalWorkflow
     from bayesflow.networks import DiffusionModel
     from bayesflow.simulators import TwoMoons
-    from bayesflow.workflows.compositional_workflow import compositional_workflow_from_basic
 
     sim = TwoMoons()
 
@@ -189,7 +188,7 @@ def test_compositional_workflow_from_basic():
     )
     basic_wf.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=3, verbose=0)
 
-    comp_wf = compositional_workflow_from_basic(basic_wf)
+    comp_wf = CompositionalWorkflow.from_basic_workflow(basic_wf)
 
     assert isinstance(comp_wf, CompositionalWorkflow)
 

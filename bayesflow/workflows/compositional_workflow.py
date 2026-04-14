@@ -208,24 +208,29 @@ class CompositionalWorkflow(BasicWorkflow):
             raise TypeError(f"Expected a BasicWorkflow instance, got {type(workflow).__name__!r}.")
 
         approximator = workflow.approximator
-        inference_network = approximator.inference_network
 
-        # Clone the inference network so the two workflows have independent weights.
-        cloned_network = keras.models.clone_model(inference_network)
-        cloned_network.set_weights(inference_network.get_weights())
+        # Clone the networks so the two workflows have independent weights.
+        cloned_inference_network = keras.models.clone_model(approximator.inference_network)
+        cloned_inference_network.set_weights(approximator.inference_network.get_weights())
 
-        if not isinstance(inference_network, DiffusionModel):
+        if not isinstance(approximator.inference_network, DiffusionModel):
             raise ValueError(
                 f"The inference network must be a DiffusionModel for compositional inference, "
-                f"got {type(inference_network).__name__!r}."
+                f"got {type(approximator.inference_network).__name__!r}."
             )
+
+        if approximator.summary_network is not None:
+            cloned_summary_network = keras.models.clone_model(approximator.summary_network)
+            cloned_summary_network.set_weights(approximator.summary_network.get_weights())
+        else:
+            cloned_summary_network = approximator.summary_network
 
         # Collect all attributes from the basic workflow that can be passed to the constructor.
         init_kwargs = dict(
             simulator=workflow.simulator,
             adapter=approximator.adapter,
-            inference_network=cloned_network,
-            summary_network=approximator.summary_network,
+            inference_network=cloned_inference_network,
+            summary_network=cloned_summary_network,
             initial_learning_rate=workflow.initial_learning_rate,
             optimizer=workflow.optimizer,
             checkpoint_filepath=workflow.checkpoint_filepath,
@@ -238,8 +243,7 @@ class CompositionalWorkflow(BasicWorkflow):
         # Override with caller-supplied kwargs and create new workflow
         compositional_workflow = cls(**(init_kwargs | kwargs))
 
-        # Replace the fresh (unfitted) standardizer with a deep copy of the source one so
-        # that the learned running mean / variance / count are preserved but independent.
+        # Replace the fresh (unfitted) standardizer with a deep copy of the source one
         compositional_workflow.approximator.standardizer = copy.deepcopy(approximator.standardizer)
 
         return compositional_workflow

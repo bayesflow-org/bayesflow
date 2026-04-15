@@ -54,6 +54,16 @@ def consistency_model():
 
 
 @pytest.fixture()
+def stable_consistency_model():
+    from bayesflow.networks import StableConsistencyModel
+
+    return StableConsistencyModel(
+        total_steps=100,
+        subnet_kwargs=dict(widths=[8, 8]),
+    )
+
+
+@pytest.fixture()
 def affine_coupling_flow():
     from bayesflow.networks import CouplingFlow
 
@@ -81,7 +91,7 @@ def free_form_flow():
 @pytest.fixture()
 def typical_scoring_rule_network():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore
+    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore, MixtureScore
 
     return ScoringRuleNetwork(
         scoring_rules=dict(
@@ -89,6 +99,7 @@ def typical_scoring_rule_network():
             median=MedianScore(),
             quantiles=QuantileScore([0.1, 0.2, 0.5, 0.65]),
             mvn=MvNormalScore(),
+            mix=MixtureScore(mvn_c1=MvNormalScore(), mvn_c2=MvNormalScore()),
         )
     )
 
@@ -96,7 +107,7 @@ def typical_scoring_rule_network():
 @pytest.fixture()
 def typical_scoring_rule_network_subnet():
     from bayesflow.networks import ScoringRuleNetwork
-    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore
+    from bayesflow.scoring_rules import MeanScore, MedianScore, QuantileScore, MvNormalScore, MixtureScore
 
     subnet = MLP([16, 8])
 
@@ -106,6 +117,7 @@ def typical_scoring_rule_network_subnet():
             median=MedianScore(subnets=dict(value=subnet)),
             quantiles=QuantileScore(subnets=dict(value=subnet)),
             mvn=MvNormalScore(subnets=dict(mean=subnet, covariance=subnet)),
+            mix=MixtureScore(mvn_c1=MvNormalScore(), mvn_c2=MvNormalScore(), subnets=dict(mixture_logits=subnet)),
         ),
         subnet=subnet,
     )
@@ -119,6 +131,7 @@ def typical_scoring_rule_network_subnet():
         "flow_matching",
         "free_form_flow",
         "consistency_model",
+        "stable_consistency_model",
         pytest.param("diffusion_model_edm_F"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_noise", marks=pytest.mark.slow),
@@ -150,6 +163,7 @@ def inference_network_subnet(request):
         "flow_matching",
         "free_form_flow",
         "consistency_model",
+        "stable_consistency_model",
         pytest.param("diffusion_model_edm_F"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_edm_potential", marks=pytest.mark.slow),

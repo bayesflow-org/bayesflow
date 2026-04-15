@@ -5,6 +5,7 @@ import keras
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import deserialize
 
 
@@ -22,11 +23,11 @@ class InferenceNetwork(keras.Layer):
     **at minimum** the following methods:
 
     ``_forward(x, conditions, density, training, **kwargs)``
-        Map data *x* → latent *z*.  When *density* is ``True`` the method must
+        Map data *x* -> latent *z*.  When *density* is ``True`` the method must
         return a tuple ``(z, log_prob)``; otherwise just *z*.
 
     ``_inverse(z, conditions, density, training, **kwargs)``
-        Map latent *z* → data *x*.  Same density convention as ``_forward``.
+        Map latent *z* -> data *x*.  Same density convention as ``_forward``.
 
     ``compute_metrics(x, conditions, sample_weight, stage)``
         Compute and return a ``dict[str, Tensor]`` of training metrics.  The dict
@@ -121,12 +122,16 @@ class InferenceNetwork(keras.Layer):
         raise NotImplementedError
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape, conditions: Tensor = None, **kwargs) -> Tensor:
-        samples = self.base_distribution.sample(batch_shape)
-        if "compute_prior_score" in kwargs:
-            samples = self._inverse_compositional(samples, conditions=conditions, inverse=True, density=False, **kwargs)
-        else:
-            samples = self(samples, conditions=conditions, inverse=True, density=False, **kwargs)
+    def sample(
+        self,
+        batch_shape: Shape,
+        conditions: Tensor = None,
+        seed: int | keras.random.SeedGenerator | None = None,
+        **kwargs,
+    ) -> Tensor:
+        seed = resolve_seed(seed)
+        samples = self.base_distribution.sample(batch_shape, seed=seed)
+        samples = self(samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs)
         return samples
 
     def log_prob(self, samples: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:

@@ -10,6 +10,7 @@ from bayesflow.networks.inference.scoring.scoring_rules import (  # noqa: F401
     MvNormalScore,
     MixtureScore,
     CrossEntropyScore,
+    __doc__,
 )
 
 from bayesflow.utils._docs import _add_imports_to_all

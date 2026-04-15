@@ -17,6 +17,7 @@ from bayesflow.utils import (
     maybe_mask_tensor,
     random_mask,
     randomly_mask_along_axis,
+    resolve_seed,
     weighted_mean,
     DETERMINISTIC_METHODS,
     STOCHASTIC_METHODS,
@@ -780,7 +781,8 @@ class DiffusionModel(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        # Build integrate kwargs: hardcoded defaults → instance config → call-time overrides
+        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs |= self.integrate_kwargs
         integrate_kwargs |= kwargs
@@ -847,7 +849,7 @@ class DiffusionModel(InferenceNetwork):
                 score_fn=score_fn,
                 noise_schedule=self.noise_schedule,
                 state=state,
-                seed=self.seed_generator,
+                seed=seed,
                 **integrate_kwargs,
             )
         else:

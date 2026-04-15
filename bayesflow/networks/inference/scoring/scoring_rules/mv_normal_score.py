@@ -4,6 +4,7 @@ import keras
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.links import CholeskyFactor
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable
 
 from .parametric_distribution_score import ParametricDistributionScore
@@ -98,7 +99,13 @@ class MvNormalScore(ParametricDistributionScore):
 
         return log_prob
 
-    def sample(self, batch_shape: Shape, mean: Tensor, precision_cholesky_factor: Tensor) -> Tensor:
+    def sample(
+        self,
+        batch_shape: Shape,
+        mean: Tensor,
+        precision_cholesky_factor: Tensor,
+        seed: int | keras.random.SeedGenerator | None = None,
+    ) -> Tensor:
         """
         Generate samples from a multivariate Gaussian distribution.
 
@@ -117,6 +124,8 @@ class MvNormalScore(ParametricDistributionScore):
             A tensor representing the lower-triangular Cholesky factor of the precision matrix
             of the multivariate Gaussian distribution.
             Shape: ``(..., D, D)``.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling.
 
         Returns
         -------
@@ -124,7 +133,7 @@ class MvNormalScore(ParametricDistributionScore):
             Samples with the same shape as ``mean``.
         """
         covariance_cholesky_factor = keras.ops.inv(precision_cholesky_factor)
-        normal_samples = keras.random.normal(keras.ops.shape(mean))
+        normal_samples = keras.random.normal(keras.ops.shape(mean), seed=resolve_seed(seed))
         scaled_normal = keras.ops.einsum("...ij,...j->...i", covariance_cholesky_factor, normal_samples)
         samples = mean + scaled_normal
         return samples

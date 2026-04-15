@@ -138,10 +138,18 @@ def point_approximator_without_parametric_score(adapter, summary_network):
 
 @pytest.fixture()
 def ensemble_approximator_continuous_and_point(continuous_approximator, point_approximator_without_parametric_score):
+    import keras
     from bayesflow import EnsembleApproximator
 
+    continuous_approximator_clone = keras.models.clone_model(continuous_approximator)
+    # adapters must be shared among ensemble members
+    continuous_approximator_clone.adapter = continuous_approximator.adapter
     return EnsembleApproximator(
-        dict(cont_approx=continuous_approximator, point_approx=point_approximator_without_parametric_score)
+        dict(
+            cont_approx=continuous_approximator,
+            cont_approx_2=continuous_approximator_clone,
+            point_approx=point_approximator_without_parametric_score,
+        )
     )
 
 

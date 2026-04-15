@@ -10,6 +10,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import logging, filter_kwargs
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.datasets import EnsembleDataset
 
@@ -230,6 +231,7 @@ class EnsembleApproximator(Approximator):
         split: bool = False,
         member_weights: Mapping[str, float] | None = None,
         merge_members: bool = True,
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -268,23 +270,33 @@ class EnsembleApproximator(Approximator):
                 fn=lambda name, a: a.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs),
             )
 
+        seed_generator = resolve_seed(seed)
+
         weights = self._resolve_member_weights(member_weights)
         names = tuple(weights.keys())
-        probs = np.fromiter(weights.values(), dtype=float, count=len(weights))
+        probs = np.array(list(weights.values()))
 
-        counts = np.random.multinomial(num_samples, probs)
+        # Sample counts from multinomial
+        K = len(probs)
+        logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, K))
+        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
+        one_hot = keras.ops.one_hot(cat_indices, K)
+        counts = keras.ops.sum(one_hot, axis=0)
+
         alloc = {name: int(count) for name, count in zip(names, counts) if count > 0}
 
         per_member = self._map_members(
             list(alloc.keys()),
             capability="distribution",
-            fn=lambda name, a: a.sample(num_samples=alloc[name], conditions=conditions, split=split, **kwargs),
+            fn=lambda name, a: a.sample(
+                num_samples=alloc[name], conditions=conditions, split=split, seed=seed_generator, **kwargs
+            ),
         )
 
         merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *list(per_member.values()))
-        idx = np.random.permutation(num_samples)
+        shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed_generator)
 
-        return keras.tree.map_structure(lambda a: np.take(a, idx, axis=1), merged)
+        return keras.tree.map_structure(lambda a: np.take(a, shuffle_idx, axis=1), merged)
 
     def log_prob(
         self,

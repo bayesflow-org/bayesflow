@@ -16,7 +16,26 @@ class Distribution(keras.Layer):
     def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
         raise NotImplementedError
 
-    def sample(self, batch_shape: Shape) -> Tensor:
+    def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
+        """Draw samples from the distribution.
+
+        Parameters
+        ----------
+        batch_shape : Shape
+            The desired sample batch shape (tuple of ints), not including the
+            event dimension.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a
+            ``keras.random.SeedGenerator`` and shared across all random draws in
+            the call. A ``SeedGenerator`` is passed through as-is, advancing its
+            state with each use. If ``None`` (default), the instance seed
+            generator is used.
+
+        Returns
+        -------
+        Tensor
+            Samples with shape ``batch_shape + (event_dim,)``.
+        """
         raise NotImplementedError
 
     def compute_output_shape(self, input_shape: Shape) -> Shape:

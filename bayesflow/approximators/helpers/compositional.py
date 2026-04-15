@@ -17,7 +17,7 @@ def prepare_compute_prior_score(
     """Prepare and compute prior score with adapter inverse transformation and standardization correction.
 
     Transforms samples through an adapter's inverse operation and applies prior score computation
-    with proper jacobian adjustments for standardization.
+    with proper Jacobian adjustments for standardization.
 
     Parameters
     ----------
@@ -39,7 +39,7 @@ def prepare_compute_prior_score(
     -------
     Tensor
         Concatenated prior scores with shape (batch_size, total_score_dim) after
-        jacobian correction from standardization.
+        Jacobian correction from standardization.
 
     Raises
     ------
@@ -80,8 +80,8 @@ def prepare_compute_prior_score(
     out = keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
 
     if "inference_variables" in standardizer.standardize:
-        # Apply jacobian correction from standardization
-        # For standardization T^{-1}(z) = z * std + mean, the jacobian is diagonal with std on diagonal
+        # Apply Jacobian correction from standardization
+        # For standardization T^{-1}(z) = z * std + mean, the Jacobian is diagonal with std on diagonal
         # The gradient of log|det(J)| w.r.t. z is 0 since log|det(J)| = sum(log(std)) is constant w.r.t. z
         # But we need to transform the score: score_z = score_x * std where x = T^{-1}(z)
         standardize_layer = standardizer.standardize_layers["inference_variables"]
@@ -101,6 +101,6 @@ def prepare_compute_prior_score(
         # Expand std to match batch dimension of out
         std_expanded = keras.ops.expand_dims(std, 0)
 
-        # Apply the jacobian: score_z = score_x * std
+        # Apply the Jacobian: score_z = score_x * std
         out = out * std_expanded
     return out

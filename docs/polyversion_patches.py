@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 from subprocess import PIPE, CalledProcessError
 
+from packaging.version import Version
 from sphinx_polyversion.builder import BuildError
 from sphinx_polyversion.driver import DefaultDriver
 from sphinx_polyversion.pyvenv import Pip
@@ -18,7 +19,12 @@ import tempfile
 logging.basicConfig()
 logger = logging.getLogger("poly.py")
 
-
+def version_key(r):
+    try:
+        return (1, Version(r.name))
+    except Exception:
+        return (0, r.name)
+        
 # adapted from Pip
 class DynamicPip(Pip):
     def __init__(self, path: Path, name: str, venv: str | Path, *args, **kwargs):
@@ -74,16 +80,17 @@ class PyDataVersionEncoder(json.JSONEncoder):
     def transform(self, o: JSONable):
         output = []
         processed_names = []
-        for ref in o:
+        for ref in sorted(o, key=version_key, reverse=True):
             if ref.name in processed_names:
                 continue
-            output.append(
-                {
-                    "name": ref.name,
-                    "version": ref.name,
-                    "url": f"/{ref.name}",
-                }
-            )
+            entry = {
+                "name": ref.name,
+                "version": ref.name,
+                "url": f"/{ref.name}/",
+            }
+            if len(output) == 0:
+                entry["preferred"] = True
+            output.append(entry)
             processed_names.append(ref.name)
         # do not use cast for performance reasons
         return output

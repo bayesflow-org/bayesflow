@@ -5,10 +5,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 from datetime import datetime
 import logging
 from pathlib import Path
-from polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder
+from polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder, version_key
 
 from sphinx_polyversion.api import apply_overrides
-from sphinx_polyversion.git import Git, GitRef, GitRefType, file_predicate, refs_by_type
+from sphinx_polyversion.git import Git, GitRef, GitRefType, file_exists, refs_by_type
 from sphinx_polyversion.pyvenv import Environment, VenvWrapper
 from sphinx_polyversion.sphinx import SphinxBuilder, Placeholder
 
@@ -21,17 +21,20 @@ logger.setLevel(logging.DEBUG)
 root = Git.root(Path(__file__).parent)
 
 #: CodeRegex matching the branches to build docs for
-BRANCH_REGEX = r"^(docs-contributing-sphinx|stable-legacy)$"
+BRANCH_REGEX = r"^(main|stable-legacy|restructure-docs)$"
 
 #: Regex matching the tags to build docs for
-TAG_REGEX = r"^v(?!1\.)(?!2\.0\.[0-6]$)(?!2\.0\.9$)([\d]+\.[\d]+\.[\d]+)$"
+TAG_REGEX = r"^v2\.0\.(7|8|10)$"
 #TAG_REGEX = r""
 
 #: Output dir relative to project root
 OUTPUT_DIR = "_build_polyversion"
 
-#: Source directory
+#: Source directory in the current structure
 SOURCE_DIR = "docs"
+
+#: Legacy source directory used by older refs
+LEGACY_SOURCE_DIR = "docsrc"
 
 MOCK_DATA = {
     "revisions": [],
@@ -58,9 +61,10 @@ SPHINX_DEPS = [
     "sphinx-polyversion==1.1.0",
 ]
 
-#: Extra dependencies to iinstall for version 1
+#: Extra dependencies to install for version 1
 V1_BACKEND_DEPS = [
     "tf-keras",
+    "sphinx-book-theme",
 ]
 
 #: Extra dependencies to install for version 2
@@ -72,12 +76,18 @@ V2_BACKEND_DEPS = [
 
 VENV_DIR_NAME = ".docs_venvs"
 
+src = Path(SOURCE_DIR)
+legacy_src = Path(LEGACY_SOURCE_DIR)
+async def docs_layout_predicate(repo: Path, ref: GitRef) -> bool:
+    has_new = await file_exists(repo, ref, Path(SOURCE_DIR) / "source")
+    has_legacy = await file_exists(repo, ref, Path(LEGACY_SOURCE_DIR) / "source")
+    return has_new or has_legacy
 
 #: Data passed to templates
 def data(driver, rev, env):
     revisions = driver.targets
     branches, tags = refs_by_type(revisions)
-    latest = max(tags or branches)
+    latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":
             latest = b
@@ -86,8 +96,8 @@ def data(driver, rev, env):
     # sort tags and branches by date, newest first
     return {
         "current": rev,
-        "tags": sorted(tags, reverse=True),
-        "branches": sorted(branches, reverse=True),
+        "tags": sorted(tags, key=version_key, reverse=True),
+        "branches": sorted(branches, key=version_key, reverse=True),
         "revisions": revisions,
         "latest": latest,
     }
@@ -96,7 +106,7 @@ def data(driver, rev, env):
 def root_data(driver):
     revisions = driver.builds
     branches, tags = refs_by_type(revisions)
-    latest = max(tags or branches)
+    latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":
             latest = b
@@ -109,14 +119,12 @@ apply_overrides(globals())
 
 
 # Setup environments for the different versions
-src = Path(SOURCE_DIR)
 vcs = Git(
     branch_regex=BRANCH_REGEX,
     tag_regex=TAG_REGEX,
     buffer_size=1 * 10**9,  # 1 GB
-    predicate=file_predicate([src]),  # exclude refs without source dir
+    predicate=docs_layout_predicate,
 )
-
 
 creator = VenvWrapper(with_pip=True)
 

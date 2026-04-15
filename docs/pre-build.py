@@ -15,9 +15,38 @@ logging.basicConfig()
 logger = logging.getLogger("pre-build.py")
 logger.setLevel(logging.DEBUG)
 
+def ensure_compatible_source_layout(sourcedir):
+    sourcedir = Path(sourcedir)
+    checkout_root = sourcedir.parent.parent
+    legacy_sourcedir = checkout_root / "docsrc" / "source"
+
+    # New layout already exists: nothing to do
+    if sourcedir.exists():
+        logger.info(f"Using docs source layout at '{sourcedir}'")
+        return
+
+    # Old layout exists: copy it into the new location expected by the builder
+    if legacy_sourcedir.exists():
+        logger.info(
+            f"Legacy docs layout detected at '{legacy_sourcedir}'. "
+            f"Copying it to '{sourcedir}' for compatibility."
+        )
+        shutil.copytree(legacy_sourcedir, sourcedir, dirs_exist_ok=True)
+        return
+
+    # Fallback: create the directory so later copy operations do not fail
+    logger.info(f"No docs source directory found. Creating empty source dir at '{sourcedir}'")
+    sourcedir.mkdir(parents=True, exist_ok=True)
+
+
+
+
 
 def copy_files(sourcedir):
-    basedir = Path(os.path.abspath(sourcedir)).parent.parent
+    sourcedir = Path(sourcedir)
+    sourcedir.mkdir(parents=True, exist_ok=True)
+
+    basedir = sourcedir.parent.parent
     logger.info(f"Base directory is '{basedir}'")
     logger.info(f"Documentation source directory is '{sourcedir}'")
 
@@ -79,5 +108,6 @@ def patch_conf(sourcedir):
 if __name__ == "__main__":
     logger.info("Running pre-build script")  # move files around if necessary
     sourcedir = sys.argv[1]
+    ensure_compatible_source_layout(sourcedir)
     copy_files(sourcedir)
     patch_conf(sourcedir)

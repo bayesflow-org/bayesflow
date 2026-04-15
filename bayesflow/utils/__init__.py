@@ -97,6 +97,7 @@ from .tensor_utils import (
     random_mask,
     randomly_mask_along_axis,
     searchsorted,
+    linsolve_batched,
     size_of,
     stack_valid,
     tile_axis,

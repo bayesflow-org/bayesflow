@@ -13,6 +13,7 @@ from bayesflow.utils import (
     jacobian_trace,
     layer_kwargs,
     logging,
+    linsolve_batched,
     maybe_mask_tensor,
     random_mask,
     randomly_mask_along_axis,
@@ -134,7 +135,7 @@ class DiffusionModel(InferenceNetwork):
         self.unconditional_mode = False
         self.drop_target_prob = drop_target_prob
         self.compositional_bridge_d0 = 1.0
-        self.compositional_bridge_d1 = 1.0  # no bridge
+        self.compositional_bridge_d1 = 1.0
 
     def compute_metrics(
         self,
@@ -238,7 +239,7 @@ class DiffusionModel(InferenceNetwork):
         self.output_projector = keras.layers.Dense(units=units, bias_initializer="zeros")
 
         # construct input shape for subnet and subnet projector
-        time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
+        time_shape = (xz_shape[0], 1)
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
@@ -901,15 +902,16 @@ class DiffusionModel(InferenceNetwork):
         Parameters
         ----------
         xz : Tensor
-            The current state of the latent variable, shape (n_datasets, n_compositional, ...)
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
         time : float or Tensor
             Time step for the diffusion process
         stochastic_solver : bool
             Whether to use stochastic (SDE) or deterministic (ODE) formulation
         conditions : Tensor
-            Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
         compute_prior_score: Callable, optional
-            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional
+            score is used.
         mini_batch_size : int or None
             Mini batch size for computing individual scores. If None, use all conditions.
         training : bool, optional
@@ -973,11 +975,11 @@ class DiffusionModel(InferenceNetwork):
         Parameters
         ----------
         xz : Tensor
-            The current state of the latent variable, shape (n_datasets, n_compositional, ...)
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
         time : float or Tensor
             Time step for the diffusion process
         conditions : Tensor
-            Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None
@@ -1074,13 +1076,13 @@ class DiffusionModel(InferenceNetwork):
         Parameters
         ----------
         xz : Tensor
-            The current state of the latent variable, shape (n_datasets, n_compositional, ...)
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
         time : float or Tensor
             Time step for the diffusion process.
         log_snr_t : Tensor
             Log SNR at time t, broadcastable to shape of xz.
         conditions : Tensor
-            Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is estimated.
         mini_batch_size : int or None
@@ -1096,16 +1098,16 @@ class DiffusionModel(InferenceNetwork):
             Compositional score of same shape as input xz
         """
         # Get shapes for compositional structure
-        batch_size, n_compositional = ops.shape(conditions)[:2]
+        batch_size, num_items = ops.shape(conditions)[:2]
 
-        if mini_batch_size is not None and mini_batch_size < n_compositional:
+        if mini_batch_size is not None and mini_batch_size < num_items:
             # sample random indices for mini-batch processing
-            ranks = keras.random.uniform((batch_size, n_compositional), seed=self.seed_generator)
+            ranks = keras.random.uniform((batch_size, num_items), seed=self.seed_generator)
             per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
             conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
         else:
             conditions_batch = conditions
-            mini_batch_size = n_compositional
+            mini_batch_size = num_items
 
         needs_network_prior = compute_prior_score is None
         if needs_network_prior:
@@ -1117,7 +1119,7 @@ class DiffusionModel(InferenceNetwork):
         else:
             cond_with_prior = conditions_batch
             n_total = mini_batch_size
-        scale = n_compositional / mini_batch_size
+        scale = num_items / mini_batch_size
 
         # expand and flatten compositional dimension for score computation
         dims = tuple(ops.shape(xz)[1:])
@@ -1173,7 +1175,7 @@ class DiffusionModel(InferenceNetwork):
         Parameters
         ----------
         xz : Tensor
-            The current state of the latent variable, shape (n_datasets, n_compositional, ...)
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
         time : float or Tensor
             Time step for the diffusion process.
         log_snr_t : Tensor
@@ -1181,7 +1183,7 @@ class DiffusionModel(InferenceNetwork):
         sigma_t : Tensor
             Sigma component of noise schedule at time t, broadcastable to shape of xz.
         conditions : Tensor
-            Conditional inputs with compositional structure (n_datasets, n_compositional, ...)
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None, optional
@@ -1198,22 +1200,21 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             Compositional score of same shape as input xz
         """
-        batch_size, n_compositional = ops.shape(conditions)[:2]
+        batch_size, num_items = ops.shape(conditions)[:2]
         m = ops.shape(xz)[-1]
         upsilon_t = ops.maximum(ops.reshape(sigma_t, (-1,))[0] ** 2, 1e-8)
 
-        if mini_batch_size is not None and mini_batch_size < n_compositional:
-            # sample random indices for mini-batch processing
-            ranks = keras.random.uniform((batch_size, n_compositional), seed=self.seed_generator)
+        if mini_batch_size is not None and mini_batch_size < num_items:
+            ranks = keras.random.uniform((batch_size, num_items), seed=self.seed_generator)
             per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
             conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
         else:
             conditions_batch = conditions
-            mini_batch_size = n_compositional
+            mini_batch_size = num_items
 
-        # append prior as extra observation (zero-conditioned)
-        zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))  # (B, d)
-        cond_with_prior = ops.concatenate([conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1)  # (B, n_obs+1, d)
+        # Append prior as extra observation (zero-conditioned)
+        zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))
+        cond_with_prior = ops.concatenate([conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1)
 
         n_total = mini_batch_size + 1  # observations + prior
 
@@ -1270,8 +1271,8 @@ class DiffusionModel(InferenceNetwork):
         sum_Ps = ops.sum(Ps_obs, axis=1)  # (B, m)
 
         # Scale for mini-batch estimator
-        if mini_batch_size < n_compositional:
-            scale = n_compositional / mini_batch_size
+        if mini_batch_size < num_items:
+            scale = num_items / mini_batch_size
             sum_P = scale * sum_P
             sum_Ps = scale * sum_Ps
 
@@ -1283,21 +1284,14 @@ class DiffusionModel(InferenceNetwork):
             P_lambda_s = Ps_all[:, -1]  # already computed
 
         # solve: Λ x = s̃
-        w_prior = 1 - n_compositional
+        w_prior = 1 - num_items
         I_m_batch = ops.broadcast_to(I_m, (batch_size, m, m))
 
         lambda_matrix = sum_P + w_prior * P_lambda + regularize_precision * I_m_batch
         s_tilde = sum_Ps + w_prior * P_lambda_s
 
-        compositional_score = self._linsolve_batched(lambda_matrix, s_tilde)
+        compositional_score = linsolve_batched(lambda_matrix, s_tilde)
         return compositional_score
-
-    @staticmethod
-    def _linsolve_batched(lambda_matrix: Tensor, rhs: Tensor) -> Tensor:
-        """Solve Λ x = rhs for x, batched.  Lambda: (B,m,m), rhs: (B,m)."""
-        rhs_col = ops.expand_dims(rhs, -1)
-        x = ops.solve(lambda_matrix, rhs_col)
-        return ops.squeeze(x, axis=-1)
 
     def _compute_score_and_jacobian(
         self,
@@ -1427,16 +1421,18 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs |= self.integrate_kwargs
         integrate_kwargs |= kwargs
 
-        n_compositional = ops.shape(conditions)[1]
-        mini_batch_size = int(integrate_kwargs.pop("mini_batch_size", max(n_compositional * 0.1, 2)))
+        num_items = ops.shape(conditions)[1]
+        mini_batch_size = int(integrate_kwargs.pop("mini_batch_size", max(num_items * 0.1, 2)))
+
         if "mini_batch_size" in kwargs:
             kwargs.pop("mini_batch_size")
         if mini_batch_size is None:
-            mini_batch_size = n_compositional
+            mini_batch_size = num_items
         mini_batch_size = max(mini_batch_size, 1)
-        if keras.backend.backend() == "jax" and mini_batch_size != n_compositional:
-            mini_batch_size = n_compositional
-            logging.warning("Setting mini_batch_size to n_compositional as jax does not support mini-batching.")
+
+        if keras.backend.backend() == "jax" and mini_batch_size != num_items:
+            mini_batch_size = num_items
+            logging.warning("Setting mini_batch_size to num_items as jax does not support mini-batching.")
 
         self.compositional_bridge_d0 = float(
             integrate_kwargs.pop("compositional_bridge_d0", self.compositional_bridge_d0)
@@ -1446,7 +1442,7 @@ class DiffusionModel(InferenceNetwork):
         )
 
         if integrate_kwargs["method"] == "langevin":  # Geffner et al. (2023)
-            z_scaling = n_compositional * self.compositional_bridge_d1
+            z_scaling = num_items * self.compositional_bridge_d1
             z = z / ops.sqrt(ops.cast(z_scaling, dtype=ops.dtype(z)))
 
         # Apply user-provided target mask if available

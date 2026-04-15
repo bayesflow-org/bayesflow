@@ -82,3 +82,9 @@ def quantiles(request):
 @pytest.fixture()
 def unordered(batch_size, num_quantiles, num_variables):
     return keras.random.normal((batch_size, num_quantiles, num_variables))
+
+
+@pytest.fixture(params=[1, 2])
+def unordered_short(batch_size, num_variables, request):
+    length = request.param
+    return keras.random.normal((batch_size, length, num_variables))

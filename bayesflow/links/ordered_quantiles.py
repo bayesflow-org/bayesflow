@@ -51,10 +51,4 @@ class OrderedQuantiles(Ordered):
                     f"position {self.axis} of shape={input_shape}"
                 )
 
-        if self.anchor_index in [0, -1, num_quantile_levels - 1]:
-            raise RuntimeError(
-                f"The link function `OrderedQuantiles` expects at least 3 quantile levels, "
-                f"but only {num_quantile_levels} were given."
-            )
-
         super().build(input_shape)

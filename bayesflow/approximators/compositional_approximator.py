@@ -1,8 +1,6 @@
 from collections.abc import Sequence, Callable, Mapping
 from typing import Literal, Tuple
 
-from functools import partial
-
 
 import keras
 import numpy as np
@@ -14,7 +12,7 @@ from bayesflow.utils import split_arrays
 from bayesflow.utils.serialization import serializable
 
 from .continuous_approximator import ContinuousApproximator
-from .helpers import prepare_compute_prior_score
+from .helpers import build_prior_score_fn
 
 
 @serializable("bayesflow.approximators")
@@ -121,11 +119,8 @@ class CompositionalApproximator(ContinuousApproximator):
         if compute_prior_score is None:
             compute_prior_score_pre = None
         else:
-            compute_prior_score_pre = partial(
-                prepare_compute_prior_score,
-                compute_prior_score=compute_prior_score,
-                adapter=self.adapter,
-                standardizer=self.standardizer,
+            compute_prior_score_pre = build_prior_score_fn(
+                compute_prior_score, adapter=self.adapter, standardizer=self.standardizer
             )
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)

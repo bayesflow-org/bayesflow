@@ -1,3 +1,3 @@
 from .samplers import Sampler
 from .conditions import ConditionBuilder
-from .compositional import prepare_compute_prior_score
+from .compositional import build_prior_score_fn

@@ -24,6 +24,12 @@ class Ordered(keras.Layer):
     def build(self, input_shape):
         super().build(input_shape)
 
+        axis_size = input_shape[self.axis]
+        if not (0 <= self.anchor_index < axis_size):
+            raise ValueError(
+                f"anchor_index={self.anchor_index} is out of bounds for axis {self.axis} with size {axis_size}."
+            )
+
         self.group_indices = dict(
             below=list(range(0, self.anchor_index)),
             above=list(range(self.anchor_index + 1, input_shape[self.axis])),

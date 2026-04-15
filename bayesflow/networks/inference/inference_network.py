@@ -117,6 +117,7 @@ class InferenceNetwork(keras.Layer):
         compute_prior_score: Callable = None,
         density: bool = False,
         training: bool = False,
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
@@ -131,7 +132,12 @@ class InferenceNetwork(keras.Layer):
     ) -> Tensor:
         seed = resolve_seed(seed)
         samples = self.base_distribution.sample(batch_shape, seed=seed)
-        samples = self(samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs)
+        if "compute_prior_score" in kwargs:
+            samples = self._inverse_compositional(
+                samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs
+            )
+        else:
+            samples = self(samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs)
         return samples
 
     def log_prob(self, samples: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:

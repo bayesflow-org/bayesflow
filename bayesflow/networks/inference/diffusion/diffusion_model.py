@@ -892,6 +892,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         stochastic_solver: bool,
         conditions: Tensor,
+        seed: keras.random.SeedGenerator,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
@@ -911,6 +912,8 @@ class DiffusionModel(InferenceNetwork):
             Whether to use stochastic (SDE) or deterministic (ODE) formulation
         conditions : Tensor
             Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: SeedGenerator
+            For reproducibility.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional
             score is used.
@@ -933,6 +936,7 @@ class DiffusionModel(InferenceNetwork):
             compute_prior_score=compute_prior_score,
             mini_batch_size=mini_batch_size,
             training=training,
+            seed=seed,
             **kwargs,
         )
 
@@ -962,6 +966,7 @@ class DiffusionModel(InferenceNetwork):
         xz: Tensor,
         time: float | Tensor,
         conditions: Tensor,
+        seed: keras.random.SeedGenerator,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
@@ -982,6 +987,8 @@ class DiffusionModel(InferenceNetwork):
             Time step for the diffusion process
         conditions : Tensor
             Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: SeedGenerator
+            For reproducibility.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None
@@ -1026,6 +1033,7 @@ class DiffusionModel(InferenceNetwork):
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
                 training=training,
+                seed=seed,
                 **kwargs,
             )
         else:
@@ -1039,6 +1047,7 @@ class DiffusionModel(InferenceNetwork):
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
                 training=training,
+                seed=seed,
                 **kwargs,
             )
 
@@ -1065,6 +1074,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         log_snr_t: Tensor,
         conditions: Tensor,
+        seed: keras.random.SeedGenerator,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
@@ -1085,6 +1095,8 @@ class DiffusionModel(InferenceNetwork):
             Log SNR at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: SeedGenerator
+            For reproducibility.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is estimated.
         mini_batch_size : int or None
@@ -1104,7 +1116,7 @@ class DiffusionModel(InferenceNetwork):
 
         if mini_batch_size is not None and mini_batch_size < num_items:
             # sample random indices for mini-batch processing
-            ranks = keras.random.uniform((batch_size, num_items), seed=self.seed_generator)
+            ranks = keras.random.uniform((batch_size, num_items), seed=seed)
             per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
             conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
         else:
@@ -1162,6 +1174,7 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t: Tensor,
         sigma_t: Tensor,
         conditions: Tensor,
+        seed: keras.random.SeedGenerator,
         compute_prior_score: Callable[[Tensor], Tensor] | None = None,
         mini_batch_size: int | None = None,
         training: bool = False,
@@ -1186,6 +1199,8 @@ class DiffusionModel(InferenceNetwork):
             Sigma component of noise schedule at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: SeedGenerator
+            For reproducibility.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None, optional
@@ -1207,7 +1222,7 @@ class DiffusionModel(InferenceNetwork):
         upsilon_t = ops.maximum(ops.reshape(sigma_t, (-1,))[0] ** 2, 1e-8)
 
         if mini_batch_size is not None and mini_batch_size < num_items:
-            ranks = keras.random.uniform((batch_size, num_items), seed=self.seed_generator)
+            ranks = keras.random.uniform((batch_size, num_items), seed=seed)
             per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
             conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
         else:
@@ -1419,6 +1434,7 @@ class DiffusionModel(InferenceNetwork):
         """
         Inverse pass for compositional diffusion sampling.
         """
+        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs |= self.integrate_kwargs
         integrate_kwargs |= kwargs
@@ -1473,6 +1489,7 @@ class DiffusionModel(InferenceNetwork):
                     compute_prior_score=compute_prior_score,
                     mini_batch_size=mini_batch_size,
                     training=training,
+                    seed=seed,
                     **kwargs,
                 )
                 trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
@@ -1502,6 +1519,7 @@ class DiffusionModel(InferenceNetwork):
                         compute_prior_score=compute_prior_score,
                         mini_batch_size=mini_batch_size,
                         training=training,
+                        seed=seed,
                         **kwargs,
                     )
                 }
@@ -1521,6 +1539,7 @@ class DiffusionModel(InferenceNetwork):
                             compute_prior_score=compute_prior_score,
                             mini_batch_size=mini_batch_size,
                             training=training,
+                            seed=seed,
                             **kwargs,
                         )
                     }
@@ -1531,7 +1550,7 @@ class DiffusionModel(InferenceNetwork):
                 score_fn=score_fn,
                 noise_schedule=self.noise_schedule,
                 state=state,
-                seed=self.seed_generator,
+                seed=seed,
                 **integrate_kwargs,
             )
         else:
@@ -1546,6 +1565,7 @@ class DiffusionModel(InferenceNetwork):
                         compute_prior_score=compute_prior_score,
                         mini_batch_size=mini_batch_size,
                         training=training,
+                        seed=seed,
                         **kwargs,
                     )
                 }

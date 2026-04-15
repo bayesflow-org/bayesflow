@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Callable
 
 import numpy as np
@@ -71,13 +72,19 @@ def prepare_compute_prior_score(
             f"that have non-zero log_det_jac. Problematic keys: {problematic_keys}"
         )
 
-    prior_score = compute_prior_score(adapted_samples, time)
+    prior_has_time = "time" in inspect.signature(compute_prior_score).parameters
+    if prior_has_time:
+        prior_score = compute_prior_score(adapted_samples, time=time)
+    else:
+        prior_score = compute_prior_score(adapted_samples)
 
     for key in adapted_samples:
         prior_score[key] = keras.ops.cast(prior_score[key], "float32")
 
     prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
     out = keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
+    if not prior_has_time:
+        out = (1 - time) * out
 
     if "inference_variables" in standardizer.standardize:
         # Apply Jacobian correction from standardization

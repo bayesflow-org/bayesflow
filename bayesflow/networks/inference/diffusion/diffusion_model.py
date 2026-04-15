@@ -1142,7 +1142,7 @@ class DiffusionModel(InferenceNetwork):
         if needs_network_prior:
             prior_score = all_scores[:, -1]
         else:
-            # (1.0 - time) * prior_score
+            # internally handles: 1-time if prior score has no time argument
             prior_score = compute_prior_score(xz, time)
 
         # Combined score using compositional formula: (1-n) prior_score + Σᵢ₌₁ⁿ posterior_score

@@ -41,7 +41,11 @@ def test_compositional_sampling():
     )
     assert samples["parameters"].shape == (5, num_samples, 2)
 
-    # use precomputed summaries
+    # use precomputed summaries and prior score without time argument
+    def prior_score_fn(theta):
+        # placeholder prior score
+        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+
     samples = workflow.compositional_sample(
         num_samples=num_samples, compute_prior_score=prior_score_fn, summaries=samples["_summaries"]
     )

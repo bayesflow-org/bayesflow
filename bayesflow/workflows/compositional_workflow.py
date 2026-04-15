@@ -113,7 +113,7 @@ class CompositionalWorkflow(BasicWorkflow):
         *,
         num_samples: int,
         conditions: dict[str, np.ndarray] | None = None,
-        compute_prior_score: Callable[[dict[str, np.ndarray], np.ndarray], dict[str, np.ndarray]] = None,
+        compute_prior_score: Callable[[dict[str, np.ndarray], np.ndarray | None], dict[str, np.ndarray]] = None,
         summaries: Tensor | np.ndarray | None = None,
         split: bool = False,
         batch_size: int | None = None,
@@ -133,9 +133,10 @@ class CompositionalWorkflow(BasicWorkflow):
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
             Should have shape (n_datasets, n_compositional_conditions, ...).
-        compute_prior_score : Callable[[dict[str, np.ndarray], np.ndarray], dict[str, np.ndarray]], optional
-            A function that computes the score of the log prior distribution.
-            Otherwise, the unconditional score is used.
+        compute_prior_score : Callable[[dict[str, np.ndarray], np.ndarray | None], dict[str, np.ndarray]], optional
+            A function that computes the score of the log prior distribution. Optionally, the function can have a time
+            argument, otherwise the prior score is multiplied with (1-t), where t is diffusion time.
+            If none provided, the unconditional score is used.
         summaries : Tensor | np.ndarray | None, optional
             Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
             of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).

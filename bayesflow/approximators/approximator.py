@@ -186,14 +186,14 @@ class Approximator(BackendApproximator):
         first_conditions_arr = np.asarray(next(iter(conditions.values())))
         first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
 
-        n_datasets = first_conditions_arr.shape[0]
-        n_children = first_conditions_arr.shape[1]
-        n_parent_samples = first_ancestral_arr.shape[1]
+        num_datasets = first_conditions_arr.shape[0]
+        num_children = first_conditions_arr.shape[1]
+        num_parent_samples = first_ancestral_arr.shape[1]
 
         # If a summary network is present, summarize child conditions before expansion
         summary_network = getattr(self, "summary_network", None)
         if summary_network is not None:
-            flat_child_batch = n_datasets * n_children
+            flat_child_batch = num_datasets * num_children
             flattened_conditions = {
                 key: np.asarray(value).reshape(flat_child_batch, *np.asarray(value).shape[2:])
                 for key, value in conditions.items()
@@ -209,13 +209,13 @@ class Approximator(BackendApproximator):
             summary_kwargs = {}
             child_summary_variables = None
 
-        flat_batch = n_datasets * n_children * n_parent_samples
+        flat_batch = num_datasets * num_children * num_parent_samples
         # (n_datasets, n_parent_samples, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
         expanded_ancestral = {}
         for key, value in ancestral_conditions.items():
             arr = np.asarray(value)
             arr = np.expand_dims(arr, axis=1)  # (n_datasets, 1, n_parent_samples, ...)
-            arr = np.repeat(arr, n_children, axis=1)  # (n_datasets, n_children, n_parent_samples, ...)
+            arr = np.repeat(arr, num_children, axis=1)  # (n_datasets, n_children, n_parent_samples, ...)
             expanded_ancestral[key] = arr.reshape(flat_batch, *arr.shape[3:])
 
         # (n_datasets, n_children, ...) -> (n_datasets, n_children, n_parent_samples, ...) -> (flat_batch, ...)
@@ -223,7 +223,7 @@ class Approximator(BackendApproximator):
         for key, value in conditions.items():
             arr = np.asarray(value)
             arr = np.expand_dims(arr, axis=2)  # (n_datasets, n_children, 1, ...)
-            arr = np.repeat(arr, n_parent_samples, axis=2)  # (n_datasets, n_children, n_parent_samples, ...)
+            arr = np.repeat(arr, num_parent_samples, axis=2)  # (n_datasets, n_children, n_parent_samples, ...)
             expanded_conditions[key] = arr.reshape(flat_batch, *arr.shape[3:])
 
         merged_conditions = {**expanded_conditions, **expanded_ancestral}
@@ -239,9 +239,9 @@ class Approximator(BackendApproximator):
             inference_conditions=inference_conditions,
             child_summary_variables=child_summary_variables,
             summary_outputs=summary_outputs,
-            n_datasets=n_datasets,
-            n_children=n_children,
-            n_parent_samples=n_parent_samples,
+            num_datasets=num_datasets,
+            num_children=num_children,
+            num_parent_samples=num_parent_samples,
             batch_size=batch_size,
             **summary_kwargs,
         )

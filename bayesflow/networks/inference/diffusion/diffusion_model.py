@@ -1,5 +1,6 @@
 from collections.abc import Sequence, Mapping
 from typing import Any, Literal, Callable
+import math
 
 import keras
 from keras import ops
@@ -135,6 +136,7 @@ class DiffusionModel(InferenceNetwork):
         self.drop_cond_prob = drop_cond_prob
         self.unconditional_mode = False
         self.drop_target_prob = drop_target_prob
+
         self.compositional_bridge_d0 = 1.0
         self.compositional_bridge_d1 = 1.0
 
@@ -782,6 +784,7 @@ class DiffusionModel(InferenceNetwork):
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+
         # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs |= self.integrate_kwargs
@@ -882,8 +885,8 @@ class DiffusionModel(InferenceNetwork):
             Bridge function value with same shape as time.
 
         """
-        return self.compositional_bridge_d0 * ops.exp(
-            -ops.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time
+        return self.compositional_bridge_d0 * math.exp(
+            -math.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time
         )
 
     def compositional_velocity(
@@ -966,7 +969,7 @@ class DiffusionModel(InferenceNetwork):
         xz: Tensor,
         time: float | Tensor,
         conditions: Tensor,
-        seed: keras.random.SeedGenerator,
+        seed: keras.random.SeedGenerator | None,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
@@ -987,8 +990,8 @@ class DiffusionModel(InferenceNetwork):
             Time step for the diffusion process
         conditions : Tensor
             Conditional inputs with compositional structure (num_datasets, num_items, ...)
-        seed: SeedGenerator
-            For reproducibility.
+        seed: keras.random.SeedGenerator or None
+            Optional seed for reproducibility.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None
@@ -1074,7 +1077,7 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         log_snr_t: Tensor,
         conditions: Tensor,
-        seed: keras.random.SeedGenerator,
+        seed: keras.random.SeedGenerator | None = None,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int | None = None,
         training: bool = False,
@@ -1095,8 +1098,8 @@ class DiffusionModel(InferenceNetwork):
             Log SNR at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (num_datasets, num_items, ...)
-        seed: SeedGenerator
-            For reproducibility.
+        seed: keras.random.SeedGenerator or None
+            Optional seed for reproducibility.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is estimated.
         mini_batch_size : int or None
@@ -1111,11 +1114,11 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             Compositional score of same shape as input xz
         """
-        # Get shapes for compositional structure
+
         batch_size, num_items = ops.shape(conditions)[:2]
 
+        # Sample item indices for mini-batching or keep all items
         if mini_batch_size is not None and mini_batch_size < num_items:
-            # sample random indices for mini-batch processing
             ranks = keras.random.uniform((batch_size, num_items), seed=seed)
             per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
             conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
@@ -1123,28 +1126,29 @@ class DiffusionModel(InferenceNetwork):
             conditions_batch = conditions
             mini_batch_size = num_items
 
+        # Determine scale of summed posterior score
         needs_network_prior = compute_prior_score is None
         if needs_network_prior:
-            zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))  # (B, d)
-            cond_with_prior = ops.concatenate(
-                [conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1
-            )  # (B, n_obs+1, d)
-            n_total = mini_batch_size + 1
+            zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))
+            cond_with_prior = ops.concatenate([conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1)
+            num_total = mini_batch_size + 1
         else:
             cond_with_prior = conditions_batch
-            n_total = mini_batch_size
+            num_total = mini_batch_size
         scale = num_items / mini_batch_size
 
-        # expand and flatten compositional dimension for score computation
+        # Expand and flatten compositional dimension (i.e., num items) for score computation
         dims = tuple(ops.shape(xz)[1:])
         snr_dims = tuple(ops.shape(log_snr_t)[1:])
         conditions_dims = tuple(ops.shape(cond_with_prior)[2:])
-        xz_reshaped = ops.reshape(ops.repeat(ops.expand_dims(xz, 1), n_total, axis=1), (batch_size * n_total,) + dims)
-        log_snr_reshaped = ops.reshape(
-            ops.repeat(ops.expand_dims(log_snr_t, 1), n_total, axis=1),
-            (batch_size * n_total,) + snr_dims,
+        xz_reshaped = ops.reshape(
+            ops.repeat(ops.expand_dims(xz, 1), num_total, axis=1), (batch_size * num_total,) + dims
         )
-        conditions_flat = ops.reshape(cond_with_prior, (batch_size * n_total,) + conditions_dims)
+        log_snr_reshaped = ops.reshape(
+            ops.repeat(ops.expand_dims(log_snr_t, 1), num_total, axis=1),
+            (batch_size * num_total,) + snr_dims,
+        )
+        conditions_flat = ops.reshape(cond_with_prior, (batch_size * num_total,) + conditions_dims)
         scores_flat = self.score(
             xz_reshaped,
             log_snr_t=log_snr_reshaped,
@@ -1152,19 +1156,20 @@ class DiffusionModel(InferenceNetwork):
             training=training,
             **kwargs,
         )
-        all_scores = ops.reshape(scores_flat, (batch_size, n_total) + dims)
+        all_scores = ops.reshape(scores_flat, (batch_size, num_total) + dims)
         individual_scores = all_scores[:, :mini_batch_size]
 
         if needs_network_prior:
             prior_score = all_scores[:, -1]
         else:
-            # internally handles: 1-time if prior score has no time argument
+            # internally uses a (1-time) weight if prior score has no time argument
             prior_score = compute_prior_score(xz, time)
 
         # Combined score using compositional formula: (1-n) prior_score + Σᵢ₌₁ⁿ posterior_score
         delta = individual_scores - ops.expand_dims(prior_score, axis=1)
         update_delta = scale * ops.sum(delta, axis=1)
         compositional_score = prior_score + update_delta
+
         return compositional_score
 
     def _compositional_score_jac(
@@ -1174,7 +1179,7 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t: Tensor,
         sigma_t: Tensor,
         conditions: Tensor,
-        seed: keras.random.SeedGenerator,
+        seed: keras.random.SeedGenerator | None = None,
         compute_prior_score: Callable[[Tensor], Tensor] | None = None,
         mini_batch_size: int | None = None,
         training: bool = False,
@@ -1199,8 +1204,8 @@ class DiffusionModel(InferenceNetwork):
             Sigma component of noise schedule at time t, broadcastable to shape of xz.
         conditions : Tensor
             Conditional inputs with compositional structure (num_datasets, num_items, ...)
-        seed: SeedGenerator
-            For reproducibility.
+        seed: SeedGenerator or None
+            Optional seed for reproducibility.
         compute_prior_score: Callable, optional
             Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
         mini_batch_size : int or None, optional
@@ -1233,7 +1238,7 @@ class DiffusionModel(InferenceNetwork):
         zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))
         cond_with_prior = ops.concatenate([conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1)
 
-        n_total = mini_batch_size + 1  # observations + prior
+        num_total = mini_batch_size + 1
 
         dims = tuple(ops.shape(xz)[1:])
         snr_dims = tuple(ops.shape(log_snr_t)[1:])
@@ -1241,16 +1246,16 @@ class DiffusionModel(InferenceNetwork):
 
         # Repeat xz and log_snr_t for each observation+prior
         xz_rep = ops.reshape(
-            ops.repeat(ops.expand_dims(xz, 1), n_total, axis=1),
-            (batch_size * n_total,) + dims,
+            ops.repeat(ops.expand_dims(xz, 1), num_total, axis=1),
+            (batch_size * num_total,) + dims,
         )
         lsnr_rep = ops.reshape(
-            ops.repeat(ops.expand_dims(log_snr_t, 1), n_total, axis=1),
-            (batch_size * n_total,) + snr_dims,
+            ops.repeat(ops.expand_dims(log_snr_t, 1), num_total, axis=1),
+            (batch_size * num_total,) + snr_dims,
         )
         cond_flat = ops.reshape(
             cond_with_prior,
-            (batch_size * n_total,) + cond_dims,
+            (batch_size * num_total,) + cond_dims,
         )
 
         all_scores, all_jacs = self._compute_score_and_jacobian(
@@ -1261,22 +1266,22 @@ class DiffusionModel(InferenceNetwork):
             **kwargs,
         )
 
-        # Reshape: (B, n_total, m) and (B, n_total, m, m)
-        all_scores = ops.reshape(all_scores, (batch_size, n_total, m))
-        all_jacs = ops.reshape(all_jacs, (batch_size, n_total, m, m))
+        # Reshape: (B, num_total, m) and (B, num_total, m, m)
+        all_scores = ops.reshape(all_scores, (batch_size, num_total, m))
+        all_jacs = ops.reshape(all_jacs, (batch_size, num_total, m, m))
 
         # compute P_k = (I + υ J_k)⁻¹ for all k at once
         I_m = ops.eye(m, dtype=ops.dtype(xz))
         I_4d = ops.broadcast_to(
             ops.reshape(I_m, (1, 1, m, m)),
-            (batch_size, n_total, m, m),
+            (batch_size, num_total, m, m),
         )
         A_all = I_4d + upsilon_t * all_jacs
         P_all = ops.inv(A_all)
 
-        # P_k @ s_k for all k: (B, n_total, m, 1) → (B, n_total, m)
+        # P_k @ s_k for all k: (B, num_total, m, 1) → (B, num_total, m)
         scores_col = ops.expand_dims(all_scores, -1)
-        Ps_all = ops.squeeze(ops.matmul(P_all, scores_col), axis=-1)  # (B, n_total, m)
+        Ps_all = ops.squeeze(ops.matmul(P_all, scores_col), axis=-1)  # (B, num_total, m)
 
         # split observations and prior
         P_obs = P_all[:, :mini_batch_size]  # (B, n_obs, m, m)

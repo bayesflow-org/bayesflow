@@ -134,9 +134,9 @@ class ConditionBuilder:
         inference_conditions: Tensor | None,
         child_summary_variables: Tensor | None,
         summary_outputs: Tensor | np.ndarray | None,
-        n_datasets: int,
-        n_children: int,
-        n_parent_samples: int,
+        num_datasets: int,
+        num_children: int,
+        num_parent_samples: int,
         batch_size: int | None = None,
         **summary_kwargs,
     ) -> tuple[Tensor | None, Tensor | None]:
@@ -152,18 +152,18 @@ class ConditionBuilder:
         summary_network : keras.Layer or None
             The summary network.  If ``None``, ``child_summary_variables`` must also
             be ``None`` and ``inference_conditions`` is returned as-is.
-        inference_conditions : Tensor or None, shape (flat_batch, ic_dim)
+        inference_conditions : Tensor or None, shape (flat_batch, dim)
             Already-expanded inference conditions from the merged adapter call.
-        child_summary_variables : Tensor or None, shape (n_datasets * n_children, sv_dim)
+        child_summary_variables : Tensor or None, shape (num_datasets * num_children, sv_dim)
             Un-expanded child summary variables to be summarized before expansion.
         summary_outputs : Tensor or None
             If already computed, the output of the summary network. If provided, this will be used instead of
             computing summaries again from summary variables.
-        n_datasets : int
+        num_datasets : int
             Number of independent datasets.
-        n_children : int
+        num_children : int
             Number of child conditions per dataset.
-        n_parent_samples : int
+        num_parent_samples : int
             Number of parent samples per dataset.
         batch_size : int, optional
             Batch size for the summary network forward pass.
@@ -186,7 +186,7 @@ class ConditionBuilder:
         if child_summary_variables is None:
             raise ValueError("Summary variables are required when a summary network is present.")
 
-        total_datasets = n_datasets * n_children
+        total_datasets = num_datasets * num_children
         if batch_size is None:
             batch_size = total_datasets
 
@@ -202,15 +202,16 @@ class ConditionBuilder:
                 batches.append(batch_outputs)
 
             child_summaries = tree_concatenate(batches, axis=0)
-            child_summaries = keras.ops.reshape(child_summaries, (n_datasets, n_children, -1))
+            child_summaries = keras.ops.reshape(child_summaries, (num_datasets, num_children, -1))
         else:
             child_summaries = keras.ops.convert_to_tensor(summary_outputs)
 
-        # (n_datasets * n_children, summary_dim) -> (n_datasets, n_children, n_parent_samples, summary_dim)
+        # (num_datasets * num_children, summary_dim) ->
+        # (num_datasets, num_children, num_parent_samples, summary_dim)
         # -> (flat_batch, summary_dim)
-        flat_batch = n_datasets * n_children * n_parent_samples
+        flat_batch = num_datasets * num_children * num_parent_samples
         expanded = keras.ops.expand_dims(child_summaries, axis=2)
-        expanded = keras.ops.repeat(expanded, n_parent_samples, axis=2)
+        expanded = keras.ops.repeat(expanded, num_parent_samples, axis=2)
         expanded = keras.ops.reshape(expanded, (flat_batch, -1))
 
         conditions = concatenate_valid((inference_conditions, expanded), axis=-1)

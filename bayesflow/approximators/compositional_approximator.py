@@ -1,7 +1,6 @@
 from collections.abc import Sequence, Callable, Mapping
 from typing import Literal, Tuple
 
-
 import keras
 import numpy as np
 

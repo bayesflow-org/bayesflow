@@ -1,5 +1,5 @@
-import inspect
 from collections.abc import Callable
+import inspect
 
 import keras
 
@@ -38,10 +38,10 @@ def build_prior_score_fn(
     NotImplementedError
         If the adapter has non-zero log_det_jac for any key.
     """
-    # -- fixed state captured once ------------------------------------------------
+
+    # Capture fixed states
     prior_has_time = "time" in inspect.signature(compute_prior_score).parameters
 
-    # Pre-compute standardization std correction (constant after fitting)
     if "inference_variables" in standardizer.standardize:
         standardize_layer = standardizer.standardize_layers["inference_variables"]
         std_components = [standardize_layer.moving_std(idx) for idx in range(len(standardize_layer.moving_mean))]
@@ -49,8 +49,6 @@ def build_prior_score_fn(
         std_expanded = keras.ops.expand_dims(std, 0)
     else:
         std_expanded = None
-
-    # -------------------------------------------------------------------------
 
     def _step(samples: Tensor, time: Tensor) -> Tensor:
         samples = keras.tree.map_structure(

@@ -1,6 +1,6 @@
-import torch
-
 from functools import wraps
+
+import torch
 
 
 def grad(fn, argnums=0, has_aux=False):
@@ -16,3 +16,19 @@ def value_and_grad(fn, argnums=0, has_aux=False):
         return y, dydx
 
     return wrapper
+
+
+def jvp(fn, primals, tangents, has_aux=False):
+    return torch.func.jvp(fn, primals, tangents, has_aux=has_aux)
+
+
+def vjp(fn, *primals, has_aux=False):
+    return torch.func.vjp(fn, *primals, has_aux=has_aux)
+
+
+def jacfwd(fn, argnums=0, has_aux=False):
+    return torch.func.jacfwd(fn, argnums=argnums, has_aux=has_aux)
+
+
+def jacrev(fn, argnums=0, has_aux=False):
+    return torch.func.jacrev(fn, argnums=argnums, has_aux=has_aux)

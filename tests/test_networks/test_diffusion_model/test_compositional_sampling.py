@@ -14,6 +14,7 @@ def test_compositional_score_shape(
     simple_diffusion_model.compositional_bridge_d1 = 0.1
 
     time = 0.5
+    seed = keras.random.SeedGenerator(0)
 
     score = simple_diffusion_model.compositional_score(
         xz=compositional_state,
@@ -21,6 +22,7 @@ def test_compositional_score_shape(
         conditions=compositional_conditions,
         compute_prior_score=mock_prior_score,
         training=False,
+        seed=seed,
     )
 
     expected_shape = keras.ops.shape(compositional_state)
@@ -34,10 +36,16 @@ def test_compositional_score_shape(
 def test_compositional_score_no_conditions_raises_error(simple_diffusion_model, compositional_state, mock_prior_score):
     """Test that compositional score raises error when conditions is None."""
     simple_diffusion_model.build(keras.ops.shape(compositional_state), None)
+    seed = keras.random.SeedGenerator(0)
 
     with pytest.raises(ValueError, match="Conditions are required for compositional sampling"):
         simple_diffusion_model.compositional_score(
-            xz=compositional_state, time=0.5, conditions=None, compute_prior_score=mock_prior_score, training=False
+            xz=compositional_state,
+            time=0.5,
+            conditions=None,
+            compute_prior_score=mock_prior_score,
+            training=False,
+            seed=seed,
         )
 
 

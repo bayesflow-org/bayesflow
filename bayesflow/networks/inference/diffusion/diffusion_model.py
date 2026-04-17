@@ -1,6 +1,5 @@
 from collections.abc import Sequence, Mapping
 from typing import Any, Literal, Callable
-import math
 
 import keras
 from keras import ops
@@ -885,8 +884,8 @@ class DiffusionModel(InferenceNetwork):
             Bridge function value with same shape as time.
 
         """
-        return self.compositional_bridge_d0 * math.exp(
-            -math.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time
+        return self.compositional_bridge_d0 * ops.exp(
+            -ops.log(self.compositional_bridge_d0 / self.compositional_bridge_d1) * time
         )
 
     def compositional_velocity(

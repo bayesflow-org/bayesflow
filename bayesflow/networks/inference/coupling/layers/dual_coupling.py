@@ -53,9 +53,6 @@ class DualCoupling(InvertibleLayer):
         return base_config | serialize(config)
 
     def build(self, xz_shape: Shape, conditions_shape: Shape = None):
-        if self.built:
-            return
-
         xz_shape = tuple(xz_shape)
         if conditions_shape is not None:
             conditions_shape = tuple(conditions_shape)

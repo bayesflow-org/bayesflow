@@ -1,10 +1,11 @@
-import keras
 import numpy as np
+
+import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import pad, searchsorted
 from bayesflow.utils.keras_utils import shifted_softplus
-from bayesflow.utils.serialization import serializable, deserialize
+from bayesflow.utils.serialization import serializable
 
 from ._rational_quadratic import _rational_quadratic_spline
 from .transform import Transform
@@ -15,7 +16,7 @@ class SplineTransform(Transform):
     def __init__(
         self,
         bins: int = 16,
-        default_domain: (float, float, float, float) = (-3.0, 3.0, -3.0, 3.0),
+        default_domain: tuple[float, float, float, float] = (-3.0, 3.0, -3.0, 3.0),
         min_width: float = 1.0,
         min_height: float = 1.0,
         min_bin_width: float = 0.1,
@@ -27,15 +28,18 @@ class SplineTransform(Transform):
         if bins <= 0:
             raise ValueError("Number of bins must be strictly positive.")
 
+        if default_domain[1] <= default_domain[0] or default_domain[3] <= default_domain[2]:
+            raise ValueError("Invalid default domain. Must be (left, right, bottom, top).")
+
+        if method != "rational_quadratic":
+            raise NotImplementedError("Currently, only 'rational_quadratic' spline method is supported.")
+
         self.bins = bins
         self.min_width = max(min_width, bins * min_bin_width)
         self.min_height = max(min_height, bins * min_bin_height)
         self.min_bin_width = min_bin_width
         self.min_bin_height = min_bin_height
         self.method = method
-
-        if self.method != "rational_quadratic":
-            raise NotImplementedError("Currently, only 'rational_quadratic' spline method is supported.")
 
         self.method_fn = _rational_quadratic_spline
 
@@ -50,9 +54,6 @@ class SplineTransform(Transform):
             "bin_heights": self.bins,
             "derivatives": self.bins - 1,
         }
-
-        if default_domain[1] <= default_domain[0] or default_domain[3] <= default_domain[2]:
-            raise ValueError("Invalid default domain. Must be (left, right, bottom, top).")
 
         self.default_left = default_domain[0]
         self.default_bottom = default_domain[2]
@@ -82,10 +83,6 @@ class SplineTransform(Transform):
             "min_bin_height": self.min_bin_height,
             "method": self.method,
         }
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "SplineTransform":
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     @property
     def params_per_dim(self) -> int:

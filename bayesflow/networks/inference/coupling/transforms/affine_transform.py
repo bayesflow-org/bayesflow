@@ -2,7 +2,7 @@ import keras.ops as ops
 
 from bayesflow.types import Tensor
 from bayesflow.utils.keras_utils import shifted_softplus
-from bayesflow.utils.serialization import serializable, deserialize
+from bayesflow.utils.serialization import serializable
 
 from .transform import Transform
 
@@ -15,10 +15,6 @@ class AffineTransform(Transform):
 
     def get_config(self) -> dict:
         return {"clamp": self.clamp}
-
-    @classmethod
-    def from_config(cls, config: dict, custom_objects=None) -> "AffineTransform":
-        return cls(**deserialize(config, custom_objects=custom_objects))
 
     @property
     def params_per_dim(self):

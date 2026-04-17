@@ -35,11 +35,6 @@ class InferenceNetwork(keras.Layer):
 
     Optionally override:
 
-    ``build(xz_shape, conditions_shape)``
-        Allocate weights that depend on the concrete tensor shapes.  Call
-        ``super().build(...)`` to build the ``base_distribution`` and trigger a
-        forward pass for shape inference.
-
     ``sample(batch_shape, conditions, **kwargs)``
         Draw samples from the learned distribution.  The default implementation
         samples from ``base_distribution`` and passes the result through
@@ -74,17 +69,6 @@ class InferenceNetwork(keras.Layer):
         is not ``None``.
         """
         return {key: source[key] for key in keys if source.get(key) is not None}
-
-    def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
-        if self.built:
-            # building when the network is already built can cause issues with serialization
-            # see https://github.com/keras-team/keras/issues/21147
-            return
-
-        self.base_distribution.build(xz_shape)
-        x = keras.ops.zeros(xz_shape)
-        conditions = keras.ops.zeros(conditions_shape) if conditions_shape is not None else None
-        self.call(x, conditions, training=True)
 
     def call(
         self,

@@ -22,8 +22,8 @@ class ConditionalDenseBlock(keras.Layer):
     Computes::
 
         h = dense(x)
-        h = dropout(h)  # if dropout > 0
         h = activation(h)
+        h = dropout(h)  # if dropout > 0
         h = film(h, conditioning)
         h = projector(x) + h  # if residual
         h = norm(h)  # if norm is not None
@@ -122,7 +122,8 @@ class ConditionalDenseBlock(keras.Layer):
 
     def call(self, inputs: list[Tensor, Tensor], training: bool = None):
         x, cond = inputs
-        h = self.dense(x, training=training)
+
+        h = self.dense(x)
         h = self.activation(h)
 
         if self.dropout_layer is not None:

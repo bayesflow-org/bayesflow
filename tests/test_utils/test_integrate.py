@@ -1,7 +1,7 @@
 import numpy as np
 import keras
 import pytest
-from bayesflow.utils import integrate, integrate_stochastic
+from bayesflow.utils import integrate, integrate_stochastic, DETERMINISTIC_METHODS
 
 
 TOLERANCE_ADAPTIVE = 1e-6  # Adaptive solvers should be very accurate.
@@ -12,7 +12,7 @@ TOL_MEAN = 5e-2
 TOL_VAR = 5e-2
 
 
-@pytest.mark.parametrize("method", ["euler", "rk45", "tsit5"])
+@pytest.mark.parametrize("method", DETERMINISTIC_METHODS)
 def test_scheduled_integration(method):
     def fn(t, x):
         return {"x": t**2}

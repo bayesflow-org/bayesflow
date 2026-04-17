@@ -243,8 +243,7 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
-
-        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions)
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
@@ -308,6 +307,7 @@ class ContinuousApproximator(Approximator):
             adapted.get("inference_conditions"),
             adapted.get("summary_variables"),
             stage="inference",
+            batch_size=kwargs.get("batch_size", None),
             **summary_kwargs,
         )
 
@@ -330,3 +330,102 @@ class ContinuousApproximator(Approximator):
         log_prob = keras.tree.map_structure(lambda lp: lp + log_det_jac, log_prob)
 
         return log_prob
+
+    def ancestral_sample(
+        self,
+        *,
+        conditions: Mapping[str, np.ndarray],
+        ancestral_conditions: Mapping[str, np.ndarray],
+        split: bool = False,
+        batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        return_summaries: bool = False,
+        summary_outputs: Tensor | np.ndarray | None = None,
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generates ancestral samples from the approximator given input conditions. The `conditions` and
+         `ancestral_conditions dictionary is preprocessed using the `adapter`.
+          Samples are converted to NumPy arrays after inference.
+          Expected shape of each condition variable is (n_datasets, n_children, ...) and
+          of each ancestral condition variable is (n_datasets, n_parent_samples, ...).
+
+        Parameters
+        ----------
+        conditions : dict[str, np.ndarray]
+            Dictionary of conditioning variables as NumPy arrays.
+        ancestral_conditions : dict[str, np.ndarray]
+            Dictionary of ancestral conditioning variables as NumPy arrays.
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
+        return_summaries: bool, optional
+            If set to True and a summary network is present, will return the learned summary statistics for
+            the provided conditions.
+        summary_outputs : Tensor | np.ndarray | None, optional
+            Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
+            of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
+        **kwargs : dict
+            Additional keyword arguments for the sampling process.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Dictionary containing generated samples with the same keys as `conditions`.
+            Samples of shape (n_datasets, n_children, n_samples, ...)
+        """
+        first_conditions_arr = np.asarray(next(iter(conditions.values())))
+        first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
+        n_datasets = first_conditions_arr.shape[0]
+        n_children = first_conditions_arr.shape[1]
+        n_parent_samples = first_ancestral_arr.shape[1]
+
+        resolved_conditions, adapted, summary_outputs = self._prepare_ancestral_conditions(
+            conditions,
+            ancestral_conditions=ancestral_conditions,
+            batch_size=batch_size,
+            summary_outputs=summary_outputs,
+        )
+
+        inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
+
+        samples = self.sampler.sample(
+            inference_network=self.inference_network,
+            num_samples=1,
+            conditions=resolved_conditions,
+            batch_size=batch_size,
+            sample_shape=sample_shape,
+            **inference_kwargs,
+        )
+
+        # Unstandardize and inverse-adapt samples (tree-aware for nested dict outputs)
+        samples = keras.tree.map_structure(
+            lambda s: self.standardizer.maybe_standardize(
+                s, key="inference_variables", stage="inference", forward=False
+            ),
+            samples,
+        )
+        samples = keras.tree.map_structure(
+            lambda s: self.adapter({"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False),
+            samples,
+        )
+        samples = {k: s.reshape((n_datasets, n_children, n_parent_samples, *s.shape[2:])) for k, s in samples.items()}
+
+        if return_summaries and summary_outputs is not None:
+            samples["_summaries"] = summary_outputs
+
+        if split:
+            samples = split_arrays(samples, axis=-1)
+
+        return samples

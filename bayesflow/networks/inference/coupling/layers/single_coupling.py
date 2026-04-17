@@ -70,9 +70,6 @@ class SingleCoupling(InvertibleLayer):
 
     # noinspection PyMethodOverriding
     def build(self, x1_shape: Shape, x2_shape: Shape, conditions_shape: Shape = None):
-        if self.built:
-            return
-
         self.output_projector = keras.layers.Dense(
             units=self.transform.params_per_dim * x2_shape[-1],
             kernel_initializer="zeros",
@@ -81,13 +78,14 @@ class SingleCoupling(InvertibleLayer):
         )
 
         if conditions_shape is not None:
-            subnet_input_shape = x1_shape[:-1] + (x1_shape[-1] + conditions_shape[-1],)
+            subnet_input_shape = tuple(x1_shape[:-1]) + (x1_shape[-1] + conditions_shape[-1],)
         else:
-            subnet_input_shape = x1_shape
+            subnet_input_shape = tuple(x1_shape)
 
         self.subnet.build(subnet_input_shape)
         out_shape = self.subnet.compute_output_shape(subnet_input_shape)
         self.output_projector.build(out_shape)
+        self.transform.build(x2_shape)
 
     def call(
         self, x1: Tensor, x2: Tensor, conditions: Tensor = None, inverse: bool = False, training: bool = False, **kwargs

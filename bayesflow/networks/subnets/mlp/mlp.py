@@ -54,7 +54,7 @@ class MLP(keras.Layer):
         if len(widths) == 0:
             raise ValueError("MLP requires at least one hidden width.")
 
-        self.widths = list(widths)
+        self.widths = widths
         self.activation = activation
         self.kernel_initializer = kernel_initializer
         self.residual = residual
@@ -83,9 +83,6 @@ class MLP(keras.Layer):
         return h
 
     def build(self, input_shape):
-        if self.built:
-            return
-
         h_shape = input_shape
 
         for block in self.blocks:

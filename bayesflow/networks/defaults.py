@@ -13,14 +13,16 @@ from types import MappingProxyType
 TIME_MLP_DEFAULTS = MappingProxyType(
     {
         "widths": (256, 256, 256, 256, 256),
+        "time_embedding_dim": 32,
+        "fourier_scale": 30.0,
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
         "dropout": 0.05,
-        "spectral_normalization": False,
-        "time_embedding_dim": 32,
-        "merge": "concat",
         "norm": "layer",
+        "spectral_normalization": False,
+        "merge": "concat",
+        "film_use_gamma": False,
     }
 )
 
@@ -31,16 +33,19 @@ WEIGHT_MLP_DEFAULTS = MappingProxyType(
         "kernel_initializer": "he_normal",
         "residual": False,
         "dropout": 0.05,
+        "norm": None,
         "spectral_normalization": False,
     }
 )
 
 COUPLING_MLP_DEFAULTS = MappingProxyType(
     {
+        "widths": (128, 128),
         "activation": "hard_silu",
         "kernel_initializer": "glorot_uniform",
         "residual": False,
         "dropout": 0.05,
+        "norm": None,
         "spectral_normalization": False,
     }
 )

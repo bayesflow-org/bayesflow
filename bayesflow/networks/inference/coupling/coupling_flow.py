@@ -1,3 +1,5 @@
+from typing import Any
+
 import keras
 
 from bayesflow.types import Tensor
@@ -82,8 +84,8 @@ class CouplingFlow(InferenceNetwork):
         permutation: str | None = "random",
         use_actnorm: bool = True,
         base_distribution: str = "normal",
-        subnet_kwargs: dict[str, any] = None,
-        transform_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, Any] = None,
+        transform_kwargs: dict[str, Any] = None,
         **kwargs,
     ):
         super().__init__(base_distribution=base_distribution, **kwargs)
@@ -106,12 +108,17 @@ class CouplingFlow(InferenceNetwork):
                 DualCoupling(subnet, transform, subnet_kwargs=subnet_kwargs, transform_kwargs=transform_kwargs)
             )
 
-        # We only need to do this from coupling flows, since we do not serialize invertible layers
+        # We only need to do this for coupling flows, since we do not serialize invertible layers
         self.subnet_kwargs = subnet_kwargs
         self.transform_kwargs = transform_kwargs
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):
+        if self.built:
+            # building when the network is already built can cause issues with serialization
+            # see https://github.com/keras-team/keras/issues/21147
+            return
+
         for layer in self.invertible_layers:
             layer.build(xz_shape=xz_shape, conditions_shape=conditions_shape)
 

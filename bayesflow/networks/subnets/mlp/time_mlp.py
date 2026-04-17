@@ -78,7 +78,7 @@ class TimeMLP(keras.Layer):
         if merge not in ("add", "concat"):
             raise ValueError(f"Unknown merge mode: {merge!r} (expected 'add' or 'concat').")
 
-        self.widths = list(widths)
+        self.widths = widths
         self.time_embedding_dim = time_embedding_dim
         self.fourier_scale = fourier_scale
         self.activation = activation

@@ -15,8 +15,8 @@ class DenseBlock(keras.Layer):
     Computes::
 
         h = dense(x)
-        h = dropout(h)  # if dropout > 0
         h = activation(h)
+        h = dropout(h)  # if dropout > 0
         h = norm(h)  # if norm is not None
         h = projector(x) + h  # if residual
 

@@ -1,4 +1,4 @@
-from .blocks import DenseBlock, ConditionalBlock
+from .blocks import DenseBlock, ConditionalDenseBlock
 from .embeddings import FourierEmbedding, Time2Vec, RecurrentEmbedding, FiLM
 from .residual import Residual, ConditionalResidual
 from .sequential import Sequential

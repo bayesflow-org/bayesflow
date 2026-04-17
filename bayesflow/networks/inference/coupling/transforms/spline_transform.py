@@ -4,7 +4,7 @@ import numpy as np
 from bayesflow.types import Tensor
 from bayesflow.utils import pad, searchsorted
 from bayesflow.utils.keras_utils import shifted_softplus
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils.serialization import serializable, deserialize
 
 from ._rational_quadratic import _rational_quadratic_spline
 from .transform import Transform
@@ -66,6 +66,26 @@ class SplineTransform(Transform):
             raise ValueError(f"Default height must be greater than minimum height ({self.min_height}).")
 
         self._shift = np.sinh(1.0) * np.log(np.e - 1.0)
+
+    def get_config(self) -> dict:
+        return {
+            "bins": self.bins,
+            "default_domain": (
+                self.default_left,
+                self.default_left + self.default_width,
+                self.default_bottom,
+                self.default_bottom + self.default_height,
+            ),
+            "min_width": self.min_width,
+            "min_height": self.min_height,
+            "min_bin_width": self.min_bin_width,
+            "min_bin_height": self.min_bin_height,
+            "method": self.method,
+        }
+
+    @classmethod
+    def from_config(cls, config: dict, custom_objects=None) -> "SplineTransform":
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     @property
     def params_per_dim(self) -> int:

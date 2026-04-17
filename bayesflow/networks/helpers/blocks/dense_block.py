@@ -64,24 +64,24 @@ class DenseBlock(keras.Layer):
         self.norm = norm
         self.spectral_normalization = bool(spectral_normalization)
 
-        # Dense
+        # Internal dense layer with optional spectral normalization
         dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")
         if spectral_normalization:
             dense = keras.layers.SpectralNormalization(dense)
         self.dense = dense
 
-        # Dropout
+        # Optional dropout layer
         self.dropout_layer = None
         if dropout is not None and dropout > 0:
             self.dropout_layer = keras.layers.Dropout(dropout, name="dropout")
 
-        # Activation
+        # Non-linear activation
         activation = keras.activations.get(activation)
         if not isinstance(activation, keras.Layer):
             activation = keras.layers.Activation(activation)
         self.activation = activation
 
-        # Normalization
+        # Optional normalization
         if norm == "batch":
             self.norm_layer = keras.layers.BatchNormalization(name="norm")
         elif norm == "layer":
@@ -100,6 +100,22 @@ class DenseBlock(keras.Layer):
         # Residual projector (created in build if dims differ)
         self.projector = None
 
+    def call(self, x: Tensor, training: bool = None):
+        h = self.dense(x, training=training)
+        h = self.activation(h)
+
+        if self.dropout_layer is not None:
+            h = self.dropout_layer(h, training=training)
+
+        if self.residual:
+            skip = x if self.projector is None else self.projector(x)
+            h = skip + h
+
+        if self.norm_layer is not None:
+            h = self.norm_layer(h, training=training)
+
+        return h
+
     @classmethod
     def from_config(cls, config, custom_objects=None):
         return cls(**deserialize(config, custom_objects=custom_objects))
@@ -107,6 +123,7 @@ class DenseBlock(keras.Layer):
     def get_config(self):
         base = super().get_config()
         base = layer_kwargs(base)
+
         config = {
             "width": self.width,
             "activation": self.activation,
@@ -140,19 +157,3 @@ class DenseBlock(keras.Layer):
 
     def compute_output_shape(self, input_shape):
         return self.dense.compute_output_shape(input_shape)
-
-    def call(self, x: Tensor, training: bool = None):
-        h = self.dense(x, training=training)
-        h = self.activation(h)
-
-        if self.dropout_layer is not None:
-            h = self.dropout_layer(h, training=training)
-
-        if self.residual:
-            skip = x if self.projector is None else self.projector(x)
-            h = skip + h
-
-        if self.norm_layer is not None:
-            h = self.norm_layer(h, training=training)
-
-        return h

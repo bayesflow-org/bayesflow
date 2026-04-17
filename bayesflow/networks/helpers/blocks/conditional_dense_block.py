@@ -2,6 +2,7 @@ from typing import Literal, Callable
 
 import keras
 
+from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
@@ -9,7 +10,7 @@ from ..embeddings import FiLM
 
 
 @serializable("bayesflow.networks")
-class ConditionalBlock(keras.Layer):
+class ConditionalDenseBlock(keras.Layer):
     """Single fully-connected hidden layer with FiLM conditioning [1],
     optional residual skip, dropout, normalization, and spectral
     normalization.
@@ -46,6 +47,8 @@ class ConditionalBlock(keras.Layer):
     spectral_normalization : bool, optional
         Apply spectral normalization to the Dense kernel. Default is
         ``False``.
+    film_use_gamma : bool, optional
+        Whether film uses a learnable gamma. Default is ``False``.
     **kwargs
         Extra keyword arguments forwarded to ``keras.Layer``.
 
@@ -63,45 +66,48 @@ class ConditionalBlock(keras.Layer):
         kernel_initializer: str | keras.Initializer = "he_normal",
         residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
-        norm: Literal["batch", "layer"] | keras.Layer = "layer",
+        norm: Literal["batch", "layer", "rms"] | keras.Layer = "layer",
         spectral_normalization: bool = False,
+        film_use_gamma: bool = False,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
 
-        self.width = int(width)
+        self.width = width
         self.activation = activation
         self.kernel_initializer = kernel_initializer
-        self.residual = bool(residual)
+        self.residual = residual
         self.dropout = dropout
         self.norm = norm
-        self.spectral_normalization = bool(spectral_normalization)
+        self.spectral_normalization = spectral_normalization
 
-        # Dense
+        # Internal dense layer with optional spectral normalization
         dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")
         if spectral_normalization:
             dense = keras.layers.SpectralNormalization(dense)
         self.dense = dense
 
-        # Dropout
+        # Optional dropout layer
         self.dropout_layer = None
         if dropout is not None and dropout > 0:
             self.dropout_layer = keras.layers.Dropout(dropout, name="dropout")
 
-        # Activation
-        act = keras.activations.get(activation)
-        if not isinstance(act, keras.Layer):
-            act = keras.layers.Activation(act)
-        self.act = act
+        # Non-linear activation
+        activation = keras.activations.get(activation)
+        if not isinstance(activation, keras.Layer):
+            activation = keras.layers.Activation(activation)
+        self.activation = activation
 
-        # FiLM
-        self.film = FiLM(self.width, use_gamma=kwargs.pop("film_use_gamma", False), name="film")
+        # FiLM layer
+        self.film = FiLM(self.width, use_gamma=film_use_gamma, name="film")
 
-        # Normalization
+        # Optional normalization
         if norm == "batch":
             self.norm_layer = keras.layers.BatchNormalization(name="norm")
         elif norm == "layer":
             self.norm_layer = keras.layers.LayerNormalization(name="norm")
+        elif norm == "rms":
+            self.norm_layer = keras.layers.RMSNormalization(name="norm")
         elif isinstance(norm, str):
             raise ValueError(f"Unknown normalization strategy: {norm!r}.")
         elif isinstance(norm, keras.Layer):
@@ -114,23 +120,23 @@ class ConditionalBlock(keras.Layer):
         # Residual projector (created in build if dims differ)
         self.projector = None
 
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
+    def call(self, inputs: list[Tensor, Tensor], training: bool = None):
+        x, cond = inputs
+        h = self.dense(x, training=training)
+        h = self.activation(h)
 
-    def get_config(self):
-        base = super().get_config()
-        base = layer_kwargs(base)
-        config = {
-            "width": self.width,
-            "activation": self.activation,
-            "kernel_initializer": self.kernel_initializer,
-            "residual": self.residual,
-            "dropout": self.dropout,
-            "norm": self.norm,
-            "spectral_normalization": self.spectral_normalization,
-        }
-        return base | serialize(config)
+        if self.dropout_layer is not None:
+            h = self.dropout_layer(h, training=training)
+
+        h = self.film((h, cond))
+
+        if self.residual:
+            skip = x if self.projector is None else self.projector(x)
+            h = skip + h
+
+        if self.norm_layer is not None:
+            h = self.norm_layer(h, training=training)
+        return h
 
     def build(self, input_shape):
         if self.built:
@@ -145,7 +151,8 @@ class ConditionalBlock(keras.Layer):
 
         if self.dropout_layer is not None:
             self.dropout_layer.build(h_shape)
-        self.act.build(h_shape)
+
+        self.activation.build(h_shape)
 
         if self.norm_layer is not None:
             self.norm_layer.build(h_shape)
@@ -156,26 +163,25 @@ class ConditionalBlock(keras.Layer):
             )
             self.projector.build(x_shape)
 
-        super().build(input_shape)
-
     def compute_output_shape(self, input_shape):
         x_shape, _ = input_shape
         return self.dense.compute_output_shape(x_shape)
 
-    def call(self, inputs, training=None):
-        x, cond = inputs
-        h = self.dense(x)
-        h = self.act(h)
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
-        if self.dropout_layer is not None:
-            h = self.dropout_layer(h, training=training)
+    def get_config(self):
+        base = super().get_config()
+        base = layer_kwargs(base)
 
-        h = self.film((h, cond))
-
-        if self.residual:
-            skip = x if self.projector is None else self.projector(x)
-            h = skip + h
-
-        if self.norm_layer is not None:
-            h = self.norm_layer(h, training=training)
-        return h
+        config = {
+            "width": self.width,
+            "activation": self.activation,
+            "kernel_initializer": self.kernel_initializer,
+            "residual": self.residual,
+            "dropout": self.dropout,
+            "norm": self.norm,
+            "spectral_normalization": self.spectral_normalization,
+        }
+        return base | serialize(config)

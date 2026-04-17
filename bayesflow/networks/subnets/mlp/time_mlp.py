@@ -7,7 +7,7 @@ from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serialize, serializable, deserialize
 
 from ...helpers import FourierEmbedding
-from ...helpers import ConditionalBlock
+from ...helpers import ConditionalDenseBlock
 
 
 @serializable("bayesflow.networks")
@@ -48,6 +48,8 @@ class TimeMLP(keras.Layer):
     merge : ``"add"`` or ``"concat"``, optional
         How to merge input and conditions (``"add"`` or ``"concat"``).
         Default is ``"concat"``.
+    film_use_gamma : bool, optional
+        Whether film uses a learnable gamma. Default is ``False``.
     **kwargs
         Additional keyword arguments passed to ``keras.Layer``.
     """
@@ -66,6 +68,7 @@ class TimeMLP(keras.Layer):
         norm: Literal["batch", "layer"] | keras.Layer = "layer",
         spectral_normalization: bool = False,
         merge: Literal["add", "concat"] = "concat",
+        film_use_gamma: bool = False,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -104,14 +107,14 @@ class TimeMLP(keras.Layer):
         self.c_proj = None
         self.merge_proj = None
 
-        act = keras.activations.get(activation)
-        if not isinstance(act, keras.Layer):
-            act = keras.layers.Activation(act)
-        self.act = act
+        activation = keras.activations.get(activation)
+        if not isinstance(activation, keras.Layer):
+            activation = keras.layers.Activation(activation)
+        self.activation = activation
 
-        # Time-conditional blocks
+        # Time-conditional blocks using film
         self.blocks = [
-            ConditionalBlock(
+            ConditionalDenseBlock(
                 width=width,
                 activation=activation,
                 kernel_initializer=kernel_initializer,
@@ -119,31 +122,34 @@ class TimeMLP(keras.Layer):
                 dropout=dropout,
                 norm=norm,
                 spectral_normalization=spectral_normalization,
+                film_use_gamma=film_use_gamma,
             )
             for width in self.widths
         ]
 
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
+    def call(
+        self,
+        inputs: tuple[Tensor, Tensor, Tensor | None],
+        training: bool = None,
+    ) -> Tensor:
+        x, t, conditions = inputs
+        h = self.x_proj(x)
 
-    def get_config(self):
-        base_config = super().get_config()
-        base_config = layer_kwargs(base_config)
+        if conditions is not None and self.c_proj is not None:
+            hc = self.c_proj(conditions)
+            if self.merge == "concat":
+                h = keras.ops.concatenate([h, hc], axis=-1)
+            else:
+                h = h + hc
+            h = self.merge_proj(self.activation(h))
+        h = self.activation(h)
 
-        config = {
-            "widths": self.widths,
-            "time_embedding_dim": self.time_embedding_dim,
-            "time_emb": self.time_emb,
-            "activation": self.activation,
-            "kernel_initializer": self.kernel_initializer,
-            "residual": self.residual,
-            "dropout": self.dropout,
-            "norm": self.norm,
-            "spectral_normalization": self.spectral_normalization,
-            "merge": self.merge,
-        }
-        return base_config | serialize(config)
+        t_emb = self.time_emb(t)
+
+        for block in self.blocks:
+            h = block((h, t_emb), training=training)
+
+        return h
 
     def build(self, input_shape):
         if self.built:
@@ -181,8 +187,6 @@ class TimeMLP(keras.Layer):
             block.build((h_shape, t_emb_shape))
             h_shape = block.compute_output_shape((h_shape, t_emb_shape))
 
-        super().build(input_shape)
-
     def compute_output_shape(self, input_shape):
         x_shape, t_shape, conditions_shape = input_shape
         h_shape = self.x_proj.compute_output_shape(x_shape)
@@ -193,29 +197,24 @@ class TimeMLP(keras.Layer):
 
         return h_shape
 
-    def call(
-        self,
-        inputs: tuple[Tensor, Tensor, Tensor | None],
-        training: bool = None,
-    ) -> Tensor:
-        x, t, conditions = inputs
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
-        # Project and merge inputs
-        h = self.x_proj(x)
-        if conditions is not None and self.c_proj is not None:
-            hc = self.c_proj(conditions)
-            if self.merge == "concat":
-                h = keras.ops.concatenate([h, hc], axis=-1)
-            else:
-                h = h + hc
-            h = self.merge_proj(self.act(h))
-        h = self.act(h)
+    def get_config(self):
+        base_config = super().get_config()
+        base_config = layer_kwargs(base_config)
 
-        # Time embedding
-        t_emb = self.time_emb(t)
-
-        # Residual blocks with time conditioning
-        for block in self.blocks:
-            h = block((h, t_emb), training=training)
-
-        return h
+        config = {
+            "widths": self.widths,
+            "time_embedding_dim": self.time_embedding_dim,
+            "time_emb": self.time_emb,
+            "activation": self.activation,
+            "kernel_initializer": self.kernel_initializer,
+            "residual": self.residual,
+            "dropout": self.dropout,
+            "norm": self.norm,
+            "spectral_normalization": self.spectral_normalization,
+            "merge": self.merge,
+        }
+        return base_config | serialize(config)

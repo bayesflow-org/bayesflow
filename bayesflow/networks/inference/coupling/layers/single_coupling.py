@@ -3,7 +3,7 @@ from typing import Any
 import keras
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import filter_kwargs, find_network, layer_kwargs
+from bayesflow.utils import filter_kwargs, find_network, layer_kwargs, concatenate_valid
 from bayesflow.utils.serialization import serializable, serialize
 
 from ..invertible_layer import InvertibleLayer
@@ -80,8 +80,13 @@ class SingleCoupling(InvertibleLayer):
             name="output_projector",
         )
 
-        self.subnet.build((x1_shape, conditions_shape))
-        out_shape = self.subnet.compute_output_shape((x1_shape, conditions_shape))
+        if conditions_shape is not None:
+            subnet_input_shape = x1_shape[:-1] + (x1_shape[-1] + conditions_shape[-1],)
+        else:
+            subnet_input_shape = x1_shape
+
+        self.subnet.build(subnet_input_shape)
+        out_shape = self.subnet.compute_output_shape(subnet_input_shape)
         self.output_projector.build(out_shape)
 
     def call(
@@ -117,7 +122,7 @@ class SingleCoupling(InvertibleLayer):
         """Applies the inner neural network to obtain the transformation parameters, for instance,
         if affine transformations, then [s, t] = NN(inputs), followed by a constraint, e.g., s = exp(s).
         """
-        inputs = (x, conditions) if conditions is not None else x
+        inputs = concatenate_valid((x, conditions), axis=-1)
 
         parameters = self.subnet(inputs, training=training, **filter_kwargs(kwargs, self.subnet.call))
         parameters = self.output_projector(parameters)

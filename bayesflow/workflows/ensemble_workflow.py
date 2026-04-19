@@ -179,6 +179,7 @@ class EnsembleWorkflow(BasicWorkflow):
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
         self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
         self.history = None
+        self._needs_compile = True
 
     def fit_offline(
         self,

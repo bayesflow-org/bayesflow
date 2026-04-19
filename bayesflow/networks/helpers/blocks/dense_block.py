@@ -10,7 +10,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 @serializable("bayesflow.networks")
 class DenseBlock(keras.Layer):
     """Single fully-connected hidden layer with optional residual skip,
-    dropout, normalization, and spectral normalization.
+    dropout, and normalization.
 
     Computes::
 
@@ -36,8 +36,6 @@ class DenseBlock(keras.Layer):
     norm : ``"batch"``, ``"layer"``, keras.Layer, or None, optional
         Normalization applied after activation (and after the residual
         addition, if enabled). Default is ``None``.
-    spectral_normalization : bool, optional
-        Apply spectral normalization to the Dense kernel. Default is ``False``.
     **kwargs
         Extra keyword arguments forwarded to ``keras.Layer``.
     """
@@ -51,7 +49,6 @@ class DenseBlock(keras.Layer):
         residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
         norm: Literal["batch", "layer", "rms"] | keras.Layer = None,
-        spectral_normalization: bool = False,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -62,13 +59,9 @@ class DenseBlock(keras.Layer):
         self.residual = residual
         self.dropout = dropout
         self.norm = norm
-        self.spectral_normalization = bool(spectral_normalization)
 
-        # Internal dense layer with optional spectral normalization
-        dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")
-        if spectral_normalization:
-            dense = keras.layers.SpectralNormalization(dense)
-        self.dense = dense
+        # Internal dense layer
+        self.dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")
 
         # Optional dropout layer
         self.dropout_layer = None
@@ -131,7 +124,6 @@ class DenseBlock(keras.Layer):
             "residual": self.residual,
             "dropout": self.dropout,
             "norm": self.norm,
-            "spectral_normalization": self.spectral_normalization,
         }
         return base | serialize(config)
 

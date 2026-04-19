@@ -42,9 +42,6 @@ class TimeMLP(keras.Layer):
         Dropout rate for regularization. Default is ``0.05``.
     norm : ``"batch"``, ``"layer"``, keras.Layer, or None, optional
         Normalization applied after each hidden layer. Default is ``"layer"``.
-    spectral_normalization : bool, optional
-        Whether to apply spectral normalization to Dense layers.
-        Default is ``False``.
     merge : ``"add"`` or ``"concat"``, optional
         How to merge input and conditions (``"add"`` or ``"concat"``).
         Default is ``"concat"``.
@@ -86,7 +83,6 @@ class TimeMLP(keras.Layer):
         self.residual = residual
         self.dropout = dropout
         self.norm = norm
-        self.spectral_normalization = spectral_normalization
         self.merge = merge
 
         # Time embedding
@@ -121,7 +117,6 @@ class TimeMLP(keras.Layer):
                 residual=residual,
                 dropout=dropout,
                 norm=norm,
-                spectral_normalization=spectral_normalization,
                 film_use_gamma=film_use_gamma,
             )
             for width in self.widths
@@ -214,7 +209,6 @@ class TimeMLP(keras.Layer):
             "residual": self.residual,
             "dropout": self.dropout,
             "norm": self.norm,
-            "spectral_normalization": self.spectral_normalization,
             "merge": self.merge,
         }
         return base_config | serialize(config)

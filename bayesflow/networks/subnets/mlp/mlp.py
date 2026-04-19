@@ -31,8 +31,6 @@ class MLP(keras.Layer):
         Dropout rate for regularization. Default is ``0.05``.
     norm : ``"batch"``, ``"layer"``, ``"rms"``, keras.Layer, or None, optional
         Normalization applied after each hidden layer. Default is ``None``.
-    spectral_normalization : bool, optional
-        Apply spectral normalization to Dense layers. Default is ``False``.
     **kwargs
         Additional keyword arguments passed to ``keras.Layer``.
     """
@@ -46,7 +44,6 @@ class MLP(keras.Layer):
         residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
         norm: Literal["batch", "layer", "rms"] | keras.Layer = None,
-        spectral_normalization: bool = False,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -60,7 +57,6 @@ class MLP(keras.Layer):
         self.residual = residual
         self.dropout = dropout
         self.norm = norm
-        self.spectral_normalization = spectral_normalization
 
         # Hidden blocks
         self.blocks = [
@@ -71,7 +67,6 @@ class MLP(keras.Layer):
                 residual=residual,
                 dropout=dropout,
                 norm=norm,
-                spectral_normalization=spectral_normalization,
             )
             for width in self.widths
         ]
@@ -110,6 +105,5 @@ class MLP(keras.Layer):
             "residual": self.residual,
             "dropout": self.dropout,
             "norm": self.norm,
-            "spectral_normalization": self.spectral_normalization,
         }
         return base_config | serialize(config)

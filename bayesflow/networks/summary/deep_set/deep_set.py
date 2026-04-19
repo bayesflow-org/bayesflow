@@ -48,8 +48,8 @@ class DeepSet(SummaryNetwork):
         The equivariant layers perform many-to-many transformations, preserving structural information, while
         the final invariant module aggregates the set into a lower-dimensional summary.
 
-        The model supports various activation functions, kernel initializations, and optional spectral normalization
-        for stability. Pooling mechanisms can be specified for both intermediate and final aggregation steps.
+        The model supports various activation functions, kernel initializations. Pooling mechanisms can be specified
+        for both intermediate and final aggregation steps.
 
         Parameters
         ----------
@@ -77,8 +77,6 @@ class DeepSet(SummaryNetwork):
             Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
         dropout : int, float, or None, optional
             Dropout rate applied within MLP layers. Default is 0.05.
-        spectral_normalization : bool, optional
-            Whether to apply spectral normalization to stabilize training. Default is False.
         **kwargs
             Additional keyword arguments passed to the base class.
         """
@@ -94,7 +92,6 @@ class DeepSet(SummaryNetwork):
                 mlp_widths_invariant_outer=mlp_widths_invariant_outer,
                 activation=activation,
                 kernel_initializer=kernel_initializer,
-                spectral_normalization=spectral_normalization,
                 dropout=dropout,
                 pooling=inner_pooling,
             )
@@ -108,7 +105,6 @@ class DeepSet(SummaryNetwork):
             kernel_initializer=kernel_initializer,
             dropout=dropout,
             pooling=output_pooling,
-            spectral_normalization=spectral_normalization,
         )
 
         # Output linear layer to project set representation down to "summary_dim" learned summary statistics

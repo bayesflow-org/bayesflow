@@ -41,8 +41,8 @@ class InvariantLayer(keras.Layer):
         set elements, followed by a pooling operation that aggregates features across the set. The pooled features are
         then passed through an outer fully connected network to produce the final invariant representation.
 
-        The model supports different activation functions, dropout, and optional spectral normalization for stability.
-        The pooling mechanism can be customized with additional arguments.
+        The model supports different activation functions, dropout. The pooling mechanism can be customized with
+        additional arguments.
 
         Parameters
         ----------
@@ -60,8 +60,6 @@ class InvariantLayer(keras.Layer):
             Type of pooling operation applied across set elements, such as "mean". Default is "mean".
         pooling_kwargs : dict, optional
             Additional keyword arguments for the pooling layer. Default is None.
-        spectral_normalization : bool, optional
-            Whether to apply spectral normalization to stabilize training. Default is False.
         """
 
         super().__init__(**layer_kwargs(kwargs))
@@ -72,7 +70,6 @@ class InvariantLayer(keras.Layer):
             dropout=dropout,
             activation=activation,
             kernel_initializer=kernel_initializer,
-            spectral_normalization=spectral_normalization,
         )
         self.inner_projector = keras.layers.Dense(units=mlp_widths_inner[-1], kernel_initializer=kernel_initializer)
 
@@ -81,7 +78,6 @@ class InvariantLayer(keras.Layer):
             dropout=dropout,
             activation=activation,
             kernel_initializer=kernel_initializer,
-            spectral_normalization=spectral_normalization,
         )
         self.outer_projector = keras.layers.Dense(units=mlp_widths_outer[-1], kernel_initializer=kernel_initializer)
 

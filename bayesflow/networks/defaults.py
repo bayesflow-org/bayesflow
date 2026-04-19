@@ -20,7 +20,6 @@ TIME_MLP_DEFAULTS = MappingProxyType(
         "residual": True,
         "dropout": 0.05,
         "norm": "layer",
-        "spectral_normalization": False,
         "merge": "concat",
         "film_use_gamma": False,
     }
@@ -34,7 +33,6 @@ WEIGHT_MLP_DEFAULTS = MappingProxyType(
         "residual": False,
         "dropout": 0.05,
         "norm": None,
-        "spectral_normalization": False,
     }
 )
 
@@ -42,11 +40,10 @@ COUPLING_MLP_DEFAULTS = MappingProxyType(
     {
         "widths": (128, 128),
         "activation": "hard_silu",
-        "kernel_initializer": "glorot_uniform",
+        "kernel_initializer": "orthogonal",
         "residual": False,
         "dropout": 0.05,
         "norm": None,
-        "spectral_normalization": False,
     }
 )
 

@@ -12,8 +12,7 @@ from ..embeddings import FiLM
 @serializable("bayesflow.networks")
 class ConditionalDenseBlock(keras.Layer):
     """Single fully-connected hidden layer with FiLM conditioning [1],
-    optional residual skip, dropout, normalization, and spectral
-    normalization.
+    optional residual skip, dropout, and normalization.
 
     Expects a tuple ``(x, conditioning)`` as input.  The dense
     transformation is applied to ``x``, and ``conditioning`` modulates the
@@ -44,9 +43,6 @@ class ConditionalDenseBlock(keras.Layer):
     norm : ``"batch"``, ``"layer"``, keras.Layer, or None, optional
         Normalization applied after the residual addition. Default is
         ``"layer"``.
-    spectral_normalization : bool, optional
-        Apply spectral normalization to the Dense kernel. Default is
-        ``False``.
     film_use_gamma : bool, optional
         Whether film uses a learnable gamma. Default is ``False``.
     **kwargs
@@ -81,11 +77,8 @@ class ConditionalDenseBlock(keras.Layer):
         self.norm = norm
         self.spectral_normalization = spectral_normalization
 
-        # Internal dense layer with optional spectral normalization
-        dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")
-        if spectral_normalization:
-            dense = keras.layers.SpectralNormalization(dense)
-        self.dense = dense
+        # Internal dense layer
+        self.dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")
 
         # Optional dropout layer
         self.dropout_layer = None
@@ -183,6 +176,5 @@ class ConditionalDenseBlock(keras.Layer):
             "residual": self.residual,
             "dropout": self.dropout,
             "norm": self.norm,
-            "spectral_normalization": self.spectral_normalization,
         }
         return base | serialize(config)

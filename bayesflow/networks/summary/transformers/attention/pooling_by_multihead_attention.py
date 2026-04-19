@@ -106,7 +106,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
             Since this is self-attention, the input set is used
             as a query (Q), key (K), and value (V)
         training   : boolean, optional (default - True)
-            Passed to the optional internal dropout and spectral normalization
+            Passed to the optional internal dropout and normalization
             layers to distinguish between train and test time behavior.
 
         Returns

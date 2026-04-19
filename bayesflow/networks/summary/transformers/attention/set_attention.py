@@ -30,7 +30,7 @@ class SetAttention(MultiHeadAttention):
         x  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
         training   : boolean, optional (default - True)
-            Passed to the optional internal dropout and spectral normalization
+            Passed to the optional internal dropout and normalization
             layers to distinguish between train and test time behavior.
         attention_mask: a boolean mask of shape `(batch_size, set_size, set_size)`, that prevents
             attention to certain positions. The boolean mask specifies which

@@ -30,7 +30,6 @@ class InvariantLayer(keras.Layer):
         dropout: int | float | None = 0.05,
         pooling: str = "mean",
         pooling_kwargs: dict = None,
-        spectral_normalization: bool = False,
         **kwargs,
     ):
         """

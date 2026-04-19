@@ -40,7 +40,7 @@ class ConditionalDenseBlock(keras.Layer):
         is used when dimensions differ. Default is ``True``.
     dropout : float or None, optional
         Dropout rate. ``None`` or ``0`` disables dropout. Default is ``0.05``.
-    norm : ``"batch"``, ``"layer"``, keras.Layer, or None, optional
+    norm : ``"batch"``, ``"layer"``, ``"rms"``, keras.Layer, or None, optional
         Normalization applied after the residual addition. Default is
         ``"layer"``.
     film_use_gamma : bool, optional
@@ -63,7 +63,6 @@ class ConditionalDenseBlock(keras.Layer):
         residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
         norm: Literal["batch", "layer", "rms"] | keras.Layer = "layer",
-        spectral_normalization: bool = False,
         film_use_gamma: bool = False,
         **kwargs,
     ):
@@ -75,7 +74,6 @@ class ConditionalDenseBlock(keras.Layer):
         self.residual = residual
         self.dropout = dropout
         self.norm = norm
-        self.spectral_normalization = spectral_normalization
 
         # Internal dense layer
         self.dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")

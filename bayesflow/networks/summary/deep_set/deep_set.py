@@ -33,7 +33,6 @@ class DeepSet(SummaryNetwork):
         activation: str = "silu",
         kernel_initializer: str = "he_normal",
         dropout: int | float | None = 0.05,
-        spectral_normalization: bool = False,
         **kwargs,
     ):
         """

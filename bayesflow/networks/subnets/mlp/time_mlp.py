@@ -40,7 +40,7 @@ class TimeMLP(keras.Layer):
         Whether to use residual connections. Default is ``True``.
     dropout : float or None, optional
         Dropout rate for regularization. Default is ``0.05``.
-    norm : ``"batch"``, ``"layer"``, keras.Layer, or None, optional
+    norm : ``"batch"``, ``"layer"``, ``"rms"``, keras.Layer, or None, optional
         Normalization applied after each hidden layer. Default is ``"layer"``.
     merge : ``"add"`` or ``"concat"``, optional
         How to merge input and conditions (``"add"`` or ``"concat"``).
@@ -62,8 +62,7 @@ class TimeMLP(keras.Layer):
         kernel_initializer: str | keras.Initializer = "he_normal",
         residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
-        norm: Literal["batch", "layer"] | keras.Layer = "layer",
-        spectral_normalization: bool = False,
+        norm: Literal["batch", "layer", "rms"] | keras.Layer = "layer",
         merge: Literal["add", "concat"] = "concat",
         film_use_gamma: bool = False,
         **kwargs,
@@ -84,6 +83,7 @@ class TimeMLP(keras.Layer):
         self.dropout = dropout
         self.norm = norm
         self.merge = merge
+        self.film_use_gamma = film_use_gamma
 
         # Time embedding
         if time_emb is None:

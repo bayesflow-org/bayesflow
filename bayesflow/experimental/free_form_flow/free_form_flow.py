@@ -38,7 +38,6 @@ class FreeFormFlow(InferenceNetwork):
         "kernel_initializer": "he_normal",
         "residual": True,
         "dropout": 0.0,
-        "spectral_normalization": False,
     }
 
     DECODER_MLP_DEFAULT_CONFIG = {
@@ -47,7 +46,6 @@ class FreeFormFlow(InferenceNetwork):
         "kernel_initializer": "he_normal",
         "residual": True,
         "dropout": 0.0,
-        "spectral_normalization": False,
     }
 
     def __init__(

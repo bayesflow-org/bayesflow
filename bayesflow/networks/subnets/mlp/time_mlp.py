@@ -204,11 +204,13 @@ class TimeMLP(keras.Layer):
             "widths": self.widths,
             "time_embedding_dim": self.time_embedding_dim,
             "time_emb": self.time_emb,
+            "fourier_scale": self.fourier_scale,
             "activation": self.activation,
             "kernel_initializer": self.kernel_initializer,
             "residual": self.residual,
             "dropout": self.dropout,
             "norm": self.norm,
             "merge": self.merge,
+            "film_use_gamma": self.film_use_gamma,
         }
         return base_config | serialize(config)

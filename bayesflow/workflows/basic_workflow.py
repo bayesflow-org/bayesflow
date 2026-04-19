@@ -44,7 +44,8 @@ class BasicWorkflow(Workflow):
     initial_learning_rate : float, optional
         Initial learning rate for the optimizer (default is 5e-4).
     optimizer : type, optional
-        The optimizer to be used for training. If None, a default Adam optimizer will be selected (default is None).
+        The optimizer to be used for training. If None, a default Adam optimizer will be selected for online
+        training and AdamW for offline / disk training (default is None).
     checkpoint_filepath : str, optional
         Directory path where model checkpoints will be saved (default is None).
     checkpoint_name : str, optional
@@ -115,12 +116,13 @@ class BasicWorkflow(Workflow):
 
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
         self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
+        self._needs_compile = True
         self.history = None
 
     def _init_optimizer(self, initial_learning_rate, optimizer, **kwargs):
         self.initial_learning_rate = initial_learning_rate
         if isinstance(optimizer, type):
-            self.optimizer = optimizer(initial_learning_rate, **kwargs.get("optimizer_kwargs", {}))
+            self.optimizer = optimizer(initial_learning_rate, **kwargs)
         else:
             self.optimizer = optimizer
 
@@ -137,14 +139,14 @@ class BasicWorkflow(Workflow):
             checkpoint_full_filepath = os.path.join(self.checkpoint_filepath, file_ext)
             if os.path.exists(checkpoint_full_filepath):
                 msg = (
-                    f"Checkpoint file exists: '{checkpoint_full_filepath}'.\n"
-                    "Existing checkpoints can _not_ be restored/loaded using this workflow. "
-                    "Upon refitting, the checkpoints will be overwritten."
+                    f"Checkpoint file exists: '{self.checkpoint_filepath}/{file_ext}'.\n"
+                    "Existing checkpoints are not automatically loaded. "
+                    "Upon refitting, the checkpoints will be overwritten.\n"
                 )
                 if not self.save_weights_only:
                     msg += (
-                        " To load the stored approximator from the checkpoint, "
-                        "use approximator = keras.saving.load_model(...)"
+                        """To load the stored approximator from the checkpoint, """
+                        f"""use approximator = keras.saving.load_model("{self.checkpoint_filepath}/{file_ext}")"""
                     )
 
                 logging.warning(msg)
@@ -455,11 +457,10 @@ class BasicWorkflow(Workflow):
             else:
                 kwargs["callbacks"] = [model_checkpoint_callback]
 
-        # returns None if no new optimizer was built and assigned to self.optimizer, which indicates we do not have
-        # to (re)compile the approximator.
-        optimizer = self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
-        if optimizer is not None:
+        self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
+        if self._needs_compile:
             self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
+            self._needs_compile = False
 
         try:
             start_time = time.perf_counter()
@@ -473,6 +474,7 @@ class BasicWorkflow(Workflow):
         finally:
             if not keep_optimizer:
                 self.optimizer = None
+                self._needs_compile = True
 
     def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
         """
@@ -502,7 +504,7 @@ class BasicWorkflow(Workflow):
         """
 
         if self.optimizer is not None:
-            return
+            return self.optimizer
 
         total_steps = int(epochs * num_batches)
         warmup_steps = int(0.05 * epochs * num_batches)
@@ -1036,13 +1038,14 @@ class BasicWorkflow(Workflow):
         **kwargs,
     ) -> Sequence[Mapping] | pd.DataFrame:
         """
-        Computes custom diagnostic metrics to evaluate the quality of inference. The metric functions should
-        have a signature of:
+        Computes custom diagnostic metrics to evaluate the quality of inference.
+        The metric functions should have a signature of:
 
         - metric_fn(samples, inference_variables, variable_names, variable_keys) or
         - metric_fn(samples, inference_variables, **kwargs)
 
-        And return a dictionary containing the metric name in 'name' key and the metric values in a 'values' key.
+        The functions should return a dictionary containing the metric name in ``metric_name``
+        key and the metric values in a ``values`` key.
 
         Parameters
         ----------
@@ -1093,7 +1096,7 @@ class BasicWorkflow(Workflow):
         metrics_dict = {}
         for key, metric_fn in metrics.items():
             metric = metric_fn(samples, test_data, variable_keys=variable_keys, variable_names=variable_names)
-            metrics_dict[metric["name"]] = metric["values"]
+            metrics_dict[metric["metric_name"]] = metric["values"]
 
         if as_data_frame:
             return pd.DataFrame(metrics_dict, index=variable_names)
@@ -1125,8 +1128,9 @@ class BasicWorkflow(Workflow):
             else:
                 file_ext = self.checkpoint_name + ".keras"
 
+            model_path = f"{self.checkpoint_filepath}/{file_ext}"
             logging.info(
-                f"""Training is now finished.
-            You can find the trained approximator at '{self.checkpoint_filepath}/{self.checkpoint_name}.{file_ext}'.
-            To load it, use approximator = keras.saving.load_model(...)."""
+                f"Training is now finished.\n"
+                f"You can find the trained approximator at '{model_path}'.\n"
+                f'To load it, use approximator = keras.saving.load_model("{model_path}").'
             )

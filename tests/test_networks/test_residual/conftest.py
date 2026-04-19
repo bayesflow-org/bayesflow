@@ -1,6 +1,7 @@
 import pytest
 
-from bayesflow.networks.helpers.residual import Residual, ConditionalResidual
+from bayesflow.networks.helpers.residual import Residual
+from bayesflow.networks.helpers import ConditionalDenseBlock
 
 
 @pytest.fixture()
@@ -12,7 +13,7 @@ def residual():
 
 @pytest.fixture()
 def cond_residual():
-    return ConditionalResidual(width=2)
+    return ConditionalDenseBlock(width=2)
 
 
 @pytest.fixture()

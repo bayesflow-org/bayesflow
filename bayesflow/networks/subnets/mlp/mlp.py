@@ -83,9 +83,6 @@ class MLP(keras.Layer):
         return h
 
     def build(self, input_shape):
-        if self.built:
-            return
-
         h_shape = input_shape
 
         for block in self.blocks:

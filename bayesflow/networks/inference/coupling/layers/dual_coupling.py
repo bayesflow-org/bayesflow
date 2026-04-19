@@ -58,8 +58,8 @@ class DualCoupling(InvertibleLayer):
             conditions_shape = tuple(conditions_shape)
         self.pivot = xz_shape[-1] // 2
 
-        x1_shape = xz_shape[:1] + (self.pivot,)
-        x2_shape = xz_shape[:1] + (xz_shape[-1] - self.pivot,)
+        x1_shape = xz_shape[:-1] + (self.pivot,)
+        x2_shape = xz_shape[:-1] + (xz_shape[-1] - self.pivot,)
 
         self.coupling1.build(x1_shape, x2_shape, conditions_shape)
         self.coupling2.build(x2_shape, x1_shape, conditions_shape)

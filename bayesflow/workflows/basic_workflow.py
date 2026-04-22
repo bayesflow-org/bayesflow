@@ -768,6 +768,7 @@ class BasicWorkflow(Workflow):
         self,
         test_data: Mapping[str, np.ndarray] | int,
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         **kwargs,
@@ -794,6 +795,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -823,7 +828,7 @@ class BasicWorkflow(Workflow):
             types, and values are the respective matplotlib Figure objects.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         figures = dict()
 
@@ -853,6 +858,7 @@ class BasicWorkflow(Workflow):
         test_data: Mapping[str, np.ndarray] | int,
         plot_fns: Mapping[str, Callable],
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         **kwargs,
@@ -878,6 +884,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -907,24 +917,18 @@ class BasicWorkflow(Workflow):
             types, and values are the respective matplotlib Figure objects.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         figures = dict()
         for key, plot_fn in plot_fns.items():
             figures[key] = plot_fn(samples, test_data, variable_keys=variable_keys, variable_names=variable_names)
         return figures
 
-    def plot_diagnostics(self, **kwargs):
-        logging.warning(
-            "This function will be deprecated in future versions. Please, use plot_default_diagnostics"
-            "or plot_custom_diagnositcs if you want to use your custom diagnostics."
-        )
-        return self.plot_default_diagnostics(**kwargs)
-
     def compute_default_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         as_data_frame: bool = True,
@@ -948,6 +952,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -978,7 +986,7 @@ class BasicWorkflow(Workflow):
             returns a sequence of dictionaries with metric values.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         root_mean_squared_error = bf_metrics.root_mean_squared_error(
             estimates=samples,
@@ -1032,6 +1040,7 @@ class BasicWorkflow(Workflow):
         test_data: Mapping[str, np.ndarray] | int,
         metrics: Mapping[str, Callable],
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         as_data_frame: bool = True,
@@ -1061,6 +1070,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -1091,7 +1104,7 @@ class BasicWorkflow(Workflow):
             returns a sequence of dictionaries with metric values.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         metrics_dict = {}
         for key, metric_fn in metrics.items():
@@ -1102,18 +1115,24 @@ class BasicWorkflow(Workflow):
             return pd.DataFrame(metrics_dict, index=variable_names)
         return metrics_dict
 
-    def compute_diagnostics(self, **kwargs):
-        logging.warning(
-            "This function will be deprecated in future versions. Please, use plot_default_diagnostics"
-            "or compute_custom_diagnositcs if you want to use your own metrics."
-        )
-        return self.compute_default_diagnostics(**kwargs)
+    def _prepare_for_diagnostics(
+        self,
+        test_data: Mapping[str, np.ndarray] | int,
+        num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
+        **kwargs,
+    ):
+        if samples is not None:
+            if isinstance(test_data, int):
+                raise ValueError(
+                    "When providing a samples dict, you need to also provide the test_data used to obtain the samples."
+                )
+            return samples, test_data
 
-    def _prepare_for_diagnostics(self, test_data: Mapping[str, np.ndarray] | int, num_samples: int = 1000, **kwargs):
-        if isinstance(test_data, int) and self.simulator is not None:
+        if isinstance(test_data, int):
+            if self.simulator is None:
+                raise ValueError(f"No simulator found for generating {test_data} data sets.")
             test_data = self.simulator.sample(test_data, **kwargs.pop("test_data_kwargs", {}))
-        elif isinstance(test_data, int):
-            raise ValueError(f"No simulator found for generating {test_data} data sets.")
 
         samples = self.approximator.sample(
             num_samples=num_samples, conditions=test_data, **kwargs.get("approximator_kwargs", {})

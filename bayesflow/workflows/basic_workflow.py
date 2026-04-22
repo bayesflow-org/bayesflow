@@ -1115,13 +1115,6 @@ class BasicWorkflow(Workflow):
             return pd.DataFrame(metrics_dict, index=variable_names)
         return metrics_dict
 
-    def compute_diagnostics(self, **kwargs):
-        logging.warning(
-            "This function will be deprecated in future versions. Please, use plot_default_diagnostics"
-            "or compute_custom_diagnositcs if you want to use your own metrics."
-        )
-        return self.compute_default_diagnostics(**kwargs)
-
     def _prepare_for_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,

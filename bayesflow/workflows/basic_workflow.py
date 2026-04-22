@@ -1123,7 +1123,7 @@ class BasicWorkflow(Workflow):
         **kwargs,
     ):
         if samples is not None:
-            if isinstance(test_data, int) and samples:
+            if isinstance(test_data, int):
                 raise ValueError(
                     "When providing a samples dict, you need to also provide the test_data used to obtain the samples."
                 )

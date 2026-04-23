@@ -19,7 +19,7 @@ def value_and_grad(fn, argnums=0, has_aux=False):
 
 
 def jvp(fn, primals, tangents, has_aux=False):
-    return torch.func.jvp(fn, primals, tangents, has_aux=has_aux)
+    return torch.func.jvp(fn, tuple(primals), tuple(tangents), has_aux=has_aux)
 
 
 def vjp(fn, *primals, has_aux=False):

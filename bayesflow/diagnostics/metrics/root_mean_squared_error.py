@@ -73,7 +73,7 @@ def root_mean_squared_error(
             The (inferred) variable names.
     """
 
-    if normalize is not None:
+    if normalize:
         logging.warning(
             "Using new default normalize='prior' for a more dynamic range. "
             "To reproduce previous behavior, set normalize='range'."

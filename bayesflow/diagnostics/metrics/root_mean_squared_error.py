@@ -47,7 +47,7 @@ def root_mean_squared_error(
         sample dimension, as appropriate reshaping is done internally.
     normalize      : str or None, optional (default = "range")
         Whether to normalize the RMSE using statistics of the prior samples.
-        Possible options are ("mean", "range", "median", "iqr", "std", None)
+        Possible options are ("mean", "range", "median", "iqr", "std", "prior", None)
     aggregation    : callable, optional (default = np.median)
         Function to aggregate the RMSE across draws. Typically `np.mean` or `np.median`.
 
@@ -120,6 +120,18 @@ def root_mean_squared_error(
             q75 = np.percentile(targets, 75, axis=0)
             q25 = np.percentile(targets, 25, axis=0)
             normalizer = q75 - q25
+            metric_name = "NRMSE"
+
+        case "prior":
+            N, S, D = samples["estimates"].shape
+
+            # bootstrap prior-only predictions from empirical prior samples in targets
+            idx = np.random.randint(0, N, size=(N, S))
+            prior_estimates = targets[idx]
+
+            prior_err = prior_estimates - targets[:, None, :]
+            prior_rmse = np.sqrt(np.mean(prior_err**2, axis=1))
+            normalizer = aggregation(prior_rmse, axis=0)
             metric_name = "NRMSE"
 
         case _:

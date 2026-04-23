@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import partial, wraps
 
 import tensorflow as tf
 
@@ -59,6 +59,7 @@ def jvp(fn, primals, tangents, has_aux=False):
 
 
 def vjp(fn, *primals, has_aux=False) -> tuple:
+    # use a persistent tape so the vjp_fn can be called multiple times
     with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
         for p in primals:
             tape.watch(p)
@@ -82,25 +83,21 @@ def jacrev(fn, argnums=0, has_aux=False):
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        with tf.GradientTape(watch_accessed_variables=False) as tape:
+        with tf.GradientTape(persistent=False, watch_accessed_variables=False) as tape:
             for argnum in argnums:
                 tape.watch(args[argnum])
 
             if has_aux:
-                y, aux = fn(*args, **kwargs)
+                out, aux = fn(*args, **kwargs)
             else:
-                y = fn(*args, **kwargs)
+                out = fn(*args, **kwargs)
 
-        sources = [args[i] for i in argnums]
-        jacs = tape.jacobian(y, sources)
+        jacs = tape.jacobian(target=out, sources=args)
 
         if len(argnums) == 1:
-            # follow the jax way to return the jacobian directly if only one argument is differentiated
-            jacs = jacs[0]
-        else:
-            jacs = tuple(jacs)
+            return jacs[0]
 
-        return (jacs, aux) if has_aux else jacs
+        return jacs
 
     return wrapper
 
@@ -110,38 +107,62 @@ def jacfwd(fn, argnums=0, has_aux=False):
         argnums = [argnums]
 
     @wraps(fn)
-    def wrapper(*args, **kwargs):
-        jacs = []
-        for argnum in argnums:
-            p = args[argnum]
-            p_shape = tf.shape(p)
-            n = tf.reduce_prod(p_shape)
+    def jac_fn(*args, **kwargs):
+        bound_fn = partial(fn, **kwargs)
 
-            def get_jvp(i):
-                # Construct standard basis vector and reshape to primal shape
-                tangent = tf.reshape(tf.one_hot(i, n, dtype=p.dtype), p_shape)
-                tangents = tuple(tf.zeros_like(a) for a in args)
-                tangents = list(tangents)
-                tangents[argnum] = tangent
+        primals = [args[i] for i in argnums]
+        shapes = [tf.shape(p) for p in primals]
+        sizes = [tf.reduce_prod(s) for s in shapes]
 
-                with tf.autodiff.ForwardAccumulator(args, tuple(tangents)) as acc:
-                    out = fn(*args, **kwargs)
-                    y_val = out[0] if has_aux else out
-                return acc.jvp(y_val)
+        def jvp_fn(tangent):
+            tangents = [tf.reshape(t, s) for t, s in zip(tf.split(tangent, sizes), shapes)]
+            out, _jvp = jvp(bound_fn, primals, tangents, has_aux=has_aux)
+            if has_aux:
+                _, aux = out
+                return _jvp, aux
+            return _jvp, None
 
-            # Parallelize JVP computation over the input basis
-            jvp_stack = tf.vectorized_map(get_jvp, tf.range(n))
-
-            # Reshape and transpose to match (output_shape, input_shape)
-            # jvp_stack is [input_dim, output_dims...] -> move input_dim to end
-            perm = tf.roll(tf.range(tf.rank(jvp_stack)), shift=-1, axis=0)
-            jac = tf.transpose(jvp_stack, perm)
-            jacs.append(tf.reshape(jac, tf.concat([tf.shape(jac)[:-1], p_shape], axis=0)))
+        eye = tf.eye(sum(sizes))
+        jacobian, aux = tf.vectorized_map(jvp_fn, eye)
 
         if has_aux:
-            _, aux = fn(*args, **kwargs)
+            return tf.transpose(jacobian), tf.nest.map_structure(lambda x: x[0], aux)
+        return tf.transpose(jacobian)
 
-        jacs = jacs[0] if len(argnums) == 1 else tuple(jacs)
-        return (jacs, aux) if has_aux else jacs
+    return jac_fn
 
-    return wrapper
+
+# def jacfwd(fn, argnums=0, has_aux=False):
+#     if isinstance(argnums, int):
+#         argnums = [argnums]
+#
+#     def jac_fn(*args, **kwargs):
+#         primals = [args[i] for i in argnums]
+#
+#         shapes = [tf.shape(p) for p in primals]
+#         sizes = [tf.reduce_prod(s) for s in shapes]
+#
+#         def compute_jvp(tangent_flat):
+#             tangents = [tf.reshape(t, s) for t, s in zip(tf.split(tangent_flat, sizes), shapes)]
+#
+#             def fn_wrapper(*primals_only):
+#                 args_with_primals = list(args)
+#                 for i, argnum in enumerate(argnums):
+#                     args_with_primals[argnum] = primals_only[i]
+#                 return fn(*args_with_primals, **kwargs)
+#
+#             out, jvp_val = jvp(fn_wrapper, primals, tangents, has_aux=has_aux)
+#             if has_aux:
+#                 primals_out, aux = out
+#                 return jvp_val, aux
+#             else:
+#                 return jvp_val, None
+#
+#         eye = tf.eye(sum(sizes))
+#         jacobian, aux_data = tf.vectorized_map(compute_jvp, eye)
+#
+#         if has_aux:
+#             return tf.transpose(jacobian), tf.nest.map_structure(lambda x: x[0], aux_data)
+#         return tf.transpose(jacobian)
+#
+#     return wrapper

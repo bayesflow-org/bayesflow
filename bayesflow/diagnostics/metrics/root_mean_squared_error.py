@@ -90,7 +90,9 @@ def root_mean_squared_error(
         variable_names=variable_names,
     )
 
-    rmse = np.sqrt(np.mean((samples["estimates"] - samples["targets"][:, None, :]) ** 2, axis=0))
+    err = samples["estimates"] - samples["targets"][:, None, :]
+    rmse = np.sqrt(np.mean(err**2, axis=1))
+
     targets = samples["targets"]
 
     match normalize:
@@ -123,7 +125,7 @@ def root_mean_squared_error(
         case _:
             raise ValueError(f"Unknown normalization mode: {normalize}")
 
-    rmse /= normalizer[None, ...]
+    rmse = rmse / normalizer
     rmse = aggregation(rmse, axis=0)
 
     variable_names = samples["estimates"].variable_names

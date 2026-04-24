@@ -56,7 +56,7 @@ def test_jacfwd_binary_scalars(fn_binary_scalars):
     # Test with multiple argnums
     jac_fn_xy = jacfwd(fn_binary_scalars, argnums=(0, 1))
     actual_xy = jac_fn_xy(x, y)
-    assert isinstance(actual_xy, (tuple, list))
+    assert isinstance(actual_xy, tuple)
     assert len(actual_xy) == 2
     assert keras.ops.is_tensor(actual_xy[0])
     assert keras.ops.is_tensor(actual_xy[1])
@@ -78,7 +78,7 @@ def test_jacfwd_binary_vectors(fn_binary_vectors):
     # Test with multiple argnums
     jac_fn_xy = jacfwd(fn_binary_vectors, argnums=(0, 1))
     actual_xy = jac_fn_xy(x, y)
-    assert isinstance(actual_xy, (tuple, list))
+    assert isinstance(actual_xy, tuple)
     assert len(actual_xy) == 2
     assert keras.ops.is_tensor(actual_xy[0])
     assert keras.ops.is_tensor(actual_xy[1])
@@ -109,7 +109,7 @@ def test_jacfwd_multiple_outputs():
     x = keras.random.normal((2,))
     jac = jacfwd(fn)(x)
 
-    assert isinstance(jac, (tuple, list))
+    assert isinstance(jac, tuple)
     assert len(jac) == 2
     assert keras.ops.is_tensor(jac[0])
     assert keras.ops.is_tensor(jac[1])

@@ -2,7 +2,7 @@ import keras
 import numpy as np
 from keras.ops import convert_to_numpy as to_np
 
-from bayesflow.backend import jacrev as jacobian, jit, grad
+from bayesflow._backend import jacrev as jacobian, jit, grad
 
 
 def test_grad_unary_scalar(fn_unary_scalar, jit_compile):

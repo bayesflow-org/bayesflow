@@ -2,7 +2,7 @@ import keras
 import numpy as np
 from keras.ops import convert_to_numpy as to_np
 
-from bayesflow.backend import jacfwd, jit
+from bayesflow._backend import jacfwd, jit
 
 
 def test_jacfwd():

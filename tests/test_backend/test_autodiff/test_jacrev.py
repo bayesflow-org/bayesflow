@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from keras.ops import convert_to_numpy as to_np
 
-from bayesflow.backend import jacrev, jacfwd, jit
+from bayesflow._backend import jacrev, jacfwd, jit
 
 
 def test_jacrev(jit_compile):

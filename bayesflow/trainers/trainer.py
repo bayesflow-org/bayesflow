@@ -1,4 +1,4 @@
-from bayesflow.backend import jit, value_and_grad
+from bayesflow._backend import jit, value_and_grad
 
 
 class Trainer:

@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from keras.ops import convert_to_numpy as to_np
 
-from bayesflow.backend import jacrev as jacobian, vjp, jit
+from bayesflow._backend import jacrev as jacobian, vjp, jit
 
 
 def test_vjp_unary_scalar(fn_unary_scalar, jit_compile):

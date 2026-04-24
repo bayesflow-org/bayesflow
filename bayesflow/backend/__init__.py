@@ -16,4 +16,4 @@ try:
 except ImportError as e:
     raise RuntimeError(f"Failed to import backend {keras.backend.backend()!r}") from e
 except AttributeError as e:
-    raise RuntimeError(f"Setup for backend {keras.backend.backend()!r} failed:") from e
+    raise RuntimeError(f"Setup for backend {keras.backend.backend()!r} failed") from e

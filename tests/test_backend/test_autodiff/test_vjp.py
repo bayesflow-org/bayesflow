@@ -1,14 +1,22 @@
 import keras
 import numpy as np
+import pytest
 from keras.ops import convert_to_numpy as to_np
 
-from bayesflow.backend import jacrev as jacobian, vjp
+from bayesflow.backend import jacrev as jacobian, vjp, jit
 
 
-def test_vjp_unary_scalar(fn_unary_scalar):
+def test_vjp_unary_scalar(fn_unary_scalar, jit_compile):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's vjp is not yet compatible with jit compilation.")
+
     x = keras.random.uniform(())
     cotangent = keras.random.uniform(())
     actual_value, vjp_fn = vjp(fn_unary_scalar, x)
+
+    if jit_compile:
+        vjp_fn = jit(vjp_fn)
+
     out = vjp_fn(cotangent)
 
     assert isinstance(out, tuple)
@@ -28,10 +36,17 @@ def test_vjp_unary_scalar(fn_unary_scalar):
     np.testing.assert_allclose(to_np(actual_vjp), to_np(expected_vjp))
 
 
-def test_vjp_unary_vector(fn_unary_vector):
+def test_vjp_unary_vector(fn_unary_vector, jit_compile):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's vjp is not yet compatible with jit compilation.")
+
     x = keras.random.uniform((2,))
     cotangent = keras.random.uniform(())
     actual_value, vjp_fn = vjp(fn_unary_vector, x)
+
+    if jit_compile:
+        vjp_fn = jit(vjp_fn)
+
     out = vjp_fn(cotangent)
 
     assert isinstance(out, tuple)
@@ -52,10 +67,17 @@ def test_vjp_unary_vector(fn_unary_vector):
     np.testing.assert_allclose(to_np(actual_vjp), to_np(expected_vjp))
 
 
-def test_vjp_binary_scalars(fn_binary_scalars):
+def test_vjp_binary_scalars(fn_binary_scalars, jit_compile):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's vjp is not yet compatible with jit compilation.")
+
     primals = [keras.random.uniform(()), keras.random.uniform(())]
     cotangent = keras.random.uniform(())
     actual_value, vjp_fn = vjp(fn_binary_scalars, *primals)
+
+    if jit_compile:
+        vjp_fn = jit(vjp_fn)
+
     actual_vjps = vjp_fn(cotangent)
 
     assert isinstance(actual_vjps, tuple)
@@ -78,10 +100,17 @@ def test_vjp_binary_scalars(fn_binary_scalars):
         np.testing.assert_allclose(to_np(actual_vjps[i]), to_np(expected_vjps[i]))
 
 
-def test_vjp_binary_vectors(fn_binary_vectors):
+def test_vjp_binary_vectors(fn_binary_vectors, jit_compile):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's vjp is not yet compatible with jit compilation.")
+
     primals = [keras.random.uniform((2,)), keras.random.uniform((2,))]
     cotangent = keras.random.uniform(())
     actual_value, vjp_fn = vjp(fn_binary_vectors, *primals)
+
+    if jit_compile:
+        vjp_fn = jit(vjp_fn)
+
     actual_vjps = vjp_fn(cotangent)
 
     assert isinstance(actual_vjps, tuple)

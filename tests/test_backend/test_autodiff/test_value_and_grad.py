@@ -2,12 +2,16 @@ import keras
 import numpy as np
 from keras.ops import convert_to_numpy as to_np
 
-from bayesflow.backend import jacrev as jacobian, value_and_grad
+from bayesflow.backend import jacrev as jacobian, jit, value_and_grad
 
 
-def test_value_and_grad_unary_scalar(fn_unary_scalar):
+def test_value_and_grad_unary_scalar(fn_unary_scalar, jit_compile):
     x = keras.random.uniform(())
     grad_fn = value_and_grad(fn_unary_scalar)
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual_value, actual_grad = grad_fn(x)
     expected_value = fn_unary_scalar(x)
     expected_grad = jacobian(fn_unary_scalar)(x)
@@ -23,9 +27,13 @@ def test_value_and_grad_unary_scalar(fn_unary_scalar):
     np.testing.assert_allclose(to_np(actual_grad), to_np(expected_grad))
 
 
-def test_value_and_grad_unary_vector(fn_unary_vector):
+def test_value_and_grad_unary_vector(fn_unary_vector, jit_compile):
     x = keras.random.uniform((2,))
     grad_fn = value_and_grad(fn_unary_vector)
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual_value, actual_grad = grad_fn(x)
     expected_value = fn_unary_vector(x)
     expected_grad = jacobian(fn_unary_vector)(x)
@@ -41,13 +49,17 @@ def test_value_and_grad_unary_vector(fn_unary_vector):
     np.testing.assert_allclose(to_np(actual_grad), to_np(expected_grad))
 
 
-def test_value_and_grad_binary_scalars(fn_binary_scalars):
+def test_value_and_grad_binary_scalars(fn_binary_scalars, jit_compile):
     x = keras.random.uniform(())
     y = keras.random.uniform(())
 
     # Test with single argnums
-    grad_fn_x = value_and_grad(fn_binary_scalars, argnums=0)
-    actual_value_x, actual_grad_x = grad_fn_x(x, y)
+    grad_fn = value_and_grad(fn_binary_scalars, argnums=0)
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
+    actual_value_x, actual_grad_x = grad_fn(x, y)
     expected_value = fn_binary_scalars(x, y)
     expected_grad_x = jacobian(fn_binary_scalars, argnums=0)(x, y)
 
@@ -60,6 +72,10 @@ def test_value_and_grad_binary_scalars(fn_binary_scalars):
 
     # Test with multiple argnums
     grad_fn = value_and_grad(fn_binary_scalars, argnums=(0, 1))
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual_value, actual_grad = grad_fn(x, y)
     expected_grad = jacobian(fn_binary_scalars, argnums=(0, 1))(x, y)
 
@@ -78,13 +94,17 @@ def test_value_and_grad_binary_scalars(fn_binary_scalars):
     np.testing.assert_allclose(to_np(actual_grad[1]), to_np(expected_grad[1]))
 
 
-def test_value_and_grad_binary_vectors(fn_binary_vectors):
+def test_value_and_grad_binary_vectors(fn_binary_vectors, jit_compile):
     x = keras.random.uniform((2,))
     y = keras.random.uniform((2,))
 
     # Test with single argnums
-    grad_fn_x = value_and_grad(fn_binary_vectors, argnums=0)
-    actual_value_x, actual_grad_x = grad_fn_x(x, y)
+    grad_fn = value_and_grad(fn_binary_vectors, argnums=0)
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
+    actual_value_x, actual_grad_x = grad_fn(x, y)
     expected_value = fn_binary_vectors(x, y)
     expected_grad_x = jacobian(fn_binary_vectors, argnums=0)(x, y)
 
@@ -97,6 +117,10 @@ def test_value_and_grad_binary_vectors(fn_binary_vectors):
 
     # Test with multiple argnums
     grad_fn = value_and_grad(fn_binary_vectors, argnums=(0, 1))
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual_value, actual_grad = grad_fn(x, y)
     expected_grad = jacobian(fn_binary_vectors, argnums=(0, 1))(x, y)
 

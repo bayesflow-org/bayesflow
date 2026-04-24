@@ -2,12 +2,16 @@ import keras
 import numpy as np
 from keras.ops import convert_to_numpy as to_np
 
-from bayesflow.backend import jacrev as jacobian, grad
+from bayesflow.backend import jacrev as jacobian, jit, grad
 
 
-def test_grad_unary_scalar(fn_unary_scalar):
+def test_grad_unary_scalar(fn_unary_scalar, jit_compile):
     x = keras.random.uniform(())
     grad_fn = grad(fn_unary_scalar)
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual = grad_fn(x)
     expected = jacobian(fn_unary_scalar)(x)
 
@@ -17,9 +21,13 @@ def test_grad_unary_scalar(fn_unary_scalar):
     np.testing.assert_allclose(to_np(actual), to_np(expected))
 
 
-def test_grad_unary_vector(fn_unary_vector):
+def test_grad_unary_vector(fn_unary_vector, jit_compile):
     x = keras.random.uniform((2,))
     grad_fn = grad(fn_unary_vector)
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual = grad_fn(x)
     expected = jacobian(fn_unary_vector)(x)
 
@@ -29,12 +37,16 @@ def test_grad_unary_vector(fn_unary_vector):
     np.testing.assert_allclose(to_np(actual), to_np(expected))
 
 
-def test_grad_binary_scalars(fn_binary_scalars):
+def test_grad_binary_scalars(fn_binary_scalars, jit_compile):
     x = keras.random.uniform(())
     y = keras.random.uniform(())
 
     # Test with single argnums
     grad_fn_x = grad(fn_binary_scalars, argnums=0)
+
+    if jit_compile:
+        grad_fn_x = jit(grad_fn_x)
+
     actual_x = grad_fn_x(x, y)
     expected_x = jacobian(fn_binary_scalars, argnums=0)(x, y)
 
@@ -45,6 +57,10 @@ def test_grad_binary_scalars(fn_binary_scalars):
 
     # Test with multiple argnums
     grad_fn = grad(fn_binary_scalars, argnums=(0, 1))
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual = grad_fn(x, y)
     expected = jacobian(fn_binary_scalars, argnums=(0, 1))(x, y)
 
@@ -58,13 +74,17 @@ def test_grad_binary_scalars(fn_binary_scalars):
     np.testing.assert_allclose(to_np(actual[1]), to_np(expected[1]))
 
 
-def test_grad_binary_vectors(fn_binary_vectors):
+def test_grad_binary_vectors(fn_binary_vectors, jit_compile):
     x = keras.random.uniform((2,))
     y = keras.random.uniform((2,))
 
     # Test with single argnums
-    grad_fn_x = grad(fn_binary_vectors, argnums=0)
-    actual_x = grad_fn_x(x, y)
+    grad_fn = grad(fn_binary_vectors, argnums=0)
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
+    actual_x = grad_fn(x, y)
     expected_x = jacobian(fn_binary_vectors, argnums=0)(x, y)
 
     assert keras.ops.is_tensor(actual_x)
@@ -74,6 +94,10 @@ def test_grad_binary_vectors(fn_binary_vectors):
 
     # Test with multiple argnums
     grad_fn = grad(fn_binary_vectors, argnums=(0, 1))
+
+    if jit_compile:
+        grad_fn = jit(grad_fn)
+
     actual = grad_fn(x, y)
     expected = jacobian(fn_binary_vectors, argnums=(0, 1))(x, y)
 

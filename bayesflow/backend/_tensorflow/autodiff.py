@@ -130,39 +130,3 @@ def jacfwd(fn, argnums=0, has_aux=False):
         return tf.transpose(jacobian)
 
     return jac_fn
-
-
-# def jacfwd(fn, argnums=0, has_aux=False):
-#     if isinstance(argnums, int):
-#         argnums = [argnums]
-#
-#     def jac_fn(*args, **kwargs):
-#         primals = [args[i] for i in argnums]
-#
-#         shapes = [tf.shape(p) for p in primals]
-#         sizes = [tf.reduce_prod(s) for s in shapes]
-#
-#         def compute_jvp(tangent_flat):
-#             tangents = [tf.reshape(t, s) for t, s in zip(tf.split(tangent_flat, sizes), shapes)]
-#
-#             def fn_wrapper(*primals_only):
-#                 args_with_primals = list(args)
-#                 for i, argnum in enumerate(argnums):
-#                     args_with_primals[argnum] = primals_only[i]
-#                 return fn(*args_with_primals, **kwargs)
-#
-#             out, jvp_val = jvp(fn_wrapper, primals, tangents, has_aux=has_aux)
-#             if has_aux:
-#                 primals_out, aux = out
-#                 return jvp_val, aux
-#             else:
-#                 return jvp_val, None
-#
-#         eye = tf.eye(sum(sizes))
-#         jacobian, aux_data = tf.vectorized_map(compute_jvp, eye)
-#
-#         if has_aux:
-#             return tf.transpose(jacobian), tf.nest.map_structure(lambda x: x[0], aux_data)
-#         return tf.transpose(jacobian)
-#
-#     return wrapper

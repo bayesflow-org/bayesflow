@@ -124,6 +124,7 @@ def jacfwd(fn, argnums=0, has_aux=False):
 
         eye = tf.eye(sum(sizes))
         jacobian, aux = tf.vectorized_map(jvp_fn, eye)
+        jacobian = tf.squeeze(jacobian)
 
         if has_aux:
             return tf.transpose(jacobian), tf.nest.map_structure(lambda x: x[0], aux)

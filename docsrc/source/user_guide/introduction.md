@@ -58,4 +58,10 @@ BayesFlow is useful because it gives you a complete, flexible workflow for amort
   You can use high-level workflow objects for convenience, while still accessing lower-level components compatible with the entire deep learning ecosystem when you need more control.
 
 * **Agentic AI-ready by design.**
-  Because BayesFlow workflows are explicit, modular, and diagnostic-driven, they are well suited for AI agents that need to reason about simulator design, adapter choices, neural architectures, training modes, and validation checks. See the [Baygent amortized-workflow skill](https://github.com/Learning-Bayesian-Statistics/baygent-skills/tree/main) for an example.
+  Because BayesFlow workflows are explicit, modular, and diagnostic-driven, they are well suited for AI agents that need to reason about simulator design, adapter choices, neural architectures, training modes, and validation checks. See the [amortized workflow skill](https://github.com/Learning-Bayesian-Statistics/baygent-skills/tree/main) for an example.
+
+## Further Reading
+
+- Read our [software white paper](https://arxiv.org/abs/2602.07098) for a deeper overview of the project’s design, methodology, and implementation.
+- Explore our [diffusion model tutorial review](https://arxiv.org/abs/2512.20685) for background and banchmarks on diffusion-based methods.
+- Browse the [bayesflow-org GitHub organization](https://github.com/bayesflow-org) for application-specific repositories and examples.

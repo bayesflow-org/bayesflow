@@ -1,8 +1,6 @@
 # User Guide
 
-**Attention**: This guide is in a very early stage, and for now mostly copies what you can also find in the {doc}`../examples`.
-We plan to evolve this into a more comprehensive user guide, with more detailed information on each topic.
-If you want to contribute, feel free to open an issue or a pull request, we welcome contributions to the documentation.
+**Attention**: This guide provides an entry point into the basic principles of amortized Bayesian workflows with **BayesFlow**. End-to-end application examples can be found under {doc}`../examples`.
 
 ```{toctree}
 :maxdepth: 1

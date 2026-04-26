@@ -5,9 +5,6 @@ from bayesflow.utils.serialization import serialize, deserialize
 from tests.utils import assert_layers_equal, assert_allclose
 
 
-# ---- Build -----------------------------------------------------------------
-
-
 def test_build(coupling_flow, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
@@ -16,9 +13,6 @@ def test_build(coupling_flow, random_samples, random_conditions):
     coupling_flow.build(xz_shape, conditions_shape=cond_shape)
     assert coupling_flow.built
     assert coupling_flow.variables
-
-
-# ---- Output shapes ---------------------------------------------------------
 
 
 def test_forward_output_shape(coupling_flow, random_samples, random_conditions):
@@ -61,9 +55,6 @@ def test_inverse_density_output_shape(coupling_flow, random_samples, random_cond
     assert keras.ops.shape(log_density) == (keras.ops.shape(random_samples)[0],)
 
 
-# ---- Variable batch size ---------------------------------------------------
-
-
 def test_variable_batch_size(coupling_flow, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
@@ -78,9 +69,6 @@ def test_variable_batch_size(coupling_flow, random_samples, random_conditions):
         assert keras.ops.shape(out)[0] == bs
 
 
-# ---- Cycle consistency (forward ∘ inverse ≈ identity) ----------------------
-
-
 def test_cycle_consistency(coupling_flow, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
@@ -91,9 +79,6 @@ def test_cycle_consistency(coupling_flow, random_samples, random_conditions):
 
     assert_allclose(random_samples, x_reconstructed, atol=1e-5, rtol=1e-5)
     assert_allclose(fwd_log_density, inv_log_density, atol=1e-3, rtol=1e-3)
-
-
-# ---- Serialization ---------------------------------------------------------
 
 
 def test_serialize_deserialize(coupling_flow, random_samples, random_conditions):
@@ -138,9 +123,6 @@ def test_save_load_output_unchanged(tmp_path, random_samples, random_conditions)
 
     loaded_out = loaded(z, conditions=random_conditions, inverse=True)
     assert_allclose(original_out, loaded_out, atol=1e-5, rtol=1e-5)
-
-
-# ---- compute_metrics -------------------------------------------------------
 
 
 def test_compute_metrics(coupling_flow, random_samples, random_conditions):

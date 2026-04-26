@@ -2,11 +2,6 @@ import keras
 import pytest
 
 
-# ---------------------------------------------------------------------------
-# Shapes
-# ---------------------------------------------------------------------------
-
-
 @pytest.fixture(params=[2], scope="session")
 def batch_size(request):
     return request.param
@@ -32,11 +27,6 @@ def random_conditions(batch_size, cond_dim):
     if cond_dim is None:
         return None
     return keras.random.normal((batch_size, cond_dim))
-
-
-# ---------------------------------------------------------------------------
-# Transforms and invertible layers
-# ---------------------------------------------------------------------------
 
 
 @pytest.fixture(params=["affine", "spline"])
@@ -68,11 +58,6 @@ def single_coupling(request, transform):
     from bayesflow.networks.inference.coupling.layers import SingleCoupling
 
     return SingleCoupling(transform=transform)
-
-
-# ---------------------------------------------------------------------------
-# CouplingFlow variants
-# ---------------------------------------------------------------------------
 
 
 @pytest.fixture(

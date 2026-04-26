@@ -10,7 +10,7 @@ If you want to contribute, feel free to open an issue or a pull request, we welc
 :numbered:
 
 introduction
-generative_models.ipynb
+simulators.ipynb
 data_processing.ipynb
 summary_networks.ipynb
 inference_networks.ipynb

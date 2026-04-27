@@ -14,6 +14,7 @@ summary_networks.ipynb
 inference_networks.ipynb
 approximators.ipynb
 workflows.ipynb
+datasets.ipynb
 diagnostics.ipynb
 saving_loading.ipynb
 ```

@@ -6,11 +6,11 @@ The challenge is computation.
 
 For many modern models, posterior inference is slow or unavailable with standard methods. The likelihood may be impossible to evaluate. The simulator may be stochastic, high-dimensional, ill-defined, or expensive. The data may have variable size or complex structure. And even when conventional Markov chain Monte Carlo or variational methods work, they often need to be rerun from scratch for every new dataset, every new participant, every new experimental design, or every new observation.
 
-Amortized Bayesian inference addresses this bottleneck by changing the unit of computation. Instead of solving a new inference problem from scratch every time we observe new data, we first invest in learning an inference machine. We simulate many datasets from a generative model and train a neural network to map simulated observations to the corresponding Bayesian quantities of interest: posterior samples, likelihoods, likelihood ratios, Bayes estimators, point estimates, model probabilities, or any distribution we may care about.
+**Amortized Bayesian inference** addresses this bottleneck by changing the unit of computation. Instead of solving a new inference problem from scratch every time we observe new data, we first invest in learning an inference machine. We simulate many datasets from a generative model and train a neural network to map simulated observations to the corresponding Bayesian quantities of interest: posterior samples, likelihoods, likelihood ratios, Bayes estimators, point estimates, model probabilities, or any distribution we may care about.
 
 After training, inference becomes fast.
 
-This is the core idea of amortization: we pay an upfront simulation-and-training cost once, and then reuse the learned estimator for many future inference tasks from the same model family. In settings where we want to test models on simulated data, data arrive repeatedly, experiments are run sequentially, models are compared many times, or inference must be performed interactively, this changes Bayesian inference from a slow per-dataset computation into a reusable workflow.
+This is the core idea of *amortization*: we pay an upfront simulation-and-training cost once, and then reuse the learned estimator for many future inference tasks from the same model family. In settings where we want to test models on simulated data, data arrive repeatedly, experiments are run sequentially, models are compared many times, or inference must be performed interactively, this changes Bayesian inference from a slow per-dataset computation into a reusable workflow.
 
 ## Amortized Bayesian Workflows
 
@@ -26,11 +26,11 @@ It lets you define the generative process, adapt simulator output into training-
 
 This guide introduces all components that let you create and run amortized workflows. These component are organized around several modules:
 
-{py:mod}~bayesflow.simulators provides tools for defining and combining priors, simulators, and meta-functions. These components generate the model-implied quantities used for training, validation, diagnostics, and inference.
-{py:mod}~bayesflow.adapters defines the bridge between simulator output and neural-network input. Adapters make preprocessing explicit, reproducible, and shared between training and inference.
-{py:mod}~bayesflow.networks contains neural architectures for amortized inference and representation learning, including generative networks for posterior approximation and summary networks for structured or variable-size observations.
-{py:mod}~bayesflow.approximators connects networks to concrete inference goals, such as posterior estimation, likelihood estimation, ratio estimation, or point estimation.
-High-level workflows, such as {py:class}~bayesflow.workflows.BasicWorkflow, orchestrate the full process from simulation to training, diagnostics, and application.
+- {py:mod}`~bayesflow.simulators` provides tools for defining and combining priors, simulators, and meta-functions. These components generate the model-implied quantities used for training, validation, diagnostics, and inference.
+- {py:mod}`~bayesflow.adapters` defines the bridge between simulator output and neural-network input. Adapters make preprocessing explicit, reproducible, and shared between training and inference.
+- {py:mod}`~bayesflow.networks` contains neural architectures for amortized inference and representation learning, including generative networks for posterior approximation and summary networks for structured or variable-size observations.
+- {py:mod}`~bayesflow.approximators` connects networks to concrete inference goals, such as posterior estimation, likelihood estimation, ratio estimation, or point estimation.
+High-level workflows, such as {py:class}`~bayesflow.workflows.BasicWorkflow`, orchestrate the full process from simulation to training, diagnostics, and application.
 
 ## Why BayesFlow?
 

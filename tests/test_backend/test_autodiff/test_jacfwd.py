@@ -5,7 +5,7 @@ from keras.ops import convert_to_numpy as to_np
 from bayesflow._backend import jacfwd, jit
 
 
-def test_jacfwd():
+def test_jacfwd(jit_compile):
     w = keras.random.normal((32, 16))
     b = keras.random.normal((32,))
 
@@ -13,7 +13,12 @@ def test_jacfwd():
         return keras.ops.dot(w, _x) + b
 
     x = keras.random.normal((16,))
-    jac = jacfwd(fn)(x)
+    jac_fn = jacfwd(fn)
+
+    if jit_compile:
+        jac_fn = jit(jac_fn)
+
+    jac = jac_fn(x)
 
     assert keras.ops.is_tensor(jac)
     assert keras.ops.shape(jac) == keras.ops.shape(w)
@@ -27,11 +32,11 @@ def test_jacfwd_unary_scalar(fn_unary_scalar, jit_compile):
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual = jac_fn(x)
+    jac = jac_fn(x)
 
-    assert keras.ops.is_tensor(actual)
+    assert keras.ops.is_tensor(jac)
     # For a scalar function of a scalar, the jacobian is a scalar
-    assert keras.ops.shape(actual) == ()
+    assert keras.ops.shape(jac) == ()
 
 
 def test_jacfwd_unary_vector(fn_unary_vector, jit_compile):
@@ -41,11 +46,11 @@ def test_jacfwd_unary_vector(fn_unary_vector, jit_compile):
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual = jac_fn(x)
+    jac = jac_fn(x)
 
-    assert keras.ops.is_tensor(actual)
+    assert keras.ops.is_tensor(jac)
     # For a vector function of a vector, the jacobian should be a vector
-    assert keras.ops.shape(actual) == keras.ops.shape(x)
+    assert keras.ops.shape(jac) == keras.ops.shape(x)
 
 
 def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile):
@@ -58,16 +63,16 @@ def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile):
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual_x = jac_fn(x, y)
-    assert keras.ops.is_tensor(actual_x)
+    jac = jac_fn(x, y)
+    assert keras.ops.is_tensor(jac)
 
     jac_fn = jacfwd(fn_binary_scalars, argnums=1)
 
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual_y = jac_fn(x, y)
-    assert keras.ops.is_tensor(actual_y)
+    jac = jac_fn(x, y)
+    assert keras.ops.is_tensor(jac)
 
     # Test with multiple argnums
     jac_fn = jacfwd(fn_binary_scalars, argnums=(0, 1))
@@ -75,11 +80,11 @@ def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile):
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual_xy = jac_fn(x, y)
-    assert isinstance(actual_xy, tuple)
-    assert len(actual_xy) == 2
-    assert keras.ops.is_tensor(actual_xy[0])
-    assert keras.ops.is_tensor(actual_xy[1])
+    jacs = jac_fn(x, y)
+    assert isinstance(jacs, tuple)
+    assert len(jacs) == 2
+    assert keras.ops.is_tensor(jacs[0])
+    assert keras.ops.is_tensor(jacs[1])
 
 
 def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile):
@@ -92,16 +97,16 @@ def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile):
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual_x = jac_fn(x, y)
-    assert keras.ops.is_tensor(actual_x)
+    jac = jac_fn(x, y)
+    assert keras.ops.is_tensor(jac)
 
     jac_fn = jacfwd(fn_binary_vectors, argnums=1)
 
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual_y = jac_fn(x, y)
-    assert keras.ops.is_tensor(actual_y)
+    jac = jac_fn(x, y)
+    assert keras.ops.is_tensor(jac)
 
     # Test with multiple argnums
     jac_fn = jacfwd(fn_binary_vectors, argnums=(0, 1))
@@ -109,11 +114,11 @@ def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile):
     if jit_compile:
         jac_fn = jit(jac_fn)
 
-    actual_xy = jac_fn(x, y)
-    assert isinstance(actual_xy, tuple)
-    assert len(actual_xy) == 2
-    assert keras.ops.is_tensor(actual_xy[0])
-    assert keras.ops.is_tensor(actual_xy[1])
+    jacs = jac_fn(x, y)
+    assert isinstance(jacs, tuple)
+    assert len(jacs) == 2
+    assert keras.ops.is_tensor(jacs[0])
+    assert keras.ops.is_tensor(jacs[1])
 
 
 def test_jacfwd_with_aux(jit_compile):

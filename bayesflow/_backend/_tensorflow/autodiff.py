@@ -23,9 +23,7 @@ def value_and_grad(fn, argnums=0, has_aux=False):
 
     @wraps(fn)
     def grad_fn(*args, **kwargs):
-        nonlocal fn
-
-        fn = partial(fn, **kwargs)
+        bound_fn = partial(fn, **kwargs)
         primals = [args[i] for i in argnums]
 
         with tf.GradientTape(persistent=False, watch_accessed_variables=False) as tape:
@@ -33,9 +31,9 @@ def value_and_grad(fn, argnums=0, has_aux=False):
                 tape.watch(p)
 
             if has_aux:
-                y, aux = fn(*args, **kwargs)
+                y, aux = bound_fn(*args)
             else:
-                y = fn(*args, **kwargs)
+                y = bound_fn(*args)
 
         if tf.executing_eagerly():
             dydx = tape.gradient(y, primals)
@@ -82,6 +80,8 @@ def vjp(fn, *primals, has_aux=False) -> tuple:
             out = y
 
     def vjp_fn(cotangent):
+        # For some reason this works even inside tf.function. If it fails at some point, use the
+        # `if tf.executing_eagerly()` approach used in `value_and_grad`
         return tape.gradient(y, primals, output_gradients=cotangent)
 
     return out, vjp_fn

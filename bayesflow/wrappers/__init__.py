@@ -21,40 +21,51 @@ Examples
 >>> ratio_dist = RatioDistribution(approximator, param_names=["mu", "sigma"])  # doctest: +SKIP
 """
 
+"""
+Optional integrations with third-party libraries.
+"""
+from importlib import import_module
+from bayesflow.utils.logging import warning
+
 
 def __getattr__(name: str):
     if name == "mamba":
         try:
-            from . import mamba as _mamba
+            module = import_module(f"{__name__}.mamba")
+        except ModuleNotFoundError as exc:
+            if exc.name and exc.name.split(".")[0] == "mamba_ssm":
+                warning(
+                    "The 'bayesflow.wrappers.mamba' submodule requires the "
+                    "'mamba-ssm' package. Install it with:\n\n"
+                    "    pip install mamba-ssm\n",
+                )
+                raise ImportError("Could not import 'bayesflow.wrappers.mamba': mamba-ssm is not installed.") from exc
+            raise
 
-            globals()["mamba"] = _mamba
-            return _mamba
-        except ImportError as exc:
-            import warnings
-
-            warnings.warn(
-                "The 'bayesflow.wrappers.mamba' submodule requires the 'mamba-ssm' package. "
-                "Install it with:\n\n    pip install mamba-ssm\n",
-                ImportWarning,
-                stacklevel=2,
-            )
-            raise ImportError("Could not import 'bayesflow.wrappers.mamba': mamba-ssm is not installed.") from exc
+        globals()[name] = module
+        return module
 
     if name == "pymc":
         try:
-            from . import pymc as _pymc
+            module = import_module(f"{__name__}.pymc")
+        except ModuleNotFoundError as exc:
+            if exc.name and exc.name.split(".")[0] in {"pymc", "pytensor"}:
+                warning(
+                    "The 'bayesflow.wrappers.pymc' submodule requires PyMC "
+                    "and PyTensor. Install them with:\n\n"
+                    "    pip install pymc\n",
+                )
+                raise ImportError("Could not import 'bayesflow.wrappers.pymc': PyMC is not installed.") from exc
+            raise
 
-            globals()["pymc"] = _pymc
-            return _pymc
-        except ImportError as exc:
-            import warnings
+        globals()[name] = module
+        return module
 
-            warnings.warn(
-                "The 'bayesflow.wrappers.pymc' submodule requires PyMC and PyTensor. "
-                "Install them with:\n\n    pip install pymc\n",
-                ImportWarning,
-                stacklevel=2,
-            )
-            raise ImportError("Could not import 'bayesflow.wrappers.pymc': PyMC is not installed.") from exc
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-    raise AttributeError(f"module 'bayesflow.wrappers' has no attribute {name!r}")
+
+def __dir__():
+    return sorted(set(globals()) | {"mamba", "pymc"})
+
+
+__all__ = ["mamba", "pymc"]

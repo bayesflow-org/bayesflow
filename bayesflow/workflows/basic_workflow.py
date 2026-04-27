@@ -24,6 +24,53 @@ from .workflow import Workflow
 
 
 class BasicWorkflow(Workflow):
+    """
+    This class provides methods to set up, simulate, and fit and validate models using
+    amortized Bayesian inference. It allows for both online and offline amortized workflows.
+
+    Parameters
+    ----------
+    simulator : Simulator, optional
+        A Simulator object to generate synthetic data for inference (default is None).
+    adapter : Adapter, optional
+        Adapter for data processing. If not provided, a default adapter will be used (default is None), but
+        you need to make sure to provide the correct names for `inference_variables` and/or `inference_conditions`
+        and/or `summary_variables`.
+    inference_network : InferenceNetwork or str, optional
+        The inference network used for posterior approximation, specified as an instance or by
+        name (default is "coupling_flow").
+    summary_network : SummaryNetwork or str, optional
+        The summary network used for data summarization, specified as an instance or by name (default is None).
+    initial_learning_rate : float, optional
+        Initial learning rate for the optimizer (default is 5e-4).
+    optimizer : type, optional
+        The optimizer to be used for training. If None, a default Adam optimizer will be selected (default is None).
+    checkpoint_filepath : str, optional
+        Directory path where model checkpoints will be saved (default is None).
+    checkpoint_name : str, optional
+        Name of the checkpoint file (default is "model").
+    save_weights_only : bool, optional
+        If True, only the model weights will be saved during checkpointing (default is False).
+    save_best_only: bool, optional
+        If only the best model according to the quantity monitored (loss or validation) at the end of
+        each epoch will be saved instead of the last model (default is False). Use with caution,
+        as some losses (e.g. flow matching) do not reliably reflect model performance, and outliers in the
+        validation data can cause unwanted effects.
+    inference_variables : Sequence[str] or str, optional
+        Variables for inference as a sequence of strings or a single string (default is None).
+        Important for automating diagnostics!
+    inference_conditions : Sequence[str] or str, optional
+        Variables used as direct conditions for inference (default is None).
+    summary_variables : Sequence[str] or str, optional
+        Variables to be summarized through the summary network before being used as conditions (default is None).
+    standardize : Sequence[str] or str, optional
+        Variables to standardize during preprocessing (default is "inference_variables"). These will be
+        passed to the corresponding approximator constructor and can be either "all" or any subset of
+        ["inference_variables", "summary_variables", "inference_conditions"].
+    **kwargs : dict, optional
+        Additional arguments for configuring networks, adapters, optimizers, etc.
+    """
+
     def __init__(
         self,
         simulator: Simulator | None = None,
@@ -42,53 +89,6 @@ class BasicWorkflow(Workflow):
         standardize: Sequence[str] | str | None = "inference_variables",
         **kwargs,
     ):
-        """
-        This class provides methods to set up, simulate, and fit and validate models using
-        amortized Bayesian inference. It allows for both online and offline amortized workflows.
-
-        Parameters
-        ----------
-        simulator : Simulator, optional
-            A Simulator object to generate synthetic data for inference (default is None).
-        adapter : Adapter, optional
-            Adapter for data processing. If not provided, a default adapter will be used (default is None), but
-            you need to make sure to provide the correct names for `inference_variables` and/or `inference_conditions`
-            and/or `summary_variables`.
-        inference_network : InferenceNetwork or str, optional
-            The inference network used for posterior approximation, specified as an instance or by
-            name (default is "coupling_flow").
-        summary_network : SummaryNetwork or str, optional
-            The summary network used for data summarization, specified as an instance or by name (default is None).
-        initial_learning_rate : float, optional
-            Initial learning rate for the optimizer (default is 5e-4).
-        optimizer : type, optional
-            The optimizer to be used for training. If None, a default Adam optimizer will be selected (default is None).
-        checkpoint_filepath : str, optional
-            Directory path where model checkpoints will be saved (default is None).
-        checkpoint_name : str, optional
-            Name of the checkpoint file (default is "model").
-        save_weights_only : bool, optional
-            If True, only the model weights will be saved during checkpointing (default is False).
-        save_best_only: bool, optional
-            If only the best model according to the quantity monitored (loss or validation) at the end of
-            each epoch will be saved instead of the last model (default is False). Use with caution,
-            as some losses (e.g. flow matching) do not reliably reflect model performance, and outliers in the
-            validation data can cause unwanted effects.
-        inference_variables : Sequence[str] or str, optional
-            Variables for inference as a sequence of strings or a single string (default is None).
-            Important for automating diagnostics!
-        inference_conditions : Sequence[str] or str, optional
-            Variables used as direct conditions for inference (default is None).
-        summary_variables : Sequence[str] or str, optional
-            Variables to be summarized through the summary network before being used as conditions (default is None).
-        standardize : Sequence[str] or str, optional
-            Variables to standardize during preprocessing (default is "inference_variables"). These will be
-            passed to the corresponding approximator constructor and can be either "all" or any subset of
-            ["inference_variables", "summary_variables", "inference_conditions"].
-        **kwargs : dict, optional
-            Additional arguments for configuring networks, adapters, optimizers, etc.
-        """
-
         self.inference_network = find_inference_network(inference_network, **kwargs.get("inference_kwargs", {}))
 
         if summary_network is not None:
@@ -213,6 +213,317 @@ class BasicWorkflow(Workflow):
 
         return adapter
 
+    def fit_offline(
+        self,
+        data: Mapping[str, np.ndarray],
+        epochs: int = 100,
+        batch_size: int = 32,
+        keep_optimizer: bool = False,
+        validation_data: Mapping[str, np.ndarray] | int = None,
+        augmentations: Mapping[str, Callable] | Callable = None,
+        **kwargs,
+    ) -> keras.callbacks.History:
+        """
+        Train the approximator offline using a fixed dataset. This approach will be faster than online training,
+        since no computation time is spent in generating new data for each batch, but it assumes that simulations
+        can fit in memory.
+
+        Parameters
+        ----------
+        data : Mapping[str, np.ndarray]
+            A dictionary containing training data where keys represent variable
+            names and values are corresponding realizations.
+        epochs : int, optional
+            The number of training epochs, by default 100. Consider increasing this number for free-form inference
+            networks, such as FlowMatching or ConsistencyModel, which generally need more epochs than CouplingFlows.
+        batch_size : int, optional
+            The batch size used for training, by default 32.
+        keep_optimizer : bool, optional
+            Whether to retain the current state of the optimizer after training,
+            by default False.
+        validation_data : Mapping[str, np.ndarray] or int, optional
+            A dictionary containing validation data. If an integer is provided,
+            that number of validation samples will be generated (if supported).
+            By default, no validation data is used.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the underlying `_fit` method.
+
+        Returns
+        -------
+        history : keras.callbacks.History
+            A history object containing training history, where keys correspond to
+            logged metrics (e.g., loss values) and values are arrays tracking
+            metric evolution over epochs.
+        """
+
+        dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter, augmentations=augmentations)
+
+        return self._fit(
+            dataset,
+            epochs,
+            strategy="offline",
+            keep_optimizer=keep_optimizer,
+            validation_data=validation_data,
+            **kwargs,
+        )
+
+    def fit_online(
+        self,
+        epochs: int = 100,
+        num_batches_per_epoch: int = 100,
+        batch_size: int = 32,
+        keep_optimizer: bool = False,
+        validation_data: Mapping[str, np.ndarray] | int = None,
+        augmentations: Mapping[str, Callable] | Callable = None,
+        **kwargs,
+    ) -> keras.callbacks.History:
+        """
+        Train the approximator using an online data-generating process. The dataset is dynamically generated during
+        training, making this approach suitable for scenarios where generating new simulations is computationally cheap.
+
+        Parameters
+        ----------
+        epochs : int, optional
+            The number of training epochs, by default 100.
+        num_batches_per_epoch : int, optional
+            The number of batches generated per epoch, by default 100.
+        batch_size : int, optional
+            The batch size used for training, by default 32.
+        keep_optimizer : bool, optional
+            Whether to retain the current state of the optimizer after training,
+            by default False.
+        validation_data : Mapping[str, np.ndarray] or int, optional
+            A dictionary containing validation data. If an integer is provided,
+            that number of validation samples will be generated (if supported).
+            By default, no validation data is used.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the underlying `_fit` method.
+
+        Returns
+        -------
+        history : keras.callbacks.History
+            A history object containing training history, where keys correspond to
+            logged metrics (e.g., loss values) and values are arrays tracking
+            metric evolution over epochs.
+        """
+
+        dataset = OnlineDataset(
+            simulator=self.simulator,
+            batch_size=batch_size,
+            num_batches=num_batches_per_epoch,
+            adapter=self.adapter,
+            augmentations=augmentations,
+        )
+
+        return self._fit(
+            dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
+        )
+
+    def fit_disk(
+        self,
+        root: os.PathLike,
+        pattern: str = "*.pkl",
+        batch_size: int = 32,
+        load_fn: callable = None,
+        epochs: int = 100,
+        keep_optimizer: bool = False,
+        validation_data: Mapping[str, np.ndarray] | int = None,
+        augmentations: Mapping[str, Callable] | Callable = None,
+        **kwargs,
+    ) -> keras.callbacks.History:
+        """
+        Train the approximator using data stored on disk. This approach is suitable for large sets of simulations that
+        don't fit in memory.
+
+        Parameters
+        ----------
+        root : os.PathLike
+            The root directory containing the dataset files.
+        pattern : str, optional
+            A filename pattern to match dataset files, by default ``"*.pkl"``.
+        batch_size : int, optional
+            The batch size used for training, by default 32.
+        load_fn : callable, optional
+            A function to load dataset files. If None, a default loading
+            function is used.
+        epochs : int, optional
+            The number of training epochs, by default 100. Consider increasing this number for free-form inference
+            networks, such as FlowMatching or ConsistencyModel, which generally need more epochs than CouplingFlows.
+        keep_optimizer : bool, optional
+            Whether to retain the current state of the optimizer after training,
+            by default False.
+        validation_data : Mapping[str, np.ndarray] or int, optional
+            A dictionary containing validation data. If an integer is provided,
+            that number of validation samples will be generated (if supported).
+            By default, no validation data is used.
+        augmentations : dict of str to Callable or Callable, optional
+            Dictionary of augmentation functions to apply to each corresponding key in the batch
+            or a function to apply to the entire batch (possibly adding new keys).
+
+            If you provide a dictionary of functions, each function should accept one element
+            of your output batch and return the corresponding transformed element. Otherwise,
+            your function should accept the entire dictionary output and return a dictionary.
+
+            Note - augmentations are applied before the adapter is called and are generally
+            transforms that you only want to apply during training.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the underlying `_fit` method.
+
+        Returns
+        -------
+        history : keras.callbacks.History
+            A history object containing training history, where keys correspond to
+            logged metrics (e.g., loss values) and values are arrays tracking
+            metric evolution over epochs.
+        """
+
+        dataset = DiskDataset(
+            root=root,
+            pattern=pattern,
+            batch_size=batch_size,
+            load_fn=load_fn,
+            adapter=self.adapter,
+            augmentations=augmentations,
+        )
+
+        return self._fit(
+            dataset,
+            epochs,
+            strategy="offline",
+            keep_optimizer=keep_optimizer,
+            validation_data=validation_data,
+            **kwargs,
+        )
+
+    def _fit(
+        self,
+        dataset: keras.utils.PyDataset,
+        epochs: int,
+        strategy: str,
+        keep_optimizer: bool,
+        validation_data: Mapping[str, np.ndarray] | int,
+        **kwargs,
+    ) -> keras.callbacks.History:
+        if validation_data is not None:
+            if isinstance(validation_data, int) and self.simulator is not None:
+                validation_data = self.simulator.sample(validation_data, **kwargs.pop("validation_data_kwargs", {}))
+            elif isinstance(validation_data, int):
+                raise ValueError(f"No simulator found for generating {validation_data} data sets.")
+
+            validation_data = OfflineDataset(data=validation_data, batch_size=dataset.batch_size, adapter=self.adapter)
+            monitor = "val_loss"
+        else:
+            monitor = "loss"
+
+        if self.checkpoint_filepath is not None:
+            if self.save_weights_only:
+                file_ext = self.checkpoint_name + ".weights.h5"
+            else:
+                file_ext = self.checkpoint_name + ".keras"
+
+            model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
+                filepath=os.path.join(self.checkpoint_filepath, file_ext),
+                monitor=monitor,
+                mode="min",
+                save_best_only=self.save_best_only,
+                save_weights_only=self.save_weights_only,
+                save_freq="epoch",
+            )
+
+            if kwargs.get("callbacks") is not None:
+                kwargs["callbacks"].append(model_checkpoint_callback)
+            else:
+                kwargs["callbacks"] = [model_checkpoint_callback]
+
+        # returns None if no new optimizer was built and assigned to self.optimizer, which indicates we do not have
+        # to (re)compile the approximator.
+        optimizer = self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
+        if optimizer is not None:
+            self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
+
+        try:
+            start_time = time.perf_counter()
+            self.history = self.approximator.fit(
+                dataset=dataset, epochs=epochs, validation_data=validation_data, **kwargs
+            )
+            elapsed = time.perf_counter() - start_time
+            logging.info(f"Training completed in {format_duration(elapsed)}.")
+            self._on_training_finished()
+            return self.history
+        finally:
+            if not keep_optimizer:
+                self.optimizer = None
+
+    def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
+        """
+        Build and initialize the optimizer based on the training strategy. Uses a cosine decay learning rate schedule,
+        where the final learning rate is proportional to the square of the initial learning rate, as found to work
+        best in SBI.
+
+        The default optimizer will use 5% of the epochs as warmup; during the warmup phase, the learning rate
+        will be increased from 10% of the initial learning rate to initial learning rate supplied to the workflow.
+
+        Parameters
+        ----------
+        epochs : int
+            The total number of training epochs.
+        num_batches : int
+            The number of batches per epoch.
+        strategy : str
+            The training strategy, either "online" or another mode that
+            applies weight decay. For "online" training, an Adam optimizer with gradient clipping is used. For other
+            strategies, AdamW is used with weight decay to encourage regularization.
+
+        Returns
+        -------
+        keras.Optimizer or None
+            The initialized optimizer if it was not already set. Returns None
+            if the optimizer was already defined.
+        """
+
+        if self.optimizer is not None:
+            return
+
+        total_steps = int(epochs * num_batches)
+        warmup_steps = int(0.05 * epochs * num_batches)
+        decay_steps = total_steps - warmup_steps
+
+        # Default case
+        learning_rate = keras.optimizers.schedules.CosineDecay(
+            initial_learning_rate=0.1 * self.initial_learning_rate,
+            warmup_target=self.initial_learning_rate,
+            warmup_steps=warmup_steps,
+            decay_steps=decay_steps,
+            alpha=0,
+        )
+
+        # Use adam for online learning, apply weight decay otherwise
+        if strategy.lower() == "online":
+            self.optimizer = keras.optimizers.Adam(learning_rate, clipnorm=1.5)
+        else:
+            self.optimizer = keras.optimizers.AdamW(learning_rate, weight_decay=5e-3, clipnorm=1.5)
+        return self.optimizer
+
     def simulate(self, batch_shape: Shape, **kwargs) -> dict[str, np.ndarray]:
         """
         Generates a batch of simulations using the provided simulator.
@@ -269,10 +580,11 @@ class BasicWorkflow(Workflow):
         self,
         *,
         num_samples: int,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -282,7 +594,7 @@ class BasicWorkflow(Workflow):
         ----------
         num_samples : int
             The number of samples to generate.
-        conditions : dict[str, np.ndarray]
+        conditions : dict[str, np.ndarray], optional
             A dictionary where keys represent variable names and values are
             NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
             conditions during training should be present.
@@ -300,6 +612,10 @@ class BasicWorkflow(Workflow):
             dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
             then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
             `(num_conditions, num_samples, time, target_dim)`.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), each component uses its own instance seed generator.
         **kwargs : dict | str, optional
             Additional keyword arguments passed to the approximator's sampling function.
 
@@ -316,6 +632,7 @@ class BasicWorkflow(Workflow):
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,
+            seed=seed,
             **kwargs,
         )
         elapsed = time.perf_counter() - start_time
@@ -325,7 +642,7 @@ class BasicWorkflow(Workflow):
     def estimate(
         self,
         *,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         **kwargs,
     ) -> dict[str, dict[str, np.ndarray | dict[str, np.ndarray]]]:
         """
@@ -333,7 +650,7 @@ class BasicWorkflow(Workflow):
 
         Parameters
         ----------
-        conditions : Mapping[str, np.ndarray]
+        conditions : Mapping[str, np.ndarray], optional
             A dictionary mapping variable names to arrays representing the conditions for the estimation process.
         **kwargs : dict | str
             Additional keyword arguments passed to underlying processing functions.
@@ -722,317 +1039,6 @@ class BasicWorkflow(Workflow):
             "or compute_custom_diagnositcs if you want to use your own metrics."
         )
         return self.compute_default_diagnostics(**kwargs)
-
-    def fit_offline(
-        self,
-        data: Mapping[str, np.ndarray],
-        epochs: int = 100,
-        batch_size: int = 32,
-        keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
-        **kwargs,
-    ) -> keras.callbacks.History:
-        """
-        Train the approximator offline using a fixed dataset. This approach will be faster than online training,
-        since no computation time is spent in generating new data for each batch, but it assumes that simulations
-        can fit in memory.
-
-        Parameters
-        ----------
-        data : Mapping[str, np.ndarray]
-            A dictionary containing training data where keys represent variable
-            names and values are corresponding realizations.
-        epochs : int, optional
-            The number of training epochs, by default 100. Consider increasing this number for free-form inference
-            networks, such as FlowMatching or ConsistencyModel, which generally need more epochs than CouplingFlows.
-        batch_size : int, optional
-            The batch size used for training, by default 32.
-        keep_optimizer : bool, optional
-            Whether to retain the current state of the optimizer after training,
-            by default False.
-        validation_data : Mapping[str, np.ndarray] or int, optional
-            A dictionary containing validation data. If an integer is provided,
-            that number of validation samples will be generated (if supported).
-            By default, no validation data is used.
-        augmentations : dict of str to Callable or Callable, optional
-            Dictionary of augmentation functions to apply to each corresponding key in the batch
-            or a function to apply to the entire batch (possibly adding new keys).
-
-            If you provide a dictionary of functions, each function should accept one element
-            of your output batch and return the corresponding transformed element. Otherwise,
-            your function should accept the entire dictionary output and return a dictionary.
-
-            Note - augmentations are applied before the adapter is called and are generally
-            transforms that you only want to apply during training.
-        **kwargs : dict, optional
-            Additional keyword arguments passed to the underlying `_fit` method.
-
-        Returns
-        -------
-        history : keras.callbacks.History
-            A history object containing training history, where keys correspond to
-            logged metrics (e.g., loss values) and values are arrays tracking
-            metric evolution over epochs.
-        """
-
-        dataset = OfflineDataset(data=data, batch_size=batch_size, adapter=self.adapter, augmentations=augmentations)
-
-        return self._fit(
-            dataset,
-            epochs,
-            strategy="offline",
-            keep_optimizer=keep_optimizer,
-            validation_data=validation_data,
-            **kwargs,
-        )
-
-    def fit_online(
-        self,
-        epochs: int = 100,
-        num_batches_per_epoch: int = 100,
-        batch_size: int = 32,
-        keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
-        **kwargs,
-    ) -> keras.callbacks.History:
-        """
-        Train the approximator using an online data-generating process. The dataset is dynamically generated during
-        training, making this approach suitable for scenarios where generating new simulations is computationally cheap.
-
-        Parameters
-        ----------
-        epochs : int, optional
-            The number of training epochs, by default 100.
-        num_batches_per_epoch : int, optional
-            The number of batches generated per epoch, by default 100.
-        batch_size : int, optional
-            The batch size used for training, by default 32.
-        keep_optimizer : bool, optional
-            Whether to retain the current state of the optimizer after training,
-            by default False.
-        validation_data : Mapping[str, np.ndarray] or int, optional
-            A dictionary containing validation data. If an integer is provided,
-            that number of validation samples will be generated (if supported).
-            By default, no validation data is used.
-        augmentations : dict of str to Callable or Callable, optional
-            Dictionary of augmentation functions to apply to each corresponding key in the batch
-            or a function to apply to the entire batch (possibly adding new keys).
-
-            If you provide a dictionary of functions, each function should accept one element
-            of your output batch and return the corresponding transformed element. Otherwise,
-            your function should accept the entire dictionary output and return a dictionary.
-
-            Note - augmentations are applied before the adapter is called and are generally
-            transforms that you only want to apply during training.
-        **kwargs : dict, optional
-            Additional keyword arguments passed to the underlying `_fit` method.
-
-        Returns
-        -------
-        history : keras.callbacks.History
-            A history object containing training history, where keys correspond to
-            logged metrics (e.g., loss values) and values are arrays tracking
-            metric evolution over epochs.
-        """
-
-        dataset = OnlineDataset(
-            simulator=self.simulator,
-            batch_size=batch_size,
-            num_batches=num_batches_per_epoch,
-            adapter=self.adapter,
-            augmentations=augmentations,
-        )
-
-        return self._fit(
-            dataset, epochs, strategy="online", keep_optimizer=keep_optimizer, validation_data=validation_data, **kwargs
-        )
-
-    def fit_disk(
-        self,
-        root: os.PathLike,
-        pattern: str = "*.pkl",
-        batch_size: int = 32,
-        load_fn: callable = None,
-        epochs: int = 100,
-        keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
-        **kwargs,
-    ) -> keras.callbacks.History:
-        """
-        Train the approximator using data stored on disk. This approach is suitable for large sets of simulations that
-        don't fit in memory.
-
-        Parameters
-        ----------
-        root : os.PathLike
-            The root directory containing the dataset files.
-        pattern : str, optional
-            A filename pattern to match dataset files, by default ``"*.pkl"``.
-        batch_size : int, optional
-            The batch size used for training, by default 32.
-        load_fn : callable, optional
-            A function to load dataset files. If None, a default loading
-            function is used.
-        epochs : int, optional
-            The number of training epochs, by default 100. Consider increasing this number for free-form inference
-            networks, such as FlowMatching or ConsistencyModel, which generally need more epochs than CouplingFlows.
-        keep_optimizer : bool, optional
-            Whether to retain the current state of the optimizer after training,
-            by default False.
-        validation_data : Mapping[str, np.ndarray] or int, optional
-            A dictionary containing validation data. If an integer is provided,
-            that number of validation samples will be generated (if supported).
-            By default, no validation data is used.
-        augmentations : dict of str to Callable or Callable, optional
-            Dictionary of augmentation functions to apply to each corresponding key in the batch
-            or a function to apply to the entire batch (possibly adding new keys).
-
-            If you provide a dictionary of functions, each function should accept one element
-            of your output batch and return the corresponding transformed element. Otherwise,
-            your function should accept the entire dictionary output and return a dictionary.
-
-            Note - augmentations are applied before the adapter is called and are generally
-            transforms that you only want to apply during training.
-        **kwargs : dict, optional
-            Additional keyword arguments passed to the underlying `_fit` method.
-
-        Returns
-        -------
-        history : keras.callbacks.History
-            A history object containing training history, where keys correspond to
-            logged metrics (e.g., loss values) and values are arrays tracking
-            metric evolution over epochs.
-        """
-
-        dataset = DiskDataset(
-            root=root,
-            pattern=pattern,
-            batch_size=batch_size,
-            load_fn=load_fn,
-            adapter=self.adapter,
-            augmentations=augmentations,
-        )
-
-        return self._fit(
-            dataset,
-            epochs,
-            strategy="offline",
-            keep_optimizer=keep_optimizer,
-            validation_data=validation_data,
-            **kwargs,
-        )
-
-    def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
-        """
-        Build and initialize the optimizer based on the training strategy. Uses a cosine decay learning rate schedule,
-        where the final learning rate is proportional to the square of the initial learning rate, as found to work
-        best in SBI.
-
-        The default optimizer will use 5% of the epochs as warmup; during the warmup phase, the learning rate
-        will be increased from 10% of the initial learning rate to initial learning rate supplied to the workflow.
-
-        Parameters
-        ----------
-        epochs : int
-            The total number of training epochs.
-        num_batches : int
-            The number of batches per epoch.
-        strategy : str
-            The training strategy, either "online" or another mode that
-            applies weight decay. For "online" training, an Adam optimizer with gradient clipping is used. For other
-            strategies, AdamW is used with weight decay to encourage regularization.
-
-        Returns
-        -------
-        keras.Optimizer or None
-            The initialized optimizer if it was not already set. Returns None
-            if the optimizer was already defined.
-        """
-
-        if self.optimizer is not None:
-            return
-
-        total_steps = int(epochs * num_batches)
-        warmup_steps = int(0.05 * epochs * num_batches)
-        decay_steps = total_steps - warmup_steps
-
-        # Default case
-        learning_rate = keras.optimizers.schedules.CosineDecay(
-            initial_learning_rate=0.1 * self.initial_learning_rate,
-            warmup_target=self.initial_learning_rate,
-            warmup_steps=warmup_steps,
-            decay_steps=decay_steps,
-            alpha=0,
-        )
-
-        # Use adam for online learning, apply weight decay otherwise
-        if strategy.lower() == "online":
-            self.optimizer = keras.optimizers.Adam(learning_rate, clipnorm=1.5)
-        else:
-            self.optimizer = keras.optimizers.AdamW(learning_rate, weight_decay=5e-3, clipnorm=1.5)
-        return self.optimizer
-
-    def _fit(
-        self,
-        dataset: keras.utils.PyDataset,
-        epochs: int,
-        strategy: str,
-        keep_optimizer: bool,
-        validation_data: Mapping[str, np.ndarray] | int,
-        **kwargs,
-    ) -> keras.callbacks.History:
-        if validation_data is not None:
-            if isinstance(validation_data, int) and self.simulator is not None:
-                validation_data = self.simulator.sample(validation_data, **kwargs.pop("validation_data_kwargs", {}))
-            elif isinstance(validation_data, int):
-                raise ValueError(f"No simulator found for generating {validation_data} data sets.")
-
-            validation_data = OfflineDataset(data=validation_data, batch_size=dataset.batch_size, adapter=self.adapter)
-            monitor = "val_loss"
-        else:
-            monitor = "loss"
-
-        if self.checkpoint_filepath is not None:
-            if self.save_weights_only:
-                file_ext = self.checkpoint_name + ".weights.h5"
-            else:
-                file_ext = self.checkpoint_name + ".keras"
-
-            model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
-                filepath=os.path.join(self.checkpoint_filepath, file_ext),
-                monitor=monitor,
-                mode="min",
-                save_best_only=self.save_best_only,
-                save_weights_only=self.save_weights_only,
-                save_freq="epoch",
-            )
-
-            if kwargs.get("callbacks") is not None:
-                kwargs["callbacks"].append(model_checkpoint_callback)
-            else:
-                kwargs["callbacks"] = [model_checkpoint_callback]
-
-        # returns None if no new optimizer was built and assigned to self.optimizer, which indicates we do not have
-        # to (re)compile the approximator.
-        optimizer = self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
-        if optimizer is not None:
-            self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
-
-        try:
-            start_time = time.perf_counter()
-            self.history = self.approximator.fit(
-                dataset=dataset, epochs=epochs, validation_data=validation_data, **kwargs
-            )
-            elapsed = time.perf_counter() - start_time
-            logging.info(f"Training completed in {format_duration(elapsed)}.")
-            self._on_training_finished()
-            return self.history
-        finally:
-            if not keep_optimizer:
-                self.optimizer = None
 
     def _prepare_for_diagnostics(self, test_data: Mapping[str, np.ndarray] | int, num_samples: int = 1000, **kwargs):
         if isinstance(test_data, int) and self.simulator is not None:

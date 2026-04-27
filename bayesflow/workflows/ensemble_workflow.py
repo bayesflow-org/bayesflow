@@ -18,6 +18,73 @@ from .basic_workflow import BasicWorkflow
 
 
 class EnsembleWorkflow(BasicWorkflow):
+    """
+    Ensemble variant of :class:`~bayesflow.workflows.BasicWorkflow` that trains multiple approximators
+    jointly, allowing for flexible sharing of network components and training data.
+
+    Two construction modes are supported:
+
+    1. **Dictionary mode** – pass a ``dict`` for ``inference_networks`` (and optionally
+       ``summary_networks``) to give each ensemble member an explicit name and network instance.
+       In this mode ``ensemble_size`` and ``share_inference_network`` are ignored.
+
+    2. **Size mode** – pass a single network (or name string) together with ``ensemble_size > 1``
+       to automatically create that many members by cloning the network. Set
+       ``share_inference_network=True`` to make all members share the same instance instead.
+
+    All fit methods (:meth:`fit_offline`, :meth:`fit_online`, :meth:`fit_disk`) accept a
+    ``data_reuse`` parameter in ``[0, 1]`` that controls how much training data is shared across
+    ensemble members: ``1.0`` means all members train on identical batches, while lower values
+    introduce independent draws to encourage diversity.
+
+    Parameters
+    ----------
+    simulator : Simulator, optional
+        A Simulator object to generate synthetic data for inference (default is None).
+    adapter : Adapter, optional
+        Adapter for data processing. If not provided, a default adapter will be used (default is None), but
+        you need to make sure to provide the correct names for ``inference_variables`` and/or
+        ``inference_conditions`` and/or ``summary_variables``.
+    inference_networks : dict[str, InferenceNetwork or str] or InferenceNetwork or str, optional
+        In dictionary mode: a mapping from member names to inference network instances or name strings.
+        In size mode: a single network instance or name string to be cloned ``ensemble_size`` times.
+        Defaults to ``"coupling_flow"``.
+    summary_networks : dict[str, SummaryNetwork or str] or SummaryNetwork or str, optional
+        In dictionary mode: a mapping from member names (must match ``inference_networks`` keys) to
+        summary network instances or name strings. In size mode: a single summary network shared across
+        all members. Defaults to None.
+    ensemble_size : int, optional
+        Number of ensemble members to create in size mode. Must be greater than 1. Ignored when
+        ``inference_networks`` is a dict (default is None).
+    share_inference_network : bool, optional
+        If True, all members share the same inference network instance rather than independent clones.
+        Only relevant in size mode (default is False).
+    initial_learning_rate : float, optional
+        Initial learning rate for the optimizer (default is 5e-4).
+    optimizer : type, optional
+        The optimizer to be used for training. If None, a default Adam optimizer will be used (default is None).
+    checkpoint_filepath : str, optional
+        Directory path where model checkpoints will be saved (default is None).
+    checkpoint_name : str, optional
+        Name of the checkpoint file (default is "model").
+    save_weights_only : bool, optional
+        If True, only the model weights will be saved during checkpointing (default is False).
+    save_best_only : bool, optional
+        If True, only the best model according to the monitored quantity will be saved (default is False).
+    inference_variables : Sequence[str] or str, optional
+        Variables for inference (default is None). Important for automating diagnostics.
+    inference_conditions : Sequence[str] or str, optional
+        Variables used as direct conditions for inference (default is None).
+    summary_variables : Sequence[str] or str, optional
+        Variables to be summarized through the summary network before being used as conditions
+        (default is None).
+    standardize : Sequence[str] or str, optional
+        Variables to standardize during preprocessing, applied to each member approximator
+        (default is ``"inference_variables"``).
+    **kwargs : dict, optional
+        Additional arguments for configuring networks, adapters, optimizers, etc.
+    """
+
     def __init__(
         self,
         simulator: Simulator | None = None,
@@ -141,7 +208,7 @@ class EnsembleWorkflow(BasicWorkflow):
             The batch size used for training, by default 32.
         data_reuse : float, optional
             Similarity of training data for ensemble members in ``[0, 1]``, by default 1.0.
-            See also :py:class`bayesflow.datasets.EnsembleDataset`.
+            See also :py:class:`bayesflow.datasets.EnsembleDataset`.
         keep_optimizer : bool, optional
             Whether to retain the current state of the optimizer after training,
             by default False.
@@ -208,7 +275,7 @@ class EnsembleWorkflow(BasicWorkflow):
             The batch size used for training, by default 32.
         data_reuse : float, optional
             Similarity of training data for ensemble members in ``[0, 1]``, by default 1.0.
-            See also :py:class`bayesflow.datasets.EnsembleDataset`.
+            See also :py:class:`bayesflow.datasets.EnsembleDataset`.
         keep_optimizer : bool, optional
             Whether to retain the current state of the optimizer after training,
             by default False.
@@ -277,7 +344,7 @@ class EnsembleWorkflow(BasicWorkflow):
             The batch size used for training, by default 32.
         data_reuse : float, optional
             Similarity of training data for ensemble members in ``[0, 1]``, by default 1.0.
-            See also :py:class`bayesflow.datasets.EnsembleDataset`.
+            See also :py:class:`bayesflow.datasets.EnsembleDataset`.
         load_fn : callable, optional
             A function to load dataset files. If None, a default loading
             function is used.

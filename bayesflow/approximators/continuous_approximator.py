@@ -9,6 +9,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import split_arrays
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serialize, serializable
 
 from .approximator import Approximator
@@ -195,11 +196,12 @@ class ContinuousApproximator(Approximator):
         self,
         *,
         num_samples: int,
-        conditions: Mapping[str, np.ndarray],
+        conditions: Mapping[str, np.ndarray] | None = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -210,7 +212,7 @@ class ContinuousApproximator(Approximator):
         ----------
         num_samples : int
             Number of samples to generate.
-        conditions : dict[str, np.ndarray]
+        conditions : dict[str, np.ndarray], optional
             Dictionary of conditioning variables as NumPy arrays.
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one sample array per target variable.
@@ -229,6 +231,10 @@ class ContinuousApproximator(Approximator):
         return_summaries: bool, optional
             If set to True and a summary network is present, will return the learned summary statistics for
             the provided conditions.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), each component uses its own instance seed generator.
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
@@ -248,6 +254,7 @@ class ContinuousApproximator(Approximator):
             conditions=resolved_conditions,
             batch_size=batch_size,
             sample_shape=sample_shape,
+            seed=resolve_seed(seed),
             **inference_kwargs,
         )
 

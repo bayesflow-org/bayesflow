@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from pathlib import Path
-from docsrc.polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder
+from docsrc.polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder, version_key
 
 from sphinx_polyversion.api import apply_overrides
 from sphinx_polyversion.git import Git, GitRef, GitRefType, file_predicate, refs_by_type
@@ -17,11 +17,13 @@ logger.setLevel(logging.DEBUG)
 root = Git.root(Path(__file__).parent)
 
 #: CodeRegex matching the branches to build docs for
-BRANCH_REGEX = r"^(main|stable-legacy)$"
+# BRANCH_REGEX = r"^(main|stable-legacy)$"
+BRANCH_REGEX = r"^(stable-legacy)$"
 
 #: Regex matching the tags to build docs for
+TAG_REGEX = r"^v(?!1\.)(?!2\.0\.[0-6]$)(?!2\.0\.9$)([\d]+\.[\d]+\.[\d]+)$"
 # TAG_REGEX = r"^v((?!1\.)[\.0-9]*)$"
-TAG_REGEX = r""
+# TAG_REGEX = r""
 
 #: Output dir relative to project root
 OUTPUT_DIR = "_build_polyversion"
@@ -73,17 +75,16 @@ VENV_DIR_NAME = ".docs_venvs"
 def data(driver, rev, env):
     revisions = driver.targets
     branches, tags = refs_by_type(revisions)
-    latest = max(tags or branches)
+    latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":
             latest = b
             break
 
-    # sort tags and branches by date, newest first
     return {
         "current": rev,
-        "tags": sorted(tags, reverse=True),
-        "branches": sorted(branches, reverse=True),
+        "tags": tags,
+        "branches": branches,
         "revisions": revisions,
         "latest": latest,
     }
@@ -92,7 +93,7 @@ def data(driver, rev, env):
 def root_data(driver):
     revisions = driver.builds
     branches, tags = refs_by_type(revisions)
-    latest = max(tags or branches)
+    latest = max(tags or branches, key=version_key)
     for b in branches:
         if b.name == "main":
             latest = b

@@ -2,6 +2,8 @@
 A collection of utility functions, mostly used for internal purposes.
 """
 
+from .keras_utils import resolve_seed
+
 from . import (
     keras_utils,
     logging,

@@ -11,8 +11,8 @@ It provides users with:
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="_static/bayesflow_landing_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="_static/bayesflow_landing_light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="_static/bf_landing_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="_static/bf_landing_light.png">
   <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the gold-standard toolkit for simulation intelligence." src="_static/bayesflow_landing_dark.png">
 </picture>
 </div>

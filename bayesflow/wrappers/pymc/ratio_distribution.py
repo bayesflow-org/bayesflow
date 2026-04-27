@@ -6,10 +6,10 @@ import pymc as pm
 import pytensor
 import pytensor.tensor as pt
 
-from .backend import Ratio
+from .backend import BackendRatio
 
 
-class RatioDistribution:
+class NeuralRatioDistribution:
     """
     User-facing wrapper around :class:`pm.CustomDist` for ratio-based likelihoods.
 
@@ -75,7 +75,7 @@ class RatioDistribution:
         self.param_names = tuple(param_names)
         self.exchangeable = exchangeable
         self.simulator_fn = simulator_fn
-        self.backend = Ratio(ratio_approximator, param_names, exchangeable=exchangeable)
+        self.backend = BackendRatio(ratio_approximator, param_names, exchangeable=exchangeable)
 
     @property
     def log_ratio(self) -> Callable:

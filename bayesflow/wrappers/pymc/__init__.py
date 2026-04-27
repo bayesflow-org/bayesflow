@@ -1,1 +1,1 @@
-from .ratio_distribution import RatioDistribution
+from .ratio_distribution import NeuralRatioDistribution

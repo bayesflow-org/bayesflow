@@ -23,16 +23,26 @@ def value_and_grad(fn, argnums=0, has_aux=False):
 
     @wraps(fn)
     def grad_fn(*args, **kwargs):
+        nonlocal fn
+
+        fn = partial(fn, **kwargs)
+        primals = [args[i] for i in argnums]
+
         with tf.GradientTape(persistent=False, watch_accessed_variables=False) as tape:
-            for argnum in argnums:
-                tape.watch(args[argnum])
+            for p in primals:
+                tape.watch(p)
 
             if has_aux:
                 y, aux = fn(*args, **kwargs)
             else:
                 y = fn(*args, **kwargs)
 
-        dydx = tape.gradient(y, args)
+        if tf.executing_eagerly():
+            dydx = tape.gradient(y, primals)
+        else:
+            dydx = tf.gradients(y, primals)
+
+        dydx = tuple(dydx)
 
         if len(argnums) == 1:
             # follow the jax way to return the gradient directly if only one argument is differentiated

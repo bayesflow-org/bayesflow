@@ -1,4 +1,7 @@
 from collections.abc import Callable, Sequence
+from numpy.typing import ArrayLike
+
+import numpy as np
 
 import keras
 
@@ -131,12 +134,17 @@ class NeuralRatioDistribution:
         value = pt.cast(pt.as_tensor_variable(value), pytensor.config.floatX)
 
         if self.exchangeable:
-            value = pt.reshape(value, (-1,))  # (n_obs,)
+            # Ensure at least 1-D so scalar obs get a batch axis.
+            # Do NOT flatten further dimensions: (n_obs, obs_dim) must stay 2-D
+            # so that vmap yields x_i of shape (obs_dim,) rather than a scalar.
+            if value.ndim == 0:
+                value = value[None]
+            n_obs = value.shape[0]
             prepared_params = []
             for p in dist_params:
                 p = pt.cast(pt.as_tensor_variable(p), pytensor.config.floatX)
-                p = pt.reshape(p, (-1,))  # scalar -> (1,), vector -> (n,)
-                p = pt.broadcast_to(p, value.shape)
+                p = pt.reshape(p, (-1,))  # scalar -> (1,)
+                p = pt.broadcast_to(p, (n_obs,))  # always (n_obs,)
                 prepared_params.append(p)
         else:
             prepared_params = [pt.cast(pt.as_tensor_variable(p), pytensor.config.floatX) for p in dist_params]
@@ -170,7 +178,7 @@ class NeuralRatioDistribution:
             raise NotImplementedError("No simulator_fn was provided, so random sampling is unavailable.")
         return self.simulator_fn(rng, *dist_params, size=size)
 
-    def __call__(self, name: str, *args, observed=None, **kwargs) -> pm.Distribution:
+    def __call__(self, name: str, *args, observed: ArrayLike, **kwargs) -> pm.Distribution:
         """
         Register this distribution as a named variable in the active PyMC model.
 
@@ -181,7 +189,7 @@ class NeuralRatioDistribution:
         *args :
             Distribution parameters passed positionally, in the order
             given by ``param_names``.
-        observed : array-like or None, optional
+        observed : array-like
             Observed data to condition on.
         **kwargs :
             Distribution parameters passed by keyword.  Cannot be mixed
@@ -192,14 +200,31 @@ class NeuralRatioDistribution:
         pm.Distribution
             A ``pm.CustomDist`` node wired into the active PyMC model.
         """
+
+        if observed is None:
+            raise ValueError("NeuralRatioDistribution requires observed data.")
+
         params = self._prepare_params(args, kwargs)
 
         if self.exchangeable:
-            # Each element of `observed` is an independent scalar draw
+            # Always use scalar output signature regardless of obs dimensionality.
+            # PyTensor's _supp_shape_from_params cannot infer a named dimension (d)
+            # when no input parameter carries that shape — using "->(d)" in the
+            # output causes NotImplementedError on the current PyMC/PyTensor stack.
+            # With "->()" (ndim_supp=0) PyMC sets shape=observed.shape on the RV
+            # and does not call _supp_shape_from_params at all.
+            # Our logp receives the full (n_obs, d) value tensor, vmaps over
+            # axis-0 (trials), and returns (n_obs,) per-trial log-ratios which
+            # PyMC sums to give the correct total log-likelihood.
             signature = ",".join(["()"] * len(self.param_names)) + "->()"
         else:
-            # The whole `observed` array is a single joint observation
-            signature = "(n)," + ",".join(["()"] * len(self.param_names)) + "->()"
+            # The whole `observed` array is a single joint observation.
+            # Use generic dimension names matching the actual data ndim so no
+            # shape is assumed — the network decides what it can consume.
+            ndim = np.asarray(observed).ndim
+            dim_names = [chr(ord("m") + i) for i in range(ndim)]  # "m","n","o",...
+            data_core = "(" + ",".join(dim_names) + ")"
+            signature = data_core + "," + ",".join(["()"] * len(self.param_names)) + "->()"
 
         custom_kwargs = {
             "logp": self.logp,

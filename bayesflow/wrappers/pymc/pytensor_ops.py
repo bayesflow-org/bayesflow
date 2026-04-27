@@ -21,10 +21,15 @@ class RatioLogpVJPOp(Op):
     logp_vjp_jit : Callable
         A JIT-compiled function ``(data, *params, gz) -> tuple[array, ...]``
         that evaluates the VJP of the log-ratio with respect to ``params``.
+    logp_vjp_nojit : Callable, optional
+        Non-JIT version of the same function, used by JAX-backend samplers
+        (numpyro, blackjax) via ``jax_funcify``.  Falls back to
+        ``logp_vjp_jit`` when not provided.
     """
 
-    def __init__(self, logp_vjp_jit: Callable):
+    def __init__(self, logp_vjp_jit: Callable, logp_vjp_nojit: Callable = None):
         self.logp_vjp_jit = logp_vjp_jit
+        self.logp_vjp_nojit = logp_vjp_nojit if logp_vjp_nojit is not None else logp_vjp_jit
 
     def make_node(self, data, *dist_params, gz):
         data = pt.as_tensor_variable(data)

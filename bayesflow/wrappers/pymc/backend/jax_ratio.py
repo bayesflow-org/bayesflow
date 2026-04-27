@@ -13,6 +13,19 @@ def ratio_logp_op_jax_funcify(op, **kwargs):
     return op.logp_nojit
 
 
+@jax_funcify.register(RatioLogpVJPOp)
+def ratio_logp_vjp_op_jax_funcify(op, **kwargs):
+    # logp_vjp_nojit signature: (data, *params, gz) -> tuple[grad_per_param]
+    # jax_funcify receives positional args in make_node order: [data, *params, gz]
+    logp_vjp_nojit = op.logp_vjp_nojit
+
+    def logp_vjp(*args):
+        *data_and_params, gz = args
+        return logp_vjp_nojit(*data_and_params, gz=gz)
+
+    return logp_vjp
+
+
 class JAXRatio:
     """
     Owns the JAX single-trial log-ratio and the PyTensor Ops wrapping it.
@@ -40,9 +53,9 @@ class JAXRatio:
         self.exchangeable = exchangeable
 
         self.log_ratio = self.make_log_ratio()
-        self.logp_nojit, self.logp_jit, self.logp_vjp_jit = self.make_logp_functions()
+        self.logp_nojit, self.logp_jit, self.logp_vjp_nojit, self.logp_vjp_jit = self.make_logp_functions()
 
-        self.logp_vjp_op = RatioLogpVJPOp(self.logp_vjp_jit)
+        self.logp_vjp_op = RatioLogpVJPOp(self.logp_vjp_jit, self.logp_vjp_nojit)
         self.logp_op = RatioLogpOp(
             logp_jit=self.logp_jit,
             logp_nojit=self.logp_nojit,
@@ -79,7 +92,7 @@ class JAXRatio:
 
         return log_ratio
 
-    def make_logp_functions(self) -> tuple[Callable, Callable, Callable]:
+    def make_logp_functions(self) -> tuple[Callable, Callable, Callable, Callable]:
         """
         Build the JIT-compiled log-ratio and its VJP.
 
@@ -89,9 +102,13 @@ class JAXRatio:
             ``(data, *params) -> array`` — (vmapped) log-ratio without JIT.
         logp_jit : Callable
             JIT-compiled version of ``logp_nojit``.
+        logp_vjp_nojit : Callable
+            Non-JIT ``(data, *params, gz) -> tuple[array, ...]`` that returns
+            the VJP with respect to ``params``.  Used by the JAX-backend
+            ``jax_funcify`` path (numpyro / blackjax samplers).
         logp_vjp_jit : Callable
-            JIT-compiled ``(data, *params, gz) -> tuple[array, ...]`` that
-            returns the VJP of ``logp_nojit`` with respect to ``params``.
+            JIT-compiled version of ``logp_vjp_nojit``.  Used by the
+            pytensor C/Python backend ``perform()`` path.
 
         Notes
         -----
@@ -117,4 +134,4 @@ class JAXRatio:
 
         logp_vjp_jit = jit(logp_vjp_nojit)
 
-        return logp_nojit, logp_jit, logp_vjp_jit
+        return logp_nojit, logp_jit, logp_vjp_nojit, logp_vjp_jit

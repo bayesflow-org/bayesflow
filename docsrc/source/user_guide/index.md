@@ -10,11 +10,11 @@
 introduction
 simulators.ipynb
 data_processing.ipynb
+approximators.ipynb
 summary_networks.ipynb
 inference_networks.ipynb
-approximators.ipynb
 workflows.ipynb
-datasets.ipynb
-diagnostics.ipynb
 saving_loading.ipynb
+diagnostics.ipynb
+datasets.ipynb
 ```

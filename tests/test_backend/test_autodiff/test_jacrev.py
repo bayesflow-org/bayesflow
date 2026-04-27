@@ -63,78 +63,80 @@ def test_jacrev_unary_vector(fn_unary_vector, jit_compile):
     assert keras.ops.shape(jac) == keras.ops.shape(x)
 
 
-def test_jacrev_binary_scalars(fn_binary_scalars, jit_compile):
+def test_jacrev_binary_scalars(fn_binary_scalars, jit_compile, subtests):
     if jit_compile and keras.backend.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     x = keras.random.uniform(())
     y = keras.random.uniform(())
 
-    # Test with single argnums
-    jac_fn = jacrev(fn_binary_scalars, argnums=0)
+    with subtests.test("Single argnums=0"):
+        jac_fn = jacrev(fn_binary_scalars, argnums=0)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac), f"{type(jac)=!r}"
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac), f"{type(jac)=!r}"
 
-    jac_fn = jacrev(fn_binary_scalars, argnums=1)
+    with subtests.test("Single argnums=1"):
+        jac_fn = jacrev(fn_binary_scalars, argnums=1)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac), f"{type(jac)=!r}"
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac), f"{type(jac)=!r}"
 
-    # Test with multiple argnums
-    jac_fn = jacrev(fn_binary_scalars, argnums=(0, 1))
+    with subtests.test("Multi argnums=(0, 1)"):
+        jac_fn = jacrev(fn_binary_scalars, argnums=(0, 1))
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jacs = jac_fn(x, y)
-    assert isinstance(jacs, tuple), f"{type(jac)=!r}"
-    assert len(jacs) == 2, f"{len(jacs)=!r}"
-    assert keras.ops.is_tensor(jacs[0]), f"{type(jacs[0])=!r}"
-    assert keras.ops.is_tensor(jacs[1]), f"{type(jacs[1])=!r}"
+        jacs = jac_fn(x, y)
+        assert isinstance(jacs, tuple), f"{type(jac)=!r}"
+        assert len(jacs) == 2, f"{len(jacs)=!r}"
+        assert keras.ops.is_tensor(jacs[0]), f"{type(jacs[0])=!r}"
+        assert keras.ops.is_tensor(jacs[1]), f"{type(jacs[1])=!r}"
 
 
-def test_jacrev_binary_vectors(fn_binary_vectors, jit_compile):
+def test_jacrev_binary_vectors(fn_binary_vectors, jit_compile, subtests):
     if jit_compile and keras.backend.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     x = keras.random.uniform((2,))
     y = keras.random.uniform((2,))
 
-    # Test with single argnums
-    jac_fn = jacrev(fn_binary_vectors, argnums=0)
+    with subtests.test("Single argnums=0"):
+        jac_fn = jacrev(fn_binary_vectors, argnums=0)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac)
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac)
 
-    jac_fn = jacrev(fn_binary_vectors, argnums=1)
+    with subtests.test("Single argnums=1"):
+        jac_fn = jacrev(fn_binary_vectors, argnums=1)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac)
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac)
 
-    # Test with multiple argnums
-    jac_fn = jacrev(fn_binary_vectors, argnums=(0, 1))
+    with subtests.test("Multi argnums=(0, 1)"):
+        jac_fn = jacrev(fn_binary_vectors, argnums=(0, 1))
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert isinstance(jac, tuple)
-    assert len(jac) == 2
-    assert keras.ops.is_tensor(jac[0])
-    assert keras.ops.is_tensor(jac[1])
+        jac = jac_fn(x, y)
+        assert isinstance(jac, tuple)
+        assert len(jac) == 2
+        assert keras.ops.is_tensor(jac[0])
+        assert keras.ops.is_tensor(jac[1])
 
 
 def test_jacrev_jacfwd_consistency(fn_unary_vector, jit_compile):

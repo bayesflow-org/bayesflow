@@ -53,72 +53,74 @@ def test_jacfwd_unary_vector(fn_unary_vector, jit_compile):
     assert keras.ops.shape(jac) == keras.ops.shape(x)
 
 
-def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile):
+def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile, subtests):
     x = keras.random.uniform(())
     y = keras.random.uniform(())
 
-    # Test with single argnums
-    jac_fn = jacfwd(fn_binary_scalars, argnums=0)
+    with subtests.test("Single argnums=0"):
+        jac_fn = jacfwd(fn_binary_scalars, argnums=0)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac)
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac)
 
-    jac_fn = jacfwd(fn_binary_scalars, argnums=1)
+    with subtests.test("Single argnums=1"):
+        jac_fn = jacfwd(fn_binary_scalars, argnums=1)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac)
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac)
 
-    # Test with multiple argnums
-    jac_fn = jacfwd(fn_binary_scalars, argnums=(0, 1))
+    with subtests.test("Multi argnums=(0, 1)"):
+        jac_fn = jacfwd(fn_binary_scalars, argnums=(0, 1))
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jacs = jac_fn(x, y)
-    assert isinstance(jacs, tuple)
-    assert len(jacs) == 2
-    assert keras.ops.is_tensor(jacs[0])
-    assert keras.ops.is_tensor(jacs[1])
+        jacs = jac_fn(x, y)
+        assert isinstance(jacs, tuple)
+        assert len(jacs) == 2
+        assert keras.ops.is_tensor(jacs[0])
+        assert keras.ops.is_tensor(jacs[1])
 
 
-def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile):
+def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile, subtests):
     x = keras.random.uniform((2,))
     y = keras.random.uniform((2,))
 
-    # Test with single argnums
-    jac_fn = jacfwd(fn_binary_vectors, argnums=0)
+    with subtests.test("Single argnums=0"):
+        jac_fn = jacfwd(fn_binary_vectors, argnums=0)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac)
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac)
 
-    jac_fn = jacfwd(fn_binary_vectors, argnums=1)
+    with subtests.test("Single argnums=1"):
+        jac_fn = jacfwd(fn_binary_vectors, argnums=1)
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jac = jac_fn(x, y)
-    assert keras.ops.is_tensor(jac)
+        jac = jac_fn(x, y)
+        assert keras.ops.is_tensor(jac)
 
-    # Test with multiple argnums
-    jac_fn = jacfwd(fn_binary_vectors, argnums=(0, 1))
+    with subtests.test("Multi argnums=(0, 1)"):
+        jac_fn = jacfwd(fn_binary_vectors, argnums=(0, 1))
 
-    if jit_compile:
-        jac_fn = jit(jac_fn)
+        if jit_compile:
+            jac_fn = jit(jac_fn)
 
-    jacs = jac_fn(x, y)
-    assert isinstance(jacs, tuple)
-    assert len(jacs) == 2
-    assert keras.ops.is_tensor(jacs[0])
-    assert keras.ops.is_tensor(jacs[1])
+        jacs = jac_fn(x, y)
+        assert isinstance(jacs, tuple)
+        assert len(jacs) == 2
+        assert keras.ops.is_tensor(jacs[0])
+        assert keras.ops.is_tensor(jacs[1])
 
 
 def test_jacfwd_with_aux(jit_compile):

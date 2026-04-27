@@ -21,9 +21,6 @@ Examples
 >>> ratio_dist = RatioDistribution(approximator, param_names=["mu", "sigma"])  # doctest: +SKIP
 """
 
-"""
-Optional integrations with third-party libraries.
-"""
 from importlib import import_module
 from bayesflow.utils.logging import warning
 

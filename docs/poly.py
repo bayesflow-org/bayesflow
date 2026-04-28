@@ -76,7 +76,7 @@ V2_BACKEND_DEPS = [
 
 VENV_DIR_NAME = ".docs_venvs"
 
-#src = Path(SOURCE_DIR)
+src = Path(SOURCE_DIR)
 #legacy_src = Path(LEGACY_SOURCE_DIR)
 async def docs_layout_predicate(repo: Path, ref: GitRef) -> bool:
     has_new = await file_exists(repo, ref, Path(SOURCE_DIR) / "source")

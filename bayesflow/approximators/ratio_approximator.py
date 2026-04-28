@@ -38,8 +38,8 @@ class RatioApproximator(Approximator):
         Odds or of any pair being drawn dependently to completely independently.
         Default is 1.
     K: int, optional
-        Number of parameter candidates used for contrastive learning.
-        Default is 5.
+        Number of parameter candidates used for contrastive learning. Good performance is
+        typically observed for values close to batch_size / 2. Default is 5.
     standardize : str | Sequence[str] | None
         The variables to standardize before passing to the networks. Can be either
         "all" or any subset of ["inference_variables", "inference_conditions", "summary_variables"].
@@ -273,19 +273,34 @@ class RatioApproximator(Approximator):
         return base_config | serialize(config)
 
     def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
-        """Samples K batches of inference variables with replacement. Ensures
-        that no self-sampling occurs (i.e., all samples are negative examples)."""
+        """Samples K distinct negative examples from the batch for each item.
+
+        Sampling is done without replacement and excludes self-sampling, i.e.,
+        for each batch item i, all sampled indices are distinct and different
+        from i.
+
+        Requires K <= batch_size - 1.
+        """
         B = keras.ops.shape(inference_variables)[0]
 
-        r = keras.random.randint(
-            shape=(B, self.K),
-            minval=0,
-            maxval=B - 1,
-            dtype="int32",
+        if isinstance(B, int) and self.K > B - 1:
+            raise ValueError(
+                f"Cannot sample K={self.K} negatives without replacement from batch_size={B}. Need K <= batch_size - 1."
+            )
+
+        # Random scores for every possible pair (anchor i, candidate j).
+        scores = keras.random.uniform(
+            shape=(B, B),
+            dtype="float32",
             seed=self.seed_generator,
         )
 
-        i = keras.ops.expand_dims(keras.ops.arange(B, dtype="int32"), axis=1)
-        idx = r + keras.ops.cast(r >= i, "int32")
+        # Prevent self-sampling by making diagonal entries impossible to select.
+        # Since scores are in [0, 1), subtracting 2 makes diagonal entries < -1.
+        diagonal = keras.ops.eye(B, dtype=scores.dtype)
+        scores = scores - 2.0 * diagonal
+
+        # Top-K random scores are a uniform sample without replacement.
+        _, idx = keras.ops.top_k(scores, k=self.K)
 
         return keras.ops.take(inference_variables, idx, axis=0)

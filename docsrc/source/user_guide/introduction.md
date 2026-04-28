@@ -62,6 +62,6 @@ BayesFlow is useful because it gives you a complete, flexible workflow for amort
 
 ## Further Reading
 
-- Read our [software white paper](https://arxiv.org/abs/2602.07098) for a deeper overview of the project’s design, methodology, and implementation.
-- Explore our [diffusion model tutorial review](https://arxiv.org/abs/2512.20685) for background and banchmarks on diffusion-based methods.
+- Read our [software paper](https://arxiv.org/abs/2602.07098) for a deeper overview of the project’s design, methodology, and implementation.
+- Explore our [diffusion model tutorial review](https://arxiv.org/abs/2512.20685) for background and benchmarks on diffusion-based methods.
 - Browse the [bayesflow-org GitHub organization](https://github.com/bayesflow-org) for application-specific repositories and examples.

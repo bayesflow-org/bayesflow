@@ -16,7 +16,7 @@ docs/_build/
 docs/_build_polyversion
 docs/.docs_venvs
 docs/source/api/*
-!docs/source/api/index.rst
+!docs/source/api/bayesflow.rst
 docs/source/contributing.md
 examples/checkpoints/
 

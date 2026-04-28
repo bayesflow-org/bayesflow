@@ -1,8 +1,7 @@
 # Developer Documentation
 
 **Attention:** You are looking BayesFlow's developer documentation, which is
-aimed at people who want to extend or improve BayesFlow. For user documentation,
-please refer to the {doc}`../examples` and the {doc}`../api/bayesflow`.
+aimed at people who want to extend or improve BayesFlow. For user documentation.
 
 This section is work in progress, so if you read through the code base and
 encounter something that looks odd, but shows up in multiple places, please open
@@ -13,9 +12,8 @@ practice.
 
 ```{toctree}
 :maxdepth: 1
-:titlesonly:
-:numbered:
 
+contributing
 introduction
 pitfalls
 stages

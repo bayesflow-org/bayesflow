@@ -1,5 +1,13 @@
-About Us
-========
+About
+=====
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :titlesonly:
+
+   citing
+   acknowledgments
 
 Core maintainers
 ----------------

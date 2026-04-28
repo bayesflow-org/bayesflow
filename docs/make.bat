@@ -21,39 +21,42 @@ goto end
 
 :localdocs
 sphinx-polyversion --local poly.py
-echo.Copying docs to ../docs
-del /q /s ..\docs\*
-xcopy /y /s _build_polyversion\ ..\docs
-xcopy /y .nojekyll ..\docs\.nojekyll
-del /q /s _build_polyversion
+echo.Copying docs to build/html
+rmdir /q /s build\html
+mkdir build\html
+xcopy /y /s _build_polyversion\* build\html\
+xcopy /y .nojekyll build\html\.nojekyll
+rmdir /q /s _build_polyversion
 goto end
 
 :docssequential
 sphinx-polyversion --sequential poly.py
-echo.Copying docs to ../docs
-del /q /s ..\docs\*
-xcopy /y /s _build_polyversion\ ..\docs
-xcopy /y .nojekyll ..\docs\.nojekyll
-del /q /s _build_polyversion
+echo.Copying docs to build/html
+rmdir /q /s build\html
+mkdir build\html
+xcopy /y /s _build_polyversion\* build\html\
+xcopy /y .nojekyll build\html\.nojekyll
+rmdir /q /s _build_polyversion
 goto end
 
 :docs
 sphinx-polyversion poly.py
-echo.Copying docs to ../docs
-del /q /s ..\docs\*
-xcopy /y /s _build_polyversion\ ..\docs
-xcopy /y .nojekyll ..\docs\.nojekyll
-del /q /s _build_polyversion
+echo.Copying docs to build/html
+rmdir /q /s build\html
+mkdir build\html
+xcopy /y /s _build_polyversion\* build\html\
+xcopy /y .nojekyll build\html\.nojekyll
+rmdir /q /s _build_polyversion
 goto end
 
 :viewdocs
-echo.Serving the contents of '../docs'... (open the link below to view).
+echo.Serving the contents of 'build/html'... (open the link below to view).
 echo.Interrupt with Ctrl+C.
-python -m http.server -d ../docs -b 127.0.0.1 8090
+python -m http.server -d build/html -b 127.0.0.1 8090
 goto end
 
 :clean
-del /q /s ..\docs\*
+rmdir /q /s build\html
 rmdir /q /s _build
 rmdir /q /s %BUILDDIR%
 rmdir /q /s _build_polyversion

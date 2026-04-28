@@ -3,10 +3,10 @@ import json
 import logging
 import os
 from pathlib import Path
-from packaging.version import Version
 import shutil
 from subprocess import PIPE, CalledProcessError
 
+from packaging.version import Version
 from sphinx_polyversion.builder import BuildError
 from sphinx_polyversion.driver import DefaultDriver
 from sphinx_polyversion.pyvenv import Pip
@@ -19,14 +19,12 @@ import tempfile
 logging.basicConfig()
 logger = logging.getLogger("poly.py")
 
-
 def version_key(r):
     try:
         return (1, Version(r.name))
     except Exception:
         return (0, r.name)
-
-
+        
 # adapted from Pip
 class DynamicPip(Pip):
     def __init__(self, path: Path, name: str, venv: str | Path, *args, **kwargs):

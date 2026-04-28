@@ -17,9 +17,15 @@ try:
     from sphinx_polyversion.git import GitRef
     from sphinx_polyversion.api import LoadError
 
-    USE_POLYVERSION = True
-    data = load(globals())
-    current = data["current"].name
+    try:
+        USE_POLYVERSION = True
+        data = load(globals())
+        current = data["current"].name
+    except LoadError:
+        USE_POLYVERSION = False
+        print("sphinx_polyversion data not available, building single version")
+        current = "local"
+
 except ImportError:
     USE_POLYVERSION = False
     print("sphinx_polyversion not installed, building single version")
@@ -27,7 +33,6 @@ except ImportError:
 
 sys.path.insert(0, os.path.abspath("../.."))
 sys.path.insert(0, os.path.abspath("sphinxext"))
-
 # might set copyright end to wrong year -> remove
 if "SOURCE_DATE_EPOCH" in os.environ:
     del os.environ["SOURCE_DATE_EPOCH"]
@@ -37,8 +42,6 @@ if "SOURCE_DATE_EPOCH" in os.environ:
 project = "BayesFlow"
 author = "The BayesFlow authors"
 copyright = "2023-%Y, BayesFlow authors (lead maintainer: Stefan T. Radev)"
-version = current
-release = current
 
 
 # -- General configuration ---------------------------------------------------
@@ -63,8 +66,8 @@ extensions = [
 if not current.startswith("v1."):
     extensions.extend(
         [
-            "override_pst_pagetoc",  # local, see sphinxext folder
-            "adapt_autodoc_docstring",  # local, see sphinxext folder
+            # "override_pst_pagetoc",  # local, see sphinxext folder
+            # "adapt_autodoc_docstring",  # local, see sphinxext folder
         ]
     )
 
@@ -127,6 +130,8 @@ if current.startswith("v1."):
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
+
+html_extra_path = [os.path.abspath("../../examples")]
 html_theme = "pydata_sphinx_theme"
 html_title = "BayesFlow: Amortized Bayesian Inference"
 
@@ -134,14 +139,15 @@ html_title = "BayesFlow: Amortized Bayesian Inference"
 # relative to this directory. They are copied after the builtin _static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_css_files = ["custom.css"]
+html_css_files = ["css/custom.css"]
 html_show_sourcelink = False
+header_links_before_dropdown = 6
 html_theme_options = {
-    "use_edit_page_button": True,
+    "use_edit_page_button": False,
     "logo": {
         "alt-text": "BayesFlow",
-        "image_light": "_static/bayesflow_hor.png",
-        "image_dark": "_static/bayesflow_hor_dark.png",
+        "image_light": "_static/img/bayesflow_hor.png",
+        "image_dark": "_static/img/bayesflow_hor_dark.png",
     },
     "icon_links_label": "Icon Links",
     "icon_links": [
@@ -171,17 +177,16 @@ html_theme_options = {
         "version_match": current,
     },
     "check_switcher": False,
-    "show_version_warning_banner": True,
 }
 html_context = {
     "github_url": "https://github.com",  # or your GitHub Enterprise site
     "github_user": "bayesflow-org",
     "github_repo": "bayesflow",
     "github_version": current,
-    "doc_path": "docsrc/source",
+    "doc_path": "docs/source",
 }
-html_logo = "_static/bayesflow_hor.png"
-html_favicon = "_static/bayesflow_hex.ico"
+html_logo = "_static/img/bayesflow_hor.png"
+html_favicon = "_static/img/bayesflow_hex.ico"
 html_baseurl = "https://www.bayesflow.org/"
 
 todo_include_todos = True
@@ -200,7 +205,7 @@ suppress_warnings = [
 
 remove_from_toctrees = ["_autosummary/*"]
 
-autosummmary_generate = True
+autosummary_generate = True
 
 # versioning data for template
 if USE_POLYVERSION:

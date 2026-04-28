@@ -41,7 +41,7 @@ jobs:
 
       - name: Make the Sphinx docs
         run: |
-          cd ./repo/docsrc
+          cd ./repo/docs
           make clean
           make production-docs-sequential
 

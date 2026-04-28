@@ -29,10 +29,10 @@ jobs:
           python -m pip install jax
       - name: Make docs from local state
         run: |
-          cd ./docsrc
+          cd ./docs
           make clean
           make local-docs
       - name: Clean up
         run: |
-          cd ./docsrc
+          cd ./docs
           make clean-all

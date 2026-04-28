@@ -90,8 +90,8 @@ be described analytically.
       Getting started
       ^^^
 
-      New to Bayesflow? Check out the Absolute Beginner's Guide. It contains an
-      introduction to Bayesflow's main concepts and links to additional tutorials.
+      New to Bayesflow? Start with the Absolute Beginner's Guide for the basics
+      and links to tutorials.
 
       +++
 
@@ -109,8 +109,7 @@ be described analytically.
       User guide
       ^^^
 
-      The user guide provides in-depth information on the
-      key concepts of Bayesflow with useful background information and explanation.
+      The user guide explains Bayesflow’s key concepts with helpful background details.
 
       +++
 
@@ -128,10 +127,7 @@ be described analytically.
       API reference
       ^^^
 
-      The reference guide contains a detailed description of the functions,
-      modules, and objects included in Bayesflow. The reference describes how the
-      methods work and which parameters can be used. It assumes that you have an
-      understanding of the key concepts.
+      The reference guide details Bayesflow’s functions, modules, and objects, including how they work and available parameters. It assumes familiarity with the core concepts.
 
       +++
 

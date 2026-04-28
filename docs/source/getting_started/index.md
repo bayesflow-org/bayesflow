@@ -76,7 +76,31 @@ history = workflow.fit_online(epochs=20, batch_size=32, num_batches_per_epoch=20
 diagnostics = workflow.plot_default_diagnostics(test_data=300)
 ```
 
-For more examples and learning materials, see {doc}`Examples </examples/index>` and {doc}`Resources <resources>`.
+(getting-started-examples)=
+# Examples
+
+The tutorial notebooks are available in the repository-level `examples/` folder.
+
+
+## Tutorial notebooks
+
+1. [Bayesian Experimental Design](../_examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
+2. [Diffusion Models](../_examples/Diffusion_Models.ipynb) - A small tutorial on the power of diffusion models for SBI.
+3. [Ensembles](../_examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
+4. [From ABC to BayesFlow](../_examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+5. [From BayesFlow 1.1 to 2.0](../_examples/From_BayesFlow_1.1_to_2.0.ipynb) - Learn how to migrate from BayesFlow 1.1 to 2.0.
+6. [Likelihood Estimation](../_examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions.
+7. [Linear Regression Starter](../_examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
+8. [Lotka Volterra Point Estimation](../_examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
+9. [Multimodal Data](../_examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
+10. [One Sample TTest](../_examples/One_Sample_TTest.ipynb) - Learn Bayes factors using probabilistic classification.
+11. [Ratio Estimation](../_examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
+12. [SIR Posterior Estimation](../_examples/SIR_Posterior_Estimation.ipynb) - Model infectious diseases through an end-to-end Bayesian workflow.
+13. [Spatial Data and Parameters](../_examples/Spatial_Data_and_Parameters.ipynb) - Learn parameters from or generate image data.
+14. [Two Moons Starter](../_examples/Two_Moons_Starter.ipynb) - A simple starter example using the two moons benchmark.
+
+### Books
+Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bayesmodels.com/) by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
 
 ## Reporting Issues
 

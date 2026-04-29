@@ -167,13 +167,12 @@ def test_compute_metrics_with_masking(diffusion_model_with_masking, random_sampl
 
 
 @pytest.mark.slow
-def test_diffusion_guidance():
-    from bayesflow.networks import DiffusionModel
+def test_diffusion_guidance(simple_diffusion_model):
     from bayesflow import BasicWorkflow
     from bayesflow.simulators import TwoMoons
 
     workflow = BasicWorkflow(
-        inference_network=DiffusionModel(subnet_kwargs=dict(widths=(8, 8))),
+        inference_network=simple_diffusion_model,
         inference_variables=["parameters"],
         inference_conditions=["observables"],
         simulator=TwoMoons(),

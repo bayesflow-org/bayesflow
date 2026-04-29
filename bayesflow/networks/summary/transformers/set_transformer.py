@@ -132,8 +132,8 @@ class SetTransformer(Transformer):
         x               : Tensor (e.g., np.ndarray, tf.Tensor, ...)
             Input of shape (batch_size, set_size, input_dim)
         training        : boolean, optional (default - False)
-            Passed to the optional internal dropout and spectral normalization
-            layers to distinguish between train and test time behavior.
+            Passed to the optional internal dropout and norm layers to distinguish
+            between train and test time behavior.
         attention_mask  : a boolean mask of shape `(B, T, T)`, that prevents
             attention to certain positions. The boolean mask specifies which
             query elements can attend to which key elements, 1 indicates

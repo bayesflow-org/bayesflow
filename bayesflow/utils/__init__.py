@@ -2,6 +2,8 @@
 A collection of utility functions, mostly used for internal purposes.
 """
 
+from .keras_utils import resolve_seed
+
 from . import (
     keras_utils,
     logging,
@@ -97,6 +99,7 @@ from .tensor_utils import (
     random_mask,
     randomly_mask_along_axis,
     searchsorted,
+    linsolve_batched,
     size_of,
     stack_valid,
     tile_axis,

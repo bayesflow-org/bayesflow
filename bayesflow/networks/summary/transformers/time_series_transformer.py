@@ -122,7 +122,7 @@ class TimeSeriesTransformer(Transformer):
         x               : Tensor
             Input of shape (batch_size, sequence_length, input_dim)
         training        : boolean, optional (default - False)
-            Passed to the optional internal dropout and spectral normalization
+            Passed to the optional internal dropout and norm
             layers to distinguish between train and test time behavior.
         attention_mask  : a boolean mask of shape `(B, T, T)`, that prevents
             attention to certain positions. The boolean mask specifies which

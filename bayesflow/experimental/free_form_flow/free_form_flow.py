@@ -38,7 +38,6 @@ class FreeFormFlow(InferenceNetwork):
         "kernel_initializer": "he_normal",
         "residual": True,
         "dropout": 0.0,
-        "spectral_normalization": False,
     }
 
     DECODER_MLP_DEFAULT_CONFIG = {
@@ -47,7 +46,6 @@ class FreeFormFlow(InferenceNetwork):
         "kernel_initializer": "he_normal",
         "residual": True,
         "dropout": 0.0,
-        "spectral_normalization": False,
     }
 
     def __init__(
@@ -140,6 +138,7 @@ class FreeFormFlow(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        kwargs.pop("seed", None)  # forward pass is deterministic; seed only used for base distribution
         if density:
             z, jac = jacobian(
                 lambda inp: self.encode(inp, conditions=conditions, training=training, **kwargs), x, return_output=True
@@ -155,6 +154,7 @@ class FreeFormFlow(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        kwargs.pop("seed", None)  # inverse pass is deterministic; seed only used for base distribution
         if density:
             x, jac = jacobian(
                 lambda inp: self.decode(inp, conditions=conditions, training=training, **kwargs), z, return_output=True

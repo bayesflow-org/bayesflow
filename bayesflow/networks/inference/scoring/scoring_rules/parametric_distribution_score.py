@@ -19,7 +19,7 @@ class ParametricDistributionScore(ScoringRule):
     def log_prob(self, *args, **kwargs):
         raise NotImplementedError
 
-    def sample(self, *args, **kwargs):
+    def sample(self, batch_shape, seed=None, **kwargs):
         raise NotImplementedError
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:

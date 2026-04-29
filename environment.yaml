@@ -4,8 +4,8 @@ channels:
 dependencies:
   - jupyter
   - jupyterlab
-  - keras ~= 3.9.0
-  - numpy ~= 1.26
+  - keras
+  - numpy
   - matplotlib
   - pre-commit
   - pytest

@@ -75,6 +75,7 @@ class Sampler:
         conditions: Tensor | None = None,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Sequence[int] | int = "infer",
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         if conditions is None:
@@ -83,6 +84,7 @@ class Sampler:
                 num_samples=num_samples,
                 conditions=None,
                 sample_shape=sample_shape,
+                seed=seed,
                 **kwargs,
             )
 
@@ -103,6 +105,7 @@ class Sampler:
                 num_samples=num_samples,
                 conditions=batch_conditions,
                 sample_shape=sample_shape,
+                seed=seed,
                 **batch_kwargs,
             )
             batches.append(batch_samples)
@@ -116,6 +119,7 @@ class Sampler:
         num_samples: int,
         conditions: Tensor | None,
         sample_shape: Literal["infer"] | Sequence[int] | int,
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         conditions = self.repeat_and_flatten_conditions(conditions, num_samples)
@@ -137,7 +141,7 @@ class Sampler:
         sample_shape = self.infer_sample_shape(conditions, sample_shape)
         batch_shape = batch_shape + sample_shape
 
-        samples = inference_network.sample(batch_shape, conditions=conditions, **kwargs)
+        samples = inference_network.sample(batch_shape, conditions=conditions, seed=seed, **kwargs)
 
         if conditions is not None:
             samples = self.unflatten_samples(samples, num_samples)

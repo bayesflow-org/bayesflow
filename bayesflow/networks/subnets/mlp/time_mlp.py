@@ -3,50 +3,52 @@ from typing import Literal, Callable, Sequence
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import concatenate_valid, layer_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serialize, serializable, deserialize
 
 from ...helpers import FourierEmbedding
-from ...helpers import ConditionalResidual
+from ...helpers import ConditionalDenseBlock
 
 
 @serializable("bayesflow.networks")
 class TimeMLP(keras.Layer):
-    """
-    Implements a time-conditioned multi-layer perceptron (MLP).
+    """Time-conditioned multi-layer perceptron with FiLM modulation.
 
-    The model processes three separate inputs: the state variable `x`, a scalar or vector-valued time input `t`,
-    and a conditioning variable `conditions`. The input and condition are projected into a shared feature space,
-    merged, and passed through a deep residual MLP. A learned time embedding is injected via FiLM at every hidden layer.
-
-    If `residual` is enabled, each layer includes a skip connection for improved gradient flow. The model also
-    supports dropout for regularization and spectral normalization for stability in learning smooth functions.
+    Processes three inputs: a state variable ``x``, a scalar or vector-valued
+    time ``t``, and an optional conditioning variable ``conditions``.  The input
+    and conditions are projected into a shared feature space, merged, and passed
+    through residual blocks.  A learned time embedding is injected via FiLM at
+    every hidden layer.
 
     Parameters
     ----------
     widths : Sequence[int], optional
-        Defines the number of hidden units per layer, as well as the number of layers to be used.
+        Number of hidden units per layer. Default is ``(256, 256)``.
     time_embedding_dim : int, optional
-        Dimensionality of the learned time embedding. Default is 32. If set to 1, no embedding is applied and
-        time is used directly.
+        Dimensionality of the learned time embedding. Default is ``32``.
+        Set to ``1`` to use time directly without embedding.
     time_emb : keras.Layer or None, optional
-        Custom time embedding layer. If None, a random Fourier feature embedding is used.
-    activation : str, optional
-        Activation function applied in the hidden layers, such as "mish". Default is "mish".
-    kernel_initializer : str, optional
-        Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
+        Custom time embedding layer. If ``None``, uses random Fourier features.
+    fourier_scale : float, optional
+        Frequency scaling for the default Fourier embedding. Default is ``30.0``.
+        Ignored when *time_emb* is provided.
+    activation : str or callable, optional
+        Activation function for hidden layers. Default is ``"mish"``.
+    kernel_initializer : str or keras.Initializer, optional
+        Weight initialization strategy. Default is ``"he_normal"``.
     residual : bool, optional
-        Whether to use residual connections for improved training stability. Default is True.
+        Whether to use residual connections. Default is ``True``.
     dropout : float or None, optional
-        Dropout rate applied within the MLP layers for regularization. Default is 0.05.
-    norm : str or keras.Layer, optional
-        Normalization applied after each hidden layer ("batch", "layer", or None). Default is "layer".
-    spectral_normalization : bool, optional
-        Whether to apply spectral normalization to dense layers. Default is False.
-    merge : str, optional
-        Method to merge input and condition if available ("add" or "concat"). Default is "concat".
+        Dropout rate for regularization. Default is ``0.05``.
+    norm : ``"batch"``, ``"layer"``, ``"rms"``, keras.Layer, or None, optional
+        Normalization applied after each hidden layer. Default is ``"layer"``.
+    merge : ``"add"`` or ``"concat"``, optional
+        How to merge input and conditions (``"add"`` or ``"concat"``).
+        Default is ``"concat"``.
+    film_use_gamma : bool, optional
+        Whether film uses a learnable gamma. Default is ``False``.
     **kwargs
-        Additional keyword arguments passed to `keras.Layer`.
+        Additional keyword arguments passed to ``keras.Layer``.
     """
 
     def __init__(
@@ -55,32 +57,33 @@ class TimeMLP(keras.Layer):
         *,
         time_embedding_dim: int = 32,
         time_emb: keras.Layer | None = None,
+        fourier_scale: float = 30.0,
         activation: str | Callable[[], keras.Layer] = "mish",
         kernel_initializer: str | keras.Initializer = "he_normal",
         residual: bool = True,
         dropout: Literal[0, None] | float = 0.05,
-        norm: Literal["batch", "layer"] | keras.Layer = "layer",
-        spectral_normalization: bool = False,
+        norm: Literal["batch", "layer", "rms"] | keras.Layer = "layer",
         merge: Literal["add", "concat"] = "concat",
+        film_use_gamma: bool = False,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
 
-        self.widths = list(widths)
-        self.time_embedding_dim = int(time_embedding_dim)
+        if len(widths) == 0:
+            raise ValueError("TimeMLP requires at least one hidden width.")
+        if merge not in ("add", "concat"):
+            raise ValueError(f"Unknown merge mode: {merge!r} (expected 'add' or 'concat').")
+
+        self.widths = widths
+        self.time_embedding_dim = time_embedding_dim
+        self.fourier_scale = fourier_scale
         self.activation = activation
         self.kernel_initializer = kernel_initializer
         self.residual = residual
         self.dropout = dropout
         self.norm = norm
-        self.spectral_normalization = spectral_normalization
         self.merge = merge
-
-        if self.merge not in ("add", "concat"):
-            raise ValueError(f"Unknown merge mode: {self.merge!r} (expected 'add' or 'concat').")
-
-        if len(self.widths) == 0:
-            raise ValueError("TimeMLP requires at least one hidden width.")
+        self.film_use_gamma = film_use_gamma
 
         # Time embedding
         if time_emb is None:
@@ -89,7 +92,7 @@ class TimeMLP(keras.Layer):
             else:
                 self.time_emb = FourierEmbedding(
                     embed_dim=self.time_embedding_dim,
-                    scale=kwargs.pop("fourier_scale", 30.0),
+                    scale=self.fourier_scale,
                     include_identity=True,
                 )
         else:
@@ -99,26 +102,95 @@ class TimeMLP(keras.Layer):
         self.x_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="x_proj")
         self.c_proj = None
         self.merge_proj = None
-        act = keras.activations.get(activation)
 
-        if not isinstance(act, keras.Layer):
-            act = keras.layers.Activation(act)
+        activation = keras.activations.get(activation)
+        if not isinstance(activation, keras.Layer):
+            activation = keras.layers.Activation(activation)
+        self.activation = activation
 
-        self.act = act
-
+        # Time-conditional blocks using film
         self.blocks = [
-            ConditionalResidual(
+            ConditionalDenseBlock(
                 width=width,
                 activation=activation,
                 kernel_initializer=kernel_initializer,
                 residual=residual,
                 dropout=dropout,
                 norm=norm,
-                spectral_normalization=spectral_normalization,
-                **kwargs,
+                film_use_gamma=film_use_gamma,
             )
             for width in self.widths
         ]
+
+    def call(
+        self,
+        inputs: tuple[Tensor, Tensor, Tensor | None],
+        training: bool = None,
+    ) -> Tensor:
+        x, t, conditions = inputs
+        h = self.x_proj(x)
+
+        if conditions is not None and self.c_proj is not None:
+            hc = self.c_proj(conditions)
+            if self.merge == "concat":
+                h = keras.ops.concatenate([h, hc], axis=-1)
+            else:
+                h = h + hc
+            h = self.merge_proj(self.activation(h))
+        h = self.activation(h)
+
+        t_emb = self.time_emb(t)
+
+        for block in self.blocks:
+            h = block((h, t_emb), training=training)
+
+        return h
+
+    def build(self, input_shape):
+        if self.built:
+            return
+
+        x_shape, t_shape, conditions_shape = input_shape
+
+        # Time embedding
+        self.time_emb.build(t_shape)
+        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
+
+        # Input projection
+        self.x_proj.build(x_shape)
+        h_shape = self.x_proj.compute_output_shape(x_shape)
+
+        # Condition projection and merge
+        if conditions_shape is not None:
+            self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="c_proj")
+            self.c_proj.build(conditions_shape)
+
+            if self.merge == "concat":
+                merge_shape = list(h_shape)
+                merge_shape[-1] = merge_shape[-1] + self.widths[0]
+                merge_shape = tuple(merge_shape)
+            else:
+                merge_shape = h_shape
+
+            self.merge_proj = keras.layers.Dense(
+                self.widths[0], kernel_initializer=self.kernel_initializer, name="merge_proj"
+            )
+            self.merge_proj.build(merge_shape)
+
+        # Time-conditional blocks
+        for block in self.blocks:
+            block.build((h_shape, t_emb_shape))
+            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
+
+    def compute_output_shape(self, input_shape):
+        x_shape, t_shape, conditions_shape = input_shape
+        h_shape = self.x_proj.compute_output_shape(x_shape)
+        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
+
+        for block in self.blocks:
+            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
+
+        return h_shape
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -132,79 +204,13 @@ class TimeMLP(keras.Layer):
             "widths": self.widths,
             "time_embedding_dim": self.time_embedding_dim,
             "time_emb": self.time_emb,
+            "fourier_scale": self.fourier_scale,
             "activation": self.activation,
             "kernel_initializer": self.kernel_initializer,
             "residual": self.residual,
             "dropout": self.dropout,
             "norm": self.norm,
-            "spectral_normalization": self.spectral_normalization,
             "merge": self.merge,
+            "film_use_gamma": self.film_use_gamma,
         }
         return base_config | serialize(config)
-
-    def build(self, input_shape):
-        if self.built:
-            return
-
-        x_shape, t_shape, conditions_shape = input_shape
-        self.time_emb.build(t_shape)
-        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
-
-        # Merge / input pathway
-        self.x_proj.build(x_shape)
-        h_shape = self.x_proj.compute_output_shape(x_shape)
-        if conditions_shape is not None:
-            self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="c_proj")
-            self.c_proj.build(conditions_shape)
-            if self.merge == "concat":
-                merge_shape = list(h_shape)
-                merge_shape[-1] = merge_shape[-1] + self.widths[0]
-                merge_shape = tuple(merge_shape)
-            else:
-                merge_shape = h_shape
-            self.merge_proj = keras.layers.Dense(
-                self.widths[0], kernel_initializer=self.kernel_initializer, name="merge_proj"
-            )
-            self.merge_proj.build(merge_shape)
-
-        # Conditional residual blocks
-        for block in self.blocks:
-            block.build((h_shape, t_emb_shape))
-            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
-
-        super().build(input_shape)
-
-    def compute_output_shape(self, input_shape):
-        x_shape, t_shape, conditions_shape = input_shape
-        h_shape = self.x_proj.compute_output_shape(x_shape)
-        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
-
-        for block in self.blocks:
-            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
-
-        return h_shape
-
-    def call(
-        self,
-        inputs: tuple[Tensor, Tensor, Tensor] | tuple[Tensor, Tensor, None],
-        training: bool = None,
-        mask: Tensor = None,
-    ) -> Tensor:
-        x, t, conditions = inputs
-        h = self.x_proj(x)
-
-        if conditions is not None:
-            hc = self.c_proj(conditions)
-            if self.merge == "concat":
-                h = concatenate_valid([h, hc], axis=-1)
-            else:
-                h = h + hc
-            h = self.merge_proj(self.act(h))
-        h = self.act(h)
-
-        t_emb = self.time_emb(t)
-
-        for block in self.blocks:
-            h = block((h, t_emb), training=training)
-
-        return h

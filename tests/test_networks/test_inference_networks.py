@@ -23,7 +23,7 @@ def test_build(inference_network, random_samples, random_conditions):
 
 
 def test_variable_batch_size(inference_network, random_samples, random_conditions):
-    from bayesflow.networks import ScoringRuleNetwork, ConsistencyModel
+    from bayesflow.networks import ScoringRuleNetwork, ConsistencyModel, StableConsistencyModel
 
     # build with one batch size
     samples_shape = keras.ops.shape(random_samples)
@@ -39,7 +39,7 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
         else:
             new_conditions = keras.ops.zeros((bs,) + keras.ops.shape(random_conditions)[1:])
 
-        if isinstance(inference_network, ConsistencyModel):
+        if isinstance(inference_network, (ConsistencyModel, StableConsistencyModel)):
             # consistency models don't implement .forward
             with pytest.raises(NotImplementedError):
                 inference_network(new_input, conditions=new_conditions)

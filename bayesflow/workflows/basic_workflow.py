@@ -15,7 +15,7 @@ from bayesflow.networks import InferenceNetwork, ScoringRuleNetwork, SummaryNetw
 from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ContinuousApproximator, ScoringRuleApproximator
-from bayesflow.types import Shape
+from bayesflow.types import Shape, Tensor
 from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration, filter_kwargs
 from bayesflow.diagnostics import metrics as bf_metrics
 from bayesflow.diagnostics import plots as bf_plots
@@ -44,7 +44,8 @@ class BasicWorkflow(Workflow):
     initial_learning_rate : float, optional
         Initial learning rate for the optimizer (default is 5e-4).
     optimizer : type, optional
-        The optimizer to be used for training. If None, a default Adam optimizer will be selected (default is None).
+        The optimizer to be used for training. If None, a default Adam optimizer will be selected for online
+        training and AdamW for offline / disk training (default is None).
     checkpoint_filepath : str, optional
         Directory path where model checkpoints will be saved (default is None).
     checkpoint_name : str, optional
@@ -116,11 +117,12 @@ class BasicWorkflow(Workflow):
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
         self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
         self.history = None
+        self._needs_compile = True
 
     def _init_optimizer(self, initial_learning_rate, optimizer, **kwargs):
         self.initial_learning_rate = initial_learning_rate
         if isinstance(optimizer, type):
-            self.optimizer = optimizer(initial_learning_rate, **kwargs.get("optimizer_kwargs", {}))
+            self.optimizer = optimizer(initial_learning_rate, **kwargs)
         else:
             self.optimizer = optimizer
 
@@ -137,14 +139,14 @@ class BasicWorkflow(Workflow):
             checkpoint_full_filepath = os.path.join(self.checkpoint_filepath, file_ext)
             if os.path.exists(checkpoint_full_filepath):
                 msg = (
-                    f"Checkpoint file exists: '{checkpoint_full_filepath}'.\n"
-                    "Existing checkpoints can _not_ be restored/loaded using this workflow. "
-                    "Upon refitting, the checkpoints will be overwritten."
+                    f"Checkpoint file exists: '{self.checkpoint_filepath}/{file_ext}'.\n"
+                    "Existing checkpoints are not automatically loaded. "
+                    "Upon refitting, the checkpoints will be overwritten.\n"
                 )
                 if not self.save_weights_only:
                     msg += (
-                        " To load the stored approximator from the checkpoint, "
-                        "use approximator = keras.saving.load_model(...)"
+                        """To load the stored approximator from the checkpoint, """
+                        f"""use approximator = keras.saving.load_model("{self.checkpoint_filepath}/{file_ext}")"""
                     )
 
                 logging.warning(msg)
@@ -455,11 +457,10 @@ class BasicWorkflow(Workflow):
             else:
                 kwargs["callbacks"] = [model_checkpoint_callback]
 
-        # returns None if no new optimizer was built and assigned to self.optimizer, which indicates we do not have
-        # to (re)compile the approximator.
-        optimizer = self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
-        if optimizer is not None:
+        self.build_optimizer(epochs, dataset.num_batches, strategy=strategy)
+        if self._needs_compile:
             self.approximator.compile(optimizer=self.optimizer, metrics=kwargs.pop("metrics", None))
+            self._needs_compile = False
 
         try:
             start_time = time.perf_counter()
@@ -473,6 +474,7 @@ class BasicWorkflow(Workflow):
         finally:
             if not keep_optimizer:
                 self.optimizer = None
+                self._needs_compile = True
 
     def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
         """
@@ -502,7 +504,7 @@ class BasicWorkflow(Workflow):
         """
 
         if self.optimizer is not None:
-            return
+            return self.optimizer
 
         total_steps = int(epochs * num_batches)
         warmup_steps = int(0.05 * epochs * num_batches)
@@ -584,6 +586,7 @@ class BasicWorkflow(Workflow):
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -611,6 +614,10 @@ class BasicWorkflow(Workflow):
             dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
             then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
             `(num_conditions, num_samples, time, target_dim)`.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), each component uses its own instance seed generator.
         **kwargs : dict | str, optional
             Additional keyword arguments passed to the approximator's sampling function.
 
@@ -624,6 +631,73 @@ class BasicWorkflow(Workflow):
         samples = self.approximator.sample(
             num_samples=num_samples,
             conditions=conditions,
+            split=split,
+            batch_size=batch_size,
+            sample_shape=sample_shape,
+            seed=seed,
+            **kwargs,
+        )
+        elapsed = time.perf_counter() - start_time
+        logging.info(f"Sampling completed in {format_duration(elapsed)}.")
+        return samples
+
+    def ancestral_sample(
+        self,
+        *,
+        conditions: Mapping[str, np.ndarray],
+        ancestral_conditions: Mapping[str, np.ndarray],
+        summaries: Tensor | np.ndarray | None = None,
+        split: bool = False,
+        batch_size: int | None = None,
+        sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
+        **kwargs,
+    ) -> dict[str, np.ndarray]:
+        """
+        Draws samples from the approximator given specified conditions and ancestral conditions.
+
+        Parameters
+        ----------
+        conditions : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the adapted simulated variables. Keys used as summary or inference
+            conditions during training should be present.
+            Should have shape (n_datasets, n_conditions, ...).
+        ancestral_conditions : dict[str, np.ndarray]
+            A dictionary where keys represent variable names and values are
+            NumPy arrays containing the ancestral conditions for sampling. These are used in ancestral sampling
+            scheme (e.g. a hierarchical model).
+            Should have shape (n_datasets, n_ancestral_conditions, ...).
+        summaries : Tensor | np.ndarray | None, optional
+            Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
+            of the conditions. Should have shape (n_datasets, n_conditions, ...).
+        split : bool, default=False
+            Whether to split the output arrays along the last axis and return one sample array per target variable.
+        batch_size : int or None, optional
+            If provided, the conditions are split into batches of size `batch_size`, for which samples are generated
+            sequentially. Can help with memory management for large sample sizes.
+        sample_shape : str or tuple of int, optional
+            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)
+            dimension. For example, use `(time,)` for time series or `(height, width)` for images.
+
+            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.
+            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural
+            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,
+            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape
+            `(num_conditions, num_samples, time, target_dim)`.
+        **kwargs : dict | str, optional
+            Additional keyword arguments passed to the approximator's sampling function.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            A dictionary where keys correspond to variable names and
+            values are arrays containing the generated samples.
+        """
+        start_time = time.perf_counter()
+        samples = self.approximator.ancestral_sample(
+            conditions=conditions,
+            ancestral_conditions=ancestral_conditions,
+            summary_outputs=summaries,
             split=split,
             batch_size=batch_size,
             sample_shape=sample_shape,
@@ -694,6 +768,7 @@ class BasicWorkflow(Workflow):
         self,
         test_data: Mapping[str, np.ndarray] | int,
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         **kwargs,
@@ -720,6 +795,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -749,7 +828,7 @@ class BasicWorkflow(Workflow):
             types, and values are the respective matplotlib Figure objects.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         figures = dict()
 
@@ -779,6 +858,7 @@ class BasicWorkflow(Workflow):
         test_data: Mapping[str, np.ndarray] | int,
         plot_fns: Mapping[str, Callable],
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         **kwargs,
@@ -804,6 +884,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -833,24 +917,18 @@ class BasicWorkflow(Workflow):
             types, and values are the respective matplotlib Figure objects.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         figures = dict()
         for key, plot_fn in plot_fns.items():
             figures[key] = plot_fn(samples, test_data, variable_keys=variable_keys, variable_names=variable_names)
         return figures
 
-    def plot_diagnostics(self, **kwargs):
-        logging.warning(
-            "This function will be deprecated in future versions. Please, use plot_default_diagnostics"
-            "or plot_custom_diagnositcs if you want to use your custom diagnostics."
-        )
-        return self.plot_default_diagnostics(**kwargs)
-
     def compute_default_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         as_data_frame: bool = True,
@@ -874,6 +952,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -904,7 +986,7 @@ class BasicWorkflow(Workflow):
             returns a sequence of dictionaries with metric values.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         root_mean_squared_error = bf_metrics.root_mean_squared_error(
             estimates=samples,
@@ -958,19 +1040,21 @@ class BasicWorkflow(Workflow):
         test_data: Mapping[str, np.ndarray] | int,
         metrics: Mapping[str, Callable],
         num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
         variable_keys: Sequence[str] = None,
         variable_names: Sequence[str] = None,
         as_data_frame: bool = True,
         **kwargs,
     ) -> Sequence[Mapping] | pd.DataFrame:
         """
-        Computes custom diagnostic metrics to evaluate the quality of inference. The metric functions should
-        have a signature of:
+        Computes custom diagnostic metrics to evaluate the quality of inference.
+        The metric functions should have a signature of:
 
         - metric_fn(samples, inference_variables, variable_names, variable_keys) or
         - metric_fn(samples, inference_variables, **kwargs)
 
-        And return a dictionary containing the metric name in 'name' key and the metric values in a 'values' key.
+        The functions should return a dictionary containing the metric name in ``metric_name``
+        key and the metric values in a ``values`` key.
 
         Parameters
         ----------
@@ -986,6 +1070,10 @@ class BasicWorkflow(Workflow):
         num_samples : int, optional
             The number of samples to draw from the approximator for diagnostics,
             by default 1000.
+        samples : Mapping[str, array], optional
+            Pre-computed samples from `workflow.sample` or `approximator.sample`.
+            If provided, the `num_samples` argument is ignored. Providing samples
+            requires you to also provide the `test_data` used to obtain the samples.
         variable_keys : list or None, optional, default: None
            Select keys from the dictionaries provided in estimates and targets.
            By default, select all keys.
@@ -1016,29 +1104,35 @@ class BasicWorkflow(Workflow):
             returns a sequence of dictionaries with metric values.
         """
 
-        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, **kwargs)
+        samples, test_data = self._prepare_for_diagnostics(test_data, num_samples, samples, **kwargs)
 
         metrics_dict = {}
         for key, metric_fn in metrics.items():
             metric = metric_fn(samples, test_data, variable_keys=variable_keys, variable_names=variable_names)
-            metrics_dict[metric["name"]] = metric["values"]
+            metrics_dict[metric["metric_name"]] = metric["values"]
 
         if as_data_frame:
             return pd.DataFrame(metrics_dict, index=variable_names)
         return metrics_dict
 
-    def compute_diagnostics(self, **kwargs):
-        logging.warning(
-            "This function will be deprecated in future versions. Please, use plot_default_diagnostics"
-            "or compute_custom_diagnositcs if you want to use your own metrics."
-        )
-        return self.compute_default_diagnostics(**kwargs)
+    def _prepare_for_diagnostics(
+        self,
+        test_data: Mapping[str, np.ndarray] | int,
+        num_samples: int = 1000,
+        samples: Mapping[str, np.ndarray] = None,
+        **kwargs,
+    ):
+        if samples is not None:
+            if isinstance(test_data, int):
+                raise ValueError(
+                    "When providing a samples dict, you need to also provide the test_data used to obtain the samples."
+                )
+            return samples, test_data
 
-    def _prepare_for_diagnostics(self, test_data: Mapping[str, np.ndarray] | int, num_samples: int = 1000, **kwargs):
-        if isinstance(test_data, int) and self.simulator is not None:
+        if isinstance(test_data, int):
+            if self.simulator is None:
+                raise ValueError(f"No simulator found for generating {test_data} data sets.")
             test_data = self.simulator.sample(test_data, **kwargs.pop("test_data_kwargs", {}))
-        elif isinstance(test_data, int):
-            raise ValueError(f"No simulator found for generating {test_data} data sets.")
 
         samples = self.approximator.sample(
             num_samples=num_samples, conditions=test_data, **kwargs.get("approximator_kwargs", {})
@@ -1053,8 +1147,9 @@ class BasicWorkflow(Workflow):
             else:
                 file_ext = self.checkpoint_name + ".keras"
 
+            model_path = f"{self.checkpoint_filepath}/{file_ext}"
             logging.info(
-                f"""Training is now finished.
-            You can find the trained approximator at '{self.checkpoint_filepath}/{self.checkpoint_name}.{file_ext}'.
-            To load it, use approximator = keras.saving.load_model(...)."""
+                f"Training is now finished.\n"
+                f"You can find the trained approximator at '{model_path}'.\n"
+                f'To load it, use approximator = keras.saving.load_model("{model_path}").'
             )

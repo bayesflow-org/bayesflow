@@ -6,8 +6,6 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
-from ....helpers import Sequential
-
 
 @serializable("bayesflow.networks")
 class DownSample2D(keras.Layer):
@@ -55,7 +53,7 @@ class DownSample2D(keras.Layer):
 
         match self.mode:
             case "conv":
-                self.down = keras.layers.Conv2D(
+                self.conv = keras.layers.Conv2D(
                     filters=self.width,
                     kernel_size=3,
                     strides=2,
@@ -63,16 +61,12 @@ class DownSample2D(keras.Layer):
                     kernel_initializer=self.kernel_initializer,
                 )
             case "average":
-                self.down = Sequential(
-                    [
-                        keras.layers.AveragePooling2D(pool_size=2, strides=2, padding="same"),
-                        keras.layers.Conv2D(
-                            filters=self.width,
-                            kernel_size=1,
-                            padding="same",
-                            kernel_initializer=self.kernel_initializer,
-                        ),
-                    ]
+                self.pool = keras.layers.AveragePooling2D(pool_size=2, strides=2, padding="same")
+                self.conv = keras.layers.Conv2D(
+                    filters=self.width,
+                    kernel_size=1,
+                    padding="same",
+                    kernel_initializer=self.kernel_initializer,
                 )
             case _:
                 raise ValueError(f"Unsupported downsampling mode: {self.mode}")
@@ -91,10 +85,18 @@ class DownSample2D(keras.Layer):
     def build(self, input_shape):
         if self.built:
             return
-        self.down.build(input_shape)
+        if self.mode == "average":
+            self.pool.build(input_shape)
+            self.conv.build(self.pool.compute_output_shape(input_shape))
+        else:
+            self.conv.build(input_shape)
 
     def compute_output_shape(self, input_shape):
-        return self.down.compute_output_shape(input_shape)
+        if self.mode == "average":
+            return self.conv.compute_output_shape(self.pool.compute_output_shape(input_shape))
+        return self.conv.compute_output_shape(input_shape)
 
-    def call(self, x: Tensor, training: bool | None = None, **kwargs) -> Tensor:
-        return self.down(x, training=training)
+    def call(self, x: Tensor, **kwargs) -> Tensor:
+        if self.mode == "average":
+            return self.conv(self.pool(x))
+        return self.conv(x)

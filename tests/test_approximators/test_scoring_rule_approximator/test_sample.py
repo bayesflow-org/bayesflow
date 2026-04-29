@@ -47,3 +47,18 @@ def test_sample(scoring_rule_approximator_any, simulator, batch_size, num_sample
         for variable, variable_estimates in samples_separate.items():
             assert isinstance(variable_estimates, np.ndarray)
             assert variable_estimates.shape[:-1] == (batch_size, num_samples)
+
+    samples_seed42_1 = scoring_rule_approximator_any.sample(num_samples=num_samples, conditions=data, seed=42)
+    samples_seed42_2 = scoring_rule_approximator_any.sample(num_samples=num_samples, conditions=data, seed=42)
+
+    for key in samples_merged.keys():
+        np.testing.assert_allclose(
+            samples_seed42_1[key],
+            samples_seed42_2[key],
+            err_msg=f"{key}: samples differ for identical seed",
+        )
+        with pytest.raises(AssertionError):
+            np.testing.assert_allclose(
+                samples_seed42_1[key],
+                samples_merged[key],
+            )

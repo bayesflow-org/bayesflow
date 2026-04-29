@@ -1,6 +1,7 @@
 import keras
 
 from bayesflow.utils import model_kwargs, find_network
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Shape, Tensor
 from .scoring_rules import ScoringRule, ParametricDistributionScore
@@ -194,7 +195,9 @@ class ScoringRuleNetwork(keras.Layer):
         return metrics | {"loss": neg_score}
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape, conditions: Tensor | None = None) -> dict[str, Tensor]:
+    def sample(
+        self, batch_shape: Shape, conditions: Tensor | None = None, seed: int | keras.random.SeedGenerator | None = None
+    ) -> dict[str, Tensor]:
         """
         Draw one sample per parameter set from each parametric scoring rule.
 
@@ -209,12 +212,21 @@ class ScoringRuleNetwork(keras.Layer):
             - unconditional: ``(num_samples,)`` — single parameter set broadcast.
         conditions : Tensor or None, default None
             Optional inference conditions. If not given, unconditional samples are returned.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a
+            ``keras.random.SeedGenerator`` and shared across all random draws in
+            the call. A ``SeedGenerator`` is passed through as-is, advancing its
+            state with each use. If ``None`` (default), the instance seed
+            generator is used.
+
+
 
         Returns
         -------
         samples : dict[str, Tensor]
             Samples for every parametric scoring rule.
         """
+        seed_generator = resolve_seed(seed)
         if conditions is None:
             conditions = keras.ops.convert_to_tensor([[1.0]], dtype="float32")
 
@@ -233,7 +245,7 @@ class ScoringRuleNetwork(keras.Layer):
                         for k, v in parameters.items()
                     }
 
-                samples[score_key] = score.sample(batch_shape, **parameters)
+                samples[score_key] = score.sample(batch_shape, seed=seed_generator, **parameters)
 
         return samples
 

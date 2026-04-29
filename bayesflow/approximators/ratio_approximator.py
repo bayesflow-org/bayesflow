@@ -273,34 +273,23 @@ class RatioApproximator(Approximator):
         return base_config | serialize(config)
 
     def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
-        """Samples K distinct negative examples from the batch for each item.
-
-        Sampling is done without replacement and excludes self-sampling, i.e.,
-        for each batch item i, all sampled indices are distinct and different
-        from i.
-
-        Requires K <= batch_size - 1.
-        """
         B = keras.ops.shape(inference_variables)[0]
 
         if isinstance(B, int) and self.K > B - 1:
-            raise ValueError(
-                f"Cannot sample K={self.K} negatives without replacement from batch_size={B}. Need K <= batch_size - 1."
-            )
+            num_contrastive = B - 1
+        else:
+            num_contrastive = self.K
 
-        # Random scores for every possible pair (anchor i, candidate j).
+        # Sample from (B, B-1) space — O(B*K) instead of O(B^2)
         scores = keras.random.uniform(
-            shape=(B, B),
+            shape=(B, B - 1),
             dtype="float32",
             seed=self.seed_generator,
         )
+        _, idx = keras.ops.top_k(scores, k=num_contrastive)
 
-        # Prevent self-sampling by making diagonal entries impossible to select.
-        # Since scores are in [0, 1), subtracting 2 makes diagonal entries < -1.
-        diagonal = keras.ops.eye(B, dtype=scores.dtype)
-        scores = scores - 2.0 * diagonal
-
-        # Top-K random scores are a uniform sample without replacement.
-        _, idx = keras.ops.top_k(scores, k=self.K)
+        # Remap indices >= row index to skip self: [0..i-1] unchanged, [i..B-2] -> [i+1..B-1]
+        row = keras.ops.arange(B)[:, None]  # (B, 1)
+        idx = idx + keras.ops.cast(idx >= row, dtype=idx.dtype)
 
         return keras.ops.take(inference_variables, idx, axis=0)

@@ -1,83 +1,24 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 
 import jax.numpy as jnp
 
-from jax import jit, vjp, vmap
-from pytensor.link.jax.dispatch import jax_funcify
-
-from ..pytensor_ops import RatioLogpOp, RatioLogpVJPOp
+from .jax_wrapper import JAXWrapper
 
 
-@jax_funcify.register(RatioLogpOp)
-def ratio_logp_op_jax_funcify(op, **kwargs):
-    return op.logp_nojit
+class JAXRatio(JAXWrapper):
+    """JAX backend for a :class:`~bayesflow.approximators.RatioApproximator`.
 
-
-@jax_funcify.register(RatioLogpVJPOp)
-def ratio_logp_vjp_op_jax_funcify(op, **kwargs):
-    # logp_vjp_nojit signature: (data, *params, gz) -> tuple[grad_per_param]
-    # jax_funcify receives positional args in make_node order: [data, *params, gz]
-    logp_vjp_nojit = op.logp_vjp_nojit
-
-    def logp_vjp(*args):
-        *data_and_params, gz = args
-        return logp_vjp_nojit(*data_and_params, gz=gz)
-
-    return logp_vjp
-
-
-class JAXRatio:
-    """
-    Owns the JAX single-trial log-ratio and the PyTensor Ops wrapping it.
-
-    Parameters
-    ----------
-    exchangeable:
-        If True (default) the likelihood is assumed to factorize over
-        i.i.d. observations: the log-ratio is vmapped over trials and
-        the Op returns a per-trial vector.
-        If False the network consumes the full dataset at once (joint /
-        non-exchangeable likelihood): no vmap is applied and the Op
-        returns a scalar.
+    Evaluates ``log p(x | θ) / p(x)`` via the classifier + projector heads.
+    With ``exchangeable=True`` this is vmapped over observations; with
+    ``exchangeable=False`` the full data array is passed at once.
     """
 
-    def __init__(
-        self,
-        ratio_approximator,
-        param_names: Sequence[str],
-        *,
-        exchangeable: bool = True,
-    ):
-        self.ratio_approximator = ratio_approximator
-        self.param_names = tuple(param_names)
-        self.exchangeable = exchangeable
+    def make_log_prob(self) -> Callable:
+        classifier = self.approximator.inference_network
+        projector = self.approximator.projector
+        std = self.approximator.standardizer
 
-        self.log_ratio = self.make_log_ratio()
-        self.logp_nojit, self.logp_jit, self.logp_vjp_nojit, self.logp_vjp_jit = self.make_logp_functions()
-
-        self.logp_vjp_op = RatioLogpVJPOp(self.logp_vjp_jit, self.logp_vjp_nojit)
-        self.logp_op = RatioLogpOp(
-            logp_jit=self.logp_jit,
-            logp_nojit=self.logp_nojit,
-            vjp_op=self.logp_vjp_op,
-            scalar_output=not exchangeable,
-        )
-
-    def make_log_ratio(self) -> Callable:
-        """
-        Build the single-trial log-ratio callable.
-
-        Returns
-        -------
-        Callable
-            A function ``(x_i, *params) -> scalar`` that evaluates
-            ``log p(x_i | params) / p(x_i)`` for a single observation.
-        """
-        classifier = self.ratio_approximator.inference_network
-        projector = self.ratio_approximator.projector
-        std = self.ratio_approximator.standardizer
-
-        def log_ratio(x_i, *params):
+        def log_prob(x_i, *params):
             inf_vars = jnp.stack([jnp.asarray(p) for p in params], axis=0)
             inf_conds = jnp.atleast_1d(jnp.asarray(x_i))
 
@@ -85,53 +26,7 @@ class JAXRatio:
             inf_conds = std.maybe_standardize(inf_conds, key="inference_conditions")
 
             inputs = jnp.concatenate([inf_vars, inf_conds], axis=0)
-            hidden = classifier(inputs[None, :])
-            logits = projector(hidden)
-
+            logits = projector(classifier(inputs[None, :]))
             return jnp.squeeze(logits)
 
-        return log_ratio
-
-    def make_logp_functions(self) -> tuple[Callable, Callable, Callable, Callable]:
-        """
-        Build the JIT-compiled log-ratio and its VJP.
-
-        Returns
-        -------
-        logp_nojit : Callable
-            ``(data, *params) -> array`` — (vmapped) log-ratio without JIT.
-        logp_jit : Callable
-            JIT-compiled version of ``logp_nojit``.
-        logp_vjp_nojit : Callable
-            Non-JIT ``(data, *params, gz) -> tuple[array, ...]`` that returns
-            the VJP with respect to ``params``.  Used by the JAX-backend
-            ``jax_funcify`` path (numpyro / blackjax samplers).
-        logp_vjp_jit : Callable
-            JIT-compiled version of ``logp_vjp_nojit``.  Used by the
-            pytensor C/Python backend ``perform()`` path.
-
-        Notes
-        -----
-        When ``exchangeable=True`` the log-ratio is vmapped over the trial
-        axis so that it accepts a batch of observations and broadcast
-        parameter vectors.  When ``exchangeable=False`` the network is
-        called once on the full data array and returns a scalar.
-        """
-        n_params = len(self.param_names)
-
-        if self.exchangeable:
-            in_axes = (0,) + (0,) * n_params
-            logp_nojit = vmap(self.log_ratio, in_axes=in_axes)
-        else:
-            logp_nojit = self.log_ratio
-
-        logp_jit = jit(logp_nojit)
-
-        def logp_vjp_nojit(data, *params, gz):
-            _, vjp_fn = vjp(logp_nojit, data, *params)
-            # Ignore gradient wrt observed data; keep only parameter gradients
-            return vjp_fn(gz)[1:]
-
-        logp_vjp_jit = jit(logp_vjp_nojit)
-
-        return logp_nojit, logp_jit, logp_vjp_nojit, logp_vjp_jit
+        return log_prob

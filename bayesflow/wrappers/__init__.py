@@ -11,14 +11,15 @@ mamba
     :py:class:`~bayesflow.wrappers.mamba.Mamba` summary network backed by the
     ``mamba-ssm`` state-space library.  Install with ``pip install mamba-ssm``.
 pymc
-    :py:class:`~bayesflow.wrappers.pymc.NeuralRatioDistribution` — use a trained
-    :py:class:`~bayesflow.approximators.RatioApproximator` as a likelihood term
-    inside a PyMC model.  Install with ``pip install pymc``.
+    :py:class:`~bayesflow.wrappers.pymc.NeuralDistribution` — use a trained
+    :py:class:`~bayesflow.approximators.RatioApproximator` (NRE) or
+    :py:class:`~bayesflow.approximators.ContinuousApproximator` (NLE) as a
+    likelihood term inside a PyMC model.  Install with ``pip install pymc``.
 
 Examples
 --------
->>> from bayesflow.wrappers.pymc import RatioDistribution  # doctest: +SKIP
->>> ratio_dist = NeuralRatioDistribution(approximator, param_names=["mu", "sigma"])  # doctest: +SKIP
+>>> from bayesflow.wrappers.pymc import NeuralDistribution  # doctest: +SKIP
+>>> dist = NeuralDistribution(approximator, param_names=["mu", "sigma"])  # doctest: +SKIP
 """
 
 from importlib import import_module

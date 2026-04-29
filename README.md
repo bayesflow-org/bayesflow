@@ -119,12 +119,17 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 10. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
 11. [Ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
 12. [Ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling.
+13. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
 
 ### Tutorial papers
 
 1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685*. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
+
+### Agentic AI Workflows
+
+Turn your AI agent into an amortized Bayesian expert using [Baygent Skills](https://github.com/Learning-Bayesian-Statistics/baygent-skills).
 
 ## Contributing
 

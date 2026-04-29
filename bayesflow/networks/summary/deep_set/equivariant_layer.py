@@ -33,7 +33,6 @@ class EquivariantLayer(keras.Layer):
         kernel_initializer: str = "he_normal",
         dropout: int | float | None = 0.05,
         layer_norm: bool = True,
-        spectral_normalization: bool = False,
         **kwargs,
     ):
         """
@@ -46,8 +45,7 @@ class EquivariantLayer(keras.Layer):
         The architecture consists of a fully connected residual block for equivariant processing and an invariant
         module to enhance expressiveness.
 
-        The model supports different activation functions, dropout, layer normalization, and optional spectral
-        normalization for stability.
+        The model supports different activation functions, dropout, and layer normalization.
 
         Parameters
         ----------
@@ -68,8 +66,6 @@ class EquivariantLayer(keras.Layer):
             Dropout rate applied within the MLP layers. Default is 0.05.
         layer_norm : bool, optional
             Whether to apply layer normalization after transformations. Default is True.
-        spectral_normalization : bool, optional
-            Whether to apply spectral normalization to stabilize training. Default is False.
         """
 
         super().__init__(**layer_kwargs(kwargs))
@@ -82,7 +78,6 @@ class EquivariantLayer(keras.Layer):
             kernel_initializer=kernel_initializer,
             dropout=dropout,
             pooling=pooling,
-            spectral_normalization=spectral_normalization,
         )
 
         # Fully connected net + residual connection for an equivariant transform applied to each set member
@@ -92,7 +87,6 @@ class EquivariantLayer(keras.Layer):
             dropout=dropout,
             activation=activation,
             kernel_initializer=kernel_initializer,
-            spectral_normalization=spectral_normalization,
         )
         self.out_fc_projector = keras.layers.Dense(
             units=mlp_widths_equivariant[-1], kernel_initializer=kernel_initializer

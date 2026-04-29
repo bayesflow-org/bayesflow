@@ -11,7 +11,6 @@ from .double_conv import DoubleConv
 
 from ..transformers.attention import PoolingByMultiHeadAttention
 
-from ...helpers import Residual
 from ...summary import SummaryNetwork
 
 
@@ -117,8 +116,8 @@ class ConvolutionalNetwork(SummaryNetwork):
         layers = []
         for width, num_blocks, downsample in zip(self.widths, self.blocks_per_stage, self.downsample_stage):
             for _ in range(num_blocks):
-                block = DoubleConv(width, self.norm, self.groups, self.dropout, self.activation)
-                layers.append(Residual(block) if self.residual else block)
+                block = DoubleConv(width, self.norm, self.groups, self.dropout, self.activation, residual=self.residual)
+                layers.append(block)
 
             if downsample:
                 layers.extend(self._make_downsample_layers(width))

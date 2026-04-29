@@ -105,7 +105,7 @@ class MultiHeadAttention(keras.Layer):
             Input of shape (batch_size, seq_size_y, input_dim), which will
             play the role of key (K) and value (V).
         training : boolean, optional (default - True)
-            Passed to the optional internal dropout and spectral normalization
+            Passed to the optional internal dropout and normalization
             layers to distinguish between train and test time behavior.
         attention_mask: a boolean mask of shape `(B, T, T)`, that prevents
             attention to certain positions. The boolean mask specifies which

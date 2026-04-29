@@ -129,7 +129,7 @@ class EnsembleApproximator(Approximator):
         )
 
         return EnsembleDataset(
-            base_dataset=base_dataset,
+            dataset=base_dataset,
             member_names=self.members,
             **filter_kwargs(kwargs, keras.utils.PyDataset.__init__),
         )

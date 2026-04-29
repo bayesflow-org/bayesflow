@@ -76,29 +76,13 @@ class NeuralDistribution:
         exchangeable: bool = True,
         simulator_fn: Callable | None = None,
     ):
+        # Match float precision of pytensor with keras
+        pytensor.config.floatX = keras.backend.floatx()
+
         self.param_names = tuple(param_names)
         self.exchangeable = exchangeable
         self.simulator_fn = simulator_fn
         self.backend = build_backend(approximator, param_names, exchangeable=exchangeable)
-
-    def _prepare_params(self, args, kwargs):
-        if args and kwargs:
-            raise TypeError("Pass parameters either positionally or by keyword, not both.")
-
-        if args:
-            if len(args) != len(self.param_names):
-                raise TypeError(f"Expected {len(self.param_names)} parameters, got {len(args)}.")
-            return list(args)
-
-        missing = [name for name in self.param_names if name not in kwargs]
-        if missing:
-            raise TypeError(f"Missing required parameters: {missing}")
-
-        extra = [name for name in kwargs if name not in self.param_names]
-        if extra:
-            raise TypeError(f"Unexpected parameters: {extra}")
-
-        return [kwargs[name] for name in self.param_names]
 
     def logp(self, value: pt.TensorVariable, *dist_params: pt.TensorVariable) -> pt.TensorVariable:
         """
@@ -184,3 +168,22 @@ class NeuralDistribution:
             custom_kwargs["random"] = self.random
 
         return pm.CustomDist(name, *params, observed=observed, **custom_kwargs)
+
+    def _prepare_params(self, args, kwargs):
+        if args and kwargs:
+            raise TypeError("Pass parameters either positionally or by keyword, not both.")
+
+        if args:
+            if len(args) != len(self.param_names):
+                raise TypeError(f"Expected {len(self.param_names)} parameters, got {len(args)}.")
+            return list(args)
+
+        missing = [name for name in self.param_names if name not in kwargs]
+        if missing:
+            raise TypeError(f"Missing required parameters: {missing}")
+
+        extra = [name for name in kwargs if name not in self.param_names]
+        if extra:
+            raise TypeError(f"Unexpected parameters: {extra}")
+
+        return [kwargs[name] for name in self.param_names]

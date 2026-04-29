@@ -18,14 +18,15 @@ class JAXContinuous(JAXWrapper):
         flow = self.approximator.inference_network
         std = self.approximator.standardizer
 
-        def log_prob(x_i, *params):
-            inf_vars = jnp.atleast_1d(jnp.asarray(x_i))
+        def log_prob(x, *params):
+            inf_vars = jnp.atleast_1d(jnp.asarray(x))
             inf_cond = jnp.stack([jnp.asarray(p) for p in params], axis=0)
 
-            inf_vars = std.maybe_standardize(inf_vars, key="inference_variables")
+            # Apply change-of-variables correction in case of standardization
+            inf_vars, log_det_jac = std.maybe_standardize(inf_vars, key="inference_variables", log_det_jac=True)
             inf_cond = std.maybe_standardize(inf_cond, key="inference_conditions")
 
             lp = flow.log_prob(inf_vars[None, :], conditions=inf_cond[None, :])
-            return jnp.squeeze(lp)
+            return jnp.squeeze(lp) + log_det_jac
 
         return log_prob

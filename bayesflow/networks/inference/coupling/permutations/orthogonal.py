@@ -22,12 +22,12 @@ class OrthogonalPermutation(InvertibleLayer):
     def build(self, xz_shape: Shape, **kwargs) -> None:
         self.weight = self.add_weight(shape=(xz_shape[-1], xz_shape[-1]), initializer="orthogonal", trainable=True)
 
-    def call(self, xz: Tensor, inverse: bool = False, **kwargs) -> (Tensor, Tensor):
+    def call(self, xz: Tensor, inverse: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
         if inverse:
             return self._inverse(xz)
         return self._forward(xz)
 
-    def _forward(self, x: Tensor) -> (Tensor, Tensor):
+    def _forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         z = ops.matmul(x, self.weight)
         log_det = ops.log(ops.abs(ops.det(self.weight)))
 
@@ -36,7 +36,7 @@ class OrthogonalPermutation(InvertibleLayer):
 
         return z, log_det
 
-    def _inverse(self, z: Tensor) -> (Tensor, Tensor):
+    def _inverse(self, z: Tensor) -> tuple[Tensor, Tensor]:
         weight = ops.inv(self.weight)
 
         x = ops.matmul(z, weight)

@@ -1,36 +1,48 @@
+from typing import Any
+
 import keras
 
-from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, find_network, model_kwargs, concatenate_valid
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.types import Shape, Tensor
+from bayesflow.utils import filter_kwargs, find_network, layer_kwargs, concatenate_valid
+from bayesflow.utils.serialization import serializable, serialize
 
 from ..invertible_layer import InvertibleLayer
 from ..transforms import find_transform
 
+from ....defaults import COUPLING_MLP_DEFAULTS
+
 
 @serializable("bayesflow.networks")
 class SingleCoupling(InvertibleLayer):
-    """
-    Implements a single coupling layer as a composition of a subnet and a transform.
+    """Implements a single coupling layer as a composition of a subnet and a transform.
 
-    Subnet output tensors are linearly mapped to the correct dimension.
-    """
+    A coupling layer partitions input into two parts: one part remains unchanged,
+    while the other is transformed via a parametric transformation whose parameters
+    are computed by a neural network (subnet) applied to the unchanged part.
 
-    MLP_DEFAULT_CONFIG = {
-        "widths": (128, 128),
-        "activation": "hard_silu",
-        "kernel_initializer": "glorot_uniform",
-        "residual": False,
-        "dropout": 0.05,
-        "spectral_normalization": False,
-    }
+    Parameters
+    ----------
+    subnet : str or type, optional
+        A neural network type for computing transformation parameters. If a string,
+        should be a registered name (e.g., "mlp"). If a type, will be instantiated
+        with the provided *subnet_kwargs*. Default is "mlp".
+    transform : str, optional
+        Name of the transformation to apply (e.g., "affine"). Default is "affine".
+    subnet_kwargs : dict[str, Any], optional
+        Keyword arguments passed to the subnet constructor or used to update the
+        default subnet settings. Default is None.
+    transform_kwargs : dict[str, Any], optional
+        Keyword arguments passed to the transform constructor. Default is None.
+    **kwargs
+        Additional keyword arguments passed to `InvertibleLayer`.
+    """
 
     def __init__(
         self,
         subnet: str | type = "mlp",
         transform: str = "affine",
-        subnet_kwargs: dict[str, any] = None,
-        transform_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, Any] = None,
+        transform_kwargs: dict[str, Any] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -39,7 +51,7 @@ class SingleCoupling(InvertibleLayer):
         transform_kwargs = transform_kwargs or {}
 
         if subnet == "mlp":
-            subnet_kwargs = SingleCoupling.MLP_DEFAULT_CONFIG | subnet_kwargs
+            subnet_kwargs = COUPLING_MLP_DEFAULTS | subnet_kwargs
 
         self.subnet = find_network(subnet, **subnet_kwargs)
         self.transform = find_transform(transform, **transform_kwargs)
@@ -47,22 +59,17 @@ class SingleCoupling(InvertibleLayer):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = model_kwargs(base_config)
+        base_config = layer_kwargs(base_config)
 
         config = {
             "subnet": self.subnet,
             "transform": self.transform,
-            "output_projector": self.output_projector,
         }
 
         return base_config | serialize(config)
 
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
     # noinspection PyMethodOverriding
-    def build(self, x1_shape, x2_shape, conditions_shape=None):
+    def build(self, x1_shape: Shape, x2_shape: Shape, conditions_shape: Shape = None):
         self.output_projector = keras.layers.Dense(
             units=self.transform.params_per_dim * x2_shape[-1],
             kernel_initializer="zeros",
@@ -70,26 +77,26 @@ class SingleCoupling(InvertibleLayer):
             name="output_projector",
         )
 
-        x1 = keras.ops.zeros(x1_shape)
-        x2 = keras.ops.zeros(x2_shape)
-        if conditions_shape is None:
-            conditions = None
+        if conditions_shape is not None:
+            subnet_input_shape = tuple(x1_shape[:-1]) + (x1_shape[-1] + conditions_shape[-1],)
         else:
-            conditions = keras.ops.zeros(conditions_shape)
+            subnet_input_shape = tuple(x1_shape)
 
-        # build nested layers with forward pass
-        self.call(x1, x2, conditions=conditions)
+        self.subnet.build(subnet_input_shape)
+        out_shape = self.subnet.compute_output_shape(subnet_input_shape)
+        self.output_projector.build(out_shape)
+        self.transform.build(x2_shape)
 
     def call(
         self, x1: Tensor, x2: Tensor, conditions: Tensor = None, inverse: bool = False, training: bool = False, **kwargs
-    ) -> ((Tensor, Tensor), Tensor):
+    ) -> tuple[tuple[Tensor, Tensor], Tensor]:
         if inverse:
             return self._inverse(x1, x2, conditions=conditions, training=training, **kwargs)
         return self._forward(x1, x2, conditions=conditions, training=training, **kwargs)
 
     def _forward(
         self, x1: Tensor, x2: Tensor, conditions: Tensor = None, training: bool = False, **kwargs
-    ) -> ((Tensor, Tensor), Tensor):
+    ) -> tuple[tuple[Tensor, Tensor], Tensor]:
         """Transform (x1, x2) -> (x1, f(x2; x1))"""
         z1 = x1
         parameters = self.get_parameters(x1, conditions=conditions, training=training)
@@ -99,7 +106,7 @@ class SingleCoupling(InvertibleLayer):
 
     def _inverse(
         self, z1: Tensor, z2: Tensor, conditions: Tensor = None, training: bool = False, **kwargs
-    ) -> ((Tensor, Tensor), Tensor):
+    ) -> tuple[tuple[Tensor, Tensor], Tensor]:
         """Transform (x1, f(x2; x1)) -> (x1, x2)"""
         x1 = z1
         parameters = self.get_parameters(x1, conditions=conditions, training=training, **kwargs)
@@ -113,9 +120,10 @@ class SingleCoupling(InvertibleLayer):
         """Applies the inner neural network to obtain the transformation parameters, for instance,
         if affine transformations, then [s, t] = NN(inputs), followed by a constraint, e.g., s = exp(s).
         """
-        x = concatenate_valid([x, conditions], axis=-1)
+        inputs = concatenate_valid((x, conditions), axis=-1)
 
-        parameters = self.output_projector(self.subnet(x, training=training, **filter_kwargs(kwargs, self.subnet.call)))
+        parameters = self.subnet(inputs, training=training, **filter_kwargs(kwargs, self.subnet.call))
+        parameters = self.output_projector(parameters)
         parameters = self.transform.split_parameters(parameters)
         parameters = self.transform.constrain_parameters(parameters)
 

@@ -38,8 +38,8 @@ class RatioApproximator(Approximator):
         Odds or of any pair being drawn dependently to completely independently.
         Default is 1.
     K: int, optional
-        Number of parameter candidates used for contrastive learning.
-        Default is 5.
+        Number of parameter candidates used for contrastive learning. Good performance is
+        typically observed for values close to batch_size / 2. Default is 5.
     standardize : str | Sequence[str] | None
         The variables to standardize before passing to the networks. Can be either
         "all" or any subset of ["inference_variables", "inference_conditions", "summary_variables"].
@@ -273,19 +273,23 @@ class RatioApproximator(Approximator):
         return base_config | serialize(config)
 
     def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
-        """Samples K batches of inference variables with replacement. Ensures
-        that no self-sampling occurs (i.e., all samples are negative examples)."""
         B = keras.ops.shape(inference_variables)[0]
 
-        r = keras.random.randint(
-            shape=(B, self.K),
-            minval=0,
-            maxval=B - 1,
-            dtype="int32",
+        if isinstance(B, int) and self.K > B - 1:
+            num_contrastive = B - 1
+        else:
+            num_contrastive = self.K
+
+        # Sample from (B, B-1) space — O(B*K) instead of O(B^2)
+        scores = keras.random.uniform(
+            shape=(B, B - 1),
+            dtype="float32",
             seed=self.seed_generator,
         )
+        _, idx = keras.ops.top_k(scores, k=num_contrastive)
 
-        i = keras.ops.expand_dims(keras.ops.arange(B, dtype="int32"), axis=1)
-        idx = r + keras.ops.cast(r >= i, "int32")
+        # Remap indices >= row index to skip self: [0..i-1] unchanged, [i..B-2] -> [i+1..B-1]
+        row = keras.ops.arange(B)[:, None]  # (B, 1)
+        idx = idx + keras.ops.cast(idx >= row, dtype=idx.dtype)
 
         return keras.ops.take(inference_variables, idx, axis=0)

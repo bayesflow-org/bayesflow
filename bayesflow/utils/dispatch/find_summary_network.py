@@ -54,3 +54,8 @@ def _(layer: keras.Layer, *args, **kwargs):
 @find_summary_network.register
 def _(model: keras.Model, *args, **kwargs):
     return model
+
+
+@find_summary_network.register
+def _(none: type(None), *args, **kwargs):
+    return None

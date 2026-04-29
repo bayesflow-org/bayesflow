@@ -83,26 +83,21 @@ class CompositionalWorkflow(BasicWorkflow):
         standardize: Sequence[str] | str | None = "inference_variables",
         **kwargs,
     ):
-        self.inference_network = find_inference_network(inference_network, **kwargs.get("inference_kwargs", {}))
+        inference_network = find_inference_network(inference_network, **kwargs.get("inference_kwargs", {}))
 
-        if not isinstance(self.inference_network, DiffusionModel):
-            raise ValueError("Inference network currently must be a DiffusionModel for compositional inference.")
-
-        if summary_network is not None:
-            self.summary_network = find_summary_network(summary_network, **kwargs.get("summary_kwargs", {}))
-        else:
-            self.summary_network = None
+        if not isinstance(inference_network, DiffusionModel):
+            raise ValueError("Currently only a DiffusionModel inference network supports compositional inference.")
 
         self.simulator = simulator
 
         adapter = adapter or BasicWorkflow.default_adapter(inference_variables, inference_conditions, summary_variables)
 
         self.approximator = CompositionalApproximator(
-            inference_network=self.inference_network,
-            summary_network=self.summary_network,
+            inference_network=inference_network,
+            summary_network=find_summary_network(summary_network, **kwargs.get("summary_kwargs", {})),
             adapter=adapter,
             standardize=standardize,
-            **filter_kwargs(kwargs, keras.Model.__init__),
+            **filter_kwargs(kwargs, CompositionalApproximator.__init__),
         )
 
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))

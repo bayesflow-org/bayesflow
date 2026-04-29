@@ -167,11 +167,11 @@ class EnsembleWorkflow(BasicWorkflow):
                 summary_network=_summary_networks.get(k, None),
                 adapter=adapter,
                 standardize=standardize,
-                **filter_kwargs(kwargs, keras.Model.__init__),
+                **filter_kwargs(kwargs, constructor.__init__),
             )
 
         self.approximator = EnsembleApproximator(
-            approximators=approximators, **filter_kwargs(kwargs, keras.Model.__init__)
+            approximators=approximators, **filter_kwargs(kwargs, EnsembleApproximator.__init__)
         )
 
         self.member_names = tuple(self.approximator.approximators.keys())

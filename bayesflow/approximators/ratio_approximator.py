@@ -19,7 +19,6 @@ class RatioApproximator(Approximator):
     """
     Implements contrastive neural likelihood-to-evidence ratio estimation  (NRE-C)
     as described in https://arxiv.org/pdf/2210.06170.
-
     The estimation target is the ratio of likelihood and evidence: p(x | theta) / p(x).
 
     Parameters

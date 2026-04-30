@@ -279,7 +279,6 @@ class ConsistencyModel(InferenceNetwork):
                 "The number of discretization steps is not equal to the number of unique steps used during training. "
                 "This might lead to suboptimal sample quality."
             )
-
         x = keras.ops.copy(z) * self.max_time
         discretized_time = keras.ops.flip(self._discretize_time(steps), axis=-1)
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)

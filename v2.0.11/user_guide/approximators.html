@@ -1,0 +1,1099 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4. Approximators &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../_static/documentation_options.js?v=4e34c7ab"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/approximators';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/user_guide/approximators.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="5. Summary Networks" href="summary_networks.html" />
+    <link rel="prev" title="3. Data Processing: Adapters" href="data_processing.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.0.11" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulators.html">2. Simulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_processing.html">3. Data Processing: Adapters</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">4. Approximators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary_networks.html">5. Summary Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_networks.html">6. Inference Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">7. Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="saving_loading.html">8. Saving &amp; Loading Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diagnostics.html">9. Diagnostics and Visualizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">10. Using Datasets in BayesFlow</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">4. </span>Approximators</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="approximators">
+<h1><span class="section-number">4. </span>Approximators<a class="headerlink" href="#approximators" title="Link to this heading">#</a></h1>
+<p>An <strong>approximator</strong> is the central object in BayesFlow. It wires together an adapter, an optional <a class="reference internal" href="summary_networks.html"><span class="std std-doc">summary network</span></a>, and an <a class="reference internal" href="inference_networks.html"><span class="std std-doc">inference network</span></a>, and exposes a unified API for training and inference.</p>
+<p>Approximators are Keras models. They implement <code class="docutils literal notranslate"><span class="pre">.fit()</span></code> for training and task-specific inference methods (<code class="docutils literal notranslate"><span class="pre">.sample()</span></code>, <code class="docutils literal notranslate"><span class="pre">.log_prob()</span></code>, <code class="docutils literal notranslate"><span class="pre">.predict()</span></code>, etc.) for posterior queries.</p>
+<p>This page covers:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#approximator-types"><span class="xref myst">Approximator types</span></a> — which one to use for your task</p></li>
+<li><p><a class="reference internal" href="#key-methods"><span class="xref myst">Key methods</span></a> — <code class="docutils literal notranslate"><span class="pre">fit</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">log_prob</span></code>, and friends</p></li>
+<li><p><a class="reference internal" href="#approximator-details"><span class="xref myst">Approximators in detail</span></a> — more details about each approximator</p></li>
+<li><p><a class="reference internal" href="#saving-and-loading"><span class="xref myst">Saving and loading</span></a> — a quick serialization/deserialization demo</p></li>
+</ol>
+<section id="approximator-types">
+<h2><span class="section-number">4.1. </span>Approximator Types<a class="headerlink" href="#approximator-types" title="Link to this heading">#</a></h2>
+<p>Approximators are independent Keras models — you don’t need a workflow to use them, even though workflows are recommended unless you need lower level control. This is useful when you want fine-grained control over the training loop, want to integrate BayesFlow into an existing codebase, or are building a non-standard pipeline.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Approximator</p></th>
+<th class="head"><p>Task</p></th>
+<th class="head"><p>Primary inference method</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code></p></td>
+<td><p>Neural posterior / likelihood estimation (NPE, NLE)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.sample()</span></code>, <code class="docutils literal notranslate"><span class="pre">.log_prob()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ModelComparisonApproximator</span></code></p></td>
+<td><p>Bayesian model selection (discrete posteriors)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.predict()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">RatioApproximator</span></code></p></td>
+<td><p>Likelihood-to-evidence ratio estimation (NRE-C)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.log_ratio()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ScoringRuleApproximator</span></code></p></td>
+<td><p>Point estimation via scoring-rule minimization</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.estimate()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EnsembleApproximator</span></code></p></td>
+<td><p>Ensemble of heterogeneous approximators</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.sample()</span></code>, <code class="docutils literal notranslate"><span class="pre">.log_prob()</span></code>, <code class="docutils literal notranslate"><span class="pre">.estimate()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CompositionalApproximator</span></code></p></td>
+<td><p>Compositional / hierarchical distributions</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.compositional_sample()</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All approximators live in <code class="docutils literal notranslate"><span class="pre">bayesflow.approximators</span></code> and are re-exported from the top-level <code class="docutils literal notranslate"><span class="pre">bayesflow</span></code> namespace.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="key-methods">
+<h2><span class="section-number">4.2. </span>Key Methods<a class="headerlink" href="#key-methods" title="Link to this heading">#</a></h2>
+<section id="fit-and-compile">
+<h3><span class="section-number">4.2.1. </span><code class="docutils literal notranslate"><span class="pre">fit</span></code> and <code class="docutils literal notranslate"><span class="pre">compile</span></code><a class="headerlink" href="#fit-and-compile" title="Link to this heading">#</a></h3>
+<p>All approximators share the same <code class="docutils literal notranslate"><span class="pre">fit</span></code> interface. You can pass either a simulator (BayesFlow builds the dataset for you) or a pre-built dataset:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Here&#39;s a very basic simulator and adapter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">theta</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create an approximator (e.g., for a continuous distribution)</span>
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span><span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">)</span>
+
+<span class="c1"># Compile first — sets the optimizer; compatible with any keras optimizer</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+
+<span class="c1"># Train via simulator (most common path)</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Loss trajectories can be inspected like so:</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/c6cbde0cafbd9c9d60379915a1d5db9272a401b69fcb60097f0c43e788977324.png" src="../_images/c6cbde0cafbd9c9d60379915a1d5db9272a401b69fcb60097f0c43e788977324.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Or using an in-memory simulation bank</span>
+<span class="n">sim_bank</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+
+<span class="c1"># Convert simulation bank to a dataset object that takes care of batching etc</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">OfflineDataset</span><span class="p">(</span><span class="n">sim_bank</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">)</span>
+
+<span class="c1"># Training is much faster now, since simulation is decoupled from learning</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="approximator-details">
+<h2><span class="section-number">4.3. </span>Approximator Details<a class="headerlink" href="#approximator-details" title="Link to this heading">#</a></h2>
+<section id="continuousapproximator">
+<h3><span class="section-number">4.3.1. </span>ContinuousApproximator<a class="headerlink" href="#continuousapproximator" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code> is the standard choice for <strong>neural posterior estimation (NPE)</strong> and <strong>neural likelihood estimation (NLE)</strong>. It learns a continuous density <span class="math notranslate nohighlight">\(p(\theta \mid x)\)</span> (or <span class="math notranslate nohighlight">\(p(x \mid \theta)\)</span>) using a normalizing flow or diffusion-based inference network.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">approximators</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="c1"># summary_network=bf.networks.SetTransformer(),  # optional; requires .as_set() in adapter</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">test_batch</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">x_obs</span> <span class="o">=</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="sample-num-samples-conditions-draw-posterior-samples">
+<h3><span class="section-number">4.3.2. </span><code class="docutils literal notranslate"><span class="pre">.sample(num_samples,</span> <span class="pre">conditions)</span></code> — draw posterior samples<a class="headerlink" href="#sample-num-samples-conditions-draw-posterior-samples" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># conditions: dict of observed data, preprocessed by the adapter</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">})</span>
+<span class="c1"># returns: {&quot;theta&quot;: np.ndarray of shape (num_conditions, 1000, theta_dim)}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="log-prob-data-evaluate-the-log-posterior-density">
+<h3><span class="section-number">4.3.3. </span><code class="docutils literal notranslate"><span class="pre">.log_prob(data)</span></code> — evaluate the log-posterior density<a class="headerlink" href="#log-prob-data-evaluate-the-log-posterior-density" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_p</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">log_prob</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">})</span>
+<span class="c1"># returns: np.ndarray of shape (num_conditions,)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="ancestral-sample-conditions-ancestral-conditions-hierarchical-sampling">
+<h3><span class="section-number">4.3.4. </span><code class="docutils literal notranslate"><span class="pre">.ancestral_sample(conditions,</span> <span class="pre">ancestral_conditions)</span></code> — hierarchical sampling<a class="headerlink" href="#ancestral-sample-conditions-ancestral-conditions-hierarchical-sampling" title="Link to this heading">#</a></h3>
+<p>For hierarchical models, child-level observations are conditioned on parent-level parameters. One can use <code class="docutils literal notranslate"><span class="pre">ancestral_sample</span></code> to specify <code class="docutils literal notranslate"><span class="pre">child_conditions</span></code> and <code class="docutils literal notranslate"><span class="pre">parent_conditions</span></code> correspondingly. See also <span class="xref myst">our example notebook for compositional diffusion</span> for more detail.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example of specifying child and parent (ancestral) conditions for hierarchical sampling</span>
+<span class="c1"># Not run here because we do not have a hierarchical simulator</span>
+<span class="c1"># samples = approximator.ancestral_sample( </span>
+<span class="c1">#     conditions=child_conditions,</span>
+<span class="c1">#     ancestral_conditions=parent_conditions,</span>
+<span class="c1">#     num_samples=500</span>
+<span class="c1"># )</span>
+</pre></div>
+</div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>NPE vs NLE:</strong> The choice between posterior estimation and likelihood estimation is controlled entirely by how the adapter routes variables — not by the approximator class. Point <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code> at <code class="docutils literal notranslate"><span class="pre">theta</span></code> for NPE, or at <code class="docutils literal notranslate"><span class="pre">x</span></code> for NLE.</p>
+</div></blockquote>
+</section>
+<section id="modelcomparisonapproximator">
+<h3><span class="section-number">4.3.5. </span>ModelComparisonApproximator<a class="headerlink" href="#modelcomparisonapproximator" title="Link to this heading">#</a></h3>
+<p>Use this when comparing a discrete set of competing simulators / models. It learns posterior model probabilities <span class="math notranslate nohighlight">\(p(M_k \mid x)\)</span> via a classifier trained with cross-entropy.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior_null</span><span class="p">():</span> <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_alt1</span><span class="p">():</span> <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_alt2</span><span class="p">():</span> <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">likelihood_mc</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span> <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">))</span>
+
+<span class="n">sim1</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_null</span><span class="p">,</span> <span class="n">likelihood_mc</span><span class="p">])</span>
+<span class="n">sim2</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_alt1</span><span class="p">,</span> <span class="n">likelihood_mc</span><span class="p">])</span>
+<span class="n">sim3</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_alt2</span><span class="p">,</span> <span class="n">likelihood_mc</span><span class="p">])</span>
+
+<span class="n">mc_adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">as_set</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;model_indices&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">test_batch_mc</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">ModelComparisonSimulator</span><span class="p">([</span><span class="n">sim1</span><span class="p">,</span> <span class="n">sim2</span><span class="p">,</span> <span class="n">sim3</span><span class="p">])</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">x_obs_mc</span> <span class="o">=</span> <span class="n">test_batch_mc</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ModelComparisonApproximator</span><span class="p">(</span>
+    <span class="n">num_models</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">classifier_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">MLP</span><span class="p">(),</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SetTransformer</span><span class="p">(),</span>  <span class="c1"># optional; requires .as_set() in adapter</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">mc_adapter</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Training requires a <code class="docutils literal notranslate"><span class="pre">ModelComparisonSimulator</span></code> (or a list of simulators):</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulators</span><span class="o">=</span><span class="p">[</span><span class="n">sim1</span><span class="p">,</span> <span class="n">sim2</span><span class="p">,</span> <span class="n">sim3</span><span class="p">],</span> <span class="n">adapter</span><span class="o">=</span><span class="n">mc_adapter</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="predict-conditions-posterior-model-probabilities">
+<h3><span class="section-number">4.3.6. </span><code class="docutils literal notranslate"><span class="pre">.predict(conditions)</span></code> — posterior model probabilities<a class="headerlink" href="#predict-conditions-posterior-model-probabilities" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">probs</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs_mc</span><span class="p">})</span>
+<span class="c1"># returns: np.ndarray of shape (num_conditions, num_models)</span>
+<span class="c1"># probs[i, k] = estimated P(M_k | x_obs[i])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">probs=False</span></code> to get raw logits instead.</p>
+</section>
+<section id="ratioapproximator">
+<h3><span class="section-number">4.3.7. </span>RatioApproximator<a class="headerlink" href="#ratioapproximator" title="Link to this heading">#</a></h3>
+<p>Implements <strong>neural ratio estimation (NRE-C)</strong>, learning the log likelihood-to-evidence ratio <span class="math notranslate nohighlight">\(\log \frac{p(x \mid \theta)}{p(x)}\)</span> via contrastive learning. Useful when you need a flexible, simulation-based density ratio without committing to a specific parametric form.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">RatioApproximator</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">MLP</span><span class="p">(),</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>        <span class="c1"># number of negative samples per positive pair</span>
+    <span class="n">gamma</span><span class="o">=</span><span class="mf">1.0</span>   <span class="c1"># odds of a dependent pair; increase to up-weight joint pairs</span>
+<span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="log-ratio-data-estimated-log-likelihood-to-evidence-ratio">
+<h3><span class="section-number">4.3.8. </span><code class="docutils literal notranslate"><span class="pre">.log_ratio(data)</span></code> — estimated log likelihood-to-evidence ratio<a class="headerlink" href="#log-ratio-data-estimated-log-likelihood-to-evidence-ratio" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_r</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">log_ratio</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">})</span>
+<span class="c1"># returns: Tensor of shape (num_conditions,)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="scoringruleapproximator">
+<h3><span class="section-number">4.3.9. </span>ScoringRuleApproximator<a class="headerlink" href="#scoringruleapproximator" title="Link to this heading">#</a></h3>
+<p>Minimizes a <strong>proper scoring rule</strong> (e.g., energy score, CRPS) instead of a likelihood. Useful when you want amortized point estimates or light-weight distributional summaries rather than full posterior samples.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ScoringRuleApproximator</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ScoringRuleNetwork</span><span class="p">(</span>
+        <span class="n">scoring_rules</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">MeanScore</span><span class="p">(),</span>
+            <span class="s2">&quot;quantile&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">QuantileScore</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">])</span>
+        <span class="p">},</span>
+        <span class="n">subnet</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">MLP</span><span class="p">()</span>
+    <span class="p">),</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="estimate-conditions-point-estimates-and-distributional-parameters">
+<h3><span class="section-number">4.3.10. </span><code class="docutils literal notranslate"><span class="pre">.estimate(conditions)</span></code> — point estimates and distributional parameters<a class="headerlink" href="#estimate-conditions-point-estimates-and-distributional-parameters" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">})</span>
+<span class="c1"># returns nested dict: {variable_name: {score_name: {head_name: np.ndarray}}}</span>
+<span class="c1"># e.g., {&quot;theta&quot;: {&quot;mean&quot;: {&quot;mean&quot;: ...}, &quot;quantile&quot;: {&quot;0.1&quot;: ..., &quot;0.5&quot;: ..., &quot;0.9&quot;: ...}}}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Grouping can be changed with <code class="docutils literal notranslate"><span class="pre">groupby=&quot;score&quot;</span></code> to inspect results per scoring rule.</p>
+</section>
+<section id="ensembleapproximator">
+<h3><span class="section-number">4.3.11. </span>EnsembleApproximator<a class="headerlink" href="#ensembleapproximator" title="Link to this heading">#</a></h3>
+<p>Wraps multiple named approximators and trains them jointly. It can wrap approximators of different types, such as point and distribution approximators. At inference time, it can return per-member outputs or merge them into a mixture.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">EnsembleApproximator</span><span class="p">(</span>
+    <span class="n">approximators</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;flow&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+            <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;diffusion&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+            <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">DiffusionModel</span><span class="p">(),</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+        <span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">}</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>All members share the same training data; the adapter is taken from the first member.</p>
+</section>
+<section id="sample-num-samples-conditions-merged-mixture-samples">
+<h3><span class="section-number">4.3.12. </span><code class="docutils literal notranslate"><span class="pre">.sample(num_samples,</span> <span class="pre">conditions)</span></code> — merged mixture samples<a class="headerlink" href="#sample-num-samples-conditions-merged-mixture-samples" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Returns a single merged sample array by default (mixture of all members)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">)</span>
+
+<span class="c1"># Per-member results</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">merge_members</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># returns: {&quot;flow&quot;: ..., &quot;diffusion&quot;: ...}</span>
+
+<span class="c1"># Weighted mixture</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span>
+    <span class="n">member_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;flow&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;diffusion&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="log-prob-data-log-probability-under-the-mixture">
+<h3><span class="section-number">4.3.13. </span><code class="docutils literal notranslate"><span class="pre">.log_prob(data)</span></code> — log-probability under the mixture<a class="headerlink" href="#log-prob-data-log-probability-under-the-mixture" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_p</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">merge_members</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># log-sum-exp mixture</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="estimate-conditions-point-estimates-for-members-that-support-it">
+<h3><span class="section-number">4.3.14. </span><code class="docutils literal notranslate"><span class="pre">.estimate(conditions)</span></code> — point estimates (for members that support it)<a class="headerlink" href="#estimate-conditions-point-estimates-for-members-that-support-it" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">)</span>
+<span class="c1"># returns: {&quot;member_name&quot;: {variable: array}} by default</span>
+<span class="c1"># or groupby=&quot;variable&quot;: {variable: {&quot;member_name&quot;: array}}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="compositionalapproximator">
+<h3><span class="section-number">4.3.15. </span>CompositionalApproximator<a class="headerlink" href="#compositionalapproximator" title="Link to this heading">#</a></h3>
+<p>Extends <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code> to handle <strong>compositional distributions</strong> — settings where the inference conditions themselves have a compositional structure (e.g., multi-level or hierarchical observations processed jointly).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">approximators</span><span class="o">.</span><span class="n">CompositionalApproximator</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="compositional-sample-num-samples-conditions-compositional-posterior-samples">
+<h3><span class="section-number">4.3.16. </span><code class="docutils literal notranslate"><span class="pre">.compositional_sample(num_samples,</span> <span class="pre">conditions)</span></code> — compositional posterior samples<a class="headerlink" href="#compositional-sample-num-samples-conditions-compositional-posterior-samples" title="Link to this heading">#</a></h3>
+<p>Input conditions are expected to have shape <code class="docutils literal notranslate"><span class="pre">(n_datasets,</span> <span class="pre">n_compositional,</span> <span class="pre">...)</span></code> where <code class="docutils literal notranslate"><span class="pre">n_compositional</span> <span class="pre">&gt;=</span> <span class="pre">2</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">compositional_sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>For most use cases, <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code> is sufficient. Reach for <code class="docutils literal notranslate"><span class="pre">CompositionalApproximator</span></code> when your generative model has explicit compositional structure that must be preserved at inference time. See the <a class="reference internal" href="#../../examples/Compositional_Diffusion.ipynb"><span class="xref myst">Compositional Diffusion example</span></a> for a worked example.</p>
+</section>
+</section>
+<section id="saving-and-loading">
+<h2><span class="section-number">4.4. </span>Saving and Loading<a class="headerlink" href="#saving-and-loading" title="Link to this heading">#</a></h2>
+<p>Standalone approximators are saved and loaded identically to workflow-managed ones:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load (import bayesflow first to register custom objects)</span>
+<span class="c1"># Reimport if approximators come from other code</span>
+<span class="c1"># import bayesflow as bf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+
+<span class="c1"># Serialize approximator</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my_model.keras&quot;</span><span class="p">)</span>
+
+<span class="c1"># Deserialize approximator </span>
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;my_model.keras&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>See <a class="reference internal" href="saving_loading.html"><span class="std std-doc">Saving &amp; Loading</span></a> for further details.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="data_processing.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">3. </span>Data Processing: Adapters</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="summary_networks.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">5. </span>Summary Networks</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#approximator-types">4.1. Approximator Types</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-methods">4.2. Key Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fit-and-compile">4.2.1. <code class="docutils literal notranslate"><span class="pre">fit</span></code> and <code class="docutils literal notranslate"><span class="pre">compile</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#approximator-details">4.3. Approximator Details</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#continuousapproximator">4.3.1. ContinuousApproximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sample-num-samples-conditions-draw-posterior-samples">4.3.2. <code class="docutils literal notranslate"><span class="pre">.sample(num_samples,</span> <span class="pre">conditions)</span></code> — draw posterior samples</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#log-prob-data-evaluate-the-log-posterior-density">4.3.3. <code class="docutils literal notranslate"><span class="pre">.log_prob(data)</span></code> — evaluate the log-posterior density</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ancestral-sample-conditions-ancestral-conditions-hierarchical-sampling">4.3.4. <code class="docutils literal notranslate"><span class="pre">.ancestral_sample(conditions,</span> <span class="pre">ancestral_conditions)</span></code> — hierarchical sampling</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modelcomparisonapproximator">4.3.5. ModelComparisonApproximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#predict-conditions-posterior-model-probabilities">4.3.6. <code class="docutils literal notranslate"><span class="pre">.predict(conditions)</span></code> — posterior model probabilities</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ratioapproximator">4.3.7. RatioApproximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#log-ratio-data-estimated-log-likelihood-to-evidence-ratio">4.3.8. <code class="docutils literal notranslate"><span class="pre">.log_ratio(data)</span></code> — estimated log likelihood-to-evidence ratio</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scoringruleapproximator">4.3.9. ScoringRuleApproximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#estimate-conditions-point-estimates-and-distributional-parameters">4.3.10. <code class="docutils literal notranslate"><span class="pre">.estimate(conditions)</span></code> — point estimates and distributional parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ensembleapproximator">4.3.11. EnsembleApproximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sample-num-samples-conditions-merged-mixture-samples">4.3.12. <code class="docutils literal notranslate"><span class="pre">.sample(num_samples,</span> <span class="pre">conditions)</span></code> — merged mixture samples</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#log-prob-data-log-probability-under-the-mixture">4.3.13. <code class="docutils literal notranslate"><span class="pre">.log_prob(data)</span></code> — log-probability under the mixture</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#estimate-conditions-point-estimates-for-members-that-support-it">4.3.14. <code class="docutils literal notranslate"><span class="pre">.estimate(conditions)</span></code> — point estimates (for members that support it)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compositionalapproximator">4.3.15. CompositionalApproximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compositional-sample-num-samples-conditions-compositional-posterior-samples">4.3.16. <code class="docutils literal notranslate"><span class="pre">.compositional_sample(num_samples,</span> <span class="pre">conditions)</span></code> — compositional posterior samples</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-loading">4.4. Saving and Loading</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.11/docsrc/source/user_guide/approximators.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

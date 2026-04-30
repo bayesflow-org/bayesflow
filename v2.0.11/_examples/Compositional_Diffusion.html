@@ -1,0 +1,1308 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>13. Compositional Amortized Inference for Hierarchical Bayesian Models &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../_static/documentation_options.js?v=4e34c7ab"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Compositional_Diffusion';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Compositional_Diffusion.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="User Guide" href="../user_guide/index.html" />
+    <link rel="prev" title="12. Neural Likelihood-to-Evidence Ratio Estimation" href="Ratio_Estimation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.0.11" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion Models In Simulation-Based Inference: A Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Linear_Regression_Starter.html">2. Bayesian Linear Regression Starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">3. Image data: Inference on Spatial Data and Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">4. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">5. Simple Model Comparison - One Sample T-Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">7. Posterior Estimation for SIR-like Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">8. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">9. Likelihood Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">10. Posterior Estimation With Multimodal Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">11. Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">12. Neural Likelihood-to-Evidence Ratio Estimation</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">13. Compositional Amortized Inference for Hierarchical Bayesian Models</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">13. </span>Compositional Amortized Inference for Hierarchical Bayesian Models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="compositional-amortized-inference-for-hierarchical-bayesian-models">
+<h1><span class="section-number">13. </span>Compositional Amortized Inference for Hierarchical Bayesian Models<a class="headerlink" href="#compositional-amortized-inference-for-hierarchical-bayesian-models" title="Link to this heading">#</a></h1>
+<p><strong>References:</strong></p>
+<ul class="simple">
+<li><p>Arruda et al. (2026) — <a class="reference external" href="https://arxiv.org/abs/2505.14429">Compositional amortized inference for large-scale hierarchical Bayesian models</a></p></li>
+<li><p>Geffner et al. (2023) — <a class="reference external" href="https://proceedings.mlr.press/v202/geffner23a.html">Compositional score modeling for simulation-based inference</a></p></li>
+</ul>
+<p><em>Author: Jonas Arruda</em></p>
+<hr class="docutils" />
+<section id="what-this-tutorial-covers">
+<h2><span class="section-number">13.1. </span>What This Tutorial Covers<a class="headerlink" href="#what-this-tutorial-covers" title="Link to this heading">#</a></h2>
+<p>Hierarchical Bayesian models are powerful tools in cognitive science and many other fields, but they face a fundamental scalability challenge: inference must be repeated every time data grows — more subjects, more trials, larger studies. Standard amortized inference (training a neural network to approximate the posterior) requires training data that match the exact study size, which makes generalizing to larger datasets difficult.</p>
+<p><strong>Compositional amortized inference</strong> resolves this by decomposing the posterior into pieces that can be independently amortized and then composed at test time — without retraining. The key insight is:</p>
+<div class="math notranslate nohighlight">
+\[p(\boldsymbol{\eta} \mid \mathbf{Y}_{1:J}) \propto p(\boldsymbol{\eta})^{1-J} \prod_{j=1}^{J} p(\boldsymbol{\eta} \mid \mathbf{Y}_j)\]</div>
+<p>Each posterior term can be trained using a single network, and then combined via a compositional sampling procedure. This allows a network trained on <strong>small datasets</strong> (e.g., 1 or 5 subjects) to be repurposed for inference over <strong>thousands of subjects</strong> at test time.</p>
+<section id="the-example-hierarchical-evidence-accumulation-model">
+<h3><span class="section-number">13.1.1. </span>The Example: Hierarchical Evidence Accumulation Model<a class="headerlink" href="#the-example-hierarchical-evidence-accumulation-model" title="Link to this heading">#</a></h3>
+<p>We use the <strong>Evidence Accumulation Model (EAM)</strong> from mathematical psychology as our running example (see Habermann et al. (2025) — <em>Amortized Bayesian Multilevel Models</em>). The EAM is a widely-used model of two-alternative forced-choice reaction time tasks. It captures both response times and choice accuracy in a principled mechanistic framework.</p>
+<p>The hierarchical structure has two levels:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Level</p></th>
+<th class="head"><p>Parameters</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Group</strong></p></td>
+<td><p><span class="math notranslate nohighlight">\(\mu_\nu, \mu_{\log\alpha}, \mu_{\log t_0}, \sigma_\nu, \sigma_{\log\alpha}, \sigma_{\log t_0}, \beta\)</span></p></td>
+<td><p>Population-level tendencies and variability</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Subject</strong></p></td>
+<td><p><span class="math notranslate nohighlight">\(\nu_p, \alpha_p, t_{0,p}\)</span></p></td>
+<td><p>Individual drift rates, thresholds, and non-decision times</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>By the end of this tutorial, you will know how to:</p>
+<ol class="arabic simple">
+<li><p>Define a hierarchical generative model with BayesFlow</p></li>
+<li><p>Train a <code class="docutils literal notranslate"><span class="pre">CompositionalDiffusionModel</span></code> for group-level parameters</p></li>
+<li><p>Scale inference to 10,000 subjects at test time via <code class="docutils literal notranslate"><span class="pre">compositional_sample</span></code></p></li>
+<li><p>Recover subject-level parameters via <code class="docutils literal notranslate"><span class="pre">ancestral_sample</span></code></p></li>
+</ol>
+</section>
+</section>
+<section id="setup-and-imports">
+<h2><span class="section-number">13.2. </span>1. Setup and Imports<a class="headerlink" href="#setup-and-imports" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">beta</span> <span class="k">as</span> <span class="n">beta_dist</span><span class="p">,</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">norm_dist</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;tensorflow&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># for faster simulations, optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="hierarchical-evidence-accumulation-model-eam">
+<h2><span class="section-number">13.3. </span>2. Hierarchical Evidence Accumulation Model (EAM)<a class="headerlink" href="#hierarchical-evidence-accumulation-model-eam" title="Link to this heading">#</a></h2>
+<section id="the-evidence-accumulation-model">
+<h3><span class="section-number">13.3.1. </span>2.1 The Evidence Accumulation Model<a class="headerlink" href="#the-evidence-accumulation-model" title="Link to this heading">#</a></h3>
+<p>The EAM models a decision as a noisy accumulation of evidence over time. A particle starts at position <span class="math notranslate nohighlight">\(\beta \cdot \alpha\)</span> (the relative starting point scaled by the boundary) and drifts with rate <span class="math notranslate nohighlight">\(\nu\)</span> and diffusion noise <span class="math notranslate nohighlight">\(\sigma \, dW_t\)</span> until it hits either <span class="math notranslate nohighlight">\(0\)</span> (lower boundary, choice = 0) or <span class="math notranslate nohighlight">\(\alpha\)</span> (upper boundary, choice = 1). The response time is the first-passage time plus a non-decision offset <span class="math notranslate nohighlight">\(t_0\)</span> for sensory and motor latency.</p>
+<p>The four EAM parameters are:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Symbol</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Drift rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(\nu\)</span></p></td>
+<td><p>Speed and direction of evidence accumulation</p></td>
+</tr>
+<tr class="row-odd"><td><p>Boundary separation</p></td>
+<td><p><span class="math notranslate nohighlight">\(\alpha\)</span></p></td>
+<td><p>Response caution — larger values mean slower but more accurate responses</p></td>
+</tr>
+<tr class="row-even"><td><p>Non-decision time</p></td>
+<td><p><span class="math notranslate nohighlight">\(t_0\)</span></p></td>
+<td><p>Sensory encoding + motor execution time, not part of decision</p></td>
+</tr>
+<tr class="row-odd"><td><p>Starting point</p></td>
+<td><p><span class="math notranslate nohighlight">\(\beta \in [0,1]\)</span></p></td>
+<td><p>Prior bias toward one response option</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The simulation below implements the Euler–Maruyama discretization of this stochastic differential equation. We use <code class="docutils literal notranslate"><span class="pre">numba</span></code> to JIT-compile the inner trial loop to increase simulation speed.</p>
+</section>
+<section id="hierarchical-prior-structure">
+<h3><span class="section-number">13.3.2. </span>2.2 Hierarchical Prior Structure<a class="headerlink" href="#hierarchical-prior-structure" title="Link to this heading">#</a></h3>
+<p>Subjects are modeled as exchangeable draws from a population. The generative process is:</p>
+<p><strong>Group level</strong> (shared across all subjects):
+$<span class="math notranslate nohighlight">\(\mu_\nu \sim \mathcal{N}(0.5, 0.3^2), \quad \mu_{\log\alpha} \sim \mathcal{N}(0, 0.05^2), \quad \mu_{\log t_0} \sim \mathcal{N}(-1, 0.3^2)\)</span><span class="math notranslate nohighlight">\(
+\)</span><span class="math notranslate nohighlight">\(\log\sigma_\nu \sim \mathcal{N}(0, 1), \quad \log\sigma_{\log\alpha} \sim \mathcal{N}(0, 1), \quad \log\sigma_{\log t_0} \sim \mathcal{N}(-1, 0.3^2)\)</span><span class="math notranslate nohighlight">\(
+\)</span><span class="math notranslate nohighlight">\(\beta_\text{raw} \sim \mathcal{N}(0, 1), \quad \beta = F^{-1}_{\text{Beta}(50,50)}(\Phi(\beta_\text{raw}))\)</span>$</p>
+<p><strong>Subject level</strong> (per-subject draws from the group):
+$<span class="math notranslate nohighlight">\(\nu_p \sim \mathcal{N}(\mu_\nu, \sigma_\nu^2), \quad \log\alpha_p \sim \mathcal{N}(\mu_{\log\alpha}, \sigma_{\log\alpha}^2), \quad \log t_{0,p} \sim \mathcal{N}(\mu_{\log t_0}, \sigma_{\log t_0}^2)\)</span>$</p>
+<p>The starting point <span class="math notranslate nohighlight">\(\beta\)</span> is shared across subjects (a global bias), while drift rate and thresholds vary. Log-normal priors on <span class="math notranslate nohighlight">\(\alpha\)</span> and <span class="math notranslate nohighlight">\(t_0\)</span> ensure positivity without truncation.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">beta_raw</span></code> reparameterization maps an unconstrained Gaussian to the <span class="math notranslate nohighlight">\([0,1]\)</span> Beta-distributed prior via the probability integral transform.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@njit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_ddm_trial</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulates one realization of the diffusion process given</span>
+<span class="sd">    a set of parameters and a step size `dt`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    (x, c) - a tuple of response time (y - float) and a</span>
+<span class="sd">        binary decision (c - int)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Inits (process starts at relative starting point)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">alpha</span>
+    <span class="n">rt</span> <span class="o">=</span> <span class="n">t0</span>
+    <span class="n">const</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+    <span class="c1"># Loop through process and check boundary conditions</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">&gt;=</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rt</span> <span class="o">&lt;=</span> <span class="n">max_time</span><span class="p">:</span>
+        <span class="c1"># Perform diffusion equation</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="n">nu</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">const</span> <span class="o">*</span> <span class="n">z</span>
+
+        <span class="c1"># Increment step counter</span>
+        <span class="n">rt</span> <span class="o">+=</span> <span class="n">dt</span>
+
+    <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="n">alpha</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">rt</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_ddm</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">n_subjects</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+        <span class="n">nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_subjects</span><span class="p">,))</span> <span class="o">*</span> <span class="n">nu</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_subjects</span><span class="p">,))</span> <span class="o">*</span> <span class="n">alpha</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_subjects</span><span class="p">,))</span> <span class="o">*</span> <span class="n">t0</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_subjects</span><span class="p">,</span> <span class="n">n_trials</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">j_subject</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subjects</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i_trial</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_trials</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">j_subject</span><span class="p">,</span> <span class="n">i_trial</span><span class="p">]</span> <span class="o">=</span> <span class="n">simulate_ddm_trial</span><span class="p">(</span><span class="n">nu</span><span class="p">[</span><span class="n">j_subject</span><span class="p">],</span> <span class="n">alpha</span><span class="p">[</span><span class="n">j_subject</span><span class="p">],</span> <span class="n">t0</span><span class="p">[</span><span class="n">j_subject</span><span class="p">],</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_subjects</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">n_trials</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">n_subjects</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">n_trials</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">sim_data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">score_log_norm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">m</span><span class="p">)</span> <span class="o">/</span> <span class="n">s</span><span class="o">**</span><span class="mi">2</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">beta_from_normal</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">norm_dist</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">beta_dist</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>  <span class="c1"># Beta inverse CDF</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="n">global_prior</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;mu_nu&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+    <span class="s1">&#39;mu_alpha&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span>
+    <span class="s1">&#39;mu_t0&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+    <span class="s1">&#39;log_sigma_nu&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="s1">&#39;log_sigma_alpha&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="s1">&#39;log_sigma_t0&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+    <span class="s1">&#39;beta_raw&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_hierarchical_priors</span><span class="p">(</span><span class="n">n_subjects</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a dict with group params and per subject params.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Group level</span>
+    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">mu_alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">mu_t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">log_sigma_alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">log_sigma_t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">beta_from_normal</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+    <span class="c1"># Subject level</span>
+    <span class="n">nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_nu</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_sigma_nu</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_subjects</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_alpha</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_sigma_alpha</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_subjects</span><span class="p">))</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_t0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_sigma_t0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_subjects</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="c1"># group</span>
+        <span class="s2">&quot;mu_nu&quot;</span><span class="p">:</span> <span class="n">mu_nu</span><span class="p">,</span>
+        <span class="s2">&quot;mu_alpha&quot;</span><span class="p">:</span> <span class="n">mu_alpha</span><span class="p">,</span>
+        <span class="s2">&quot;mu_t0&quot;</span><span class="p">:</span> <span class="n">mu_t0</span><span class="p">,</span>
+        <span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">:</span> <span class="n">log_sigma_nu</span><span class="p">,</span>
+        <span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">:</span> <span class="n">log_sigma_alpha</span><span class="p">,</span>
+        <span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">:</span> <span class="n">log_sigma_t0</span><span class="p">,</span>
+        <span class="s2">&quot;beta_raw&quot;</span><span class="p">:</span> <span class="n">beta_raw</span><span class="p">,</span>
+        <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">beta</span><span class="p">,</span>
+        <span class="c1"># subjects</span>
+        <span class="s2">&quot;nu&quot;</span><span class="p">:</span> <span class="n">nu</span><span class="p">,</span>
+        <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">alpha</span><span class="p">,</span>
+        <span class="s2">&quot;t0&quot;</span><span class="p">:</span> <span class="n">t0</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="the-prior-score-function">
+<h3><span class="section-number">13.3.3. </span>2.3 The Prior Score Function<a class="headerlink" href="#the-prior-score-function" title="Link to this heading">#</a></h3>
+<p>Compositional inference requires the <strong>score function</strong> of the prior, i.e., <span class="math notranslate nohighlight">\(\nabla_\theta \log p(\theta)\)</span>. For a Gaussian prior <span class="math notranslate nohighlight">\(\mathcal{N}(\mu, \sigma^2)\)</span>, the score is simply:
+$<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \mu}{\sigma^2}\)</span>$</p>
+<p>The score is time-weighted by <span class="math notranslate nohighlight">\((1 - t)\)</span> following the diffusion bridge formulation in Arruda et al. (2026), where <span class="math notranslate nohighlight">\(t \in [0, 1]\)</span> is the diffusion time. At <span class="math notranslate nohighlight">\(t=0\)</span> (start of diffusion) the prior score has full weight; at <span class="math notranslate nohighlight">\(t=1\)</span> (end) it vanishes. Optionally, the prior score function can have a time argument and you can define your one time dependence.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior_global_score</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">]</span>
+    <span class="n">mu_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">]</span>
+    <span class="n">mu_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">]</span>
+    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">]</span>
+    <span class="n">log_sigma_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">]</span>
+    <span class="n">log_sigma_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">]</span>
+    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">]</span>
+
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mu_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;mu_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;mu_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;beta_raw&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">parts</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator_hierarchical</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">sample_hierarchical_priors</span><span class="p">,</span> <span class="n">simulate_ddm</span><span class="p">])</span>
+<span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">)[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>array([[1.        , 0.71087643],
+       [1.        , 0.32586295],
+       [0.        , 0.65258866],
+       [1.        , 0.56785688],
+       [1.        , 0.74872884],
+       [1.        , 0.41415553],
+       [1.        , 0.73329022],
+       [0.        , 0.56402845],
+       [0.        , 0.80291146],
+       [0.        , 0.51513243]])
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="configuration">
+<h2><span class="section-number">13.4. </span>3. Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
+<p>We set all hyperparameters in one place for easy experimentation.</p>
+<blockquote>
+<div><p><strong>Note on training vs. test scale:</strong> The network sees only 5 subjects per training sample during training (small enough for fast simulation). At inference time, compositional sampling decomposes the 10,000-subject problem into 5-subject sub-problems, aggregates their posterior scores, and samples from the composed posterior without any retraining.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N_TRAINING_BATCHES</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">EPOCHS</span> <span class="o">=</span> <span class="mi">1_000</span>
+<span class="n">N_LOCAL_SUBJECTS</span> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># number of subjects in a single training batch</span>
+
+<span class="n">N_TRIALS</span> <span class="o">=</span> <span class="mi">30</span>         <span class="c1"># trials per subject</span>
+<span class="n">N_SUBJECTS</span> <span class="o">=</span> <span class="mi">10_000</span>   <span class="c1"># number of subjects in one experiment</span>
+<span class="n">N_TEST</span> <span class="o">=</span> <span class="mi">100</span>          <span class="c1"># number of test data sets</span>
+<span class="n">N_SAMPLES</span> <span class="o">=</span> <span class="mi">100</span>       <span class="c1"># posterior samples per test dataset</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="building-the-bayesflow-workflows">
+<h2><span class="section-number">13.5. </span>4. Building the BayesFlow Workflows<a class="headerlink" href="#building-the-bayesflow-workflows" title="Link to this heading">#</a></h2>
+<p>We need two workflows, one for each level of the hierarchy:</p>
+<section id="global-workflow-group-level-parameters">
+<h3><span class="section-number">13.5.1. </span>4.1 Global Workflow (Group-level Parameters)<a class="headerlink" href="#global-workflow-group-level-parameters" title="Link to this heading">#</a></h3>
+<p><strong>Summary network</strong>: Each subject’s trial data is an unordered set of (choice, RT) pairs. The <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code> is a permutation-invariant attention-based architecture that produces a fixed-size embedding.</p>
+<p><strong>Inference network</strong>: The <code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code> is the key component enabling compositional inference. It learns to approximate the per-subject posterior score <span class="math notranslate nohighlight">\(\nabla_{\boldsymbol{\eta}_t} \log p({\boldsymbol{\eta}_t} \mid \mathbf{Y}_j)\)</span> using a diffusion-based score model. During training this is just a standard Diffusion Model (see our <a class="reference internal" href="Diffusion_Models.html"><span class="std std-doc">Diffusion Model Tutorial</span></a>). At inference time, scores from many individuals are summed and integrated via an SDE solver to produce samples from the composed posterior.</p>
+</section>
+<section id="local-workflow-subject-level-parameters">
+<h3><span class="section-number">13.5.2. </span>4.2 Local Workflow (Subject-level Parameters)<a class="headerlink" href="#local-workflow-subject-level-parameters" title="Link to this heading">#</a></h3>
+<p>The local workflow recovers per-subject parameters <span class="math notranslate nohighlight">\((\nu_p, \alpha_p, t_{0,p})\)</span> given the individual subject’s data and conditioned on the group-level posterior. During training it gets the true global parameters and during inference we can sample from the local parameters using ancestral sampling.</p>
+<p>After training, both workflows are ready for compositional and ancestral sampling respectively.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">param_names_global</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">global_prior</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="n">pretty_param_names_global</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="sa">r</span><span class="s1">&#39;$\mu_\nu$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\mu_\alpha$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\mu_</span><span class="si">{t_0}</span><span class="s1">$&#39;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s1">&#39;$\log \sigma_\nu$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\log \sigma_\alpha$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\log \sigma_</span><span class="si">{t_0}</span><span class="s1">$&#39;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s1">&#39;$\beta_\text</span><span class="si">{raw}</span><span class="s1">$&#39;</span>
+<span class="p">]</span>
+
+<span class="c1"># Global (group-level) workflow</span>
+<span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_global</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;sim_data&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">workflow_global</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">CompositionalWorkflow</span><span class="p">(</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SetTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">DiffusionModel</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="c1"># note: you can also turn a BasicWorkflow into a compositional one including the already trained diffusion model</span>
+<span class="c1"># workflow_global = CompositionalWorkflow.from_basic_workflow(workflow_global)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">param_names_local</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;t0&#39;</span><span class="p">]</span>
+<span class="n">pretty_param_names_local</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\nu_p$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\alpha_p$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$t_{0,p}$&#39;</span><span class="p">]</span>
+
+<span class="c1"># Local (subject-level) workflow</span>
+<span class="n">adapter_local</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">log</span><span class="p">([</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;t0&quot;</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_local</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_global</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;sim_data&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">workflow_local</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter_local</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SetTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">StableConsistencyModel</span><span class="p">(),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The SetTransformer treats all 5 * N_TRIALS (choice, RT) pairs from all subjects as a single unordered set.</span>
+<span class="n">training_data</span> <span class="o">=</span> <span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample_parallel</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">N_TRAINING_BATCHES</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span><span class="p">),</span>
+    <span class="n">n_subjects</span><span class="o">=</span><span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span>
+<span class="p">)</span>
+<span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">N_TRAINING_BATCHES</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">N_LOCAL_SUBJECTS</span> <span class="o">*</span> <span class="n">N_TRIALS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">training_data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="n">EPOCHS</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span>
+<span class="p">)</span>
+<span class="c1"># keras.saving.save_model(workflow_global.approximator, &quot;misc/diffusion/partial_pooling_global.keras&quot;)</span>
+<span class="c1"># workflow_global.approximator = keras.saving.load_model(&quot;misc/diffusion/partial_pooling_global.keras&quot;)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The SetTransformer treats all N_TRIALS (choice, RT) pairs as a single unordered set.</span>
+<span class="n">training_data</span> <span class="o">=</span> <span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample_parallel</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">N_TRAINING_BATCHES</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span><span class="p">),</span>
+    <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow_local</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">training_data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># keras.saving.save_model(workflow_local.approximator, &quot;misc/diffusion/partial_pooling_local.keras&quot;)</span>
+<span class="c1"># workflow_local.approximator = keras.saving.load_model(&quot;misc/diffusion/partial_pooling_local.keras&quot;)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We first validate that the trained global workflow can recover parameters on test datasets of the same scale (5 subjects, 30 trials each). This is a sanity check to ensure the network learned something sensible before we attempt to scale up to 10,000 subjects. At this stage, you should continue only with a well calibrated model. Recovery might not be perfect due to the smaller number of trials.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_data_single</span> <span class="o">=</span> <span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample_parallel</span><span class="p">(</span>
+    <span class="n">N_TEST</span><span class="p">,</span> <span class="n">n_subjects</span><span class="o">=</span><span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span>
+<span class="p">)</span>
+<span class="n">test_data_single</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data_single</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span>
+    <span class="n">N_TEST</span><span class="p">,</span> <span class="n">N_LOCAL_SUBJECTS</span> <span class="o">*</span> <span class="n">N_TRIALS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">test_posterior</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="n">N_SAMPLES</span><span class="p">,</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">test_data_single</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "686801b9f49644beb1f381620cd92e3e", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "a155332971014bb193c73e21ec0e4dab", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 30.68 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">test_posterior</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">test_data_single</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">pretty_param_names_global</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/e5fdbd29e7ffa562f87905ae7f50f0d6e3e3624dd71540764cb65efd1055e7f2.png" src="../_images/e5fdbd29e7ffa562f87905ae7f50f0d6e3e3624dd71540764cb65efd1055e7f2.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">test_posterior</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">test_data_single</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">pretty_param_names_global</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/cda68ab0c1ee287825f0ac5095bfe5f17098f4e58f538ed792bf72b0b3d439ac.png" src="../_images/cda68ab0c1ee287825f0ac5095bfe5f17098f4e58f538ed792bf72b0b3d439ac.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="compositional-inference-at-scale">
+<h2><span class="section-number">13.6. </span>5. Compositional Inference at Scale<a class="headerlink" href="#compositional-inference-at-scale" title="Link to this heading">#</a></h2>
+<p>This is where the method’s scalability shines. We now simulate <code class="docutils literal notranslate"><span class="pre">N_TEST</span></code> independent studies, each with <strong>10,000 subjects</strong> — 2000× more subjects than the network ever saw during training.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_data</span> <span class="o">=</span> <span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample_parallel</span><span class="p">(</span>
+    <span class="n">N_TEST</span><span class="p">,</span> <span class="n">n_subjects</span><span class="o">=</span><span class="n">N_SUBJECTS</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span>
+<span class="p">)</span>
+<span class="c1"># bring the data in the right format</span>
+<span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span>
+    <span class="n">N_TEST</span><span class="p">,</span> <span class="n">N_SUBJECTS</span> <span class="o">//</span> <span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="n">N_TRIALS</span> <span class="o">*</span> <span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">summaries</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># will be computed later by the workflow</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="how-compositional-sampling-works">
+<h3><span class="section-number">13.6.1. </span>How Compositional sampling works<a class="headerlink" href="#how-compositional-sampling-works" title="Link to this heading">#</a></h3>
+<p>Instead of passing all 10,000 subjects at once (which the network was not trained for), <code class="docutils literal notranslate"><span class="pre">compositional_sample</span></code> partitions subjects into mini-batches of <code class="docutils literal notranslate"><span class="pre">M=mini_batch_size</span></code>. For each mini-batch, the trained <code class="docutils literal notranslate"><span class="pre">CompositionalDiffusionModel</span></code> evaluates the approximate posterior score contributions and then the total score is:
+$<span class="math notranslate nohighlight">\(\nabla_{\boldsymbol{\eta}} \log p_t(\boldsymbol{\eta} \mid \mathbf{Y}_{1:J}) = d(t) \cdot \bigl[(1-t)(1-J) \nabla_{\boldsymbol{\eta}} \log p(\theta) + \frac{J}{M}\sum_{m=1}^{M} \hat{s}_m(\boldsymbol{\eta} \mid \mathbf{Y}_m)\bigr]\)</span>$</p>
+<p>This summed score is then used by a diffusion solver.</p>
+<p>Key arguments:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_prior_score</span></code> — injects the analytically known prior score into the solver</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mini_batch_size</span></code> — number of subjects processed per score evaluation (trades memory for accuracy)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">return_summaries</span></code> — cache computed subject summaries so they don’t need to be recomputed across subsequent calls with different sampler hyperparameters</p></li>
+</ul>
+<p>The compositional sampling accumulates scores from all 10,000 subjects, hence it also accumulates errors. The <code class="docutils literal notranslate"><span class="pre">compositional_bridge_d1</span></code> and <code class="docutils literal notranslate"><span class="pre">compositional_bridge_d0</span></code> arguments can help with calibration of the posterior by scaling the score over time. This is the exponential function
+from Arruda et al. (2026) that smoothly transitions from <code class="docutils literal notranslate"><span class="pre">compositional_bridge_d1</span></code> at time 1 to <code class="docutils literal notranslate"><span class="pre">compositional_bridge_d0</span></code> at time 0. Setting both to the same value (e.g., 0.1) applies a constant scaling factor.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">global_posterior</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">compositional_sample</span><span class="p">(</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="n">N_SAMPLES</span><span class="p">,</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span> <span class="c1"># get rid of all unnecessary keys</span>
+    <span class="n">compute_prior_score</span><span class="o">=</span><span class="n">prior_global_score</span><span class="p">,</span>
+    <span class="c1">#compositional_bridge_d1=0.1,     # hyperparameter, control error accumulation</span>
+    <span class="c1">#compositional_bridge_d0=0.1,     # hyperparameter, control error accumulation</span>
+    <span class="n">method</span><span class="o">=</span><span class="s1">&#39;two_step_adaptive&#39;</span><span class="p">,</span>       <span class="c1"># hyperparameter, try &quot;euler_maruyama&quot; for non-adaptive method</span>
+    <span class="n">steps</span><span class="o">=</span><span class="s1">&#39;adaptive&#39;</span><span class="p">,</span>                 <span class="c1"># hyperparameter, speed vs accuracy/stability</span>
+    <span class="n">mini_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>               <span class="c1"># hyperparameter, memory/speed vs accuracy</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">return_summaries</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">summaries</span> <span class="o">=</span> <span class="n">global_posterior</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_summaries&quot;</span><span class="p">)</span>  <span class="c1"># when rerunning with different sampler hyperparameters, pass these summaries back in to avoid recomputing them</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">global_posterior</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">pretty_param_names_global</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ddc4879068cb4766a221306cfa93d8d1", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "a75968ee8fcc4fb9a3620ac9ed3bfb20", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 23.38 minutes.
+</pre></div>
+</div>
+<img alt="../_images/3b75b51822fa781adfcfff1f3254882f7bea69650d74308ef3f38c2238d23261.png" src="../_images/3b75b51822fa781adfcfff1f3254882f7bea69650d74308ef3f38c2238d23261.png" />
+</div>
+</div>
+<p>We also provide a stabilized implementation of the approximation algorithm by Linhart et al. (2026) with the mini-batching from Arruda et al. (2026). This is based on a Gaussian approximation of the reverse diffusion kernel using the Jacobian of the score (and hence, it is computationally more costly). The method needs access to the noisy prior corresponding to the noise schedule (which you can provide or be computed directly from the diffusion model, leading to an additional pass through the network in each step of the solver). Just set <code class="docutils literal notranslate"><span class="pre">use_jac=True</span></code> and provide the corresponding <code class="docutils literal notranslate"><span class="pre">compute_prior_score</span></code>. This method can improve calibration, if the number of conditions is small, at the cost of increased computation time during inference. We recommend to use a simple ODE solver here and use it only for small numbers of compositions (e.g., &lt;50).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">noise_schedule</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">noise_schedule</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">score_log_norm_noisy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">alpha_t</span> <span class="o">*</span> <span class="n">m</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">alpha_t</span><span class="o">*</span><span class="n">s</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sigma_t</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_global_score_jac</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">time</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="c1"># diffused prior for backward kernel: N(alpha_t x theta_0, sigma_t**2 I)</span>
+    <span class="n">log_snr_t</span> <span class="o">=</span> <span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_log_snr</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span> <span class="o">=</span> <span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_alpha_sigma</span><span class="p">(</span><span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">)</span>
+
+    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">]</span>
+    <span class="n">mu_log_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_log_alpha&quot;</span><span class="p">]</span>
+    <span class="n">mu_log_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_log_t0&quot;</span><span class="p">]</span>
+    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">]</span>
+    <span class="n">log_sigma_log_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_log_alpha&quot;</span><span class="p">]</span>
+    <span class="n">log_sigma_log_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_log_t0&quot;</span><span class="p">]</span>
+    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">]</span>
+
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mu_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">&quot;mu_log_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_log_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">&quot;mu_log_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_log_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">&quot;log_sigma_log_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_log_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">&quot;log_sigma_log_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_log_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">&quot;beta_raw&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">parts</span>
+
+<span class="n">global_posterior</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">compositional_sample</span><span class="p">(</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="n">N_SAMPLES</span><span class="p">,</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span> <span class="c1"># get rid of all unnecessary keys</span>
+    <span class="n">compute_prior_score</span><span class="o">=</span><span class="n">prior_global_score_jac</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s1">&#39;euler&#39;</span><span class="p">,</span>
+    <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">mini_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
+    <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
+    <span class="n">use_jac</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="subject-level-inference-via-ancestral-sampling">
+<h2><span class="section-number">13.7. </span>6. Subject-Level Inference via Ancestral Sampling<a class="headerlink" href="#subject-level-inference-via-ancestral-sampling" title="Link to this heading">#</a></h2>
+<p>With group-level posteriors in hand, we can now recover the per-subject parameters <span class="math notranslate nohighlight">\((\nu_p, \alpha_p, t_{0,p})\)</span> for all 10,000 subjects.</p>
+<section id="ancestral-sampling">
+<h3><span class="section-number">13.7.1. </span>Ancestral sampling<a class="headerlink" href="#ancestral-sampling" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ancestral_sample</span></code> implements the second stage of the hierarchical inference cascade: For each posterior draw of the global parameters from <code class="docutils literal notranslate"><span class="pre">global_posterior</span></code>, the local workflow conditions on that draw and the individual subject’s trials to produce a subject-level sample. This naturally propagates uncertainty from the group level down to the individual level.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ancestral_conditions</span></code> gets the global samples as conditioning variables
+The result is a full approximate joint posterior over all parameters at both levels of the hierarchy.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># only check for N_LOCAL_CONDITIONS local conditions per dataset here</span>
+<span class="n">N_LOCAL_CONDITIONS</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">smaller_test_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[:,</span> <span class="p">:</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">test_data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">param_names_local</span><span class="p">}</span>
+<span class="n">smaller_test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="p">,</span> <span class="n">N_SUBJECTS</span><span class="p">,</span> <span class="n">N_TRIALS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[:,</span> <span class="p">:</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">local_posterior</span> <span class="o">=</span> <span class="n">workflow_local</span><span class="o">.</span><span class="n">ancestral_sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">smaller_test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span>
+    <span class="n">ancestral_conditions</span><span class="o">=</span><span class="n">global_posterior</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="o">*</span><span class="n">N_SAMPLES</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "d81cc10453e946fe830216749291cd55", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "c577f8fb5aaf4ec881a795388510b72f", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 12.78 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flat_local_posterior</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="o">*</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">,</span> <span class="n">N_SAMPLES</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">local_posterior</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<span class="n">flat_test_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="o">*</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">smaller_test_data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;sim_data&#39;</span><span class="p">}</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">flat_local_posterior</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">flat_test_data</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">pretty_param_names_local</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/847198dc36463298d76afe3d222845bde8124b00b1718be936795b327888ab88.png" src="../_images/847198dc36463298d76afe3d222845bde8124b00b1718be936795b327888ab88.png" />
+</div>
+</div>
+<p>Congratulations! You have now run a full compositional amortized inference pipeline on a hierarchical Bayesian model with 10,000 subjects!</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Ratio_Estimation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">12. </span>Neural Likelihood-to-Evidence Ratio Estimation</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../user_guide/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">User Guide</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-this-tutorial-covers">13.1. What This Tutorial Covers</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-example-hierarchical-evidence-accumulation-model">13.1.1. The Example: Hierarchical Evidence Accumulation Model</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup-and-imports">13.2. 1. Setup and Imports</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hierarchical-evidence-accumulation-model-eam">13.3. 2. Hierarchical Evidence Accumulation Model (EAM)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-evidence-accumulation-model">13.3.1. 2.1 The Evidence Accumulation Model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hierarchical-prior-structure">13.3.2. 2.2 Hierarchical Prior Structure</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-prior-score-function">13.3.3. 2.3 The Prior Score Function</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">13.4. 3. Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-the-bayesflow-workflows">13.5. 4. Building the BayesFlow Workflows</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#global-workflow-group-level-parameters">13.5.1. 4.1 Global Workflow (Group-level Parameters)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#local-workflow-subject-level-parameters">13.5.2. 4.2 Local Workflow (Subject-level Parameters)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#compositional-inference-at-scale">13.6. 5. Compositional Inference at Scale</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-compositional-sampling-works">13.6.1. How Compositional sampling works</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subject-level-inference-via-ancestral-sampling">13.7. 6. Subject-Level Inference via Ancestral Sampling</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ancestral-sampling">13.7.1. Ancestral sampling</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.11/docsrc/source/_examples/Compositional_Diffusion.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

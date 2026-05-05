@@ -1,55 +1,76 @@
-name: Publish Python 🐍 distribution 📦 to PyPI
+name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Whether to perform a dry run (publish to TestPyPI)"
+        required: true
+        type: boolean
+        default: true
+      version:
+        description: "The new version string (without the leading v, e.g., 2.1.0)"
+        required: true
+        type: string
 
 jobs:
-  build:
-    name: Build distribution 📦
+  publish:
     runs-on: ubuntu-latest
+
+    # PyPI trusted publishing permissions
+    permissions:
+      id-token: write
+      contents: write
 
     steps:
     - uses: actions/checkout@v6
       with:
         persist-credentials: false
+        fetch-depth: 0  # shallow clone
+
+    - name: Validate version string
+      run: |
+        VERSION=${{ github.event.inputs.version }}
+
+        if [[ "$VERSION" =~ ^v ]]; then
+          echo "::error::Version string starts with 'v' ($VERSION). Please provide a pure SemVer string (e.g., 1.2.3)."
+          exit 1
+        fi
+
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+          echo "::error::Invalid version format ($VERSION). Use X.Y.Z format."
+          exit 1
+        fi
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
     - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "3.x"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
-    - name: Build a binary wheel and a source tarball
-      run: python3 -m build
+      run: uv python install
+
+    - name: Update version string
+      run: uv version ${{ github.event.inputs.version }}
+
+    - name: Build wheel
+      run: uv build
+
     - name: Check wheel contents
-      run: pipx run check-wheel-contents dist/*.whl
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v7
-      with:
-        name: python-package-distributions
-        path: dist/
+      run: uvx check-wheel-contents dist/*.whl
 
-  publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    needs:
-    - build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/bayesflow  # Replace <package-name> with your PyPI project name
-    permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+    - name: Publish package to TestPyPI
+      if: ${{ github.event.inputs.dry_run == true }}
+      run: uv publish --publish-url = "https://test.pypi.org/legacy/"
 
-    steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v8
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+    - name: Publish package to PyPI
+      if: ${{ github.event.inputs.dry_run == false }}
+      run: uv publish
+
+    - name: Commit and Tag Version
+      if: ${{ github.event.inputs.dry_run == false }}
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add pyproject.toml
+        git commit -m "🚀 Release ${{ github.event.inputs.version_string }}"
+        git tag v${{ github.event.inputs.version_string }}
+        git push origin main --tags

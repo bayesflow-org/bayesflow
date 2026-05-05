@@ -21,18 +21,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
-      - name: Install Ruff
-        run: |
-          pip install -U pip setuptools wheel
-          pip install ruff
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install Dependencies
+        run: uv pip install ruff
 
       - name: Run Linter
-        run: ruff check --config pyproject.toml --verbose
+        run: uv run ruff check --config pyproject.toml --verbose
 
       - name: Run Formatter
-        run: ruff format --config pyproject.toml --check --verbose
+        run: uv run ruff format --config pyproject.toml --check --verbose

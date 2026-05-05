@@ -23,16 +23,14 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: 3.11
-          cache: "pip"
+        run: uv python install
 
       - name: Install dependencies
-        run: |
-          cd ./repo
-          python -m pip install .[docs]
+        run: uv sync --extra docs
 
       - name: Create local branches
         run: |
@@ -42,8 +40,8 @@ jobs:
       - name: Make the Sphinx docs
         run: |
           cd ./repo/docsrc
-          make clean
-          make production-docs-sequential
+          uv run make clean
+          uv run make production-docs-sequential
 
       - name: Checkout gh-pages-dev
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -61,7 +59,7 @@ jobs:
           git add -A
           if ! git diff-index --quiet HEAD; then
             git commit -m "auto: Rebuild docs."
-            git  push
+            git push
           else
             echo No commit made because the docs have not changed.
           fi

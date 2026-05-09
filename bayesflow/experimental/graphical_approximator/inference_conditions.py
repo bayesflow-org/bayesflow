@@ -1,4 +1,7 @@
-from typing import Literal, NamedTuple
+from __future__ import annotations
+
+import re
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
 import keras
 
@@ -6,6 +9,9 @@ from bayesflow.networks import SummaryNetwork
 from bayesflow.types import Tensor
 
 from .tensor_concatenation import concatenate
+
+if TYPE_CHECKING:
+    from .graphical_approximator import GraphicalApproximator
 
 
 class SummaryKey(NamedTuple):
@@ -196,3 +202,133 @@ def apply_summary(
         Output of the summary network.
     """
     return registry[key](tensor, training=training)
+
+
+def is_per_level_summary(
+    inferred_node: str,
+    conditioned_node: str,
+    inverted_graph,
+) -> bool:
+    """
+    Returns True if `conditioned_node` requires a per-level summary when
+    conditioning `inferred_node`, False if a global summary is required.
+
+    A per-level summary applies when, for every expanded copy of
+    `inferred_node`, all expanded copies of `conditioned_node` in its
+    conditions share the same last-digit suffix as the expanded inferred node.
+    This means data can be split by level rather than summarised globally.
+
+    Parameters
+    ----------
+    inferred_node : str
+        Original simulation node name being inferred.
+    conditioned_node : str
+        Original simulation node name being conditioned on.
+    inverted_graph : InvertedGraph
+        The inverted graph providing the expanded condition structure.
+
+    Returns
+    -------
+    bool
+        True if a per-level summary is appropriate, False if global.
+    """
+    detailed = inverted_graph.detailed_conditions_by_node()
+    original_names = inverted_graph.original_node_names()
+
+    for expanded_inferred, conditions in detailed.items():
+        if original_names[expanded_inferred] != inferred_node:
+            continue
+
+        expanded_conditioned = [c for c in conditions if original_names[c] == conditioned_node]
+        if not expanded_conditioned:
+            continue
+
+        inferred_match = re.search(r"\d+$", expanded_inferred)
+        if inferred_match is None:
+            return False
+
+        inferred_last_digit = inferred_match.group()[-1]
+        for c in expanded_conditioned:
+            c_match = re.search(r"\d+$", c)
+            if c_match is None or c_match.group()[-1] != inferred_last_digit:
+                return False
+
+    return True
+
+
+def inference_conditions_by_network(
+    approximator: GraphicalApproximator,
+    simulation_output: dict[str, Tensor],
+    summary_registry: dict[SummaryKey, SummaryNetwork],
+    training: bool = False,
+) -> dict[int, Tensor]:
+    """
+    Computes inference conditions for each network by running each conditioned
+    node's output through the full condition pipeline: gather → permute →
+    flatten → summarise → expand.
+
+    Parameters
+    ----------
+    approximator : GraphicalApproximator
+        The approximator, providing graph structure, variable names, and
+        output shapes.
+    simulation_output : dict[str, Tensor]
+        Dictionary mapping variable names to tensors, as produced by the
+        simulator or accumulated during sampling.
+    summary_registry : dict[SummaryKey, SummaryNetwork]
+        Mapping from summary keys to summary networks, built from the list
+        passed to ``GraphicalApproximator``.
+    training : bool, optional
+        Whether the model is in training mode, affecting layers like dropout.
+        Default is False.
+
+    Returns
+    -------
+    dict[int, Tensor]
+        Mapping from network index to the concatenated conditions tensor for
+        that network.
+    """
+    result = {}
+    output_shapes = approximator.output_shapes
+    variable_names = approximator.variable_names
+
+    for network_idx, inferred_nodes in approximator.network_composition.items():
+        # all nodes in a network share the same prefix; use the first variable
+        # of the first node to read it (variables of a node share a prefix,
+        # differing only in the last data dimension)
+        inferred_node_vars = variable_names[inferred_nodes[0]]
+        inferred_prefix = output_shapes[inferred_node_vars[0]][:-1]
+
+        condition_tensors = []
+
+        for conditioned_node in approximator.network_conditions[network_idx]:
+            tensor = gather_node_output(variable_names[conditioned_node], simulation_output)
+
+            # use the first variable's shape to compute the permutation; all
+            # variables of a node share the same prefix
+            source_shape = output_shapes[variable_names[conditioned_node][0]]
+            tensor = permute_to_prefix(tensor, source_shape, inferred_prefix)
+
+            if tensor.ndim > len(inferred_prefix) + 1:
+                if is_per_level_summary(inferred_nodes[0], conditioned_node, approximator.graph):
+                    mode = "per_level"
+                else:
+                    mode = "global"
+                tensor = flatten_to_summary_input(tensor, mode)
+                key = SummaryKey(
+                    conditioned_node,
+                    mode,
+                    inferred_nodes[0] if mode == "per_level" else None,
+                )
+                tensor = apply_summary(tensor, key, summary_registry, training=training)
+
+            # from_prefix is always recoverable from the tensor rank after the
+            # pipeline steps above, since permute aligns dimensions with the
+            # inferred prefix
+            from_prefix = inferred_prefix[: tensor.ndim - 1]
+            tensor = expand_to_prefix(tensor, from_prefix, inferred_prefix)
+            condition_tensors.append(tensor)
+
+        result[network_idx] = concatenate(condition_tensors)
+
+    return result

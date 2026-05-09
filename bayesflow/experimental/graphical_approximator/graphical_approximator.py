@@ -18,15 +18,10 @@ from ...datasets import OfflineDataset, OnlineDataset
 from ...networks.helpers.standardization.standardize import Standardize
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
-from .network_assignment import (
-    _prepare_inference_conditions,
-    inference_conditions_by_network,
-    inference_variables_by_network,
-    summary_inputs_by_network,
-)
+from .inference_conditions import inference_conditions_by_network
+from .inference_variables import inference_variables_by_network
 from .non_exchangeable_wrapper import NonExchangeableWrapper
 from .shape_inference import (
-    inference_condition_shapes_by_network,
     inference_variable_shapes_by_network,
     summary_input_shapes_by_network,
 )
@@ -84,6 +79,13 @@ class GraphicalApproximator(Approximator):
         self.adapter = adapter
         self.inference_networks = inference_networks
         self.summary_networks = summary_networks
+
+        required = self.graph.required_summary_networks()
+        if len(summary_networks or []) != len(required):
+            raise ValueError(
+                f"Expected {len(required)} summary networks, got {len(summary_networks or [])}."
+            )
+        self.summary_registry = dict(zip(required.keys(), summary_networks or []))
 
         # precompute frequently used quantities
         self.output_shapes = self.graph.simulation_graph.output_shapes()
@@ -190,20 +192,19 @@ class GraphicalApproximator(Approximator):
         if not data_shapes:
             data_shapes = self.output_shapes
 
-        # build summary networks
-        input_shapes = summary_input_shapes_by_network(self, data_shapes, meta_dict)
+        # build summary networks using shapes from required_summary_networks()
+        resolved_meta = self._meta_dict_from_data_shapes(data_shapes) | (meta_dict or {})
+        for key, input_shape in self.graph.required_summary_networks().items():
+            network = self.summary_registry[key]
+            if not network.built:
+                concrete_shape = tuple(
+                    int(d.subs(resolved_meta)) if isinstance(d, sp.Expr) else d
+                    for d in input_shape
+                )
+                network.build(concrete_shape)
 
-        for i, summary_network in enumerate(self.summary_networks or []):
-            if not summary_network.built:
-                summary_network.build(input_shapes[i])
-
-        # build inference networks
-        variable_shapes = inference_variable_shapes_by_network(self, data_shapes, meta_dict)
-        condition_shapes = inference_condition_shapes_by_network(self, data_shapes, meta_dict)
-
-        for i, inference_network in enumerate(self.inference_networks):
-            if not inference_network.built:
-                inference_network.build(variable_shapes[i], condition_shapes[i])
+        # inference networks are built lazily on the first forward pass with
+        # the actual condition shapes produced by inference_conditions_by_network
 
         # build standardization layers
         output_shapes = resolve_shapes(data_shapes, meta_dict)
@@ -237,38 +238,25 @@ class GraphicalApproximator(Approximator):
         -------
         metrics : dict[str, Tensor]
             Dictionary containing the total loss under the key "loss", as well as all tracked
-            metrics for the inference and summary networks. Each metric key is prefixed with
-            "inference_" or "summary_" to indicate its source.
+            metrics for the inference networks. Each metric key is prefixed with
+            ``inference_metrics_<i>/`` where ``i`` is the network index.
         """
-        # compute summary metrics
-        summary_metrics = {}
-
-        summary_inputs = summary_inputs_by_network(self, kwargs)
-
-        for i, summary_network in enumerate(self.summary_networks or []):
-            summary_metrics[i] = summary_network.compute_metrics(summary_inputs[i], stage=stage)
-            summary_metrics[i].pop("outputs")
-
-        # compute inference metrics
         inference_variables = inference_variables_by_network(self, kwargs)
-        inference_conditions = inference_conditions_by_network(self, kwargs)
+        inference_conditions = inference_conditions_by_network(
+            self, kwargs, self.summary_registry, training=stage == "training"
+        )
 
-        inference_metrics = {}
-        for i, inference_network in enumerate(self.inference_networks):
-            inference_metrics[i] = inference_network.compute_metrics(
-                inference_variables[i], conditions=inference_conditions[i], stage=stage
-            )
-        # combine metrics
         total_loss = 0
         combined_metrics = {}
 
-        for i, metric_type in enumerate([summary_metrics, inference_metrics]):
-            prefix = "summary_metrics" if i == 0 else "inference_metrics"
-            for val, metrics in metric_type.items():
-                if "loss" in metrics:
-                    total_loss += metrics["loss"]
-                for k, v in metrics.items():
-                    combined_metrics[f"{prefix}_{val}/{k}"] = v
+        for i, inference_network in enumerate(self.inference_networks):
+            metrics = inference_network.compute_metrics(
+                inference_variables[i], conditions=inference_conditions[i], stage=stage
+            )
+            if "loss" in metrics:
+                total_loss += metrics["loss"]
+            for k, v in metrics.items():
+                combined_metrics[f"inference_metrics_{i}/{k}"] = v
 
         combined_metrics["loss"] = total_loss
 
@@ -387,9 +375,11 @@ class GraphicalApproximator(Approximator):
         for name in data_variables:
             inference_conditions[name] = keras.ops.repeat(conditions[name], num_samples, axis=0)
 
-        # build new inference conditions incrementally
+        # build new inference conditions incrementally: after each network samples,
+        # add its output to inference_conditions so later networks can condition on it
         for i, inference_network in enumerate(self.inference_networks):
-            cond = _prepare_inference_conditions(self, inference_conditions, i, meta_dict=meta_dict)
+            all_conds = inference_conditions_by_network(self, inference_conditions, self.summary_registry)
+            cond = all_conds[i]
             variable_shape = list(variable_shapes[i])
             variable_shape[0] = batch_n
 
@@ -419,7 +409,7 @@ class GraphicalApproximator(Approximator):
         log_prob = keras.ops.zeros(batch_size)
 
         variables = inference_variables_by_network(self, adapted)
-        conditions = inference_conditions_by_network(self, adapted)
+        conditions = inference_conditions_by_network(self, adapted, self.summary_registry)
 
         # log_probs
         for i, inference_network in enumerate(self.inference_networks):

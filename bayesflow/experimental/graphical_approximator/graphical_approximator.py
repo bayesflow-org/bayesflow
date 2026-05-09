@@ -7,7 +7,6 @@ import numpy as np
 import sympy as sp
 
 from bayesflow.approximators import Approximator
-from bayesflow.experimental.graphical_approximator.shape_operations import resolve_shapes
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Shape
 from bayesflow.utils import logging
@@ -19,7 +18,7 @@ from ...networks.helpers.standardization.standardize import Standardize
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .inference_conditions import inference_conditions_by_network
-from .inference_variables import inference_variable_shapes_by_network, inference_variables_by_network
+from .inference_variables import inference_variable_shapes_by_network, inference_variables_by_network, resolve_shapes
 from .non_exchangeable_wrapper import NonExchangeableWrapper
 
 

@@ -1,14 +1,31 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 import sympy as sp
 
 from bayesflow.types import Tensor
 
-from .shape_operations import resolve_shapes
 from .tensor_concatenation import concatenate
 
 if TYPE_CHECKING:
     from .graphical_approximator import GraphicalApproximator
+
+K = TypeVar("K", str, int)
+
+
+def resolve_shapes(
+    shapes: dict[K, tuple[int | sp.Expr, ...]], meta_dict: dict | None
+) -> dict[K, tuple[int | sp.Expr, ...]]:
+    """Substitutes sympy symbols in a dict of shape tuples using ``meta_dict``."""
+    meta_dict = meta_dict or {}
+
+    def resolve(x):
+        if isinstance(x, sp.Expr):
+            x = sp.simplify(x.subs(meta_dict))
+            if isinstance(x, sp.Integer):
+                return int(x)
+        return x
+
+    return {k: tuple(resolve(d) for d in shape) for k, shape in shapes.items()}
 
 
 def inference_variables_by_network(approximator: "GraphicalApproximator", adapted_data: dict) -> dict[int, Tensor]:

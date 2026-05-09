@@ -1,7 +1,10 @@
 from typing import TYPE_CHECKING
 
+import sympy as sp
+
 from bayesflow.types import Tensor
 
+from .shape_operations import resolve_shapes
 from .tensor_concatenation import concatenate
 
 if TYPE_CHECKING:
@@ -67,3 +70,36 @@ def _collect_inference_variables(
             tensors.append(var)
 
     return concatenate(tensors)
+
+
+def inference_variable_shapes_by_network(
+    approximator: "GraphicalApproximator",
+    data_shapes: dict | None = None,
+    meta_dict: dict | None = None,
+) -> dict[int, tuple[int | sp.Expr, ...]]:
+    """
+    Returns the concrete shape of the concatenated inference variable tensor
+    for each network, with sympy symbols resolved from the data shapes.
+
+    Parameters
+    ----------
+    approximator : GraphicalApproximator
+        The approximator, providing graph structure and output shapes.
+    data_shapes : dict, optional
+        Concrete data shapes to resolve sympy symbols. Defaults to the
+        symbolic output shapes stored on the approximator.
+    meta_dict : dict, optional
+        Additional symbol-to-value mappings for resolution.
+
+    Returns
+    -------
+    dict[int, tuple]
+        Mapping from network index to resolved shape tuple.
+    """
+    if not data_shapes:
+        data_shapes = approximator.output_shapes
+
+    data_shapes = resolve_shapes(data_shapes, meta_dict)
+    meta_dict = approximator._meta_dict_from_data_shapes(data_shapes)
+
+    return resolve_shapes(approximator.graph.inference_variable_shapes(), meta_dict)

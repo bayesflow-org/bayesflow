@@ -19,12 +19,8 @@ from ...networks.helpers.standardization.standardize import Standardize
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
 from .inference_conditions import inference_conditions_by_network
-from .inference_variables import inference_variables_by_network
+from .inference_variables import inference_variable_shapes_by_network, inference_variables_by_network
 from .non_exchangeable_wrapper import NonExchangeableWrapper
-from .shape_inference import (
-    inference_variable_shapes_by_network,
-    summary_input_shapes_by_network,
-)
 
 
 @serializable("bayesflow.experimental")  # type: ignore[missing-argument]
@@ -81,11 +77,19 @@ class GraphicalApproximator(Approximator):
         self.summary_networks = summary_networks
 
         required = self.graph.required_summary_networks()
-        if len(summary_networks or []) != len(required):
+        required_nonex = self.graph.required_non_exchangeable_summary_networks()
+        n_data = len(required)
+        n_nonex = len(required_nonex)
+        total_required = n_data + n_nonex
+        if len(summary_networks or []) != total_required:
             raise ValueError(
-                f"Expected {len(required)} summary networks, got {len(summary_networks or [])}."
+                f"Expected {total_required} summary networks "
+                f"({n_data} data, {n_nonex} sequential), "
+                f"got {len(summary_networks or [])}."
             )
-        self.summary_registry = dict(zip(required.keys(), summary_networks or []))
+        data_summary_networks = (summary_networks or [])[:n_data]
+        nonex_summary_networks = (summary_networks or [])[n_data:]
+        self.summary_registry = dict(zip(required.keys(), data_summary_networks))
 
         # precompute frequently used quantities
         self.output_shapes = self.graph.simulation_graph.output_shapes()
@@ -106,20 +110,11 @@ class GraphicalApproximator(Approximator):
         if adapter == "auto":
             self.adapter = GraphicalApproximator.build_adapter()
 
-        summary_input_shapes = summary_input_shapes_by_network(self)
-        inference_variable_shapes = inference_variable_shapes_by_network(self)
-
-        # wrap inference network in NonExchangeableWrapper if node is not not exchangeable
-        exchangeable = self.graph.amortizable_nodes()
-        inference_variable_shapes = inference_variable_shapes_by_network(self)
-        shape_to_summary = {v: sk for sk, v in summary_input_shapes.items()}
-
-        for k, nodes in self.network_composition.items():
-            if any(node not in exchangeable for node in nodes):
-                summary_idx = shape_to_summary.get(inference_variable_shapes[k])
-                if summary_idx is not None and summary_idx < len(self.summary_networks or []):
-                    summary_network = self.summary_networks[summary_idx]
-                    self.inference_networks[k] = NonExchangeableWrapper(self.inference_networks[k], summary_network)
+        # wrap non-amortizable inference networks in NonExchangeableWrapper
+        for i, network_idx in enumerate(required_nonex):
+            self.inference_networks[network_idx] = NonExchangeableWrapper(
+                self.inference_networks[network_idx], nonex_summary_networks[i]
+            )
 
     @property
     def standardize_layers(self):
@@ -192,16 +187,27 @@ class GraphicalApproximator(Approximator):
         if not data_shapes:
             data_shapes = self.output_shapes
 
-        # build summary networks using shapes from required_summary_networks()
         resolved_meta = self._meta_dict_from_data_shapes(data_shapes) | (meta_dict or {})
-        for key, input_shape in self.graph.required_summary_networks().items():
-            network = self.summary_registry[key]
+
+        def _build_network(network, input_shape):
             if not network.built:
                 concrete_shape = tuple(
                     int(d.subs(resolved_meta)) if isinstance(d, sp.Expr) else d
                     for d in input_shape
                 )
                 network.build(concrete_shape)
+
+        # build data summary networks
+        for key, input_shape in self.graph.required_summary_networks().items():
+            _build_network(self.summary_registry[key], input_shape)
+
+        # build non-exchangeable summary networks (must be built before their wrappers)
+        n_data = len(self.summary_registry)
+        nonex_networks = (self.summary_networks or [])[n_data:]
+        for (_, input_shape), network in zip(
+            self.graph.required_non_exchangeable_summary_networks().items(), nonex_networks
+        ):
+            _build_network(network, input_shape)
 
         # inference networks are built lazily on the first forward pass with
         # the actual condition shapes produced by inference_conditions_by_network

@@ -68,6 +68,60 @@ class InvertedGraph(nx.DiGraph):
         """
         return max(1, len(self.data_shape_order()))
 
+    def inference_variable_shapes(self) -> dict[int, tuple]:
+        """
+        Returns the symbolic shape of the concatenated inference variable tensor
+        for each inference network.
+
+        All variables assigned to a network share the same batch/spatial prefix
+        and differ only in the last (feature) dimension, so the result is
+        ``prefix + (sum_of_feature_dims,)`` for each network.
+
+        Returns
+        -------
+        dict[int, tuple]
+            Mapping from network index to symbolic shape tuple.
+        """
+        output_shapes = self.simulation_graph.output_shapes()
+        variable_names = self.simulation_graph.variable_names()
+
+        result = {}
+        for network_idx, nodes in self.network_composition().items():
+            shapes = [
+                output_shapes[var]
+                for node in nodes
+                for var in variable_names[node]
+                if var in output_shapes
+            ]
+            if shapes:
+                prefix = shapes[0][:-1]
+                total_D = sum(s[-1] for s in shapes)
+                result[network_idx] = prefix + (total_D,)
+
+        return result
+
+    def required_non_exchangeable_summary_networks(self) -> dict[int, tuple]:
+        """
+        Returns the symbolic input shape for the sequential summary network
+        required by each non-amortizable inference network.
+
+        A non-amortizable network needs an auto-regressive summary network
+        that is fed the previously sampled values of the same node. Its input
+        shape therefore matches the inference variable shape of that network.
+
+        Returns
+        -------
+        dict[int, tuple]
+            Mapping from network index to symbolic input shape, ordered by
+            network index. Empty if all nodes are amortizable.
+        """
+        var_shapes = self.inference_variable_shapes()
+        result = {}
+        for network_idx, nodes in self.network_composition().items():
+            if any(not self.allows_amortization(node) for node in nodes):
+                result[network_idx] = var_shapes[network_idx]
+        return result
+
     def required_summary_networks(self) -> dict["SummaryKey", tuple]:
         """
         Returns an ordered mapping from ``SummaryKey`` to symbolic input shape for

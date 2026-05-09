@@ -1,10 +1,27 @@
-from typing import Literal
+from typing import Literal, NamedTuple
 
 import keras
 
+from bayesflow.networks import SummaryNetwork
 from bayesflow.types import Tensor
 
 from .tensor_concatenation import concatenate
+
+
+class SummaryKey(NamedTuple):
+    """
+    Identifies a summary network in the registry.
+
+    For ``"global"`` mode, ``inferred_node`` is ``None`` because the same
+    summary (over all data) is shared across all inferred nodes. For
+    ``"per_level"`` mode, ``inferred_node`` identifies which level is kept
+    non-flattened, so different inferred nodes at different levels get
+    different summary networks.
+    """
+
+    conditioned_node: str
+    mode: Literal["global", "per_level"]
+    inferred_node: str | None = None
 
 
 def gather_node_output(
@@ -149,3 +166,33 @@ def expand_to_prefix(
     for _ in range(n_new_axes):
         tensor = keras.ops.expand_dims(tensor, axis=-2)
     return tensor
+
+
+def apply_summary(
+    tensor: Tensor,
+    key: SummaryKey,
+    registry: dict[SummaryKey, SummaryNetwork],
+    training: bool = False,
+) -> Tensor:
+    """
+    Applies the summary network identified by `key` to `tensor`.
+
+    Parameters
+    ----------
+    tensor : Tensor
+        Flattened input tensor, as produced by ``flatten_to_summary_input``.
+    key : SummaryKey
+        Identifies which summary network to use.
+    registry : dict[SummaryKey, SummaryNetwork]
+        Mapping from summary keys to summary networks, built from the ordered
+        list passed to ``GraphicalApproximator``.
+    training : bool, optional
+        Whether the model is in training mode, affecting layers like dropout.
+        Default is False.
+
+    Returns
+    -------
+    Tensor
+        Output of the summary network.
+    """
+    return registry[key](tensor, training=training)

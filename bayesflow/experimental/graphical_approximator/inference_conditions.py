@@ -114,3 +114,38 @@ def flatten_to_summary_input(
     if tensor.ndim <= 4:
         return tensor
     return keras.ops.reshape(tensor, [shape[0], shape[1], -1, shape[-1]])
+
+
+def expand_to_prefix(
+    tensor: Tensor,
+    from_prefix: tuple,
+    to_prefix: tuple,
+) -> Tensor:
+    """
+    Inserts singleton dimensions so that `tensor` can broadcast to `to_prefix`.
+
+    Each missing prefix dimension is inserted as a singleton axis immediately
+    before the last (data) dimension. The actual tiling to the target size
+    happens later when conditions are assembled via ``concatenate``.
+
+    Parameters
+    ----------
+    tensor : Tensor
+        Input tensor with prefix ``from_prefix``, i.e. shape
+        ``(*from_prefix, D)``.
+    from_prefix : tuple
+        Current prefix of `tensor`, e.g. ``(B,)`` for a global summary.
+    to_prefix : tuple
+        Target prefix to expand towards, e.g. ``(B, N_regions, N_squares)``.
+        Must be at least as long as `from_prefix`.
+
+    Returns
+    -------
+    Tensor
+        Tensor with singleton dimensions inserted, shape ``(*to_prefix, D)``
+        where the new axes have size 1.
+    """
+    n_new_axes = len(to_prefix) - len(from_prefix)
+    for _ in range(n_new_axes):
+        tensor = keras.ops.expand_dims(tensor, axis=-2)
+    return tensor

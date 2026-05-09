@@ -1,3 +1,5 @@
+from typing import Literal
+
 import keras
 
 from bayesflow.types import Tensor
@@ -69,3 +71,46 @@ def permute_to_prefix(
         return tensor
 
     return keras.ops.transpose(tensor, perm)
+
+
+def flatten_to_summary_input(
+    tensor: Tensor,
+    mode: Literal["global", "per_level"],
+) -> Tensor:
+    """
+    Flattens `tensor` into the shape expected by a summary network, based on
+    the summary mode. Assumes `permute_to_prefix` has already been applied so
+    that the target prefix dimensions are leading.
+
+    For ``"global"`` mode, all spatial dimensions are collapsed into a single
+    set dimension: ``(B, d1, ..., dk, D) -> (B, d1*...*dk, D)``.
+
+    For ``"per_level"`` mode, the first spatial dimension is kept and the
+    remaining ones are collapsed: ``(B, N, d2, ..., dk, D) -> (B, N, d2*...*dk, D)``.
+
+    Parameters
+    ----------
+    tensor : Tensor
+        Input tensor. Must have rank >= 3 for ``"global"`` and >= 4 for
+        ``"per_level"``.
+    mode : {"global", "per_level"}
+        Summary mode. ``"global"`` produces a single summary vector per batch
+        element. ``"per_level"`` produces one summary per entry in the level
+        dimension.
+
+    Returns
+    -------
+    Tensor
+        Tensor with spatial dimensions collapsed into a single set dimension.
+    """
+    shape = keras.ops.shape(tensor)
+
+    if mode == "global":
+        if tensor.ndim <= 3:
+            return tensor
+        return keras.ops.reshape(tensor, [shape[0], -1, shape[-1]])
+
+    # per_level: keep the first spatial dimension, flatten the rest
+    if tensor.ndim <= 4:
+        return tensor
+    return keras.ops.reshape(tensor, [shape[0], shape[1], -1, shape[-1]])

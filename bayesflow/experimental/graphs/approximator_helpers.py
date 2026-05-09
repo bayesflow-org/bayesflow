@@ -72,8 +72,9 @@ def summary_input_shapes_by_network(graph: InvertedGraph) -> dict[int, tuple[int
             reshaped_input = _permute_to_prefix(input_shape, prefix)
 
             result[network_idx] = reshaped_input
+            network_idx += 1
             for _ in range(len(prefix), len(reshaped_input) - 2):
-                result[network_idx] = result[network_idx - 1][:-2] + (sp.Symbol(f"summary_dim_{network_idx}"),)
+                result[network_idx] = result[network_idx - 1][:-2] + (sp.Symbol(f"summary_dim_{network_idx - 1}"),)
                 network_idx += 1
 
     # extra summary networks required for non-exchangeable nodes

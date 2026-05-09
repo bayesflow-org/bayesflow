@@ -1,5 +1,6 @@
+import re
 from copy import deepcopy
-from typing import TypeAlias
+from typing import Literal, NamedTuple, TypeAlias
 
 import networkx as nx
 from networkx.readwrite import json_graph
@@ -12,6 +13,29 @@ from .utils import merge_root_nodes, sort_nodes_topologically
 Node: TypeAlias = str
 SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
+
+
+class SummaryKey(NamedTuple):
+    """
+    Identifies a summary network by the role it plays in the condition pipeline.
+
+    For ``"global"`` mode, ``inferred_node`` is ``None`` because the same
+    summary (over all data) is shared across all inferred nodes where this summary is needed.
+    For ``"per_level"`` mode, ``inferred_node`` identifies which level is kept
+    non-flattened, so different inferred nodes at different levels get
+    different summary networks.
+    """
+
+    conditioned_node: SimulationNode
+    mode: Literal["global", "per_level"]
+    inferred_node: SimulationNode | None = None
+
+
+def _flat_product(dims):
+    result = 1
+    for d in dims:
+        result = result * d
+    return result
 
 
 @serializable("bayesflow.experimental")  # type: ignore[missing-argument]
@@ -43,6 +67,73 @@ class InvertedGraph(nx.DiGraph):
         of the graph.
         """
         return max(1, len(self.data_shape_order()))
+
+    def required_summary_networks(self) -> dict["SummaryKey", tuple]:
+        """
+        Returns an ordered mapping from ``SummaryKey`` to symbolic input shape for
+        each summary network required by this graph.
+
+        The dict is deduplicated by key (first occurrence wins) and preserves
+        insertion order, which defines the canonical ordering of summary networks
+        in ``GraphicalApproximator``.
+        """
+        output_shapes = self.simulation_graph.output_shapes()
+        variable_names = self.simulation_graph.variable_names()
+        network_composition = self.network_composition()
+        network_conditions = self.network_conditions()
+
+        result = {}
+
+        for network_idx, inferred_nodes in network_composition.items():
+            first_vars = variable_names[inferred_nodes[0]]
+            inferred_prefix = output_shapes[first_vars[0]][:-1]
+
+            for conditioned_node in network_conditions[network_idx]:
+                conditioned_vars = variable_names[conditioned_node]
+                conditioned_prefix = output_shapes[conditioned_vars[0]][:-1]
+                total_D = sum(output_shapes[v][-1] for v in conditioned_vars)
+                conditioned_shape = conditioned_prefix + (total_D,)
+
+                # permute to align with inferred_prefix, skipping dims not present
+                source = list(conditioned_shape)
+                available_prefix = [dim for dim in inferred_prefix if dim in source]
+                prefix_indices = [source.index(dim) for dim in available_prefix]
+                remaining_indices = [i for i in range(len(source)) if i not in prefix_indices]
+                perm = prefix_indices + remaining_indices
+                conditioned_shape = tuple(conditioned_shape[i] for i in perm)
+
+                if len(conditioned_shape) <= len(inferred_prefix) + 1:
+                    continue
+
+                if self.is_per_level_summary(inferred_nodes[0], conditioned_node):
+                    mode = "per_level"
+                else:
+                    mode = "global"
+
+                B = conditioned_shape[0]
+                D = conditioned_shape[-1]
+                spatial_dims = conditioned_shape[1:-1]
+
+                if mode == "global":
+                    input_shape = (B, _flat_product(spatial_dims), D)
+                else:
+                    N1 = spatial_dims[0]
+                    rest = spatial_dims[1:]
+                    if rest:
+                        input_shape = (B, N1, _flat_product(rest), D)
+                    else:
+                        input_shape = (B, N1, D)
+
+                key = SummaryKey(
+                    conditioned_node=conditioned_node,
+                    mode=mode,
+                    inferred_node=inferred_nodes[0] if mode == "per_level" else None,
+                )
+
+                if key not in result:
+                    result[key] = input_shape
+
+        return result
 
     def network_conditions(self) -> dict[int, list[SimulationNode]]:
         """
@@ -169,6 +260,38 @@ class InvertedGraph(nx.DiGraph):
             if node_names[k] == node:
                 condition_names = [node_names[x] for x in v]
                 if node in condition_names:
+                    return False
+
+        return True
+
+    def is_per_level_summary(self, inferred_node: SimulationNode, conditioned_node: SimulationNode) -> bool:
+        """
+        Returns True if ``conditioned_node`` requires a per-level summary when
+        conditioning ``inferred_node``, False if a global summary is required.
+
+        A per-level summary applies when every expanded copy of ``conditioned_node``
+        that conditions a given expanded copy of ``inferred_node`` shares the same
+        last-digit suffix as that expanded inferred node.
+        """
+        detailed = self.detailed_conditions_by_node()
+        original_names = self.original_node_names()
+
+        for expanded_inferred, conditions in detailed.items():
+            if original_names[expanded_inferred] != inferred_node:
+                continue
+
+            expanded_conditioned = [c for c in conditions if original_names[c] == conditioned_node]
+            if not expanded_conditioned:
+                continue
+
+            inferred_match = re.search(r"\d+$", expanded_inferred)
+            if inferred_match is None:
+                return False
+
+            inferred_last_digit = inferred_match.group()[-1]
+            for c in expanded_conditioned:
+                c_match = re.search(r"\d+$", c)
+                if c_match is None or c_match.group()[-1] != inferred_last_digit:
                     return False
 
         return True

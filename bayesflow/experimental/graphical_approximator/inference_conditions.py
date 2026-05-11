@@ -72,8 +72,8 @@ def permute_to_prefix(
 
     # only permute dimensions that are present in source; missing prefix dims
     # are handled later by expand_to_prefix
-    available_prefix = [dim for dim in target_prefix if dim in source]
-    prefix_indices = [source.index(dim) for dim in available_prefix]
+    shared_prefix = [dim for dim in target_prefix if dim in source]
+    prefix_indices = [source.index(dim) for dim in shared_prefix]
     remaining_indices = [i for i in range(len(source)) if i not in prefix_indices]
     perm = prefix_indices + remaining_indices
 
@@ -192,6 +192,90 @@ def apply_summary(
     return registry[key](tensor, training=training)
 
 
+def compute_chain_steps(
+    tensor: Tensor,
+    shared_prefix: tuple,
+    mode: Literal["global", "per_level"],
+) -> int:
+    """
+    Returns the number of summary networks to apply in the parallel chain.
+
+    Parameters
+    ----------
+    tensor : Tensor
+        The permuted conditioned tensor.
+    shared_prefix : tuple
+        The shared prefix dimensions between the conditioned and inferred nodes.
+    mode : {"global", "per_level"}
+        Summary mode.
+
+    Returns
+    -------
+    int
+        Number of chain steps. Zero means no summary network is needed.
+    """
+    n_extra = tensor.ndim - 1 - len(shared_prefix)
+    if mode == "per_level":
+        n_extra -= 1
+    return max(0, n_extra)
+
+
+def apply_parallel_chain(
+    tensor: Tensor,
+    conditioned_node: str,
+    mode: Literal["global", "per_level"],
+    inferred_node: str | None,
+    k: int,
+    registry: dict[SummaryKey, SummaryNetwork],
+    training: bool = False,
+) -> Tensor:
+    """
+    Applies k summary networks sequentially from innermost to outermost
+    extra dimension, maintaining a carry for enrichment at each step.
+
+    Parameters
+    ----------
+    tensor : Tensor
+        The permuted conditioned tensor.
+    conditioned_node : str
+        The node being summarized.
+    mode : {"global", "per_level"}
+        Summary mode.
+    inferred_node : str or None
+        The inferred node, required for per_level mode.
+    k : int
+        Number of chain steps, as returned by compute_chain_steps.
+    registry : dict[SummaryKey, SummaryNetwork]
+        Mapping from summary keys to summary networks.
+    training : bool, optional
+        Whether the model is in training mode. Default is False.
+
+    Returns
+    -------
+    Tensor
+        Output of the final summary network in the chain.
+    """
+    carry = keras.ops.mean(tensor, axis=-2)
+    summary = None
+
+    for i in range(k):
+        if i == 0:
+            chain_input = tensor
+        else:
+            chain_input = concatenate([carry, summary])
+            carry = keras.ops.mean(summary, axis=-2)
+
+        key = SummaryKey(
+            conditioned_node=conditioned_node,
+            mode=mode,
+            inferred_node=inferred_node if mode == "per_level" else None,
+            chain_step=i,
+        )
+        summary = apply_summary(chain_input, key, registry, training=training)
+
+    return summary
+
+
 def inference_conditions_by_network(
     approximator: GraphicalApproximator,
     simulation_output: dict[str, Tensor],
@@ -249,10 +333,10 @@ def inference_conditions_by_network(
             # use the first variable's shape to compute the permutation; all
             # variables of a node share the same prefix
             source_shape = output_shapes[variable_names[conditioned_node][0]]
-            available_prefix = [dim for dim in inferred_prefix if dim in source_shape]
+            shared_prefix = [dim for dim in inferred_prefix if dim in source_shape]
             tensor = permute_to_prefix(tensor, source_shape, inferred_prefix)
 
-            if tensor.ndim > len(available_prefix) + 1:
+            if tensor.ndim > len(shared_prefix) + 1:
                 if approximator.graph.is_per_level_summary(inferred_nodes[0], conditioned_node):
                     mode = "per_level"
                 else:

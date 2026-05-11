@@ -27,11 +27,14 @@ class SummaryKey(NamedTuple):
     For ``"non_exchangeable"`` mode, the network summarizes previously sampled values
     of ``conditioned_node`` to condition the next sample in an auto-regressive
     flow. ``inferred_node`` is ``None``.
+    ``chain_step`` identifies the position in the parallel summary chain;
+    0 for the flatten strategy or the first step of the parallel strategy.
     """
 
     conditioned_node: SimulationNode
     mode: Literal["global", "per_level", "non_exchangeable"]
     inferred_node: SimulationNode | None = None
+    chain_step: int = 0
 
 
 def _flat_product(dims):

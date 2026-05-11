@@ -112,7 +112,6 @@ from . import (
     utils,
     scoring_rules,
     workflows,
-    wrappers,
 )
 
 from .adapters import Adapter

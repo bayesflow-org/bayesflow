@@ -10,7 +10,8 @@ from ...summary import SummaryNetwork
 @serializable("bayesflow.networks")
 class TimeSeriesNetwork(SummaryNetwork):
     """
-    (SN) Implements a LSTNet Architecture as described in [1]
+    (SN) Implements a LSTNet Architecture as described in [1], with addition tweaks for
+    performance and stability.
 
     [1] Y. Zhang and L. Mikelsons, Solving Stochastic Inverse Problems with Stochastic BayesFlow,
     2023 IEEE/ASME International Conference on Advanced Intelligent Mechatronics (AIM),
@@ -106,7 +107,6 @@ class TimeSeriesNetwork(SummaryNetwork):
 
         self.conv = keras.Sequential(conv_blocks, name="conv")
 
-        # Recurrent and feedforward backbones
         self.recurrent = SkipRecurrentNet(
             hidden_dim=recurrent_dim,
             recurrent_type=recurrent_type,

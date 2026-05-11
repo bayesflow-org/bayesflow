@@ -262,34 +262,44 @@ class DiffusionModel(InferenceNetwork):
         }
         return base_config | serialize(config)
 
-    def guidance_constraint_term(
+    def guidance_function(
         self,
-        x: Tensor,
+        x_pred: Tensor,
         time: Tensor,
-        constraints: Callable | Sequence[Callable],
+        score: Tensor,
+        constraints: Callable | Sequence[Callable] = None,
         guidance_strength: float = 1.0,
-        scaling_function: Callable | None = None,
+        scaling_function: Callable = None,
         reduce: Literal["sum", "mean"] = "sum",
     ) -> Tensor:
         """
-        Backend-agnostic implementation of:
-            `∇_x Σ_k log sigmoid( -s(t) * c_k(x) )`
+        Takes the current denoised estimate and the diffusion time. By default, it computes a guidance constraint term
+         if guidance constraints are provided, and returns the score otherwise. Function can be overwritten by the
+         user to implement custom guidance.
+
+        Custom guidance:
+        def guidance_function(x_pred, time, score):
+            # do something here, needs to return the new score
+            return score
+        workflow.approximator.inference_network.guidance_function = guidance_function
 
         Parameters
         ----------
-        x : Tensor
+        x_pred : Tensor
             The denoised target at time t.
         time : Tensor
             The time corresponding to x.
-        constraints : Callable or Sequence[Callable]
+        score: Tensor
+            The score at the current time point, which should be guided.
+        constraints : Callable or Sequence[Callable], optional
             A single constraint function or a list/tuple of constraint functions.
             Each function should take x as input and return a tensor of constraint values.
-        guidance_strength : float, optional
+        guidance_strength : float
             A positive scaling factor for the guidance term. Default is 1.0.
         scaling_function : Callable, optional
             A function that takes time t as input and returns a scaling factor s(t).
             If None, a default scaling based on the noise schedule is used. Default is None.
-        reduce : {'sum', 'mean'}, optional
+        reduce : {'sum', 'mean'}
             Method to reduce the log-probabilities from multiple constraints. Default is 'sum'.
 
         Returns
@@ -297,22 +307,24 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             The computed guidance term of the same shape as zt.
         """
+        if constraints is None:
+            return score
 
         if not isinstance(constraints, Sequence):
             constraints = [constraints]
 
         if scaling_function is None:
 
-            def scaling_function(t: Tensor):
+            def scaling_function(t: Tensor) -> Tensor:
                 log_snr = self.noise_schedule.get_log_snr(t, training=False)
                 alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr)
                 return ops.square(alpha_t) / ops.square(sigma_t)
 
-        def objective_fn(z):
+        def objective_fn(x: Tensor) -> Tensor:
             st = scaling_function(time)
-            logp = keras.ops.zeros((), dtype=z.dtype)
+            logp = keras.ops.zeros((), dtype=x.dtype)
             for c in constraints:
-                ck = c(z)
+                ck = c(x)
                 logp = logp - keras.ops.softplus(st * ck)
             return keras.ops.sum(logp) if reduce == "sum" else keras.ops.mean(logp)
 
@@ -322,21 +334,21 @@ class DiffusionModel(InferenceNetwork):
             case "jax":
                 import jax
 
-                grad = jax.grad(objective_fn)(x)
+                grad = jax.grad(objective_fn)(x_pred)
 
             case "tensorflow":
                 import tensorflow as tf
 
                 with tf.GradientTape() as tape:
-                    tape.watch(x)
-                    objective = objective_fn(x)
-                grad = tape.gradient(objective, x)
+                    tape.watch(x_pred)
+                    objective = objective_fn(x_pred)
+                grad = tape.gradient(objective, x_pred)
 
             case "torch":
                 import torch
 
                 with torch.enable_grad():
-                    x_grad = x.clone().detach().requires_grad_(True)
+                    x_grad = x_pred.clone().detach().requires_grad_(True)
                     objective = objective_fn(x_grad)
                     grad = torch.autograd.grad(
                         outputs=objective,
@@ -346,7 +358,7 @@ class DiffusionModel(InferenceNetwork):
             case _:
                 raise NotImplementedError(f"Unsupported backend: {backend}")
 
-        return guidance_strength * grad
+        return score + guidance_strength * grad
 
     def convert_prediction_to_x(
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, prediction_type: str
@@ -411,8 +423,7 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t: Tensor = None,
         conditions: Tensor = None,
         training: bool = False,
-        guidance_constraints: Mapping[str, Any] = None,
-        guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
+        guidance_kwargs: Mapping[str, Any] = None,
         **kwargs,
     ) -> Tensor:
         """
@@ -434,15 +445,10 @@ class DiffusionModel(InferenceNetwork):
         training : bool, optional
             Whether the model is in training mode. Affects behavior of dropout, batch norm,
             or other stochastic layers. Default is False.
-        guidance_constraints : dict[str, Any], optional
+        guidance_kwargs : Mapping[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
             the implementation of `guidance_constraint_term`.
-        guidance_function : Callable[[Tensor, Tensor], Tensor], optional
-            A custom function for computing a guidance term, which is added to the score
-            for guided sampling. The function should accept the predicted clean signal
-            `x_pred` and the current time `time` as inputs and return a tensor of the same
-            shape as `xz`.
         **kwargs
             Subnet kwargs (e.g., attention_mask, mask) for the subnet layer.
             Also supports guidance_constraints and guidance_function for custom guidance.
@@ -488,14 +494,7 @@ class DiffusionModel(InferenceNetwork):
             )
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
-        if guidance_constraints is not None:
-            guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
-            score = score + guidance
-
-        if guidance_function is not None:
-            guidance = guidance_function(x=x_pred, time=time)
-            score = score + guidance
-
+        score = self.guidance_function(x_pred=x_pred, time=time, score=score, **(guidance_kwargs or {}))
         return score
 
     def velocity(
@@ -832,7 +831,12 @@ class DiffusionModel(InferenceNetwork):
             def deltas(time, xz):
                 return {
                     "xz": self.velocity(
-                        xz, time=time, stochastic_solver=True, conditions=conditions, training=training, **kwargs
+                        xz,
+                        time=time,
+                        stochastic_solver=integrate_kwargs["method"] != "glass",
+                        conditions=conditions,
+                        training=training,
+                        **kwargs,
                     )
                 }
 
@@ -970,12 +974,11 @@ class DiffusionModel(InferenceNetwork):
         conditions: Tensor,
         seed: keras.random.SeedGenerator | None,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
-        mini_batch_size: int | None = None,
+        mini_batch_size: int = None,
         training: bool = False,
         clip: tuple[float, float] | None = (-3, 3),
         use_jac: bool = False,
-        guidance_constraints: Mapping[str, Any] = None,
-        guidance_function: Callable[[Tensor, Tensor], Tensor] = None,
+        guidance_kwargs: Mapping[str, Any] = None,
         **kwargs,
     ) -> Tensor:
         """
@@ -1001,15 +1004,10 @@ class DiffusionModel(InferenceNetwork):
             Whether to clip the predicted x for numerical stability at given values.
         use_jac: bool, optional
             Whether to use the Jacobian-based compositional score instead of the direct sum.
-        guidance_constraints : dict[str, Any], optional
+        guidance_kwargs : Mapping[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
-            the implementation of `guidance_constraint_term`.
-        guidance_function : Callable[[Tensor, Tensor], Tensor], optional
-            A custom function for computing a guidance term, which is added to the score
-            for guided sampling. The function should accept the predicted clean signal
-            `x_pred` and the current time `time` as inputs and return a tensor of the same
-            shape as `xz`.
+            the implementation of `guidance_function`.
         **kwargs
             Additional keyword arguments passed to the individual score computation
 
@@ -1055,17 +1053,10 @@ class DiffusionModel(InferenceNetwork):
 
         compositional_score = self.compositional_bridge(time) * compositional_score
 
-        if guidance_constraints is not None or guidance_function is not None:
-            # x_pred = (z + sigma_t ** 2 * score) / alpha_t
-            x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
-
-            if guidance_constraints is not None:
-                guidance = self.guidance_constraint_term(x=x_pred, time=time, **guidance_constraints)
-                compositional_score = compositional_score + guidance
-
-            if guidance_function is not None:
-                guidance = guidance_function(x=x_pred, time=time)
-                compositional_score = compositional_score + guidance
+        x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
+        compositional_score = self.guidance_function(
+            x_pred=x_pred, time=time, score=compositional_score, **(guidance_kwargs or {})
+        )
 
         compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
         return compositional_score
@@ -1076,9 +1067,9 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         log_snr_t: Tensor,
         conditions: Tensor,
-        seed: keras.random.SeedGenerator | None = None,
+        seed: keras.random.SeedGenerator = None,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
-        mini_batch_size: int | None = None,
+        mini_batch_size: int = None,
         training: bool = False,
         **kwargs,
     ) -> Tensor:
@@ -1178,9 +1169,9 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t: Tensor,
         sigma_t: Tensor,
         conditions: Tensor,
-        seed: keras.random.SeedGenerator | None = None,
-        compute_prior_score: Callable[[Tensor], Tensor] | None = None,
-        mini_batch_size: int | None = None,
+        seed: keras.random.SeedGenerator = None,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int = None,
         training: bool = False,
         regularize_precision: float = 1e-6,
         **kwargs,
@@ -1512,13 +1503,14 @@ class DiffusionModel(InferenceNetwork):
         state = {"xz": z}
 
         if integrate_kwargs["method"] in STOCHASTIC_METHODS:
+            stochastic_solver = integrate_kwargs["method"] != "glass"
 
             def deltas(time, xz):
                 return {
                     "xz": self.compositional_velocity(
                         xz,
                         time=time,
-                        stochastic_solver=True,
+                        stochastic_solver=stochastic_solver,
                         conditions=conditions,
                         compute_prior_score=compute_prior_score,
                         mini_batch_size=mini_batch_size,

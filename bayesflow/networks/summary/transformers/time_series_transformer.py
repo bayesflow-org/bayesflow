@@ -17,12 +17,11 @@ class TimeSeriesTransformer(Transformer):
         summary_dim: int = 16,
         embed_dims: tuple = (64, 64),
         num_heads: tuple = (4, 4),
-        mlp_depths: tuple = (2, 2),
-        mlp_widths: tuple = (128, 128),
         dropout: float = 0.05,
-        mlp_activation: str = "gelu",
-        kernel_initializer: str = "lecun_normal",
-        use_bias: bool = True,
+        expansion_factor: float = 4.0,
+        glu_variant: str = "swiglu",
+        kernel_initializer: str = "glorot_uniform",
+        use_bias: bool = False,
         layer_norm: bool = True,
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
@@ -36,45 +35,43 @@ class TimeSeriesTransformer(Transformer):
 
         Parameters
         ----------
-        summary_dim : int, optional (default - 16)
-            Dimensionality of the final summary output.
-        embed_dims  : tuple of int, optional (default - (64, 64))
-            Dimensions of the keys, values, and queries for each attention block.
-        num_heads   : tuple of int, optional (default - (4, 4))
-            Number of attention heads for each embedding dimension.
-        mlp_depths  : tuple of int, optional (default - (2, 2))
-            Depth of the multi-layer perceptron (MLP) blocks for each component.
-        mlp_widths  : tuple of int, optional (default - (128, 128))
-            Width of each MLP layer in each block for each component.
-        dropout     : float, optional (default - 0.05)
-            Dropout rate applied to the attention and MLP layers. If set to None, no dropout is applied.
-        mlp_activation : str, optional (default - 'gelu')
-            Activation function used in the dense layers. Common choices include "relu", "elu", and "gelu".
-        kernel_initializer : str, optional (default - 'lecun_normal')
-            Initializer for the kernel weights matrix. Common choices include "glorot_uniform", "he_normal", etc.
-        use_bias : bool, optional (default - True)
-            Whether to include a bias term in the dense layers.
-        layer_norm : bool, optional (default - True)
-            Whether to apply layer normalization after the attention and MLP layers.
-        time_embedding  : str, optional (default - "time2vec")
-            The type of embedding to use. Must be in ["time2vec", "lstm", "gru"]
-        time_embed_dim  : int, optional (default - 8)
-            The dimensionality of the Time2Vec or recurrent embedding.
-        time_axis     : int, optional (default - None)
-            The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into the embedding.
-            If an embedding is provided and time_axis is None, a uniform time interval between [0, sequence_len]
-            will be assumed.
-        return_sequences : bool, optional (default - False)
-            If True, acts as a many-to-many encoder (to be used for time-varying tasks).
-            If False, acts as a many-to-one embedding network (to be used for compression tasks).
-            In that case, the `summary_dim` argument denotes the dimension of the output sequence.
-        **kwargs : dict
+        summary_dim : int, optional
+            Dimensionality of the final summary output, by default 16.
+        embed_dims : tuple of int, optional
+            Embedding dimensionality for each attention block, by default (64, 64).
+        num_heads : tuple of int, optional
+            Number of attention heads for each block, by default (4, 4).
+        dropout : float, optional
+            Dropout rate applied inside the attention sublayer, by default 0.05.
+        expansion_factor : float, optional
+            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.
+        glu_variant : str, optional
+            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,
+            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
+        kernel_initializer : str, optional
+            Initializer for kernel weights, by default ``"glorot_uniform"``.
+        use_bias : bool, optional
+            Whether to include bias terms in dense layers, by default False.
+        layer_norm : bool, optional
+            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+        time_embedding : str, optional
+            The type of embedding to use. Must be in ``["time2vec", "lstm", "gru"]``,
+            by default ``"time2vec"``.
+        time_embed_dim : int, optional
+            Dimensionality of the Time2Vec or recurrent embedding, by default 8.
+        time_axis : int or None, optional
+            The time axis from which to grab the time vector for the embedding.
+            If None, a uniform time interval between [0, sequence_len] is assumed.
+        return_sequences : bool, optional
+            If True, acts as a many-to-many encoder. If False (default), acts as a
+            many-to-one embedding network and ``summary_dim`` is the output dimension.
+        **kwargs
             Additional keyword arguments passed to the base layer.
         """
 
         super().__init__(**kwargs)
 
-        check_lengths_same(embed_dims, num_heads, mlp_depths, mlp_widths)
+        check_lengths_same(embed_dims, num_heads)
 
         if time_embedding is None:
             self.time_embedding = None
@@ -89,19 +86,16 @@ class TimeSeriesTransformer(Transformer):
 
         self.attention_blocks = []
         for i in range(len(embed_dims)):
-            layer_attention_settings = dict(
+            block = MultiHeadAttention(
+                embed_dim=embed_dims[i],
+                num_heads=num_heads[i],
                 dropout=dropout,
-                mlp_activation=mlp_activation,
+                expansion_factor=expansion_factor,
+                glu_variant=glu_variant,
                 kernel_initializer=kernel_initializer,
                 use_bias=use_bias,
                 layer_norm=layer_norm,
-                num_heads=num_heads[i],
-                embed_dim=embed_dims[i],
-                mlp_depth=mlp_depths[i],
-                mlp_width=mlp_widths[i],
             )
-
-            block = MultiHeadAttention(**layer_attention_settings)
             self.attention_blocks.append(block)
 
         if return_sequences:
@@ -115,26 +109,22 @@ class TimeSeriesTransformer(Transformer):
         self.time_axis = time_axis
 
     def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
-        """Compresses the input sequence into a summary vector of size `summary_dim`.
+        """Compresses the input sequence into a summary vector of size ``summary_dim``.
 
         Parameters
         ----------
-        x               : Tensor
-            Input of shape (batch_size, sequence_length, input_dim)
-        training        : boolean, optional (default - False)
-            Passed to the optional internal dropout and norm
-            layers to distinguish between train and test time behavior.
-        attention_mask  : a boolean mask of shape `(B, T, T)`, that prevents
-            attention to certain positions. The boolean mask specifies which
-            query elements can attend to which key elements, 1 indicates
-            attention and 0 indicates no attention. Broadcasting can happen for
-            the missing batch dimensions and the head dimension.
+        x : Tensor
+            Input of shape ``(batch_size, sequence_length, input_dim)``.
+        training : bool, optional
+            Passed to dropout and norm layers, by default False.
+        attention_mask : Tensor, optional
+            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask.
 
         Returns
         -------
-        out : Tensor
-            Output of shape (batch_size, summary_dim) if `return_sequences=False`, otherwise
-            a new sequence of shape (batch_size, sequence_length, summary_dim).
+        Tensor
+            Shape ``(batch_size, summary_dim)`` if ``return_sequences=False``, otherwise
+            ``(batch_size, sequence_length, summary_dim)``.
         """
 
         if self.time_axis is not None:
@@ -149,11 +139,9 @@ class TimeSeriesTransformer(Transformer):
         if self.time_embedding:
             inp = self.time_embedding(inp, t=t)
 
-        # Apply self-attention blocks
         for layer in self.attention_blocks:
             inp = layer(inp, inp, training=training, attention_mask=attention_mask)
 
-        # Global average pooling and (optional) output projection
         summary = self.pooling(inp)
         summary = self.output_projector(summary)
         return summary

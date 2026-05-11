@@ -69,7 +69,14 @@ class BasicWorkflow(Workflow):
         passed to the corresponding approximator constructor and can be either "all" or any subset of
         ["inference_variables", "summary_variables", "inference_conditions"].
     **kwargs : dict, optional
-        Additional arguments for configuring networks, adapters, optimizers, etc.
+        Additional keyword arguments organized by context. Recognized keys:
+        - ``inference_kwargs`` : dict
+            Arguments passed to ``find_inference_network()``.
+        - ``summary_kwargs`` : dict
+            Arguments passed to ``find_summary_network()``.
+        - ``optimizer_kwargs`` : dict
+            Arguments passed to ``_init_optimizer()``.
+        - Other keys are passed to the approximator constructor if they match its signature.
     """
 
     def __init__(
@@ -90,28 +97,21 @@ class BasicWorkflow(Workflow):
         standardize: Sequence[str] | str | None = "inference_variables",
         **kwargs,
     ):
-        self.inference_network = find_inference_network(inference_network, **kwargs.get("inference_kwargs", {}))
-
-        if summary_network is not None:
-            self.summary_network = find_summary_network(summary_network, **kwargs.get("summary_kwargs", {}))
-        else:
-            self.summary_network = None
-
         self.simulator = simulator
 
         adapter = adapter or BasicWorkflow.default_adapter(inference_variables, inference_conditions, summary_variables)
 
-        if isinstance(self.inference_network, ScoringRuleNetwork):
+        if isinstance(inference_network, ScoringRuleNetwork):
             constructor = ScoringRuleApproximator
         else:
             constructor = ContinuousApproximator
 
         self.approximator = constructor(
-            inference_network=self.inference_network,
-            summary_network=self.summary_network,
+            inference_network=find_inference_network(inference_network, **kwargs.get("inference_kwargs", {})),
+            summary_network=find_summary_network(summary_network, **kwargs.get("summary_kwargs", {})),
             adapter=adapter,
             standardize=standardize,
-            **filter_kwargs(kwargs, keras.Model.__init__),
+            **filter_kwargs(kwargs, constructor.__init__),
         )
 
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
@@ -154,6 +154,14 @@ class BasicWorkflow(Workflow):
     @property
     def adapter(self):
         return self.approximator.adapter
+
+    @property
+    def inference_network(self):
+        return self.approximator.inference_network
+
+    @property
+    def summary_network(self):
+        return self.approximator.summary_network
 
     @staticmethod
     def samples_to_data_frame(samples: Mapping[str, np.ndarray]) -> pd.DataFrame:

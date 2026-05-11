@@ -188,15 +188,17 @@ def test_diffusion_guidance(simple_diffusion_model):
         return a1
 
     samples_guided = workflow.sample(
-        num_samples=2, conditions=test_conditions, guidance_constraints=dict(constraints=constraint)
+        num_samples=2, conditions=test_conditions, guidance_kwargs=dict(constraints=constraint)
     )["parameters"]
     assert samples_guided.shape == samples.shape
     assert (samples_guided[..., 0] < 0).all()
 
-    def guidance_function(x, time):
-        return x * 0
+    def guidance_function(x_pred, time, score, **guidance_kwargs):
+        return x_pred * 0
 
+    workflow.approximator.inference_network.guidance_function = guidance_function
     samples_guided_func = workflow.sample(
-        num_samples=2, conditions=test_conditions, guidance_function=guidance_function
+        num_samples=2,
+        conditions=test_conditions,
     )["parameters"]
     assert samples_guided_func.shape == samples.shape

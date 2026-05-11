@@ -47,9 +47,12 @@ class InferenceNetwork(keras.Layer):
 
     Parameters
     ----------
-    base_distribution : str, optional
-        Identifier for the base (latent) distribution, resolved via
-        :func:`~bayesflow.utils.find_distribution`.  Default is ``"normal"``.
+    base_distribution : str or ~bayesflow.distributions.Distribution, optional
+        The base (latent) distribution.  Accepts the string shortcuts
+        ``"normal"`` (:class:`~bayesflow.distributions.DiagonalNormal`) and
+        ``"student_t"`` (:class:`~bayesflow.distributions.DiagonalStudentT`),
+        or an explicit :class:`~bayesflow.distributions.Distribution` instance
+        for full control.  Default is ``"normal"``.
     **kwargs
         Forwarded to ``keras.Layer`` after filtering with
         :func:`~bayesflow.utils.layer_kwargs`.
@@ -58,7 +61,7 @@ class InferenceNetwork(keras.Layer):
     # Valid mask keys to pass to subnet
     _SUBNET_MASK_KEYS = {"attention_mask", "mask"}
 
-    def __init__(self, base_distribution: str = "normal", **kwargs):
+    def __init__(self, base_distribution: str | keras.Layer = "normal", **kwargs):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 

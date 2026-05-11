@@ -26,124 +26,103 @@ class SetTransformer(Transformer):
         summary_dim: int = 16,
         embed_dims: tuple = (64, 64),
         num_heads: tuple = (4, 4),
-        mlp_depths: tuple = (2, 2),
-        mlp_widths: tuple = (128, 128),
-        num_seeds: int = 1,
+        num_seeds: int = 4,
         dropout: float = 0.05,
-        mlp_activation: str = "gelu",
-        kernel_initializer: str = "lecun_normal",
-        use_bias: bool = True,
+        expansion_factor: float = 4.0,
+        glu_variant: str = "swiglu",
+        kernel_initializer: str = "glorot_uniform",
+        use_bias: bool = False,
         layer_norm: bool = True,
-        num_inducing_points: int | None = None,
-        seed_dim: int | None = None,
+        num_inducing_points: int = None,
+        seed_dim: int = None,
         **kwargs,
     ):
         """
-        Creates a many-to-one permutation-invariant encoder, typically used as a summary net for embedding set-based,
-        (i.e., exchangeable or IID) data. Use a TimeSeriesTransformer or a FusionTransformer for non-IID data.
-
-        The number of multi-head attention block is inferred from the length of `embed_dims` tuple.
+        Creates a many-to-one permutation-invariant encoder, typically used as a summary network
+        for embedding set-based (i.e., exchangeable or IID) data.
 
         Parameters
         ----------
-        summary_dim : int, optional (default - 16)
-            Dimensionality of the final summary output.
-        embed_dims  : tuple of int, optional (default - (64, 64))
-            Dimensions of the keys, values, and queries for each attention block.
-        num_heads   : tuple of int, optional (default - (4, 4))
-            Number of attention heads for each embedding dimension.
-        mlp_depths  : tuple of int, optional (default - (2, 2))
-            Depth of the multi-layer perceptron (MLP) blocks for each component.
-        mlp_widths  : tuple of int, optional (default - (128, 128))
-            Width of each MLP layer in each block for each component.
-        num_seeds   : int, optional (default - 1)
-            Number of seeds to use for embedding.
-        dropout     : float, optional (default - 0.05)
-            Dropout rate applied to the attention and MLP layers. If set to None, no dropout is applied.
-        mlp_activation : str, optional (default - 'gelu')
-            Activation function used in the dense layers. Common choices include "relu", "elu", and "gelu".
-        kernel_initializer : str, optional (default - 'lecun_normal')
-            Initializer for the kernel weights matrix. Common choices include "glorot_uniform", "he_normal", etc.
-        use_bias : bool, optional (default - True)
-            Whether to include a bias term in the dense layers.
-        layer_norm : bool, optional (default - True)
-            Whether to apply layer normalization after the attention and MLP layers.
-        num_inducing_points : int or None, optional (default - None)
-            Number of inducing points used, if applicable. If set to None, this option is disabled.
-        seed_dim : int or None, optional (default - None)
-            Dimensionality of the seed embeddings. If None, it defaults to `summary_dim`.
-        **kwargs : dict
+        summary_dim : int, optional
+            Dimensionality of the final summary output, by default 16.
+        embed_dims : tuple of int, optional
+            Embedding dimensionality for each attention block, by default (64, 64).
+        num_heads : tuple of int, optional
+            Number of attention heads for each block, by default (4, 4).
+        num_seeds : int, optional
+            Number of seed vectors used for PMA pooling. Increase if performance
+            appears subpar. By default 4.
+        dropout : float, optional
+            Dropout rate applied inside the attention sublayer, by default 0.05.
+        expansion_factor : float, optional
+            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.
+        glu_variant : str, optional
+            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,
+            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
+        kernel_initializer : str, optional
+            Initializer for kernel weights, by default ``"glorot_uniform"``.
+        use_bias : bool, optional
+            Whether to include bias terms in dense layers, by default False.
+        layer_norm : bool, optional
+            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+        num_inducing_points : int or None, optional
+            If set, uses InducedSetAttention (ISAB) blocks with this many inducing
+            points instead of standard SetAttention (SAB) blocks.
+        seed_dim : int or None, optional
+            Dimensionality of the PMA seed vectors. If None, defaults to ``embed_dims[-1]``.
+        **kwargs
             Additional keyword arguments passed to the base layer.
         """
 
         super().__init__(**kwargs)
 
-        check_lengths_same(embed_dims, num_heads, mlp_depths, mlp_widths)
+        check_lengths_same(embed_dims, num_heads)
 
-        num_attention_layers = len(embed_dims)
-
-        # Construct a series of set-attention blocks
-        self.attention_blocks = []
-
-        global_attention_settings = dict(
+        shared_kwargs = dict(
             dropout=dropout,
-            mlp_activation=mlp_activation,
+            expansion_factor=expansion_factor,
+            glu_variant=glu_variant,
             kernel_initializer=kernel_initializer,
             use_bias=use_bias,
             layer_norm=layer_norm,
         )
 
-        for i in range(num_attention_layers):
-            layer_attention_settings = dict(
-                num_heads=num_heads[i],
-                embed_dim=embed_dims[i],
-                mlp_depth=mlp_depths[i],
-                mlp_width=mlp_widths[i],
-            )
-
+        self.attention_blocks = []
+        for i in range(len(embed_dims)):
+            block_kwargs = shared_kwargs | dict(num_heads=num_heads[i], embed_dim=embed_dims[i])
             if num_inducing_points is None:
-                block = SetAttention(**(global_attention_settings | layer_attention_settings))
+                block = SetAttention(**block_kwargs)
             else:
-                isab_settings = dict(num_inducing_points=num_inducing_points)
-                block = InducedSetAttention(**(global_attention_settings | layer_attention_settings | isab_settings))
-
+                block = InducedSetAttention(num_inducing_points=num_inducing_points, **block_kwargs)
             self.attention_blocks.append(block)
 
-        # Pooling will be applied as a final step to the abstract representations obtained from set attention
-        pooling_settings = dict(
+        self.pooling_by_attention = PoolingByMultiHeadAttention(
             num_heads=num_heads[-1],
             embed_dim=embed_dims[-1],
-            mlp_depth=mlp_depths[-1],
-            mlp_width=mlp_widths[-1],
-            seed_dim=seed_dim,
             num_seeds=num_seeds,
+            seed_dim=seed_dim,
+            **shared_kwargs,
         )
-        self.pooling_by_attention = PoolingByMultiHeadAttention(**(global_attention_settings | pooling_settings))
         self.output_projector = keras.layers.Dense(units=summary_dim)
 
         self.summary_dim = summary_dim
 
     def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
-        """Compresses the input sequence into a summary vector of size `summary_dim`. Note, that
-        this network should not use causal mask as it assumes no order in the `x` sequence.
+        """Compresses the input set into a summary vector of size ``summary_dim``.
 
         Parameters
         ----------
-        x               : Tensor (e.g., np.ndarray, tf.Tensor, ...)
-            Input of shape (batch_size, set_size, input_dim)
-        training        : boolean, optional (default - False)
-            Passed to the optional internal dropout and norm layers to distinguish
-            between train and test time behavior.
-        attention_mask  : a boolean mask of shape `(B, T, T)`, that prevents
-            attention to certain positions. The boolean mask specifies which
-            query elements can attend to which key elements, 1 indicates
-            attention and 0 indicates no attention. Broadcasting can happen for
-            the missing batch dimensions and the head dimension.
+        x : Tensor
+            Input of shape ``(batch_size, set_size, input_dim)``.
+        training : bool, optional
+            Passed to dropout and norm layers, by default False.
+        attention_mask : Tensor, optional
+            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask.
 
         Returns
         -------
-        out : Tensor
-            Output of shape (batch_size, summary_dim)
+        Tensor
+            Output of shape ``(batch_size, summary_dim)``.
         """
         for layer in self.attention_blocks:
             x = layer(x, training=training, attention_mask=attention_mask)

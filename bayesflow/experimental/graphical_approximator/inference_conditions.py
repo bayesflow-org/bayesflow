@@ -197,6 +197,7 @@ def inference_conditions_by_network(
     simulation_output: dict[str, Tensor],
     summary_registry: dict[SummaryKey, SummaryNetwork],
     training: bool = False,
+    only_network: int | None = None,
 ) -> dict[int, Tensor]:
     """
     Computes inference conditions for each network by running each conditioned
@@ -217,6 +218,9 @@ def inference_conditions_by_network(
     training : bool, optional
         Whether the model is in training mode, affecting layers like dropout.
         Default is False.
+    only_network : int or None, optional
+        If given, only compute conditions for this network index. Used during
+        sequential sampling where later networks' conditions are not yet available.
 
     Returns
     -------
@@ -229,6 +233,8 @@ def inference_conditions_by_network(
     variable_names = approximator.variable_names
 
     for network_idx, inferred_nodes in approximator.network_composition.items():
+        if only_network is not None and network_idx != only_network:
+            continue
         # all nodes in a network share the same prefix; use the first variable
         # of the first node to read it (variables of a node share a prefix,
         # differing only in the last data dimension)
@@ -243,9 +249,10 @@ def inference_conditions_by_network(
             # use the first variable's shape to compute the permutation; all
             # variables of a node share the same prefix
             source_shape = output_shapes[variable_names[conditioned_node][0]]
+            available_prefix = [dim for dim in inferred_prefix if dim in source_shape]
             tensor = permute_to_prefix(tensor, source_shape, inferred_prefix)
 
-            if tensor.ndim > len(inferred_prefix) + 1:
+            if tensor.ndim > len(available_prefix) + 1:
                 if approximator.graph.is_per_level_summary(inferred_nodes[0], conditioned_node):
                     mode = "per_level"
                 else:

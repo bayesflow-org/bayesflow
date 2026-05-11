@@ -76,19 +76,23 @@ class GraphicalApproximator(Approximator):
         self.summary_networks = summary_networks
 
         required = self.graph.required_summary_networks()
-        required_nonex = self.graph.required_non_exchangeable_summary_networks()
-        n_data = len(required)
-        n_nonex = len(required_nonex)
-        total_required = n_data + n_nonex
-        if len(summary_networks or []) != total_required:
-            raise ValueError(
-                f"Expected {total_required} summary networks "
-                f"({n_data} data, {n_nonex} sequential), "
-                f"got {len(summary_networks or [])}."
-            )
+        data_keys = [k for k in required if k.mode != "non_exchangeable"]
+        n_data = len(data_keys)
+        n_nonex = len(required) - n_data
+        n_provided = len(summary_networks or [])
+
+        if n_provided != len(required):
+            if n_nonex:
+                raise ValueError(
+                    f"Expected {len(required)} summary networks ({n_data} data + {n_nonex} non-exchangeable), "
+                    f"got {n_provided}."
+                )
+            else:
+                raise ValueError(f"Expected {n_data} summary networks, got {n_provided}.")
+
         data_summary_networks = (summary_networks or [])[:n_data]
         nonex_summary_networks = (summary_networks or [])[n_data:]
-        self.summary_registry = dict(zip(required.keys(), data_summary_networks))
+        self.summary_registry = dict(zip(data_keys, data_summary_networks))
 
         # precompute frequently used quantities
         self.output_shapes = self.graph.simulation_graph.output_shapes()
@@ -110,6 +114,7 @@ class GraphicalApproximator(Approximator):
             self.adapter = GraphicalApproximator.build_adapter()
 
         # wrap non-amortizable inference networks in NonExchangeableWrapper
+        required_nonex = self.graph.required_non_exchangeable_summary_networks()
         for i, network_idx in enumerate(required_nonex):
             self.inference_networks[network_idx] = NonExchangeableWrapper(
                 self.inference_networks[network_idx], nonex_summary_networks[i]
@@ -197,16 +202,15 @@ class GraphicalApproximator(Approximator):
                 network.build(concrete_shape)
 
         # build data summary networks
-        for key, input_shape in self.graph.required_summary_networks().items():
-            _build_network(self.summary_registry[key], input_shape)
-
-        # build non-exchangeable summary networks (must be built before their wrappers)
-        n_data = len(self.summary_registry)
-        nonex_networks = (self.summary_networks or [])[n_data:]
-        for (_, input_shape), network in zip(
-            self.graph.required_non_exchangeable_summary_networks().items(), nonex_networks
-        ):
+        for key, network in self.summary_registry.items():
+            input_shape = self.graph.required_summary_networks()[key]
             _build_network(network, input_shape)
+
+        # build non-exchangeable summary networks inside their wrappers
+        for network_idx, input_shape in self.graph.required_non_exchangeable_summary_networks().items():
+            wrapper = self.inference_networks[network_idx]
+            if isinstance(wrapper, NonExchangeableWrapper):
+                _build_network(wrapper.summary_network, input_shape)
 
         # inference networks are built lazily on the first forward pass with
         # the actual condition shapes produced by inference_conditions_by_network
@@ -222,6 +226,15 @@ class GraphicalApproximator(Approximator):
             self._standardize_layers[var].build(output_shapes[var])
 
         self.built = True
+
+    def build_from_data(self, adapted_data):
+        Approximator.build_from_data(self, adapted_data)
+        # run a forward pass so inference networks are lazily built before
+        # Keras's _symbolic_build checks for unbuilt layers
+        self.compute_metrics(**adapted_data)
+
+    def call(self, data, **kwargs):
+        return self.compute_metrics(**data, **kwargs)
 
     def compute_metrics(self, stage: str = "training", **kwargs):
         """
@@ -383,7 +396,7 @@ class GraphicalApproximator(Approximator):
         # build new inference conditions incrementally: after each network samples,
         # add its output to inference_conditions so later networks can condition on it
         for i, inference_network in enumerate(self.inference_networks):
-            all_conds = inference_conditions_by_network(self, inference_conditions, self.summary_registry)
+            all_conds = inference_conditions_by_network(self, inference_conditions, self.summary_registry, only_network=i)
             cond = all_conds[i]
             variable_shape = list(variable_shapes[i])
             variable_shape[0] = batch_n

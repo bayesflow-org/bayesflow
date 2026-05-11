@@ -167,7 +167,6 @@ def test_custom_standardize():
         DeepSet(summary_dim=10),
         DeepSet(summary_dim=20),
         DeepSet(summary_dim=30),
-        DeepSet(summary_dim=40),
     ]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 
@@ -206,7 +205,6 @@ def test_default_adapter():
         DeepSet(summary_dim=10),
         DeepSet(summary_dim=20),
         DeepSet(summary_dim=30),
-        DeepSet(summary_dim=40),
     ]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 
@@ -269,7 +267,6 @@ def test_log_prob():
         DeepSet(summary_dim=10),
         DeepSet(summary_dim=20),
         DeepSet(summary_dim=30),
-        DeepSet(summary_dim=40),
     ]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 

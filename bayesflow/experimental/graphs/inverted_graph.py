@@ -24,10 +24,13 @@ class SummaryKey(NamedTuple):
     For ``"per_level"`` mode, ``inferred_node`` identifies which level is kept
     non-flattened, so different inferred nodes at different levels get
     different summary networks.
+    For ``"non_exchangeable"`` mode, the network summarizes previously sampled values
+    of ``conditioned_node`` to condition the next sample in an auto-regressive
+    flow. ``inferred_node`` is ``None``.
     """
 
     conditioned_node: SimulationNode
-    mode: Literal["global", "per_level"]
+    mode: Literal["global", "per_level", "non_exchangeable"]
     inferred_node: SimulationNode | None = None
 
 
@@ -156,7 +159,7 @@ class InvertedGraph(nx.DiGraph):
                 perm = prefix_indices + remaining_indices
                 conditioned_shape = tuple(conditioned_shape[i] for i in perm)
 
-                if len(conditioned_shape) <= len(inferred_prefix) + 1:
+                if len(conditioned_shape) <= len(available_prefix) + 1:
                     continue
 
                 if self.is_per_level_summary(inferred_nodes[0], conditioned_node):
@@ -186,6 +189,13 @@ class InvertedGraph(nx.DiGraph):
 
                 if key not in result:
                     result[key] = input_shape
+
+        # append sequential summary networks for non-amortizable nodes
+        for network_idx, nodes in network_composition.items():
+            if any(not self.allows_amortization(node) for node in nodes):
+                key = SummaryKey(conditioned_node=nodes[0], mode="non_exchangeable")
+                if key not in result:
+                    result[key] = self.inference_variable_shapes()[network_idx]
 
         return result
 
@@ -323,29 +333,33 @@ class InvertedGraph(nx.DiGraph):
         Returns True if ``conditioned_node`` requires a per-level summary when
         conditioning ``inferred_node``, False if a global summary is required.
 
-        A per-level summary applies when every expanded copy of ``conditioned_node``
-        that conditions a given expanded copy of ``inferred_node`` shares the same
-        last-digit suffix as that expanded inferred node.
+        A per-level summary applies when the sets of expanded ``conditioned_node``
+        copies that condition distinct expanded copies of ``inferred_node`` are
+        pairwise disjoint: each copy of ``inferred_node`` conditions on a distinct,
+        non-overlapping subset of the expanded ``conditioned_node`` copies.
         """
         detailed = self.detailed_conditions_by_node()
         original_names = self.original_node_names()
+
+        per_copy_conditioned: dict = {}
 
         for expanded_inferred, conditions in detailed.items():
             if original_names[expanded_inferred] != inferred_node:
                 continue
 
-            expanded_conditioned = [c for c in conditions if original_names[c] == conditioned_node]
+            expanded_conditioned = frozenset(c for c in conditions if original_names[c] == conditioned_node)
             if not expanded_conditioned:
                 continue
 
-            inferred_match = re.search(r"\d+$", expanded_inferred)
-            if inferred_match is None:
-                return False
+            per_copy_conditioned[expanded_inferred] = expanded_conditioned
 
-            inferred_last_digit = inferred_match.group()[-1]
-            for c in expanded_conditioned:
-                c_match = re.search(r"\d+$", c)
-                if c_match is None or c_match.group()[-1] != inferred_last_digit:
+        if len(per_copy_conditioned) <= 1:
+            return False
+
+        all_sets = list(per_copy_conditioned.values())
+        for i in range(len(all_sets)):
+            for j in range(i + 1, len(all_sets)):
+                if all_sets[i] & all_sets[j]:
                     return False
 
         return True

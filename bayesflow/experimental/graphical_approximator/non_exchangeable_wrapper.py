@@ -45,21 +45,31 @@ class NonExchangeableWrapper(InferenceNetwork):
 
     def call(self, xz, conditions=None, inverse=False, density=False, training=False, **kwargs):
         if inverse:
-            # Sampling is inherently sequential: step i depends on the output of step i-1
-            calls = []
+            # Sampling is inherently sequential: step i depends on the output of step i-1.
+            # We accumulate actual generated samples (not the input noise) as the autoregressive context.
+            generated = []
+            values = []
+            log_densities = []
             for i in range(self._seq_len):
-                calls.append(
-                    self.inference_network._inverse(
-                        xz[..., i : i + 1, :],
-                        conditions=self._prepare_inference_conditions(xz, i, conditions),
-                        density=density,
-                        training=training,
-                        **kwargs,
-                    )
+                prev = keras.ops.concatenate(generated, axis=-2) if generated else None
+                conds = self._prepare_inference_conditions(xz, i, conditions, generated_samples=prev)
+                result = self.inference_network._inverse(
+                    xz[..., i : i + 1, :],
+                    conditions=conds,
+                    density=density,
+                    training=training,
+                    **kwargs,
                 )
+                if density:
+                    value_i, log_density_i = result
+                    values.append(value_i)
+                    log_densities.append(log_density_i)
+                else:
+                    values.append(result)
+                generated.append(values[-1])
+
             if not density:
-                return keras.ops.concatenate(calls, axis=-2)
-            values, log_densities = zip(*calls)
+                return keras.ops.concatenate(values, axis=-2)
             return keras.ops.concatenate(values, axis=-2), keras.ops.concatenate(log_densities, axis=-2)
 
         # Forward pass: all positions are independent given their conditions.
@@ -110,21 +120,35 @@ class NonExchangeableWrapper(InferenceNetwork):
             density=True,
             training=stage == "training",
         )
-        # sum log-probs over sequence dimension, then average over batch
-        loss = weighted_mean(keras.ops.sum(-log_density, axis=-2), sample_weight)
+        # mean log-prob over all non-batch dims, then average over batch
+        # Using mean rather than sum keeps gradient variance O(1/N) instead of O(N),
+        # preventing Adam from becoming noise-dominated for long sequences.
+        sum_axes = tuple(range(1, log_density.ndim))
+        loss = weighted_mean(keras.ops.mean(-log_density, axis=sum_axes), sample_weight)
         return {"loss": loss}
 
-    def _prepare_inference_conditions(self, xz: Tensor, i: int, conditions: Tensor | None = None):
+    def _prepare_inference_conditions(
+        self, xz: Tensor, i: int, conditions: Tensor | None = None, generated_samples: Tensor | None = None
+    ):
         if i > 0:
-            parameter_conditions = keras.ops.expand_dims(self.summary_network(xz[..., :i, :]), axis=-2)
+            # In the forward pass, xz contains the actual inference variables so xz[..., :i, :] is correct.
+            # In the inverse pass, generated_samples holds the actual samples produced so far.
+            context = generated_samples if generated_samples is not None else xz[..., :i, :]
+            parameter_conditions = keras.ops.expand_dims(self.summary_network(context), axis=-2)
         else:
             parameter_conditions = keras.ops.expand_dims(
                 self.summary_network(keras.ops.zeros_like(xz[..., :1, :])), axis=-2
             )
 
         if conditions is None:
-            inference_conditions = parameter_conditions
-        else:
-            inference_conditions = keras.ops.concatenate([parameter_conditions, conditions[..., i : i + 1, :]], axis=-1)
+            return parameter_conditions
 
-        return inference_conditions
+        # conditions may be broadcast (B, 1, D) or positional (B, seq_len, D);
+        # use the same condition for all steps when there is only one step
+        n_cond_steps = conditions.shape[-2]
+        if n_cond_steps is not None and n_cond_steps == 1:
+            cond_i = conditions
+        else:
+            cond_i = conditions[..., i : i + 1, :]
+
+        return keras.ops.concatenate([parameter_conditions, cond_i], axis=-1)

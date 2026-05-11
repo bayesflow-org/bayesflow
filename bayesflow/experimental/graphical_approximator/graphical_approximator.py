@@ -201,10 +201,8 @@ class GraphicalApproximator(Approximator):
                 )
                 network.build(concrete_shape)
 
-        # build data summary networks
-        for key, network in self.summary_registry.items():
-            input_shape = self.graph.required_summary_networks()[key]
-            _build_network(network, input_shape)
+        # data summary networks are built lazily on the first forward pass with
+        # the actual tensor shapes produced by apply_parallel_chain
 
         # build non-exchangeable summary networks inside their wrappers
         for network_idx, input_shape in self.graph.required_non_exchangeable_summary_networks().items():

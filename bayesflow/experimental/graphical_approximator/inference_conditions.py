@@ -174,7 +174,7 @@ def apply_summary(
     Parameters
     ----------
     tensor : Tensor
-        Flattened input tensor, as produced by ``flatten_to_summary_input``.
+        Input tensor to summarize.
     key : SummaryKey
         Identifies which summary network to use.
     registry : dict[SummaryKey, SummaryNetwork]
@@ -285,8 +285,8 @@ def inference_conditions_by_network(
 ) -> dict[int, Tensor]:
     """
     Computes inference conditions for each network by running each conditioned
-    node's output through the full condition pipeline: gather → permute →
-    flatten → summarise → expand.
+    node's output through the full condition pipeline: gather -> permute ->
+    compute_chain_steps -> apply_parallel_chain -> expand.
 
     Parameters
     ----------
@@ -341,13 +341,16 @@ def inference_conditions_by_network(
                     mode = "per_level"
                 else:
                     mode = "global"
-                tensor = flatten_to_summary_input(tensor, mode)
-                key = SummaryKey(
-                    conditioned_node,
-                    mode,
-                    inferred_nodes[0] if mode == "per_level" else None,
+                k = compute_chain_steps(tensor, shared_prefix, mode)
+                tensor = apply_parallel_chain(
+                    tensor,
+                    conditioned_node=conditioned_node,
+                    mode=mode,
+                    inferred_node=inferred_nodes[0] if mode == "per_level" else None,
+                    k=k,
+                    registry=summary_registry,
+                    training=training,
                 )
-                tensor = apply_summary(tensor, key, summary_registry, training=training)
 
             # from_prefix is always recoverable from the tensor rank after the
             # pipeline steps above, since permute aligns dimensions with the

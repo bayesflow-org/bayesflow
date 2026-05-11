@@ -10,6 +10,7 @@ from .metrics import (
     posterior_z_score,
     summary_space_comparison,
     correlation,
+    tarp,
 )
 
 from .plots import (

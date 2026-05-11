@@ -156,13 +156,13 @@ class InvertedGraph(nx.DiGraph):
 
                 # permute to align with inferred_prefix, skipping dims not present
                 source = list(conditioned_shape)
-                available_prefix = [dim for dim in inferred_prefix if dim in source]
-                prefix_indices = [source.index(dim) for dim in available_prefix]
+                shared_prefix = [dim for dim in inferred_prefix if dim in source]
+                prefix_indices = [source.index(dim) for dim in shared_prefix]
                 remaining_indices = [i for i in range(len(source)) if i not in prefix_indices]
                 perm = prefix_indices + remaining_indices
                 conditioned_shape = tuple(conditioned_shape[i] for i in perm)
 
-                if len(conditioned_shape) <= len(available_prefix) + 1:
+                if len(conditioned_shape) <= len(shared_prefix) + 1:
                     continue
 
                 if self.is_per_level_summary(inferred_nodes[0], conditioned_node):
@@ -174,24 +174,18 @@ class InvertedGraph(nx.DiGraph):
                 D = conditioned_shape[-1]
                 spatial_dims = conditioned_shape[1:-1]
 
-                if mode == "global":
-                    input_shape = (B, _flat_product(spatial_dims), D)
-                else:
-                    N1 = spatial_dims[0]
-                    rest = spatial_dims[1:]
-                    if rest:
-                        input_shape = (B, N1, _flat_product(rest), D)
-                    else:
-                        input_shape = (B, N1, D)
+                input_shape = (B, _flat_product(spatial_dims), D)
 
-                key = SummaryKey(
-                    conditioned_node=conditioned_node,
-                    mode=mode,
-                    inferred_node=inferred_nodes[0] if mode == "per_level" else None,
-                )
-
-                if key not in result:
-                    result[key] = input_shape
+                n_extra = len(spatial_dims) if mode == "global" else len(spatial_dims) - 1
+                for step in range(n_extra):
+                    key = SummaryKey(
+                        conditioned_node=conditioned_node,
+                        mode=mode,
+                        inferred_node=inferred_nodes[0] if mode == "per_level" else None,
+                        chain_step=step,
+                    )
+                    if key not in result:
+                        result[key] = input_shape
 
         # append sequential summary networks for non-amortizable nodes
         for network_idx, nodes in network_composition.items():

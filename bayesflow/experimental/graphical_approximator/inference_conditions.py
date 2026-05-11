@@ -195,7 +195,6 @@ def apply_summary(
 def compute_chain_steps(
     tensor: Tensor,
     shared_prefix: tuple,
-    mode: Literal["global", "per_level"],
 ) -> int:
     """
     Returns the number of summary networks to apply in the parallel chain.
@@ -206,18 +205,13 @@ def compute_chain_steps(
         The permuted conditioned tensor.
     shared_prefix : tuple
         The shared prefix dimensions between the conditioned and inferred nodes.
-    mode : {"global", "per_level"}
-        Summary mode.
 
     Returns
     -------
     int
         Number of chain steps. Zero means no summary network is needed.
     """
-    n_extra = tensor.ndim - 1 - len(shared_prefix)
-    if mode == "per_level":
-        n_extra -= 1
-    return max(0, n_extra)
+    return max(0, tensor.ndim - 1 - len(shared_prefix))
 
 
 def apply_parallel_chain(
@@ -341,7 +335,7 @@ def inference_conditions_by_network(
                     mode = "per_level"
                 else:
                     mode = "global"
-                k = compute_chain_steps(tensor, shared_prefix, mode)
+                k = compute_chain_steps(tensor, shared_prefix)
                 tensor = apply_parallel_chain(
                     tensor,
                     conditioned_node=conditioned_node,

@@ -176,7 +176,7 @@ class InvertedGraph(nx.DiGraph):
 
                 input_shape = (B, _flat_product(spatial_dims), D)
 
-                n_extra = len(spatial_dims) if mode == "global" else len(spatial_dims) - 1
+                n_extra = len(spatial_dims) - len(shared_prefix) + 1
                 for step in range(n_extra):
                     key = SummaryKey(
                         conditioned_node=conditioned_node,

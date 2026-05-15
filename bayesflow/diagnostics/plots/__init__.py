@@ -1,3 +1,5 @@
+from .bayes_factor_recovery import bayes_factor_recovery
+from .blind_coverage import blind_coverage
 from .calibration_ecdf import calibration_ecdf
 from .calibration_ecdf_from_quantiles import calibration_ecdf_from_quantiles
 from .calibration_histogram import calibration_histogram

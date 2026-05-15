@@ -1,0 +1,67 @@
+import keras
+
+from bayesflow.types import Shape, Tensor
+from bayesflow.utils import weighted_mean
+from bayesflow.utils.serialization import serializable
+
+from .scoring_rule import ScoringRule
+
+
+def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
+    """Prepend f_0=0 and compute f_k - f_m for all k, where m is the true model."""
+    zeros = keras.ops.zeros_like(f[..., :1])
+    f_full = keras.ops.concatenate([zeros, f], axis=-1)  # (..., M)
+    m = keras.ops.cast(keras.ops.argmax(targets, axis=-1), dtype="int32")
+    m_idx = keras.ops.expand_dims(m, axis=-1)  # (..., 1)
+    f_m = keras.ops.take_along_axis(f_full, m_idx, axis=-1)  # (..., 1)
+    return f_full - f_m  # (..., M), broadcast
+
+
+@serializable("bayesflow.scoring_rules", disable_module_check=True)
+class ExponentialScore(ScoringRule):
+    r"""Exponential scoring rule for amortized Bayes factor estimation.
+
+    The network outputs :math:`M - 1` log Bayes factors
+    :math:`(f_1, \ldots, f_{M-1})` relative to model 0 (:math:`f_0 = 0`
+    by convention).  For the true model :math:`m`:
+
+    :math:`S(\{f_k\}, m) = \sum_{k=0}^{M-1} \exp(f_k - f_m)`
+
+    The loss is minimised when :math:`f_m \gg f_k` for all :math:`k \neq m`,
+    i.e. when the log Bayes factor strongly favours the true model.
+    """
+
+    NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.config = {}
+
+    def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
+        target_shape = tuple(target_shape)
+        return dict(log_bayes_factors=target_shape[1:-1] + (target_shape[-1] - 1,))
+
+    def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
+        """
+        Computes the exponential Bayes factor score.
+
+        Parameters
+        ----------
+        estimates : dict[str, Tensor]
+            Must contain ``"log_bayes_factors"`` of shape ``(..., M-1)``.
+        targets : Tensor
+            One-hot encoded true model labels of shape ``(..., M)``.
+        weights : Tensor, optional
+            Per-sample weights for a weighted mean.
+
+        Returns
+        -------
+        Tensor
+            (Optionally weighted) mean exponential score over the batch.
+        """
+        diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
+        scores = keras.ops.sum(keras.ops.exp(diff), axis=-1)
+        return weighted_mean(scores, weights)
+
+    def get_config(self):
+        return super().get_config() | self.config

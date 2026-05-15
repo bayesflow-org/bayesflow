@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+import warnings
 
 import numpy as np
 
@@ -300,6 +301,13 @@ class ModelComparisonApproximator(Approximator):
         if "logits" in estimates:
             result = keras.ops.softmax(estimates["logits"]) if probs else estimates["logits"]
         elif "log_bayes_factors" in estimates:
+            if probs is not True:
+                warnings.warn(
+                    "The 'probs' argument is ignored when using a Bayes factor scoring rule. "
+                    "Returning log Bayes factors directly.",
+                    UserWarning,
+                    stacklevel=2,
+                )
             result = estimates["log_bayes_factors"]
         else:
             raise RuntimeError(

@@ -6,12 +6,17 @@ import numpy as np
 
 import keras
 
+from collections.abc import Mapping
+
+import matplotlib.pyplot as plt
+
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ModelComparisonApproximator
 from bayesflow.scoring_rules import CrossEntropyScore, ScoringRule
 from bayesflow.utils import find_network, find_summary_network, logging, format_duration, filter_kwargs
+from bayesflow.diagnostics import plots as bf_plots
 
 from .basic_workflow import BasicWorkflow
 
@@ -70,8 +75,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
     model_names : Sequence[str], optional
         Human-readable names for each model, used in diagnostic plots.
     standardize : Sequence[str] or str or None, optional
-        Variables to standardize. Defaults to ``None`` because model indices
-        are one-hot encoded and should not be standardized.
+        Variables to standardize. When a ``summary_network`` is provided and
+        this argument is ``None``, defaults to ``["summary_variables"]`` so
+        that the raw data is standardized before entering the summary network.
+        ``inference_variables`` (one-hot model indices) are never standardized.
     **kwargs : dict, optional
         Additional keyword arguments organised by context:
 
@@ -118,6 +125,12 @@ class ModelComparisonWorkflow(BasicWorkflow):
         num_models = len(simulator.simulators) if simulator is not None else None
 
         adapter = adapter or ModelComparisonWorkflow.default_adapter(inference_conditions, summary_variables)
+
+        # When a summary network is present and the caller did not specify standardize,
+        # default to standardizing summary_variables.  inference_variables (model indices)
+        # are one-hot and must never be standardized.
+        if standardize is None and summary_network is not None:
+            standardize = ["summary_variables"]
 
         self.approximator = ModelComparisonApproximator(
             num_models=num_models,
@@ -197,14 +210,116 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         Returns
         -------
-        np.ndarray of shape (num_datasets, num_models)
-            Posterior model probabilities (or logits).
+        np.ndarray
+            - Shape ``(num_datasets, num_models)`` for PMP scoring rules:
+              softmax probabilities when ``probs=True``, raw logits when ``probs=False``.
+            - Shape ``(num_datasets, num_models - 1)`` for Bayes factor scoring rules:
+              predicted log Bayes factors relative to the reference model.
+              ``probs`` is ignored in this case.
         """
         start_time = time.perf_counter()
         predictions = self.approximator.predict(conditions=conditions, probs=probs, **kwargs)
         elapsed = time.perf_counter() - start_time
         logging.info(f"Prediction completed in {format_duration(elapsed)}.")
         return predictions
+
+    def plot_default_diagnostics(
+        self,
+        test_data: Mapping[str, np.ndarray] | int,
+        **kwargs,
+    ) -> dict[str, plt.Figure]:
+        """
+        Generate default diagnostic plots for model comparison.
+
+        Produces a loss curve (when training history is available) followed by
+        a set of plots that depend on the active scoring rule:
+
+        **PMP scoring rules** (:class:`~bayesflow.scoring_rules.CrossEntropyScore`,
+        :class:`~bayesflow.scoring_rules.SquaredScore`,
+        :class:`~bayesflow.scoring_rules.PolynomialScore`):
+
+        - ``"confusion_matrix"`` — posterior model probability confusion matrix.
+        - ``"calibration"`` — per-model calibration curves with ECE annotations.
+
+        **Bayes factor scoring rules** (:class:`~bayesflow.scoring_rules.ExponentialScore`,
+        :class:`~bayesflow.scoring_rules.LogisticScore`,
+        :class:`~bayesflow.scoring_rules.LPOPExponentialScore`, etc.):
+
+        - ``"blind_coverage"`` — blind coverage test (Jeffrey & Wandelt 2024):
+          conditional ECDFs of predicted log Bayes factors stratified by true model,
+          evaluated against blind (model-label-free) quantile thresholds.
+
+        Parameters
+        ----------
+        test_data : Mapping[str, np.ndarray] or int
+            Either a pre-simulated data dictionary (as returned by
+            :meth:`simulate`) or an integer specifying how many datasets to
+            generate using the attached simulator.
+        **kwargs : dict, optional
+            Fine-grained control over individual plots via nested dicts:
+
+            - ``test_data_kwargs`` — forwarded to :meth:`simulate` when
+              ``test_data`` is an integer.
+            - ``predict_kwargs`` — forwarded to :meth:`predict`.
+            - ``loss_kwargs`` — forwarded to :func:`~bayesflow.diagnostics.plots.loss`.
+            - ``confusion_matrix_kwargs`` — forwarded to
+              :func:`~bayesflow.diagnostics.plots.mc_confusion_matrix` (PMP only).
+            - ``calibration_kwargs`` — forwarded to
+              :func:`~bayesflow.diagnostics.plots.mc_calibration` (PMP only).
+            - ``blind_coverage_kwargs`` — forwarded to
+              :func:`~bayesflow.diagnostics.plots.blind_coverage` (BF only).
+
+        Returns
+        -------
+        dict[str, plt.Figure]
+            Keys are plot names; values are the corresponding
+            :class:`~matplotlib.figure.Figure` objects.
+
+        Raises
+        ------
+        ValueError
+            If ``test_data`` is an integer but no simulator is attached.
+        """
+        if isinstance(test_data, int):
+            if self.simulator is None:
+                raise ValueError(f"No simulator attached. Cannot generate {test_data} test datasets.")
+            test_data = self.simulate(test_data, **kwargs.get("test_data_kwargs", {}))
+
+        figures = {}
+
+        if self.history is not None:
+            figures["loss"] = bf_plots.loss(self.history, **kwargs.get("loss_kwargs", {}))
+
+        predictions = self.predict(conditions=test_data, **kwargs.get("predict_kwargs", {}))
+        true_models = test_data["model_indices"]  # one-hot, shape (N, M)
+
+        # Determine active mode from the scoring rule's output head keys
+        num_models = true_models.shape[-1]
+        head_shapes = self.approximator.scoring_rule.get_head_shapes_from_target_shape((1, num_models))
+        is_pmp_mode = "logits" in head_shapes
+
+        if is_pmp_mode:
+            figures["confusion_matrix"] = bf_plots.mc_confusion_matrix(
+                pred_models=predictions,
+                true_models=true_models,
+                model_names=self.model_names,
+                **kwargs.get("confusion_matrix_kwargs", {}),
+            )
+            figures["calibration"] = bf_plots.mc_calibration(
+                pred_models=predictions,
+                true_models=true_models,
+                model_names=self.model_names,
+                **kwargs.get("calibration_kwargs", {}),
+            )
+        else:
+            figures["blind_coverage"] = bf_plots.blind_coverage(
+                pred_log_bayes_factors=predictions,
+                true_models=true_models,
+                model_names=self.model_names,
+                **kwargs.get("blind_coverage_kwargs", {}),
+            )
+
+        return figures
 
     # ------------------------------------------------------------------
     # Disable BasicWorkflow inference methods that do not apply here

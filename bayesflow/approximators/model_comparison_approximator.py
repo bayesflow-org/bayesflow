@@ -7,7 +7,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
-from bayesflow.scoring_rules import CrossEntropyScore
+from bayesflow.scoring_rules import CrossEntropyScore, ScoringRule
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, logging
@@ -56,6 +56,7 @@ class ModelComparisonApproximator(Approximator):
         *,
         num_models: int,
         classifier_network: keras.Layer,
+        scoring_rule: ScoringRule = None,
         adapter: Adapter = None,
         summary_network: SummaryNetwork = None,
         standardize: str | Sequence[str] | None = None,
@@ -65,8 +66,11 @@ class ModelComparisonApproximator(Approximator):
         self.num_models = num_models
         self.adapter = adapter if adapter is not None else Adapter()
 
+        scoring_rule = scoring_rule if scoring_rule is not None else CrossEntropyScore()
+        self.scoring_rule = scoring_rule
+
         self.inference_network = ScoringRuleNetwork(
-            scoring_rules={"cross_entropy": CrossEntropyScore()},
+            scoring_rules={"scoring_rule": scoring_rule},
             subnet=classifier_network,
         )
 
@@ -243,6 +247,7 @@ class ModelComparisonApproximator(Approximator):
 
         config = {
             "num_models": self.num_models,
+            "scoring_rule": self.scoring_rule,
             "adapter": self.adapter,
             "classifier_network": self.inference_network.subnet,
             "summary_network": self.summary_network,
@@ -259,32 +264,47 @@ class ModelComparisonApproximator(Approximator):
         **kwargs,
     ) -> np.ndarray:
         """
-        Predicts posterior model probabilities given input conditions. The `conditions` dictionary is preprocessed
-        using the `adapter`. The output is converted to NumPy array after inference.
+        Returns predictions given input conditions, adapting output to the active scoring rule.
+
+        For PMP scoring rules (e.g. :class:`~bayesflow.scoring_rules.CrossEntropyScore`,
+        :class:`~bayesflow.scoring_rules.SquaredScore`) the network outputs logits over
+        ``num_models`` classes; when ``probs=True`` (default) these are converted to
+        softmax probabilities.
+
+        For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LPOPExponentialScore`)
+        the network outputs ``num_models - 1`` log Bayes factors relative to the reference model;
+        the ``probs`` flag is ignored in this case.
 
         Parameters
         ----------
         conditions : Mapping[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
-        probs: bool, optional
-            A flag indicating whether model probabilities (True) or logits (False) are returned. Default is True.
-        **kwargs : dict
-            Additional keyword arguments for the adapter and classifier.
+        probs : bool, optional
+            For PMP scoring rules: return softmax probabilities when ``True``, raw logits when
+            ``False``.  Ignored for Bayes factor scoring rules (default: ``True``).
+        **kwargs
+            Additional keyword arguments forwarded to the adapter and classifier.
 
         Returns
         -------
-        outputs: np.ndarray
-            Predicted posterior model probabilities given `conditions`.
+        np.ndarray
+            Shape ``(num_datasets, num_models)`` for PMP scoring rules, or
+            ``(num_datasets, num_models - 1)`` for Bayes factor scoring rules.
         """
-
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions, **kwargs)
-
         inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         output = self.inference_network(xz=None, conditions=resolved_conditions, **inference_kwargs)
-        logits = output["cross_entropy"]["logits"]
+        estimates = output["scoring_rule"]
 
-        if probs:
-            logits = keras.ops.softmax(logits)
+        if "logits" in estimates:
+            result = keras.ops.softmax(estimates["logits"]) if probs else estimates["logits"]
+        elif "log_bayes_factors" in estimates:
+            result = estimates["log_bayes_factors"]
+        else:
+            raise RuntimeError(
+                f"Unrecognised scoring rule output keys: {list(estimates.keys())}. "
+                "Expected 'logits' (PMP rules) or 'log_bayes_factors' (Bayes factor rules)."
+            )
 
-        return keras.ops.convert_to_numpy(logits)
+        return keras.ops.convert_to_numpy(result)

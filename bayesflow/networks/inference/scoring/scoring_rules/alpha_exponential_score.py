@@ -28,6 +28,8 @@ class AlphaExponentialScore(ScoringRule):
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
+    # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
+    _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, alpha: float = 0.5, **kwargs):
         super().__init__(**kwargs)
@@ -58,7 +60,8 @@ class AlphaExponentialScore(ScoringRule):
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         weight = (1.0 + diff**2) ** self.alpha
-        scores = keras.ops.sum(weight * keras.ops.exp(diff), axis=-1)
+        # Clamp before exp to prevent float32 overflow (~3.4e38 ≈ exp(88))
+        scores = keras.ops.sum(weight * keras.ops.exp(keras.ops.clip(diff, -88.0, 88.0)), axis=-1)
         return weighted_mean(scores, weights)
 
     def get_config(self):

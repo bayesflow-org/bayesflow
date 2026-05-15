@@ -24,6 +24,8 @@ class LogisticScore(ScoringRule):
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
+    # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
+    _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

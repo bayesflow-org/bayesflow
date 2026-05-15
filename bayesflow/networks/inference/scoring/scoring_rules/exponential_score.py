@@ -32,6 +32,8 @@ class ExponentialScore(ScoringRule):
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
+    # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
+    _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -60,7 +62,8 @@ class ExponentialScore(ScoringRule):
             (Optionally weighted) mean exponential score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
-        scores = keras.ops.sum(keras.ops.exp(diff), axis=-1)
+        # Clamp before exp to prevent float32 overflow (~3.4e38 ≈ exp(88))
+        scores = keras.ops.sum(keras.ops.exp(keras.ops.clip(diff, -88.0, 88.0)), axis=-1)
         return weighted_mean(scores, weights)
 
     def get_config(self):

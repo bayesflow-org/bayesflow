@@ -56,6 +56,8 @@ class LPOPExponentialScore(ScoringRule):
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
+    # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
+    _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, alpha: float = 2.0, **kwargs):
         super().__init__(**kwargs)
@@ -85,7 +87,8 @@ class LPOPExponentialScore(ScoringRule):
             (Optionally weighted) mean l-POP exponential score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
-        scores = keras.ops.sum(keras.ops.exp(_lpop(diff, self.alpha)), axis=-1)
+        # Clamp after lpop (which amplifies large |diff|) to prevent float32 overflow
+        scores = keras.ops.sum(keras.ops.exp(keras.ops.clip(_lpop(diff, self.alpha), -88.0, 88.0)), axis=-1)
         return weighted_mean(scores, weights)
 
     def get_config(self):

@@ -54,9 +54,15 @@ class LogisticScore(ScoringRule):
             (Optionally weighted) mean logistic score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
-        # sum softplus(diff) over k != m; mask out k == m via (1 - targets)
-        mask = 1.0 - targets  # 0 at true model, 1 elsewhere
-        scores = keras.ops.sum(mask * keras.ops.softplus(diff), axis=-1)
+        mask = 1.0 - targets
+        half_diff = diff / 2.0
+        # log(1 + s^2) = softplus(2*log_s); compute log_s via masked logsumexp to avoid s^2 overflow
+        masked_hd = keras.ops.where(mask > 0.5, half_diff, keras.ops.full_like(half_diff, -1e9))
+        max_hd = keras.ops.max(masked_hd, axis=-1, keepdims=True)
+        log_s = max_hd[..., 0] + keras.ops.log(
+            keras.ops.sum(mask * keras.ops.exp(keras.ops.clip(half_diff - max_hd, -88.0, 0.0)), axis=-1)
+        )
+        scores = keras.ops.softplus(2.0 * log_s)
         return weighted_mean(scores, weights)
 
     def get_config(self):

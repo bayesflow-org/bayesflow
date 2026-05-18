@@ -87,8 +87,14 @@ class LPOPExponentialScore(ScoringRule):
             (Optionally weighted) mean l-POP exponential score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
-        # Clamp after lpop (which amplifies large |diff|) to prevent float32 overflow
-        scores = keras.ops.sum(keras.ops.exp(keras.ops.clip(_lpop(diff, self.alpha), -88.0, 88.0)), axis=-1)
+        mask = 1.0 - targets
+        transformed = _lpop(diff, self.alpha) / 2.0
+        # Adjust per-term clip so sum of (M-1) terms stays within float32 range
+        M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
+        clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
+        scores = keras.ops.sum(
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(transformed, -88.0), clip_max)), axis=-1
+        )
         return weighted_mean(scores, weights)
 
     def get_config(self):

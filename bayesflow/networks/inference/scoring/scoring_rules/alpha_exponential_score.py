@@ -59,9 +59,14 @@ class AlphaExponentialScore(ScoringRule):
             (Optionally weighted) mean alpha-exponential score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
-        weight = (1.0 + diff**2) ** self.alpha
-        # Clamp before exp to prevent float32 overflow (~3.4e38 ≈ exp(88))
-        scores = keras.ops.sum(weight * keras.ops.exp(keras.ops.clip(diff, -88.0, 88.0)), axis=-1)
+        mask = 1.0 - targets
+        M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
+        clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
+        # Compute weight * exp(diff/2) in log-domain to prevent joint overflow when weight is large
+        log_term = self.alpha * keras.ops.log(1.0 + diff**2) + diff / 2.0
+        scores = keras.ops.sum(
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(log_term, -88.0), clip_max)), axis=-1
+        )
         return weighted_mean(scores, weights)
 
     def get_config(self):

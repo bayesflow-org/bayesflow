@@ -62,10 +62,16 @@ class AlphaLogExponentialScore(ScoringRule):
             (Optionally weighted) mean alpha-log-exponential score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
-        alpha_diff = self.alpha * diff
-        # Numerically stable log-sum-exp: log(Σ exp(xᵢ)) = max + log(Σ exp(xᵢ - max))
-        max_ad = keras.ops.max(alpha_diff, axis=-1, keepdims=True)
-        log_sum_exp = max_ad[..., 0] + keras.ops.log(keras.ops.sum(keras.ops.exp(alpha_diff - max_ad), axis=-1))
+        # Exclude k=m; use 1/2 (not alpha/2) in exponent so optimal output = log K for any alpha.
+        # alpha retains its role as a loss-scale parameter affecting gradient magnitude.
+        mask = 1.0 - targets
+        half_diff = diff / 2.0
+        # Numerically stable masked log-sum-exp: shift by per-sample max over non-m entries
+        masked_half_diff = keras.ops.where(mask > 0.5, half_diff, keras.ops.full_like(half_diff, -1e9))
+        max_hd = keras.ops.max(masked_half_diff, axis=-1, keepdims=True)
+        log_sum_exp = max_hd[..., 0] + keras.ops.log(
+            keras.ops.sum(mask * keras.ops.exp(keras.ops.clip(half_diff - max_hd, -88.0, 88.0)), axis=-1)
+        )
         scores = log_sum_exp / self.alpha
         return weighted_mean(scores, weights)
 

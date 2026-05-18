@@ -19,6 +19,7 @@ def tarp(
     resolution: int = 20,
     standardize: bool = True,
     distance: Callable = None,
+    rng: np.random.Generator = None,
 ) -> dict:
     """
     Computes the TARP (Test of Accuracy with Random Points) diagnostic.
@@ -57,6 +58,7 @@ def tarp(
     distance : callable, optional (default = L2)
         Distance function accepting two arrays of shape ``(..., D)`` and
         returning distances of shape ``(...,)``. Defaults to Euclidean (L2).
+    rng : np.random.Generator, optional (default = None)
 
     Returns
     -------
@@ -86,34 +88,28 @@ def tarp(
         variable_names=variable_names,
     )
 
-    # thetas: (N, D), posterior_samples: (N, S, D)
     thetas = samples["targets"]
     posterior_samples = samples["estimates"]
     num_datasets, num_draws, _ = posterior_samples.shape
 
     if references is None:
-        lo = thetas.min(axis=0)
-        hi = thetas.max(axis=0)
-        rng = np.random.default_rng()
-        references = rng.uniform(low=lo, high=hi, size=thetas.shape)
+        rng = np.random.default_rng(rng)
+        shift_id = rng.integers(1, num_datasets)
+        references = np.roll(thetas, shift=shift_id, axis=0)
 
     if standardize:
-        lo = thetas.min(axis=0, keepdims=True)
-        hi = thetas.max(axis=0, keepdims=True)
-        scale = hi - lo
-        posterior_samples = (posterior_samples - lo[:, None, :]) / scale[:, None, :]
-        references = (references - lo) / scale
-        thetas = (thetas - lo) / scale
+        _mean = thetas.mean(axis=0, keepdims=True)
+        _std = thetas.std(axis=0, keepdims=True)
+        posterior_samples = (posterior_samples - _mean[:, None, :]) / _std[:, None, :]
+        references = (references - _mean) / _std
+        thetas = (thetas - _mean) / _std
 
-    # sample_dists[n, s] = distance(references[n], posterior_samples[n, s])
-    # references[:, None, :] broadcasts to (N, S, D)
-    sample_dists = distance(references[:, None, :], posterior_samples)  # (N, S)
+    sample_dists = distance(references[:, None, :], posterior_samples)
 
-    # theta_dists[n] = distance(references[n], thetas[n])
-    theta_dists = distance(references, thetas)  # (N,)
+    theta_dists = distance(references, thetas)
 
     # fraction of posterior samples closer to reference than true theta
-    coverage_values = np.sum(sample_dists < theta_dists[:, None], axis=1) / num_draws  # (N,)
+    coverage_values = np.sum(sample_dists < theta_dists[:, None], axis=1) / num_draws
 
     hist, alpha_grid = np.histogram(coverage_values, bins=resolution, density=True)
 

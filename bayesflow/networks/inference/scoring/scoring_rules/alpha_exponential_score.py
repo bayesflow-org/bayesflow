@@ -12,26 +12,31 @@ from .exponential_score import _pairwise_diff
 class AlphaExponentialScore(ScoringRule):
     r"""Alpha-exponential scoring rule for amortized Bayes factor estimation.
 
-    Extends :class:`ExponentialScore` by weighting each pairwise term with a
-    polynomial factor that penalises large log-odds:
+    .. math::
 
-    :math:`S(\{f_k\}, m; \alpha) = \sum_k \left(1 + (f_k - f_m)^2\right)^\alpha \exp(f_k - f_m)`
+        S(\{f_k\}, m; \alpha)
+        = \sum_{k \neq m} \left(1 + e^{f_k(x) - f_m(x)}\right)^\alpha
 
-    For :math:`\alpha = 0` this reduces to :class:`ExponentialScore`.  Larger
-    :math:`\alpha` provides additional down-weighting of extreme Bayes factors,
-    which can improve gradient behaviour early in training.
+    The unique minimiser of the expected loss is
+
+    .. math::
+
+        f_k^*(x) = \frac{1}{\alpha} \log K_{0,k}(x),
+
+    so the network output must be multiplied by :math:`\alpha` to recover the
+    true log-Bayes factor.
 
     Parameters
     ----------
     alpha : float, optional
-        Polynomial weight exponent (default: 0.5).  Must be non-negative.
+        Exponent (default: 1.0).  Must be positive.
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
     # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
-    def __init__(self, alpha: float = 0.5, **kwargs):
+    def __init__(self, alpha: float = 1.0, **kwargs):
         super().__init__(**kwargs)
         self.alpha = alpha
         self.config = {"alpha": alpha}
@@ -62,10 +67,11 @@ class AlphaExponentialScore(ScoringRule):
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
         clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
-        # Compute weight * exp(diff/2) in log-domain to prevent joint overflow when weight is large
-        log_term = self.alpha * keras.ops.log(1.0 + diff**2) + diff / 2.0
+        # (1 + exp(diff))^alpha = exp(alpha * softplus(diff)); softplus(diff) >= 0, so only upper clip needed
+        log_terms = self.alpha * keras.ops.softplus(diff)
         scores = keras.ops.sum(
-            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(log_term, -88.0), clip_max)), axis=-1
+            mask * keras.ops.exp(keras.ops.minimum(log_terms, clip_max)),
+            axis=-1,
         )
         return weighted_mean(scores, weights)
 

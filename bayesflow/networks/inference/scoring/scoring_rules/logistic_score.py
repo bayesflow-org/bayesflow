@@ -12,15 +12,14 @@ from .exponential_score import _pairwise_diff
 class LogisticScore(ScoringRule):
     r"""Logistic scoring rule for amortized Bayes factor estimation.
 
-    The network outputs :math:`M - 1` log Bayes factors
-    :math:`(f_1, \ldots, f_{M-1})` relative to model 0 (:math:`f_0 = 0`).
     For the true model :math:`m`:
 
-    :math:`S(\{f_k\}, m) = \sum_{k \neq m} \log\!\left(1 + \exp(f_k - f_m)\right)`
+    .. math::
 
-    Equivalent to applying the binary logistic loss to every pairwise
-    log-odds :math:`f_k - f_m`.  Compared to :class:`ExponentialScore`, the
-    log link makes it less sensitive to large Bayes factors.
+        S(\{f_k\}, m) = \sum_{k \neq m} \log\!\left(1 + e^{f_k(x) - f_m(x)}\right)
+
+    The unique minimiser of the expected loss is :math:`f_k^* = \log K_{0,k}`,
+    the same as :class:`ExponentialScore`.
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
@@ -55,14 +54,7 @@ class LogisticScore(ScoringRule):
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
-        half_diff = diff / 2.0
-        # log(1 + s^2) = softplus(2*log_s); compute log_s via masked logsumexp to avoid s^2 overflow
-        masked_hd = keras.ops.where(mask > 0.5, half_diff, keras.ops.full_like(half_diff, -1e9))
-        max_hd = keras.ops.max(masked_hd, axis=-1, keepdims=True)
-        log_s = max_hd[..., 0] + keras.ops.log(
-            keras.ops.sum(mask * keras.ops.exp(keras.ops.clip(half_diff - max_hd, -88.0, 0.0)), axis=-1)
-        )
-        scores = keras.ops.softplus(2.0 * log_s)
+        scores = keras.ops.sum(mask * keras.ops.softplus(diff), axis=-1)
         return weighted_mean(scores, weights)
 
     def get_config(self):

@@ -12,22 +12,25 @@ from .exponential_score import _pairwise_diff
 class AlphaLogExponentialScore(ScoringRule):
     r"""Alpha-log-exponential scoring rule for amortized Bayes factor estimation.
 
-    Interpolates between the :class:`LogisticScore` (:math:`\alpha \to 0^+`)
-    and the :class:`ExponentialScore` (:math:`\alpha \to \infty`) via a
-    scaled log-sum-exp over pairwise log-odds:
+    .. math::
 
-    :math:`S(\{f_k\}, m; \alpha) = \frac{1}{\alpha} \log \sum_k \exp\!\left(\alpha (f_k - f_m)\right)`
+        S(\{f_k\}, m; \alpha)
+        = \sum_{k \neq m} \exp\!\left(-\frac{\alpha}{2}(f_k(x) - f_m(x))\right)
 
-    For :math:`\alpha = 1` this equals
-    :math:`\log \sum_k \exp(f_k - f_m)`, which is the log of the
-    :class:`ExponentialScore` and equivalent to categorical cross-entropy.
-    Smaller :math:`\alpha` softens the max-like behaviour, larger
-    :math:`\alpha` sharpens it.
+    The unique minimiser of the expected loss is
+
+    .. math::
+
+        f_k^*(x) = \frac{1}{\alpha} \log K_{0,k}(x),
+
+    so the network output must be multiplied by :math:`\alpha` to recover the
+    true log-Bayes factor.  Setting :math:`\alpha = 1` recovers
+    :class:`ExponentialScore` exactly.
 
     Parameters
     ----------
     alpha : float, optional
-        Temperature parameter (default: 1.0).  Must be positive.
+        Exponent scale (default: 1.0).  Must be positive.
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
@@ -62,17 +65,14 @@ class AlphaLogExponentialScore(ScoringRule):
             (Optionally weighted) mean alpha-log-exponential score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
-        # Exclude k=m; use 1/2 (not alpha/2) in exponent so optimal output = log K for any alpha.
-        # alpha retains its role as a loss-scale parameter affecting gradient magnitude.
         mask = 1.0 - targets
-        half_diff = diff / 2.0
-        # Numerically stable masked log-sum-exp: shift by per-sample max over non-m entries
-        masked_half_diff = keras.ops.where(mask > 0.5, half_diff, keras.ops.full_like(half_diff, -1e9))
-        max_hd = keras.ops.max(masked_half_diff, axis=-1, keepdims=True)
-        log_sum_exp = max_hd[..., 0] + keras.ops.log(
-            keras.ops.sum(mask * keras.ops.exp(keras.ops.clip(half_diff - max_hd, -88.0, 88.0)), axis=-1)
+        M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
+        clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
+        neg_alpha_half_diff = -self.alpha * diff / 2.0
+        scores = keras.ops.sum(
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(neg_alpha_half_diff, -88.0), clip_max)),
+            axis=-1,
         )
-        scores = log_sum_exp / self.alpha
         return weighted_mean(scores, weights)
 
     def get_config(self):

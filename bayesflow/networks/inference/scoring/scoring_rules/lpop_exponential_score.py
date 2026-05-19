@@ -38,21 +38,33 @@ class LPOPExponentialScore(ScoringRule):
     **Recommended** Bayes factor scoring rule (Jeffrey & Wandelt 2024).
 
     Applies the leaky parity-odd power (l-POP) transform
-    :math:`J_\alpha(x) = x + x|x|^{\alpha-1}` to each pairwise log-odds
+    :math:`J_\alpha(x) = x(1 + |x|^{\alpha-1})` to each pairwise log-odds
     before the exponential:
 
-    :math:`S(\{f_k\}, m; \alpha) = \sum_k \exp\!\left(J_\alpha(f_k - f_m)\right)`
+    .. math::
 
-    The l-POP transform is odd and linear near zero (:math:`\alpha > 1`),
-    which robustifies training against extreme Bayes factors while retaining
-    the properness of the underlying exponential rule.
+        S(\{f_k\}, m; \alpha) = \sum_{k \neq m}
+            \exp\!\left(-\tfrac{1}{2} J_\alpha(f_k - f_m)\right)
+
+    The unique minimiser is :math:`f_k^* = \log K_{0,k}`, the same as
+    :class:`ExponentialScore`, because :math:`J_\alpha` is strictly monotone.
+    The practical advantage over the plain exponential rule is that
+    :math:`J_\alpha` with :math:`\alpha > 1` up-weights large deviations,
+    improving gradient signal across many orders of magnitude in :math:`K_{0,k}`.
+
+    .. note::
+        The code implements :math:`J_\alpha(x) = x(1 + |x|^{\alpha - 1})`,
+        which keeps a unit-slope linear term near zero.  The paper's original
+        :math:`\mathrm{lPOP}_\alpha(u) = \mathrm{sgn}(u)|u|^\alpha + \epsilon u`
+        uses :math:`\epsilon \ll 1` instead; both are odd and strictly monotone,
+        so the properness argument is identical.
 
     Parameters
     ----------
     alpha : float, optional
         l-POP exponent (default: 2.0).  Values :math:`> 1` give numerically
         stable gradients near zero; :math:`\alpha = 1` reduces to
-        :class:`ExponentialScore` (up to a factor of 2).
+        :class:`ExponentialScore`.
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
@@ -88,7 +100,7 @@ class LPOPExponentialScore(ScoringRule):
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
-        transformed = _lpop(diff, self.alpha) / 2.0
+        transformed = -_lpop(diff, self.alpha) / 2.0
         # Adjust per-term clip so sum of (M-1) terms stays within float32 range
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
         clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))

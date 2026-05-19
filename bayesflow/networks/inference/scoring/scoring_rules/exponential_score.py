@@ -22,13 +22,16 @@ class ExponentialScore(ScoringRule):
     r"""Exponential scoring rule for amortized Bayes factor estimation.
 
     The network outputs :math:`M - 1` log Bayes factors
-    :math:`(f_1, \ldots, f_{M-1})` relative to model 0 (:math:`f_0 = 0`
-    by convention).  For the true model :math:`m`:
+    :math:`f_k = \log K_{0,k}` relative to reference model 0
+    (:math:`f_0 \equiv 0`).  For the true model :math:`m`:
 
-    :math:`S(\{f_k\}, m) = \sum_{k=0}^{M-1} \exp(f_k - f_m)`
+    .. math::
 
-    The loss is minimised when :math:`f_m \gg f_k` for all :math:`k \neq m`,
-    i.e. when the log Bayes factor strongly favours the true model.
+        S(\{f_k\}, m) = \sum_{k \neq m} \exp\!\left(-\tfrac{1}{2}(f_k - f_m)\right)
+
+    The unique minimiser of the expected loss is :math:`f_k^* = \log K_{0,k}`,
+    where :math:`K_{0,k} = p(x \mid \mathcal{M}_0) / p(x \mid \mathcal{M}_k)`.
+    Any pairwise log-Bayes factor is recovered as :math:`\log K_{i,j} = f_j^* - f_i^*`.
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
@@ -63,12 +66,12 @@ class ExponentialScore(ScoringRule):
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
-        half_diff = diff / 2.0
+        neg_half_diff = -diff / 2.0
         # Adjust per-term clip so sum of (M-1) terms stays within float32 range
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
         clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
         scores = keras.ops.sum(
-            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(half_diff, -88.0), clip_max)), axis=-1
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(neg_half_diff, -88.0), clip_max)), axis=-1
         )
         return weighted_mean(scores, weights)
 

@@ -55,7 +55,7 @@ class PolynomialScore(ScoringRule):
         Tensor
             (Optionally weighted) mean polynomial score over the batch.
         """
-        probs = keras.ops.softmax(estimates["logits"], axis=-1)
+        probs = keras.ops.sigmoid(estimates["logits"])
         scores = keras.ops.sum(
             targets * (1.0 - probs) ** self.alpha + (1.0 - targets) * probs**self.alpha,
             axis=-1,

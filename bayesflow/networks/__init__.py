@@ -18,7 +18,7 @@ from .summary import SummaryNetwork
 from . import inference
 from .inference import ConsistencyModel, StableConsistencyModel
 from .inference import CouplingFlow
-from .inference import DiffusionModel
+from .inference import DiffusionModel, ContrastiveDiffusion
 from .inference import FlowMatching
 from .inference import PointNetwork, ScoringRuleNetwork
 

@@ -28,7 +28,7 @@ class NonExchangeableWrapper(InferenceNetwork):
             return
 
         if not self.summary_network.built:
-            raise ValueError("summary network must be built before building the wrapper.")
+            self.summary_network.build(xz_shape)
 
         summary_output_shape = self.summary_network.compute_output_shape(xz_shape)
 

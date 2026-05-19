@@ -49,7 +49,7 @@ def two_level_repeated_roots_approximator():
     adapter.to_array()
     adapter.convert_dtype("float64", "float32")
 
-    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20)]
+    summary_networks = [DeepSet(summary_dim=10), DeepSet(summary_dim=20), DeepSet(summary_dim=30)]
     inference_networks = [CouplingFlow(), CouplingFlow()]
 
     inverted_graph = simulator.graph.invert()

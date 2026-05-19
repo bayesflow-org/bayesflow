@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 import keras
+import sympy as sp
 
 from bayesflow.experimental.graphs.inverted_graph import SummaryKey
 from bayesflow.networks import SummaryNetwork
@@ -82,49 +83,6 @@ def permute_to_prefix(
         return tensor
 
     return keras.ops.transpose(tensor, perm)
-
-
-def flatten_to_summary_input(
-    tensor: Tensor,
-    mode: Literal["global", "per_level"],
-) -> Tensor:
-    """
-    Flattens `tensor` into the shape expected by a summary network, based on
-    the summary mode. Assumes `permute_to_prefix` has already been applied so
-    that the target prefix dimensions are leading.
-
-    For ``"global"`` mode, all spatial dimensions are collapsed into a single
-    set dimension: ``(B, d1, ..., dk, D) -> (B, d1*...*dk, D)``.
-
-    For ``"per_level"`` mode, the first spatial dimension is kept and the
-    remaining ones are collapsed: ``(B, N, d2, ..., dk, D) -> (B, N, d2*...*dk, D)``.
-
-    Parameters
-    ----------
-    tensor : Tensor
-        Input tensor. Must have rank >= 3 for ``"global"`` and >= 4 for
-        ``"per_level"``.
-    mode : {"global", "per_level"}
-        Summary mode. ``"global"`` produces a single summary vector per batch
-        element. ``"per_level"`` produces one summary per entry in the level
-        dimension.
-
-    Returns
-    -------
-    Tensor
-        Tensor with spatial dimensions collapsed into a single set dimension.
-    """
-    shape = keras.ops.shape(tensor)
-
-    if mode == "global":
-        if tensor.ndim <= 3:
-            return tensor
-        return keras.ops.reshape(tensor, [shape[0], -1, shape[-1]])
-
-    # per_level: keep the first spatial dimension, flatten the rest
-    if tensor.ndim <= 4:
-        return tensor
-    return keras.ops.reshape(tensor, [shape[0], shape[1], -1, shape[-1]])
 
 
 def expand_to_prefix(
@@ -310,6 +268,16 @@ def inference_conditions_by_network(
     output_shapes = approximator.output_shapes
     variable_names = approximator.variable_names
 
+    # sqrt of the data node's spatial dimensions, appended to every network's conditions
+    data_node = approximator.graph.simulation_graph.data_node()
+    data_tensor = gather_node_output(variable_names[data_node], simulation_output)
+    data_shape = keras.ops.shape(data_tensor)
+    spatial_dims = [data_shape[i] for i in range(1, data_tensor.ndim - 1)]
+    node_reps = keras.ops.expand_dims(
+        keras.ops.sqrt(keras.ops.cast(keras.ops.stack(spatial_dims), "float32")),
+        axis=0,
+    )
+
     for network_idx, inferred_nodes in approximator.network_composition.items():
         if only_network is not None and network_idx != only_network:
             continue
@@ -353,6 +321,58 @@ def inference_conditions_by_network(
             tensor = expand_to_prefix(tensor, from_prefix, inferred_prefix)
             condition_tensors.append(tensor)
 
+        condition_tensors.append(node_reps)
         result[network_idx] = concatenate(condition_tensors)
+
+    return result
+
+
+def inference_condition_shapes_by_network(
+    approximator: "GraphicalApproximator",
+    data_shapes: dict | None = None,
+    meta_dict: dict | None = None,
+) -> dict[int, tuple[int | sp.Expr, ...]]:
+    from .inference_variables import resolve_shapes
+
+    if not data_shapes:
+        data_shapes = approximator.output_shapes
+
+    data_shapes = resolve_shapes(data_shapes, meta_dict)
+    meta_dict = approximator._meta_dict_from_data_shapes(data_shapes)
+    output_shapes = resolve_shapes(approximator.output_shapes, meta_dict)
+    variable_names = approximator.variable_names
+
+    data_node = approximator.graph.simulation_graph.data_node()
+    n_node_reps = len(output_shapes[variable_names[data_node][0]]) - 2
+
+    result = {}
+
+    for network_idx, inferred_nodes in approximator.network_composition.items():
+        inferred_prefix = output_shapes[variable_names[inferred_nodes[0]][0]][:-1]
+
+        total_feature_dim = 0
+
+        for conditioned_node in approximator.network_conditions[network_idx]:
+            conditioned_vars = variable_names[conditioned_node]
+            total_D = sum(output_shapes[v][-1] for v in conditioned_vars)
+            source_shape = output_shapes[conditioned_vars[0]]
+
+            shared_prefix = [dim for dim in inferred_prefix if dim in source_shape]
+            k = len(source_shape) - 1 - len(shared_prefix)
+
+            if k <= 0:
+                total_feature_dim += total_D
+            else:
+                mode = "per_level" if approximator.graph.is_per_level_summary(inferred_nodes[0], conditioned_node) else "global"
+                key = SummaryKey(
+                    conditioned_node=conditioned_node,
+                    mode=mode,
+                    inferred_node=inferred_nodes[0] if mode == "per_level" else None,
+                    chain_step=k - 1,
+                )
+                total_feature_dim += approximator.summary_registry[key].summary_dim
+
+        total_feature_dim += n_node_reps
+        result[network_idx] = inferred_prefix + (total_feature_dim,)
 
     return result

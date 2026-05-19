@@ -360,13 +360,20 @@ class GraphicalApproximator(Approximator):
         if keras.backend.backend() == "tensorflow":
             import tensorflow as tf
 
-            data_shapes = self._data_shapes(dataset[0])
+            first_batch = dataset[0]
+            data_shapes = self._data_shapes(first_batch)
+
+            # Eagerly build all lazy layers (data summary networks, inference networks)
+            # with concrete shapes before TF traces train_step with the None-dim signature.
+            # Prevents build() from being called during tracing when input_shape has None dims.
+            self.compute_metrics(**first_batch)
+
             signature = {
                 k: tf.TensorSpec(shape=[None] * (len(v) - 1) + [v[-1]], dtype=tf.float32)
                 for k, v in data_shapes.items()
             }
             kwargs.setdefault("steps_per_epoch", dataset.num_batches)
-            kwargs["dataset"] = tf.data.Dataset.from_generator(generator, output_signature=signature)
+            kwargs["dataset"] = tf.data.Dataset.from_generator(generator, output_signature=signature).repeat()
         else:
             kwargs["dataset"] = dataset
 
@@ -405,7 +412,10 @@ class GraphicalApproximator(Approximator):
             for node in self.network_composition[i]:
                 for variable in variable_names[node]:
                     var_dim = int(self.output_shapes[variable][-1])
-                    inference_conditions[variable] = samples[..., j : (j + var_dim)]
+                    sample = samples[..., j : (j + var_dim)]
+                    if variable in self.standardize:
+                        sample = self._standardize_layers[variable](sample, forward=False)
+                    inference_conditions[variable] = sample
                     j += var_dim
 
         # reshape samples
@@ -416,6 +426,7 @@ class GraphicalApproximator(Approximator):
                     keras.ops.reshape(v, (batch_size, num_samples, *keras.ops.shape(v)[1:]))
                 )
 
+        result = self.adapter.inverse(result)
         return result
 
     def log_prob(self, data):
@@ -441,7 +452,8 @@ class GraphicalApproximator(Approximator):
 
         # log_det_jac for adapter
         for key in ldj_adapter:
-            log_prob += keras.ops.sum(keras.ops.reshape(ldj_adapter[key], (batch_size, -1)), axis=-1)
+            ldj = keras.ops.cast(ldj_adapter[key], "float32")
+            log_prob += keras.ops.sum(keras.ops.reshape(ldj, (batch_size, -1)), axis=-1)
 
         return log_prob
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesflow"
-version = "2.0.12"
+version = "2.0.10"
 authors = [{ name = "The BayesFlow Team" }]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -32,6 +32,7 @@ dependencies = [
   "pandas>=2.3.3",
   "scipy>=1.15.3",
   "seaborn>=0.13.2",
+  "sympy>=1.14.0",
   "tqdm>=4.67.1",
 ]
 [project.optional-dependencies]
@@ -155,15 +156,8 @@ docstring-code-format = true
 # enabled.
 docstring-code-line-length = "dynamic"
 
-[tool.setuptools]
-include-package-data = false
-
-[tool.setuptools.packages.find]
-include = ["bayesflow*"]
-namespaces = false
-
-[tool.check-wheel-contents]
-ignore = ["W002"]
+[tool.setuptools.packages]
+find = {}
 
 [tool.uv.sources]
 bayesflow = { workspace = true }

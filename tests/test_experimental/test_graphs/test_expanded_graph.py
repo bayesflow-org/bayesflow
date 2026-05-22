@@ -17,3 +17,11 @@ def test_expanded_graph(request, simulator):
     assert isinstance(expanded_graph, ExpandedGraph)
 
     assert isinstance(expanded_graph.invert(), InvertedGraph)
+
+
+def test_expanded_graph_serialization(single_level_simulator):
+    expanded = single_level_simulator.graph.expand()
+    config = expanded.get_config()
+    restored = ExpandedGraph.from_config(config)
+    assert isinstance(restored, ExpandedGraph)
+    assert set(restored.nodes) == set(expanded.nodes)

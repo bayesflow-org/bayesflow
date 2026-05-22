@@ -25,8 +25,7 @@ ExpandedNode: TypeAlias = str
 @serializable("bayesflow.experimental")  # type: ignore[missing-argument]
 class SimulationGraph(nx.DiGraph):
     """
-    Directed acyclic graph defining a simulation composed of sampling nodes.
-    Created and mutated internally when building a `GraphicalSimulator`.
+    Directed acyclic graph defining a model.
 
     A `SimulationGraph` is used to infer a factorization of the joint posterior
     in two stages: First, the graph is expanded into an `ExpandedGraph`.
@@ -56,7 +55,7 @@ class SimulationGraph(nx.DiGraph):
 
     def expand(self, merge_roots: bool = True):
         """
-        Expands the graph by splitting interior nodes into explicit subgraphs.
+        Expands the graph by splitting interior nodes into two subnodes.
 
         Returns
         -------
@@ -104,9 +103,7 @@ class SimulationGraph(nx.DiGraph):
     def variable_names(self) -> dict[SimulationNode, list[str]]:
         """
         Returns a mapping from each node to the list of variable names it produces.
-
         The graph is evaluated once in topological order to collect sample outputs.
-        This may be expensive; results are cached in `GraphicalApproximator`.
         """
 
         def _call_sample_fn(sample_fn: Callable[[], dict[str, Any]], args) -> dict[str, Any]:
@@ -139,10 +136,7 @@ class SimulationGraph(nx.DiGraph):
     def output_shapes(self, meta_dict: dict | None = None):
         """
         Returns the output shape of each simulated variable in the simulation graph.
-
         The graph is evaluated once in topological order to collect sample outputs.
-        This may be expensive; results are cached in `GraphicalApproximator`.
-        _______
         """
         simulation_graph = deepcopy(self)
         variable_names = self.variable_names()
@@ -176,10 +170,7 @@ class SimulationGraph(nx.DiGraph):
     def output_dimensions(self, meta_dict: dict | None = None):
         """
         Returns the output dimension of each simulated variable in the simulation graph.
-
         The graph is evaluated once in topological order to collect sample outputs.
-        This may be expensive; results are cached in `GraphicalApproximator`.
-        _______
         """
 
         def _call_sample_fn(sample_fn: Callable[[], dict[str, Any]], args) -> dict[str, Any]:
@@ -242,6 +233,7 @@ class SimulationGraph(nx.DiGraph):
             meta_fn_ref = None
 
         config = {"graph_data": graph_data, "meta_fn_ref": meta_fn_ref}
+
         return serialize(config)
 
     @classmethod

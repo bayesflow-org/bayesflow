@@ -56,10 +56,13 @@ def inference_variables_by_network(approximator: "GraphicalApproximator", adapte
     result = {}
 
     for network_idx in range(len(approximator.inference_networks)):
-        try:
+        names = []
+        for node in approximator.network_composition[network_idx]:
+            for name in approximator.variable_names[node]:
+                names.append(name)
+
+        if all(name in adapted_data for name in names):
             result[network_idx] = _collect_inference_variables(approximator, adapted_data, network_idx)
-        except KeyError:
-            pass
 
     return result
 

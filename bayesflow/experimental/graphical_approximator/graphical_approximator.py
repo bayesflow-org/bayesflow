@@ -114,7 +114,7 @@ class GraphicalApproximator(Approximator):
             self.adapter = GraphicalApproximator.build_adapter()
 
         # wrap non-amortizable inference networks in NonExchangeableWrapper
-        required_nonex = self.graph.required_non_exchangeable_summary_networks()
+        required_nonex = self.graph.non_amortizable_summary_input_shapes()
         for i, network_idx in enumerate(required_nonex):
             self.inference_networks[network_idx] = NonExchangeableWrapper(
                 self.inference_networks[network_idx], nonex_summary_networks[i]
@@ -173,7 +173,6 @@ class GraphicalApproximator(Approximator):
     def get_config(self):
         base_config = super().get_config()
         # Unwrap NonExchangeableWrapper so __init__ doesn't double-wrap on reload.
-        # The wrapping is re-applied by __init__ using the same summary_networks list.
         inference_networks = [
             n.inference_network if isinstance(n, NonExchangeableWrapper) else n for n in self.inference_networks
         ]
@@ -195,23 +194,14 @@ class GraphicalApproximator(Approximator):
 
         def _build_network(network, input_shape):
             if not network.built:
-                concrete_shape = tuple(
-                    int(d.subs(resolved_meta)) if isinstance(d, sp.Expr) else d
-                    for d in input_shape
-                )
+                concrete_shape = tuple(int(d.subs(resolved_meta)) if isinstance(d, sp.Expr) else d for d in input_shape)
                 network.build(concrete_shape)
 
-        # data summary networks are built lazily on the first forward pass with
-        # the actual tensor shapes produced by apply_parallel_chain
-
         # build non-exchangeable summary networks inside their wrappers
-        for network_idx, input_shape in self.graph.required_non_exchangeable_summary_networks().items():
+        for network_idx, input_shape in self.graph.non_amortizable_summary_input_shapes().items():
             wrapper = self.inference_networks[network_idx]
             if isinstance(wrapper, NonExchangeableWrapper):
                 _build_network(wrapper.summary_network, input_shape)
-
-        # inference networks are built lazily on the first forward pass with
-        # the actual condition shapes produced by inference_conditions_by_network
 
         # build standardization layers
         output_shapes = resolve_shapes(data_shapes, meta_dict)
@@ -362,10 +352,6 @@ class GraphicalApproximator(Approximator):
 
             first_batch = dataset[0]
             data_shapes = self._data_shapes(first_batch)
-
-            # Eagerly build all lazy layers (data summary networks, inference networks)
-            # with concrete shapes before TF traces train_step with the None-dim signature.
-            # Prevents build() from being called during tracing when input_shape has None dims.
             self.compute_metrics(**first_batch)
 
             signature = {
@@ -374,7 +360,7 @@ class GraphicalApproximator(Approximator):
             }
             kwargs.setdefault("steps_per_epoch", dataset.num_batches)
             kwargs["dataset"] = tf.data.Dataset.from_generator(generator, output_signature=signature).repeat()
-        else:
+        else:  # pragma: no cover
             kwargs["dataset"] = dataset
 
         return super().fit(*args, **kwargs, adapter=self.adapter)
@@ -387,11 +373,8 @@ class GraphicalApproximator(Approximator):
         batch_size = self._batch_size_from_data(conditions)
         batch_n = batch_size * num_samples
 
-        # Use template shapes so all latent variable shapes are available regardless of what conditions contains
         variable_shapes = inference_variable_shapes_by_network(self, meta_dict=meta_dict)
-
         data_variables = variable_names[data_node]
-
         inference_conditions = {}
 
         # add num_samples as repeats across the batch dimension
@@ -401,7 +384,9 @@ class GraphicalApproximator(Approximator):
         # build new inference conditions incrementally: after each network samples,
         # add its output to inference_conditions so later networks can condition on it
         for i, inference_network in enumerate(self.inference_networks):
-            all_conds = inference_conditions_by_network(self, inference_conditions, self.summary_registry, only_network=i)
+            all_conds = inference_conditions_by_network(
+                self, inference_conditions, self.summary_registry, only_network=i
+            )
             cond = all_conds[i]
             variable_shape = list(variable_shapes[i])
             variable_shape[0] = batch_n

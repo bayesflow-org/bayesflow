@@ -17,7 +17,7 @@ ExpandedNode: TypeAlias = str
 
 class SummaryKey(NamedTuple):
     """
-    Identifies a summary network by the role it plays in the condition pipeline.
+    Used internally to identify a summary network with a combination of mode, inferred_node and chain_step.
 
     For ``"global"`` mode, ``inferred_node`` is ``None`` because the same
     summary (over all data) is shared across all inferred nodes where this summary is needed.
@@ -25,10 +25,8 @@ class SummaryKey(NamedTuple):
     non-flattened, so different inferred nodes at different levels get
     different summary networks.
     For ``"non_exchangeable"`` mode, the network summarizes previously sampled values
-    of ``conditioned_node`` to condition the next sample in an auto-regressive
-    flow. ``inferred_node`` is ``None``.
-    ``chain_step`` identifies the position in the parallel summary chain;
-    0 for the flatten strategy or the first step of the parallel strategy.
+    of ``conditioned_node`` to condition the next sample in the NonExchangeableWrapper.
+    ``chain_step`` identifies the position in the sequential summary chain.
     """
 
     conditioned_node: SimulationNode
@@ -50,8 +48,8 @@ class InvertedGraph(nx.DiGraph):
     Directed graph representing the factorization of the joint posterior of a
     forward model defined by `SimulationGraph`.
 
-    An `InvertedGraph` is derived from an `ExpandedGraph` and encodes the
-    dependency structure between variables.
+    An `InvertedGraph` is derived from an `ExpandedGraph` retrieved by calling the `expand()`
+    method on a `SimulationGraph`.
     """
 
     def __init__(self, *, expanded_graph: ExpandedGraph, graph_data=None, **kwargs):
@@ -68,9 +66,7 @@ class InvertedGraph(nx.DiGraph):
 
     def num_summary_networks(self) -> int:
         """
-        Returns the number of required summary networks to perform amortized posterior
-        inference of the joint posterior implied by the corresponding forward model
-        of the graph.
+        Returns the number of required summary networks for the `GraphicalApproximator`.
         """
         return max(1, len(self.data_shape_order()))
 
@@ -93,12 +89,12 @@ class InvertedGraph(nx.DiGraph):
 
         result = {}
         for network_idx, nodes in self.network_composition().items():
-            shapes = [
-                output_shapes[var]
-                for node in nodes
-                for var in variable_names[node]
-                if var in output_shapes
-            ]
+            shapes = []
+            for node in nodes:
+                for var in variable_names[node]:
+                    if var in output_shapes:
+                        shapes.append(output_shapes[var])
+
             if shapes:
                 prefix = shapes[0][:-1]
                 total_D = sum(s[-1] for s in shapes)
@@ -106,7 +102,7 @@ class InvertedGraph(nx.DiGraph):
 
         return result
 
-    def required_non_exchangeable_summary_networks(self) -> dict[int, tuple]:
+    def non_amortizable_summary_input_shapes(self) -> dict[int, tuple]:
         """
         Returns the symbolic input shape for the sequential summary network
         required by each non-amortizable inference network.
@@ -126,16 +122,13 @@ class InvertedGraph(nx.DiGraph):
         for network_idx, nodes in self.network_composition().items():
             if any(not self.allows_amortization(node) for node in nodes):
                 result[network_idx] = var_shapes[network_idx]
+
         return result
 
     def required_summary_networks(self) -> dict["SummaryKey", tuple]:
         """
         Returns an ordered mapping from ``SummaryKey`` to symbolic input shape for
         each summary network required by this graph.
-
-        The dict is deduplicated by key (first occurrence wins) and preserves
-        insertion order, which defines the canonical ordering of summary networks
-        in ``GraphicalApproximator``.
         """
         output_shapes = self.simulation_graph.output_shapes()
         variable_names = self.simulation_graph.variable_names()
@@ -329,11 +322,6 @@ class InvertedGraph(nx.DiGraph):
         """
         Returns True if ``conditioned_node`` requires a per-level summary when
         conditioning ``inferred_node``, False if a global summary is required.
-
-        A per-level summary applies when the sets of expanded ``conditioned_node``
-        copies that condition distinct expanded copies of ``inferred_node`` are
-        pairwise disjoint: each copy of ``inferred_node`` conditions on a distinct,
-        non-overlapping subset of the expanded ``conditioned_node`` copies.
         """
         detailed = self.detailed_conditions_by_node()
         original_names = self.original_node_names()

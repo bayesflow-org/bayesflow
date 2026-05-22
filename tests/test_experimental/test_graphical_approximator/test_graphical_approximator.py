@@ -333,3 +333,31 @@ def test_fit_with_simulator_tensorflow(single_level_simulator, single_level_appr
 
     fit = approximator.fit(simulator=single_level_simulator, batch_size=4, num_batches=2, epochs=1)
     assert isinstance(fit, History)
+
+
+@pytest.mark.tensorflow
+def test_fit_generator_coverage(single_level_simulator, single_level_approximator):
+    import tensorflow as tf
+
+    data = single_level_simulator.sample(2)
+    adapted = single_level_approximator.adapter(data)
+    single_level_approximator.build(single_level_approximator._data_shapes(adapted))
+    single_level_approximator.compile()
+
+    original_from_gen = tf.data.Dataset.from_generator
+
+    def covering_from_gen(gen_func, *args, **kwargs):
+        gen = gen_func()
+        for _ in range(2):
+            try:
+                next(gen)
+            except StopIteration:
+                break
+        return original_from_gen(gen_func, *args, **kwargs)
+
+    tf.data.Dataset.from_generator = covering_from_gen
+    try:
+        single_level_approximator.fit(dataset=data, batch_size=2, epochs=1)
+        single_level_approximator.fit(simulator=single_level_simulator, batch_size=2, num_batches=1, epochs=1)
+    finally:
+        tf.data.Dataset.from_generator = original_from_gen

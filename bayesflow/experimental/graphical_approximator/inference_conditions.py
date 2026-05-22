@@ -9,6 +9,7 @@ from bayesflow.experimental.graphs.inverted_graph import SummaryKey
 from bayesflow.networks import SummaryNetwork
 from bayesflow.types import Tensor
 
+from .inference_variables import resolve_shapes
 from .tensor_concatenation import concatenate
 
 if TYPE_CHECKING:
@@ -50,18 +51,15 @@ def permute_to_prefix(
     appear first, in that order. The remaining dimensions follow in their
     original relative order.
 
-    The permutation is computed from symbolic shapes rather than the runtime
-    tensor shape.
-
     Parameters
     ----------
     tensor : Tensor
         The tensor to permute.
     source_shape : tuple
-        Full symbolic shape of `tensor`, e.g. ``(B, N_regions, N_squares, D)``.
+        Full symbolic shape of `tensor`, e.g. ``(B, N_globals, N_locals, D)``.
         Typically obtained from ``SimulationGraph.output_shapes()``.
     target_prefix : tuple
-        The desired leading dimensions, e.g. ``(B, N_squares)``.
+        The desired leading dimensions, e.g. ``(B, N_locals)``.
         Every element must appear in `source_shape`.
 
     Returns
@@ -71,8 +69,6 @@ def permute_to_prefix(
     """
     source = list(source_shape)
 
-    # only permute dimensions that are present in source; missing prefix dims
-    # are handled later by expand_to_prefix
     shared_prefix = [dim for dim in target_prefix if dim in source]
     prefix_indices = [source.index(dim) for dim in shared_prefix]
     remaining_indices = [i for i in range(len(source)) if i not in prefix_indices]
@@ -105,7 +101,7 @@ def expand_to_prefix(
     from_prefix : tuple
         Current prefix of `tensor`, e.g. ``(B,)`` for a global summary.
     to_prefix : tuple
-        Target prefix to expand towards, e.g. ``(B, N_regions, N_squares)``.
+        Target prefix to expand towards, e.g. ``(B, N_globals, N_locals)``.
         Must be at least as long as `from_prefix`.
 
     Returns
@@ -155,7 +151,7 @@ def compute_chain_steps(
     shared_prefix: tuple,
 ) -> int:
     """
-    Returns the number of summary networks to apply in the parallel chain.
+    Returns the number of summary networks to apply.
 
     Parameters
     ----------
@@ -172,7 +168,7 @@ def compute_chain_steps(
     return max(0, tensor.ndim - 1 - len(shared_prefix))
 
 
-def apply_parallel_chain(
+def apply_sequential_chain(
     tensor: Tensor,
     conditioned_node: str,
     mode: Literal["global", "per_level"],
@@ -183,7 +179,7 @@ def apply_parallel_chain(
 ) -> Tensor:
     """
     Applies k summary networks sequentially from innermost to outermost
-    extra dimension, maintaining a carry for enrichment at each step.
+    extra dimension, maintaining the previous mean at each step.
 
     Parameters
     ----------
@@ -238,7 +234,7 @@ def inference_conditions_by_network(
     """
     Computes inference conditions for each network by running each conditioned
     node's output through the full condition pipeline: gather -> permute ->
-    compute_chain_steps -> apply_parallel_chain -> expand.
+    compute_chain_steps -> apply_sequential_chain -> expand.
 
     Parameters
     ----------
@@ -281,9 +277,7 @@ def inference_conditions_by_network(
     for network_idx, inferred_nodes in approximator.network_composition.items():
         if only_network is not None and network_idx != only_network:
             continue
-        # all nodes in a network share the same prefix; use the first variable
-        # of the first node to read it (variables of a node share a prefix,
-        # differing only in the last data dimension)
+
         inferred_node_vars = variable_names[inferred_nodes[0]]
         inferred_prefix = output_shapes[inferred_node_vars[0]][:-1]
 
@@ -304,7 +298,7 @@ def inference_conditions_by_network(
                 else:
                     mode = "global"
                 k = compute_chain_steps(tensor, shared_prefix)
-                tensor = apply_parallel_chain(
+                tensor = apply_sequential_chain(
                     tensor,
                     conditioned_node=conditioned_node,
                     mode=mode,
@@ -314,9 +308,6 @@ def inference_conditions_by_network(
                     training=training,
                 )
 
-            # from_prefix is always recoverable from the tensor rank after the
-            # pipeline steps above, since permute aligns dimensions with the
-            # inferred prefix
             from_prefix = inferred_prefix[: tensor.ndim - 1]
             tensor = expand_to_prefix(tensor, from_prefix, inferred_prefix)
             condition_tensors.append(tensor)
@@ -332,7 +323,6 @@ def inference_condition_shapes_by_network(
     data_shapes: dict | None = None,
     meta_dict: dict | None = None,
 ) -> dict[int, tuple[int | sp.Expr, ...]]:
-    from .inference_variables import resolve_shapes
 
     if not data_shapes:
         data_shapes = approximator.output_shapes
@@ -363,7 +353,11 @@ def inference_condition_shapes_by_network(
             if k <= 0:
                 total_feature_dim += total_D
             else:
-                mode = "per_level" if approximator.graph.is_per_level_summary(inferred_nodes[0], conditioned_node) else "global"
+                mode = (
+                    "per_level"
+                    if approximator.graph.is_per_level_summary(inferred_nodes[0], conditioned_node)
+                    else "global"
+                )
                 key = SummaryKey(
                     conditioned_node=conditioned_node,
                     mode=mode,

@@ -25,11 +25,12 @@ def concatenate(tensors: list[Tensor]) -> Tensor:
                 # static: use Python max (required for jax)
                 t = ops.repeat(t, max(dims), axis=axis)
             else:
-                # dynamic: some dims unknown at trace time (tf graph mode)
+                # dynamic: some dimensions unknown (tf graph mode)
                 n = ops.shape(expanded[0])[axis]
                 for x in expanded[1:]:
                     n = ops.maximum(n, ops.shape(x)[axis])
                 t = ops.repeat(t, n, axis=axis)
+
         repeated.append(t)
 
     return ops.concatenate(repeated, axis=-1)

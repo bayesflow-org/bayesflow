@@ -277,7 +277,8 @@ def test_call(single_level_simulator, single_level_approximator):
 
 def test_wrong_summary_network_count():
     from bayesflow.experimental.graphical_approximator import GraphicalApproximator
-    from bayesflow.experimental.graphical_simulator.example_simulators import crossed_design_irt_simulator, single_level_simulator
+    from bayesflow.experimental.graphical_simulator.example_simulators import crossed_design_irt_simulator
+    from bayesflow.experimental.graphical_simulator.example_simulators import single_level_simulator
     from bayesflow.networks import CouplingFlow, DeepSet
 
     simulator = single_level_simulator()

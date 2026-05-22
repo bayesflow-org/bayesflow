@@ -1,6 +1,6 @@
 import multiprocessing as mp
 import warnings
-from typing import Literal, Sequence
+from typing import Literal
 
 import keras
 import numpy as np

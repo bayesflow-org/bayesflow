@@ -1,4 +1,3 @@
-import re
 from copy import deepcopy
 from typing import Literal, NamedTuple, TypeAlias
 

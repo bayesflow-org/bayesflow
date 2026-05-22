@@ -1,5 +1,4 @@
 import keras
-import pytest
 
 
 def test_inference_conditions_single_level(single_level_simulator, single_level_approximator):

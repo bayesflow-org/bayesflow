@@ -14,6 +14,7 @@ def blind_coverage(
     reference_model: int = 0,
     num_quantile_points: int = 200,
     confidence: float = 0.95,
+    difference: bool = True,
     figsize: tuple = None,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
@@ -85,6 +86,11 @@ def blind_coverage(
     confidence : float, optional
         Confidence level for the simultaneous bands under the null
         (default: 0.95).
+    difference : bool, optional
+        If ``True`` (default), plot the deviation from the diagonal
+        (:math:`\hat{F}_m(\hat{F}^{-1}(\alpha)) - \alpha`) so that the
+        reference line is a flat zero and departures are immediately visible.
+        If ``False``, plot the raw conditional ECDF on the unit square.
     figsize : tuple or None, optional
         Passed to ``matplotlib``. Inferred from the number of panels if None.
     label_fontsize : int, optional
@@ -165,17 +171,28 @@ def blind_coverage(
             confidence=confidence,
         )
 
+        if difference:
+            band_lo = lower_band - z_band
+            band_hi = upper_band - z_band
+        else:
+            band_lo = lower_band
+            band_hi = upper_band
+
         ax.fill_between(
             z_band,
-            lower_band,
-            upper_band,
+            band_lo,
+            band_hi,
             color=fill_color,
             alpha=0.25,
             label=rf"{int(confidence * 100)}\% simultaneous band",
             zorder=0,
         )
-        ax.plot([0, 1], [0, 1], color="black", linestyle="--", linewidth=1.0, alpha=0.8, zorder=1)
+        if difference:
+            ax.axhline(0.0, color="black", linestyle="--", linewidth=1.0, alpha=0.8, zorder=1)
+        else:
+            ax.plot([0, 1], [0, 1], color="black", linestyle="--", linewidth=1.0, alpha=0.8, zorder=1)
 
+        panel_y_vals = []
         for m in range(num_models):
             mask_m = true_model_idx == m
             log_k_m = log_k[mask_m]
@@ -184,10 +201,13 @@ def blind_coverage(
 
             # Conditional ECDF evaluated at each blind threshold
             cond_ecdf = np.array([np.mean(log_k_m <= t) for t in thresholds])
+            y_vals = cond_ecdf - alphas if difference else cond_ecdf
+            if difference:
+                panel_y_vals.append(y_vals)
 
             ax.plot(
                 alphas,
-                cond_ecdf,
+                y_vals,
                 color=model_colors[m],
                 label=model_names[m],
                 linewidth=1.8,
@@ -195,21 +215,35 @@ def blind_coverage(
             )
 
         ax.set_xlim(0.0, 1.0)
-        ax.set_ylim(0.0, 1.0)
+        if difference and panel_y_vals:
+            all_y = np.concatenate(panel_y_vals)
+            ax.set_ylim(np.nanmin(all_y), np.nanmax(all_y))
+        else:
+            ax.set_ylim(0.0, 1.0)
         ax.set_title(panel_titles[panel_idx], fontsize=title_fontsize)
 
-        if panel_idx == 0:
-            ax.legend(fontsize=legend_fontsize, loc="upper left")
-
     prettify_subplots(np.asarray(axes), num_subplots=num_panels, tick_fontsize=tick_fontsize)
+    if difference:
+        ylabel = r"$\hat{F}_m(\hat{F}^{-1}(\alpha)) - \alpha$"
+    else:
+        ylabel = r"Conditional ECDF $\hat{F}_m(\hat{F}^{-1}(\alpha))$"
     add_titles_and_labels(
         axes=np.asarray(axes),
         num_row=num_row,
         num_col=num_col,
         xlabel=r"Marginal quantile $\alpha$ (blind threshold)",
-        ylabel=r"Conditional ECDF $\hat{F}_m(\hat{F}^{-1}(\alpha))$",
+        ylabel=ylabel,
         label_fontsize=label_fontsize,
     )
 
-    fig.tight_layout()
+    handles, labels = np.asarray(axes).flat[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=len(handles),
+        fontsize=legend_fontsize,
+        bbox_to_anchor=(0.5, 0.0),
+    )
+    fig.tight_layout(rect=[0, 0.10, 1, 1])
     return fig

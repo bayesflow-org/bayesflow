@@ -266,9 +266,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
     def plot_default_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,
+        true_log_bfs_fn: callable = None,
         **kwargs,
     ) -> dict[str, plt.Figure]:
-        """
+        r"""
         Generate default diagnostic plots for model comparison.
 
         Produces a loss curve (when training history is available) followed by
@@ -288,6 +289,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
         - ``"blind_coverage"`` — blind coverage test (Jeffrey & Wandelt 2024):
           conditional ECDFs of predicted log Bayes factors stratified by true model,
           evaluated against blind (model-label-free) quantile thresholds.
+        - ``"bayes_factor_recovery"`` — scatter of predicted vs. true log Bayes
+          factors, one panel per competing model.  Only produced when
+          ``true_log_bfs_fn`` is supplied.
 
         Parameters
         ----------
@@ -295,6 +299,12 @@ class ModelComparisonWorkflow(BasicWorkflow):
             Either a pre-simulated data dictionary (as returned by
             :meth:`simulate`) or an integer specifying how many datasets to
             generate using the attached simulator.
+        true_log_bfs_fn : callable or None, optional
+            A function ``(test_data: dict) -> np.ndarray`` that receives the
+            simulated data dictionary and returns ground-truth log Bayes factors
+            of shape ``(num_datasets, num_models - 1)``.  When provided, a
+            ``"bayes_factor_recovery"`` plot is added for Bayes factor scoring
+            rules.  Ignored for PMP scoring rules.
         **kwargs : dict, optional
             Fine-grained control over individual plots via nested dicts:
 
@@ -307,7 +317,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
             - ``calibration_kwargs`` — forwarded to
               :func:`~bayesflow.diagnostics.plots.mc_calibration` (PMP only).
             - ``blind_coverage_kwargs`` — forwarded to
-              :func:`~bayesflow.diagnostics.plots.blind_coverage` (BF only).
+              :func:`~bayesflow.diagnostics.plots.blind_coverage` (BF scoring rules only).
+            - ``bayes_factor_recovery_kwargs`` — forwarded to
+              :func:`~bayesflow.diagnostics.plots.bayes_factor_recovery` (BF scoring
+              rules only, requires ``true_log_bfs_fn``).
 
         Returns
         -------
@@ -358,6 +371,15 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 model_names=self.model_names,
                 **kwargs.get("blind_coverage_kwargs", {}),
             )
+            if true_log_bfs_fn is not None:
+                true_log_bfs = true_log_bfs_fn(test_data)
+                figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
+                    pred_log_bayes_factors=predictions,
+                    true_log_bayes_factors=true_log_bfs,
+                    true_models=true_models,
+                    model_names=self.model_names,
+                    **kwargs.get("bayes_factor_recovery_kwargs", {}),
+                )
 
         return figures
 

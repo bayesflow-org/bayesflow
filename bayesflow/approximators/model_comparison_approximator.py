@@ -273,8 +273,9 @@ class ModelComparisonApproximator(Approximator):
         softmax probabilities.
 
         For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LPOPExponentialScore`)
-        the network outputs ``num_models - 1`` log Bayes factors relative to the reference model;
-        the ``probs`` flag is ignored in this case.
+        the output contains ``num_models - 1`` log Bayes factors
+        :math:`\log K_{k,\text{ref}} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_\text{ref})`
+        (reference model in the denominator); the ``probs`` flag is ignored in this case.
 
         Parameters
         ----------
@@ -308,7 +309,7 @@ class ModelComparisonApproximator(Approximator):
                     UserWarning,
                     stacklevel=2,
                 )
-            result = estimates["log_bayes_factors"]
+            result = self.scoring_rule.to_bayes_factors(estimates["log_bayes_factors"])
         else:
             raise RuntimeError(
                 f"Unrecognised scoring rule output keys: {list(estimates.keys())}. "

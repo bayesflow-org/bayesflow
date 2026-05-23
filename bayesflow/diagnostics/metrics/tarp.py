@@ -28,6 +28,15 @@ def tarp(
     are calibrated by measuring expected coverage probabilities (ECP) across
     credibility levels [1].
 
+    When no reference points are provided, they are generated as a derangement
+    of the target parameters via a random cyclic shift (a pure permutation with
+    no fixed points): a random offset in ``[1, num_datasets)`` is applied with
+    ``np.roll`` so that every dataset receives a reference drawn from a
+    *different* dataset. This keeps references within the empirical prior
+    support but offers no control over their distribution. For full control,
+    e.g. to draw references from an independent prior sample, pass explicit
+    ``references``.
+
     References:
     [1] Lemos et al., 2023, https://proceedings.mlr.press/v202/lemos23a/lemos23a.pdf
 
@@ -48,8 +57,12 @@ def tarp(
         Optional variable names to show in the output.
     references : np.ndarray, optional (default = None)
         Reference points of shape ``(num_datasets, num_variables)``. If
-        ``None``, reference points are sampled uniformly from
-        ``Uniform(low=targets.min(axis=0), high=targets.max(axis=0))``.
+        ``None``, reference points are generated automatically as a
+        derangement of ``targets`` via a random cyclic shift (i.e. a pure
+        permutation with no fixed points): a random offset in
+        ``[1, num_datasets)`` is drawn and ``np.roll`` is applied along the
+        dataset axis, so each dataset is assigned a reference from a
+        *different* dataset.
     resolution    : int, optional, default: 20
         The number of credibility intervals (CIs) to consider
     standardize : bool, optional (default = True)
@@ -105,7 +118,6 @@ def tarp(
         thetas = (thetas - _mean) / _std
 
     sample_dists = distance(references[:, None, :], posterior_samples)
-
     theta_dists = distance(references, thetas)
 
     # fraction of posterior samples closer to reference than true theta
@@ -119,9 +131,9 @@ def tarp(
 
     midindex = alpha_grid.shape[0] // 2
     dalpha = alpha_grid[1] - alpha_grid[0]
-    atc = float(np.sum((ecp[midindex:] - alpha_grid[midindex:]) * dalpha))
+    atc = np.sum((ecp[midindex:] - alpha_grid[midindex:]) * dalpha)
 
-    ks_pvalue = float(kstest(ecp, alpha_grid)[1])
+    ks_pvalue = kstest(ecp, alpha_grid)[1]
 
     variable_names = samples["estimates"].variable_names
     return {

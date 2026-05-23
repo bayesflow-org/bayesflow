@@ -15,17 +15,17 @@ class AlphaLogExponentialScore(ScoringRule):
     .. math::
 
         S(\{f_k\}, m; \alpha)
-        = \sum_{k \neq m} \exp\!\left(-\frac{\alpha}{2}(f_k(x) - f_m(x))\right)
+        = \sum_{k \neq m} \exp\!\left(\frac{\alpha}{2}(f_k(x) - f_m(x))\right)
 
     The unique minimiser of the expected loss is
 
     .. math::
 
-        f_k^*(x) = \frac{1}{\alpha} \log K_{0,k}(x),
+        f_k^*(x) = \frac{1}{\alpha} \log K_{k,0}(x),
 
     so the network output must be multiplied by :math:`\alpha` to recover the
-    true log-Bayes factor.  Setting :math:`\alpha = 1` recovers
-    :class:`ExponentialScore` exactly.
+    true log-Bayes factor (reference in denominator).  Setting :math:`\alpha = 1`
+    recovers :class:`ExponentialScore` exactly.
 
     Parameters
     ----------
@@ -68,12 +68,16 @@ class AlphaLogExponentialScore(ScoringRule):
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
         clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
-        neg_alpha_half_diff = -self.alpha * diff / 2.0
+        alpha_half_diff = self.alpha * diff / 2.0
         scores = keras.ops.sum(
-            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(neg_alpha_half_diff, -88.0), clip_max)),
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(alpha_half_diff, -88.0), clip_max)),
             axis=-1,
         )
         return weighted_mean(scores, weights)
+
+    def to_bayes_factors(self, f: Tensor) -> Tensor:
+        """Scale network outputs by alpha to recover log Bayes factors."""
+        return f * self.alpha
 
     def get_config(self):
         return super().get_config() | self.config

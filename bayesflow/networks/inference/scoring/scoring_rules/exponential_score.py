@@ -21,17 +21,16 @@ def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
 class ExponentialScore(ScoringRule):
     r"""Exponential scoring rule for amortized Bayes factor estimation.
 
-    The network outputs :math:`M - 1` log Bayes factors
-    :math:`f_k = \log K_{0,k}` relative to reference model 0
-    (:math:`f_0 \equiv 0`).  For the true model :math:`m`:
+    The network learns :math:`M - 1` latent scores :math:`f_k` relative to
+    reference model 0 (:math:`f_0 \equiv 0`).  For the true model :math:`m`:
 
     .. math::
 
-        S(\{f_k\}, m) = \sum_{k \neq m} \exp\!\left(-\tfrac{1}{2}(f_k - f_m)\right)
+        S(\{f_k\}, m) = \sum_{k \neq m} \exp\!\left(\tfrac{1}{2}(f_k - f_m)\right)
 
-    The unique minimiser of the expected loss is :math:`f_k^* = \log K_{0,k}`,
-    where :math:`K_{0,k} = p(x \mid \mathcal{M}_0) / p(x \mid \mathcal{M}_k)`.
-    Any pairwise log-Bayes factor is recovered as :math:`\log K_{i,j} = f_j^* - f_i^*`.
+    The unique minimiser of the expected loss satisfies
+    :math:`f_k^* = \log K_{k,0} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_0)`,
+    so the reference model is always in the denominator.
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
@@ -66,12 +65,12 @@ class ExponentialScore(ScoringRule):
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
-        neg_half_diff = -diff / 2.0
+        half_diff = diff / 2.0
         # Adjust per-term clip so sum of (M-1) terms stays within float32 range
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
         clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
         scores = keras.ops.sum(
-            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(neg_half_diff, -88.0), clip_max)), axis=-1
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(half_diff, -88.0), clip_max)), axis=-1
         )
         return weighted_mean(scores, weights)
 

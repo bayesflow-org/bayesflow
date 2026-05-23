@@ -21,10 +21,10 @@ class AlphaExponentialScore(ScoringRule):
 
     .. math::
 
-        f_k^*(x) = \frac{1}{\alpha} \log K_{0,k}(x),
+        f_k^*(x) = \frac{1}{\alpha + 1} \log K_{k,0}(x),
 
-    so the network output must be multiplied by :math:`\alpha` to recover the
-    true log-Bayes factor.
+    so the network output must be multiplied by :math:`\alpha + 1` to recover
+    the true log-Bayes factor (reference in denominator).
 
     Parameters
     ----------
@@ -74,6 +74,10 @@ class AlphaExponentialScore(ScoringRule):
             axis=-1,
         )
         return weighted_mean(scores, weights)
+
+    def to_bayes_factors(self, f: Tensor) -> Tensor:
+        """Scale network outputs by (alpha + 1) to recover log Bayes factors."""
+        return f * (self.alpha + 1)
 
     def get_config(self):
         return super().get_config() | self.config

@@ -18,8 +18,10 @@ class LogisticScore(ScoringRule):
 
         S(\{f_k\}, m) = \sum_{k \neq m} \log\!\left(1 + e^{f_k(x) - f_m(x)}\right)
 
-    The unique minimiser of the expected loss is :math:`f_k^* = \log K_{0,k}`,
-    the same as :class:`ExponentialScore`.
+    The unique minimiser shares the same structure as :class:`ExponentialScore`.
+    The public :meth:`~bayesflow.approximators.ModelComparisonApproximator.predict` method
+    returns :math:`\log K_{k,0} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_0)`
+    (reference in the denominator).
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)

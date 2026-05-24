@@ -28,7 +28,22 @@ def _lpop(x: Tensor, alpha: float, eps: float = 1e-8) -> Tensor:
         Small constant added to :math:`|x|` before raising to the power
         :math:`\alpha - 1` to avoid division by zero when :math:`\alpha < 1`.
     """
-    return x + x * keras.ops.power(keras.ops.abs(x), alpha - 1.0)
+    return x + x * keras.ops.power(keras.ops.abs(x) + eps, alpha - 1.0)
+
+
+class _LPopLink(keras.Layer):
+    """Applies the l-POP transform J_alpha element-wise as a head link function."""
+
+    def __init__(self, alpha: float, eps: float = 1e-8, **kwargs):
+        super().__init__(**kwargs)
+        self.alpha = alpha
+        self.eps = eps
+
+    def call(self, x):
+        return _lpop(x, self.alpha, self.eps)
+
+    def get_config(self):
+        return super().get_config() | {"alpha": self.alpha, "eps": self.eps}
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
@@ -37,24 +52,25 @@ class LPOPExponentialScore(ScoringRule):
 
     **Recommended** Bayes factor scoring rule (Jeffrey & Wandelt 2024).
 
-    Applies the leaky parity-odd power (l-POP) transform
-    :math:`J_\alpha(x) = x(1 + |x|^{\alpha-1})` to each latent score
-    :math:`f_k` individually, then takes pairwise differences before the
-    exponential:
+    The leaky parity-odd power (l-POP) transform
+    :math:`J_\alpha(x) = x(1 + |x|^{\alpha-1})` is applied as a **head link
+    function** so that the head output :math:`g = J_\alpha(f_\text{raw})`
+    directly tracks :math:`\log K` at convergence.  The score is then plain
+    :class:`ExponentialScore` in :math:`g`-space:
 
     .. math::
 
-        S(\{f_k\}, m; \alpha) = \sum_{k \neq m}
-            \exp\!\left(\tfrac{1}{2}\bigl(J_\alpha(f_k) - J_\alpha(f_m)\bigr)\right)
+        S(\{g_k\}, m; \alpha) = \sum_{k \neq m}
+            \exp\!\left(\tfrac{1}{2}(g_k - g_m)\right)
 
-    Equivalently, defining :math:`g_k = J_\alpha(f_k)`, this is the
-    :class:`ExponentialScore` on the transformed variables :math:`g_k`.  The
-    unique minimiser is therefore :math:`g_k^* = \log K_{k,0}`, i.e.\
-    :math:`f_k^* = J_\alpha^{-1}(\log K_{k,0})`, for **any** number of models
-    :math:`M`.  The practical advantage over the plain exponential rule is that
-    :math:`J_\alpha` with :math:`\alpha > 1` amplifies the gradient signal for
-    large deviations, improving recovery across many orders of magnitude in
-    :math:`K_{k,0}`.
+    The unique minimiser is :math:`g_k^* = \log K_{k,0}`.  Because the link
+    is in the *head* (not inside :meth:`score`), partial convergence where
+    :math:`g \approx c \cdot \log K` gives **linear** Bayes factor recovery at
+    slope :math:`c` — not the parabolic artefact that results from applying
+    :math:`J_\alpha` inside the loss.  Gradient amplification for large
+    deviations is preserved via the chain rule:
+    :math:`\partial \mathcal{L}/\partial f_\text{raw} =
+    (\partial \mathcal{L}/\partial g) \cdot J_\alpha'(f_\text{raw})`.
 
     .. note::
         The code implements :math:`J_\alpha(x) = x(1 + |x|^{\alpha - 1})`,
@@ -66,9 +82,9 @@ class LPOPExponentialScore(ScoringRule):
         Applying :math:`J_\alpha` to pairwise *differences*
         :math:`J_\alpha(f_k - f_m)` (instead of to individual values and then
         differencing) breaks properness for :math:`M > 2` because the nonlinear
-        transform does not commute with subtraction.  The implementation
-        correctly applies :math:`J_\alpha` element-wise to each :math:`f_k`
-        before forming pairwise differences.
+        transform does not commute with subtraction.  The head link correctly
+        applies :math:`J_\alpha` element-wise to each :math:`f_k` before the
+        score computes pairwise differences.
 
     Parameters
     ----------
@@ -87,6 +103,12 @@ class LPOPExponentialScore(ScoringRule):
         self.alpha = alpha
         self.config = {"alpha": alpha}
 
+    def get_link(self, key: str) -> keras.Layer:
+        """Return J_alpha as the head link for log_bayes_factors."""
+        if key == "log_bayes_factors":
+            return _LPopLink(self.alpha)
+        return super().get_link(key)
+
     def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
         target_shape = tuple(target_shape)
         return dict(log_bayes_factors=target_shape[1:-1] + (target_shape[-1] - 1,))
@@ -99,6 +121,8 @@ class LPOPExponentialScore(ScoringRule):
         ----------
         estimates : dict[str, Tensor]
             Must contain ``"log_bayes_factors"`` of shape ``(..., M-1)``.
+            This tensor is already :math:`g = J_\\alpha(f_\\text{raw})` because
+            the head link applies :math:`J_\\alpha` before :meth:`score` is called.
         targets : Tensor
             One-hot encoded true model labels of shape ``(..., M)``.
         weights : Tensor, optional
@@ -109,8 +133,7 @@ class LPOPExponentialScore(ScoringRule):
         Tensor
             (Optionally weighted) mean l-POP exponential score over the batch.
         """
-        g = _lpop(estimates["log_bayes_factors"], self.alpha)
-        diff = _pairwise_diff(g, targets)
+        diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         transformed = diff / 2.0
         # Adjust per-term clip so sum of (M-1) terms stays within float32 range
@@ -122,8 +145,8 @@ class LPOPExponentialScore(ScoringRule):
         return weighted_mean(scores, weights)
 
     def to_bayes_factors(self, f: Tensor) -> Tensor:
-        """Apply the l-POP transform to convert network outputs to log Bayes factors."""
-        return _lpop(f, self.alpha)
+        """Head output is already g = J_alpha(f_raw) ≈ log K; return as-is."""
+        return f
 
     def get_config(self):
         return super().get_config() | self.config

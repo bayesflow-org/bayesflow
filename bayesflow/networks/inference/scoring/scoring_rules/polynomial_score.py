@@ -9,22 +9,28 @@ from .scoring_rule import ScoringRule
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
 class PolynomialScore(ScoringRule):
-    r"""Polynomial scoring rule for amortized model comparison.
+    r"""Polynomial (Tsallis) scoring rule for amortized model comparison.
 
-    Scores predicted logits against one-hot encoded targets using the
-    polynomial proper scoring rule:
+    Implements the Tsallis proper scoring rule on the probability simplex,
+    derived from the Savage representation with :math:`G(p) = \frac{1}{\alpha}\sum_k p_k^\alpha`:
 
-    :math:`S(\hat y, y; \alpha) = \sum_k \left[ y_k (1 - p_k)^\alpha + (1 - y_k)\, p_k^\alpha \right]`
+    .. math::
 
-    where :math:`p = \mathrm{softmax}(\hat y)`.  For :math:`\alpha = 2` this
-    is equivalent to the Brier / :class:`SquaredScore`.  Larger :math:`\alpha`
-    places more weight on confident but wrong predictions.
+        S(p, m; \alpha)
+        = \frac{\alpha - 1}{\alpha}\sum_k p_k^\alpha - p_m^{\alpha - 1}
+
+    where :math:`p = \mathrm{softmax}(\hat y)` and :math:`m` is the true model index.
+    The unique minimiser of the expected score is the true posterior :math:`p_k^* = P(\mathcal{M}_k \mid x)`
+    for any :math:`\alpha > 1`.
+
+    For :math:`\alpha = 2` this is proportional to the Brier / :class:`SquaredScore`
+    (same gradient direction, same minimiser).  Larger :math:`\alpha` sharpens the
+    penalty for confidently wrong predictions.
 
     Parameters
     ----------
     alpha : float, optional
-        Exponent controlling the sharpness of the penalty (default: 2.0).
-        Must be positive.
+        Exponent (default: 2.0).  Must satisfy :math:`\alpha > 1`.
     """
 
     def __init__(self, alpha: float = 2.0, **kwargs):
@@ -38,7 +44,7 @@ class PolynomialScore(ScoringRule):
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
         """
-        Computes the polynomial score from logits.
+        Computes the Tsallis polynomial score from logits.
 
         Parameters
         ----------
@@ -53,11 +59,11 @@ class PolynomialScore(ScoringRule):
         Returns
         -------
         Tensor
-            (Optionally weighted) mean polynomial score over the batch.
+            (Optionally weighted) mean Tsallis polynomial score over the batch.
         """
         probs = keras.ops.softmax(estimates["logits"], axis=-1)
         scores = keras.ops.sum(
-            targets * (1.0 - probs) ** self.alpha + (1.0 - targets) * probs**self.alpha,
+            (self.alpha - 1.0) / self.alpha * probs**self.alpha - targets * probs ** (self.alpha - 1.0),
             axis=-1,
         )
         return weighted_mean(scores, weights)

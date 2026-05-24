@@ -15,6 +15,7 @@ from bayesflow.approximators import ModelComparisonApproximator
 from bayesflow.scoring_rules import CrossEntropyScore, ScoringRule
 from bayesflow.utils import find_network, find_summary_network, logging, format_duration, filter_kwargs
 from bayesflow.diagnostics import plots as bf_plots
+from bayesflow.diagnostics import metrics as bf_metrics
 
 from .basic_workflow import BasicWorkflow
 
@@ -244,18 +245,22 @@ class ModelComparisonWorkflow(BasicWorkflow):
         conditions : dict[str, np.ndarray]
             Conditioning data as produced by the simulator (or real observations).
         probs : bool, optional
-            Return softmax probabilities when True (default), raw logits when False.
+            When ``True`` (default) always returns posterior model probabilities of shape
+            ``(num_datasets, num_models)``.  For PMP rules these come from softmax over
+            logits; for Bayes factor rules the reference anchor :math:`f_0 = 0` is
+            prepended before softmax (assumes equal model priors).
+            When ``False`` returns raw logits (PMP rules, shape ``(N, M)``) or raw log
+            Bayes factors relative to model 0 (Bayes factor rules, shape ``(N, M-1)``).
         **kwargs
             Forwarded to :meth:`~bayesflow.approximators.ModelComparisonApproximator.predict`.
 
         Returns
         -------
         np.ndarray
-            - Shape ``(num_datasets, num_models)`` for PMP scoring rules:
-              softmax probabilities when ``probs=True``, raw logits when ``probs=False``.
-            - Shape ``(num_datasets, num_models - 1)`` for Bayes factor scoring rules:
-              predicted log Bayes factors relative to the reference model.
-              ``probs`` is ignored in this case.
+            Shape ``(num_datasets, num_models)`` when ``probs=True`` (always).
+            Shape ``(num_datasets, num_models)`` when ``probs=False`` with a PMP rule.
+            Shape ``(num_datasets, num_models - 1)`` when ``probs=False`` with a Bayes
+            factor rule.
         """
         start_time = time.perf_counter()
         predictions = self.approximator.predict(conditions=conditions, probs=probs, **kwargs)
@@ -289,6 +294,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
         - ``"blind_coverage"`` — blind coverage test (Jeffrey & Wandelt 2024):
           conditional ECDFs of predicted log Bayes factors stratified by true model,
           evaluated against blind (model-label-free) quantile thresholds.
+        - ``"pairwise_bayes_factors"`` — heatmap of the mean predicted
+          :math:`\log K_{m,j}` stratified by true model, showing pairwise
+          model separability across all :math:`M \times M` pairs.
         - ``"bayes_factor_recovery"`` — scatter of predicted vs. true log Bayes
           factors, one panel per competing model.  Only produced when
           ``true_log_bfs_fn`` is supplied.
@@ -321,6 +329,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
             - ``bayes_factor_recovery_kwargs`` — forwarded to
               :func:`~bayesflow.diagnostics.plots.bayes_factor_recovery` (BF scoring
               rules only, requires ``true_log_bfs_fn``).
+            - ``pairwise_bayes_factors_kwargs`` — forwarded to
+              :func:`~bayesflow.diagnostics.plots.pairwise_bayes_factors` (BF scoring
+              rules only).
 
         Returns
         -------
@@ -343,13 +354,25 @@ class ModelComparisonWorkflow(BasicWorkflow):
         if self.history is not None:
             figures["loss"] = bf_plots.loss(self.history, **kwargs.get("loss_kwargs", {}))
 
-        predictions = self.predict(conditions=test_data, **kwargs.get("predict_kwargs", {}))
-        true_models = test_data["model_indices"]  # one-hot, shape (N, M)
+        if "model_indices" in test_data:
+            true_models = test_data["model_indices"]
+        elif "inference_variables" in test_data:
+            true_models = test_data["inference_variables"]
+        else:
+            raise KeyError(
+                "test_data must contain 'model_indices' (raw simulator output) or "
+                "'inference_variables' (adapted output). Neither key was found."
+            )
 
-        # Determine active mode from the scoring rule's output head keys
-        num_models = true_models.shape[-1]
-        head_shapes = self.approximator.scoring_rule.get_head_shapes_from_target_shape((1, num_models))
+        # Determine mode before calling predict so we can request the right output format:
+        # PMP diagnostic plots need probs=True (softmax probabilities);
+        # BF diagnostic plots need probs=False (raw log Bayes factors).
+        head_shapes = self.approximator.scoring_rule.get_head_shapes_from_target_shape((1, 2))
         is_pmp_mode = "logits" in head_shapes
+
+        predict_kwargs = dict(kwargs.get("predict_kwargs", {}))
+        predict_kwargs.setdefault("probs", is_pmp_mode)
+        predictions = self.predict(conditions=test_data, **predict_kwargs)
 
         if is_pmp_mode:
             figures["confusion_matrix"] = bf_plots.mc_confusion_matrix(
@@ -371,6 +394,12 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 model_names=self.model_names,
                 **kwargs.get("blind_coverage_kwargs", {}),
             )
+            figures["pairwise_bayes_factors"] = bf_plots.pairwise_bayes_factors(
+                pred_log_bayes_factors=predictions,
+                true_models=true_models,
+                model_names=self.model_names,
+                **kwargs.get("pairwise_bayes_factors_kwargs", {}),
+            )
             if true_log_bfs_fn is not None:
                 true_log_bfs = true_log_bfs_fn(test_data)
                 figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
@@ -382,6 +411,85 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 )
 
         return figures
+
+    def compute_default_diagnostics(
+        self,
+        test_data: Mapping[str, np.ndarray] | int,
+        **kwargs,
+    ) -> dict[str, any]:
+        """
+        Compute default scalar diagnostic metrics for model comparison.
+
+        For **PMP scoring rules**:
+
+        - ``"accuracy"`` — fraction of datasets for which ``argmax(PMPs)`` matches
+          the true model.
+        - ``"ece"`` — per-model expected calibration errors, as returned by
+          :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`.
+
+        For **Bayes factor scoring rules**:
+
+        - ``"accuracy"`` — fraction of datasets for which
+          ``argmax(0, f_1, …, f_{M-1})`` matches the true model.
+
+        Parameters
+        ----------
+        test_data : Mapping[str, np.ndarray] or int
+            Either a pre-simulated data dictionary or an integer specifying how many
+            datasets to generate using the attached simulator.
+        **kwargs : dict, optional
+            Fine-grained control via nested dicts:
+
+            - ``test_data_kwargs`` — forwarded to :meth:`simulate` when ``test_data``
+              is an integer.
+            - ``predict_kwargs`` — forwarded to :meth:`predict`.
+            - ``ece_kwargs`` — forwarded to
+              :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`
+              (PMP mode only).
+
+        Returns
+        -------
+        dict[str, any]
+            Dictionary of diagnostic metrics.
+
+        Raises
+        ------
+        ValueError
+            If ``test_data`` is an integer but no simulator is attached.
+        """
+        if isinstance(test_data, int):
+            if self.simulator is None:
+                raise ValueError(f"No simulator attached. Cannot generate {test_data} test datasets.")
+            test_data = self.simulate(test_data, **kwargs.get("test_data_kwargs", {}))
+
+        predictions = self.predict(conditions=test_data, **kwargs.get("predict_kwargs", {}))
+
+        if "model_indices" in test_data:
+            true_models = test_data["model_indices"]
+        elif "inference_variables" in test_data:
+            true_models = test_data["inference_variables"]
+        else:
+            raise KeyError(
+                "test_data must contain 'model_indices' (raw simulator output) or "
+                "'inference_variables' (adapted output). Neither key was found."
+            )
+
+        head_shapes = self.approximator.scoring_rule.get_head_shapes_from_target_shape((1, true_models.shape[-1]))
+        is_pmp_mode = "logits" in head_shapes
+
+        # predict(probs=True) always returns shape (N, M) PMPs — suitable for accuracy in both modes
+        metrics = {"accuracy": bf_metrics.model_comparison_accuracy(predictions, true_models)}
+
+        if is_pmp_mode:
+            ece_result = bf_metrics.expected_calibration_error(
+                estimates=predictions,
+                targets=true_models,
+                model_names=self.model_names,
+                **kwargs.get("ece_kwargs", {}),
+            )
+            metrics["ece"] = ece_result
+
+        return metrics
 
     # ------------------------------------------------------------------
     # Disable BasicWorkflow inference methods that do not apply here

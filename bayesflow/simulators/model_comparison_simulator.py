@@ -83,18 +83,17 @@ class ModelComparisonSimulator(Simulator):
             shared_simulator = LambdaSimulator(shared_simulator, is_batched=True)
         self.shared_simulator = shared_simulator
 
-        match logits, p:
-            case (None, None):
-                logits = [0.0] * len(simulators)
-            case (None, logits):
-                logits = logits
-            case (p, None):
-                p = np.array(p)
-                if not np.isclose(np.sum(p), 1.0):
-                    raise ValueError("Probabilities must sum to 1.")
-                logits = np.log(p) - np.log(1 - p)
-            case _:
-                raise ValueError("Received conflicting arguments. At most one of `p` or `logits` must be provided.")
+        if logits is not None and p is not None:
+            raise ValueError("Received conflicting arguments. At most one of `p` or `logits` must be provided.")
+        elif p is not None:
+            p = np.array(p, dtype=float)
+            if not np.isclose(np.sum(p), 1.0):
+                raise ValueError("Probabilities must sum to 1.")
+            if np.any(p <= 0):
+                raise ValueError("All probabilities must be positive.")
+            logits = np.log(p)
+        elif logits is None:
+            logits = [0.0] * len(simulators)
 
         if len(logits) != len(simulators):
             raise ValueError(f"Length of logits ({len(logits)}) must match number of simulators ({len(simulators)}).")

@@ -74,6 +74,7 @@ class LatentDiffusionModel(LatentInferenceNetwork):
     def __init__(
         self,
         *,
+        latent_shape: int | tuple | str = None,
         latent_dim: int | str = "auto",
         encoder: str | type | keras.Layer = "mlp",
         decoder: str | type | keras.Layer = "mlp",
@@ -92,7 +93,6 @@ class LatentDiffusionModel(LatentInferenceNetwork):
     ):
         _inference_network_config = inference_network
 
-        # Create DiffusionModel when inference_network is "auto"
         if inference_network == "auto":
             inference_network = DiffusionModel(
                 subnet=diffusion_subnet,
@@ -109,6 +109,7 @@ class LatentDiffusionModel(LatentInferenceNetwork):
 
         super().__init__(
             inference_network=inference_network,
+            latent_shape=latent_shape,
             latent_dim=latent_dim,
             encoder=encoder,
             decoder=decoder,

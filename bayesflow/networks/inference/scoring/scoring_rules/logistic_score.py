@@ -54,6 +54,7 @@ class LogisticScore(ScoringRule):
         Tensor
             (Optionally weighted) mean logistic score over the batch.
         """
+        targets = keras.ops.convert_to_tensor(targets)
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         scores = keras.ops.sum(mask * keras.ops.softplus(diff), axis=-1)

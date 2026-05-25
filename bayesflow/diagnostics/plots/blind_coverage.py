@@ -15,7 +15,7 @@ def blind_coverage(
     num_quantile_points: int = 200,
     confidence: float = 0.95,
     difference: bool = True,
-    figsize: tuple = None,
+    fig_size: tuple = None,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
     legend_fontsize: int = 12,
@@ -91,7 +91,7 @@ def blind_coverage(
         (:math:`\hat{F}_m(\hat{F}^{-1}(\alpha)) - \alpha`) so that the
         reference line is a flat zero and departures are immediately visible.
         If ``False``, plot the raw conditional ECDF on the unit square.
-    figsize : tuple or None, optional
+    fig_size : tuple or None, optional
         Passed to ``matplotlib``. Inferred from the number of panels if None.
     label_fontsize : int, optional
         Font size for axis labels (default: 16).
@@ -144,7 +144,7 @@ def blind_coverage(
     elif num_row is None:
         num_row = int(np.ceil(num_panels / num_col))
 
-    fig, axes = make_figure(num_row, num_col, figsize=figsize)
+    fig, axes = make_figure(num_row, num_col, figsize=fig_size)
 
     # Quantile levels to evaluate
     alphas = np.linspace(0.0, 1.0, num_quantile_points)

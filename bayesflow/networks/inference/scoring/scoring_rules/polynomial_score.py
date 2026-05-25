@@ -23,7 +23,7 @@ class PolynomialScore(ScoringRule):
     The unique minimiser of the expected score is the true posterior :math:`p_k^* = P(\mathcal{M}_k \mid x)`
     for any :math:`\alpha > 1`.
 
-    For :math:`\alpha = 2` this is proportional to the Brier / :class:`SquaredScore`
+    For :math:`\alpha = 2` this is proportional to the :class:`BrierScore`
     (same gradient direction, same minimiser).  Larger :math:`\alpha` sharpens the
     penalty for confidently wrong predictions.
 

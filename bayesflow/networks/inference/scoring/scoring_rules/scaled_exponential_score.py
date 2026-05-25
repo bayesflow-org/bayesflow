@@ -5,31 +5,44 @@ from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
 from .scoring_rule import ScoringRule
-from .exponential_score import _pairwise_diff
+
+
+def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
+    """Prepend f_0=0 and compute f_k - f_m for all k, where m is the true model."""
+    zeros = keras.ops.zeros_like(f[..., :1])
+    f_full = keras.ops.concatenate([zeros, f], axis=-1)  # (..., M)
+    m = keras.ops.cast(keras.ops.argmax(targets, axis=-1), dtype="int32")
+    m_idx = keras.ops.expand_dims(m, axis=-1)  # (..., 1)
+    f_m = keras.ops.take_along_axis(f_full, m_idx, axis=-1)  # (..., 1)
+    return f_full - f_m  # (..., M), broadcast
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
-class AlphaExponentialScore(ScoringRule):
-    r"""Alpha-exponential scoring rule for amortized Bayes factor estimation.
+class ScaledExponentialScore(ScoringRule):
+    r"""Scaled exponential scoring rule for amortized Bayes factor estimation.
+
+    Generalises :class:`ExponentialScore` by scaling the exponent by
+    :math:`\alpha`:
 
     .. math::
 
         S(\{f_k\}, m; \alpha)
-        = \sum_{k \neq m} \left(1 + e^{f_k(x) - f_m(x)}\right)^\alpha
+        = \sum_{k \neq m} \exp\!\left(\frac{\alpha}{2}(f_k(x) - f_m(x))\right)
 
     The unique minimiser of the expected loss is
 
     .. math::
 
-        f_k^*(x) = \frac{1}{\alpha + 1} \log K_{k,0}(x),
+        f_k^*(x) = \frac{1}{\alpha} \log K_{k,0}(x),
 
-    so the network output must be multiplied by :math:`\alpha + 1` to recover
-    the true log-Bayes factor (reference in denominator).
+    so the network output must be multiplied by :math:`\alpha` to recover the
+    true log-Bayes factor.  Setting :math:`\alpha = 1` recovers
+    :class:`ExponentialScore` exactly.
 
     Parameters
     ----------
     alpha : float, optional
-        Exponent (default: 1.0).  Must be positive.
+        Exponent scale (default: 1.0).  Must be positive.
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
@@ -47,7 +60,7 @@ class AlphaExponentialScore(ScoringRule):
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
         """
-        Computes the alpha-exponential Bayes factor score.
+        Computes the scaled exponential Bayes factor score.
 
         Parameters
         ----------
@@ -61,23 +74,22 @@ class AlphaExponentialScore(ScoringRule):
         Returns
         -------
         Tensor
-            (Optionally weighted) mean alpha-exponential score over the batch.
+            (Optionally weighted) mean scaled exponential score over the batch.
         """
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
         clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
-        # (1 + exp(diff))^alpha = exp(alpha * softplus(diff)); softplus(diff) >= 0, so only upper clip needed
-        log_terms = self.alpha * keras.ops.softplus(diff)
+        alpha_half_diff = self.alpha * diff / 2.0
         scores = keras.ops.sum(
-            mask * keras.ops.exp(keras.ops.minimum(log_terms, clip_max)),
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(alpha_half_diff, -88.0), clip_max)),
             axis=-1,
         )
         return weighted_mean(scores, weights)
 
     def to_bayes_factors(self, f: Tensor) -> Tensor:
-        """Scale network outputs by (alpha + 1) to recover log Bayes factors."""
-        return f * (self.alpha + 1)
+        """Scale network outputs by alpha to recover log Bayes factors."""
+        return f * self.alpha
 
     def get_config(self):
         return super().get_config() | self.config

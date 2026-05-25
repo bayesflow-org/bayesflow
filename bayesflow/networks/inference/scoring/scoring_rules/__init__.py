@@ -24,13 +24,13 @@ from .median_score import MedianScore
 from .quantile_score import QuantileScore
 from .mv_normal_score import MvNormalScore
 from .cross_entropy_score import CrossEntropyScore
-from .squared_score import SquaredScore
+from .brier_score import BrierScore
 from .polynomial_score import PolynomialScore
+from .scaled_exponential_score import ScaledExponentialScore
 from .exponential_score import ExponentialScore
 from .logistic_score import LogisticScore
-from .alpha_exponential_score import AlphaExponentialScore
-from .lpop_exponential_score import LPOPExponentialScore
-from .alpha_log_exponential_score import AlphaLogExponentialScore
+from .power_logistic_score import PowerLogisticScore
+from .leaky_exponential_score import LeakyExponentialScore
 
 from bayesflow.utils._docs import _add_imports_to_all
 

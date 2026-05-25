@@ -5,7 +5,7 @@ from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
 from .scoring_rule import ScoringRule
-from .exponential_score import _pairwise_diff
+from .scaled_exponential_score import _pairwise_diff
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)

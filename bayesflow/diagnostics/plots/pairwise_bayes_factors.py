@@ -4,7 +4,7 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ...utils.plot_utils import make_figure
+from bayesflow.utils.plot_utils import make_figure
 
 
 def pairwise_bayes_factors(

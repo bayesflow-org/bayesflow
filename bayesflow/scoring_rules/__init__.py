@@ -10,13 +10,13 @@ from bayesflow.networks.inference.scoring.scoring_rules import (  # noqa: F401
     MvNormalScore,
     MixtureScore,
     CrossEntropyScore,
-    SquaredScore,
+    BrierScore,
     PolynomialScore,
     ExponentialScore,
     LogisticScore,
-    AlphaExponentialScore,
-    LPOPExponentialScore,
-    AlphaLogExponentialScore,
+    ScaledExponentialScore,
+    PowerLogisticScore,
+    LeakyExponentialScore,
     __doc__,
 )
 

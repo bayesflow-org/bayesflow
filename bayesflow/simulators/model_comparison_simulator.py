@@ -1,15 +1,14 @@
 from collections.abc import Callable, Sequence
+from types import FunctionType
+from typing import Literal
+
 import numpy as np
 
 from bayesflow.types import Shape
 from bayesflow.utils import tree_concatenate
 from bayesflow.utils.decorators import allow_batch_size
-
 from bayesflow.utils import numpy_utils as npu
 from bayesflow.utils import logging
-
-from types import FunctionType
-from typing import Literal
 
 from .simulator import Simulator
 from .lambda_simulator import LambdaSimulator
@@ -74,7 +73,7 @@ class ModelComparisonSimulator(Simulator):
         use_mixed_batches: bool = True,
         key_conflicts: Literal["drop", "fill", "error"] = "drop",
         fill_value: float = np.nan,
-        shared_simulator: Simulator | Callable[[Sequence[int]], dict[str, any]] = None,
+        shared_simulator: Simulator | Callable | None = None,
     ):
         # constructor body unchanged
         self.simulators = simulators

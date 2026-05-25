@@ -8,17 +8,20 @@ from .scoring_rule import ScoringRule
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
-class SquaredScore(ScoringRule):
-    r"""Brier / squared scoring rule for amortized model comparison.
+class BrierScore(ScoringRule):
+    r"""Brier scoring rule for amortized model comparison.
 
-    Scores a set of predicted logits against one-hot encoded target labels:
+    Scores predicted logits against one-hot encoded target labels:
 
     :math:`S(\hat y, y) = \sum_k (\mathrm{softmax}(\hat y)_k - y_k)^2`
 
     Minimised when the predicted probabilities exactly match the one-hot
     targets, i.e. when :math:`\mathrm{softmax}(\hat y)_m = 1` for the true
-    model :math:`m`.  Equivalent to the Brier score for categorical
-    distributions.
+    model :math:`m`.
+
+    .. note::
+        Proportional to :class:`PolynomialScore` with :math:`\alpha = 2`
+        (same minimiser and gradient direction, different scale).
     """
 
     def __init__(self, **kwargs):

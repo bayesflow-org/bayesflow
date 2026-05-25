@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from typing import Literal
 
 import numpy as np
 
@@ -182,7 +183,7 @@ class ModelComparisonApproximator(Approximator):
     def fit(
         self,
         *,
-        adapter: Adapter = "auto",
+        adapter: Adapter | Literal["auto"] = "auto",
         dataset: keras.utils.PyDataset = None,
         simulator: ModelComparisonSimulator = None,
         simulators: Sequence[Simulator] = None,
@@ -205,9 +206,7 @@ class ModelComparisonApproximator(Approximator):
         simulators: Sequence[Simulator], optional
             A list of simulators (one simulator per model). If provided, `dataset` must be None.
         **kwargs
-            Additional keyword arguments passed to `keras.Model.fit()`, as described in:
-
-        https://github.com/keras-team/keras/blob/v3.13.2/keras/src/backend/tensorflow/trainer.py#L314
+            Additional keyword arguments passed to ``keras.Model.fit()``.
 
         Returns
         -------
@@ -267,11 +266,11 @@ class ModelComparisonApproximator(Approximator):
         Returns predictions given input conditions, adapting output to the active scoring rule.
 
         For PMP scoring rules (e.g. :class:`~bayesflow.scoring_rules.CrossEntropyScore`,
-        :class:`~bayesflow.scoring_rules.SquaredScore`) the network outputs logits over
+        :class:`~bayesflow.scoring_rules.BrierScore`) the network outputs logits over
         ``num_models`` classes; when ``probs=True`` (default) these are converted to
         softmax probabilities.
 
-        For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LPOPExponentialScore`)
+        For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LeakyExponentialScore`)
         the network outputs ``num_models - 1`` log Bayes factors
         :math:`\log K_{k,0} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_0)`
         relative to the reference model :math:`\mathcal{M}_0`.  When ``probs=True`` these are

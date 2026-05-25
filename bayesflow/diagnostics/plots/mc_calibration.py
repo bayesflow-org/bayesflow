@@ -23,7 +23,7 @@ def mc_calibration(
     metric_fontsize: int = 14,
     tick_fontsize: int = 12,
     epsilon: float = 0.02,
-    figsize: Sequence[int] = None,
+    fig_size: Sequence[int] = None,
     color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
@@ -35,9 +35,9 @@ def mc_calibration(
 
     Parameters
     ----------
-    pred_models       : np.ndarray of shape (num_data_sets, num_models)
+    pred_models       : np.ndarray of shape (num_datasets, num_models)
         The predicted posterior model probabilities (PMPs) per data set.
-    true_models       : np.ndarray of shape (num_data_sets, num_models)
+    true_models       : np.ndarray of shape (num_datasets, num_models)
         The one-hot-encoded true model indices per data set.
     model_names       : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.
@@ -53,7 +53,7 @@ def mc_calibration(
         The font size of the axis ticklabels
     epsilon           : float, optional, default: 0.02
         A small amount to pad the [0, 1]-bounded axes from both side.
-    figsize          : tuple or None, optional, default: None
+    fig_size          : tuple or None, optional, default: None
         The figure size passed to the ``matplotlib`` constructor. Inferred if ``None``
     color             : str, optional, default: '#8f2727'
         The color of the calibration curves
@@ -76,7 +76,7 @@ def mc_calibration(
         variable_names=model_names,
         num_col=num_col,
         num_row=num_row,
-        figsize=figsize,
+        figsize=fig_size,
         default_name="M",
     )
 

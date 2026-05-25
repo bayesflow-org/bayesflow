@@ -172,6 +172,11 @@ class ScoringRule:
 
         return keras.Sequential([subnet, dense, reshape, link])
 
+    @property
+    def is_pmp_rule(self) -> bool:
+        """True for PMP rules (output logits), False for Bayes factor rules (output log Bayes factors)."""
+        return "logits" in self.get_head_shapes_from_target_shape((1, 2))
+
     def to_bayes_factors(self, f: Tensor) -> Tensor:
         """Convert raw network outputs to log Bayes factors.
 

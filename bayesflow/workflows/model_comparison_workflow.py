@@ -1,5 +1,4 @@
 from collections.abc import Callable, Mapping, Sequence
-
 import time
 
 import numpy as np
@@ -45,12 +44,12 @@ class ModelComparisonWorkflow(BasicWorkflow):
         learns to estimate:
 
         - **PMP rules** (:class:`~bayesflow.scoring_rules.CrossEntropyScore` (default),
-          :class:`~bayesflow.scoring_rules.SquaredScore`,
+          :class:`~bayesflow.scoring_rules.BrierScore`,
           :class:`~bayesflow.scoring_rules.PolynomialScore`): network outputs softmax
           probabilities over all ``num_models`` models.
         - **Bayes factor rules** (:class:`~bayesflow.scoring_rules.ExponentialScore`,
           :class:`~bayesflow.scoring_rules.LogisticScore`,
-          :class:`~bayesflow.scoring_rules.LPOPExponentialScore`, etc.): network outputs
+          :class:`~bayesflow.scoring_rules.LeakyExponentialScore`, etc.): network outputs
           ``num_models - 1`` log Bayes factors relative to model 0.
     summary_network : SummaryNetwork or str, optional
         Optional summary network for data compression (default: None).
@@ -217,7 +216,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         )
 
         # Broadcast scalar context variables (from shared_simulator) to batch dim.
-        # Must happen before as_set so the broadcast target still has its original name.
+        # Must happen before concatenate so the broadcast target still has its original name.
         if broadcast_conditions_to is not None and inference_conditions is not None:
             conds = [inference_conditions] if isinstance(inference_conditions, str) else list(inference_conditions)
             adapter = adapter.broadcast(conds, to=broadcast_conditions_to)
@@ -271,7 +270,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
     def plot_default_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,
-        true_log_bfs_fn: callable = None,
+        true_log_bfs_fn: Callable | None = None,
         **kwargs,
     ) -> dict[str, plt.Figure]:
         r"""
@@ -281,7 +280,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         a set of plots that depend on the active scoring rule:
 
         **PMP scoring rules** (:class:`~bayesflow.scoring_rules.CrossEntropyScore`,
-        :class:`~bayesflow.scoring_rules.SquaredScore`,
+        :class:`~bayesflow.scoring_rules.BrierScore`,
         :class:`~bayesflow.scoring_rules.PolynomialScore`):
 
         - ``"confusion_matrix"`` — posterior model probability confusion matrix.
@@ -289,7 +288,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         **Bayes factor scoring rules** (:class:`~bayesflow.scoring_rules.ExponentialScore`,
         :class:`~bayesflow.scoring_rules.LogisticScore`,
-        :class:`~bayesflow.scoring_rules.LPOPExponentialScore`, etc.):
+        :class:`~bayesflow.scoring_rules.LeakyExponentialScore`, etc.):
 
         - ``"blind_coverage"`` — blind coverage test (Jeffrey & Wandelt 2024):
           conditional ECDFs of predicted log Bayes factors stratified by true model,
@@ -367,8 +366,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         # Determine mode before calling predict so we can request the right output format:
         # PMP diagnostic plots need probs=True (softmax probabilities);
         # BF diagnostic plots need probs=False (raw log Bayes factors).
-        head_shapes = self.approximator.scoring_rule.get_head_shapes_from_target_shape((1, 2))
-        is_pmp_mode = "logits" in head_shapes
+        is_pmp_mode = self.approximator.scoring_rule.is_pmp_rule
 
         predict_kwargs = dict(kwargs.get("predict_kwargs", {}))
         predict_kwargs.setdefault("probs", is_pmp_mode)
@@ -416,7 +414,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         self,
         test_data: Mapping[str, np.ndarray] | int,
         **kwargs,
-    ) -> dict[str, any]:
+    ) -> dict:
         """
         Compute default scalar diagnostic metrics for model comparison.
 
@@ -474,8 +472,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
-        head_shapes = self.approximator.scoring_rule.get_head_shapes_from_target_shape((1, true_models.shape[-1]))
-        is_pmp_mode = "logits" in head_shapes
+        is_pmp_mode = self.approximator.scoring_rule.is_pmp_rule
 
         # predict(probs=True) always returns shape (N, M) PMPs — suitable for accuracy in both modes
         metrics = {"accuracy": bf_metrics.model_comparison_accuracy(predictions, true_models)}

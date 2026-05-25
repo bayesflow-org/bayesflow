@@ -2,6 +2,54 @@ import keras
 import pytest
 
 
+def test_is_pmp_rule_pmp_rules():
+    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore, PolynomialScore
+
+    assert CrossEntropyScore().is_pmp_rule is True
+    assert BrierScore().is_pmp_rule is True
+    assert PolynomialScore(alpha=2.0).is_pmp_rule is True
+
+
+def test_is_pmp_rule_bf_rules():
+    from bayesflow.scoring_rules import ExponentialScore, ScaledExponentialScore, LeakyExponentialScore
+    from bayesflow.scoring_rules import LogisticScore, PowerLogisticScore
+
+    assert ExponentialScore().is_pmp_rule is False
+    assert ScaledExponentialScore().is_pmp_rule is False
+    assert LeakyExponentialScore().is_pmp_rule is False
+    assert LogisticScore().is_pmp_rule is False
+    assert PowerLogisticScore().is_pmp_rule is False
+
+
+def test_to_bayes_factors_exponential_is_identity():
+    from bayesflow.scoring_rules import ExponentialScore
+
+    rule = ExponentialScore()
+    f = keras.ops.convert_to_tensor([[1.0, -2.0, 0.5]])
+    result = rule.to_bayes_factors(f)
+    assert keras.ops.allclose(result, f)
+
+
+def test_to_bayes_factors_scaled_exponential():
+    from bayesflow.scoring_rules import ScaledExponentialScore
+
+    alpha = 3.0
+    rule = ScaledExponentialScore(alpha=alpha)
+    f = keras.ops.convert_to_tensor([[1.0, -2.0]])
+    result = rule.to_bayes_factors(f)
+    assert keras.ops.allclose(result, f * alpha)
+
+
+def test_to_bayes_factors_base_class_is_identity():
+    """ScoringRule.to_bayes_factors is the identity by default."""
+    from bayesflow.scoring_rules import LogisticScore
+
+    rule = LogisticScore()
+    f = keras.ops.convert_to_tensor([[0.5, -0.5]])
+    result = rule.to_bayes_factors(f)
+    assert keras.ops.allclose(result, f)
+
+
 def test_require_argument_k():
     from bayesflow.scoring_rules import NormedDifferenceScore
 

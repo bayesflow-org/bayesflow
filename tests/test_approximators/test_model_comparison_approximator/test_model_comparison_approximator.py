@@ -76,3 +76,33 @@ def test_predict(approximator, train_dataset, simulator):
     output = approximator.predict(conditions=conditions)
     assert isinstance(output, np.ndarray)
     assert output.shape[0] == num_conditions
+
+
+def test_predict_probs_false(approximator, train_dataset, simulator):
+    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
+    approximator.build(data_shapes)
+    approximator.compute_metrics(**train_dataset[0])
+
+    num_conditions = 2
+    num_models = len(simulator.simulators)
+    conditions = simulator.sample(num_conditions)
+
+    output = approximator.predict(conditions=conditions, probs=False)
+    assert isinstance(output, np.ndarray)
+    assert output.shape[0] == num_conditions
+
+    if approximator.scoring_rule.is_pmp_rule:
+        # PMP rules: raw logits, shape (num_conditions, num_models)
+        assert output.shape == (num_conditions, num_models)
+    else:
+        # BF rules: raw log Bayes factors, shape (num_conditions, num_models - 1)
+        assert output.shape == (num_conditions, num_models - 1)
+
+
+def test_is_pmp_rule_property(approximator):
+    from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore
+
+    if isinstance(approximator.scoring_rule, CrossEntropyScore):
+        assert approximator.scoring_rule.is_pmp_rule is True
+    elif isinstance(approximator.scoring_rule, ExponentialScore):
+        assert approximator.scoring_rule.is_pmp_rule is False

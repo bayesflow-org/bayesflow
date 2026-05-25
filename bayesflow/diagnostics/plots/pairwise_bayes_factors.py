@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 import matplotlib.colors
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 
 from bayesflow.utils.plot_utils import make_figure
@@ -16,7 +17,7 @@ def pairwise_bayes_factors(
     title_fontsize: int = 18,
     value_fontsize: int = 10,
     tick_fontsize: int = 12,
-    cmap: str | matplotlib.colors.Colormap = "RdBu_r",
+    cmap: matplotlib.colors.Colormap | str = None,
     fmt: str = ".1f",
     title: bool = True,
 ) -> plt.Figure:
@@ -59,9 +60,11 @@ def pairwise_bayes_factors(
         Font size for the cell value annotations (default: 10).
     tick_fontsize : int, optional
         Font size for tick labels (default: 12).
-    cmap : str or Colormap, optional
-        Diverging colormap for the heatmap, always centred at zero
-        (default: ``"RdBu_r"``).
+    cmap : matplotlib.colors.Colormap or str, optional
+        Colormap for the heatmap, always centred at zero via
+        :class:`~matplotlib.colors.TwoSlopeNorm`.  If a str, it should be the
+        name of a registered colormap.  Default (``None``) uses the BayesFlow
+        white-to-blue colormap, matching :func:`mc_confusion_matrix`.
     fmt : str, optional
         Format string for cell annotations (default: ``".1f"``).
     title : bool, optional
@@ -71,6 +74,9 @@ def pairwise_bayes_factors(
     -------
     fig : plt.Figure
     """
+    if cmap is None:
+        cmap = LinearSegmentedColormap.from_list("", ["white", "#132a70"])
+
     pred_log_bayes_factors = np.asarray(pred_log_bayes_factors)
     true_models = np.asarray(true_models)
 

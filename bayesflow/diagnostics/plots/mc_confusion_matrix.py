@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 
-from ...utils.plot_utils import make_figure
-from ...utils.classification import confusion_matrix
+from bayesflow.utils.plot_utils import make_figure
+from bayesflow.utils.classification import confusion_matrix
 
 
 def mc_confusion_matrix(
@@ -28,9 +28,9 @@ def mc_confusion_matrix(
 
     Parameters
     ----------
-    pred_models    : np.ndarray of shape (num_data_sets, num_models)
+    pred_models    : np.ndarray of shape (num_datasets, num_models)
         The predicted posterior model probabilities (PMPs) per data set.
-    true_models    : np.ndarray of shape (num_data_sets, num_models)
+    true_models    : np.ndarray of shape (num_datasets, num_models)
         The one-hot-encoded true model indices per data set.
     model_names    : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.

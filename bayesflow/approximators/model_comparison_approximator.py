@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from typing import Literal
 
 import numpy as np
 
@@ -190,7 +191,7 @@ class ModelComparisonApproximator(Approximator):
     def fit(
         self,
         *,
-        adapter: Adapter = "auto",
+        adapter: Adapter | Literal["auto"] = "auto",
         dataset: keras.utils.PyDataset = None,
         simulator: ModelComparisonSimulator = None,
         simulators: Sequence[Simulator] = None,
@@ -213,9 +214,7 @@ class ModelComparisonApproximator(Approximator):
         simulators: Sequence[Simulator], optional
             A list of simulators (one simulator per model). If provided, `dataset` must be None.
         **kwargs
-            Additional keyword arguments passed to `keras.Model.fit()`, as described in:
-
-        https://github.com/keras-team/keras/blob/v3.13.2/keras/src/backend/tensorflow/trainer.py#L314
+            Additional keyword arguments passed to ``keras.Model.fit()``.
 
         Returns
         -------
@@ -275,29 +274,36 @@ class ModelComparisonApproximator(Approximator):
         Returns predictions given input conditions, adapting output to the active scoring rule.
 
         For PMP scoring rules (e.g. :class:`~bayesflow.scoring_rules.CrossEntropyScore`,
-        :class:`~bayesflow.scoring_rules.SquaredScore`) the network outputs logits over
+        :class:`~bayesflow.scoring_rules.BrierScore`) the network outputs logits over
         ``num_models`` classes; when ``probs=True`` (default) these are converted to
         softmax probabilities.
 
-        For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LPOPExponentialScore`)
-        the network outputs ``num_models - 1`` log Bayes factors relative to the reference model;
-        the ``probs`` flag is ignored in this case.
+        For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LeakyExponentialScore`)
+        the network outputs ``num_models - 1`` log Bayes factors
+        :math:`\log K_{k,0} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_0)`
+        relative to the reference model :math:`\mathcal{M}_0`.  When ``probs=True`` these are
+        converted to posterior model probabilities by prepending the reference anchor
+        :math:`f_0 = 0` and applying softmax (assumes equal model priors).
 
         Parameters
         ----------
         conditions : Mapping[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
         probs : bool, optional
-            For PMP scoring rules: return softmax probabilities when ``True``, raw logits when
-            ``False``.  Ignored for Bayes factor scoring rules (default: ``True``).
+            When ``True`` (default): return softmax probabilities of shape
+            ``(num_datasets, num_models)`` for both PMP and Bayes factor rules.
+            When ``False``: return raw logits for PMP rules or raw log Bayes factors
+            for Bayes factor rules, both of shape ``(num_datasets, num_models)`` or
+            ``(num_datasets, num_models - 1)`` respectively.
         **kwargs
             Additional keyword arguments forwarded to the adapter and classifier.
 
         Returns
         -------
         np.ndarray
-            Shape ``(num_datasets, num_models)`` for PMP scoring rules, or
-            ``(num_datasets, num_models - 1)`` for Bayes factor scoring rules.
+            Shape ``(num_datasets, num_models)`` when ``probs=True`` (always), or when
+            ``probs=False`` with a PMP scoring rule.  Shape ``(num_datasets, num_models - 1)``
+            when ``probs=False`` with a Bayes factor scoring rule.
         """
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions, **kwargs)
         inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
@@ -308,12 +314,14 @@ class ModelComparisonApproximator(Approximator):
         if "logits" in estimates:
             result = keras.ops.softmax(estimates["logits"]) if probs else estimates["logits"]
         elif "log_bayes_factors" in estimates:
-            if probs is not True:
-                logging.warning(
-                    "The 'probs' argument is ignored when using a Bayes factor scoring rule. "
-                    "Returning log Bayes factors directly."
-                )
-            result = estimates["log_bayes_factors"]
+            log_bfs = self.scoring_rule.to_bayes_factors(estimates["log_bayes_factors"])
+            if probs:
+                # Prepend f_0 = 0 (reference model anchor) and normalise via softmax.
+                # Gives P(M_k | x) for equal priors; see document Section 4.3.
+                f0 = keras.ops.zeros_like(log_bfs[..., :1])
+                result = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
+            else:
+                result = log_bfs
         else:
             raise RuntimeError(
                 f"Unrecognized scoring rule output keys: {list(estimates.keys())}. "

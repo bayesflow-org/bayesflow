@@ -358,3 +358,37 @@ def test_coverage_diff(random_estimates, random_targets):
     assert out.axes[1].title._text == "beta_1"
     assert out.axes[0].get_xlabel() == "Central interval width"
     assert out.axes[0].get_ylabel() == "Empirical coverage difference"
+
+
+def test_blind_coverage(pred_log_bayes_factors, true_models, model_names):
+    out = bf.diagnostics.plots.blind_coverage(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+    )
+    # one subplot per competing model (num_models - 1)
+    num_competing = pred_log_bayes_factors.shape[-1]
+    assert len(out.axes) == num_competing
+    assert "quantile" in out.axes[0].get_xlabel().lower()
+
+
+def test_bayes_factor_recovery(pred_log_bayes_factors, true_log_bayes_factors, true_models, model_names):
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+    )
+    num_competing = pred_log_bayes_factors.shape[-1]
+    assert len(out.axes) == num_competing
+    assert "log" in out.axes[0].get_xlabel().lower()
+    assert "log" in out.axes[0].get_ylabel().lower()
+
+
+def test_pairwise_bayes_factors(pred_log_bayes_factors, true_models, model_names):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+    )
+    assert out.axes is not None

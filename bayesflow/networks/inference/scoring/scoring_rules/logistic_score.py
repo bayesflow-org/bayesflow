@@ -5,7 +5,7 @@ from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
 from .scoring_rule import ScoringRule
-from .exponential_score import _pairwise_diff
+from .scaled_exponential_score import _pairwise_diff
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
@@ -18,8 +18,10 @@ class LogisticScore(ScoringRule):
 
         S(\{f_k\}, m) = \sum_{k \neq m} \log\!\left(1 + e^{f_k(x) - f_m(x)}\right)
 
-    The unique minimiser of the expected loss is :math:`f_k^* = \log K_{0,k}`,
-    the same as :class:`ExponentialScore`.
+    The unique minimiser shares the same structure as :class:`ExponentialScore`.
+    The public :meth:`~bayesflow.approximators.ModelComparisonApproximator.predict` method
+    returns :math:`\log K_{k,0} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_0)`
+    (reference in the denominator).
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
@@ -52,6 +54,7 @@ class LogisticScore(ScoringRule):
         Tensor
             (Optionally weighted) mean logistic score over the batch.
         """
+        targets = keras.ops.convert_to_tensor(targets)
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         scores = keras.ops.sum(mask * keras.ops.softplus(diff), axis=-1)

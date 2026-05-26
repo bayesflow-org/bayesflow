@@ -174,8 +174,8 @@ def test_mc_workflow_with_shared_simulator(mc_summary_network):
 # ── Output shapes ─────────────────────────────────────────────────────────────
 
 
-def test_predict_shapes_pmp(mc_simulators):
-    """PMP mode: probs=True returns (N, M) summing to 1; probs=False returns raw logits."""
+def test_estimate_shapes_pmp(mc_simulators):
+    """PMP mode: estimate returns model_probs (N, M) summing to 1 and logits (N, M)."""
     from bayesflow.scoring_rules import CrossEntropyScore
 
     num_models = len(mc_simulators)
@@ -189,16 +189,16 @@ def test_predict_shapes_pmp(mc_simulators):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
     test_data = workflow.simulate(n_test)
 
-    probs = workflow.predict(conditions=test_data, probs=True)
-    logits = workflow.predict(conditions=test_data, probs=False)
+    estimates = workflow.estimate(conditions=test_data)
 
-    assert probs.shape == (n_test, num_models)
-    assert logits.shape == (n_test, num_models)
-    assert np.allclose(probs.sum(axis=-1), 1.0, atol=1e-5)
+    assert isinstance(estimates, dict)
+    assert estimates["model_probs"].shape == (n_test, num_models)
+    assert estimates["logits"].shape == (n_test, num_models)
+    assert np.allclose(estimates["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
 
 
-def test_predict_shapes_bf(mc_simulators):
-    """BF mode: probs=True returns (N, M) summing to 1; probs=False returns (N, M-1) log BFs."""
+def test_estimate_shapes_bf(mc_simulators):
+    """BF mode: estimate returns model_probs (N, M) summing to 1 and log_bayes_factors (N, M-1)."""
     from bayesflow.scoring_rules import ExponentialScore
 
     num_models = len(mc_simulators)
@@ -212,12 +212,12 @@ def test_predict_shapes_bf(mc_simulators):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
     test_data = workflow.simulate(n_test)
 
-    probs = workflow.predict(conditions=test_data, probs=True)
-    log_bfs = workflow.predict(conditions=test_data, probs=False)
+    estimates = workflow.estimate(conditions=test_data)
 
-    assert probs.shape == (n_test, num_models)
-    assert log_bfs.shape == (n_test, num_models - 1)
-    assert np.allclose(probs.sum(axis=-1), 1.0, atol=1e-5)
+    assert isinstance(estimates, dict)
+    assert estimates["model_probs"].shape == (n_test, num_models)
+    assert estimates["log_bayes_factors"].shape == (n_test, num_models - 1)
+    assert np.allclose(estimates["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
 
 
 # ── Constructor validation ────────────────────────────────────────────────────

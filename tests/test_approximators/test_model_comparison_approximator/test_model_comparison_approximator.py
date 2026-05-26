@@ -1,5 +1,4 @@
 import keras
-import numpy as np
 import io
 from contextlib import redirect_stdout
 
@@ -66,19 +65,7 @@ def test_save_and_load(tmp_path, approximator, train_dataset, validation_dataset
     assert_models_equal(approximator, loaded)
 
 
-def test_predict(approximator, train_dataset, simulator):
-    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
-    approximator.build(data_shapes)
-    approximator.compute_metrics(**train_dataset[0])
-
-    num_conditions = 2
-    conditions = simulator.sample(num_conditions)
-    output = approximator.predict(conditions=conditions)
-    assert isinstance(output, np.ndarray)
-    assert output.shape[0] == num_conditions
-
-
-def test_predict_probs_false(approximator, train_dataset, simulator):
+def test_estimate(approximator, train_dataset, simulator):
     data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
     approximator.build(data_shapes)
     approximator.compute_metrics(**train_dataset[0])
@@ -86,17 +73,18 @@ def test_predict_probs_false(approximator, train_dataset, simulator):
     num_conditions = 2
     num_models = len(simulator.simulators)
     conditions = simulator.sample(num_conditions)
+    output = approximator.estimate(conditions=conditions)
 
-    output = approximator.predict(conditions=conditions, probs=False)
-    assert isinstance(output, np.ndarray)
-    assert output.shape[0] == num_conditions
+    assert isinstance(output, dict)
+    assert "model_probs" in output
+    assert output["model_probs"].shape == (num_conditions, num_models)
 
     if approximator.scoring_rule.is_pmp_rule:
-        # PMP rules: raw logits, shape (num_conditions, num_models)
-        assert output.shape == (num_conditions, num_models)
+        assert "logits" in output
+        assert output["logits"].shape == (num_conditions, num_models)
     else:
-        # BF rules: raw log Bayes factors, shape (num_conditions, num_models - 1)
-        assert output.shape == (num_conditions, num_models - 1)
+        assert "log_bayes_factors" in output
+        assert output["log_bayes_factors"].shape == (num_conditions, num_models - 1)
 
 
 def test_is_pmp_rule_property(approximator):

@@ -8,16 +8,16 @@ on:
         required: true
         type: boolean
         default: true
-      version:
-        description: "The new version string (without the leading v, e.g., 2.1.0)"
+      release_type:
+        description: "The type of release"
         required: true
-        type: string
+        type: choice
+        options: [major, minor, patch]
+        default: patch
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ github.event.inputs.version }}
 
     # PyPI trusted publishing permissions
     permissions:
@@ -30,19 +30,6 @@ jobs:
         persist-credentials: false
         fetch-depth: 0  # shallow clone
 
-    - name: Validate version string
-      run: |
-
-        if [[ "$VERSION" =~ ^v ]]; then
-          echo "::error::Version string starts with 'v' ($VERSION). Please provide a pure SemVer string (e.g., 1.2.3)."
-          exit 1
-        fi
-
-        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-          echo "::error::Invalid version format ($VERSION). Use X.Y.Z format."
-          exit 1
-        fi
-
     - name: Install uv
       uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
@@ -50,7 +37,7 @@ jobs:
       run: uv python install
 
     - name: Update version string
-      run: uv version $VERSION
+      run: uv version --bump ${{ github.event.inputs.release_type }}
 
     - name: Build wheel
       run: uv build

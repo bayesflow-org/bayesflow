@@ -1,12 +1,10 @@
 from collections.abc import Callable, Mapping, Sequence
-
 import time
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 import keras
-
-import matplotlib.pyplot as plt
 
 from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
@@ -102,23 +100,23 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
     def __init__(
         self,
-        simulator: Sequence[Simulator] | ModelComparisonSimulator | None = None,
-        adapter: Adapter | None = None,
+        simulator: Sequence[Simulator] | ModelComparisonSimulator = None,
+        adapter: Adapter = None,
         classifier_network: keras.Layer | str = "mlp",
-        summary_network: SummaryNetwork | str | None = None,
-        scoring_rule: ScoringRule | None = None,
+        summary_network: SummaryNetwork | str = None,
+        scoring_rule: ScoringRule = None,
         initial_learning_rate: float = 5e-4,
-        optimizer: keras.optimizers.Optimizer | type | None = None,
-        checkpoint_filepath: str | None = None,
+        optimizer: keras.optimizers.Optimizer | type = None,
+        checkpoint_filepath: str = None,
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
         save_best_only: bool = False,
-        inference_conditions: Sequence[str] | str | None = None,
-        summary_variables: Sequence[str] | str | None = None,
-        shared_simulator: Simulator | Callable | None = None,
+        inference_conditions: Sequence[str] | str = None,
+        summary_variables: Sequence[str] | str = None,
+        shared_simulator: Simulator | Callable = None,
         use_mixed_batches: bool = True,
-        model_names: Sequence[str] | None = None,
-        standardize: Sequence[str] | str | None = None,
+        model_names: Sequence[str] = None,
+        standardize: Sequence[str] | str = None,
         **kwargs,
     ):
         if isinstance(simulator, Sequence):
@@ -126,7 +124,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 simulators=simulator,
                 shared_simulator=shared_simulator,
                 use_mixed_batches=use_mixed_batches,
-                **kwargs.pop("simulator_kwargs", {}),
+                **kwargs.get("simulator_kwargs", {}),
             )
 
         if simulator is not None and len(simulator.simulators) < 2:
@@ -155,9 +153,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
             broadcast_conditions_to=broadcast_ref,
         )
 
-        # When a summary network is present and the caller did not specify standardize,
-        # default to standardizing summary_variables.  inference_variables (model indices)
-        # are one-hot and must never be standardized.
         if standardize is None and summary_network is not None:
             standardize = ["summary_variables"]
 
@@ -183,9 +178,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
     @staticmethod
     def default_adapter(
-        inference_conditions: Sequence[str] | str | None,
-        summary_variables: Sequence[str] | str | None,
-        broadcast_conditions_to: str | None = None,
+        inference_conditions: Sequence[str] | str,
+        summary_variables: Sequence[str] | str,
+        broadcast_conditions_to: str = None,
     ) -> Adapter:
         """
         Build a default adapter for model comparison data.
@@ -360,10 +355,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
             )
 
         return figures
-
-    # ------------------------------------------------------------------
-    # Disable BasicWorkflow inference methods that do not apply here
-    # ------------------------------------------------------------------
 
     def sample(self, *args, **kwargs):
         raise NotImplementedError("ModelComparisonWorkflow does not support sampling. Use predict() instead.")

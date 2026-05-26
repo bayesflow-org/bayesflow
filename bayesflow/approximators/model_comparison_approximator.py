@@ -1,5 +1,4 @@
 from collections.abc import Mapping, Sequence
-import warnings
 
 import numpy as np
 
@@ -23,12 +22,18 @@ from ..networks.helpers import Standardization
 @serializable("bayesflow.approximators")
 class ModelComparisonApproximator(Approximator):
     """
-    Defines an approximator for model (simulator) comparison, where the (discrete) posterior model probabilities are
-    learned with a classifier.
+    Defines an approximator for model (simulator) comparison, where the (discrete)
+    posterior model probabilities are learned with a classifier.
 
-    Uses a :class:`~bayesflow.networks.ScoringRuleNetwork` with a
+    Per default, it uses a :class:`~bayesflow.networks.ScoringRuleNetwork` with a
     :class:`~bayesflow.scoring_rules.CrossEntropyScore` to map summary/condition inputs
-    to class logits and train via categorical cross-entropy.
+    to class logits and train via categorical cross-entropy. However, you can use any
+    of the losses defined in [1] and generalized to K-model scenarios.
+
+
+    [1] Jeffrey, N., & Wandelt, B. D. (2024). Evidence Networks: simple losses for fast,
+    amortized, neural Bayesian model comparison. Machine Learning: Science and Technology,
+    5(1), 015008.
 
     Parameters
     ----------
@@ -40,6 +45,9 @@ class ModelComparisonApproximator(Approximator):
         with a :class:`~bayesflow.scoring_rules.CrossEntropyScore`.
         The input to the classifier network is created by concatenating ``inference_conditions``
         and (optional) output of the ``summary_network``.
+    scoring_rule : bf.scoring_rules.ScoringRule, optional
+        The scoring rule used for training. If ``None`` (default), a
+        :class:`~bayesflow.scoring_rules.CrossEntropyScore` is used.
     adapter : bf.adapters.Adapter, optional
         Adapter for data pre-processing. If ``None`` (default), an identity
         adapter is used that makes a shallow copy and passes data through unchanged.
@@ -60,7 +68,7 @@ class ModelComparisonApproximator(Approximator):
         scoring_rule: ScoringRule = None,
         adapter: Adapter = None,
         summary_network: SummaryNetwork = None,
-        standardize: str | Sequence[str] | None = None,
+        standardize: str | Sequence[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -71,8 +79,7 @@ class ModelComparisonApproximator(Approximator):
         self.scoring_rule = scoring_rule
 
         self.inference_network = ScoringRuleNetwork(
-            scoring_rules={"scoring_rule": scoring_rule},
-            subnet=classifier_network,
+            scoring_rules={"scoring_rule": scoring_rule}, subnet=classifier_network
         )
 
         self.summary_network = summary_network
@@ -302,16 +309,14 @@ class ModelComparisonApproximator(Approximator):
             result = keras.ops.softmax(estimates["logits"]) if probs else estimates["logits"]
         elif "log_bayes_factors" in estimates:
             if probs is not True:
-                warnings.warn(
+                logging.warning(
                     "The 'probs' argument is ignored when using a Bayes factor scoring rule. "
-                    "Returning log Bayes factors directly.",
-                    UserWarning,
-                    stacklevel=2,
+                    "Returning log Bayes factors directly."
                 )
             result = estimates["log_bayes_factors"]
         else:
             raise RuntimeError(
-                f"Unrecognised scoring rule output keys: {list(estimates.keys())}. "
+                f"Unrecognized scoring rule output keys: {list(estimates.keys())}. "
                 "Expected 'logits' (PMP rules) or 'log_bayes_factors' (Bayes factor rules)."
             )
 

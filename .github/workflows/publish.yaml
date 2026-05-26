@@ -16,6 +16,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.version }}
 
     # PyPI trusted publishing permissions
     permissions:
@@ -30,7 +32,6 @@ jobs:
 
     - name: Validate version string
       run: |
-        VERSION=${{ github.event.inputs.version }}
 
         if [[ "$VERSION" =~ ^v ]]; then
           echo "::error::Version string starts with 'v' ($VERSION). Please provide a pure SemVer string (e.g., 1.2.3)."
@@ -49,7 +50,7 @@ jobs:
       run: uv python install
 
     - name: Update version string
-      run: uv version ${{ github.event.inputs.version }}
+      run: uv version $VERSION
 
     - name: Build wheel
       run: uv build
@@ -71,6 +72,6 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add pyproject.toml
-        git commit -m "🚀 Release ${{ github.event.inputs.version_string }}"
-        git tag v${{ github.event.inputs.version_string }}
+        git commit -m "🚀 Release $VERSION"
+        git tag v$VERSION
         git push origin main --tags

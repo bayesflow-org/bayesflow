@@ -21,7 +21,6 @@ from .inference import CouplingFlow
 from .inference import DiffusionModel
 from .inference import FlowMatching
 from .inference import LatentInferenceNetwork, Encoder, Decoder
-from .inference import LatentDiffusionModel
 from .inference import PointNetwork, ScoringRuleNetwork
 
 # Summary networks

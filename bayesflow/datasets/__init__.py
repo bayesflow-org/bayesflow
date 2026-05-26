@@ -7,6 +7,8 @@ effective training strategy (e.g., online or offline).
 from .online_dataset import OnlineDataset
 from .offline_dataset import OfflineDataset
 from .disk_dataset import DiskDataset
+from .multi_dataset import MultiDataset
+from .self_consistency_dataset import SelfConsistencyDataset
 
 from .ensemble_dataset import EnsembleDataset
 from .ensemble_online_dataset import EnsembleOnlineDataset

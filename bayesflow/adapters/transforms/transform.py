@@ -1,5 +1,4 @@
 import numpy as np
-
 from bayesflow.utils.serialization import serializable, deserialize
 
 

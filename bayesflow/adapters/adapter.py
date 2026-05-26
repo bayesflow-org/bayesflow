@@ -1,4 +1,3 @@
-from typing import Any
 from collections.abc import Callable, MutableSequence, Sequence
 
 import numpy as np
@@ -100,7 +99,7 @@ class Adapter(MutableSequence[Transform]):
         return serialize(config)
 
     def forward(
-        self, data: dict[str, Any], *, log_det_jac: bool = False, **kwargs
+        self, data: dict[str, any], *, log_det_jac: bool = False, keras: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the forward direction.
 
@@ -110,6 +109,8 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
+        keras: bool, optional
+            If False, the transforms are computed using `numpy` as a backend, otherwise using `keras`.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -121,19 +122,19 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
         if not log_det_jac:
             for transform in self.transforms:
-                data = transform(data, **kwargs)
+                data = transform(data, keras=keras, **kwargs)
             return data
 
         log_det_jac = {}
         for transform in self.transforms:
-            transformed_data = transform(data, **kwargs)
-            log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
+            transformed_data = transform(data, keras=keras, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac=log_det_jac, keras=keras, **kwargs)
             data = transformed_data
 
         return data, log_det_jac
 
     def inverse(
-        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
+        self, data: dict[str, any], *, log_det_jac: bool = False, keras: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the inverse direction.
 
@@ -143,6 +144,8 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
+        keras: bool, optional
+            If False, the transforms are computed using `numpy` as a backend, otherwise using `keras`.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -154,18 +157,18 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
         if not log_det_jac:
             for transform in reversed(self.transforms):
-                data = transform(data, inverse=True, **kwargs)
+                data = transform(data, inverse=True, keras=keras, **kwargs)
             return data
 
         log_det_jac = {}
         for transform in reversed(self.transforms):
-            data = transform(data, inverse=True, **kwargs)
-            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
+            data = transform(data, inverse=True, keras=keras, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, keras=keras, **kwargs)
 
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, any], *, inverse: bool = False, **kwargs
+        self, data: dict[str, any], *, inverse: bool = False, keras: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
@@ -175,6 +178,8 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
+        keras: bool, optional
+            If False, the transforms are computed using `numpy` as a backend, otherwise using `keras`.
         **kwargs
             Additional keyword arguments passed to each transform.
 
@@ -183,10 +188,11 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        if inverse:
-            return self.inverse(data, **kwargs)
 
-        return self.forward(data, **kwargs)
+        if inverse:
+            return self.inverse(data, keras=keras, **kwargs)
+
+        return self.forward(data, keras=keras, **kwargs)
 
     def __repr__(self):
         result = ""

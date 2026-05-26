@@ -1,6 +1,8 @@
 import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.types import Tensor
 from bayesflow.utils.numpy_utils import (
     inverse_sigmoid,
     inverse_softplus,
@@ -92,6 +94,21 @@ class Constrain(ElementwiseTransform):
                         x = (x - lower) / (upper - lower)
                         return -np.log(x) - np.log1p(-x) - np.log(upper - lower)
 
+                    def constrain_keras(x):
+                        return (upper - lower) * ops.sigmoid(x) + lower
+
+                    def unconstrain_keras(x):
+                        z = (x - lower) / (upper - lower)
+                        return ops.log(z) - ops.log(1.0 - z)
+
+                    def ldj_keras(x):
+                        z = (x - lower) / (upper - lower)
+                        return (
+                            -ops.log(z)
+                            - ops.log(1.0 - z)
+                            - ops.log(ops.convert_to_tensor(upper - lower, dtype=x.dtype))
+                        )
+
                 case str() as name:
                     raise ValueError(f"Unsupported method name for double bounded constraint: '{name}'.")
                 case other:
@@ -111,6 +128,17 @@ class Constrain(ElementwiseTransform):
                         x = x - lower
                         return x - np.log(np.exp(x) - 1)
 
+                    def constrain_keras(x):
+                        return ops.softplus(x) + lower
+
+                    def unconstrain_keras(x):
+                        y = x - lower
+                        return ops.where(y > 20, y, ops.log(ops.expm1(y)))
+
+                    def ldj_keras(x):
+                        y = x - lower
+                        return y - ops.log(ops.expm1(y))
+
                 case "exp" | "log":
 
                     def constrain(x):
@@ -121,6 +149,15 @@ class Constrain(ElementwiseTransform):
 
                     def ldj(x):
                         return -np.log(x - lower)
+
+                    def constrain_keras(x):
+                        return ops.exp(x) + lower
+
+                    def unconstrain_keras(x):
+                        return ops.log(x - lower)
+
+                    def ldj_keras(x):
+                        return -ops.log(x - lower)
 
                 case str() as name:
                     raise ValueError(f"Unsupported method name for single bounded constraint: '{name}'.")
@@ -141,6 +178,17 @@ class Constrain(ElementwiseTransform):
                         x = -(x - upper)
                         return x - np.log(np.exp(x) - 1)
 
+                    def constrain_keras(x):
+                        return -ops.softplus(-x) + upper
+
+                    def unconstrain_keras(x):
+                        y = upper - x
+                        return -ops.where(y > 20, y, ops.log(ops.expm1(y)))
+
+                    def ldj_keras(x):
+                        y = upper - x
+                        return y - ops.log(ops.expm1(y))
+
                 case "exp" | "log":
 
                     def constrain(x):
@@ -151,6 +199,16 @@ class Constrain(ElementwiseTransform):
 
                     def ldj(x):
                         return -np.log(-x + upper)
+
+                    def constrain_keras(x):
+                        return -ops.exp(-x) + upper
+
+                    def unconstrain_keras(x):
+                        return -ops.log(upper - x)
+
+                    def ldj_keras(x):
+                        return -ops.log(upper - x)
+
                 case str() as name:
                     raise ValueError(f"Unsupported method name for single bounded constraint: '{name}'.")
                 case other:
@@ -165,6 +223,9 @@ class Constrain(ElementwiseTransform):
         self.constrain = constrain
         self.unconstrain = unconstrain
         self.ldj = ldj
+        self.constrain_keras = constrain_keras
+        self.unconstrain_keras = unconstrain_keras
+        self.ldj_keras = ldj_keras
 
         # do this last to avoid serialization issues
         match inclusive:
@@ -194,16 +255,28 @@ class Constrain(ElementwiseTransform):
         }
         return serialize(config)
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # forward means data space -> network space, so unconstrain the data
         return self.unconstrain(data)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
+        return self.unconstrain_keras(data)
+
+    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         # inverse means network space -> data space, so constrain the data
         return self.constrain(data)
 
-    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
+        return self.constrain_keras(data)
+
+    def _log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
         ldj = self.ldj(data)
         if inverse:
             ldj = -ldj
         return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))
+
+    def _log_det_jac_keras(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
+        ldj = self.ldj_keras(data)
+        if inverse:
+            ldj = -ldj
+        return self._sum_except_batch_keras(ldj)

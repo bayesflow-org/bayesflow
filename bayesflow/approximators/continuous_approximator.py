@@ -222,6 +222,7 @@ class ContinuousApproximator(Approximator):
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
         seed: int | keras.random.SeedGenerator | None = None,
+        numpy: bool = True,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -287,9 +288,11 @@ class ContinuousApproximator(Approximator):
             samples,
         )
         samples = keras.tree.map_structure(
-            lambda s: self.adapter({"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False),
+            lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False, keras=True),
             samples,
         )
+        if numpy:
+            samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         if return_summaries and summary_outputs is not None:
             samples["_summaries"] = summary_outputs
@@ -299,7 +302,7 @@ class ContinuousApproximator(Approximator):
 
         return samples
 
-    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+    def log_prob(self, data: Mapping[str, np.ndarray], numpy: bool = True, **kwargs) -> np.ndarray:
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
         `adapter`. Log-probabilities are returned as NumPy arrays.
@@ -320,8 +323,8 @@ class ContinuousApproximator(Approximator):
         # NOTE: We cannot use _prepare_conditions here because we need
         # log_det_jac from the adapter call (log_det_jac=True), which
         # _prepare_conditions does not support.
-        adapted, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
-        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
+        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+        adapted, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, keras=True, stage="inference")
 
         summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
 
@@ -338,7 +341,7 @@ class ContinuousApproximator(Approximator):
         )
 
         log_det_jac = log_det_jac.get("inference_variables", 0.0)
-        log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
+        log_det_jac += log_det_jac_std
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
@@ -348,8 +351,10 @@ class ContinuousApproximator(Approximator):
             **inference_kwargs,
         )
 
-        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
         log_prob = keras.tree.map_structure(lambda lp: lp + log_det_jac, log_prob)
+
+        if numpy:
+            log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
 
         return log_prob
 

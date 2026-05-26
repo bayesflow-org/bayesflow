@@ -1,10 +1,9 @@
 import keras
-from typing import TypeVar
+import numpy as np
+from typing import TypeVar, Union
 
 match keras.backend.backend():
     case "numpy":
-        import numpy as np
-
         BackendTensor = np.ndarray
     case "jax":
         import jax
@@ -22,3 +21,5 @@ match keras.backend.backend():
         raise NotImplementedError
 
 Tensor = TypeVar("Tensor", bound=BackendTensor)
+
+ArrayOrTensor = Union[np.ndarray, Tensor]

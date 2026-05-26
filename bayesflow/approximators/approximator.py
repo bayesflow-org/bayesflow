@@ -150,8 +150,8 @@ class Approximator(BackendApproximator):
 
         Standard inference-time pipeline shared across all approximators:
 
-        1. Apply the adapter (``strict=False``)
-        2. Convert all values to tensors
+        1. Convert all values to tensors
+        2. Apply the adapter (``strict=False``)
         3. Standardize ``inference_conditions`` and ``summary_variables``
         4. Resolve conditions via the summary network (if present)
 
@@ -178,6 +178,8 @@ class Approximator(BackendApproximator):
         summary_outputs : Tensor or None
             Raw summary network outputs, or ``None`` if no summary network.
         """
+        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+        adapted = self.adapter(data, strict=False, keras=True, **kwargs)
 
         if data is not None:
             adapted = self.adapter(data, strict=False, **kwargs)

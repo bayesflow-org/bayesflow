@@ -111,7 +111,7 @@ class FilterTransform(Transform):
 
         for key, value in data.items():
             if self._should_transform(key, value, inverse=True):
-                data[key] = self._apply_transform(key, value, inverse=True)
+                data[key] = self._apply_transform(key, value, inverse=True, **kwargs)
 
         return data
 

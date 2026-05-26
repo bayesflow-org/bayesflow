@@ -109,13 +109,14 @@ from . import (
     experimental,
     networks,
     simulators,
+    schedules,
     utils,
     scoring_rules,
     workflows,
 )
 
 from .adapters import Adapter
-from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
+from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset, MultiDataset, SelfConsistencyDataset
 from .approximators import (
     ContinuousApproximator,
     CompositionalApproximator,
@@ -123,6 +124,7 @@ from .approximators import (
     ScoringRuleApproximator,
     EnsembleApproximator,
     RatioApproximator,
+    SemiSupervisedApproximator,
 )
 from .simulators import make_simulator
 from .workflows import BasicWorkflow, EnsembleWorkflow, CompositionalWorkflow, ModelComparisonWorkflow

@@ -1,6 +1,8 @@
 import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.types import Tensor
 
 from .elementwise_transform import ElementwiseTransform
 
@@ -45,21 +47,36 @@ class Standardize(ElementwiseTransform):
         }
         return serialize(config)
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         mean = np.broadcast_to(self.mean, data.shape)
         std = np.broadcast_to(self.std, data.shape)
-
         return (data - mean) / std
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
+        mean = ops.broadcast_to(ops.convert_to_tensor(self.mean, dtype=data.dtype), ops.shape(data))
+        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=data.dtype), ops.shape(data))
+        return (data - mean) / std
+
+    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         mean = np.broadcast_to(self.mean, data.shape)
         std = np.broadcast_to(self.std, data.shape)
-
         return data * std + mean
 
-    def log_det_jac(self, data, inverse: bool = False, **kwargs) -> np.ndarray:
+    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
+        mean = ops.broadcast_to(ops.convert_to_tensor(self.mean, dtype=data.dtype), ops.shape(data))
+        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=data.dtype), ops.shape(data))
+        return data * std + mean
+
+    def _log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
         std = np.broadcast_to(self.std, data.shape)
         ldj = -np.log(np.abs(std))
         if inverse:
             ldj = -ldj
         return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))
+
+    def _log_det_jac_keras(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
+        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=data.dtype), ops.shape(data))
+        ldj = -ops.log(ops.abs(std))
+        if inverse:
+            ldj = -ldj
+        return self._sum_except_batch_keras(ldj)

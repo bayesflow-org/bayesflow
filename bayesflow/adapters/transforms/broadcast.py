@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serialize, serializable
 
@@ -103,37 +104,66 @@ class Broadcast(Transform):
         return serialize(config)
 
     # noinspection PyMethodOverriding
-    def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data: dict[str, np.ndarray], *, keras: bool = False, **kwargs) -> dict[str, np.ndarray]:
         target_shape = data[self.to].shape
 
         data = data.copy()
 
         for k in self.keys:
-            # ensure that .shape is defined
-            data[k] = np.asarray(data[k])
-            len_diff = len(target_shape) - len(data[k].shape)
+            if keras:
+                current = data[k]
+                len_diff = len(target_shape) - len(current.shape)
 
-            if self.expand == "left":
-                data[k] = np.expand_dims(data[k], axis=tuple(np.arange(0, len_diff)))
-            elif self.expand == "right":
-                data[k] = np.expand_dims(data[k], axis=tuple(-np.arange(1, len_diff + 1)))
-            elif isinstance(self.expand, Sequence):
-                if len(self.expand) is not len_diff:
-                    raise ValueError("Length of `expand` must match the length difference of the involed arrays.")
-                data[k] = np.expand_dims(data[k], axis=self.expand)
+                if self.expand == "left":
+                    for _ in range(len_diff):
+                        current = ops.expand_dims(current, axis=0)
+                elif self.expand == "right":
+                    for _ in range(len_diff):
+                        current = ops.expand_dims(current, axis=-1)
+                elif isinstance(self.expand, Sequence):
+                    final_ndim = len(current.shape) + len_diff
+                    positive_axes = sorted(ax % final_ndim for ax in self.expand)
+                    for ax in positive_axes:
+                        current = ops.expand_dims(current, axis=ax)
 
-            new_shape = target_shape
-            if self.exclude is not None:
-                new_shape = np.array(new_shape, dtype=int)
-                old_shape = np.array(data[k].shape, dtype=int)
-                exclude = list(self.exclude)
-                new_shape[exclude] = old_shape[exclude]
-                new_shape = tuple(new_shape)
+                new_shape = list(ops.shape(data[self.to]))
+                if self.exclude is not None:
+                    current_shape = list(ops.shape(current))
+                    for ax in self.exclude:
+                        new_shape[ax] = current_shape[ax]
 
-            data[k] = np.broadcast_to(data[k], new_shape)
+                current = ops.broadcast_to(current, new_shape)
 
-            if self.squeeze is not None:
-                data[k] = np.squeeze(data[k], axis=self.squeeze)
+                if self.squeeze is not None:
+                    current = ops.squeeze(current, axis=self.squeeze)
+
+                data[k] = current
+            else:
+                # ensure that .shape is defined
+                data[k] = np.asarray(data[k])
+                len_diff = len(target_shape) - len(data[k].shape)
+
+                if self.expand == "left":
+                    data[k] = np.expand_dims(data[k], axis=tuple(np.arange(0, len_diff)))
+                elif self.expand == "right":
+                    data[k] = np.expand_dims(data[k], axis=tuple(-np.arange(1, len_diff + 1)))
+                elif isinstance(self.expand, Sequence):
+                    if len(self.expand) is not len_diff:
+                        raise ValueError("Length of `expand` must match the length difference of the involed arrays.")
+                    data[k] = np.expand_dims(data[k], axis=self.expand)
+
+                new_shape = target_shape
+                if self.exclude is not None:
+                    new_shape = np.array(new_shape, dtype=int)
+                    old_shape = np.array(data[k].shape, dtype=int)
+                    exclude = list(self.exclude)
+                    new_shape[exclude] = old_shape[exclude]
+                    new_shape = tuple(new_shape)
+
+                data[k] = np.broadcast_to(data[k], new_shape)
+
+                if self.squeeze is not None:
+                    data[k] = np.squeeze(data[k], axis=self.squeeze)
 
         return data
 

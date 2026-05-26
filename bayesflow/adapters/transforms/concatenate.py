@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 import numpy as np
-
+import keras.ops as ops
 from bayesflow.utils.serialization import serialize, serializable
 
 from .transform import Transform
@@ -48,7 +48,7 @@ class Concatenate(Transform):
         }
         return serialize(config)
 
-    def forward(self, data: dict[str, any], *, strict: bool = True, **kwargs) -> dict[str, any]:
+    def forward(self, data: dict[str, any], *, strict: bool = True, keras: bool = False, **kwargs) -> dict[str, any]:
         if not strict and self.indices is None:
             raise ValueError("Cannot call `forward` with `strict=False` before calling `forward` with `strict=True`.")
 
@@ -70,22 +70,30 @@ class Concatenate(Transform):
 
             return data
 
-        if self.indices is None:
-            # remember the indices of the parts in the concatenated array
-            self.indices = np.cumsum([data[key].shape[self.axis] for key in self.keys]).tolist()
+        if self.indices is None and not keras:
+            if keras:
+                raise RuntimeError(
+                    "Cannot call `forward` with `keras=True` before calling `forward` with `keras=False` at least once."
+                )
+            else:
+                # remember the indices of the parts in the concatenated array
+                self.indices = np.cumsum([data[key].shape[self.axis] for key in self.keys]).tolist()
 
         # remove each part
         parts = [data.pop(key) for key in self.keys]
 
         # concatenate them all
-        result = np.concatenate(parts, axis=self.axis)
+        if keras:
+            result = ops.concatenate(parts, axis=self.axis)
+        else:
+            result = np.concatenate(parts, axis=self.axis)
 
         # store the result
         data[self.into] = result
 
         return data
 
-    def inverse(self, data: dict[str, any], *, strict: bool = False, **kwargs) -> dict[str, any]:
+    def inverse(self, data: dict[str, any], *, strict: bool = False, keras: bool = False, **kwargs) -> dict[str, any]:
         if self.indices is None:
             raise RuntimeError("Cannot call `inverse` before calling `forward` at least once.")
 
@@ -101,7 +109,10 @@ class Concatenate(Transform):
 
         # split the concatenated array and remove the concatenated key
         keys = self.keys
-        values = np.split(data.pop(self.into), self.indices, axis=self.axis)
+        if keras:
+            values = ops.split(data.pop(self.into), self.indices, axis=self.axis)
+        else:
+            values = np.split(data.pop(self.into), self.indices, axis=self.axis)
 
         # restore the parts
         data |= dict(zip(keys, values))
@@ -123,6 +134,7 @@ class Concatenate(Transform):
         *,
         strict: bool = False,
         inverse: bool = False,
+        keras: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         # copy to avoid side effects

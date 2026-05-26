@@ -1,6 +1,8 @@
 import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.types import Tensor
 
 from .elementwise_transform import ElementwiseTransform
 
@@ -51,8 +53,14 @@ class ExpandDims(ElementwiseTransform):
     def get_config(self) -> dict:
         return serialize({"axis": self.axis})
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
         return np.expand_dims(data, axis=self.axis)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
+        return ops.expand_dims(data, axis=self.axis)
+
+    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
         return np.squeeze(data, axis=self.axis)
+
+    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
+        return ops.squeeze(data, axis=self.axis)

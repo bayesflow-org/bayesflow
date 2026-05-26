@@ -134,7 +134,7 @@ class OfflineDataset(keras.utils.PyDataset):
         batch = apply_augmentations(batch, self.augmentations)
 
         if self.adapter is not None:
-            batch = self.adapter(batch)
+            batch = self.adapter(batch, strict=False)
 
         return batch
 

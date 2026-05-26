@@ -1,10 +1,12 @@
 from functools import singledispatch
 
-from bayesflow.networks.inference.scoring.scoring_rules import ScoringRule
-
 
 @singledispatch
-def find_scoring_rule(arg, *args, **kwargs) -> ScoringRule:
+def find_scoring_rule(arg, *args, **kwargs):
+    from bayesflow.networks.inference.scoring.scoring_rules import ScoringRule
+
+    if isinstance(arg, ScoringRule):
+        return arg
     raise TypeError(f"Cannot infer scoring rule from {arg!r}.")
 
 
@@ -28,30 +30,27 @@ def _(name: str, *args, **kwargs):
 
             return ExponentialScore(*args, **kwargs)
         case "scaled_exponential":
-            from bayesflow.scoring_rules import ScaledExponentialScore
+            from bayesflow.scoring_rules import ExponentialScore
 
-            return ScaledExponentialScore(*args, **kwargs)
+            return ExponentialScore(*args, **kwargs)
+        case "leaky_exponential":
+            from bayesflow.scoring_rules import ExponentialScore
+
+            kwargs.setdefault("leaky", 2.0)
+            return ExponentialScore(*args, **kwargs)
         case "logistic":
             from bayesflow.scoring_rules import LogisticScore
 
             return LogisticScore(*args, **kwargs)
         case "power_logistic":
-            from bayesflow.scoring_rules import PowerLogisticScore
+            from bayesflow.scoring_rules import LogisticScore
 
-            return PowerLogisticScore(*args, **kwargs)
-        case "leaky_exponential":
-            from bayesflow.scoring_rules import LeakyExponentialScore
-
-            return LeakyExponentialScore(*args, **kwargs)
+            kwargs.setdefault("alpha", 1.0)
+            return LogisticScore(*args, **kwargs)
         case other:
             raise ValueError(f"Unsupported scoring rule name: '{other}'.")
 
 
-@find_scoring_rule.register
-def _(cls: type, *args, **kwargs):
+@find_scoring_rule.register(type)
+def _(cls, *args, **kwargs):
     return cls(*args, **kwargs)
-
-
-@find_scoring_rule.register
-def _(rule: ScoringRule, *args, **kwargs):
-    return rule

@@ -276,7 +276,7 @@ class ModelComparisonApproximator(Approximator):
         :class:`~bayesflow.scoring_rules.BrierScore`) the network outputs logits over
         ``num_models`` classes, converted to softmax probabilities.
 
-        For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LeakyExponentialScore`)
+        For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.ExponentialScore`)
         the network outputs ``num_models - 1`` log Bayes factors
         :math:`\log K_{k,0} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_0)`
         relative to the reference model :math:`\mathcal{M}_0`, which are converted to posterior

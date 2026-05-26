@@ -54,7 +54,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         - **PMP rules** (``"cross_entropy"``, ``"brier"``, ``"polynomial"``): network
           outputs softmax probabilities over all ``num_models`` models.
         - **Bayes factor rules** (``"exponential"``, ``"scaled_exponential"``,
-          ``"logistic"``, ``"power_logistic"``, ``"leaky_exponential"``): network outputs
+          ``"leaky_exponential"``, ``"logistic"``, ``"power_logistic"``): network outputs
           ``num_models - 1`` log Bayes factors relative to model 0.
     summary_network : SummaryNetwork or str, optional
         Optional summary network for data compression (default: None).
@@ -281,8 +281,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         - ``"calibration"`` — per-model calibration curves with ECE annotations.
 
         **Bayes factor scoring rules** (:class:`~bayesflow.scoring_rules.ExponentialScore`,
-        :class:`~bayesflow.scoring_rules.LogisticScore`,
-        :class:`~bayesflow.scoring_rules.LeakyExponentialScore`, etc.):
+        :class:`~bayesflow.scoring_rules.LogisticScore`):
 
         - ``"blind_coverage"`` — blind coverage test (Jeffrey & Wandelt 2024):
           conditional ECDFs of predicted log Bayes factors stratified by true model,

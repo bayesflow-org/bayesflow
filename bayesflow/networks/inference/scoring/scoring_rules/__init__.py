@@ -26,11 +26,8 @@ from .mv_normal_score import MvNormalScore
 from .cross_entropy_score import CrossEntropyScore
 from .brier_score import BrierScore
 from .polynomial_score import PolynomialScore
-from .scaled_exponential_score import ScaledExponentialScore
 from .exponential_score import ExponentialScore
 from .logistic_score import LogisticScore
-from .power_logistic_score import PowerLogisticScore
-from .leaky_exponential_score import LeakyExponentialScore
 
 from bayesflow.utils._docs import _add_imports_to_all
 

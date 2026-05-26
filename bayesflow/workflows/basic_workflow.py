@@ -57,6 +57,9 @@ class BasicWorkflow(Workflow):
         each epoch will be saved instead of the last model (default is False). Use with caution,
         as some losses (e.g. flow matching) do not reliably reflect model performance, and outliers in the
         validation data can cause unwanted effects.
+    restore : bool, optional
+        If True, automatically restore the approximator from an existing checkpoint during initialization
+        (default is False). Requires ``checkpoint_filepath`` to be set and the checkpoint file to exist.
     inference_variables : Sequence[str] or str, optional
         Variables for inference as a sequence of strings or a single string (default is None).
         Important for automating diagnostics!
@@ -91,6 +94,7 @@ class BasicWorkflow(Workflow):
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
         save_best_only: bool = False,
+        restore: bool = False,
         inference_variables: Sequence[str] | str | None = None,
         inference_conditions: Sequence[str] | str | None = None,
         summary_variables: Sequence[str] | str | None = None,
@@ -119,6 +123,9 @@ class BasicWorkflow(Workflow):
         self.history = None
         self._needs_compile = True
 
+        if restore:
+            self.load_approximator()
+
     def _init_optimizer(self, initial_learning_rate, optimizer, **kwargs):
         self.initial_learning_rate = initial_learning_rate
         if isinstance(optimizer, type):
@@ -142,18 +149,74 @@ class BasicWorkflow(Workflow):
                     f"Checkpoint file exists: '{self.checkpoint_filepath}/{file_ext}'.\n"
                     "Existing checkpoints are not automatically loaded. "
                     "Upon refitting, the checkpoints will be overwritten.\n"
+                    "To restore the approximator from the checkpoint, call "
+                    "workflow.load_approximator() or pass restore=True to the workflow constructor."
                 )
-                if not self.save_weights_only:
-                    msg += (
-                        """To load the stored approximator from the checkpoint, """
-                        f"""use approximator = keras.saving.load_model("{self.checkpoint_filepath}/{file_ext}")"""
-                    )
-
                 logging.warning(msg)
 
     @property
     def adapter(self):
         return self.approximator.adapter
+
+    def load_approximator(self, path: str = None):
+        """
+        Restore the approximator from a saved checkpoint.
+
+        When ``path`` is ``None``, the checkpoint location is derived from the
+        workflow's ``checkpoint_filepath`` and ``checkpoint_name`` attributes.
+        The expected filename is ``<checkpoint_name>.weights.h5`` when
+        ``save_weights_only=True`` was set, and ``<checkpoint_name>.keras``
+        for a fully serialized model.
+
+        For weights-only checkpoints (``.weights.h5``), the current
+        approximator's architecture is kept and only the weights are replaced
+        via ``approximator.load_weights()``. For full-model checkpoints
+        (``.keras``), the entire approximator object is replaced via
+        ``keras.saving.load_model()``.
+
+        Parameters
+        ----------
+        path : str, optional
+            Explicit path to the checkpoint file. The file extension determines
+            the loading strategy:
+
+            - ``*.weights.h5`` → weights-only restore (``load_weights``).
+            - any other extension (e.g. ``*.keras``) → full model restore
+              (``keras.saving.load_model``).
+
+            If ``None`` (default), the path is inferred from
+            ``checkpoint_filepath`` / ``checkpoint_name``. A ``ValueError``
+            is raised when neither ``path`` nor ``checkpoint_filepath`` is set.
+
+        Raises
+        ------
+        ValueError
+            If ``path`` is ``None`` and ``checkpoint_filepath`` is not set on
+            the workflow.
+        FileNotFoundError
+            If the resolved checkpoint path does not exist on disk.
+        """
+        if path is None:
+            if self.checkpoint_filepath is None:
+                raise ValueError(
+                    "No path provided and no checkpoint_filepath is set on this workflow. "
+                    "Pass an explicit path to load_approximator()."
+                )
+            file_ext = self.checkpoint_name + (".weights.h5" if self.save_weights_only else ".keras")
+            path = os.path.join(self.checkpoint_filepath, file_ext)
+
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f"No checkpoint found at '{path}'. "
+                "Provide a valid path or ensure the workflow has been trained and checkpointed."
+            )
+
+        if path.endswith(".weights.h5"):
+            self.approximator.load_weights(path)
+            logging.info(f"Approximator weights restored from '{path}'.")
+        else:
+            self.approximator = keras.saving.load_model(path)
+            logging.info(f"Approximator restored from '{path}'.")
 
     @property
     def inference_network(self):
@@ -1156,8 +1219,18 @@ class BasicWorkflow(Workflow):
                 file_ext = self.checkpoint_name + ".keras"
 
             model_path = f"{self.checkpoint_filepath}/{file_ext}"
+            if self.save_weights_only:
+                load_hint = (
+                    f"Via the workflow: workflow.load_approximator()\n"
+                    f'Standalone (weights only): approximator.load_weights("{model_path}")'
+                )
+            else:
+                load_hint = (
+                    f"Via the workflow: workflow.load_approximator()\n"
+                    f'Standalone: approximator = keras.saving.load_model("{model_path}")'
+                )
             logging.info(
                 f"Training is now finished.\n"
                 f"You can find the trained approximator at '{model_path}'.\n"
-                f'To load it, use approximator = keras.saving.load_model("{model_path}").'
+                f"To restore it:\n{load_hint}"
             )

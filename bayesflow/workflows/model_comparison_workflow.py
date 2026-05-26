@@ -225,43 +225,35 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         return adapter
 
-    def predict(
+    def estimate(
         self,
         *,
         conditions: dict,
-        probs: bool = True,
         **kwargs,
-    ) -> np.ndarray:
+    ) -> dict[str, np.ndarray]:
         """
-        Return posterior model probabilities (or logits) for the given conditions.
+        Return posterior model probabilities (and raw network outputs) for the given conditions.
 
         Parameters
         ----------
         conditions : dict[str, np.ndarray]
             Conditioning data as produced by the simulator (or real observations).
-        probs : bool, optional
-            When ``True`` (default) always returns posterior model probabilities of shape
-            ``(num_datasets, num_models)``.  For PMP rules these come from softmax over
-            logits; for Bayes factor rules the reference anchor :math:`f_0 = 0` is
-            prepended before softmax (assumes equal model priors).
-            When ``False`` returns raw logits (PMP rules, shape ``(N, M)``) or raw log
-            Bayes factors relative to model 0 (Bayes factor rules, shape ``(N, M-1)``).
         **kwargs
-            Forwarded to :meth:`~bayesflow.approximators.ModelComparisonApproximator.predict`.
+            Forwarded to :meth:`~bayesflow.approximators.ModelComparisonApproximator.estimate`.
 
         Returns
         -------
-        np.ndarray
-            Shape ``(num_datasets, num_models)`` when ``probs=True`` (always).
-            Shape ``(num_datasets, num_models)`` when ``probs=False`` with a PMP rule.
-            Shape ``(num_datasets, num_models - 1)`` when ``probs=False`` with a Bayes
-            factor rule.
+        dict[str, np.ndarray]
+            Always contains ``"model_probs"`` of shape ``(num_datasets, num_models)``.
+            PMP rules additionally contain ``"logits"`` of shape ``(num_datasets, num_models)``.
+            Bayes factor rules additionally contain ``"log_bayes_factors"`` of shape
+            ``(num_datasets, num_models - 1)``.
         """
         start_time = time.perf_counter()
-        predictions = self.approximator.predict(conditions=conditions, probs=probs, **kwargs)
+        estimates = self.approximator.estimate(conditions=conditions, **kwargs)
         elapsed = time.perf_counter() - start_time
-        logging.info(f"Prediction completed in {format_duration(elapsed)}.")
-        return predictions
+        logging.info(f"Estimation completed in {format_duration(elapsed)}.")
+        return estimates
 
     def plot_default_diagnostics(
         self,
@@ -359,37 +351,32 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
-        # Determine mode before calling predict so we can request the right output format:
-        # PMP diagnostic plots need probs=True (softmax probabilities);
-        # BF diagnostic plots need probs=False (raw log Bayes factors).
         is_pmp_mode = self.approximator.scoring_rule.is_pmp_rule
 
-        predict_kwargs = dict(kwargs.get("predict_kwargs", {}))
-        predict_kwargs.setdefault("probs", is_pmp_mode)
-        predictions = self.predict(conditions=test_data, **predict_kwargs)
+        estimates = self.estimate(conditions=test_data, **kwargs.get("estimate_kwargs", {}))
 
         if is_pmp_mode:
             figures["confusion_matrix"] = bf_plots.mc_confusion_matrix(
-                pred_models=predictions,
+                pred_models=estimates["model_probs"],
                 true_models=true_models,
                 model_names=self.model_names,
                 **kwargs.get("confusion_matrix_kwargs", {}),
             )
             figures["calibration"] = bf_plots.mc_calibration(
-                pred_models=predictions,
+                pred_models=estimates["model_probs"],
                 true_models=true_models,
                 model_names=self.model_names,
                 **kwargs.get("calibration_kwargs", {}),
             )
         else:
             figures["blind_coverage"] = bf_plots.blind_coverage(
-                pred_log_bayes_factors=predictions,
+                pred_log_bayes_factors=estimates["log_bayes_factors"],
                 true_models=true_models,
                 model_names=self.model_names,
                 **kwargs.get("blind_coverage_kwargs", {}),
             )
             figures["pairwise_bayes_factors"] = bf_plots.pairwise_bayes_factors(
-                pred_log_bayes_factors=predictions,
+                pred_log_bayes_factors=estimates["log_bayes_factors"],
                 true_models=true_models,
                 model_names=self.model_names,
                 **kwargs.get("pairwise_bayes_factors_kwargs", {}),
@@ -397,7 +384,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
             if true_log_bfs_fn is not None:
                 true_log_bfs = true_log_bfs_fn(test_data)
                 figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
-                    pred_log_bayes_factors=predictions,
+                    pred_log_bayes_factors=estimates["log_bayes_factors"],
                     true_log_bayes_factors=true_log_bfs,
                     true_models=true_models,
                     model_names=self.model_names,
@@ -436,7 +423,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
             - ``test_data_kwargs`` — forwarded to :meth:`simulate` when ``test_data``
               is an integer.
-            - ``predict_kwargs`` — forwarded to :meth:`predict`.
+            - ``estimate_kwargs`` — forwarded to :meth:`estimate`.
             - ``ece_kwargs`` — forwarded to
               :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`
               (PMP mode only).
@@ -456,7 +443,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 raise ValueError(f"No simulator attached. Cannot generate {test_data} test datasets.")
             test_data = self.simulate(test_data, **kwargs.get("test_data_kwargs", {}))
 
-        predictions = self.predict(conditions=test_data, **kwargs.get("predict_kwargs", {}))
+        estimates = self.estimate(conditions=test_data, **kwargs.get("estimate_kwargs", {}))
 
         if "model_indices" in test_data:
             true_models = test_data["model_indices"]
@@ -470,12 +457,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         is_pmp_mode = self.approximator.scoring_rule.is_pmp_rule
 
-        # predict(probs=True) always returns shape (N, M) PMPs — suitable for accuracy in both modes
-        metrics = {"accuracy": bf_metrics.model_comparison_accuracy(predictions, true_models)}
+        metrics = {"accuracy": bf_metrics.model_comparison_accuracy(estimates["model_probs"], true_models)}
 
         if is_pmp_mode:
             ece_result = bf_metrics.expected_calibration_error(
-                estimates=predictions,
+                estimates=estimates["model_probs"],
                 targets=true_models,
                 model_names=self.model_names,
                 **kwargs.get("ece_kwargs", {}),
@@ -485,13 +471,12 @@ class ModelComparisonWorkflow(BasicWorkflow):
         return metrics
 
     def sample(self, *args, **kwargs):
-        raise NotImplementedError("ModelComparisonWorkflow does not support sampling. Use predict() instead.")
-
-    def estimate(self, *args, **kwargs):
-        raise NotImplementedError("ModelComparisonWorkflow does not support estimate(). Use predict() instead.")
+        raise NotImplementedError("ModelComparisonWorkflow does not support sampling. Use estimate() instead.")
 
     def log_prob(self, *args, **kwargs):
         raise NotImplementedError("ModelComparisonWorkflow does not support log_prob().")
 
     def ancestral_sample(self, *args, **kwargs):
-        raise NotImplementedError("ModelComparisonWorkflow does not support ancestral_sample(). Use predict() instead.")
+        raise NotImplementedError(
+            "ModelComparisonWorkflow does not support ancestral_sample(). Use estimate() instead."
+        )

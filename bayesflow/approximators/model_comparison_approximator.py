@@ -263,69 +263,63 @@ class ModelComparisonApproximator(Approximator):
 
         return base_config | serialize(config)
 
-    def predict(
+    def estimate(
         self,
         *,
         conditions: Mapping[str, np.ndarray],
-        probs: bool = True,
         **kwargs,
-    ) -> np.ndarray:
+    ) -> dict[str, np.ndarray]:
         """
-        Returns predictions given input conditions, adapting output to the active scoring rule.
+        Returns estimates given input conditions, adapting output to the active scoring rule.
 
         For PMP scoring rules (e.g. :class:`~bayesflow.scoring_rules.CrossEntropyScore`,
         :class:`~bayesflow.scoring_rules.BrierScore`) the network outputs logits over
-        ``num_models`` classes; when ``probs=True`` (default) these are converted to
-        softmax probabilities.
+        ``num_models`` classes, converted to softmax probabilities.
 
         For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.LeakyExponentialScore`)
         the network outputs ``num_models - 1`` log Bayes factors
         :math:`\log K_{k,0} = \log p(x \mid \mathcal{M}_k) - \log p(x \mid \mathcal{M}_0)`
-        relative to the reference model :math:`\mathcal{M}_0`.  When ``probs=True`` these are
-        converted to posterior model probabilities by prepending the reference anchor
-        :math:`f_0 = 0` and applying softmax (assumes equal model priors).
+        relative to the reference model :math:`\mathcal{M}_0`, which are converted to posterior
+        model probabilities by prepending the reference anchor :math:`f_0 = 0` and applying
+        softmax (assumes equal model priors).
 
         Parameters
         ----------
         conditions : Mapping[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
-        probs : bool, optional
-            When ``True`` (default): return softmax probabilities of shape
-            ``(num_datasets, num_models)`` for both PMP and Bayes factor rules.
-            When ``False``: return raw logits for PMP rules or raw log Bayes factors
-            for Bayes factor rules, both of shape ``(num_datasets, num_models)`` or
-            ``(num_datasets, num_models - 1)`` respectively.
         **kwargs
             Additional keyword arguments forwarded to the adapter and classifier.
 
         Returns
         -------
-        np.ndarray
-            Shape ``(num_datasets, num_models)`` when ``probs=True`` (always), or when
-            ``probs=False`` with a PMP scoring rule.  Shape ``(num_datasets, num_models - 1)``
-            when ``probs=False`` with a Bayes factor scoring rule.
+        dict[str, np.ndarray]
+            Always contains ``"model_probs"`` of shape ``(num_datasets, num_models)``.
+            PMP rules additionally contain ``"logits"`` of shape ``(num_datasets, num_models)``.
+            Bayes factor rules additionally contain ``"log_bayes_factors"`` of shape
+            ``(num_datasets, num_models - 1)``.
         """
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions, **kwargs)
         inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         output = self.inference_network(xz=None, conditions=resolved_conditions, **inference_kwargs)
-        estimates = output["scoring_rule"]
+        raw = output["scoring_rule"]
 
-        if "logits" in estimates:
-            result = keras.ops.softmax(estimates["logits"]) if probs else estimates["logits"]
-        elif "log_bayes_factors" in estimates:
-            log_bfs = self.scoring_rule.to_bayes_factors(estimates["log_bayes_factors"])
-            if probs:
-                # Prepend f_0 = 0 (reference model anchor) and normalise via softmax.
-                # Gives P(M_k | x) for equal priors; see document Section 4.3.
-                f0 = keras.ops.zeros_like(log_bfs[..., :1])
-                result = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
-            else:
-                result = log_bfs
+        if "logits" in raw:
+            logits = raw["logits"]
+            return {
+                "logits": keras.ops.convert_to_numpy(logits),
+                "model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(logits)),
+            }
+        elif "log_bayes_factors" in raw:
+            log_bfs = self.scoring_rule.to_bayes_factors(raw["log_bayes_factors"])
+            f0 = keras.ops.zeros_like(log_bfs[..., :1])
+            model_probs = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
+            return {
+                "log_bayes_factors": keras.ops.convert_to_numpy(log_bfs),
+                "model_probs": keras.ops.convert_to_numpy(model_probs),
+            }
         else:
             raise RuntimeError(
-                f"Unrecognized scoring rule output keys: {list(estimates.keys())}. "
+                f"Unrecognized scoring rule output keys: {list(raw.keys())}. "
                 "Expected 'logits' (PMP rules) or 'log_bayes_factors' (Bayes factor rules)."
             )
-
-        return keras.ops.convert_to_numpy(result)

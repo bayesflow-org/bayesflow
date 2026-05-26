@@ -10,8 +10,15 @@ from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ModelComparisonApproximator
-from bayesflow.scoring_rules import CrossEntropyScore, ScoringRule
-from bayesflow.utils import find_network, find_summary_network, logging, format_duration, filter_kwargs
+from bayesflow.scoring_rules import ScoringRule
+from bayesflow.utils import (
+    find_network,
+    find_scoring_rule,
+    find_summary_network,
+    logging,
+    format_duration,
+    filter_kwargs,
+)
 from bayesflow.diagnostics import plots as bf_plots
 from bayesflow.diagnostics import metrics as bf_metrics
 
@@ -38,17 +45,16 @@ class ModelComparisonWorkflow(BasicWorkflow):
         The classifier backbone used inside the approximator (default: ``"mlp"``).
         Accepts a Keras layer instance or any name recognised by
         :func:`~bayesflow.utils.find_network` (e.g. ``"mlp"``).
-    scoring_rule : ScoringRule, optional
-        Scoring rule used to train the classifier. Determines what the network
-        learns to estimate:
+    scoring_rule : ScoringRule or str, optional
+        Scoring rule used to train the classifier. Accepts a
+        :class:`~bayesflow.scoring_rules.ScoringRule` instance or a string recognised by
+        :func:`~bayesflow.utils.find_scoring_rule` (default: ``"cross_entropy"``).
+        Determines what the network learns to estimate:
 
-        - **PMP rules** (:class:`~bayesflow.scoring_rules.CrossEntropyScore` (default),
-          :class:`~bayesflow.scoring_rules.BrierScore`,
-          :class:`~bayesflow.scoring_rules.PolynomialScore`): network outputs softmax
-          probabilities over all ``num_models`` models.
-        - **Bayes factor rules** (:class:`~bayesflow.scoring_rules.ExponentialScore`,
-          :class:`~bayesflow.scoring_rules.LogisticScore`,
-          :class:`~bayesflow.scoring_rules.LeakyExponentialScore`, etc.): network outputs
+        - **PMP rules** (``"cross_entropy"``, ``"brier"``, ``"polynomial"``): network
+          outputs softmax probabilities over all ``num_models`` models.
+        - **Bayes factor rules** (``"exponential"``, ``"scaled_exponential"``,
+          ``"logistic"``, ``"power_logistic"``, ``"leaky_exponential"``): network outputs
           ``num_models - 1`` log Bayes factors relative to model 0.
     summary_network : SummaryNetwork or str, optional
         Optional summary network for data compression (default: None).
@@ -105,7 +111,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         adapter: Adapter = None,
         classifier_network: keras.Layer | str = "mlp",
         summary_network: SummaryNetwork | str = None,
-        scoring_rule: ScoringRule = None,
+        scoring_rule: ScoringRule | str = None,
         initial_learning_rate: float = 5e-4,
         optimizer: keras.optimizers.Optimizer | type = None,
         checkpoint_filepath: str = None,
@@ -161,7 +167,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
             num_models=num_models,
             classifier_network=find_network(classifier_network, **kwargs.get("classifier_kwargs", {})),
             summary_network=find_summary_network(summary_network, **kwargs.get("summary_kwargs", {})),
-            scoring_rule=scoring_rule if scoring_rule is not None else CrossEntropyScore(),
+            scoring_rule=find_scoring_rule(scoring_rule if scoring_rule is not None else "cross_entropy"),
             adapter=adapter,
             standardize=standardize,
             **filter_kwargs(kwargs, ModelComparisonApproximator.__init__),

@@ -2,6 +2,8 @@ import pytest
 
 import keras
 
+import bayesflow as bf
+from bayesflow.networks import CouplingFlow
 from bayesflow.utils.serialization import serializable
 
 
@@ -60,6 +62,36 @@ def summary_network(request):
                 return self.inner(x, training=kwargs.get("stage") == "training")
 
         return Custom()
+
+
+@pytest.fixture
+def tiny_workflow(tmp_path):
+    """Trained minimal workflow with a full .keras checkpoint."""
+    workflow = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+        checkpoint_filepath=str(tmp_path),
+        checkpoint_name="model",
+        save_weights_only=False,
+    )
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    return workflow
+
+
+@pytest.fixture
+def tiny_workflow_weights_only(tmp_path):
+    """Trained minimal workflow with a weights-only .weights.h5 checkpoint."""
+    workflow = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+        checkpoint_filepath=str(tmp_path),
+        checkpoint_name="model",
+        save_weights_only=True,
+    )
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    return workflow
 
 
 @pytest.fixture

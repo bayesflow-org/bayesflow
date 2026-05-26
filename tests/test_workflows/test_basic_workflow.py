@@ -1,5 +1,6 @@
 import os
 
+import pytest
 import keras
 import numpy as np
 
@@ -133,3 +134,97 @@ def test_ancestral_sampling():
 
     assert "beta" in samples
     assert samples["beta"].shape == (n_test, local_n, num_samples, 1)
+
+
+def test_load_approximator_full_model(tiny_workflow):
+    """load_approximator() with no path restores a full .keras checkpoint."""
+    from bayesflow.networks import CouplingFlow
+
+    original = tiny_workflow.approximator
+    workflow2 = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        checkpoint_filepath=tiny_workflow.checkpoint_filepath,
+        checkpoint_name="model",
+        save_weights_only=False,
+    )
+    workflow2.load_approximator()
+    assert_models_equal(original, workflow2.approximator)
+
+
+def test_load_approximator_weights_only(tiny_workflow_weights_only):
+    """load_approximator() with no path restores a weights-only .weights.h5 checkpoint."""
+    from bayesflow.networks import CouplingFlow
+
+    workflow = tiny_workflow_weights_only
+    # Build the approximator on a small batch so weights are initialised before loading
+    workflow.approximator.sample(conditions=workflow.simulate(2), num_samples=1)
+    original = workflow.approximator
+
+    workflow2 = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+        checkpoint_filepath=workflow.checkpoint_filepath,
+        checkpoint_name="model",
+        save_weights_only=True,
+    )
+    # Build before loading weights
+    workflow2.approximator.sample(conditions=workflow2.simulate(2), num_samples=1)
+    workflow2.load_approximator()
+    assert_models_equal(original, workflow2.approximator)
+
+
+def test_load_approximator_explicit_path(tiny_workflow):
+    """load_approximator(path=...) accepts an explicit file path."""
+    from bayesflow.networks import CouplingFlow
+
+    explicit_path = os.path.join(tiny_workflow.checkpoint_filepath, "model.keras")
+    workflow2 = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+    )
+    workflow2.load_approximator(path=explicit_path)
+    assert_models_equal(tiny_workflow.approximator, workflow2.approximator)
+
+
+def test_load_approximator_restore_flag(tiny_workflow):
+    """restore=True in the constructor automatically loads the checkpoint."""
+    from bayesflow.networks import CouplingFlow
+
+    workflow2 = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+        checkpoint_filepath=tiny_workflow.checkpoint_filepath,
+        checkpoint_name="model",
+        restore=True,
+    )
+    assert_models_equal(tiny_workflow.approximator, workflow2.approximator)
+
+
+def test_load_approximator_no_path_no_checkpoint_raises():
+    """load_approximator() raises ValueError when no path or checkpoint_filepath is set."""
+    from bayesflow.networks import CouplingFlow
+
+    workflow = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+    )
+    with pytest.raises(ValueError, match="No path provided"):
+        workflow.load_approximator()
+
+
+def test_load_approximator_missing_file_raises(tmp_path):
+    """load_approximator() raises FileNotFoundError when the checkpoint file is absent."""
+    from bayesflow.networks import CouplingFlow
+
+    workflow = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        checkpoint_filepath=str(tmp_path),
+        checkpoint_name="ghost",
+    )
+    with pytest.raises(FileNotFoundError, match="No checkpoint found"):
+        workflow.load_approximator()

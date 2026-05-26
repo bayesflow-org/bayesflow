@@ -11,14 +11,13 @@ def test_is_pmp_rule_pmp_rules():
 
 
 def test_is_pmp_rule_bf_rules():
-    from bayesflow.scoring_rules import ExponentialScore, ScaledExponentialScore, LeakyExponentialScore
-    from bayesflow.scoring_rules import LogisticScore, PowerLogisticScore
+    from bayesflow.scoring_rules import ExponentialScore, LogisticScore
 
     assert ExponentialScore().is_pmp_rule is False
-    assert ScaledExponentialScore().is_pmp_rule is False
-    assert LeakyExponentialScore().is_pmp_rule is False
+    assert ExponentialScore(alpha=2.0).is_pmp_rule is False
+    assert ExponentialScore(leaky=2.0).is_pmp_rule is False
     assert LogisticScore().is_pmp_rule is False
-    assert PowerLogisticScore().is_pmp_rule is False
+    assert LogisticScore(alpha=1.0).is_pmp_rule is False
 
 
 def test_to_bayes_factors_exponential_is_identity():
@@ -31,10 +30,10 @@ def test_to_bayes_factors_exponential_is_identity():
 
 
 def test_to_bayes_factors_scaled_exponential():
-    from bayesflow.scoring_rules import ScaledExponentialScore
+    from bayesflow.scoring_rules import ExponentialScore
 
     alpha = 3.0
-    rule = ScaledExponentialScore(alpha=alpha)
+    rule = ExponentialScore(alpha=alpha)
     f = keras.ops.convert_to_tensor([[1.0, -2.0]])
     result = rule.to_bayes_factors(f)
     assert keras.ops.allclose(result, f * alpha)

@@ -82,16 +82,16 @@ def exponential_score():
 
 @pytest.fixture()
 def scaled_exponential_score():
-    from bayesflow.scoring_rules import ScaledExponentialScore
+    from bayesflow.scoring_rules import ExponentialScore
 
-    return ScaledExponentialScore(alpha=2.0)
+    return ExponentialScore(alpha=2.0)
 
 
 @pytest.fixture()
 def leaky_exponential_score():
-    from bayesflow.scoring_rules import LeakyExponentialScore
+    from bayesflow.scoring_rules import ExponentialScore
 
-    return LeakyExponentialScore()
+    return ExponentialScore(leaky=2.0)
 
 
 @pytest.fixture()
@@ -103,9 +103,9 @@ def logistic_score():
 
 @pytest.fixture()
 def power_logistic_score():
-    from bayesflow.scoring_rules import PowerLogisticScore
+    from bayesflow.scoring_rules import LogisticScore
 
-    return PowerLogisticScore()
+    return LogisticScore(alpha=1.0)
 
 
 @pytest.fixture(

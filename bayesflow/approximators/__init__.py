@@ -10,7 +10,6 @@ from .scoring_rule_approximator import ScoringRuleApproximator
 from .model_comparison_approximator import ModelComparisonApproximator
 from .ratio_approximator import RatioApproximator
 from .ensemble_approximator import EnsembleApproximator
-from .semi_supervised_approximator import SemiSupervisedApproximator
 from ..utils._docs import _add_imports_to_all
 
 _add_imports_to_all(include_modules=[])

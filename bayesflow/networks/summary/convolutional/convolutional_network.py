@@ -181,6 +181,7 @@ class ConvolutionalNetwork(SummaryNetwork):
             "summary_dim": self.summary_dim,
             "widths": self.widths,
             "blocks_per_stage": self.blocks_per_stage,
+            "downsample_stage": self.downsample_stage,
             "norm": self.norm,
             "residual": self.residual,
             "groups": self.groups,

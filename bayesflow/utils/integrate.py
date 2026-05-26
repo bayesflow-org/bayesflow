@@ -18,7 +18,7 @@ StateDict = Dict[str, ArrayLike]
 
 
 DETERMINISTIC_METHODS = ["euler", "rk45", "tsit5"]
-STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin"]
+STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin", "glass"]
 
 
 def _check_all_nans(state: StateDict):
@@ -1251,6 +1251,286 @@ def integrate_langevin(
     return final_state
 
 
+def _glass_alpha_sigma(noise_schedule, t: Tensor) -> Tuple[Tensor, Tensor]:
+    """Return (alpha_t, sigma_t) for the given schedule at time t.
+
+    Accepts either the string ``"flow_matching"`` (alpha_t = t, sigma_t = 1 - t)
+    or any ``NoiseSchedule`` instance.
+    """
+    if noise_schedule == "flow_matching":
+        return t, 1.0 - t
+    log_snr = noise_schedule.get_log_snr(t, training=False)
+    return noise_schedule.get_alpha_sigma(log_snr)
+
+
+def _glass_g_inv(noise_schedule, v: Tensor) -> Tensor:
+    """
+    Invert g(t) = sigma_t^2 / alpha_t^2 to obtain t* s.t. g(t*) = v.
+
+    For implemented diffusion noise schedule g(t) = exp(-lambda_t).
+    """
+    if noise_schedule == "flow_matching":
+        t_star = 1.0 / (1.0 + keras.ops.sqrt(v))
+    else:
+        # g(t) = exp(-lamda_t)
+        log_snr_star = -keras.ops.log(v)
+        t_star = noise_schedule.get_t_from_log_snr(log_snr_star, training=False)
+    return t_star
+
+
+def _glass_alpha_sigma_dot(noise_schedule, t: Tensor) -> Tuple[Tensor, Tensor]:
+    """Return (alpha_dot_t, sigma_dot_t) — analytical schedule derivatives at t.
+
+    Uses the identity beta(t) = d/dt log(1 + e^{-lambda(t)}) = -lambda_dot * sigmoid(-lambda),
+    plus the variance-preserving / variance-exploding parameterizations of (alpha, sigma)
+    in terms of lambda.
+
+    Flow matching:        alpha_t = t,  sigma_t = 1 - t   (closed form)
+    Variance preserving:  alpha_dot = -0.5 * alpha * beta
+                          sigma_dot =  0.5 * alpha^2 * beta / sigma
+    Variance exploding:   alpha_dot = 0
+                          sigma_dot = beta * (1 + sigma^2) / (2 * sigma)
+    """
+    if noise_schedule == "flow_matching":
+        ones = keras.ops.ones_like(t)
+        return ones, -ones
+
+    log_snr = noise_schedule.get_log_snr(t, training=False)
+    alpha, sigma = noise_schedule.get_alpha_sigma(log_snr)
+    beta = noise_schedule.derivative_log_snr(log_snr, training=False)
+
+    if noise_schedule._variance_type == "preserving":
+        alpha_dot = -0.5 * alpha * beta
+        sigma_dot = 0.5 * alpha**2 * beta / sigma
+    elif noise_schedule._variance_type == "exploding":
+        alpha_dot = keras.ops.zeros_like(beta)
+        sigma_dot = beta * (1.0 + sigma**2) / (2.0 * sigma)
+    else:
+        raise ValueError(f"Unknown variance type for GLASS: {noise_schedule._variance_type!r}")
+    return alpha_dot, sigma_dot
+
+
+def _glass_suf_stat(
+    x_t: Tensor,
+    x_bar_s: Tensor,
+    alpha_t: Tensor,
+    sigma_t: Tensor,
+    alpha_bar_s: Tensor,
+    sigma_bar_s: Tensor,
+    gamma_bar: Tensor,
+) -> Tuple[Tensor, Tensor]:
+    """
+    Compute the GLASS sufficient statistic S.
+
+    For the structured covariance
+
+        Sigma = [[sigma_t²,               sigma_t² * gamma_bar           ],
+                 [sigma_t² * gamma_bar,   sigma_bar_s² + gamma_bar² * sigma_t²]]
+
+    det = sigma_t² * sigma_bar_s², giving closed-form weights::
+
+        w_t  = alpha_t / sigma_t²  -  alpha_bar_s * gamma_bar / sigma_bar_s²
+        w_b  = alpha_bar_s / sigma_bar_s²
+        norm = alpha_t² / sigma_t²  +  alpha_bar_s² / sigma_bar_s²
+        S    = (w_t * x_t + w_b * x_bar_s) / norm
+
+    Returns ``(S, norm)``.
+    """
+    sigma_t_sq = sigma_t**2
+    sigma_bar_s_sq = sigma_bar_s**2
+
+    w_t = alpha_t / sigma_t_sq - alpha_bar_s * gamma_bar / sigma_bar_s_sq
+    w_b = alpha_bar_s / sigma_bar_s_sq
+    norm = alpha_t**2 / sigma_t_sq + alpha_bar_s**2 / sigma_bar_s_sq
+    norm = keras.ops.maximum(norm, keras.ops.cast(1e-12, keras.ops.dtype(norm)))
+    suf_stat = (w_t * x_t + w_b * x_bar_s) / norm
+    return suf_stat, norm
+
+
+def glass_step(
+    fn: Callable,
+    state: StateDict,
+    time: ArrayLike,
+    step_size: ArrayLike,
+    noise_schedule,
+    *,
+    x_t: StateDict,
+    alpha_t,
+    sigma_t,
+    alpha_bar,
+    sigma_bar,
+    gamma_bar,
+    sigma_bar_0: float,
+) -> Tuple[StateDict, ArrayLike]:
+    """
+    Single Euler step of the GLASS inner ODE at inner time s in [0, 1).
+
+    ``fn`` returns the velocity field; denoiser is derived using the noise schedule ``noise_schedule``.
+    """
+    dtype = keras.ops.dtype(next(iter(x_t.values())))
+    s_val = keras.ops.cast(time, dtype)
+
+    alpha_bar_s = s_val * alpha_bar
+    sigma_bar_s = (1 - s_val) * sigma_bar_0 + s_val * sigma_bar
+    dot_alpha_bar_s = alpha_bar
+    dot_sigma_bar_s = sigma_bar - sigma_bar_0
+
+    w1 = dot_sigma_bar_s / sigma_bar_s
+    w2 = dot_alpha_bar_s - alpha_bar_s * w1
+    w3 = -gamma_bar * w1
+
+    suf_stats = {}
+    norm = None
+    for key, x_bar_s in state.items():
+        suf_stat, norm = _glass_suf_stat(x_t[key], x_bar_s, alpha_t, sigma_t, alpha_bar_s, sigma_bar_s, gamma_bar)
+        suf_stats[key] = suf_stat
+
+    t_star = _glass_g_inv(noise_schedule, 1.0 / norm)
+    alpha_t_star, sigma_t_star = _glass_alpha_sigma(noise_schedule, t_star)
+    dot_alpha_t_star, dot_sigma_t_star = _glass_alpha_sigma_dot(noise_schedule, t_star)
+    denom = dot_alpha_t_star * sigma_t_star - alpha_t_star * dot_sigma_t_star
+
+    z_in = {key: alpha_t_star * suf_stat for key, suf_stat in suf_stats.items()}
+    fn_out = fn(t_star, **filter_kwargs(z_in, fn))
+    missing_keys = set(state) - set(fn_out)
+    if missing_keys:
+        raise ValueError(f"GLASS model output is missing state keys: {sorted(missing_keys)}.")
+
+    new_state = {}
+    for key, x_bar_s in state.items():
+        d_val = (sigma_t_star * fn_out[key] - dot_sigma_t_star * z_in[key]) / denom
+
+        velocity = w1 * x_bar_s + w2 * d_val + w3 * x_t[key]
+        new_state[key] = x_bar_s + step_size * velocity
+
+    return new_state, time + step_size
+
+
+def integrate_glass(
+    fn: Callable,
+    state: StateDict,
+    start_time: ArrayLike,
+    stop_time: ArrayLike,
+    steps: int,
+    seed: int | keras.random.SeedGenerator | None,
+    noise_schedule,
+    inner_steps: int = 1,
+    rho: float = 0.4,
+    sigma_bar_0: float = 1.0,
+    **kwargs,
+) -> StateDict:
+    """
+    Sample from the Markov transition p_{t'|t}(·|x_t) using the GLASS inner ODE [1].
+
+    Constructs a deterministic inner ODE whose endpoint approximates a draw
+    from p_{t'|t}(·|x_t) implied by the trained model. Allows stochastic sampling from a flow matching model.
+
+    [1] Holderrieth et al. (2026) "GLASS Flows: Transition Sampling for Alignment of Flow and Diffusion Models"
+
+    Parameters
+    ----------
+    fn : callable
+        Model forward function in integrate-compatible form. It receives
+        ``fn(time, **state)`` velocity field and returns a state dictionary with matching keys.
+    state : dict
+        Current trajectory state.
+    start_time : float or Tensor
+        Start outer time.
+    stop_time : float or Tensor
+        Target outer time.
+    steps : int
+        Number of GLASS transitions. K=1 standard flow matching integration.
+    noise_schedule : "flow_matching" or NoiseSchedule, optional
+        Outer noise schedule.  Pass "flow_matching" for flow matching; pass the model's
+        ".noise_schedule" attribute for diffusion models.
+        Note that flow matching and diffusion models operate in different time directions.
+    seed : int, SeedGenerator, or None
+        Seed for the stochastic inner initialization.
+    inner_steps : int
+        Inner GLASS-ODE steps M. M=1 recovers DDIM.
+    rho : float, optional
+        Correlation ρ ∈ [-1, 1]. Default 0.4.
+    sigma_bar_0 : float, optional
+        Initial inner noise level (> 0).  Default 1.
+    Returns
+    -------
+    dict
+        State dictionary containing the approximate transition sample.
+
+    """
+    if not isinstance(steps, int) or steps <= 0:
+        raise ValueError(f"GLASS integration requires a positive integer number of steps, got {steps}.")
+    if start_time is None or stop_time is None:
+        raise ValueError(
+            "Please provide start_time and stop_time for GLASS integration, was "
+            f"'start_time={start_time}', 'stop_time={stop_time}'."
+        )
+    if not state:
+        raise ValueError("GLASS integration requires a non-empty state dictionary.")
+    if sigma_bar_0 < 0:
+        raise ValueError(f"sigma_bar_0 must be > 0, got {sigma_bar_0}.")
+
+    x_t = {key: keras.ops.convert_to_tensor(value) for key, value in state.items()}
+    dtype = keras.ops.dtype(next(iter(x_t.values())))
+    t_val = keras.ops.cast(start_time, dtype)
+    t_prime_val = keras.ops.cast(stop_time, dtype)
+    rho_val = keras.ops.cast(rho, dtype)
+    sigma_bar_0_val = keras.ops.cast(sigma_bar_0, dtype)
+
+    glass_transitions = steps  # K
+    outer_step_size = (t_prime_val - t_val) / keras.ops.cast(glass_transitions, dtype)  # K
+    inner_step_size = keras.ops.cast(1.0 / inner_steps, dtype)
+
+    # Pre-generate noise for all outer steps
+    noise_per_step = {}
+    for key, value in x_t.items():
+        noise_per_step[key] = keras.random.normal(
+            (glass_transitions, *keras.ops.shape(value)),
+            dtype=keras.ops.dtype(value),
+            seed=seed,
+        )
+
+    def outer_body(i, current_state):
+        i_f = keras.ops.cast(i, dtype)
+        t_curr = t_val + i_f * outer_step_size
+        t_next = t_val + (i_f + 1.0) * outer_step_size
+
+        alpha_curr, sigma_curr = _glass_alpha_sigma(noise_schedule, t_curr)
+        alpha_next, sigma_next = _glass_alpha_sigma(noise_schedule, t_next)
+
+        # Derived scalars for this sub-interval
+        gamma_bar_i = rho_val * sigma_next / sigma_curr
+        alpha_bar_i = alpha_next - gamma_bar_i * alpha_curr
+        sigma_bar_i = keras.ops.sqrt(sigma_next**2 * (1.0 - rho_val**2))
+
+        inner_state_i = {
+            key: gamma_bar_i * current_state[key] + sigma_bar_0_val * noise_per_step[key][i] for key in current_state
+        }
+
+        def inner_body(_j, _inner_loop_state):
+            _state, _time = _inner_loop_state
+            _state, _time = glass_step(
+                fn,
+                _state,
+                _time,
+                inner_step_size,
+                noise_schedule=noise_schedule,
+                x_t=current_state,
+                alpha_t=alpha_curr,
+                sigma_t=sigma_curr,
+                alpha_bar=alpha_bar_i,
+                sigma_bar=sigma_bar_i,
+                gamma_bar=gamma_bar_i,
+                sigma_bar_0=sigma_bar_0_val,
+            )
+            return _state, _time
+
+        inner_state_i, _ = keras.ops.fori_loop(0, inner_steps, inner_body, (inner_state_i, keras.ops.cast(0.0, dtype)))
+        return inner_state_i
+
+    return keras.ops.fori_loop(0, glass_transitions, outer_body, x_t)
+
+
 def integrate_stochastic(
     drift_fn: Callable,
     diffusion_fn: Callable,
@@ -1324,6 +1604,22 @@ def integrate_stochastic(
 
     is_adaptive = isinstance(steps, str) and steps in ["adaptive", "dynamic"]
 
+    if method == "glass":
+        if is_adaptive:
+            raise ValueError("Adaptive step sizing is not supported for the 'glass' method.")
+        if isinstance(steps, Sequence) or isinstance(steps, np.ndarray) or keras.ops.is_tensor(steps):
+            raise ValueError("Scheduled integration is not supported for the 'glass' method.")
+        return integrate_glass(
+            fn=drift_fn,
+            state=state,
+            start_time=start_time,
+            stop_time=stop_time,
+            steps=steps,
+            noise_schedule=noise_schedule or "flow_matching",
+            seed=seed,
+            **kwargs,
+        )
+
     if is_adaptive:
         if start_time is None or stop_time is None:
             raise ValueError("Please provide start_time and stop_time for adaptive integration.")
@@ -1375,7 +1671,7 @@ def integrate_stochastic(
 
             z_history = None
             if keras.backend.backend() == "jax":
-                warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
+                warning(f"JAX backend needs to preallocate random samples for 'max_steps={loop_steps}'.")
                 z_history = {}
                 for key, val in state.items():
                     shape = keras.ops.shape(val)
@@ -1404,7 +1700,7 @@ def integrate_stochastic(
     z_history = None
     z_extra_history = None if method not in ["sea", "shark"] else {}
     if keras.backend.backend() == "jax":
-        warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
+        warning(f"JAX backend needs to preallocate random samples for 'max_steps={loop_steps}'.")
         z_history = {}
         for key, val in state.items():
             shape = keras.ops.shape(val)

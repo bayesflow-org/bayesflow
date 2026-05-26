@@ -85,6 +85,7 @@ class Sampler:
                 conditions=None,
                 sample_shape=sample_shape,
                 seed=seed,
+                masking_names=("target_mask", "targets_fixed"),  # only needed for unconditional sampling
                 **kwargs,
             )
 
@@ -119,16 +120,17 @@ class Sampler:
         num_samples: int,
         conditions: Tensor | None,
         sample_shape: Literal["infer"] | Sequence[int] | int,
+        masking_names: Sequence[str] = (),
         seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         conditions = self.repeat_and_flatten_conditions(conditions, num_samples)
 
-        # Keep tensor-valued kwargs (e.g. masks) aligned with the flattened conditions.
-        # Only repeat tensors that have a batch dimension (ndim >= 2); feature-level
-        # tensors like target_mask (shape [feature_dim]) are passed through unchanged.
+        # tensors like target_mask (shape [feature_dim]) are passed through unchanged when no conditions are given
         kwargs = {
-            k: self.repeat_and_flatten_conditions(v, num_samples) if hasattr(v, "shape") and len(v.shape) >= 2 else v
+            k: self.repeat_and_flatten_conditions(v, num_samples)
+            if hasattr(v, "shape") and k not in masking_names
+            else v
             for k, v in kwargs.items()
         }
 

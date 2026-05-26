@@ -2,10 +2,9 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
-from bayesflow.utils.decorators import sanitize_input_shape
-from bayesflow.utils.serialization import serializable
-from ....subnets import MLP
+from bayesflow.utils.serialization import serializable, serialize, deserialize
 
+from .feedforward_net import FFN
 from .multihead_attention import MultiHeadAttention
 
 
@@ -29,55 +28,64 @@ class PoolingByMultiHeadAttention(keras.Layer):
         num_heads: int = 4,
         seed_dim: int = None,
         dropout: float = 0.05,
-        mlp_depth: int = 2,
-        mlp_width: int = 128,
-        mlp_activation: str = "gelu",
-        kernel_initializer: str = "lecun_normal",
-        use_bias: bool = True,
+        expansion_factor: float = 4.0,
+        glu_variant: str = "swiglu",
+        kernel_initializer: str = "glorot_uniform",
+        use_bias: bool = False,
         layer_norm: bool = True,
         **kwargs,
     ):
         """
         Creates a PoolingByMultiHeadAttention (PMA) block for permutation-invariant set encoding using
-        multi-head attention pooling. Can also be used us a building block for `DeepSet` architectures.
+        multi-head attention pooling. Can also be used as a building block for ``DeepSet`` architectures.
 
         Parameters
         ----------
-        num_seeds : int, optional (default=1)
-            Number of seed vectors used for pooling. Acts as the number of summary outputs.
-        embed_dim : int, optional (default=64)
-            Dimensionality of the embedding space used in the attention mechanism.
-        num_heads : int, optional (default=4)
-            Number of attention heads in the multi-head attention block.
-        seed_dim : int or None, optional (default=None)
-            Dimensionality of each seed vector. If None, defaults to `embed_dim`.
-        dropout : float, optional (default=0.05)
-            Dropout rate applied to attention and MLP layers.
-        mlp_depth : int, optional (default=2)
-            Number of layers in the feedforward MLP applied before attention.
-        mlp_width : int, optional (default=128)
-            Number of units in each hidden layer of the MLP.
-        mlp_activation : str, optional (default="gelu")
-            Activation function used in the MLP.
-        kernel_initializer : str, optional (default="lecun_normal")
-            Initializer for kernel weights in dense layers.
-        use_bias : bool, optional (default=True)
-            Whether to include bias terms in dense layers.
-        layer_norm : bool, optional (default=True)
-            Whether to apply layer normalization before and after attention.
+        num_seeds : int, optional
+            Number of seed vectors used for pooling. Acts as the number of summary outputs,
+            by default 1.
+        embed_dim : int, optional
+            Dimensionality of the embedding space used in the attention mechanism, by default 64.
+        num_heads : int, optional
+            Number of attention heads in the multi-head attention block, by default 4.
+        seed_dim : int or None, optional
+            Dimensionality of each seed vector. If None, defaults to ``embed_dim``.
+        dropout : float, optional
+            Dropout rate applied inside the attention sublayer, by default 0.05.
+        expansion_factor : float, optional
+            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.
+        glu_variant : str, optional
+            GLU activation variant for both the pre-attention FFN and the MAB's internal FFN.
+            One of ``"swiglu"``, ``"geglu"``, ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
+        kernel_initializer : str, optional
+            Initializer for kernel weights in all dense layers, by default ``"glorot_uniform"``.
+        use_bias : bool, optional
+            Whether to include bias terms in dense layers, by default False.
+        layer_norm : bool, optional
+            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
         **kwargs
             Additional keyword arguments passed to the Keras Layer base class.
         """
 
         super().__init__(**layer_kwargs(kwargs))
 
+        self.num_seeds = num_seeds
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.seed_dim = seed_dim
+        self.dropout_rate = dropout
+        self.expansion_factor = expansion_factor
+        self.glu_variant = glu_variant
+        self.kernel_initializer = kernel_initializer
+        self.use_bias = use_bias
+        self.layer_norm = layer_norm
+
         self.mab = MultiHeadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
             dropout=dropout,
-            mlp_depth=mlp_depth,
-            mlp_width=mlp_width,
-            mlp_activation=mlp_activation,
+            expansion_factor=expansion_factor,
+            glu_variant=glu_variant,
             kernel_initializer=kernel_initializer,
             use_bias=use_bias,
             layer_norm=layer_norm,
@@ -89,11 +97,14 @@ class PoolingByMultiHeadAttention(keras.Layer):
             trainable=True,
         )
 
-        self.feedforward = MLP(
-            widths=(mlp_width,) * mlp_depth,
-            activation=mlp_activation,
-            kernel_initializer=kernel_initializer,
+        # Pre-attention FFN: refines set representations before pooling (rFF in the paper)
+        self.feedforward = FFN(
+            embed_dim=embed_dim,
+            expansion_factor=expansion_factor,
+            glu_variant=glu_variant,
+            use_bias=use_bias,
             dropout=dropout,
+            kernel_initializer=kernel_initializer,
         )
 
     def call(self, x: Tensor, training: bool = False) -> Tensor:
@@ -101,27 +112,52 @@ class PoolingByMultiHeadAttention(keras.Layer):
 
         Parameters
         ----------
-        x  : Tensor (e.g., np.ndarray, tf.Tensor, ...)
-            Input of shape (batch_size, set_size, input_dim)
-            Since this is self-attention, the input set is used
-            as a query (Q), key (K), and value (V)
-        training   : boolean, optional (default - True)
-            Passed to the optional internal dropout and normalization
-            layers to distinguish between train and test time behavior.
+        x : Tensor
+            Input of shape ``(batch_size, set_size, input_dim)``.
+        training : bool, optional
+            Passed to dropout and norm layers, by default False.
 
         Returns
         -------
-        summary : Tensor
-            Output of shape (batch_size, num_seeds * summary_dim)
+        Tensor
+            Output of shape ``(batch_size, num_seeds * embed_dim)``.
         """
-
         set_x_transformed = self.feedforward(x, training=training)
         batch_size = keras.ops.shape(x)[0]
-        seed_vector_expanded = keras.ops.expand_dims(self.seed_vector, axis=0)
-        seed_tiled = keras.ops.tile(seed_vector_expanded, [batch_size, 1, 1])
+        seed_tiled = keras.ops.tile(keras.ops.expand_dims(self.seed_vector, axis=0), [batch_size, 1, 1])
         summaries = self.mab(seed_tiled, set_x_transformed, training=training)
         return keras.ops.reshape(summaries, (keras.ops.shape(summaries)[0], -1))
 
-    @sanitize_input_shape
+    def build(self, input_shape):
+        if self.built:
+            return
+
+        input_shape = input_shape
+        self.feedforward.build(input_shape)
+        ffn_out_shape = self.feedforward.compute_output_shape(input_shape)
+        seed_shape = (input_shape[0], self.num_seeds, self.seed_dim if self.seed_dim is not None else self.embed_dim)
+        self.mab.build(seed_shape, ffn_out_shape)
+
     def compute_output_shape(self, input_shape):
-        return keras.ops.shape(self.call(keras.ops.zeros(input_shape)))
+        return (input_shape[0], self.num_seeds * self.embed_dim)
+
+    def get_config(self):
+        base_config = super().get_config()
+        return base_config | serialize(
+            {
+                "num_seeds": self.num_seeds,
+                "embed_dim": self.embed_dim,
+                "num_heads": self.num_heads,
+                "seed_dim": self.seed_dim,
+                "dropout": self.dropout_rate,
+                "expansion_factor": self.expansion_factor,
+                "glu_variant": self.glu_variant,
+                "kernel_initializer": self.kernel_initializer,
+                "use_bias": self.use_bias,
+                "layer_norm": self.layer_norm,
+            }
+        )
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))

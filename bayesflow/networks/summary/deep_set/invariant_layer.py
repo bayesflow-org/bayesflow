@@ -3,9 +3,7 @@ from collections.abc import Sequence
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs
-from bayesflow.utils import find_pooling
-from bayesflow.utils.decorators import sanitize_input_shape
+from bayesflow.utils import find_pooling, layer_kwargs
 from bayesflow.utils.serialization import serializable
 
 from ...subnets import MLP
@@ -13,102 +11,110 @@ from ...subnets import MLP
 
 @serializable("bayesflow.networks")
 class InvariantLayer(keras.Layer):
-    """Implements an invariant module performing a permutation-invariant transform.
+    """Implements a permutation-invariant transform with Pre-LN RMSNorm.
 
-    For details and rationale, see:
+    Applies the following transformation (no residual — pooling changes the set dimension):
 
-    [1] Bloem-Reddy, B., & Teh, Y. W. (2020). Probabilistic Symmetries and Invariant Neural Networks.
+        x → RMSNorm → inner MLP → pool → RMSNorm → outer MLP → output
+
+    For details and rationale of the basic ideas, see:
+
+    Bloem-Reddy, B., & Teh, Y. W. (2020). Probabilistic Symmetries and Invariant Neural Networks.
     J. Mach. Learn. Res., 21, 90-1. https://www.jmlr.org/papers/volume21/19-322/19-322.pdf
+
+    Parameters
+    ----------
+    embed_dim : int, optional
+        Output dimensionality and the working width of both MLPs. Default is 128.
+    mlp_widths : Sequence[int], optional
+        Hidden layer widths for both the inner and outer MLPs. The final
+        output of each MLP is always ``embed_dim``. Default is ``(128,)``.
+    pooling : str, optional
+        Pooling operation applied after the inner MLP, e.g. ``"mean"``.
+        Default is ``"mean"``.
+    activation : str, optional
+        Activation function for MLP layers. Default is ``"gelu"``.
+    kernel_initializer : str, optional
+        Weight initializer for Dense projections. Default is ``"he_normal"``.
+    dropout : float or None, optional
+        Dropout rate in MLP layers. Default is 0.05.
+    layer_norm : bool, optional
+        Whether to apply Pre-LN RMSNorm before each MLP. Default is True.
+    **kwargs
+        Additional keyword arguments forwarded to ``keras.Layer``.
     """
 
     def __init__(
         self,
-        mlp_widths_inner: Sequence[int] = (128, 128),
-        mlp_widths_outer: Sequence[int] = (128, 128),
+        embed_dim: int = 128,
+        mlp_widths: Sequence[int] = (128,),
+        pooling: str = "mean",
         activation: str = "gelu",
         kernel_initializer: str = "he_normal",
-        dropout: int | float | None = 0.05,
-        pooling: str = "mean",
-        pooling_kwargs: dict = None,
+        dropout: float | None = 0.05,
+        layer_norm: bool = True,
         **kwargs,
     ):
-        """
-        Initializes an invariant module representing a learnable permutation-invariant function with an option for
-        learnable pooling.
-
-        This module applies a two-stage transformation: an inner fully connected network processes individual
-        set elements, followed by a pooling operation that aggregates features across the set. The pooled features are
-        then passed through an outer fully connected network to produce the final invariant representation.
-
-        The model supports different activation functions, dropout. The pooling mechanism can be customized with
-        additional arguments.
-
-        Parameters
-        ----------
-        mlp_widths_inner : Sequence[int], optional
-            Widths of the MLP layers applied before pooling. Default is (128, 128).
-        mlp_widths_outer : Sequence[int], optional
-            Widths of the MLP layers applied after pooling. Default is (128, 128).
-        activation : str, optional
-            Activation function applied in the MLP layers, such as "gelu". Default is "gelu".
-        kernel_initializer : str, optional
-            Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".
-        dropout : int, float, or None, optional
-            Dropout rate applied in the outer MLP layers. Default is 0.05.
-        pooling : str, optional
-            Type of pooling operation applied across set elements, such as "mean". Default is "mean".
-        pooling_kwargs : dict, optional
-            Additional keyword arguments for the pooling layer. Default is None.
-        """
-
         super().__init__(**layer_kwargs(kwargs))
 
-        # Inner fully connected net for sum decomposition: inner( pooling( inner(set) ) )
+        self.embed_dim = embed_dim
+        self.ln_inner = keras.layers.RMSNormalization() if layer_norm else None
         self.inner_fc = MLP(
-            mlp_widths_inner,
-            dropout=dropout,
+            widths=(*mlp_widths, embed_dim),
             activation=activation,
             kernel_initializer=kernel_initializer,
+            dropout=dropout,
         )
-        self.inner_projector = keras.layers.Dense(units=mlp_widths_inner[-1], kernel_initializer=kernel_initializer)
 
+        self.ln_outer = keras.layers.RMSNormalization() if layer_norm else None
         self.outer_fc = MLP(
-            mlp_widths_outer,
-            dropout=dropout,
+            widths=(*mlp_widths, embed_dim),
             activation=activation,
             kernel_initializer=kernel_initializer,
+            dropout=dropout,
         )
-        self.outer_projector = keras.layers.Dense(units=mlp_widths_outer[-1], kernel_initializer=kernel_initializer)
 
-        # Pooling function as keras layer for sum decomposition: inner( pooling( inner(set) ) )
-        if pooling_kwargs is None:
-            pooling_kwargs = {}
+        self.pooling_layer = find_pooling(pooling)
 
-        self.pooling_layer = find_pooling(pooling, **pooling_kwargs)
-
-    def call(self, input_set: Tensor, training: bool = False, **kwargs) -> Tensor:
+    def call(self, x: Tensor, training: bool = False) -> Tensor:
         """Performs the forward pass of a learnable invariant transform.
 
         Parameters
         ----------
-        input_set : Tensor
-            Input of shape (batch_size,..., input_dim)
-        training  : bool, optional, default - False
-            Dictates the behavior of the optional dropout layers
+        x : Tensor
+            Input of shape ``(batch_size, set_size, input_dim)``.
+        training : bool, optional
+            Passed to dropout and norm layers, by default False.
 
         Returns
         -------
-        set_summary : tf.Tensor
-            Output of shape (batch_size,..., out_dim)
+        Tensor
+            Output of shape ``(batch_size, embed_dim)``.
         """
+        if self.ln_inner is not None:
+            x = self.ln_inner(x, training=training)
+        x = self.inner_fc(x, training=training)
+        x = self.pooling_layer(x)
 
-        set_summary = self.inner_fc(input_set, training=training)
-        set_summary = self.inner_projector(set_summary)
-        set_summary = self.pooling_layer(set_summary, training=training)
-        set_summary = self.outer_fc(set_summary, training=training)
-        set_summary = self.outer_projector(set_summary)
-        return set_summary
+        if self.ln_outer is not None:
+            x = self.ln_outer(x, training=training)
+        x = self.outer_fc(x, training=training)
 
-    @sanitize_input_shape
+        return x
+
     def build(self, input_shape):
-        self.call(keras.ops.zeros(input_shape))
+        input_shape = tuple(input_shape)
+
+        if self.ln_inner is not None:
+            self.ln_inner.build(input_shape)
+        self.inner_fc.build(input_shape)
+
+        # pooling removes the set dimension (axis=-2): (B, S, embed_dim) → (B, embed_dim)
+        pooled_shape = (input_shape[0], self.embed_dim)
+
+        if self.ln_outer is not None:
+            self.ln_outer.build(pooled_shape)
+        self.outer_fc.build(pooled_shape)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], self.embed_dim)

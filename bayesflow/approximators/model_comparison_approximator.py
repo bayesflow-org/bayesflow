@@ -225,7 +225,9 @@ class ModelComparisonApproximator(Approximator):
 
         if adapter == "auto":
             logging.info("Building automatic data adapter.")
-            adapter = self.build_adapter(num_models=self.num_models, **filter_kwargs(kwargs, self.build_adapter))
+            adapter = self.build_adapter(
+                inference_variables="model_indices", **filter_kwargs(kwargs, self.build_adapter)
+            )
 
         if simulator is not None:
             return super().fit(simulator=simulator, adapter=adapter, **kwargs)

@@ -224,7 +224,8 @@ def test_masking(diffusion_type_inference_network):
             keras.ops.zeros(1),  # param 2 is fixed
         )
     )
-    targets_fixed = test_conditions_adapted["inference_variables"][0]  # one set of parameters
+    target_mask = np.broadcast_to(target_mask, (5, 2))
+    targets_fixed = test_conditions_adapted["inference_variables"]
     if "inference_variables" in workflow.approximator.standardize_layers:
         targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
 
@@ -232,5 +233,50 @@ def test_masking(diffusion_type_inference_network):
         conditions=test_conditions, num_samples=num_samples, targets_fixed=targets_fixed, target_mask=target_mask
     )["parameters"]
     assert samples.shape == fixed_samples.shape
-    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][0, 1]) < 1e-6).all()
-    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][0, 0]) > 0.1).any()  # should vary
+    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()
+    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][:, :1]) > 0.1).any()  # should vary
+
+
+def test_masking_unconditional(diffusion_type_inference_network):
+    from bayesflow import BasicWorkflow
+    from bayesflow.simulators import TwoMoons
+
+    num_samples = 3
+    batch_size = 2
+    num_batches_per_epoch = 2
+    epochs = 5
+    workflow = BasicWorkflow(
+        inference_network=diffusion_type_inference_network(
+            subnet_kwargs=dict(widths=(8, 8)),
+            drop_cond_prob=0.1,
+            drop_target_prob=0.5,
+            **filter_kwargs(
+                dict(total_steps=epochs * num_batches_per_epoch, s0=3, s1=10, eps=1e-8),
+                diffusion_type_inference_network,
+            ),
+        ),
+        inference_variables=["parameters"],
+        simulator=TwoMoons(),
+    )
+
+    workflow.fit_online(epochs=epochs, batch_size=batch_size, num_batches_per_epoch=num_batches_per_epoch)
+    test_conditions = workflow.simulate((5,))
+
+    test_conditions_adapted = workflow.adapter(test_conditions)
+    target_mask = keras.ops.concatenate(
+        (
+            keras.ops.ones(1),  # param 1 is inferred
+            keras.ops.zeros(1),  # param 2 is fixed
+        )
+    )
+    target_mask = np.broadcast_to(target_mask, (5, num_samples, 2)).reshape(-1, 2)
+    targets_fixed = test_conditions_adapted["inference_variables"]
+    targets_fixed = np.broadcast_to(np.expand_dims(targets_fixed, axis=1), (5, num_samples, 2)).reshape(-1, 2)
+    if "inference_variables" in workflow.approximator.standardize_layers:
+        targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
+
+    fixed_samples = workflow.sample(num_samples=num_samples * 5, targets_fixed=targets_fixed, target_mask=target_mask)[
+        "parameters"
+    ].reshape(5, num_samples, 2)
+    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()
+    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][:, :1]) > 0.1).any()  # should vary

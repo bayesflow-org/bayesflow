@@ -268,6 +268,30 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
     np.testing.assert_allclose(np.array(out).mean(), exact, atol=1e-3, rtol=0.1)
 
 
+@pytest.mark.parametrize("start_time, stop_time", [(0.0, 1.0), (0.8, 0.2)])
+def test_glass_flow_matching_sampler_returns_finite_state(start_time, stop_time):
+    def drift_fn(t, x):
+        return {"x": keras.ops.ones_like(x)}
+
+    initial_state = {"x": keras.ops.zeros((16, 3))}
+
+    out = integrate_stochastic(
+        drift_fn=drift_fn,
+        diffusion_fn=None,
+        state=initial_state,
+        start_time=start_time,
+        stop_time=stop_time,
+        steps=3,
+        seed=keras.random.SeedGenerator(0),
+        method="glass",
+        noise_schedule="flow_matching",
+        steps_inner=3,
+    )["x"]
+
+    assert keras.ops.shape(out) == keras.ops.shape(initial_state["x"])
+    assert np.isfinite(np.array(out)).all()
+
+
 @pytest.mark.parametrize("steps", [500])
 def test_langevin_gaussian_sampling(steps):
     """

@@ -101,7 +101,8 @@ def test_compositional_masking():
             keras.ops.zeros(1),  # param 2 is fixed
         )
     )
-    targets_fixed = test_conditions_adapted["inference_variables"][0]  # one set of parameters
+    target_mask = np.broadcast_to(target_mask, (5, 2))
+    targets_fixed = test_conditions_adapted["inference_variables"]
     if "inference_variables" in workflow.approximator.standardize_layers:
         targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
 
@@ -113,8 +114,8 @@ def test_compositional_masking():
         target_mask=target_mask,
     )["parameters"]
     assert samples.shape == fixed_samples.shape
-    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][0, 1]) < 1e-6).all()
-    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][0, 0]) > 0.1).any()  # should vary
+    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()
+    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][:, :1]) > 0.1).any()  # should vary
 
 
 @pytest.mark.slow
@@ -165,14 +166,14 @@ def test_diffusion_compositional_guidance():
     assert samples_guided.shape == samples.shape
     assert (samples_guided[..., 0] < 0).all()
 
-    def guidance_function(x, time):
-        return x * 0
+    def guidance_function(x_pred, time, score, **guidance_kwargs):
+        return x_pred * 0
 
+    workflow.approximator.inference_network.guidance_function = guidance_function
     samples_guided_func = workflow.compositional_sample(
         num_samples=2,
         conditions=test_conditions,
         compute_prior_score=prior_score_fn,
-        guidance_function=guidance_function,
     )["parameters"]
     assert samples_guided_func.shape == samples.shape
 

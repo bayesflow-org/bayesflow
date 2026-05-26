@@ -9,6 +9,34 @@ from bayesflow.approximators import Approximator
 
 
 class SemiSupervisedApproximator(Approximator):
+    """Jointly trains different approximators on multiple datasets.
+
+    Support semi-supervised or multi-task settings where
+    different datasets (possibly labeled and unlabeled) are available and different losses
+    apply to each, allowing, e.g., joint posterior and likelihood training on different datasets.
+    Each training step receives a batch that is a dict-of-dicts, where
+    the outer keys are dataset names and the inner dicts are the actual tensors.
+
+    Two kinds of losses can be configured per dataset key via ``compile``:
+
+    - **approximator_metrics**: standard supervised metrics of named sub-approximators
+      (e.g. posterior trained on labeled data).
+    - **composite_metrics**: higher-level losses that depend on multiple approximators,
+      such as ``SelfConsistencyLoss`` (e.g. SC loss computed on unlabeled data).
+
+    Parameters
+    ----------
+    approximators : dict[str, Any]
+        Named sub-approximators (e.g. ``{"prior": ..., "posterior": ...,
+        "likelihood": ...}``).
+        Note: approximators must be of class `Approximator`, or an object with `.log_prob` method,
+        or `Callable`. In the latter two cases, the approximator is only used for composite
+        training.
+    adapter : Adapter, optional
+        Shared adapter applied to all datasets before passing to approximators and composite
+        metrics. Defaults to an identity adapter.
+    """
+
     def __init__(self, approximators, adapter: Adapter = None, **kwargs):
         super().__init__(**kwargs)
         self.approximators = approximators or {}
@@ -23,6 +51,23 @@ class SemiSupervisedApproximator(Approximator):
         composite_metrics: Mapping[str, Any] | None = None,
         **kwargs,
     ):
+        """Configure the losses and metrics for each dataset.
+
+        Parameters
+        ----------
+        approximator_metrics : Mapping[str, Sequence[str]], optional
+            Maps each dataset key to a list of approximator names whose standard
+            metrics could be computed on that dataset via `.compute_metrics`.
+            For example, ``{"labeled": ["posterior"]}`` trains the posterior approximator
+            on a dataset with key "labeled", with whatever loss is defined
+            by the posterior approximator in its `.compute_metrics`.
+        composite_metrics : Mapping[str, Any], optional
+            Maps each dataset key to a composite metric object (e.g.
+            ``SelfConsistencyLoss``). Each composite metric's ``attach`` method is
+            called here so it can access the approximators and shared adapter.
+            For example, ``{"unlabeled": SelfConsistencyLoss(...)}`` computes the SC
+            loss on a dataset with key "labeled".
+        """
         self._approximator_metrics = approximator_metrics or {}
 
         composite_metrics = composite_metrics or {}
@@ -34,6 +79,23 @@ class SemiSupervisedApproximator(Approximator):
     def compute_metrics(
         self, data: Mapping[str, Mapping[str, Tensor]], stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
+        """Compute the total loss and all sub-metrics for one training step.
+
+        Parameters
+        ----------
+        data : Mapping[str, Mapping[str, Tensor]]
+            A batch structured as ``{"data": {"labeled": {...}, "unlabeled": {...}}}``.
+            The inner dicts hold the actual tensors for each dataset split.
+        stage : str, optional
+            Current training stage (e.g., "training", "validation", "inference"). Controls
+            the behavior of standardization and some metric computations (default is "training").
+
+        Returns
+        -------
+        dict
+            All metric values with namespaced keys like ``"labeled/posterior/loss"``
+            or ``"unlabeled/self-consistency/loss"``, plus the total ``"loss"``.
+        """
         loss = keras.ops.zeros(())
         metrics = {}
 
@@ -53,6 +115,12 @@ class SemiSupervisedApproximator(Approximator):
         return metrics
 
     def _compute_metrics_approximator(self, data: Mapping[str, Tensor], name: str, stage: str) -> Mapping[str, Tensor]:
+        """Run one approximator's training loss on a single dataset.
+
+        Applies the approximator's own adapter (if present) before calling its
+        ``compute_metrics``. Returns an empty dict if the named approximator is not
+        found or is not an ``Approximator`` instance.
+        """
         approximator = self.approximators.get(name)
         if not approximator or not isinstance(approximator, Approximator):
             return {}
@@ -87,4 +155,5 @@ class SemiSupervisedApproximator(Approximator):
         return adapted_data
 
     def _batch_size_from_data(self, data: Mapping[str, Any]) -> int:
+        # TODO: currently returns a placeholder — batch size inference is not implemented
         return 1

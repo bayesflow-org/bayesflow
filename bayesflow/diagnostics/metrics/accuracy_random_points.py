@@ -10,7 +10,7 @@ def _l2(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.sqrt(np.sum((a - b) ** 2, axis=-1))
 
 
-def tarp(
+def accuracy_random_points(
     estimates: Mapping[str, np.ndarray] | np.ndarray,
     targets: Mapping[str, np.ndarray] | np.ndarray,
     variable_keys: Sequence[str] = None,
@@ -30,12 +30,8 @@ def tarp(
 
     When no reference points are provided, they are generated as a derangement
     of the target parameters via a random cyclic shift (a pure permutation with
-    no fixed points): a random offset in ``[1, num_datasets)`` is applied with
-    ``np.roll`` so that every dataset receives a reference drawn from a
-    *different* dataset. This keeps references within the empirical prior
-    support but offers no control over their distribution. For full control,
-    e.g. to draw references from an independent prior sample, pass explicit
-    ``references``.
+    no fixed points). For full control, e.g. to draw references from an independent
+    prior sample, pass explicit ``references``.
 
     References:
     [1] Lemos et al., 2023, https://proceedings.mlr.press/v202/lemos23a/lemos23a.pdf

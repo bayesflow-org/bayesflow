@@ -30,11 +30,9 @@ class MultiDataset(keras.utils.PyDataset):
         """Return one batch from each constituent dataset, wrapping shorter ones."""
         data = {}
         for key, dataset in self.datasets.items():
-            num_batches = dataset.num_batches
-            item = item % num_batches
-            data[key] = dataset[item]
+            data[key] = dataset[item % dataset.num_batches]
 
-        return dict(data=data)
+        return data
 
     @property
     def num_batches(self) -> int:

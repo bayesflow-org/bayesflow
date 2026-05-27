@@ -41,8 +41,8 @@ class SemiSupervisedApproximator(Approximator):
         super().__init__(**kwargs)
         self.approximators = approximators or {}
         self.adapter = adapter or Adapter()
-        self._approximator_metrics = {}
-        self._composite_metrics = {}
+        self.approximator_metrics = {}
+        self.composite_metrics = {}
 
     def compile(
         self,
@@ -68,24 +68,21 @@ class SemiSupervisedApproximator(Approximator):
             For example, ``{"unlabeled": SelfConsistencyLoss(...)}`` computes the SC
             loss on a dataset with key "labeled".
         """
-        self._approximator_metrics = approximator_metrics or {}
+        self.approximator_metrics = approximator_metrics or {}
 
         composite_metrics = composite_metrics or {}
         composite_metrics = {k: m.attach(self.approximators, self.adapter) for k, m in composite_metrics.items()}
-        self._composite_metrics = composite_metrics
+        self.composite_metrics = composite_metrics
 
         return super().compile(*args, **kwargs)
 
-    def compute_metrics(
-        self, data: Mapping[str, Mapping[str, Tensor]], stage: str = "training", **kwargs
-    ) -> dict[str, Tensor]:
+    def compute_metrics(self, stage: str = "training", **data: Mapping[str, Tensor]) -> dict[str, Tensor]:
         """Compute the total loss and all sub-metrics for one training step.
 
         Parameters
         ----------
-        data : Mapping[str, Mapping[str, Tensor]]
-            A batch structured as ``{"data": {"labeled": {...}, "unlabeled": {...}}}``.
-            The inner dicts hold the actual tensors for each dataset split.
+        **data : Mapping[str, Tensor]
+            Named list of input datasets.
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").
@@ -100,13 +97,13 @@ class SemiSupervisedApproximator(Approximator):
         metrics = {}
 
         for key, value in data.items():
-            for approx_name in self._approximator_metrics.get(key, []):
+            for approx_name in self.approximator_metrics.get(key, []):
                 approximator_metrics = self._compute_metrics_approximator(data=value, name=approx_name, stage=stage)
                 loss += approximator_metrics["loss"]
                 metrics = metrics | {f"{key}/{approx_name}/{k}": v for k, v in approximator_metrics.items()}
 
-            if self._composite_metrics.get(key, False):
-                composite_metrics = self._composite_metrics[key](value, stage=stage)
+            if self.composite_metrics.get(key, False):
+                composite_metrics = self.composite_metrics[key](value, stage=stage)
                 loss += composite_metrics["loss"]
                 metrics = metrics | {f"{key}/self-consistency/{k}": v for k, v in composite_metrics.items()}
 
@@ -115,7 +112,7 @@ class SemiSupervisedApproximator(Approximator):
         return metrics
 
     def _compute_metrics_approximator(self, data: Mapping[str, Tensor], name: str, stage: str) -> Mapping[str, Tensor]:
-        """Run one approximator's training loss on a single dataset.
+        """Run one approximator's training metrics on a single dataset.
 
         Applies the approximator's own adapter (if present) before calling its
         ``compute_metrics``. Returns an empty dict if the named approximator is not
@@ -134,11 +131,11 @@ class SemiSupervisedApproximator(Approximator):
         for name, appr in self.approximators.items():
             if hasattr(appr, "built") and not appr.built:
                 appr.build(data_shapes[name])
+
         self.built = True
 
     def build_from_data(self, adapted_data: Mapping[str, Mapping]):
-        adapted_data = next(iter(adapted_data["data"].values()))
-        # adapt data further for each approximator...
+        adapted_data = next(iter(adapted_data.values()))
         adapted_data = self._adapt_data(adapted_data)
 
         self.build(keras.tree.map_structure(keras.ops.shape, adapted_data))

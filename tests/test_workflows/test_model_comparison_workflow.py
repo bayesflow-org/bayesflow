@@ -317,3 +317,96 @@ def test_plot_diagnostics_without_simulator_raises():
 
     with pytest.raises(ValueError, match="No simulator"):
         workflow.plot_default_diagnostics(test_data=10)
+
+
+def test_compute_diagnostics_without_simulator_raises():
+    """compute_default_diagnostics(int) raises when no simulator is attached."""
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.networks import MLP
+
+    approximator = ModelComparisonApproximator(
+        num_models=2,
+        classifier_network=MLP(widths=(8,)),
+    )
+    workflow = ModelComparisonWorkflow.__new__(ModelComparisonWorkflow)
+    workflow.approximator = approximator
+    workflow.simulator = None
+    workflow.model_names = None
+    workflow.history = None
+
+    with pytest.raises(ValueError, match="No simulator"):
+        workflow.compute_default_diagnostics(test_data=10)
+
+
+# ── classifier_network property ───────────────────────────────────────────────
+
+
+def test_classifier_network_property(mc_simulators):
+    """classifier_network returns the subnet of the internal ScoringRuleNetwork."""
+    workflow = ModelComparisonWorkflow(simulator=mc_simulators)
+    assert workflow.classifier_network is not None
+    assert workflow.classifier_network is workflow.approximator.inference_network.subnet
+
+
+# ── inference_variables key branch ───────────────────────────────────────────
+
+
+def test_plot_diagnostics_with_inference_variables_key(mc_simulators):
+    """plot_default_diagnostics accepts test_data with 'inference_variables' instead of 'model_indices'."""
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+
+    test_data = workflow.simulate(10)
+    # Simulate pre-adapted data: rename model_indices → inference_variables
+    test_data["inference_variables"] = test_data.pop("model_indices")
+
+    plots = workflow.plot_default_diagnostics(test_data=test_data)
+    assert "confusion_matrix" in plots
+
+
+def test_compute_diagnostics_with_inference_variables_key(mc_simulators):
+    """compute_default_diagnostics accepts test_data with 'inference_variables' instead of 'model_indices'."""
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+
+    test_data = workflow.simulate(10)
+    test_data["inference_variables"] = test_data.pop("model_indices")
+
+    metrics = workflow.compute_default_diagnostics(test_data=test_data)
+    assert "accuracy" in metrics
+
+
+def test_plot_diagnostics_raises_without_model_key(mc_simulators):
+    """plot_default_diagnostics raises KeyError when test_data has neither model key."""
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+
+    test_data = workflow.simulate(10)
+    del test_data["model_indices"]
+
+    with pytest.raises(KeyError):
+        workflow.plot_default_diagnostics(test_data=test_data)
+
+
+def test_compute_diagnostics_raises_without_model_key(mc_simulators):
+    """compute_default_diagnostics raises KeyError when test_data has neither model key."""
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+
+    test_data = workflow.simulate(10)
+    del test_data["model_indices"]
+
+    with pytest.raises(KeyError):
+        workflow.compute_default_diagnostics(test_data=test_data)

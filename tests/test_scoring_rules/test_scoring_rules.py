@@ -49,6 +49,42 @@ def test_to_bayes_factors_base_class_is_identity():
     assert keras.ops.allclose(result, f)
 
 
+def test_to_bayes_factors_power_logistic():
+    from bayesflow.scoring_rules import LogisticScore
+
+    alpha = 2.0
+    rule = LogisticScore(alpha=alpha)
+    f = keras.ops.convert_to_tensor([[1.0, -1.0]])
+    result = rule.to_bayes_factors(f)
+    assert keras.ops.allclose(result, f * (alpha + 1))
+
+
+def test_logistic_score_get_config():
+    from bayesflow.scoring_rules import LogisticScore
+
+    rule_log = LogisticScore()
+    config_log = rule_log.get_config()
+    assert config_log["alpha"] is None
+
+    rule_pow = LogisticScore(alpha=1.5)
+    config_pow = rule_pow.get_config()
+    assert config_pow["alpha"] == 1.5
+
+
+def test_exponential_score_leaky_get_config():
+    from bayesflow.scoring_rules import ExponentialScore
+
+    rule = ExponentialScore(leaky=2.0)
+    config = rule.get_config()
+    assert config["leaky"] == 2.0
+    assert config["alpha"] == 1.0
+
+    # _LeakyLink.get_config() is exercised via get_link
+    link = rule.get_link("log_bayes_factors")
+    link_config = link.get_config()
+    assert link_config["alpha"] == 2.0
+
+
 def test_require_argument_k():
     from bayesflow.scoring_rules import NormedDifferenceScore
 

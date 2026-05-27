@@ -1,5 +1,6 @@
 import keras
 import io
+import pytest
 from contextlib import redirect_stdout
 
 from tests.utils import assert_models_equal
@@ -94,3 +95,84 @@ def test_is_pmp_rule_property(approximator):
         assert approximator.scoring_rule.is_pmp_rule is True
     elif isinstance(approximator.scoring_rule, ExponentialScore):
         assert approximator.scoring_rule.is_pmp_rule is False
+
+
+def test_build_dataset_with_simulators_list(approximator, adapter):
+    import numpy as np
+    from bayesflow import make_simulator
+    from bayesflow.datasets import OnlineDataset
+
+    def prior_null():
+        return dict(mu=0.0, n=4)
+
+    def prior_alt():
+        return dict(mu=np.random.normal(0, 1), n=4)
+
+    def likelihood(mu, n):
+        return dict(x=np.random.normal(mu, 1, n))
+
+    sims = [
+        make_simulator([prior_null, likelihood]),
+        make_simulator([prior_alt, likelihood]),
+    ]
+
+    dataset = approximator.build_dataset(
+        simulators=sims,
+        adapter=adapter,
+        memory_budget="20 KiB",
+        num_batches=2,
+    )
+    assert isinstance(dataset, OnlineDataset)
+
+
+def test_build_dataset_conflict_raises(approximator, simulator, adapter):
+    dataset = approximator.build_dataset(
+        simulator=simulator,
+        adapter=adapter,
+        memory_budget="20 KiB",
+        num_batches=2,
+    )
+    with pytest.raises(ValueError, match="Exactly one"):
+        approximator.build_dataset(dataset=dataset, simulator=simulator)
+
+
+def test_fit_dataset_conflict_raises(approximator, train_dataset, simulator):
+    approximator.compile(optimizer="AdamW")
+    with pytest.raises(ValueError, match="conflicting"):
+        approximator.fit(dataset=train_dataset, simulator=simulator, epochs=1)
+
+
+def test_fit_with_simulators_list():
+    """fit(simulators=[...]) auto-builds adapter and ModelComparisonSimulator."""
+    import numpy as np
+    from bayesflow import make_simulator
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.networks import MLP
+
+    def prior_null():
+        return dict(mu=0.0)
+
+    def prior_alt():
+        return dict(mu=np.random.normal(0, 1))
+
+    def likelihood(mu):
+        return dict(x=np.random.normal(mu, 1, 4).astype(np.float32))
+
+    sims = [
+        make_simulator([prior_null, likelihood]),
+        make_simulator([prior_alt, likelihood]),
+    ]
+
+    approximator = ModelComparisonApproximator(
+        num_models=2,
+        classifier_network=MLP(widths=(8,)),
+    )
+    approximator.compile(optimizer="AdamW")
+    approximator.fit(
+        simulators=sims,
+        inference_conditions=["x"],
+        epochs=1,
+        num_batches=1,
+        batch_size=4,
+        verbose=0,
+    )

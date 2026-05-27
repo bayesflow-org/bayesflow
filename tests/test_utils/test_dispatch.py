@@ -297,3 +297,80 @@ def test_find_noise_schedule_invalid_class():
 def test_find_noise_schedule_invalid_object():
     with pytest.raises(TypeError):
         find_noise_schedule(1.0)
+
+
+# --- Tests for find_scoring_rule.py ---
+
+
+@pytest.mark.parametrize(
+    "name,expected_class",
+    [
+        ("cross_entropy", "bayesflow.scoring_rules.CrossEntropyScore"),
+        ("default", "bayesflow.scoring_rules.CrossEntropyScore"),
+        ("brier", "bayesflow.scoring_rules.BrierScore"),
+        ("polynomial", "bayesflow.scoring_rules.PolynomialScore"),
+        ("exponential", "bayesflow.scoring_rules.ExponentialScore"),
+        ("scaled_exponential", "bayesflow.scoring_rules.ExponentialScore"),
+        ("leaky_exponential", "bayesflow.scoring_rules.ExponentialScore"),
+        ("logistic", "bayesflow.scoring_rules.LogisticScore"),
+        ("power_logistic", "bayesflow.scoring_rules.LogisticScore"),
+    ],
+)
+def test_find_scoring_rule_by_name(name, expected_class):
+    from bayesflow.utils import find_scoring_rule
+    import importlib
+
+    module_path, class_name = expected_class.rsplit(".", 1)
+    expected_cls = getattr(importlib.import_module(module_path), class_name)
+
+    rule = find_scoring_rule(name)
+    assert isinstance(rule, expected_cls)
+
+
+def test_find_scoring_rule_leaky_default_sets_leaky():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import ExponentialScore
+
+    rule = find_scoring_rule("leaky_exponential")
+    assert isinstance(rule, ExponentialScore)
+    assert rule.leaky == 2.0
+
+
+def test_find_scoring_rule_power_logistic_default_sets_alpha():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import LogisticScore
+
+    rule = find_scoring_rule("power_logistic")
+    assert isinstance(rule, LogisticScore)
+    assert rule.alpha == 1.0
+
+
+def test_find_scoring_rule_by_type():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import CrossEntropyScore
+
+    rule = find_scoring_rule(CrossEntropyScore)
+    assert isinstance(rule, CrossEntropyScore)
+
+
+def test_find_scoring_rule_by_instance():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import BrierScore
+
+    existing = BrierScore()
+    result = find_scoring_rule(existing)
+    assert result is existing
+
+
+def test_find_scoring_rule_unknown_name():
+    from bayesflow.utils import find_scoring_rule
+
+    with pytest.raises(ValueError, match="Unsupported scoring rule name"):
+        find_scoring_rule("unknown_rule")
+
+
+def test_find_scoring_rule_invalid_type():
+    from bayesflow.utils import find_scoring_rule
+
+    with pytest.raises(TypeError):
+        find_scoring_rule(42)

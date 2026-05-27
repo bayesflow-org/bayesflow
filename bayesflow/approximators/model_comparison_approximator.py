@@ -297,8 +297,10 @@ class ModelComparisonApproximator(Approximator):
             PMP rules additionally contain ``"logits"`` of shape ``(num_datasets, num_models)``.
             Bayes factor rules additionally contain ``"log_bayes_factors"`` of shape
             ``(num_datasets, num_models - 1)``.
+            If a summary network is present, also contains ``"summaries"`` of shape
+            ``(num_datasets, summary_dim)``.
         """
-        resolved_conditions, adapted, _ = self._prepare_conditions(conditions, **kwargs)
+        resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, **kwargs)
         inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         output = self.inference_network(xz=None, conditions=resolved_conditions, **inference_kwargs)
@@ -306,7 +308,7 @@ class ModelComparisonApproximator(Approximator):
 
         if "logits" in raw:
             logits = raw["logits"]
-            return {
+            result = {
                 "logits": keras.ops.convert_to_numpy(logits),
                 "model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(logits)),
             }
@@ -314,7 +316,7 @@ class ModelComparisonApproximator(Approximator):
             log_bfs = self.scoring_rule.to_bayes_factors(raw["log_bayes_factors"])
             f0 = keras.ops.zeros_like(log_bfs[..., :1])
             model_probs = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
-            return {
+            result = {
                 "log_bayes_factors": keras.ops.convert_to_numpy(log_bfs),
                 "model_probs": keras.ops.convert_to_numpy(model_probs),
             }
@@ -323,3 +325,8 @@ class ModelComparisonApproximator(Approximator):
                 f"Unrecognized scoring rule output keys: {list(raw.keys())}. "
                 "Expected 'logits' (PMP rules) or 'log_bayes_factors' (Bayes factor rules)."
             )
+
+        if summary_outputs is not None:
+            result["summaries"] = keras.ops.convert_to_numpy(summary_outputs)
+
+        return result

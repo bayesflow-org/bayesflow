@@ -87,6 +87,13 @@ def test_estimate(approximator, train_dataset, simulator):
         assert "log_bayes_factors" in output
         assert output["log_bayes_factors"].shape == (num_conditions, num_models - 1)
 
+    if approximator.summary_network is not None:
+        assert "summaries" in output
+        assert output["summaries"].ndim == 2
+        assert output["summaries"].shape[0] == num_conditions
+    else:
+        assert "summaries" not in output
+
 
 def test_is_pmp_rule_property(approximator):
     from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore

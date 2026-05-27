@@ -9,7 +9,7 @@ from .scoring_rule import ScoringRule
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
 class BrierScore(ScoringRule):
-    r"""Brier scoring rule for amortized model comparison.
+    r""":math:`S(\hat p_{1\ldots C}, y) = \sum_{c=1}^C (\hat p_c - y_c)^2`
 
     Scores predicted logits against one-hot encoded target labels:
 

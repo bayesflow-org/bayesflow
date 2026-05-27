@@ -35,7 +35,7 @@ class _LeakyLink(keras.Layer):
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
 class ExponentialScore(ScoringRule):
-    r"""Exponential scoring rule for amortized Bayes factor estimation.
+    r""":math:`S(\{f_k\}, m; \alpha) = \sum_{k \neq m} \exp\!\left(\tfrac{\alpha}{2}(f_k - f_m)\right)`
 
     The network learns :math:`M - 1` latent scores :math:`f_k` relative to
     reference model 0 (:math:`f_0 \equiv 0`). For the true model :math:`m`:
@@ -91,6 +91,24 @@ class ExponentialScore(ScoringRule):
         return dict(log_bayes_factors=target_shape[1:-1] + (target_shape[-1] - 1,))
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
+        """
+        Computes the exponential Bayes factor score.
+
+        Parameters
+        ----------
+        estimates : dict[str, Tensor]
+            Must contain ``"log_bayes_factors"`` of shape ``(..., M-1)`` — latent scores
+            :math:`f_k` for models :math:`k = 1, \\ldots, M-1` relative to reference model 0.
+        targets : Tensor
+            One-hot encoded true model labels of shape ``(..., M)``.
+        weights : Tensor, optional
+            Per-sample weights for a weighted mean.
+
+        Returns
+        -------
+        Tensor
+            (Optionally weighted) mean exponential score over the batch.
+        """
         targets = keras.ops.convert_to_tensor(targets)
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets

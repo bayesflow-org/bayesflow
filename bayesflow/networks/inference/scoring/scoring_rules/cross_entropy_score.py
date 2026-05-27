@@ -9,7 +9,7 @@ from .scoring_rule import ScoringRule
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
 class CrossEntropyScore(ScoringRule):
-    r"""Categorical cross-entropy scoring rule for classification tasks.
+    r""":math:`S(\hat p_{1\ldots C}, y) = -\sum_{c=1}^C y_c \log \hat p_c`
 
     Scores a set of predicted logits against one-hot encoded target labels:
 

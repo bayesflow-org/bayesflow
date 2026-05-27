@@ -10,7 +10,7 @@ from .exponential_score import _pairwise_diff
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
 class LogisticScore(ScoringRule):
-    r"""Logistic scoring rule for amortized Bayes factor estimation.
+    r""":math:`S(\{f_k\}, m) = \sum_{k \neq m} \log\!\left(1 + e^{f_k - f_m}\right)`
 
     Two modes selected by the ``alpha`` parameter:
 

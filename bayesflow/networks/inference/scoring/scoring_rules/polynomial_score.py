@@ -9,7 +9,7 @@ from .scoring_rule import ScoringRule
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
 class PolynomialScore(ScoringRule):
-    r"""Polynomial (Tsallis) scoring rule for amortized model comparison.
+    r""":math:`S(\hat p_{1\ldots C}, y; \alpha) = \tfrac{\alpha-1}{\alpha}\sum_c \hat p_c^\alpha - \hat p_y^{\alpha-1}`
 
     Implements the Tsallis proper scoring rule on the probability simplex,
     derived from the Savage representation with :math:`G(p) = \frac{1}{\alpha}\sum_k p_k^\alpha`:

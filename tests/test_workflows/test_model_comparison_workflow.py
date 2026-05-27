@@ -268,14 +268,11 @@ def test_default_adapter_structure():
 
 
 def test_disabled_methods_raise(mc_simulators):
-    """sample(), estimate(), log_prob(), and ancestral_sample() are not supported."""
+    """sample(), log_prob(), and ancestral_sample() are not supported."""
     workflow = ModelComparisonWorkflow(simulator=mc_simulators)
 
     with pytest.raises(NotImplementedError):
         workflow.sample()
-
-    with pytest.raises(NotImplementedError):
-        workflow.estimate()
 
     with pytest.raises(NotImplementedError):
         workflow.log_prob()

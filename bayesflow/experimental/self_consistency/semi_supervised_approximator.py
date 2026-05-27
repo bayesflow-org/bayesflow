@@ -6,8 +6,10 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.approximators import Approximator
+from bayesflow.utils.serialization import serialize, serializable
 
 
+@serializable("bayesflow.experimental")
 class SemiSupervisedApproximator(Approximator):
     """Jointly trains different approximators on multiple datasets.
 
@@ -126,6 +128,22 @@ class SemiSupervisedApproximator(Approximator):
 
         metrics = approximator.compute_metrics(**data, stage=stage)
         return metrics
+
+    def get_config(self):
+        base_config = super().get_config()
+        config = {
+            "approximators": self.approximators,
+            "adapter": self.adapter,
+        }
+        return base_config | serialize(config)
+
+    def get_compile_config(self):
+        base_config = super().get_compile_config() or {}
+        config = {
+            "approximator_metrics": self.approximator_metrics,
+            "composite_metrics": self.composite_metrics,
+        }
+        return base_config | serialize(config)
 
     def build(self, data_shapes: Mapping[str, tuple[int] | Mapping[str, Mapping]]):
         for name, appr in self.approximators.items():

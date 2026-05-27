@@ -44,3 +44,10 @@ class MultiDataset(keras.utils.PyDataset):
     def dataset_keys(self) -> Sequence[str]:
         """Names of the constituent datasets."""
         return list(self.datasets.keys())
+
+    def get_config(self) -> dict:
+        return {"datasets": self.datasets}
+
+    @classmethod
+    def from_config(cls, config: dict) -> "MultiDataset":
+        return cls(**config["datasets"])

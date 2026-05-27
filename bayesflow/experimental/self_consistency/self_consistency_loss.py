@@ -7,8 +7,10 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.approximators import Approximator
+from bayesflow.utils.serialization import deserialize, serialize, serializable
 
 
+@serializable("bayesflow.experimental")
 class SelfConsistencyLoss:
     """Self-consistency loss for joint training of prior, likelihood, and posterior.
 
@@ -291,6 +293,21 @@ class SelfConsistencyLoss:
             log_prob = keras.ops.stop_gradient(log_prob)
 
         return keras.ops.squeeze(log_prob)
+
+    def get_config(self):
+        config = {
+            "num_samples": self.num_samples,
+            "adapter": self.adapter,
+            "gradient": list(self.gradient),
+            "adapted": self.adapted,
+            "parameter_keys": self.parameter_keys,
+            "data_keys": self.data_keys,
+        }
+        return serialize(config)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        return cls(**deserialize(config, custom_objects=custom_objects))
 
     def attach(self, approximators, adapter):
         """Bind the prior, likelihood, posterior approximators and an adapter.

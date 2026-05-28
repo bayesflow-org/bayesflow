@@ -83,7 +83,7 @@ class ConvolutionalNetwork(SummaryNetwork):
         pool_num_heads: int = 4,
         **kwargs,
     ):
-        super().__init__(**layer_kwargs(kwargs))
+        super().__init__(**kwargs)
 
         if norm != "batch" and activation in ("relu", "relu6", "leaky_relu"):
             logging.warning(

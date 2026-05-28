@@ -4,6 +4,7 @@ import keras
 from bayesflow.networks import ConvolutionalNetwork
 
 from bayesflow.utils.serialization import deserialize, serialize
+from bayesflow.distributions import DiagonalNormal
 from tests.utils import assert_layers_equal
 
 BATCH = 2
@@ -139,7 +140,5 @@ def test_convolutional_network_forwards_kwargs():
     """
     See: https://github.com/bayesflow-org/bayesflow/issues/699
     """
-    from bayesflow.distributions import DiagonalNormal
-
     net = ConvolutionalNetwork(base_distribution="normal")
     assert isinstance(net.base_distribution, DiagonalNormal)

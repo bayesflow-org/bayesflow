@@ -60,13 +60,6 @@ jobs:
         run: |
           uv pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-      - name: Show Environment Info
-        run: |
-          uv run python --version
-          uv pip --version
-          uv run printenv | sort
-          uv pip list
-
       - name: Run Tests
         run: |
           uv run pytest -x -m "not slow"

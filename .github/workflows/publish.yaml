@@ -1,10 +1,10 @@
-name: Publish to PyPI
+name: Publish to PyPI and Release
 
 on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Whether to perform a dry run (publish to TestPyPI)"
+        description: "Whether to perform a dry, which skips tagging and publishing."
         required: true
         type: boolean
         default: true
@@ -16,12 +16,18 @@ on:
         # Other release types should be handled manually.
         options: [minor, patch]
         default: patch
+      github_release:
+        description: "Whether to create a release on GitHub."
+        required: true
+        type: boolean
+        default: true
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     env:
-      # Using the release type only as an environment variable avoids security vulnerabilities from input injection.
+      # Use environment variables to avoid security vulnerabilities from input injection.
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
       RELEASE_TYPE: ${{ github.event.inputs.release_type }}
 
     # PyPI trusted publishing permissions
@@ -47,20 +53,29 @@ jobs:
     - name: Check wheel contents
       run: uvx check-wheel-contents dist/*.whl
 
-    - name: Publish package to TestPyPI
-      if: ${{ github.event.inputs.dry_run == true }}
-      run: uv publish --publish-url = "https://test.pypi.org/legacy/"
-
-    - name: Publish package to PyPI
-      if: ${{ github.event.inputs.dry_run == false }}
-      run: uv publish
-
     - name: Commit and Tag Version
-      if: ${{ github.event.inputs.dry_run == false }}
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add pyproject.toml
-        git commit -m "🚀 Release $VERSION"
-        git tag v$VERSION
-        git push origin main --tags
+        if [[ $DRY_RUN == true ]]; then
+          echo "Performing a dry run. No commit or tag will be created."
+          git commit -m "🚀 Release $VERSION" --dry-run
+          git tag v$VERSION
+          git push origin --tags --dry-run
+        else
+          echo "Committing and tagging version $VERSION."
+          git commit -m "🚀 Release $VERSION"
+          git tag v$VERSION
+          git push origin --tags
+        fi
+
+    - name: Publish package to PyPI
+      run: |
+        if [[ $DRY_RUN == true ]]; then
+          echo "Performing a dry run. No package will be published."
+          uv publish --dry-run
+        else
+          echo "Publishing package to PyPI."
+          uv publish
+        fi

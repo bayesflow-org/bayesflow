@@ -94,24 +94,31 @@ class ConditionBuilder:
 
         if purpose == "call":
             if summary_outputs is None:
-                batches = []
                 num_conditions = dim_maybe_nested(summary_variables, axis=0)
-                if batch_size is None:
-                    batch_size = num_conditions
 
-                for i in tqdm(range(0, num_conditions, batch_size), desc="Summarizing", unit="batch"):
-                    batch_variables = slice_maybe_nested(summary_variables, i, i + batch_size)
-                    batch_kwargs = {
-                        k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
-                        for k, v in summary_kwargs.items()
-                    }
-
-                    batch_outputs = summary_network(
-                        batch_variables, **filter_kwargs(batch_kwargs, summary_network.call)
+                if num_conditions is None:
+                    # Graph mode: shapes are symbolic, cannot iterate over batches
+                    summary_outputs = summary_network(
+                        summary_variables, **filter_kwargs(summary_kwargs, summary_network.call)
                     )
-                    batches.append(batch_outputs)
+                else:
+                    if batch_size is None:
+                        batch_size = num_conditions
 
-                summary_outputs = tree_concatenate(batches, axis=0)
+                    batches = []
+                    for i in tqdm(range(0, num_conditions, batch_size), desc="Summarizing", unit="batch"):
+                        batch_variables = slice_maybe_nested(summary_variables, i, i + batch_size)
+                        batch_kwargs = {
+                            k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
+                            for k, v in summary_kwargs.items()
+                        }
+
+                        batch_outputs = summary_network(
+                            batch_variables, **filter_kwargs(batch_kwargs, summary_network.call)
+                        )
+                        batches.append(batch_outputs)
+
+                    summary_outputs = tree_concatenate(batches, axis=0)
             else:
                 summary_outputs = keras.ops.convert_to_tensor(summary_outputs)
             conditions = concatenate_valid((inference_conditions, summary_outputs), axis=-1)

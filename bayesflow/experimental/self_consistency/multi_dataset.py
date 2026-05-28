@@ -9,10 +9,10 @@ class MultiDataset(keras.utils.PyDataset):
     """A dataset that combines multiple named datasets into a single batch.
 
     On each step, one batch is drawn from every constituent dataset and returned
-    together as ``{"data": {"name1": batch1, "name2": batch2, ...}}``. This format
+    together as ``{"name1": batch1, "name2": batch2, ...}``. This format
     matches what ``SemiSupervisedApproximator.compute_metrics`` expects.
 
-    When datasets have different lengths, shorter datasets are recycled (modulo
+    When datasets have different lengths (num_batches), shorter datasets are recycled (modulo
     indexing), so training always runs for ``max(num_batches)`` steps.
 
     Parameters

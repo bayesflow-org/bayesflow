@@ -4,7 +4,7 @@ from typing import Literal
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, logging
+from bayesflow.utils import logging
 from bayesflow.utils.serialization import serializable, serialize
 
 from .double_conv import DoubleConv

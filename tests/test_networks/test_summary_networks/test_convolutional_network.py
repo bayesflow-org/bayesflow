@@ -133,3 +133,13 @@ def test_dropout():
     net = _make(dropout=0.1)
     y = net(_input(), training=False)
     assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_convolutional_network_forwards_kwargs():
+    """
+    See: https://github.com/bayesflow-org/bayesflow/issues/699
+    """
+    from bayesflow.distributions import DiagonalNormal
+
+    net = ConvolutionalNetwork(base_distribution="normal")
+    assert isinstance(net.base_distribution, DiagonalNormal)

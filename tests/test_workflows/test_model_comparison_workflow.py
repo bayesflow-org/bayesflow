@@ -75,12 +75,12 @@ def test_bf_workflow(tmp_path, mc_simulators):
     assert "loss" in history.history
     assert len(history.history["loss"]) == 2
 
-    # BF diagnostics: blind_coverage + pairwise_bayes_factors (+ loss); no PMP plots
+    # BF diagnostics: calibration + pairwise_bayes_factors (+ loss); no PMP-only plots
     assert "loss" in plots
-    assert "blind_coverage" in plots
+    assert "calibration" in plots
     assert "pairwise_bayes_factors" in plots
     assert "confusion_matrix" not in plots
-    assert "calibration" not in plots
+    assert "blind_coverage" not in plots
     # no true_log_bfs_fn supplied → no recovery plot
     assert "bayes_factor_recovery" not in plots
 
@@ -112,7 +112,7 @@ def test_bf_workflow_with_bayes_factor_recovery(mc_simulators):
     plots = workflow.plot_default_diagnostics(test_data=20, true_log_bfs_fn=true_log_bfs_fn)
 
     assert "bayes_factor_recovery" in plots
-    assert "blind_coverage" in plots
+    assert "calibration" in plots
     assert "pairwise_bayes_factors" in plots
 
 
@@ -129,7 +129,7 @@ def test_bf_workflow_with_summary_network(mc_simulators, mc_summary_network):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
     plots = workflow.plot_default_diagnostics(test_data=20)
 
-    assert "blind_coverage" in plots
+    assert "calibration" in plots
     assert "pairwise_bayes_factors" in plots
 
 

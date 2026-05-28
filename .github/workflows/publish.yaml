@@ -38,9 +38,6 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
-    - name: Set up Python
-      run: uv python install
-
     - name: Update version string
       run: uv version --bump "RELEASE_TYPE"
 

@@ -283,9 +283,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
         **Bayes factor scoring rules** (:class:`~bayesflow.scoring_rules.ExponentialScore`,
         :class:`~bayesflow.scoring_rules.LogisticScore`):
 
-        - ``"blind_coverage"`` — blind coverage test (Jeffrey & Wandelt 2024):
-          conditional ECDFs of predicted log Bayes factors stratified by true model,
-          evaluated against blind (model-label-free) quantile thresholds.
+        - ``"calibration"`` — per-model calibration curves (Jeffrey & Wandelt 2024
+          blind coverage): predicted posterior model probability on x, observed
+          fraction on y, with ECE annotations.
         - ``"pairwise_bayes_factors"`` — heatmap of the mean predicted
           :math:`\log K_{m,j}` stratified by true model, showing pairwise
           model separability across all :math:`M \times M` pairs.
@@ -315,9 +315,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
             - ``confusion_matrix_kwargs`` — forwarded to
               :func:`~bayesflow.diagnostics.plots.mc_confusion_matrix` (PMP only).
             - ``calibration_kwargs`` — forwarded to
-              :func:`~bayesflow.diagnostics.plots.mc_calibration` (PMP only).
-            - ``blind_coverage_kwargs`` — forwarded to
-              :func:`~bayesflow.diagnostics.plots.blind_coverage` (BF scoring rules only).
+              :func:`~bayesflow.diagnostics.plots.mc_calibration` (both PMP and BF rules).
             - ``bayes_factor_recovery_kwargs`` — forwarded to
               :func:`~bayesflow.diagnostics.plots.bayes_factor_recovery` (BF scoring
               rules only, requires ``true_log_bfs_fn``).
@@ -374,11 +372,12 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 **kwargs.get("calibration_kwargs", {}),
             )
         else:
-            figures["blind_coverage"] = bf_plots.blind_coverage(
-                pred_log_bayes_factors=estimates["log_bayes_factors"],
+            bf_calibration_defaults = dict(color="#21908c")
+            figures["calibration"] = bf_plots.mc_calibration(
+                pred_models=estimates["model_probs"],
                 true_models=true_models,
                 model_names=self.model_names,
-                **kwargs.get("blind_coverage_kwargs", {}),
+                **{**bf_calibration_defaults, **kwargs.get("calibration_kwargs", {})},
             )
             figures["pairwise_bayes_factors"] = bf_plots.pairwise_bayes_factors(
                 pred_log_bayes_factors=estimates["log_bayes_factors"],

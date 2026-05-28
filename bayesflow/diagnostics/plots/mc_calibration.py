@@ -28,6 +28,8 @@ def mc_calibration(
     num_col: int = None,
     num_row: int = None,
     markersize: float = None,
+    xlabel: str = "Predicted Probability",
+    ylabel: str = "True Probability",
 ) -> plt.Figure:
     """Plots the calibration curves, the ECEs and the marginal histograms of predicted posterior model probabilities
     for a model comparison problem. The marginal histograms inform about the fraction of predictions in each bin.
@@ -63,6 +65,10 @@ def mc_calibration(
         The number of columns for the subplots. Dynamically determined if None.
     markersize          : float, optional, default: None
         The marker size in points.
+    xlabel              : str, optional, default: 'Predicted Probability'
+        Label for the x-axis.
+    ylabel              : str, optional, default: 'True Probability'
+        Label for the y-axis.
 
     Returns
     -------
@@ -123,8 +129,8 @@ def mc_calibration(
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
         title=plot_data["variable_names"],
-        xlabel="Predicted Probability",
-        ylabel="True Probability",
+        xlabel=xlabel,
+        ylabel=ylabel,
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )

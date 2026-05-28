@@ -75,7 +75,7 @@ def pairwise_bayes_factors(
     fig : plt.Figure
     """
     if cmap is None:
-        cmap = LinearSegmentedColormap.from_list("", ["white", "#132a70"])
+        cmap = LinearSegmentedColormap.from_list("", ["#c0392b", "white", "#27ae60"])
 
     pred_log_bayes_factors = np.asarray(pred_log_bayes_factors)
     true_models = np.asarray(true_models)

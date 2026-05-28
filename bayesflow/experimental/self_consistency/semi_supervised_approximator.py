@@ -113,6 +113,25 @@ class SemiSupervisedApproximator(Approximator):
 
         return metrics
 
+    def sample(self, *, approximator: str, **kwargs):
+        """
+        Generates samples from one of the approximator (specified by its name) given input conditions.
+        """
+        if hasattr(self.approximators[approximator], "sample"):
+            samples = self.approximators[approximator].sample(**kwargs)
+        else:
+            raise AttributeError(f"approximator `{approximator}` does not have a `sample` method.")
+
+        summary_outputs = samples.pop("_summaries", None)
+
+        if self.adapter is not None:
+            samples = self.adapter(samples, inverse=True)
+
+        if summary_outputs is not None:
+            samples["_summaries"] = summary_outputs
+
+        return samples
+
     def _compute_metrics_approximator(self, data: Mapping[str, Tensor], name: str, stage: str) -> Mapping[str, Tensor]:
         """Run one approximator's training metrics on a single dataset.
 

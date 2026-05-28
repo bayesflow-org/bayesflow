@@ -178,11 +178,9 @@ class Approximator(BackendApproximator):
         summary_outputs : Tensor or None
             Raw summary network outputs, or ``None`` if no summary network.
         """
-        data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
-        adapted = self.adapter(data, strict=False, keras=True, **kwargs)
-
         if data is not None:
-            adapted = self.adapter(data, strict=False, **kwargs)
+            data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+            adapted = self.adapter(data, strict=False, keras=True, **kwargs)
             adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
             summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)

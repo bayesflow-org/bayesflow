@@ -9,15 +9,20 @@ on:
         type: boolean
         default: true
       release_type:
-        description: "The type of release"
+        description: "The type of release. Performs an automatic version bump."
         required: true
         type: choice
-        options: [major, minor, patch]
+        # We explicitly only support minor and patch releases with this workflow.
+        # Other release types should be handled manually.
+        options: [minor, patch]
         default: patch
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      # Using the release type only as an environment variable avoids security vulnerabilities from input injection.
+      RELEASE_TYPE: ${{ github.event.inputs.release_type }}
 
     # PyPI trusted publishing permissions
     permissions:
@@ -37,7 +42,7 @@ jobs:
       run: uv python install
 
     - name: Update version string
-      run: uv version --bump ${{ github.event.inputs.release_type }}
+      run: uv version --bump "RELEASE_TYPE"
 
     - name: Build wheel
       run: uv build

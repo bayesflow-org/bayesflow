@@ -11,10 +11,6 @@ from .scoring_rule import ScoringRule
 class BrierScore(ScoringRule):
     r""":math:`S(\hat p_{1\ldots C}, y) = \sum_{c=1}^C (\hat p_c - y_c)^2`
 
-    Scores predicted logits against one-hot encoded target labels:
-
-    :math:`S(\hat y, y) = \sum_k (\mathrm{softmax}(\hat y)_k - y_k)^2`
-
     Minimised when the predicted probabilities exactly match the one-hot
     targets, i.e. when :math:`\mathrm{softmax}(\hat y)_m = 1` for the true
     model :math:`m`.

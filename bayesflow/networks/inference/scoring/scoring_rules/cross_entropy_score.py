@@ -11,10 +11,6 @@ from .scoring_rule import ScoringRule
 class CrossEntropyScore(ScoringRule):
     r""":math:`S(\hat p_{1\ldots C}, y) = -\sum_{c=1}^C y_c \log \hat p_c`
 
-    Scores a set of predicted logits against one-hot encoded target labels:
-
-    :math:`S(\hat y, y) = -\sum_c y_c \log \mathrm{softmax}(\hat y)_c`
-
     Designed for model comparison / classification, where the network outputs
     raw logits and targets are one-hot encoded class indicators.
     """

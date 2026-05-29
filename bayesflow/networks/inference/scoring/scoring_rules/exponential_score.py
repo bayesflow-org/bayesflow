@@ -19,18 +19,18 @@ def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
 
 
 class _LeakyLink(keras.Layer):
-    """Applies the leaky parity-odd power transform J_alpha(x) = x(1 + |x|^{alpha-1}) element-wise."""
+    """Applies the leaky parity-odd power transform J_λ(x) = x(1 + |x|^{λ-1}) element-wise."""
 
-    def __init__(self, alpha: float, eps: float = 1e-8, **kwargs):
+    def __init__(self, power: float, eps: float = 1e-8, **kwargs):
         super().__init__(**kwargs)
-        self.alpha = alpha
+        self.power = power
         self.eps = eps
 
     def call(self, x):
-        return x + x * keras.ops.power(keras.ops.abs(x) + self.eps, self.alpha - 1.0)
+        return x + x * keras.ops.power(keras.ops.abs(x) + self.eps, self.power - 1.0)
 
     def get_config(self):
-        return super().get_config() | {"alpha": self.alpha, "eps": self.eps}
+        return super().get_config() | {"power": self.power, "eps": self.eps}
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
@@ -58,11 +58,11 @@ class ExponentialScore(ScoringRule):
 
     Parameters
     ----------
-    alpha : float, optional
+    scale : float, optional
         Exponent scale (default: 1.0). Must be positive. The network output is
-        multiplied by ``alpha`` to recover log Bayes factors.
+        multiplied by ``scale`` to recover log Bayes factors.
     leaky : float or None, optional
-        Exponent for the leaky head link (default: None, i.e. identity link).
+        Power for the leaky head link (default: None, i.e. identity link).
         When set, applies :math:`J_\lambda(x) = x(1 + |x|^{\lambda - 1})` as
         a head link. Recommended value when used: ``leaky=2.0``.
 
@@ -71,20 +71,20 @@ class ExponentialScore(ScoringRule):
     Special cases recoverable by parameter choice:
 
     - ``ExponentialScore()`` — plain exponential rule (:math:`\alpha=1`, no leaky link)
-    - ``ExponentialScore(alpha=\alpha)`` — scaled exponential rule
+    - ``ExponentialScore(scale=scale)`` — scaled exponential rule
     - ``ExponentialScore(leaky=2.0)`` — leaky exponential rule (recommended BF rule)
-    - ``ExponentialScore(alpha=\alpha, leaky=\lambda)`` — scaled + leaky (combined)
+    - ``ExponentialScore(scale=scale, leaky=power)`` — scaled + leaky (combined)
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
     # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
-    def __init__(self, alpha: float = 1.0, leaky: float | None = None, **kwargs):
+    def __init__(self, scale: float = 1.0, leaky: float | None = None, **kwargs):
         super().__init__(**kwargs)
-        self.alpha = alpha
+        self.scale = scale
         self.leaky = leaky
-        self.config = {"alpha": alpha, "leaky": leaky}
+        self.config = {"scale": scale, "leaky": leaky}
 
     def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
         target_shape = tuple(target_shape)
@@ -114,7 +114,7 @@ class ExponentialScore(ScoringRule):
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
         clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
-        alpha_half_diff = self.alpha * diff / 2.0
+        alpha_half_diff = self.scale * diff / 2.0
         scores = keras.ops.sum(
             mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(alpha_half_diff, -88.0), clip_max)),
             axis=-1,
@@ -123,12 +123,12 @@ class ExponentialScore(ScoringRule):
 
     def get_link(self, key: str) -> keras.Layer:
         if key == "log_bayes_factors" and self.leaky is not None:
-            return _LeakyLink(self.leaky)
+            return _LeakyLink(power=self.leaky)
         return super().get_link(key)
 
     def to_bayes_factors(self, f: Tensor) -> Tensor:
-        """Scale network outputs by alpha to recover log Bayes factors."""
-        return f * self.alpha
+        """Scale network outputs by scale to recover log Bayes factors."""
+        return f * self.scale
 
     def get_config(self):
         return super().get_config() | self.config

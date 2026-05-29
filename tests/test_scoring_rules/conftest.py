@@ -84,7 +84,7 @@ def exponential_score():
 def scaled_exponential_score():
     from bayesflow.scoring_rules import ExponentialScore
 
-    return ExponentialScore(alpha=2.0)
+    return ExponentialScore(scale=2.0)
 
 
 @pytest.fixture()

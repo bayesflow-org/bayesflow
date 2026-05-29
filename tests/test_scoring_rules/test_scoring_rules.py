@@ -14,7 +14,7 @@ def test_is_pmp_rule_bf_rules():
     from bayesflow.scoring_rules import ExponentialScore, LogisticScore
 
     assert ExponentialScore().is_pmp_rule is False
-    assert ExponentialScore(alpha=2.0).is_pmp_rule is False
+    assert ExponentialScore(scale=2.0).is_pmp_rule is False
     assert ExponentialScore(leaky=2.0).is_pmp_rule is False
     assert LogisticScore().is_pmp_rule is False
     assert LogisticScore(alpha=1.0).is_pmp_rule is False
@@ -32,11 +32,11 @@ def test_to_bayes_factors_exponential_is_identity():
 def test_to_bayes_factors_scaled_exponential():
     from bayesflow.scoring_rules import ExponentialScore
 
-    alpha = 3.0
-    rule = ExponentialScore(alpha=alpha)
+    scale = 3.0
+    rule = ExponentialScore(scale=scale)
     f = keras.ops.convert_to_tensor([[1.0, -2.0]])
     result = rule.to_bayes_factors(f)
-    assert keras.ops.allclose(result, f * alpha)
+    assert keras.ops.allclose(result, f * scale)
 
 
 def test_to_bayes_factors_base_class_is_identity():
@@ -77,12 +77,12 @@ def test_exponential_score_leaky_get_config():
     rule = ExponentialScore(leaky=2.0)
     config = rule.get_config()
     assert config["leaky"] == 2.0
-    assert config["alpha"] == 1.0
+    assert config["scale"] == 1.0
 
     # _LeakyLink.get_config() is exercised via get_link
     link = rule.get_link("log_bayes_factors")
     link_config = link.get_config()
-    assert link_config["alpha"] == 2.0
+    assert link_config["power"] == 2.0
 
 
 def test_require_argument_k():

@@ -118,11 +118,12 @@ def test_bf_workflow_with_bayes_factor_recovery(mc_simulators):
 
 def test_bf_workflow_with_summary_network(mc_simulators, mc_summary_network):
     """BF workflow with a summary network."""
+    from bayesflow.links import Leaky
     from bayesflow.scoring_rules import ExponentialScore
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rule=ExponentialScore(leaky=2.0),
+        scoring_rule=ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)}),
         summary_network=mc_summary_network,
         summary_variables=["x"],
     )

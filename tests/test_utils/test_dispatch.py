@@ -327,13 +327,16 @@ def test_find_scoring_rule_by_name(name, expected_class):
     assert isinstance(rule, expected_cls)
 
 
-def test_find_scoring_rule_leaky_default_sets_leaky():
-    from bayesflow.utils import find_scoring_rule
+def test_find_scoring_rule_leaky_default_sets_link():
+    from bayesflow.links import Leaky
     from bayesflow.scoring_rules import ExponentialScore
+    from bayesflow.utils import find_scoring_rule
 
     rule = find_scoring_rule("leaky_exponential")
     assert isinstance(rule, ExponentialScore)
-    assert rule.leaky == 2.0
+    link = rule.get_link("log_bayes_factors")
+    assert isinstance(link, Leaky)
+    assert link.power == 2.0
 
 
 def test_find_scoring_rule_power_logistic_default_sets_alpha():

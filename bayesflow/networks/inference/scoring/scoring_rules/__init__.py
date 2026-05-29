@@ -19,7 +19,7 @@ Examples
 ...     cross_entropy=CrossEntropyScore(),
 ...     brier=BrierScore(),
 ...     polynomial=PolynomialScore(alpha=2.0),
-...     exponential=ExponentialScore(leaky=2.0),
+...     exponential=ExponentialScore(links={"log_bayes_factors": bf.links.Leaky(power=2.0)}),
 ...     logistic=LogisticScore(),
 ... )
 

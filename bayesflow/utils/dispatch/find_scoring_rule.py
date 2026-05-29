@@ -34,9 +34,10 @@ def _(name: str, *args, **kwargs):
 
             return ExponentialScore(*args, **kwargs)
         case "leaky_exponential":
+            from bayesflow.links import Leaky
             from bayesflow.scoring_rules import ExponentialScore
 
-            kwargs.setdefault("leaky", 2.0)
+            kwargs.setdefault("links", {"log_bayes_factors": Leaky(power=2.0)})
             return ExponentialScore(*args, **kwargs)
         case "logistic":
             from bayesflow.scoring_rules import LogisticScore

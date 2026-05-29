@@ -89,9 +89,10 @@ def scaled_exponential_score():
 
 @pytest.fixture()
 def leaky_exponential_score():
+    from bayesflow.links import Leaky
     from bayesflow.scoring_rules import ExponentialScore
 
-    return ExponentialScore(leaky=2.0)
+    return ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)})
 
 
 @pytest.fixture()

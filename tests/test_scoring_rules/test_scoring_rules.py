@@ -15,7 +15,9 @@ def test_is_pmp_rule_bf_rules():
 
     assert ExponentialScore().is_pmp_rule is False
     assert ExponentialScore(scale=2.0).is_pmp_rule is False
-    assert ExponentialScore(leaky=2.0).is_pmp_rule is False
+    from bayesflow.links import Leaky
+
+    assert ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)}).is_pmp_rule is False
     assert LogisticScore().is_pmp_rule is False
     assert LogisticScore(alpha=1.0).is_pmp_rule is False
 
@@ -72,14 +74,13 @@ def test_logistic_score_get_config():
 
 
 def test_exponential_score_leaky_get_config():
+    from bayesflow.links import Leaky
     from bayesflow.scoring_rules import ExponentialScore
 
-    rule = ExponentialScore(leaky=2.0)
+    rule = ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)})
     config = rule.get_config()
-    assert config["leaky"] == 2.0
     assert config["scale"] == 1.0
 
-    # _LeakyLink.get_config() is exercised via get_link
     link = rule.get_link("log_bayes_factors")
     link_config = link.get_config()
     assert link_config["power"] == 2.0

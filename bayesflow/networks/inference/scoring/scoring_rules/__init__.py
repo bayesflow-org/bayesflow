@@ -13,21 +13,15 @@ Examples
 ...     mvn=MvNormalScore(),
 ... )
 
->>> # A network trained with the Brier scoring rule.
->>> from bayesflow.scoring_rules import BrierScore
->>> brier_network = bf.networks.ScoringRuleNetwork(scoring_rule=BrierScore())
-
->>> # A network trained with the polynomial (Tsallis) scoring rule.
->>> from bayesflow.scoring_rules import PolynomialScore
->>> poly_network = bf.networks.ScoringRuleNetwork(scoring_rule=PolynomialScore(alpha=2.0))
-
->>> # A network trained with the exponential scoring rule to estimate log Bayes factors.
->>> from bayesflow.scoring_rules import ExponentialScore
->>> exp_network = bf.networks.ScoringRuleNetwork(scoring_rule=ExponentialScore(leaky=2.0))
-
->>> # A network trained with the logistic scoring rule to estimate log Bayes factors.
->>> from bayesflow.scoring_rules import LogisticScore
->>> logistic_network = bf.networks.ScoringRuleNetwork(scoring_rule=LogisticScore())
+>>> # A network to estimate posterior model probabilities with multiple categorical scoring rules.
+>>> from bayesflow.scoring_rules import CrossEntropyScore, BrierScore, PolynomialScore, ExponentialScore, LogisticScore
+>>> comparison_network = bf.networks.ScoringRuleNetwork(
+...     cross_entropy=CrossEntropyScore(),
+...     brier=BrierScore(),
+...     polynomial=PolynomialScore(alpha=2.0),
+...     exponential=ExponentialScore(leaky=2.0),
+...     logistic=LogisticScore(),
+... )
 
 Inherit from :py:class:`ScoringRule` to build your own custom scoring rule.
 """

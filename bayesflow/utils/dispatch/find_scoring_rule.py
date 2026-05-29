@@ -47,6 +47,30 @@ def _(name: str, *args, **kwargs):
 
             kwargs.setdefault("alpha", 1.0)
             return LogisticScore(*args, **kwargs)
+        case "mean":
+            from bayesflow.scoring_rules import MeanScore
+
+            return MeanScore(*args, **kwargs)
+        case "median":
+            from bayesflow.scoring_rules import MedianScore
+
+            return MedianScore(*args, **kwargs)
+        case "normed_difference":
+            from bayesflow.scoring_rules import NormedDifferenceScore
+
+            return NormedDifferenceScore(*args, **kwargs)
+        case "quantile":
+            from bayesflow.scoring_rules import QuantileScore
+
+            return QuantileScore(*args, **kwargs)
+        case "mv_normal" | "multivariate_normal":
+            from bayesflow.scoring_rules import MvNormalScore
+
+            return MvNormalScore(*args, **kwargs)
+        case "mixture":
+            from bayesflow.scoring_rules import MixtureScore
+
+            return MixtureScore(*args, **kwargs)
         case other:
             raise ValueError(f"Unsupported scoring rule name: '{other}'.")
 

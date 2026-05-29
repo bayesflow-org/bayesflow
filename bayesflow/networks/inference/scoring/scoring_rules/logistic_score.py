@@ -44,6 +44,8 @@ class LogisticScore(ScoringRule):
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, alpha: float | None = None, **kwargs):
+        if alpha is not None and alpha <= 0:
+            raise ValueError(f"alpha must be positive, got {alpha!r}.")
         super().__init__(**kwargs)
         self.alpha = alpha
         self.config = {"alpha": alpha}

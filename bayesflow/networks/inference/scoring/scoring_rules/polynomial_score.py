@@ -25,7 +25,7 @@ class PolynomialScore(ScoringRule):
 
     For :math:`\alpha = 2` this is proportional to the :class:`BrierScore`
     (same gradient direction, same minimiser).  Larger :math:`\alpha` sharpens the
-    penalty for confidently wrong predictions.
+    penalty for wrong predictions.
 
     Parameters
     ----------
@@ -34,6 +34,8 @@ class PolynomialScore(ScoringRule):
     """
 
     def __init__(self, alpha: float = 2.0, **kwargs):
+        if alpha <= 1:
+            raise ValueError(f"alpha must be greater than 1, got {alpha!r}.")
         super().__init__(**kwargs)
         self.alpha = alpha
         self.config = {"alpha": alpha}

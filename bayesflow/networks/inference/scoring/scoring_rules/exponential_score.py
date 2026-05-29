@@ -67,6 +67,8 @@ class ExponentialScore(ScoringRule):
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, scale: float = 1.0, **kwargs):
+        if scale <= 0:
+            raise ValueError(f"scale must be positive, got {scale!r}.")
         super().__init__(**kwargs)
         self.scale = scale
         self.config = {"scale": scale}

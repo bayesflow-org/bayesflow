@@ -86,10 +86,10 @@ class ModelComparisonSimulator(Simulator):
             raise ValueError("Received conflicting arguments. At most one of `p` or `logits` must be provided.")
         elif p is not None:
             p = np.array(p, dtype=float)
-            if not np.isclose(np.sum(p), 1.0):
-                raise ValueError("Probabilities must sum to 1.")
             if np.any(p <= 0):
                 raise ValueError("All probabilities must be positive.")
+            if not np.isclose(np.sum(p), 1.0):
+                raise ValueError("Probabilities must sum to 1.")
             logits = np.log(p)
         elif logits is None:
             logits = [0.0] * len(simulators)

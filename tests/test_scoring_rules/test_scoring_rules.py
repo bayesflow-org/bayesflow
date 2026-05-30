@@ -42,7 +42,7 @@ def test_to_bayes_factors_scaled_exponential():
 
 
 def test_to_bayes_factors_base_class_is_identity():
-    """ScoringRule.to_bayes_factors is the identity by default."""
+    """CategoricalScoringRule.to_bayes_factors is the identity by default."""
     from bayesflow.scoring_rules import LogisticScore
 
     rule = LogisticScore()

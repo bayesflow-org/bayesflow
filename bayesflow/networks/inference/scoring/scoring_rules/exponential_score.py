@@ -4,7 +4,7 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
-from .scoring_rule import ScoringRule
+from .categorical_scoring_rule import CategoricalScoringRule
 
 
 def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
@@ -19,7 +19,7 @@ def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
-class ExponentialScore(ScoringRule):
+class ExponentialScore(CategoricalScoringRule):
     r""":math:`S(\{f_k\}, m; \alpha) = \sum_{k \neq m} \exp\!\left(\tfrac{\alpha}{2}(f_k - f_m)\right)`
 
     The network learns :math:`M - 1` latent scores :math:`f_k` relative to

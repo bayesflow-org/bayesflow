@@ -10,7 +10,7 @@ from bayesflow.networks import SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ModelComparisonApproximator
-from bayesflow.scoring_rules import ScoringRule
+from bayesflow.scoring_rules import CategoricalScoringRule
 from bayesflow.utils import (
     find_network,
     find_scoring_rule,
@@ -45,9 +45,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
         The classifier backbone used inside the approximator (default: ``"mlp"``).
         Accepts a Keras layer instance or any name recognised by
         :func:`~bayesflow.utils.find_network` (e.g. ``"mlp"``).
-    scoring_rule : ScoringRule or str, optional
+    scoring_rule : CategoricalScoringRule or str, optional
         Scoring rule used to train the classifier. Accepts a
-        :class:`~bayesflow.scoring_rules.ScoringRule` instance or a string recognised by
+        :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance or a string recognised by
         :func:`~bayesflow.utils.find_scoring_rule` (default: ``"cross_entropy"``).
         Determines what the network learns to estimate:
 
@@ -111,7 +111,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         adapter: Adapter = None,
         classifier_network: keras.Layer | str = "mlp",
         summary_network: SummaryNetwork | str = None,
-        scoring_rule: ScoringRule | str = None,
+        scoring_rule: CategoricalScoringRule | str = None,
         initial_learning_rate: float = 5e-4,
         optimizer: keras.optimizers.Optimizer | type = None,
         checkpoint_filepath: str = None,

@@ -172,22 +172,6 @@ class ScoringRule:
 
         return keras.Sequential([subnet, dense, reshape, link])
 
-    @property
-    def is_pmp_rule(self) -> bool:
-        """True for PMP rules (output logits), False for Bayes factor rules (output log Bayes factors)."""
-        return "logits" in self.get_head_shapes_from_target_shape((1, 2))
-
-    def to_bayes_factors(self, f: Tensor) -> Tensor:
-        """Convert raw network outputs to log Bayes factors.
-
-        The default implementation is the identity, correct for scoring rules
-        whose minimiser is directly the log Bayes factor (e.g.
-        :class:`ExponentialScore`, :class:`LogisticScore`).  Subclasses whose
-        minimiser lives in a transformed space must override this to apply the
-        corresponding forward transform.
-        """
-        return f
-
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor) -> Tensor:
         r"""Scores a batch of probabilistic estimates of distributions based on samples
         of the corresponding distributions.

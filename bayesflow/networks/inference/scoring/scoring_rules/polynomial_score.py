@@ -4,11 +4,11 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
-from .scoring_rule import ScoringRule
+from .categorical_scoring_rule import CategoricalScoringRule
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
-class PolynomialScore(ScoringRule):
+class PolynomialScore(CategoricalScoringRule):
     r""":math:`S(\hat p_{1\ldots C}, y; \alpha) = \tfrac{\alpha-1}{\alpha}\sum_c \hat p_c^\alpha - \hat p_y^{\alpha-1}`
 
     Implements the Tsallis proper scoring rule on the probability simplex,

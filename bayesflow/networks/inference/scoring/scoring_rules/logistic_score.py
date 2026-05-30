@@ -4,12 +4,12 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
-from .scoring_rule import ScoringRule
+from .categorical_scoring_rule import CategoricalScoringRule
 from .exponential_score import _pairwise_diff
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
-class LogisticScore(ScoringRule):
+class LogisticScore(CategoricalScoringRule):
     r""":math:`S(\{f_k\}, m) = \sum_{k \neq m} \log\!\left(1 + e^{f_k - f_m}\right)`
 
     Two modes selected by the ``alpha`` parameter:

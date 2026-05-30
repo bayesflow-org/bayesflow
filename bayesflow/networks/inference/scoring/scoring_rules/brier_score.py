@@ -4,11 +4,11 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
-from .scoring_rule import ScoringRule
+from .categorical_scoring_rule import CategoricalScoringRule
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
-class BrierScore(ScoringRule):
+class BrierScore(CategoricalScoringRule):
     r""":math:`S(\hat p_{1\ldots C}, y) = \sum_{c=1}^C (\hat p_c - y_c)^2`
 
     Minimised when the predicted probabilities exactly match the one-hot

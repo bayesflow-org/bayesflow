@@ -8,7 +8,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
 from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
-from bayesflow.scoring_rules import CrossEntropyScore, ScoringRule
+from bayesflow.scoring_rules import CategoricalScoringRule, CrossEntropyScore
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, logging
@@ -46,7 +46,7 @@ class ModelComparisonApproximator(Approximator):
         with a :class:`~bayesflow.scoring_rules.CrossEntropyScore`.
         The input to the classifier network is created by concatenating ``inference_conditions``
         and (optional) output of the ``summary_network``.
-    scoring_rule : bf.scoring_rules.ScoringRule, optional
+    scoring_rule : bf.scoring_rules.CategoricalScoringRule, optional
         The scoring rule used for training. If ``None`` (default), a
         :class:`~bayesflow.scoring_rules.CrossEntropyScore` is used.
     adapter : bf.adapters.Adapter, optional
@@ -66,7 +66,7 @@ class ModelComparisonApproximator(Approximator):
         *,
         num_models: int,
         classifier_network: keras.Layer,
-        scoring_rule: ScoringRule = None,
+        scoring_rule: CategoricalScoringRule = None,
         adapter: Adapter = None,
         summary_network: SummaryNetwork = None,
         standardize: str | Sequence[str] = None,
@@ -77,6 +77,11 @@ class ModelComparisonApproximator(Approximator):
         self.adapter = adapter if adapter is not None else Adapter()
 
         scoring_rule = scoring_rule if scoring_rule is not None else CrossEntropyScore()
+        if not isinstance(scoring_rule, CategoricalScoringRule):
+            raise TypeError(
+                f"scoring_rule must be a CategoricalScoringRule, got {type(scoring_rule).__name__!r}. "
+                "Use one of the model comparison scoring rules (e.g. CrossEntropyScore, ExponentialScore)."
+            )
         self.scoring_rule = scoring_rule
 
         self.inference_network = ScoringRuleNetwork(

@@ -95,6 +95,19 @@ def test_estimate(approximator, train_dataset, simulator):
         assert "summaries" not in output
 
 
+def test_rejects_non_categorical_scoring_rule():
+    import keras
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.scoring_rules import MeanScore
+
+    with pytest.raises(TypeError, match="CategoricalScoringRule"):
+        ModelComparisonApproximator(
+            num_models=2,
+            classifier_network=keras.layers.Dense(4),
+            scoring_rule=MeanScore(),
+        )
+
+
 def test_is_pmp_rule_property(approximator):
     from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore
 

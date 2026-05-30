@@ -1,5 +1,4 @@
 from collections.abc import Callable, Sequence
-from types import FunctionType
 from typing import Literal
 
 import numpy as np
@@ -78,7 +77,7 @@ class ModelComparisonSimulator(Simulator):
         # constructor body unchanged
         self.simulators = simulators
 
-        if isinstance(shared_simulator, FunctionType):
+        if callable(shared_simulator) and not isinstance(shared_simulator, Simulator):
             shared_simulator = LambdaSimulator(shared_simulator, is_batched=True)
         self.shared_simulator = shared_simulator
 

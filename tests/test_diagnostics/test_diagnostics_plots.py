@@ -380,3 +380,104 @@ def test_pairwise_bayes_factors(pred_log_bayes_factors, true_models, model_names
         model_names=model_names,
     )
     assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_integer_labels(pred_log_bayes_factors, true_models):
+    true_model_idx = np.argmax(true_models, axis=-1)
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_model_idx,
+    )
+    assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_no_title(pred_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        title=False,
+    )
+    assert out.axes[0].get_title() == ""
+
+
+def test_pairwise_bayes_factors_custom_fmt(pred_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        fmt=".2f",
+    )
+    assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_custom_cmap(pred_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        cmap="coolwarm",
+    )
+    assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_zero_matrix():
+    # all-zero mean matrix triggers abs_max = 0 → fallback to 1.0
+    pred = np.zeros((10, 2))
+    true_models = np.eye(3)[np.zeros(10, dtype=int)]
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred,
+        true_models=true_models,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_shape_mismatch():
+    pred = np.random.normal(size=(10, 2))
+    true_wrong = np.random.normal(size=(10, 3))
+    true_models = np.eye(3)[np.random.choice(3, 10)]
+    with pytest.raises(ValueError, match="same shape"):
+        bf.diagnostics.plots.bayes_factor_recovery(
+            pred_log_bayes_factors=pred,
+            true_log_bayes_factors=true_wrong,
+            true_models=true_models,
+        )
+
+
+def test_bayes_factor_recovery_integer_labels(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    true_model_idx = np.argmax(true_models, axis=-1)
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_model_idx,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_no_corr(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        add_corr=False,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_markersize(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        markersize=5.0,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_custom_layout(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    # Use a 2×2 grid (more panels than needed) to exercise custom num_col/num_row
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        num_col=2,
+        num_row=2,
+    )
+    assert out.axes is not None

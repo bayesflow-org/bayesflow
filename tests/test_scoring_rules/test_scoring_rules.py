@@ -185,3 +185,242 @@ def test_mixture_score_serialization():
 
     assert isinstance(restored, MixtureScore)
     assert list(restored.components.keys()) == list(original.components.keys())
+
+
+# --- ScoringRule base class ---
+
+
+def test_scoring_rule_score_raises():
+    from bayesflow.scoring_rules import ScoringRule
+
+    rule = ScoringRule()
+    with pytest.raises(NotImplementedError):
+        rule.score({}, None, None)
+
+
+def test_scoring_rule_get_head_shapes_raises():
+    from bayesflow.scoring_rules import ScoringRule
+
+    rule = ScoringRule()
+    with pytest.raises(NotImplementedError):
+        rule.get_head_shapes_from_target_shape((1, 2))
+
+
+def test_scoring_rule_get_subnet_default():
+    import keras
+    from bayesflow.scoring_rules import ScoringRule
+
+    rule = ScoringRule()
+    subnet = rule.get_subnet("any_key")
+    assert isinstance(subnet, keras.layers.Identity)
+
+
+def test_scoring_rule_get_link_default():
+    import keras
+    from bayesflow.scoring_rules import ScoringRule
+
+    rule = ScoringRule()
+    link = rule.get_link("any_key")
+    assert isinstance(link, keras.layers.Activation)
+
+
+def test_scoring_rule_get_link_string():
+    import keras
+    from bayesflow.scoring_rules import ScoringRule
+
+    rule = ScoringRule(links={"value": "relu"})
+    link = rule.get_link("value")
+    assert isinstance(link, keras.layers.Activation)
+
+
+def test_scoring_rule_get_link_layer():
+    import keras
+    from bayesflow.scoring_rules import ScoringRule
+
+    layer = keras.layers.Activation("sigmoid")
+    rule = ScoringRule(links={"value": layer})
+    assert rule.get_link("value") is layer
+
+
+def test_scoring_rule_get_config_round_trip():
+    from bayesflow.scoring_rules import BrierScore
+    from bayesflow.utils.serialization import serialize, deserialize
+
+    original = BrierScore()
+    restored = deserialize(serialize(original))
+    assert isinstance(restored, BrierScore)
+
+
+# --- PolynomialScore ---
+
+
+def test_polynomial_score_alpha_validation():
+    from bayesflow.scoring_rules import PolynomialScore
+
+    with pytest.raises(ValueError, match="greater than 1"):
+        PolynomialScore(alpha=1.0)
+    with pytest.raises(ValueError, match="greater than 1"):
+        PolynomialScore(alpha=0.5)
+
+
+def test_polynomial_score_with_weights():
+    import keras
+    from bayesflow.scoring_rules import PolynomialScore
+
+    rule = PolynomialScore(alpha=2.0)
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
+    logits = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
+    # weights=[2, 0] → weighted_mean uses ops.mean(score * weight), so result = score[0]
+    weights = keras.ops.convert_to_tensor([2.0, 0.0])
+    score_weighted = rule.score({"logits": logits}, targets, weights=weights)
+    score_first = rule.score({"logits": logits[:1]}, targets[:1])
+    assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
+
+
+def test_polynomial_score_get_config():
+    from bayesflow.scoring_rules import PolynomialScore
+
+    rule = PolynomialScore(alpha=3.0)
+    config = rule.get_config()
+    assert config["alpha"] == 3.0
+
+
+# --- BrierScore ---
+
+
+def test_brier_score_with_weights():
+    import keras
+    from bayesflow.scoring_rules import BrierScore
+
+    rule = BrierScore()
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
+    logits = keras.ops.convert_to_tensor([[2.0, 0.0], [0.0, 2.0]])
+    weights = keras.ops.convert_to_tensor([2.0, 0.0])
+    score_weighted = rule.score({"logits": logits}, targets, weights=weights)
+    score_first = rule.score({"logits": logits[:1]}, targets[:1])
+    assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
+
+
+def test_brier_score_get_config_round_trip():
+    from bayesflow.scoring_rules import BrierScore
+    from bayesflow.utils.serialization import serialize, deserialize
+
+    original = BrierScore()
+    restored = deserialize(serialize(original))
+    assert isinstance(restored, BrierScore)
+
+
+def test_brier_score_optimal_at_true_probs():
+    import keras
+    from bayesflow.scoring_rules import BrierScore
+
+    rule = BrierScore()
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0], [1.0, 0.0]])
+    # perfect logits vs random
+    perfect_logits = keras.ops.convert_to_tensor([[10.0, -10.0], [10.0, -10.0]])
+    random_logits = keras.ops.convert_to_tensor([[0.0, 0.0], [0.0, 0.0]])
+    assert rule.score({"logits": perfect_logits}, targets) < rule.score({"logits": random_logits}, targets)
+
+
+# --- LogisticScore ---
+
+
+def test_logistic_score_with_weights():
+    import keras
+    from bayesflow.scoring_rules import LogisticScore
+
+    rule = LogisticScore()
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
+    estimates = keras.ops.convert_to_tensor([[1.0, -1.0], [-1.0, 1.0]])
+    weights = keras.ops.convert_to_tensor([2.0, 0.0])
+    score_weighted = rule.score({"log_bayes_factors": estimates[:, 1:]}, targets, weights=weights)
+    score_first = rule.score({"log_bayes_factors": estimates[:1, 1:]}, targets[:1])
+    assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
+
+
+def test_logistic_score_get_config_round_trip():
+    from bayesflow.scoring_rules import LogisticScore
+    from bayesflow.utils.serialization import serialize, deserialize
+
+    original = LogisticScore()
+    restored = deserialize(serialize(original))
+    assert isinstance(restored, LogisticScore)
+
+
+# --- ExponentialScore ---
+
+
+def test_exponential_score_scale_validation():
+    from bayesflow.scoring_rules import ExponentialScore
+
+    with pytest.raises(ValueError, match="positive"):
+        ExponentialScore(scale=0.0)
+    with pytest.raises(ValueError, match="positive"):
+        ExponentialScore(scale=-1.0)
+
+
+def test_exponential_score_with_weights():
+    import keras
+    from bayesflow.scoring_rules import ExponentialScore
+
+    rule = ExponentialScore()
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
+    estimates = keras.ops.convert_to_tensor([[1.0], [-1.0]])
+    weights = keras.ops.convert_to_tensor([2.0, 0.0])
+    score_weighted = rule.score({"log_bayes_factors": estimates}, targets, weights=weights)
+    score_first = rule.score({"log_bayes_factors": estimates[:1]}, targets[:1])
+    assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
+
+
+def test_exponential_score_clipping_no_overflow():
+    import keras
+    from bayesflow.scoring_rules import ExponentialScore
+
+    rule = ExponentialScore()
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0]])
+    large_estimates = keras.ops.convert_to_tensor([[1000.0]])
+    score = rule.score({"log_bayes_factors": large_estimates}, targets)
+    assert keras.ops.isfinite(score)
+
+
+def test_exponential_score_get_config_round_trip():
+    from bayesflow.scoring_rules import ExponentialScore
+    from bayesflow.utils.serialization import serialize, deserialize
+
+    original = ExponentialScore(scale=2.0)
+    restored = deserialize(serialize(original))
+    assert isinstance(restored, ExponentialScore)
+    assert restored.scale == 2.0
+
+
+# --- PowerLogisticScore ---
+
+
+def test_power_logistic_score_alpha_validation():
+    from bayesflow.scoring_rules import PowerLogisticScore
+
+    with pytest.raises(ValueError, match="positive"):
+        PowerLogisticScore(alpha=0.0)
+    with pytest.raises(ValueError, match="positive"):
+        PowerLogisticScore(alpha=-1.0)
+
+
+def test_power_logistic_score_clipping_no_overflow():
+    import keras
+    from bayesflow.scoring_rules import PowerLogisticScore
+
+    rule = PowerLogisticScore(alpha=2.0)
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0]])
+    large_estimates = keras.ops.convert_to_tensor([[1000.0]])
+    score = rule.score({"log_bayes_factors": large_estimates}, targets)
+    assert keras.ops.isfinite(score)
+
+
+def test_power_logistic_score_get_config_round_trip():
+    from bayesflow.scoring_rules import PowerLogisticScore
+    from bayesflow.utils.serialization import serialize, deserialize
+
+    original = PowerLogisticScore(alpha=2.0)
+    restored = deserialize(serialize(original))
+    assert isinstance(restored, PowerLogisticScore)
+    assert restored.alpha == 2.0

@@ -377,3 +377,48 @@ def test_find_scoring_rule_invalid_type():
 
     with pytest.raises(TypeError):
         find_scoring_rule(42)
+
+
+@pytest.mark.parametrize(
+    "name,expected_class",
+    [
+        ("mean", "bayesflow.scoring_rules.MeanScore"),
+        ("median", "bayesflow.scoring_rules.MedianScore"),
+        ("quantile", "bayesflow.scoring_rules.QuantileScore"),
+        ("mv_normal", "bayesflow.scoring_rules.MvNormalScore"),
+        ("multivariate_normal", "bayesflow.scoring_rules.MvNormalScore"),
+    ],
+)
+def test_find_scoring_rule_continuous_by_name(name, expected_class):
+    import importlib
+
+    from bayesflow.utils import find_scoring_rule
+
+    module_path, class_name = expected_class.rsplit(".", 1)
+    expected_cls = getattr(importlib.import_module(module_path), class_name)
+    rule = find_scoring_rule(name)
+    assert isinstance(rule, expected_cls)
+
+
+def test_find_scoring_rule_normed_difference():
+    from bayesflow.scoring_rules import NormedDifferenceScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("normed_difference", k=2)
+    assert isinstance(rule, NormedDifferenceScore)
+
+
+def test_find_scoring_rule_mixture():
+    from bayesflow.scoring_rules import MixtureScore, MvNormalScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("mixture", mvn1=MvNormalScore(), mvn2=MvNormalScore())
+    assert isinstance(rule, MixtureScore)
+
+
+def test_find_scoring_rule_case_insensitive():
+    from bayesflow.scoring_rules import CrossEntropyScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("CROSS_ENTROPY")
+    assert isinstance(rule, CrossEntropyScore)

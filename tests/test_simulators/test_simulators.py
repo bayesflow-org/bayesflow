@@ -127,3 +127,35 @@ def test_multimodel_p_argument(batch_size):
     # p and logits are mutually exclusive
     with pytest.raises(ValueError, match="conflicting"):
         ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.5, 0.5], logits=[0.0, 0.0])
+
+    # non-positive probabilities must raise
+    with pytest.raises(ValueError, match="positive"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.0, 1.0])
+    with pytest.raises(ValueError, match="positive"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[-0.1, 1.1])
+
+
+def test_model_comparison_simulator_logits_length_mismatch():
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+    import numpy as np
+
+    sim = make_simulator([lambda: dict(x=np.random.normal())])
+    with pytest.raises(ValueError, match="[Ll]ength"):
+        ModelComparisonSimulator(simulators=[sim, sim], logits=[0.0, 0.0, 0.0])
+
+
+def test_model_comparison_simulator_shared_simulator_callable(batch_size):
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+    import numpy as np
+
+    def shared(batch_size):
+        return dict(shared=np.ones(batch_size))
+
+    def model():
+        return dict(x=np.random.normal())
+
+    sim = make_simulator([model])
+    mc_sim = ModelComparisonSimulator(simulators=[sim, sim], shared_simulator=shared)
+    samples = mc_sim.sample(batch_size)
+    assert "shared" in samples
+    assert "model_indices" in samples

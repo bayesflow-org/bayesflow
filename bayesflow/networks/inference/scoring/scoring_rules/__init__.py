@@ -14,13 +14,21 @@ Examples
 ... )
 
 >>> # A network to estimate posterior model probabilities with multiple categorical scoring rules.
->>> from bayesflow.scoring_rules import CrossEntropyScore, BrierScore, PolynomialScore, ExponentialScore, LogisticScore
+>>> from bayesflow.scoring_rules import (
+...     CrossEntropyScore,
+...     BrierScore,
+...     PolynomialScore,
+...     ExponentialScore,
+...     LogisticScore,
+...     PowerLogisticScore,
+... )
 >>> comparison_network = bf.networks.ScoringRuleNetwork(
 ...     cross_entropy=CrossEntropyScore(),
 ...     brier=BrierScore(),
 ...     polynomial=PolynomialScore(alpha=2.0),
 ...     exponential=ExponentialScore(links={"log_bayes_factors": bf.links.Leaky(power=2.0)}),
 ...     logistic=LogisticScore(),
+...     power_logistic=PowerLogisticScore(alpha=1.0),
 ... )
 
 Inherit from :py:class:`ScoringRule` to build your own custom scoring rule.
@@ -40,6 +48,7 @@ from .brier_score import BrierScore
 from .polynomial_score import PolynomialScore
 from .exponential_score import ExponentialScore
 from .logistic_score import LogisticScore
+from .power_logistic_score import PowerLogisticScore
 
 from bayesflow.utils._docs import _add_imports_to_all
 

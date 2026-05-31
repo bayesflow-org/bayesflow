@@ -24,7 +24,7 @@ class CategoricalScoringRule(ScoringRule):
 
         The default implementation is the identity, correct for BF rules whose
         minimiser is directly the log Bayes factor (e.g.
-        :class:`ExponentialScore`, :class:`LogisticScore`). Subclasses whose
+        :class:`ExponentialScore`, :class:`LogisticScore`, :class:`PowerLogisticScore`). Subclasses whose
         minimiser lives in a transformed space must override this method.
         """
         return f

@@ -44,10 +44,10 @@ def _(name: str, *args, **kwargs):
 
             return LogisticScore(*args, **kwargs)
         case "power_logistic":
-            from bayesflow.scoring_rules import LogisticScore
+            from bayesflow.scoring_rules import PowerLogisticScore
 
             kwargs.setdefault("alpha", 1.0)
-            return LogisticScore(*args, **kwargs)
+            return PowerLogisticScore(*args, **kwargs)
         case "mean":
             from bayesflow.scoring_rules import MeanScore
 

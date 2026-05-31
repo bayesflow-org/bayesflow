@@ -14,6 +14,7 @@ from bayesflow.networks.inference.scoring.scoring_rules import (  # noqa: F401
     PolynomialScore,
     ExponentialScore,
     LogisticScore,
+    PowerLogisticScore,
     __doc__,
 )
 

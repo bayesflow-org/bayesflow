@@ -313,7 +313,7 @@ def test_find_noise_schedule_invalid_object():
         ("scaled_exponential", "bayesflow.scoring_rules.ExponentialScore"),
         ("leaky_exponential", "bayesflow.scoring_rules.ExponentialScore"),
         ("logistic", "bayesflow.scoring_rules.LogisticScore"),
-        ("power_logistic", "bayesflow.scoring_rules.LogisticScore"),
+        ("power_logistic", "bayesflow.scoring_rules.PowerLogisticScore"),
     ],
 )
 def test_find_scoring_rule_by_name(name, expected_class):
@@ -340,11 +340,11 @@ def test_find_scoring_rule_leaky_default_sets_link():
 
 
 def test_find_scoring_rule_power_logistic_default_sets_alpha():
+    from bayesflow.scoring_rules import PowerLogisticScore
     from bayesflow.utils import find_scoring_rule
-    from bayesflow.scoring_rules import LogisticScore
 
     rule = find_scoring_rule("power_logistic")
-    assert isinstance(rule, LogisticScore)
+    assert isinstance(rule, PowerLogisticScore)
     assert rule.alpha == 1.0
 
 

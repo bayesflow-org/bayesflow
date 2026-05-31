@@ -2,6 +2,7 @@
 # bayesflow.networks.inference.scoring.scoring_rules
 from bayesflow.networks.inference.scoring.scoring_rules import (  # noqa: F401
     ScoringRule,
+    CategoricalScoringRule,
     ParametricDistributionScore,
     NormedDifferenceScore,
     MeanScore,

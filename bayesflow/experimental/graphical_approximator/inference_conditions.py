@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Literal
 
 import keras
@@ -225,7 +223,7 @@ def apply_sequential_chain(
 
 
 def inference_conditions_by_network(
-    approximator: GraphicalApproximator,
+    approximator: "GraphicalApproximator",
     simulation_output: dict[str, Tensor],
     summary_registry: dict[SummaryKey, SummaryNetwork],
     training: bool = False,

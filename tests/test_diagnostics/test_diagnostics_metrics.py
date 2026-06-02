@@ -123,6 +123,25 @@ def test_classifier_two_sample_test(random_samples_a, random_samples_b):
     assert len(metrics["scores"]) == 5
 
 
+def test_model_comparison_accuracy():
+    probs = np.array([[0.8, 0.1, 0.1], [0.1, 0.9, 0.0], [0.2, 0.3, 0.5]])
+    one_hot = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+    # PMP mode: predictions shape (N, M)
+    assert bf.diagnostics.metrics.model_comparison_accuracy(probs, one_hot) == 1.0
+
+    # partial accuracy
+    probs_wrong = np.array([[0.1, 0.8, 0.1], [0.1, 0.9, 0.0], [0.2, 0.3, 0.5]])
+    acc = bf.diagnostics.metrics.model_comparison_accuracy(probs_wrong, one_hot)
+    assert abs(acc - 2 / 3) < 1e-6
+
+    # Bayes factor mode: predictions shape (N, M-1) — covers lines 61-62
+    # log K_{1,0} and log K_{2,0}; prepend f_0=0 and argmax
+    log_bfs = np.array([[-1.0, -2.0], [2.0, 0.5], [-0.5, 1.5]])
+    # argmax([0,-1,-2])=0, argmax([0,2,0.5])=1, argmax([0,-0.5,1.5])=2 → all correct
+    assert bf.diagnostics.metrics.model_comparison_accuracy(log_bfs, one_hot) == 1.0
+
+
 def test_expected_calibration_error(pred_models, true_models, model_names):
     out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models, model_names=model_names)
     assert list(out.keys()) == ["values", "metric_name", "model_names"]

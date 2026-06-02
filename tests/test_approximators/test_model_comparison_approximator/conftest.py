@@ -84,7 +84,7 @@ def approximator(adapter, classifier_network, summary_network, simulator, standa
     return ModelComparisonApproximator(
         num_models=len(simulator.simulators),
         classifier_network=classifier_network,
-        scoring_rule=scoring_rule,
+        scoring_rules=scoring_rule,
         adapter=adapter,
         summary_network=summary_network,
         standardize=standardize,

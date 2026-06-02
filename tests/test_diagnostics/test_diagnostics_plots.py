@@ -481,3 +481,38 @@ def test_bayes_factor_recovery_custom_layout(pred_log_bayes_factors, true_log_ba
         num_row=2,
     )
     assert out.axes is not None
+
+
+def test_bayes_factor_recovery_only_num_row(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    # num_row set, num_col inferred → covers elif num_col is None branch
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        num_row=1,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_only_num_col(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    # num_col set, num_row inferred → covers elif num_row is None branch
+    # num_col=1 also exercises the single-column layout path in add_y_labels / add_x_labels
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        num_col=1,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_missing_model(pred_log_bayes_factors, true_log_bayes_factors):
+    # All samples from model 0 → models 1 and 2 have empty masks → covers continue branch
+    true_models_skewed = np.zeros((100, 3), dtype=np.int32)
+    true_models_skewed[:, 0] = 1
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models_skewed,
+    )
+    assert out.axes is not None

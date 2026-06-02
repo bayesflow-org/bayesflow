@@ -63,7 +63,7 @@ def test_bf_workflow(tmp_path, mc_simulators):
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rule=ExponentialScore(),
+        scoring_rules=ExponentialScore(),
         inference_conditions=["x"],
         checkpoint_filepath=str(tmp_path),
     )
@@ -100,7 +100,7 @@ def test_bf_workflow_with_bayes_factor_recovery(mc_simulators):
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rule=ExponentialScore(),
+        scoring_rules=ExponentialScore(),
         inference_conditions=["x"],
     )
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
@@ -123,7 +123,7 @@ def test_bf_workflow_with_summary_network(mc_simulators, mc_summary_network):
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rule=ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)}),
+        scoring_rules=ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)}),
         summary_network=mc_summary_network,
         summary_variables=["x"],
     )
@@ -184,7 +184,7 @@ def test_estimate_shapes_pmp(mc_simulators):
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rule=CrossEntropyScore(),
+        scoring_rules=CrossEntropyScore(),
         inference_conditions=["x"],
     )
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
@@ -207,7 +207,7 @@ def test_estimate_shapes_bf(mc_simulators):
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rule=ExponentialScore(),
+        scoring_rules=ExponentialScore(),
         inference_conditions=["x"],
     )
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)

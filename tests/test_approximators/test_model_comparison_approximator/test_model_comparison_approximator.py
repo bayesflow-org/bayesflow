@@ -88,11 +88,11 @@ def test_estimate(approximator, train_dataset, simulator):
         assert output["log_bayes_factors"].shape == (num_conditions, num_models - 1)
 
     if approximator.summary_network is not None:
-        assert "summaries" in output
-        assert output["summaries"].ndim == 2
-        assert output["summaries"].shape[0] == num_conditions
+        assert "_summaries" in output
+        assert output["_summaries"].ndim == 2
+        assert output["_summaries"].shape[0] == num_conditions
     else:
-        assert "summaries" not in output
+        assert "_summaries" not in output
 
 
 def test_rejects_non_categorical_scoring_rule():
@@ -104,7 +104,7 @@ def test_rejects_non_categorical_scoring_rule():
         ModelComparisonApproximator(
             num_models=2,
             classifier_network=keras.layers.Dense(4),
-            scoring_rule=MeanScore(),
+            scoring_rules=MeanScore(),
         )
 
 
@@ -115,6 +115,67 @@ def test_is_pmp_rule_property(approximator):
         assert approximator.scoring_rule.is_pmp_rule is True
     elif isinstance(approximator.scoring_rule, ExponentialScore):
         assert approximator.scoring_rule.is_pmp_rule is False
+
+
+def test_scoring_rule_property_raises_for_multiple_rules():
+    import keras
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
+
+    approx = ModelComparisonApproximator(
+        num_models=2,
+        classifier_network=keras.layers.Dense(4),
+        scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
+    )
+    with pytest.raises(AttributeError, match="Multiple scoring rules"):
+        _ = approx.scoring_rule
+
+
+def test_multi_rule_estimate(train_dataset, simulator):
+    import keras
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.networks import MLP
+    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
+    from bayesflow import Adapter
+
+    adapter = (
+        Adapter()
+        .sqrt("n")
+        .broadcast("n", to="x")
+        .as_set("x")
+        .rename("n", "inference_conditions")
+        .rename("x", "summary_variables")
+        .rename("model_indices", "inference_variables")
+        .drop("mu")
+        .convert_dtype("float64", "float32")
+    )
+    from bayesflow.networks import DeepSet
+
+    approx = ModelComparisonApproximator(
+        num_models=len(simulator.simulators),
+        classifier_network=MLP(widths=(8, 8)),
+        summary_network=DeepSet(summary_dim=2, depth=1),
+        scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
+        adapter=adapter,
+    )
+    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
+    approx.build(data_shapes)
+    approx.compute_metrics(**train_dataset[0])
+
+    num_conditions = 2
+    num_models = len(simulator.simulators)
+    conditions = simulator.sample(num_conditions)
+    output = approx.estimate(conditions=conditions)
+
+    assert isinstance(output, dict)
+    for rule_key in ("ce", "brier"):
+        assert rule_key in output
+        assert "model_probs" in output[rule_key]
+        assert output[rule_key]["model_probs"].shape == (num_conditions, num_models)
+        assert "logits" in output[rule_key]
+
+    assert "_summaries" in output
+    assert output["_summaries"].shape[0] == num_conditions
 
 
 def test_build_dataset_with_simulators_list(approximator, adapter):

@@ -297,15 +297,11 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
                 "logits": keras.ops.convert_to_numpy(logits),
                 "model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(logits)),
             }
-        if "log_bayes_factors" in rule_output:
-            log_bfs = rule.to_bayes_factors(rule_output["log_bayes_factors"])
-            f0 = keras.ops.zeros_like(log_bfs[..., :1])
-            model_probs = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
-            return {
-                "log_bayes_factors": keras.ops.convert_to_numpy(log_bfs),
-                "model_probs": keras.ops.convert_to_numpy(model_probs),
-            }
-        raise RuntimeError(
-            f"Unrecognized scoring rule output keys: {list(rule_output.keys())}. "
-            "Expected 'logits' (PMP rules) or 'log_bayes_factors' (Bayes factor rules)."
-        )
+        # Bayes factor mode
+        log_bfs = rule.to_bayes_factors(rule_output["log_bayes_factors"])
+        f0 = keras.ops.zeros_like(log_bfs[..., :1])
+        model_probs = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
+        return {
+            "log_bayes_factors": keras.ops.convert_to_numpy(log_bfs),
+            "model_probs": keras.ops.convert_to_numpy(model_probs),
+        }

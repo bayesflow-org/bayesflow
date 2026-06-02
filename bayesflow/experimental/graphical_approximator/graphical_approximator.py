@@ -75,7 +75,7 @@ class GraphicalApproximator(Approximator):
         self.inference_networks = inference_networks
         self.summary_networks = summary_networks
 
-        required = self.graph.required_summary_networks()
+        required = self.graph.summary_network_input_shapes()
         data_keys = [k for k in required if k.mode != "non_exchangeable"]
         n_data = len(data_keys)
         n_nonex = len(required) - n_data

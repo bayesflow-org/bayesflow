@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Literal, NamedTuple, TypeAlias
 
 import networkx as nx
+import sympy as sp
 from networkx.readwrite import json_graph
 
 from bayesflow.utils.serialization import serializable, serialize
@@ -16,11 +17,11 @@ ExpandedNode: TypeAlias = str
 
 class SummaryKey(NamedTuple):
     """
-    Used internally to identify a summary network with a combination of mode, inferred_node and chain_step.
+    Used internally to identify a summary network with a combination of mode, inferred_nodes and chain_step.
 
-    For ``"global"`` mode, ``inferred_node`` is ``None`` because the same
-    summary (over all data) is shared across all inferred nodes where this summary is needed.
-    For ``"per_level"`` mode, ``inferred_node`` identifies which level is kept
+    For ``"global"`` mode, ``inferred_nodes`` is a tuple of all inferred nodes that share
+    this summary.
+    For ``"per_level"`` mode, ``inferred_nodes`` is a 1-tuple identifying which level is kept
     non-flattened, so different inferred nodes at different levels get
     different summary networks.
     For ``"non_exchangeable"`` mode, the network summarizes previously sampled values
@@ -30,15 +31,8 @@ class SummaryKey(NamedTuple):
 
     conditioned_node: SimulationNode
     mode: Literal["global", "per_level", "non_exchangeable"]
-    inferred_node: SimulationNode | None = None
+    inferred_nodes: tuple[SimulationNode, ...]
     chain_step: int = 0
-
-
-def _flat_product(dims):
-    result = 1
-    for d in dims:
-        result = result * d
-    return result
 
 
 @serializable("bayesflow.experimental")  # type: ignore[missing-argument]
@@ -63,6 +57,58 @@ class InvertedGraph(nx.DiGraph):
             self.add_nodes_from(g.nodes(data=True))
             self.add_edges_from(g.edges(data=True))
 
+    def required_summary_networks(self) -> None:
+        """
+        Returns the required summary networks for the `GraphicalApproximator`.
+        """
+        shapes = self.summary_network_input_shapes()
+        mode_labels = {
+            "global": "(global summary)",
+            "per_level": "(per-level summary)",
+            "non_exchangeable": "(for non-exchangeable inferred node)",
+        }
+
+        print(f"Summary Networks ({len(shapes)} total)")
+        print("_" * len(f"Summary Networks ({len(shapes)} total)"))
+        print("")
+
+        for i, (key, input_shape) in enumerate(shapes.items()):
+            output_shape = input_shape[:-2] + (sp.Symbol(f"summary_dim_{i}"),)
+            inferred = ", ".join(key.inferred_nodes)
+            label = mode_labels[key.mode]
+
+            if key.mode != "non_exchangeable":
+                print(f"{i}: Summary of {key.conditioned_node} {label} for {inferred}")
+            else:
+                print(f"{i}: Summary of {key.conditioned_node} {label}")
+
+            print(f"{' ' * (len(str(i)) + 3)} Input shape:  {input_shape}")
+            print(f"{' ' * (len(str(i)) + 3)} Output shape: {output_shape}")
+            print("")
+
+    def required_inference_networks(self) -> None:
+        """
+        Returns the required inference networks for the `GraphicalApproximator`.
+        """
+        composition = self.network_composition()
+        conditions = self.network_conditions()
+        variable_shapes = self.inference_variable_shapes()
+        condition_shapes = self.inference_condition_shapes()
+
+        print(f"Inference Networks ({len(composition)} total)")
+        print("_" * len(f"Inference Networks ({len(composition)} total)"))
+        print("")
+
+        for i in composition.keys():
+            inferred = ", ".join(composition[i])
+            conditioned = ", ".join(conditions[i])
+
+            print(f"{i}: infers {inferred} from {conditioned}")
+
+            print(f"{' ' * (len(str(i)) + 3)} Output shape:     {variable_shapes[i]}")
+            print(f"{' ' * (len(str(i)) + 3)} Conditions shape: {condition_shapes[i]}")
+            print("")
+
     def num_summary_networks(self) -> int:
         """
         Returns the number of required summary networks for the `GraphicalApproximator`.
@@ -73,10 +119,6 @@ class InvertedGraph(nx.DiGraph):
         """
         Returns the symbolic shape of the concatenated inference variable tensor
         for each inference network.
-
-        All variables assigned to a network share the same batch/spatial prefix
-        and differ only in the last (feature) dimension, so the result is
-        ``prefix + (sum_of_feature_dims,)`` for each network.
 
         Returns
         -------
@@ -98,6 +140,55 @@ class InvertedGraph(nx.DiGraph):
                 prefix = shapes[0][:-1]
                 total_D = sum(s[-1] for s in shapes)
                 result[network_idx] = prefix + (total_D,)
+
+        return result
+
+    def inference_condition_shapes(self) -> dict[int, tuple]:
+        """
+        Returns the symbolic shape of the inference condition tensor for each inference network.
+
+        Returns
+        -------
+        dict[int, tuple]
+            Mapping from network index to symbolic shape tuple.
+        """
+        output_shapes = self.simulation_graph.output_shapes()
+        variable_names = self.simulation_graph.variable_names()
+        network_composition = self.network_composition()
+        network_conditions = self.network_conditions()
+
+        summary_dims = {key: sp.Symbol(f"summary_dim_{i}") for i, key in enumerate(self.summary_network_input_shapes())}
+
+        data_node = self.simulation_graph.data_node()
+        n_node_reps = len(output_shapes[variable_names[data_node][0]]) - 2
+
+        result = {}
+
+        for network_idx, inferred_nodes in network_composition.items():
+            inferred_prefix = output_shapes[variable_names[inferred_nodes[0]][0]][:-1]
+            total_feature_dim = 0
+
+            for conditioned_node in network_conditions[network_idx]:
+                conditioned_vars = variable_names[conditioned_node]
+                total_D = sum(output_shapes[v][-1] for v in conditioned_vars)
+                source_shape = output_shapes[conditioned_vars[0]]
+
+                shared_prefix = [dim for dim in inferred_prefix if dim in source_shape]
+                k = len(source_shape) - 1 - len(shared_prefix)
+
+                if k <= 0:
+                    total_feature_dim += total_D
+                else:
+                    mode = "per_level" if self.is_per_level_summary(inferred_nodes[0], conditioned_node) else "global"
+                    key = SummaryKey(
+                        conditioned_node=conditioned_node,
+                        mode=mode,
+                        inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
+                        chain_step=k - 1,
+                    )
+                    total_feature_dim += summary_dims[key]
+
+            result[network_idx] = inferred_prefix + (total_feature_dim + n_node_reps,)
 
         return result
 
@@ -124,7 +215,7 @@ class InvertedGraph(nx.DiGraph):
 
         return result
 
-    def required_summary_networks(self) -> dict["SummaryKey", tuple]:
+    def summary_network_input_shapes(self) -> dict["SummaryKey", tuple]:
         """
         Returns an ordered mapping from ``SummaryKey`` to symbolic input shape for
         each summary network required by this graph.
@@ -162,27 +253,26 @@ class InvertedGraph(nx.DiGraph):
                 else:
                     mode = "global"
 
-                B = conditioned_shape[0]
-                D = conditioned_shape[-1]
-                spatial_dims = conditioned_shape[1:-1]
+                input_shape = conditioned_shape
+                n_extra = len(conditioned_shape[1:-1]) - len(shared_prefix) + 1
 
-                input_shape = (B, _flat_product(spatial_dims), D)
-
-                n_extra = len(spatial_dims) - len(shared_prefix) + 1
                 for step in range(n_extra):
                     key = SummaryKey(
                         conditioned_node=conditioned_node,
                         mode=mode,
-                        inferred_node=inferred_nodes[0] if mode == "per_level" else None,
+                        inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
                         chain_step=step,
                     )
+                    idx = len(result)
                     if key not in result:
                         result[key] = input_shape
+
+                    input_shape = input_shape[:-2] + (f"summary_dim_{idx}",)
 
         # append sequential summary networks for non-amortizable nodes
         for network_idx, nodes in network_composition.items():
             if any(not self.allows_amortization(node) for node in nodes):
-                key = SummaryKey(conditioned_node=nodes[0], mode="non_exchangeable")
+                key = SummaryKey(conditioned_node=nodes[0], mode="non_exchangeable", inferred_nodes=tuple(nodes))
                 if key not in result:
                     result[key] = self.inference_variable_shapes()[network_idx]
 

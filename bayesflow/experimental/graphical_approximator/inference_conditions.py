@@ -170,7 +170,7 @@ def apply_sequential_chain(
     tensor: Tensor,
     conditioned_node: str,
     mode: Literal["global", "per_level"],
-    inferred_node: str | None,
+    inferred_nodes: tuple[str, ...],
     k: int,
     registry: dict[SummaryKey, SummaryNetwork],
     training: bool = False,
@@ -187,8 +187,10 @@ def apply_sequential_chain(
         The node being summarized.
     mode : {"global", "per_level"}
         Summary mode.
-    inferred_node : str or None
-        The inferred node, required for per_level mode.
+    inferred_nodes : tuple of str
+        For ``"per_level"`` mode, a 1-tuple of the inferred node that determines
+        which summary network to use. For ``"global"`` mode, a tuple of all
+        inferred nodes that share this summary.
     k : int
         Number of chain steps, as returned by compute_chain_steps.
     registry : dict[SummaryKey, SummaryNetwork]
@@ -214,7 +216,7 @@ def apply_sequential_chain(
         key = SummaryKey(
             conditioned_node=conditioned_node,
             mode=mode,
-            inferred_node=inferred_node if mode == "per_level" else None,
+            inferred_nodes=inferred_nodes,
             chain_step=i,
         )
         summary = apply_summary(chain_input, key, registry, training=training)
@@ -300,7 +302,7 @@ def inference_conditions_by_network(
                     tensor,
                     conditioned_node=conditioned_node,
                     mode=mode,
-                    inferred_node=inferred_nodes[0] if mode == "per_level" else None,
+                    inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
                     k=k,
                     registry=summary_registry,
                     training=training,
@@ -359,7 +361,7 @@ def inference_condition_shapes_by_network(
                 key = SummaryKey(
                     conditioned_node=conditioned_node,
                     mode=mode,
-                    inferred_node=inferred_nodes[0] if mode == "per_level" else None,
+                    inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
                     chain_step=k - 1,
                 )
                 total_feature_dim += approximator.summary_registry[key].summary_dim

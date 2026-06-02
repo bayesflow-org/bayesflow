@@ -80,7 +80,8 @@ def test_estimate(approximator, train_dataset, simulator):
     assert "model_probs" in output
     assert output["model_probs"].shape == (num_conditions, num_models)
 
-    if approximator.scoring_rule.is_pmp_rule:
+    rule = next(iter(approximator.inference_network.scoring_rules.values()))
+    if rule.is_pmp_rule:
         assert "logits" in output
         assert output["logits"].shape == (num_conditions, num_models)
     else:
@@ -106,29 +107,6 @@ def test_rejects_non_categorical_scoring_rule():
             classifier_network=keras.layers.Dense(4),
             scoring_rules=MeanScore(),
         )
-
-
-def test_is_pmp_rule_property(approximator):
-    from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore
-
-    if isinstance(approximator.scoring_rule, CrossEntropyScore):
-        assert approximator.scoring_rule.is_pmp_rule is True
-    elif isinstance(approximator.scoring_rule, ExponentialScore):
-        assert approximator.scoring_rule.is_pmp_rule is False
-
-
-def test_scoring_rule_property_raises_for_multiple_rules():
-    import keras
-    from bayesflow.approximators import ModelComparisonApproximator
-    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
-
-    approx = ModelComparisonApproximator(
-        num_models=2,
-        classifier_network=keras.layers.Dense(4),
-        scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
-    )
-    with pytest.raises(AttributeError, match="Multiple scoring rules"):
-        _ = approx.scoring_rule
 
 
 def test_multi_rule_estimate(train_dataset, simulator):

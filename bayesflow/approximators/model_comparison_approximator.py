@@ -120,17 +120,6 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         filtered = [s for s in standardize if s != "inference_variables"]
         return filtered if filtered else None
 
-    @property
-    def scoring_rule(self) -> CategoricalScoringRule:
-        """The single configured scoring rule. Raises AttributeError if multiple rules are configured."""
-        rules = self.inference_network.scoring_rules
-        if len(rules) == 1:
-            return next(iter(rules.values()))
-        raise AttributeError(
-            f"Multiple scoring rules are configured ({list(rules.keys())}). "
-            "Access individual rules via .inference_network.scoring_rules."
-        )
-
     def build_dataset(
         self,
         *,

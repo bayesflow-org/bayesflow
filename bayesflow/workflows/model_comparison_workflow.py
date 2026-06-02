@@ -355,7 +355,15 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
-        is_pmp_mode = self.approximator.scoring_rule.is_pmp_rule
+        scoring_rules = self.approximator.inference_network.scoring_rules
+        if len(scoring_rules) > 1:
+            raise NotImplementedError(
+                "Default diagnostics for multiple scoring rules are not yet implemented. "
+                "Use approximator.estimate() to obtain a dict of per-rule estimates keyed by rule name, "
+                "then pass each rule's 'model_probs' (and 'logits' or 'log_bayes_factors') "
+                "to the bayesflow.diagnostics functions directly."
+            )
+        is_pmp_mode = next(iter(scoring_rules.values())).is_pmp_rule
 
         estimates = self.estimate(conditions=test_data, **kwargs.get("estimate_kwargs", {}))
 
@@ -460,7 +468,15 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
-        is_pmp_mode = self.approximator.scoring_rule.is_pmp_rule
+        scoring_rules = self.approximator.inference_network.scoring_rules
+        if len(scoring_rules) > 1:
+            raise NotImplementedError(
+                "Default diagnostics for multiple scoring rules are not yet implemented. "
+                "Use approximator.estimate() to obtain a dict of per-rule estimates keyed by rule name, "
+                "then pass each rule's 'model_probs' (and 'logits' or 'log_bayes_factors') "
+                "to the bayesflow.diagnostics functions directly."
+            )
+        is_pmp_mode = next(iter(scoring_rules.values())).is_pmp_rule
 
         metrics = {"accuracy": bf_metrics.model_comparison_accuracy(estimates["model_probs"], true_models)}
 

@@ -182,7 +182,7 @@ def test_inference_variable_shapes(single_level_graph, two_level_graph, crossed_
 
 def test_required_summary_networks(single_level_graph, two_level_graph, three_level_graph, crossed_design_irt_graph):
     for graph in [single_level_graph, two_level_graph, three_level_graph, crossed_design_irt_graph]:
-        result = graph.required_summary_networks()
+        result = graph.summary_network_input_shapes()
         assert isinstance(result, dict)
 
 

@@ -157,6 +157,7 @@ class InvertedGraph(nx.DiGraph):
         network_composition = self.network_composition()
         network_conditions = self.network_conditions()
 
+        global_inferred = self._global_summary_inferred_nodes()
         summary_dims = {key: sp.Symbol(f"summary_dim_{i}") for i, key in enumerate(self.summary_network_input_shapes())}
 
         data_node = self.simulation_graph.data_node()
@@ -183,7 +184,9 @@ class InvertedGraph(nx.DiGraph):
                     key = SummaryKey(
                         conditioned_node=conditioned_node,
                         mode=mode,
-                        inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
+                        inferred_nodes=(inferred_nodes[0],)
+                        if mode == "per_level"
+                        else global_inferred[conditioned_node],
                         chain_step=k - 1,
                     )
                     total_feature_dim += summary_dims[key]
@@ -215,6 +218,22 @@ class InvertedGraph(nx.DiGraph):
 
         return result
 
+    def _global_summary_inferred_nodes(self) -> dict[str, tuple[str, ...]]:
+        """
+        Returns a joint inferred_nodes tuple for each conditioned node that requires a global summary.
+        """
+        network_composition = self.network_composition()
+        network_conditions = self.network_conditions()
+        result = {}
+        for network_idx, inferred_nodes in network_composition.items():
+            for conditioned_node in network_conditions[network_idx]:
+                if not self.is_per_level_summary(inferred_nodes[0], conditioned_node):
+                    existing = set(result.get(conditioned_node, ()))
+                    existing.update(inferred_nodes)
+                    result[conditioned_node] = tuple(sorted(existing))
+
+        return result
+
     def summary_network_input_shapes(self) -> dict["SummaryKey", tuple]:
         """
         Returns an ordered mapping from ``SummaryKey`` to symbolic input shape for
@@ -225,6 +244,7 @@ class InvertedGraph(nx.DiGraph):
         network_composition = self.network_composition()
         network_conditions = self.network_conditions()
 
+        global_inferred = self._global_summary_inferred_nodes()
         result = {}
 
         for network_idx, inferred_nodes in network_composition.items():
@@ -260,7 +280,9 @@ class InvertedGraph(nx.DiGraph):
                     key = SummaryKey(
                         conditioned_node=conditioned_node,
                         mode=mode,
-                        inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
+                        inferred_nodes=(inferred_nodes[0],)
+                        if mode == "per_level"
+                        else global_inferred[conditioned_node],
                         chain_step=step,
                     )
                     idx = len(result)

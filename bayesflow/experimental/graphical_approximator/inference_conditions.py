@@ -141,7 +141,17 @@ def apply_summary(
     Tensor
         Output of the summary network.
     """
-    return registry[key](tensor, training=training)
+    network = registry[key]
+
+    # flattening and reshaping are done because DeepSets do not inputs with more than 3 dimensions yes
+    if tensor.ndim > 3:
+        shape = keras.ops.shape(tensor)
+        tensor = keras.ops.reshape(tensor, (-1, shape[-2], shape[-1]))
+        out = network(tensor, training=training)
+
+        return keras.ops.reshape(out, (*shape[:-2], out.shape[-1]))
+
+    return network(tensor, training=training)
 
 
 def compute_chain_steps(
@@ -274,6 +284,8 @@ def inference_conditions_by_network(
         axis=0,
     )
 
+    global_inferred = approximator.graph._global_summary_inferred_nodes()
+
     for network_idx, inferred_nodes in approximator.network_composition.items():
         if only_network is not None and network_idx != only_network:
             continue
@@ -302,7 +314,7 @@ def inference_conditions_by_network(
                     tensor,
                     conditioned_node=conditioned_node,
                     mode=mode,
-                    inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
+                    inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else global_inferred[conditioned_node],
                     k=k,
                     registry=summary_registry,
                     training=training,
@@ -335,6 +347,7 @@ def inference_condition_shapes_by_network(
     data_node = approximator.graph.simulation_graph.data_node()
     n_node_reps = len(output_shapes[variable_names[data_node][0]]) - 2
 
+    global_inferred = approximator.graph._global_summary_inferred_nodes()
     result = {}
 
     for network_idx, inferred_nodes in approximator.network_composition.items():
@@ -361,7 +374,7 @@ def inference_condition_shapes_by_network(
                 key = SummaryKey(
                     conditioned_node=conditioned_node,
                     mode=mode,
-                    inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else tuple(inferred_nodes),
+                    inferred_nodes=(inferred_nodes[0],) if mode == "per_level" else global_inferred[conditioned_node],
                     chain_step=k - 1,
                 )
                 total_feature_dim += approximator.summary_registry[key].summary_dim

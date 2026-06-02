@@ -1,3 +1,5 @@
+import warnings
+
 import keras
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Shape, Tensor
@@ -133,13 +135,18 @@ class NonExchangeableWrapper(InferenceNetwork):
     def _prepare_inference_conditions(
         self, xz: Tensor, i: int, conditions: Tensor | None = None, generated_samples: Tensor | None = None
     ):
-        if i > 0:
-            context = generated_samples if generated_samples is not None else xz[..., :i, :]
-            parameter_conditions = keras.ops.expand_dims(self.summary_network(context), axis=-2)
-        else:
-            parameter_conditions = keras.ops.expand_dims(
-                self.summary_network(keras.ops.zeros_like(xz[..., :1, :])), axis=-2
-            )
+
+        # this suppresses a warning that occurs because at index i=1, the context only has a single element,
+        # which is then summarized.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="You are using a softmax over axis", category=UserWarning)
+            if i > 0:
+                context = generated_samples if generated_samples is not None else xz[..., :i, :]
+                parameter_conditions = keras.ops.expand_dims(self.summary_network(context), axis=-2)
+            else:
+                parameter_conditions = keras.ops.expand_dims(
+                    self.summary_network(keras.ops.zeros_like(xz[..., :1, :])), axis=-2
+                )
 
         if conditions is None:
             return parameter_conditions

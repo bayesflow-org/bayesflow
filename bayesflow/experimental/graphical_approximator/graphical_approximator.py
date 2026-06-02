@@ -1,5 +1,6 @@
 import multiprocessing as mp
 import warnings
+from collections.abc import Sequence
 from typing import Literal
 
 import keras
@@ -9,7 +10,7 @@ import sympy as sp
 from bayesflow.approximators import Approximator
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Shape
-from bayesflow.utils import logging
+from bayesflow.utils import find_batch_size, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter
@@ -39,8 +40,8 @@ class GraphicalApproximator(Approximator):
         graph: InvertedGraph,
         *,
         adapter: Adapter | Literal["auto"] = "auto",
-        inference_networks: list[InferenceNetwork],
-        summary_networks: list[SummaryNetwork] | None = None,
+        inference_networks: Sequence[InferenceNetwork],
+        summary_networks: Sequence[SummaryNetwork] | None = None,
         standardize: str | list[str] | None = "all",
         **kwargs,
     ):
@@ -321,9 +322,15 @@ class GraphicalApproximator(Approximator):
             If both `dataset` and `simulator` are provided or neither is provided.
         """
         if "dataset" in kwargs:
+            raw_data = kwargs.pop("dataset")
+            batch_size = kwargs.get("batch_size", "auto")
+            if batch_size == "auto":
+                first_sample = {k: v[:1] for k, v in raw_data.items()}
+                batch_size = find_batch_size(sample=first_sample)
+                logging.info(f"Using a batch size of {batch_size}.")
             dataset = OfflineDataset(
-                kwargs.pop("dataset"),
-                batch_size=kwargs.get("batch_size"),  # type: ignore[invalid-argument-type]
+                raw_data,
+                batch_size=batch_size,
                 num_samples=kwargs.get("num_samples"),  # type: ignore[invalid-argument-type]
                 adapter=self.adapter,
                 augmentations=self.subset_data,
@@ -353,6 +360,8 @@ class GraphicalApproximator(Approximator):
             first_batch = dataset[0]
             data_shapes = self._data_shapes(first_batch)
             self.compute_metrics(**first_batch)
+            if not self.built:
+                self.build(data_shapes)
 
             signature = {
                 k: tf.TensorSpec(shape=[None] * (len(v) - 1) + [v[-1]], dtype=tf.float32)

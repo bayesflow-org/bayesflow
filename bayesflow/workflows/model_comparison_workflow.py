@@ -45,10 +45,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
         The classifier backbone used inside the approximator (default: ``"mlp"``).
         Accepts a Keras layer instance or any name recognised by
         :func:`~bayesflow.utils.find_network` (e.g. ``"mlp"``).
-    scoring_rule : CategoricalScoringRule or str, optional
-        Scoring rule used to train the classifier. Accepts a
-        :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance or a string recognised by
-        :func:`~bayesflow.utils.find_scoring_rule` (default: ``"cross_entropy"``).
+    scoring_rules : CategoricalScoringRule or dict[str, CategoricalScoringRule] or str, optional
+        Scoring rule(s) used to train the classifier. Accepts a single
+        :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance, a string recognised by
+        :func:`~bayesflow.utils.find_scoring_rule`, or a mapping of rule names to rules for
+        co-learning multiple scoring rules simultaneously (default: ``"cross_entropy"``).
         Determines what the network learns to estimate:
 
         - **PMP rules** (``"cross_entropy"``, ``"brier"``, ``"polynomial"``): network
@@ -111,7 +112,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         adapter: Adapter = None,
         classifier_network: keras.Layer | str = "mlp",
         summary_network: SummaryNetwork | str = None,
-        scoring_rule: CategoricalScoringRule | str = None,
+        scoring_rules: CategoricalScoringRule | dict[str, CategoricalScoringRule] | str = None,
         initial_learning_rate: float = 5e-4,
         optimizer: keras.optimizers.Optimizer | type = None,
         checkpoint_filepath: str = None,
@@ -167,7 +168,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
             num_models=num_models,
             classifier_network=find_network(classifier_network, **kwargs.get("classifier_kwargs", {})),
             summary_network=find_summary_network(summary_network, **kwargs.get("summary_kwargs", {})),
-            scoring_rule=find_scoring_rule(scoring_rule if scoring_rule is not None else "cross_entropy"),
+            scoring_rules=find_scoring_rule(scoring_rules) if isinstance(scoring_rules, str) else scoring_rules,
             adapter=adapter,
             standardize=standardize,
             **filter_kwargs(kwargs, ModelComparisonApproximator.__init__),

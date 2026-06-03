@@ -306,9 +306,13 @@ def test_plot_diagnostics_without_simulator_raises():
     from bayesflow.approximators import ModelComparisonApproximator
     from bayesflow.networks import MLP
 
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import CrossEntropyScore
+
     approximator = ModelComparisonApproximator(
-        num_models=2,
-        classifier_network=MLP(widths=(8,)),
+        inference_network=ScoringRuleNetwork(
+            scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=MLP(widths=(8,))
+        ),
     )
     workflow = ModelComparisonWorkflow.__new__(ModelComparisonWorkflow)
     workflow.approximator = approximator
@@ -323,11 +327,13 @@ def test_plot_diagnostics_without_simulator_raises():
 def test_compute_diagnostics_without_simulator_raises():
     """compute_default_diagnostics(int) raises when no simulator is attached."""
     from bayesflow.approximators import ModelComparisonApproximator
-    from bayesflow.networks import MLP
+    from bayesflow.networks import MLP, ScoringRuleNetwork
+    from bayesflow.scoring_rules import CrossEntropyScore
 
     approximator = ModelComparisonApproximator(
-        num_models=2,
-        classifier_network=MLP(widths=(8,)),
+        inference_network=ScoringRuleNetwork(
+            scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=MLP(widths=(8,))
+        ),
     )
     workflow = ModelComparisonWorkflow.__new__(ModelComparisonWorkflow)
     workflow.approximator = approximator

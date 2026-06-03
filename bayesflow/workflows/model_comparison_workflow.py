@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 import keras
 
-from bayesflow.networks import SummaryNetwork
+from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ModelComparisonApproximator
@@ -143,8 +143,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
         self.simulator = simulator
         self.model_names = model_names
 
-        num_models = len(simulator.simulators) if simulator is not None else None
-
         # When a shared_simulator provides context variables used as inference_conditions,
         # those variables are scalars (one value per batch, not per sample) and must be
         # broadcast to the batch dimension before the adapter can concatenate them.
@@ -164,11 +162,18 @@ class ModelComparisonWorkflow(BasicWorkflow):
         if standardize is None and summary_network is not None:
             standardize = ["summary_variables"]
 
+        resolved_scoring_rules = find_scoring_rule(scoring_rules) if isinstance(scoring_rules, str) else scoring_rules
+        if resolved_scoring_rules is None:
+            resolved_scoring_rules = find_scoring_rule("cross_entropy")
+        if isinstance(resolved_scoring_rules, CategoricalScoringRule):
+            resolved_scoring_rules = {"scoring_rule": resolved_scoring_rules}
+
         self.approximator = ModelComparisonApproximator(
-            num_models=num_models,
-            classifier_network=find_network(classifier_network, **kwargs.get("classifier_kwargs", {})),
+            inference_network=ScoringRuleNetwork(
+                scoring_rules=resolved_scoring_rules,
+                subnet=find_network(classifier_network, **kwargs.get("classifier_kwargs", {})),
+            ),
             summary_network=find_summary_network(summary_network, **kwargs.get("summary_kwargs", {})),
-            scoring_rules=find_scoring_rule(scoring_rules) if isinstance(scoring_rules, str) else scoring_rules,
             adapter=adapter,
             standardize=standardize,
             **filter_kwargs(kwargs, ModelComparisonApproximator.__init__),

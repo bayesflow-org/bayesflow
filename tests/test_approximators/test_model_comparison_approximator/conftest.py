@@ -80,11 +80,10 @@ def scoring_rule(request):
 @pytest.fixture
 def approximator(adapter, classifier_network, summary_network, simulator, standardize, scoring_rule):
     from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.networks import ScoringRuleNetwork
 
     return ModelComparisonApproximator(
-        num_models=len(simulator.simulators),
-        classifier_network=classifier_network,
-        scoring_rules=scoring_rule,
+        inference_network=ScoringRuleNetwork(scoring_rules={"scoring_rule": scoring_rule}, subnet=classifier_network),
         adapter=adapter,
         summary_network=summary_network,
         standardize=standardize,

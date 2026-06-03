@@ -96,23 +96,10 @@ def test_estimate(approximator, train_dataset, simulator):
         assert "_summaries" not in output
 
 
-def test_rejects_non_categorical_scoring_rule():
-    import keras
-    from bayesflow.approximators import ModelComparisonApproximator
-    from bayesflow.scoring_rules import MeanScore
-
-    with pytest.raises(TypeError, match="CategoricalScoringRule"):
-        ModelComparisonApproximator(
-            num_models=2,
-            classifier_network=keras.layers.Dense(4),
-            scoring_rules=MeanScore(),
-        )
-
-
 def test_multi_rule_estimate(train_dataset, simulator):
     import keras
     from bayesflow.approximators import ModelComparisonApproximator
-    from bayesflow.networks import MLP
+    from bayesflow.networks import MLP, ScoringRuleNetwork
     from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
     from bayesflow import Adapter
 
@@ -130,10 +117,11 @@ def test_multi_rule_estimate(train_dataset, simulator):
     from bayesflow.networks import DeepSet
 
     approx = ModelComparisonApproximator(
-        num_models=len(simulator.simulators),
-        classifier_network=MLP(widths=(8, 8)),
+        inference_network=ScoringRuleNetwork(
+            scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
+            subnet=MLP(widths=(8, 8)),
+        ),
         summary_network=DeepSet(summary_dim=2, depth=1),
-        scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
         adapter=adapter,
     )
     data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
@@ -201,25 +189,13 @@ def test_fit_dataset_conflict_raises(approximator, train_dataset, simulator):
         approximator.fit(dataset=train_dataset, simulator=simulator, epochs=1)
 
 
-def test_rejects_dict_with_non_categorical_scoring_rule():
-    import keras
-    from bayesflow.approximators import ModelComparisonApproximator
-    from bayesflow.scoring_rules import CrossEntropyScore, MeanScore
-
-    with pytest.raises(TypeError, match="CategoricalScoringRule"):
-        ModelComparisonApproximator(
-            num_models=2,
-            classifier_network=keras.layers.Dense(4),
-            scoring_rules={"ce": CrossEntropyScore(), "bad": MeanScore()},
-        )
-
-
 def test_fit_with_single_simulator():
     """fit(simulator=ModelComparisonSimulator(...)) takes the single-simulator fast path."""
     import numpy as np
     from bayesflow import make_simulator
     from bayesflow.approximators import ModelComparisonApproximator
-    from bayesflow.networks import MLP
+    from bayesflow.networks import MLP, ScoringRuleNetwork
+    from bayesflow.scoring_rules import CrossEntropyScore
     from bayesflow.simulators import ModelComparisonSimulator
 
     def prior_null():
@@ -235,7 +211,11 @@ def test_fit_with_single_simulator():
         simulators=[make_simulator([prior_null, likelihood]), make_simulator([prior_alt, likelihood])]
     )
 
-    approximator = ModelComparisonApproximator(num_models=2, classifier_network=MLP(widths=(8,)))
+    approximator = ModelComparisonApproximator(
+        inference_network=ScoringRuleNetwork(
+            scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=MLP(widths=(8,))
+        )
+    )
     approximator.compile(optimizer="AdamW")
     approximator.fit(
         simulator=mc_simulator,
@@ -261,7 +241,8 @@ def test_fit_with_simulators_list():
     import numpy as np
     from bayesflow import make_simulator
     from bayesflow.approximators import ModelComparisonApproximator
-    from bayesflow.networks import MLP
+    from bayesflow.networks import MLP, ScoringRuleNetwork
+    from bayesflow.scoring_rules import CrossEntropyScore
 
     def prior_null():
         return dict(mu=0.0)
@@ -278,8 +259,9 @@ def test_fit_with_simulators_list():
     ]
 
     approximator = ModelComparisonApproximator(
-        num_models=2,
-        classifier_network=MLP(widths=(8,)),
+        inference_network=ScoringRuleNetwork(
+            scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=MLP(widths=(8,))
+        ),
     )
     approximator.compile(optimizer="AdamW")
     approximator.fit(

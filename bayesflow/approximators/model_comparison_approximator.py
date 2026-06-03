@@ -7,14 +7,13 @@ import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
-from bayesflow.scoring_rules import CategoricalScoringRule, CrossEntropyScore
+from bayesflow.scoring_rules import CategoricalScoringRule
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, logging
-from bayesflow.utils.serialization import serialize, serializable
+from bayesflow.utils.serialization import serializable
 
 from .approximator import Approximator
-from .continuous_approximator import ContinuousApproximator
 from .scoring_rule_approximator import ScoringRuleApproximator
 
 
@@ -24,13 +23,12 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
     Defines an approximator for model (simulator) comparison, where the (discrete)
     posterior model probabilities are learned with a classifier.
 
-    Per default, it uses a :class:`~bayesflow.networks.ScoringRuleNetwork` with a
-    :class:`~bayesflow.scoring_rules.CrossEntropyScore` to map summary/condition inputs
-    to class logits and train via categorical cross-entropy. However, you can use any
-    of the losses defined in [1] and generalized to K-model scenarios.
-
-    Multiple scoring rules can be co-learned simultaneously by passing a ``scoring_rules``
-    dict. The combined loss is the mean of all individual scoring rule losses.
+    Uses a :class:`~bayesflow.networks.ScoringRuleNetwork` with a categorical scoring
+    rule (e.g. :class:`~bayesflow.scoring_rules.CrossEntropyScore`) to map
+    summary/condition inputs to class logits and train via the chosen scoring rule.
+    Multiple scoring rules can be co-learned simultaneously by passing a dict of rules
+    to :class:`~bayesflow.networks.ScoringRuleNetwork`. The combined loss is the mean
+    of all individual scoring rule losses.
 
     [1] Jeffrey, N., & Wandelt, B. D. (2024). Evidence Networks: simple losses for fast,
     amortized, neural Bayesian model comparison. Machine Learning: Science and Technology,
@@ -38,19 +36,10 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
 
     Parameters
     ----------
-    num_models : int
-        Number of models (simulators) that the approximator will compare.
-    classifier_network : keras.Layer
-        The network backbone (e.g., an MLP) that is used for model classification.
-        Internally wrapped in a :class:`~bayesflow.networks.ScoringRuleNetwork`.
-        The input to the classifier network is created by concatenating ``inference_conditions``
-        and (optional) output of the ``summary_network``.
-    scoring_rules : CategoricalScoringRule or dict[str, CategoricalScoringRule], optional
-        The scoring rule(s) used for training. Accepts either a single
-        :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance or a mapping of
-        rule names to rules for co-learning multiple scoring rules simultaneously.
-        The combined training loss is the mean over all rules.
-        If ``None`` (default), a :class:`~bayesflow.scoring_rules.CrossEntropyScore` is used.
+    inference_network : ScoringRuleNetwork
+        A :class:`~bayesflow.networks.ScoringRuleNetwork` configured with one or more
+        categorical scoring rules (e.g. :class:`~bayesflow.scoring_rules.CrossEntropyScore`,
+        :class:`~bayesflow.scoring_rules.ExponentialScore`).
     adapter : bf.adapters.Adapter, optional
         Adapter for data pre-processing. If ``None`` (default), an identity
         adapter is used that makes a shallow copy and passes data through unchanged.
@@ -68,34 +57,12 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
     def __init__(
         self,
         *,
-        num_models: int,
-        classifier_network: keras.Layer,
-        scoring_rules: CategoricalScoringRule | dict[str, CategoricalScoringRule] = None,
+        inference_network: ScoringRuleNetwork,
         adapter: Adapter = None,
         summary_network: SummaryNetwork = None,
         standardize: str | Sequence[str] = None,
         **kwargs,
     ):
-        if scoring_rules is None:
-            scoring_rules = {"scoring_rule": CrossEntropyScore()}
-        elif isinstance(scoring_rules, CategoricalScoringRule):
-            scoring_rules = {"scoring_rule": scoring_rules}
-        elif isinstance(scoring_rules, dict):
-            for key, rule in scoring_rules.items():
-                if not isinstance(rule, CategoricalScoringRule):
-                    raise TypeError(
-                        f"All scoring_rules must be CategoricalScoringRule instances. "
-                        f"Got {type(rule).__name__!r} for key {key!r}."
-                    )
-        else:
-            raise TypeError(
-                f"scoring_rules must be a CategoricalScoringRule or dict[str, CategoricalScoringRule], "
-                f"got {type(scoring_rules).__name__!r}. "
-                "Use one of the model comparison scoring rules (e.g. CrossEntropyScore, ExponentialScore)."
-            )
-
-        inference_network = ScoringRuleNetwork(scoring_rules=scoring_rules, subnet=classifier_network)
-
         # Model indices (one-hot encoded) must never be standardized.
         standardize = self._filter_standardize(standardize)
 
@@ -106,7 +73,6 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
             standardize=standardize,
             **kwargs,
         )
-        self.num_models = num_models
 
     @staticmethod
     def _filter_standardize(standardize):
@@ -195,22 +161,6 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         logging.info(f"Building model comparison simulator from {len(simulators)} simulators.")
         simulator = ModelComparisonSimulator(simulators=simulators)
         return Approximator.fit(self, simulator=simulator, adapter=adapter, **kwargs)
-
-    def get_config(self):
-        # Bypass ContinuousApproximator.get_config (which serializes inference_network directly).
-        # We reconstruct from classifier_network + scoring_rule(s) instead.
-        base_config = super(ContinuousApproximator, self).get_config()
-
-        config = {
-            "num_models": self.num_models,
-            "classifier_network": self.inference_network.subnet,
-            "scoring_rules": self.inference_network.scoring_rules,
-            "adapter": self.adapter,
-            "summary_network": self.summary_network,
-            "standardize": self.standardizer.standardize,
-        }
-
-        return base_config | serialize(config)
 
     def estimate(
         self,

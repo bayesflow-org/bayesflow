@@ -201,6 +201,61 @@ def test_fit_dataset_conflict_raises(approximator, train_dataset, simulator):
         approximator.fit(dataset=train_dataset, simulator=simulator, epochs=1)
 
 
+def test_rejects_dict_with_non_categorical_scoring_rule():
+    import keras
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.scoring_rules import CrossEntropyScore, MeanScore
+
+    with pytest.raises(TypeError, match="CategoricalScoringRule"):
+        ModelComparisonApproximator(
+            num_models=2,
+            classifier_network=keras.layers.Dense(4),
+            scoring_rules={"ce": CrossEntropyScore(), "bad": MeanScore()},
+        )
+
+
+def test_fit_with_single_simulator():
+    """fit(simulator=ModelComparisonSimulator(...)) takes the single-simulator fast path."""
+    import numpy as np
+    from bayesflow import make_simulator
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.networks import MLP
+    from bayesflow.simulators import ModelComparisonSimulator
+
+    def prior_null():
+        return dict(mu=0.0)
+
+    def prior_alt():
+        return dict(mu=np.random.normal(0, 1))
+
+    def likelihood(mu):
+        return dict(x=np.random.normal(mu, 1, 4).astype(np.float32))
+
+    mc_simulator = ModelComparisonSimulator(
+        simulators=[make_simulator([prior_null, likelihood]), make_simulator([prior_alt, likelihood])]
+    )
+
+    approximator = ModelComparisonApproximator(num_models=2, classifier_network=MLP(widths=(8,)))
+    approximator.compile(optimizer="AdamW")
+    approximator.fit(
+        simulator=mc_simulator,
+        inference_conditions=["x"],
+        epochs=1,
+        num_batches=1,
+        batch_size=4,
+        verbose=0,
+    )
+
+
+def test_log_prob_raises(approximator, train_dataset):
+    """log_prob() is not supported and raises NotImplementedError."""
+    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
+    approximator.build(data_shapes)
+
+    with pytest.raises(NotImplementedError, match="log_prob"):
+        approximator.log_prob()
+
+
 def test_fit_with_simulators_list():
     """fit(simulators=[...]) auto-builds adapter and ModelComparisonSimulator."""
     import numpy as np

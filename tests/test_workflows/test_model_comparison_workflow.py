@@ -342,6 +342,36 @@ def test_compute_diagnostics_without_simulator_raises():
 # ── classifier_network property ───────────────────────────────────────────────
 
 
+def test_plot_diagnostics_multi_rule_raises(mc_simulators):
+    """plot_default_diagnostics raises NotImplementedError when multiple scoring rules are used."""
+    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
+
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+
+    with pytest.raises(NotImplementedError, match="multiple scoring rules"):
+        workflow.plot_default_diagnostics(test_data=10)
+
+
+def test_compute_diagnostics_multi_rule_raises(mc_simulators):
+    """compute_default_diagnostics raises NotImplementedError when multiple scoring rules are used."""
+    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
+
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+
+    with pytest.raises(NotImplementedError, match="multiple scoring rules"):
+        workflow.compute_default_diagnostics(test_data=10)
+
+
 def test_classifier_network_property(mc_simulators):
     """classifier_network returns the subnet of the internal ScoringRuleNetwork."""
     workflow = ModelComparisonWorkflow(simulator=mc_simulators)

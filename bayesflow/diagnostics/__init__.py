@@ -16,6 +16,7 @@ from .plots import (
     calibration_ecdf,
     calibration_ecdf_from_quantiles,
     calibration_histogram,
+    coverage,
     loss,
     mc_calibration,
     mc_confusion_matrix,

@@ -1,7 +1,7 @@
 import numpy as np
 import keras
 import pytest
-from bayesflow.utils import integrate, integrate_stochastic
+from bayesflow.utils import integrate, integrate_stochastic, DETERMINISTIC_METHODS
 
 
 TOLERANCE_ADAPTIVE = 1e-6  # Adaptive solvers should be very accurate.
@@ -12,7 +12,7 @@ TOL_MEAN = 5e-2
 TOL_VAR = 5e-2
 
 
-@pytest.mark.parametrize("method", ["euler", "rk45", "tsit5"])
+@pytest.mark.parametrize("method", DETERMINISTIC_METHODS)
 def test_scheduled_integration(method):
     def fn(t, x):
         return {"x": t**2}
@@ -266,6 +266,30 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
 
     exact = x0 * np.exp(a * T)
     np.testing.assert_allclose(np.array(out).mean(), exact, atol=1e-3, rtol=0.1)
+
+
+@pytest.mark.parametrize("start_time, stop_time", [(0.0, 1.0), (0.8, 0.2)])
+def test_glass_flow_matching_sampler_returns_finite_state(start_time, stop_time):
+    def drift_fn(t, x):
+        return {"x": keras.ops.ones_like(x)}
+
+    initial_state = {"x": keras.ops.zeros((16, 3))}
+
+    out = integrate_stochastic(
+        drift_fn=drift_fn,
+        diffusion_fn=None,
+        state=initial_state,
+        start_time=start_time,
+        stop_time=stop_time,
+        steps=3,
+        seed=keras.random.SeedGenerator(0),
+        method="glass",
+        noise_schedule="flow_matching",
+        steps_inner=3,
+    )["x"]
+
+    assert keras.ops.shape(out) == keras.ops.shape(initial_state["x"])
+    assert np.isfinite(np.array(out)).all()
 
 
 @pytest.mark.parametrize("steps", [500])

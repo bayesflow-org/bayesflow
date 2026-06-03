@@ -20,6 +20,11 @@ def _(name: str, *args, **kwargs):
 
             return FlowMatching(*args, **kwargs)
 
+        case "diffusion_model":
+            from bayesflow.networks import DiffusionModel
+
+            return DiffusionModel(*args, **kwargs)
+
         case "consistency_model":
             from bayesflow.networks import ConsistencyModel
 

@@ -8,6 +8,7 @@ from bayesflow.utils import (
     expand_right_as,
     find_network,
     integrate,
+    integrate_stochastic,
     jacobian_trace,
     layer_kwargs,
     logging,
@@ -15,6 +16,7 @@ from bayesflow.utils import (
     optimal_transport,
     random_mask,
     randomly_mask_along_axis,
+    resolve_seed,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serialize, serializable
@@ -254,8 +256,14 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+
         # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs
+
+        if density and integrate_kwargs["method"] == "glass":
+            logging.warning("GLASS is not supported for density computation. Falling back to tsit5 ODE solver.")
+            integrate_kwargs["method"] = "tsit5"
 
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
@@ -287,7 +295,19 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training, **kwargs)}
 
         state = {"xz": x}
-        state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
+        if integrate_kwargs["method"] == "glass":
+            state = integrate_stochastic(
+                drift_fn=deltas,
+                diffusion_fn=None,
+                state=state,
+                start_time=1.0,
+                stop_time=0.0,
+                noise_schedule="flow_matching",
+                seed=seed,
+                **integrate_kwargs,
+            )
+        else:
+            state = integrate(deltas, state, start_time=1.0, stop_time=0.0, **integrate_kwargs)
 
         z = state["xz"]
 
@@ -296,9 +316,14 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        kwargs.pop("seed", None)  # ODE integration is deterministic; seed only used for base distribution
+        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+
         # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs
+
+        if density and integrate_kwargs["method"] == "glass":
+            logging.warning("GLASS is not supported for density computation. Falling back to tsit5 ODE solver.")
+            integrate_kwargs["method"] = "tsit5"
 
         # Apply user-provided target mask if available
         target_mask = kwargs.get("target_mask", None)
@@ -330,7 +355,19 @@ class FlowMatching(InferenceNetwork):
             return {"xz": self.velocity(xz, time=time, conditions=conditions, training=training, **kwargs)}
 
         state = {"xz": z}
-        state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
+        if integrate_kwargs["method"] == "glass":
+            state = integrate_stochastic(
+                drift_fn=deltas,
+                diffusion_fn=None,
+                state=state,
+                start_time=0.0,
+                stop_time=1.0,
+                seed=seed,
+                noise_schedule="flow_matching",
+                **integrate_kwargs,
+            )
+        else:
+            state = integrate(deltas, state, start_time=0.0, stop_time=1.0, **integrate_kwargs)
 
         x = state["xz"]
 

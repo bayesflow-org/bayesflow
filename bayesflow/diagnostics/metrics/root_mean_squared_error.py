@@ -2,6 +2,8 @@ from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
 
+from bayesflow.utils import logging
+
 from ...utils.dict_utils import dicts_to_arrays, compute_test_quantities
 
 
@@ -11,11 +13,13 @@ def root_mean_squared_error(
     variable_keys: Sequence[str] = None,
     variable_names: Sequence[str] = None,
     test_quantities: dict[str, Callable] = None,
-    normalize: str | None = "range",
+    normalize: str | None = "prior",
     aggregation: Callable = np.median,
 ) -> dict[str, any]:
     """
     Computes the (Normalized) Root Mean Squared Error (RMSE/NRMSE) for the given posterior and prior samples.
+    The values of the default normalization (`prior`) should be interpreted as 0 indicating the most informative
+    (posterior is a point mass at ground truth) and 1 indicating non-informative (posterior equals prior) results.
 
     Parameters
     ----------
@@ -45,9 +49,9 @@ def root_mean_squared_error(
         ``(batch_size,)``.
         The functions do not have to deal with an additional
         sample dimension, as appropriate reshaping is done internally.
-    normalize      : str or None, optional (default = "range")
+    normalize      : str or None, optional (default = "prior")
         Whether to normalize the RMSE using statistics of the prior samples.
-        Possible options are ("mean", "range", "median", "iqr", "std", None)
+        Possible options are ("mean", "range", "median", "iqr", "std", "prior", None)
     aggregation    : callable, optional (default = np.median)
         Function to aggregate the RMSE across draws. Typically `np.mean` or `np.median`.
 
@@ -68,6 +72,12 @@ def root_mean_squared_error(
         - "variable_names" : str
             The (inferred) variable names.
     """
+
+    if normalize:
+        logging.warning(
+            "Using new default normalize='prior' for a more dynamic range. "
+            "To reproduce previous behavior, set normalize='range'."
+        )
 
     # Optionally, compute and prepend test quantities from draws
     if test_quantities is not None:
@@ -90,40 +100,49 @@ def root_mean_squared_error(
         variable_names=variable_names,
     )
 
-    rmse = np.sqrt(np.mean((samples["estimates"] - samples["targets"][:, None, :]) ** 2, axis=0))
+    err = samples["estimates"] - samples["targets"][:, None, :]
+    rmse = np.sqrt(np.mean(err**2, axis=1))
+
     targets = samples["targets"]
 
     match normalize:
         case None | False:
             normalizer = np.array(1.0)
-            metric_name = "RMSE"
 
         case "mean":
             normalizer = np.mean(targets, axis=0)
-            metric_name = "NRMSE"
 
         case "median":
             normalizer = np.median(targets, axis=0)
-            metric_name = "NRMSE"
 
         case "range":
             normalizer = targets.max(axis=0) - targets.min(axis=0)
-            metric_name = "NRMSE"
 
         case "std":
             normalizer = np.std(targets, axis=0, ddof=0)
-            metric_name = "NRMSE"
 
         case "iqr":
             q75 = np.percentile(targets, 75, axis=0)
             q25 = np.percentile(targets, 25, axis=0)
             normalizer = q75 - q25
-            metric_name = "NRMSE"
+
+        case "prior":
+            N, S, _ = samples["estimates"].shape
+
+            # bootstrap prior-only predictions from empirical prior samples in targets
+            idx = np.random.randint(0, N, size=(N, S))
+            prior_bootstrap = targets[idx]
+
+            prior_err = prior_bootstrap - targets[:, None, :]
+            prior_rmse = np.sqrt(np.mean(prior_err**2, axis=1))
+            normalizer = aggregation(prior_rmse, axis=0)
 
         case _:
             raise ValueError(f"Unknown normalization mode: {normalize}")
 
-    rmse /= normalizer[None, ...]
+    metric_name = "NRMSE" if normalize else "RMSE"
+
+    rmse = rmse / normalizer
     rmse = aggregation(rmse, axis=0)
 
     variable_names = samples["estimates"].variable_names

@@ -4,7 +4,7 @@ BayesFlow is a Python library for efficient Bayesian inference with deep learnin
 It provides users with:
 
 - A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2409.04332)
-- A rich collection of [neural network architectures](https://arxiv.org/abs/2512.20685)
+- A rich collection of generative models, [from diffusion to consistency models](https://bayesflow-org.github.io/diffusion-experiments/)
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
 ## Conceptual Overview
@@ -95,6 +95,13 @@ For an in-depth exposition, check out our expanding list of resources below.
 
 Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bayesmodels.com/) by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
 
+### Videos
+
+A few video tutorial videos are available as part of the [Learning Bayesian Statistics](https://learnbayesstats.com/) podcast:
+
+1. Marvin Schmitt on [Amortized Bayesian Inference with Neural Networks](https://www.youtube.com/watch?v=_lotzkvy6mY)
+2. Jonas Arruda on [Diffusion Models for Simulation-Based Inference](https://www.youtube.com/watch?v=ZlcEkHXgF5k)
+
 ### Tutorial notebooks
 
 1. {doc}`Diffusion starter <_examples/Diffusion_Models>` - A small tutorial on the power of diffusion models for SBI.
@@ -109,6 +116,10 @@ Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bay
 10. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
 11. {doc}`Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine inferences.
 12. {doc}`Ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling.
+
+### Tutorial papers
+
+1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685*. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 
@@ -126,47 +137,26 @@ Please use the [BayesFlow Forums](https://discuss.bayesflow.org/) for any BayesF
 
 ## Citing BayesFlow
 
-You can cite BayesFlow along the lines of:
-
-- We approximated the posterior using neural posterior estimation (NPE) with learned summary statistics (Radev et al., 2020), as implemented in the BayesFlow framework for amortized Bayesian inference (Radev et al., 2023a).
-- We approximated the likelihood using neural likelihood estimation (NLE) without hand-crafted summary statistics (Papamakarios et al., 2019), leveraging its implementation in BayesFlow for efficient and flexible inference.
-
-1. Radev, S. T., Schmitt, M., Schumacher, L., Elsemüller, L., Pratz, V., Schälte, Y., Köthe, U., & Bürkner, P.-C. (2023a). BayesFlow: Amortized Bayesian workflows with neural networks. *The Journal of Open Source Software, 8(89)*, 5702.([arXiv](https://arxiv.org/abs/2306.16015))([JOSS](https://joss.theoj.org/papers/10.21105/joss.05702))
-2. Radev, S. T., Mertens, U. K., Voss, A., Ardizzone, L., Köthe, U. (2020). BayesFlow: Learning complex stochastic models with invertible neural networks. *IEEE Transactions on Neural Networks and Learning Systems, 33(4)*, 1452-1466. ([arXiv](https://arxiv.org/abs/2003.06281))([IEEE TNNLS](https://ieeexplore.ieee.org/document/9298920))
-3. Radev, S. T., Schmitt, M., Pratz, V., Picchini, U., Köthe, U., & Bürkner, P.-C. (2023b). JANA: Jointly amortized neural approximation of complex Bayesian models. *Proceedings of the Thirty-Ninth Conference on Uncertainty in Artificial Intelligence, 216*, 1695-1706. ([arXiv](https://arxiv.org/abs/2302.09125))([PMLR](https://proceedings.mlr.press/v216/radev23a.html))
+If you are using the new multi-backend version of BayesFlow, we recommend citing our new [software paper](https://arxiv.org/abs/2602.07098) (Kühmichel et al., 2026). For uses of the [legacy version](https://joss.theoj.org/papers/10.21105/joss.05702), you can still reference Radev et al., (2023).
 
 **BibTeX:**
 
 ```
+@article{kuhmichel2026bayesflow,
+  title={{BayesFlow} 2: Multi-backend amortized {B}ayesian inference in Python},
+  author={Kühmichel, Lars and Huang, Jerry M and Pratz, Valentin and Arruda, Jonas and Olischläger, Hans and Habermann, Daniel and Kucharsky, Simon and Elsemüller, Lasse and Mishra, Aayush and Bracher, Niels and Jedhoff, Svenja and Schmitt, Marvin and Bürkner, Paul-Christian and Radev, Stefan T},
+  journal={arXiv preprint arXiv:2602.07098},
+  year={2026}
+}
+
 @article{bayesflow_2023_software,
   title = {{BayesFlow}: Amortized {B}ayesian workflows with neural networks},
-  author = {Radev, Stefan T. and Schmitt, Marvin and Schumacher, Lukas and Elsemüller, Lasse and Pratz, Valentin and Schälte, Yannik and Köthe, Ullrich and Bürkner, Paul-Christian},
+  author = {Radev, Stefan T and Schmitt, Marvin and Schumacher, Lukas and Elsemüller, Lasse and Pratz, Valentin and Schälte, Yannik and Köthe, Ullrich and Bürkner, Paul-Christian},
   journal = {Journal of Open Source Software},
   volume = {8},
   number = {89},
   pages = {5702},
   year = {2023}
-}
-
-@article{bayesflow_2020_original,
-  title = {{BayesFlow}: Learning complex stochastic models with invertible neural networks},
-  author = {Radev, Stefan T. and Mertens, Ulf K. and Voss, Andreas and Ardizzone, Lynton and K{\"o}the, Ullrich},
-  journal = {IEEE transactions on neural networks and learning systems},
-  volume = {33},
-  number = {4},
-  pages = {1452--1466},
-  year = {2020}
-}
-
-@inproceedings{bayesflow_2023_jana,
-  title = {{JANA}: Jointly amortized neural approximation of complex {B}ayesian models},
-  author = {Radev, Stefan T. and Schmitt, Marvin and Pratz, Valentin and Picchini, Umberto and K\"othe, Ullrich and B\"urkner, Paul-Christian},
-  booktitle = {Proceedings of the Thirty-Ninth Conference on Uncertainty in Artificial Intelligence},
-  pages = {1695--1706},
-  year = {2023},
-  volume = {216},
-  series = {Proceedings of Machine Learning Research},
-  publisher = {PMLR}
 }
 ```
 

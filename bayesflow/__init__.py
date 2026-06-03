@@ -112,17 +112,17 @@ from . import (
     utils,
     scoring_rules,
     workflows,
-    wrappers,
 )
 
 from .adapters import Adapter
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
 from .approximators import (
     ContinuousApproximator,
+    CompositionalApproximator,
     ModelComparisonApproximator,
     ScoringRuleApproximator,
     EnsembleApproximator,
     RatioApproximator,
 )
 from .simulators import make_simulator
-from .workflows import BasicWorkflow, EnsembleWorkflow
+from .workflows import BasicWorkflow, EnsembleWorkflow, CompositionalWorkflow

@@ -1,5 +1,6 @@
-import keras
 import numpy as np
+
+import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import pad, searchsorted
@@ -15,7 +16,7 @@ class SplineTransform(Transform):
     def __init__(
         self,
         bins: int = 16,
-        default_domain: (float, float, float, float) = (-3.0, 3.0, -3.0, 3.0),
+        default_domain: tuple[float, float, float, float] = (-3.0, 3.0, -3.0, 3.0),
         min_width: float = 1.0,
         min_height: float = 1.0,
         min_bin_width: float = 0.1,
@@ -27,15 +28,18 @@ class SplineTransform(Transform):
         if bins <= 0:
             raise ValueError("Number of bins must be strictly positive.")
 
+        if default_domain[1] <= default_domain[0] or default_domain[3] <= default_domain[2]:
+            raise ValueError("Invalid default domain. Must be (left, right, bottom, top).")
+
+        if method != "rational_quadratic":
+            raise NotImplementedError("Currently, only 'rational_quadratic' spline method is supported.")
+
         self.bins = bins
         self.min_width = max(min_width, bins * min_bin_width)
         self.min_height = max(min_height, bins * min_bin_height)
         self.min_bin_width = min_bin_width
         self.min_bin_height = min_bin_height
         self.method = method
-
-        if self.method != "rational_quadratic":
-            raise NotImplementedError("Currently, only 'rational_quadratic' spline method is supported.")
 
         self.method_fn = _rational_quadratic_spline
 
@@ -51,9 +55,6 @@ class SplineTransform(Transform):
             "derivatives": self.bins - 1,
         }
 
-        if default_domain[1] <= default_domain[0] or default_domain[3] <= default_domain[2]:
-            raise ValueError("Invalid default domain. Must be (left, right, bottom, top).")
-
         self.default_left = default_domain[0]
         self.default_bottom = default_domain[2]
         self.default_width = default_domain[1] - default_domain[0]
@@ -66,6 +67,22 @@ class SplineTransform(Transform):
             raise ValueError(f"Default height must be greater than minimum height ({self.min_height}).")
 
         self._shift = np.sinh(1.0) * np.log(np.e - 1.0)
+
+    def get_config(self) -> dict:
+        return {
+            "bins": self.bins,
+            "default_domain": (
+                self.default_left,
+                self.default_left + self.default_width,
+                self.default_bottom,
+                self.default_bottom + self.default_height,
+            ),
+            "min_width": self.min_width,
+            "min_height": self.min_height,
+            "min_bin_width": self.min_bin_width,
+            "min_bin_height": self.min_bin_height,
+            "method": self.method,
+        }
 
     @property
     def params_per_dim(self) -> int:
@@ -124,7 +141,7 @@ class SplineTransform(Transform):
 
         return constrained_parameters
 
-    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
+    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 
@@ -177,7 +194,7 @@ class SplineTransform(Transform):
 
         return z, log_det
 
-    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
+    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 

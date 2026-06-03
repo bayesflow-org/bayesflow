@@ -5,6 +5,7 @@ neural network components used to perform it.
 
 from .approximator import Approximator
 from .continuous_approximator import ContinuousApproximator
+from .compositional_approximator import CompositionalApproximator
 from .scoring_rule_approximator import ScoringRuleApproximator
 from .model_comparison_approximator import ModelComparisonApproximator
 from .ratio_approximator import RatioApproximator

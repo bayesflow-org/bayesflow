@@ -1,12 +1,37 @@
-﻿API Reference
+﻿
+API Reference
 =============
 
-This page will be overridden by the autosummary call for bayesflow.
-To modify the actual output, refer to _templates/custom-module-template.rst.
+This is the reference for the public API. For a more guided introduction,
+please refer to the :doc:`Examples <../examples>` section.
 
-.. autosummary::
-    :toctree: .
+
+
+.. automodule:: bayesflow
+  :member-order: alphabetical
+
+
+
+  .. rubric:: Modules
+
+  .. autosummary::
+    :toctree:
     :template: custom-module-template.rst
     :recursive:
 
-    bayesflow
+    adapters
+    approximators
+    augmentations
+    datasets
+    diagnostics
+    distributions
+    experimental
+    links
+    metrics
+    networks
+    scoring_rules
+    simulators
+    types
+    utils
+    workflows
+    wrappers

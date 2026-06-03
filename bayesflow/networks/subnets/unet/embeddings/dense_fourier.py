@@ -4,7 +4,8 @@ import keras
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-from ....helpers import Sequential, FourierEmbedding
+
+from ....helpers import FourierEmbedding
 
 
 @serializable("bayesflow.networks")
@@ -82,7 +83,7 @@ class DenseFourier(keras.Layer):
 
         self.time_mlp = None
         if self.use_residual_mlp:
-            self.time_mlp = Sequential(
+            self.time_mlp = keras.Sequential(
                 [
                     keras.layers.Dense(
                         self.emb_dim + (1 if self.include_identity else 0),
@@ -131,9 +132,9 @@ class DenseFourier(keras.Layer):
         emb_shape = self.fourier.compute_output_shape(input_shape)
         return emb_shape
 
-    def call(self, t: Tensor, training: bool | None = None, **kwargs) -> Tensor:
+    def call(self, t: Tensor, **kwargs) -> Tensor:
         t_emb = self.fourier(t)
         if self.time_mlp is not None:
-            delta = self.time_mlp(t_emb, training=training)
+            delta = self.time_mlp(t_emb)
             t_emb = t_emb + delta
         return t_emb

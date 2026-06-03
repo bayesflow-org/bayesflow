@@ -1,3 +1,5 @@
+from typing import Any
+
 import keras
 
 from bayesflow.types import Tensor
@@ -49,8 +51,14 @@ class CouplingFlow(InferenceNetwork):
         ``"random"``.
     use_actnorm : bool, optional
         Whether to apply ActNorm before each coupling layer.  Default is ``True``.
-    base_distribution : str, optional
+    base_distribution : str or ~bayesflow.distributions.Distribution, optional
         The base probability distribution from which samples are drawn.
+        Accepts the string shortcuts ``"normal"``
+        (:class:`~bayesflow.distributions.DiagonalNormal`) and ``"student_t"``
+        (:class:`~bayesflow.distributions.DiagonalStudentT`), or an explicit
+        :class:`~bayesflow.distributions.Distribution` instance for full
+        control, e.g.::
+            base_distribution=bf.distributions.DiagonalStudentT(df=10.0)
         Default is ``"normal"``.
     subnet_kwargs : dict[str, any], optional
         Keyword arguments forwarded to the subnet (e.g., MLP) constructor within
@@ -81,9 +89,9 @@ class CouplingFlow(InferenceNetwork):
         transform: str = "affine",
         permutation: str | None = "random",
         use_actnorm: bool = True,
-        base_distribution: str = "normal",
-        subnet_kwargs: dict[str, any] = None,
-        transform_kwargs: dict[str, any] = None,
+        base_distribution: str | keras.Layer = "normal",
+        subnet_kwargs: dict[str, Any] = None,
+        transform_kwargs: dict[str, Any] = None,
         **kwargs,
     ):
         super().__init__(base_distribution=base_distribution, **kwargs)
@@ -95,7 +103,7 @@ class CouplingFlow(InferenceNetwork):
         self.use_actnorm = use_actnorm
 
         self.invertible_layers = []
-        for i in range(depth):
+        for _ in range(depth):
             if use_actnorm:
                 self.invertible_layers.append(ActNorm())
 
@@ -106,12 +114,17 @@ class CouplingFlow(InferenceNetwork):
                 DualCoupling(subnet, transform, subnet_kwargs=subnet_kwargs, transform_kwargs=transform_kwargs)
             )
 
-        # We only need to do this from coupling flows, since we do not serialize invertible layers
+        # We only need to do this for coupling flows, since we do not serialize invertible layers
         self.subnet_kwargs = subnet_kwargs
         self.transform_kwargs = transform_kwargs
 
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):
+        if self.built:
+            # building when the network is already built can cause issues with serialization
+            # see https://github.com/keras-team/keras/issues/21147
+            return
+
         for layer in self.invertible_layers:
             layer.build(xz_shape=xz_shape, conditions_shape=conditions_shape)
 

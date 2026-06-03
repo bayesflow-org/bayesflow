@@ -1,6 +1,6 @@
-import tensorflow as tf
-
 from functools import wraps
+
+import tensorflow as tf
 
 
 def grad(fn, argnums=0, has_aux=False):
@@ -80,12 +80,6 @@ def vjp(fn, *primals, has_aux=False) -> tuple:
         return tape.gradient(y, primals, output_gradients=cotangent)
 
     return out, vjp_fn
-
-
-def _get_arg_indices(argnums):
-    if isinstance(argnums, int):
-        return [argnums]
-    return list(argnums)
 
 
 def jacfwd(fn, argnums=0, has_aux=False):

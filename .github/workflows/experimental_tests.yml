@@ -1,0 +1,138 @@
+name: Experimental Tests
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Run ${{ matrix.backend }} tests on ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11"] # we usually only need to test the oldest python version
+        backend: ["jax", "tensorflow", "torch"]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      KERAS_BACKEND: ${{ matrix.backend }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install -U pip setuptools wheel
+          pip install .[test]
+
+      - name: Install JAX
+        if: ${{ matrix.backend == 'jax' }}
+        run: |
+          pip install -U jax
+
+      - name: Install TensorFlow
+        if: ${{ matrix.backend == 'tensorflow' }}
+        run: |
+          pip install -U tensorflow
+
+      - name: Install PyTorch
+        if: ${{ matrix.backend == 'torch' }}
+        run: |
+          pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Show Environment Info
+        run: |
+          python --version
+          pip --version
+          printenv | sort
+          pip list
+
+      - name: Run Tests
+        run: |
+          pytest -x -m "not slow"
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Create Coverage Report
+        run: |
+          coverage xml
+
+      - name: Upload Coverage Reports to CodeCov
+        uses: codecov/codecov-action@v6
+        with:
+          # do not use the files attribute here, otherwise the reports are not merged correctly
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-experimental:
+    name: Run experimental ${{ matrix.backend }} tests on ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11"]
+        backend: ["jax", "tensorflow", "torch"]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      KERAS_BACKEND: ${{ matrix.backend }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install -U pip setuptools wheel
+          pip install .[test]
+
+      - name: Install JAX
+        if: ${{ matrix.backend == 'jax' }}
+        run: |
+          pip install -U jax
+
+      - name: Install TensorFlow
+        if: ${{ matrix.backend == 'tensorflow' }}
+        run: |
+          pip install -U tensorflow
+
+      - name: Install PyTorch
+        if: ${{ matrix.backend == 'torch' }}
+        run: |
+          pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Show Environment Info
+        run: |
+          python --version
+          pip --version
+          printenv | sort
+          pip list
+
+      - name: Run Experimental Tests
+        run: |
+          pytest -x -m "not slow" --override-ini="addopts=--cov=bayesflow --strict-markers --verbose"
+
+      - name: Upload Coverage Reports to CodeCov
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

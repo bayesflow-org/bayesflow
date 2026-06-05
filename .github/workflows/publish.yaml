@@ -93,7 +93,7 @@ jobs:
       if: ${{ env.PUBLISH_PACKAGE == 'true' }}
       run: |
         if [[ $DRY_RUN == true ]]; then
-          echo "Performing a dry run. No package will be published."
+          echo "Publishing package to PyPI (dry run)"
           uv publish --dry-run
         else
           echo "Publishing package to PyPI."

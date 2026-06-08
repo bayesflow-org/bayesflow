@@ -76,12 +76,13 @@ class DualCoupling(InvertibleLayer):
     def _forward(self, x: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
         """Transform (x1, x2) -> (g(x1; f(x2; x1)), f(x2; x1))"""
         x1, x2 = x[..., : self.pivot], x[..., self.pivot :]
-        (z1, z2), log_det = self.coupling1(x1, x2, conditions=conditions, training=training, **kwargs)
+        (z1, z2), log_det1 = self.coupling1(x1, x2, conditions=conditions, training=training, **kwargs)
 
+        log_det2 = 0
         if self.pivot:
             (z2, z1), log_det2 = self.coupling2(z2, z1, conditions=conditions, training=training, **kwargs)
-            log_det = log_det + log_det2
 
+        log_det = log_det1 + log_det2
         z = keras.ops.concatenate([z1, z2], axis=-1)
 
         return z, log_det

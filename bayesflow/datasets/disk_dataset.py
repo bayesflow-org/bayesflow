@@ -101,7 +101,7 @@ class DiskDataset(keras.utils.PyDataset):
         batch = apply_augmentations(batch, self.augmentations)
 
         if self.adapter is not None:
-            batch = self.adapter(batch, strict=False)
+            batch = self.adapter(batch)
 
         return batch
 

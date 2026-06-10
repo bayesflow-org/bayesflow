@@ -209,6 +209,18 @@ def test_calibration_log_gamma_end_to_end():
     assert not lower_expected <= np.sum(sbc_calibration) <= upper_expected
 
 
+def test_accuracy_random_points():
+    # overdispersed posterior should have a higher atc than underdispersed
+    rng = np.random.default_rng(0)
+    N, S, D = 500, 300, 3
+    thetas = rng.normal(size=(N, D))
+    wide = thetas[:, None, :] + rng.normal(scale=5.0, size=(N, S, D))
+    narrow = thetas[:, None, :] + rng.normal(scale=0.01, size=(N, S, D))
+    atc_wide = bf.diagnostics.metrics.accuracy_random_points(wide, thetas)["values"]
+    atc_narrow = bf.diagnostics.metrics.accuracy_random_points(narrow, thetas)["values"]
+    assert atc_wide > atc_narrow
+
+
 def test_bootstrap_comparison_shapes():
     """Test the bootstrap_comparison output shapes."""
     observed_samples = np.random.rand(10, 5)

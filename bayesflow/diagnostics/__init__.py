@@ -10,6 +10,7 @@ from .metrics import (
     posterior_z_score,
     summary_space_comparison,
     correlation,
+    accuracy_random_points,
 )
 
 from .plots import (

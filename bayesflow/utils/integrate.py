@@ -228,11 +228,11 @@ def integrate_fixed(
 
     match method:
         case "euler":
-            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -263,11 +263,11 @@ def integrate_scheduled(
 ) -> StateDict:
     match method:
         case "euler":
-            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -305,7 +305,7 @@ def integrate_adaptive(
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=True)
         case "euler":
             raise ValueError("Adaptive step sizing is not supported for the 'euler' method.")
         case str() as name:

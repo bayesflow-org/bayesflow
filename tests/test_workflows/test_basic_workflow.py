@@ -157,8 +157,6 @@ def test_load_approximator_weights_only(tiny_workflow_weights_only):
     from bayesflow.networks import CouplingFlow
 
     workflow = tiny_workflow_weights_only
-    # Build the approximator on a small batch so weights are initialised before loading
-    workflow.approximator.sample(conditions=workflow.simulate(2), num_samples=1)
     original = workflow.approximator
 
     workflow2 = bf.BasicWorkflow(
@@ -169,8 +167,10 @@ def test_load_approximator_weights_only(tiny_workflow_weights_only):
         checkpoint_name="model",
         save_weights_only=True,
     )
-    # Build before loading weights
-    workflow2.approximator.sample(conditions=workflow2.simulate(2), num_samples=1)
+    # For weights-only restore the adapter must be initialized via a full
+    # forward pass (strict=True) before load_weights can be called.
+    # A short fit run is the correct way to achieve this.
+    workflow2.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
     workflow2.load_approximator()
     assert_models_equal(original, workflow2.approximator)
 

@@ -174,6 +174,16 @@ class BasicWorkflow(Workflow):
         (``.keras``), the entire approximator object is replaced via
         ``keras.saving.load_model()``.
 
+        .. note::
+            **Weights-only restore requires the model to be built first.**
+            BayesFlow adapters record internal state (e.g. variable split
+            indices) during the first full forward pass with ``strict=True``,
+            which only happens during ``fit``.  Call
+            ``workflow.fit_online(...)`` (or ``fit_offline`` / ``fit_disk``)
+            at least once before calling ``load_approximator()`` on a
+            ``.weights.h5`` checkpoint.  Using the default full-model
+            ``.keras`` format avoids this requirement entirely.
+
         Parameters
         ----------
         path : str, optional

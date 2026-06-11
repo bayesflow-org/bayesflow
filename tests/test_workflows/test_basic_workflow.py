@@ -228,3 +228,56 @@ def test_load_approximator_missing_file_raises(tmp_path):
     )
     with pytest.raises(FileNotFoundError, match="No checkpoint found"):
         workflow.load_approximator()
+
+
+def test_save_best_only(tmp_path):
+    """save_best_only=True is accepted and writes a checkpoint during training."""
+    from bayesflow.networks import CouplingFlow
+
+    workflow = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+        checkpoint_filepath=str(tmp_path),
+        checkpoint_name="best",
+        save_best_only=True,
+    )
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    assert os.path.exists(os.path.join(str(tmp_path), "best.keras"))
+
+
+def test_save_weights_only_checkpoint(tmp_path):
+    """save_weights_only=True writes a .weights.h5 file, not a .keras file."""
+    from bayesflow.networks import CouplingFlow
+
+    workflow = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+        checkpoint_filepath=str(tmp_path),
+        checkpoint_name="model",
+        save_weights_only=True,
+    )
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    assert os.path.exists(os.path.join(str(tmp_path), "model.weights.h5"))
+    assert not os.path.exists(os.path.join(str(tmp_path), "model.keras"))
+
+
+def test_checkpoint_exists_warning(tmp_path, caplog):
+    """A warning is emitted when a checkpoint file already exists at init time."""
+    import logging as stdlib_logging
+    from bayesflow.networks import CouplingFlow
+
+    # Plant a dummy checkpoint so the warning path is hit
+    dummy = os.path.join(str(tmp_path), "model.keras")
+    open(dummy, "w").close()
+
+    with caplog.at_level(stdlib_logging.WARNING, logger="bayesflow"):
+        bf.BasicWorkflow(
+            inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+            inference_variables=["parameters"],
+            checkpoint_filepath=str(tmp_path),
+            checkpoint_name="model",
+        )
+
+    assert any("Checkpoint file exists" in record.message for record in caplog.records)

@@ -174,16 +174,6 @@ class BasicWorkflow(Workflow):
         (``.keras``), the entire approximator object is replaced via
         ``keras.saving.load_model()``.
 
-        .. note::
-            **Weights-only restore requires the model to be built first.**
-            BayesFlow adapters record internal state (e.g. variable split
-            indices) during the first full forward pass with ``strict=True``,
-            which only happens during ``fit``.  Call
-            ``workflow.fit_online(...)`` (or ``fit_offline`` / ``fit_disk``)
-            at least once before calling ``load_approximator()`` on a
-            ``.weights.h5`` checkpoint.  Using the default full-model
-            ``.keras`` format avoids this requirement entirely.
-
         Parameters
         ----------
         path : str, optional
@@ -191,12 +181,11 @@ class BasicWorkflow(Workflow):
             the loading strategy:
 
             - ``*.weights.h5`` → weights-only restore (``load_weights``).
-            - any other extension (e.g. ``*.keras``) → full model restore
+            - any other extension (e.g. ``*.keras``) -> full model restore
               (``keras.saving.load_model``).
 
             If ``None`` (default), the path is inferred from
-            ``checkpoint_filepath`` / ``checkpoint_name``. A ``ValueError``
-            is raised when neither ``path`` nor ``checkpoint_filepath`` is set.
+            ``checkpoint_filepath`` / ``checkpoint_name``.
 
         Raises
         ------
@@ -205,6 +194,14 @@ class BasicWorkflow(Workflow):
             the workflow.
         FileNotFoundError
             If the resolved checkpoint path does not exist on disk.
+
+        Notes
+        -----
+        Weights-only restore requires the model to be built first. BayesFlow
+        adapters record internal state during the first ``strict=True`` forward
+        pass, which only happens in ``fit``. Call ``workflow.fit_online(...)``
+        (or ``fit_offline`` / ``fit_disk``) once before loading a ``.weights.h5``
+        checkpoint. The default ``.keras`` format avoids this requirement entirely.
         """
         if path is None:
             if self.checkpoint_filepath is None:
@@ -212,8 +209,8 @@ class BasicWorkflow(Workflow):
                     "No path provided and no checkpoint_filepath is set on this workflow. "
                     "Pass an explicit path to load_approximator()."
                 )
-            file_ext = self.checkpoint_name + (".weights.h5" if self.save_weights_only else ".keras")
-            path = os.path.join(self.checkpoint_filepath, file_ext)
+            filename = self.checkpoint_name + (".weights.h5" if self.save_weights_only else ".keras")
+            path = os.path.join(self.checkpoint_filepath, filename)
 
         if not os.path.exists(path):
             raise FileNotFoundError(

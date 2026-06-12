@@ -9,7 +9,6 @@ from .categorical_scoring_rule import CategoricalScoringRule
 
 def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
     """Prepend f_0=0 and compute f_k - f_m for all k, where m is the true model."""
-    targets = keras.ops.convert_to_tensor(targets)
     zeros = keras.ops.zeros_like(f[..., :1])
     f_full = keras.ops.concatenate([zeros, f], axis=-1)  # (..., M)
     m = keras.ops.cast(keras.ops.argmax(targets, axis=-1), dtype="int32")
@@ -96,7 +95,6 @@ class ExponentialScore(CategoricalScoringRule):
         Tensor
             (Optionally weighted) mean exponential score over the batch.
         """
-        targets = keras.ops.convert_to_tensor(targets)
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")

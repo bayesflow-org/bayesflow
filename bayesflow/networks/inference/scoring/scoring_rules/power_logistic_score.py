@@ -54,7 +54,6 @@ class PowerLogisticScore(CategoricalScoringRule):
         Tensor
             (Optionally weighted) mean power logistic score over the batch.
         """
-        targets = keras.ops.convert_to_tensor(targets)
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")

@@ -47,7 +47,6 @@ class BrierScore(CategoricalScoringRule):
         Tensor
             (Optionally weighted) mean Brier score over the batch.
         """
-        targets = keras.ops.convert_to_tensor(targets)
         probs = keras.ops.softmax(estimates["logits"], axis=-1)
         scores = keras.ops.sum((probs - targets) ** 2, axis=-1)
         return weighted_mean(scores, weights)

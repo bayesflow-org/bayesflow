@@ -427,7 +427,7 @@ class BasicWorkflow(Workflow):
         root: os.PathLike,
         pattern: str = "*.pkl",
         batch_size: int = 32,
-        load_fn: callable | None = None,
+        load_fn: Callable | None = None,
         epochs: int = 100,
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int | None = None,
@@ -446,7 +446,7 @@ class BasicWorkflow(Workflow):
             A filename pattern to match dataset files, by default ``"*.pkl"``.
         batch_size : int, optional
             The batch size used for training, by default 32.
-        load_fn : callable, optional
+        load_fn : Callable, optional
             A function to load dataset files. If None, a default loading
             function is used.
         epochs : int, optional

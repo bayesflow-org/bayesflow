@@ -43,7 +43,7 @@ def correlation(
         Test quantity functions are expected to accept a dict of draws with
         shape ``(batch_size, ...)`` as the first positional argument and return
         a NumPy array of shape ``(batch_size,)``.
-    aggregation    : callable, optional (default = np.median)
+    aggregation    : Callable, optional (default = np.median)
         Function to aggregate the correlations across posterior draws.
         Typically `np.mean` or `np.median`.
 

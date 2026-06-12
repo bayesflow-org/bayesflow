@@ -324,7 +324,7 @@ class EnsembleWorkflow(BasicWorkflow):
         pattern: str = "*.pkl",
         batch_size: int = 32,
         data_reuse: float = 1.0,
-        load_fn: callable | None = None,
+        load_fn: Callable | None = None,
         epochs: int = 100,
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int | None = None,
@@ -346,7 +346,7 @@ class EnsembleWorkflow(BasicWorkflow):
         data_reuse : float, optional
             Similarity of training data for ensemble members in ``[0, 1]``, by default 1.0.
             See also :py:class:`bayesflow.datasets.EnsembleDataset`.
-        load_fn : callable, optional
+        load_fn : Callable, optional
             A function to load dataset files. If None, a default loading
             function is used.
         epochs : int, optional

@@ -18,7 +18,7 @@ def jacobian_trace(
 
     Parameters
     ----------
-    f : callable
+    f : Callable
         The function to be differentiated.
     x :  Tensor of shape (n, ..., d)
         The input tensor to f.
@@ -56,7 +56,7 @@ def jacobian_trace(
 
 
 def _hutchinson(
-    f: callable, x: Tensor, steps: int = 1, return_output: bool = False, seed: int | keras.random.SeedGenerator = None
+    f: Callable, x: Tensor, steps: int = 1, return_output: bool = False, seed: int | keras.random.SeedGenerator = None
 ):
     """Estimate the trace of the Jacobian matrix of f using Hutchinson's algorithm.
 

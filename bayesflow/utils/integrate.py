@@ -1429,7 +1429,7 @@ def integrate_glass(
 
     Parameters
     ----------
-    fn : callable
+    fn : Callable
         Model forward function in integrate-compatible form. It receives
         ``fn(time, **state)`` velocity field and returns a state dictionary with matching keys.
     state : dict
@@ -1556,10 +1556,10 @@ def integrate_stochastic(
 
     Parameters
     ----------
-    drift_fn : callable
+    drift_fn : Callable
         Function computing the drift term of the SDE. It should accept the current
         state and time as inputs.
-    diffusion_fn : callable
+    diffusion_fn : Callable
         Function computing the diffusion term of the SDE. It should accept the current
         state and time as inputs.
     state : StateDict
@@ -1583,8 +1583,8 @@ def integrate_stochastic(
         Maximum number of steps for adaptive integration. Noise is pre-generated
         up to this number of steps, which may increase memory usage. Default is
         ``1000``.
-    score_fn : callable, optional
-        Score function used for predictor–corrector sampling. If ``None``,
+    score_fn : Callable, optional
+        Score function used for predictor-corrector sampling. If ``None``,
         no corrector step is applied.
     corrector_steps : int, optional
         Number of corrector steps applied after each predictor step. Default is ``0``.

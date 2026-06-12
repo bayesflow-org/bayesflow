@@ -47,7 +47,7 @@ class NeuralRatioDistribution:
             returns a single scalar log-ratio.  No vectorisation is
             applied.  PyMC ``signature``: ``"(n),()->()"``.  The Op
             returns a scalar directly.
-    simulator_fn : callable or None, optional
+    simulator_fn : Callable or None, optional
         A function with signature ``(rng, *params, size) -> ndarray`` used
         to generate samples.  Required only when prior- or posterior-predictive
         sampling is needed (e.g. :func:`pm.sample_prior_predictive`).

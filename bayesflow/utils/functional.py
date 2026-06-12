@@ -1,12 +1,14 @@
 from collections.abc import Callable, Mapping, Sequence
-import keras
+
 import numpy as np
+
+import keras
 
 from bayesflow.types import Shape
 
 
 def batched_call(
-    f: callable,
+    f: Callable,
     batch_shape: Shape,
     args: Sequence[any] = (),
     kwargs: Mapping[str, any] = None,

@@ -5,7 +5,7 @@ from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
 from .categorical_scoring_rule import CategoricalScoringRule
-from .exponential_score import _pairwise_diff
+from bayesflow.utils.keras_utils import pairwise_diff
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
@@ -47,7 +47,7 @@ class LogisticScore(CategoricalScoringRule):
             (Optionally weighted) mean logistic score over the batch.
         """
         targets = keras.ops.convert_to_tensor(targets)
-        diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
+        diff = pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         scores = keras.ops.sum(mask * keras.ops.softplus(diff), axis=-1)
         return weighted_mean(scores, weights)

@@ -1,23 +1,15 @@
+import numpy as np
 import keras
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
+from bayesflow.utils.keras_utils import pairwise_diff
 from .categorical_scoring_rule import CategoricalScoringRule
 
-# exp(88) ≈ 1.65e38, just below float32 max; used to clip exponent arguments
-_FLOAT32_EXP_MAX = 88.0
-
-
-def _pairwise_diff(f: Tensor, targets: Tensor) -> Tensor:
-    """Prepend f_0=0 and compute f_k - f_m for all k, where m is the true model."""
-    zeros = keras.ops.zeros_like(f[..., :1])
-    f_full = keras.ops.concatenate([zeros, f], axis=-1)
-    m = keras.ops.cast(keras.ops.argmax(targets, axis=-1), dtype="int32")
-    m_idx = keras.ops.expand_dims(m, axis=-1)
-    f_m = keras.ops.take_along_axis(f_full, m_idx, axis=-1)
-    return f_full - f_m
+# Largest integer x such that exp(x) does not overflow in float32.
+FLOAT32_EXP_MAX = np.floor(np.log(np.finfo(np.float32).max))
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
@@ -65,7 +57,7 @@ class ExponentialScore(CategoricalScoringRule):
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
-    # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
+    # Small-stddev init keeps initial log-odds near zero for stable early training.
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, scale: float = 1.0, **kwargs):
@@ -98,13 +90,13 @@ class ExponentialScore(CategoricalScoringRule):
         Tensor
             (Optionally weighted) mean exponential score over the batch.
         """
-        diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
+        diff = pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
-        clip_max = _FLOAT32_EXP_MAX - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
-        alpha_half_diff = self.scale * diff / 2.0
+        clip_max = FLOAT32_EXP_MAX - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
+        alpha_half_diff = self.scale / 2.0 * diff
         scores = keras.ops.sum(
-            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(alpha_half_diff, -_FLOAT32_EXP_MAX), clip_max)),
+            mask * keras.ops.exp(keras.ops.minimum(keras.ops.maximum(alpha_half_diff, -FLOAT32_EXP_MAX), clip_max)),
             axis=-1,
         )
         return weighted_mean(scores, weights)

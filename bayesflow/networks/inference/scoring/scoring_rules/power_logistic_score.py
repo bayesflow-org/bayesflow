@@ -5,7 +5,12 @@ from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
 from .categorical_scoring_rule import CategoricalScoringRule
-from .exponential_score import _pairwise_diff, _FLOAT32_EXP_MAX
+import numpy as np
+
+from bayesflow.utils.keras_utils import pairwise_diff
+
+# Largest integer x such that exp(x) does not overflow in float32.
+FLOAT32_EXP_MAX = np.floor(np.log(np.finfo(np.float32).max))
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
@@ -22,7 +27,7 @@ class PowerLogisticScore(CategoricalScoringRule):
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("log_bayes_factors",)
-    # Small-stddev init keeps initial log-odds near zero, preventing exp() overflow at the start of training.
+    # Small-stddev init keeps initial log-odds near zero for stable early training.
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
 
     def __init__(self, alpha: float, **kwargs):
@@ -54,11 +59,10 @@ class PowerLogisticScore(CategoricalScoringRule):
         Tensor
             (Optionally weighted) mean power logistic score over the batch.
         """
-        diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
+        diff = pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
-        clip_max = _FLOAT32_EXP_MAX - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
-        # (1 + exp(diff))^alpha = exp(alpha * softplus(diff)); only upper clip needed
+        clip_max = FLOAT32_EXP_MAX - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
         log_terms = self.alpha * keras.ops.softplus(diff)
         scores = keras.ops.sum(
             mask * keras.ops.exp(keras.ops.minimum(log_terms, clip_max)),

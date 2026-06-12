@@ -14,10 +14,10 @@ class Leaky(keras.Layer):
     Parameters
     ----------
     power : float
-        Exponent :math:`\lambda`. Must be greater than 1. Recommended value: ``2.0``.
+        Exponent :math:`\lambda`. Default: 2.0.
     """
 
-    def __init__(self, power: float, eps: float = 1e-8, **kwargs):
+    def __init__(self, power: float = 2.0, eps: float = 1e-8, **kwargs):
         super().__init__(**kwargs)
         self.power = power
         self.eps = eps

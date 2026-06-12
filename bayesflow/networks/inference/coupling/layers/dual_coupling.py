@@ -62,7 +62,9 @@ class DualCoupling(InvertibleLayer):
         x2_shape = xz_shape[:-1] + (xz_shape[-1] - self.pivot,)
 
         self.coupling1.build(x1_shape, x2_shape, conditions_shape)
-        self.coupling2.build(x2_shape, x1_shape, conditions_shape)
+
+        if self.pivot:
+            self.coupling2.build(x2_shape, x1_shape, conditions_shape)
 
     def call(
         self, xz: Tensor, conditions: Tensor = None, inverse: bool = False, training: bool = False, **kwargs
@@ -75,17 +77,26 @@ class DualCoupling(InvertibleLayer):
         """Transform (x1, x2) -> (g(x1; f(x2; x1)), f(x2; x1))"""
         x1, x2 = x[..., : self.pivot], x[..., self.pivot :]
         (z1, z2), log_det1 = self.coupling1(x1, x2, conditions=conditions, training=training, **kwargs)
-        (z2, z1), log_det2 = self.coupling2(z2, z1, conditions=conditions, training=training, **kwargs)
 
-        z = keras.ops.concatenate([z1, z2], axis=-1)
+        log_det2 = 0
+        if self.pivot:
+            (z2, z1), log_det2 = self.coupling2(z2, z1, conditions=conditions, training=training, **kwargs)
+
         log_det = log_det1 + log_det2
+        z = keras.ops.concatenate([z1, z2], axis=-1)
 
         return z, log_det
 
     def _inverse(self, z: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
         """Transform (g(x1; f(x2; x1)), f(x2; x1)) -> (x1, x2)"""
         z1, z2 = z[..., : self.pivot], z[..., self.pivot :]
-        (z2, z1), log_det2 = self.coupling2(z2, z1, conditions=conditions, inverse=True, training=training, **kwargs)
+
+        log_det2 = 0
+        if self.pivot:
+            (z2, z1), log_det2 = self.coupling2(
+                z2, z1, conditions=conditions, inverse=True, training=training, **kwargs
+            )
+
         (x1, x2), log_det1 = self.coupling1(z1, z2, conditions=conditions, inverse=True, training=training, **kwargs)
 
         x = keras.ops.concatenate([x1, x2], axis=-1)

@@ -4,7 +4,7 @@ from typing import Literal
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, logging
+from bayesflow.utils import logging
 from bayesflow.utils.serialization import serializable, serialize
 
 from .double_conv import DoubleConv
@@ -83,7 +83,7 @@ class ConvolutionalNetwork(SummaryNetwork):
         pool_num_heads: int = 4,
         **kwargs,
     ):
-        super().__init__(**layer_kwargs(kwargs))
+        super().__init__(**kwargs)
 
         if norm != "batch" and activation in ("relu", "relu6", "leaky_relu"):
             logging.warning(

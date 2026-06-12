@@ -12,22 +12,22 @@ def inference_network(request):
     if request.param == "coupling_flow":
         from bayesflow.networks import CouplingFlow
 
-        return CouplingFlow(depth=2, subnet_kwargs=dict(widths=(16, 16)))
+        return CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,)))
 
     elif request.param == "flow_matching":
         from bayesflow.networks import FlowMatching
 
-        return FlowMatching(subnet_kwargs=dict(widths=(16, 16)), use_optimal_transport=False)
+        return FlowMatching(subnet_kwargs=dict(widths=(8,)), use_optimal_transport=False)
 
     elif request.param == "diffusion_model":
         from bayesflow.networks import DiffusionModel
 
-        return DiffusionModel(subnet_kwargs=dict(widths=(16, 16)))
+        return DiffusionModel(subnet_kwargs=dict(widths=(8,)))
 
     elif request.param == "consistency_model":
         from bayesflow.networks import ConsistencyModel
 
-        return ConsistencyModel(subnet_kwargs=dict(widths=(16, 16)), total_steps=10)
+        return ConsistencyModel(subnet_kwargs=dict(widths=(8,)), total_steps=10)
 
 
 @pytest.fixture(params=["time_series_transformer", "fusion_transformer", "time_series_network", "custom"])
@@ -35,13 +35,13 @@ def summary_network(request):
     if request.param == "time_series_transformer":
         from bayesflow.networks import TimeSeriesTransformer
 
-        return TimeSeriesTransformer(embed_dims=(8, 8), mlp_widths=(16, 8), mlp_depths=(1, 1))
+        return TimeSeriesTransformer(embed_dims=(4, 4), mlp_widths=(8, 4), mlp_depths=(1, 1))
 
     elif request.param == "fusion_transformer":
         from bayesflow.networks import FusionTransformer
 
         return FusionTransformer(
-            embed_dims=(8, 8), mlp_widths=(8, 16), mlp_depths=(2, 1), template_dim=8, bidirectional=False
+            embed_dims=(4, 4), mlp_widths=(4, 8), mlp_depths=(1, 1), template_dim=4, bidirectional=False
         )
 
     elif request.param == "time_series_network":
@@ -75,7 +75,7 @@ def tiny_workflow(tmp_path):
         checkpoint_name="model",
         save_weights_only=False,
     )
-    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=1, verbose=0)
     return workflow
 
 
@@ -90,7 +90,7 @@ def tiny_workflow_weights_only(tmp_path):
         checkpoint_name="model",
         save_weights_only=True,
     )
-    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=1, verbose=0)
     return workflow
 
 

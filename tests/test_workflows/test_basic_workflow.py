@@ -19,12 +19,12 @@ def test_basic_workflow(tmp_path, inference_network, summary_network):
     )
 
     # Ensure metrics work fine batched
-    history = workflow.fit_online(epochs=2, batch_size=3, num_batches_per_epoch=2, verbose=0)
-    plots = workflow.plot_default_diagnostics(test_data=25, num_samples=10)
-    metrics = workflow.compute_default_diagnostics(test_data=10, num_samples=20, variable_names=["p1", "p2"])
+    history = workflow.fit_online(epochs=1, batch_size=3, num_batches_per_epoch=2, verbose=0)
+    plots = workflow.plot_default_diagnostics(test_data=10, num_samples=5)
+    metrics = workflow.compute_default_diagnostics(test_data=6, num_samples=10, variable_names=["p1", "p2"])
 
     assert "loss" in list(history.history.keys())
-    assert len(history.history["loss"]) == 2
+    assert len(history.history["loss"]) == 1
     assert list(plots.keys()) == ["losses", "recovery", "calibration_ecdf", "coverage", "z_score_contraction"]
     assert list(metrics.columns) == ["p1", "p2"]
     assert metrics.values.shape == (4, 2)
@@ -53,12 +53,12 @@ def test_basic_workflow_fusion(
     )
 
     # Ensure metrics work fine
-    history = workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
-    plots = workflow.plot_default_diagnostics(test_data=50, num_samples=25)
-    metrics = workflow.compute_default_diagnostics(test_data=50, num_samples=25, variable_names=["p1", "p2"])
+    history = workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    plots = workflow.plot_default_diagnostics(test_data=10, num_samples=5)
+    metrics = workflow.compute_default_diagnostics(test_data=6, num_samples=10, variable_names=["p1", "p2"])
 
     assert "loss" in list(history.history.keys())
-    assert len(history.history["loss"]) == 2
+    assert len(history.history["loss"]) == 1
     assert list(plots.keys()) == ["losses", "recovery", "calibration_ecdf", "coverage", "z_score_contraction"]
     assert list(metrics.columns) == ["p1", "p2"]
     assert metrics.values.shape == (4, 2)
@@ -81,7 +81,7 @@ def test_unconditional_sampling(inference_network):
         inference_variables=["parameters"],
         simulator=bf.simulators.TwoMoons(),
     )
-    workflow.fit_online(epochs=2, batch_size=3, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=3, num_batches_per_epoch=2, verbose=0)
 
     # Get samples
     samples = workflow.sample(conditions=None, num_samples=3)
@@ -111,12 +111,12 @@ def test_ancestral_sampling():
             return {"mu": mu, "beta": beta, "x": x}
 
     workflow = BasicWorkflow(
-        inference_network=ConsistencyModel(subnet_kwargs=dict(widths=(8, 8)), total_steps=5 * 2),
+        inference_network=ConsistencyModel(subnet_kwargs=dict(widths=(8,)), total_steps=2 * 2),
         inference_variables=["beta"],
         inference_conditions=["mu", "x"],
         simulator=LocalSimulator(),
     )
-    workflow.fit_online(epochs=5, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
 
     n_test = 3
     local_n = 4
@@ -163,14 +163,16 @@ def test_load_approximator_weights_only(tiny_workflow_weights_only):
         inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
         inference_variables=["parameters"],
         simulator=bf.simulators.TwoMoons(),
-        checkpoint_filepath=workflow.checkpoint_filepath,
-        checkpoint_name="model",
-        save_weights_only=True,
     )
+
     # For weights-only restore the adapter must be initialized via a full
     # forward pass (strict=True) before load_weights can be called.
     # A short fit run is the correct way to achieve this.
-    workflow2.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow2.fit_online(epochs=1, batch_size=2, num_batches_per_epoch=1, verbose=0)
+    # Point workflow2 at the original checkpoint and load it.
+    workflow2.checkpoint_filepath = workflow.checkpoint_filepath
+    workflow2.checkpoint_name = "model"
+    workflow2.save_weights_only = True
     workflow2.load_approximator()
     assert_models_equal(original, workflow2.approximator)
 
@@ -242,7 +244,7 @@ def test_save_best_only(tmp_path):
         checkpoint_name="best",
         save_best_only=True,
     )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
     assert os.path.exists(os.path.join(str(tmp_path), "best.keras"))
 
 

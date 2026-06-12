@@ -62,4 +62,4 @@ def model_comparison_accuracy(
         predictions = np.concatenate([f0, predictions], axis=-1)
 
     predicted_labels = predictions.argmax(axis=-1)
-    return float(np.mean(predicted_labels == true_labels))
+    return np.mean(predicted_labels == true_labels)

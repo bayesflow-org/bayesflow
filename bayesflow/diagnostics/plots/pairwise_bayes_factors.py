@@ -93,10 +93,10 @@ def pairwise_bayes_factors(
 
     # Prepend f_0 = 0 to obtain (N, M) with entry k = log K_{k,0}
     f0 = np.zeros((N, 1), dtype=pred_log_bayes_factors.dtype)
-    f = np.concatenate([f0, pred_log_bayes_factors], axis=-1)  # (N, M)
+    f = np.concatenate([f0, pred_log_bayes_factors], axis=-1)
 
     # Full (N, M, M) pairwise matrix: entry [n, i, j] = f_i - f_j = log K_{i,j}
-    pairwise = f[:, :, np.newaxis] - f[:, np.newaxis, :]  # (N, M, M)
+    pairwise = f[:, :, np.newaxis] - f[:, np.newaxis, :]
 
     # Stratified mean: row m = mean log K_{m,j} over datasets from M_m
     mean_matrix = np.zeros((M, M))

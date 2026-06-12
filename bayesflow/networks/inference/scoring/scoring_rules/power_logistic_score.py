@@ -5,7 +5,7 @@ from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
 from .categorical_scoring_rule import CategoricalScoringRule
-from .exponential_score import _pairwise_diff
+from .exponential_score import _pairwise_diff, _FLOAT32_EXP_MAX
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
@@ -57,7 +57,7 @@ class PowerLogisticScore(CategoricalScoringRule):
         diff = _pairwise_diff(estimates["log_bayes_factors"], targets)
         mask = 1.0 - targets
         M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
-        clip_max = 88.0 - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
+        clip_max = _FLOAT32_EXP_MAX - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
         # (1 + exp(diff))^alpha = exp(alpha * softplus(diff)); only upper clip needed
         log_terms = self.alpha * keras.ops.softplus(diff)
         scores = keras.ops.sum(

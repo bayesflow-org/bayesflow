@@ -50,8 +50,8 @@ class ContinuousApproximator(Approximator):
         self,
         *,
         inference_network: InferenceNetwork,
-        adapter: Adapter = None,
-        summary_network: SummaryNetwork = None,
+        adapter: Adapter | None = None,
+        summary_network: SummaryNetwork | None = None,
         standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
@@ -67,13 +67,13 @@ class ContinuousApproximator(Approximator):
     def compute_metrics(
         self,
         inference_variables: Tensor,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        sample_weight: Tensor = None,
-        summary_attention_mask: Tensor = None,
-        summary_mask: Tensor = None,
-        inference_attention_mask: Tensor = None,
-        inference_mask: Tensor = None,
+        inference_conditions: Tensor | None = None,
+        summary_variables: Tensor | None = None,
+        sample_weight: Tensor | None = None,
+        summary_attention_mask: Tensor | None = None,
+        summary_mask: Tensor | None = None,
+        inference_attention_mask: Tensor | None = None,
+        inference_mask: Tensor | None = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """

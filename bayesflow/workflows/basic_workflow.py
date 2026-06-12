@@ -84,20 +84,20 @@ class BasicWorkflow(Workflow):
 
     def __init__(
         self,
-        simulator: Simulator = None,
-        adapter: Adapter = None,
+        simulator: Simulator | None = None,
+        adapter: Adapter | None = None,
         inference_network: InferenceNetwork | str = "coupling_flow",
-        summary_network: SummaryNetwork | str = None,
+        summary_network: SummaryNetwork | str | None = None,
         initial_learning_rate: float = 5e-4,
-        optimizer: keras.optimizers.Optimizer | type = None,
-        checkpoint_filepath: str = None,
+        optimizer: keras.optimizers.Optimizer | type | None = None,
+        checkpoint_filepath: str | None = None,
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
         save_best_only: bool = False,
         restore: bool = False,
-        inference_variables: Sequence[str] | str = None,
-        inference_conditions: Sequence[str] | str = None,
-        summary_variables: Sequence[str] | str = None,
+        inference_variables: Sequence[str] | str | None = None,
+        inference_conditions: Sequence[str] | str | None = None,
+        summary_variables: Sequence[str] | str | None = None,
         standardize: Sequence[str] | str = "inference_variables",
         **kwargs,
     ):
@@ -158,7 +158,7 @@ class BasicWorkflow(Workflow):
     def adapter(self):
         return self.approximator.adapter
 
-    def load_approximator(self, path: str = None):
+    def load_approximator(self, path: str | None = None):
         """
         Restore the approximator from a saved checkpoint.
 
@@ -302,8 +302,8 @@ class BasicWorkflow(Workflow):
         epochs: int = 100,
         batch_size: int = 32,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -366,8 +366,8 @@ class BasicWorkflow(Workflow):
         num_batches_per_epoch: int = 100,
         batch_size: int = 32,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -427,11 +427,11 @@ class BasicWorkflow(Workflow):
         root: os.PathLike,
         pattern: str = "*.pkl",
         batch_size: int = 32,
-        load_fn: callable = None,
+        load_fn: callable | None = None,
         epochs: int = 100,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -849,9 +849,9 @@ class BasicWorkflow(Workflow):
         self,
         test_data: Mapping[str, np.ndarray] | int,
         num_samples: int = 1000,
-        samples: Mapping[str, np.ndarray] = None,
-        variable_keys: Sequence[str] = None,
-        variable_names: Sequence[str] = None,
+        samples: Mapping[str, np.ndarray] | None = None,
+        variable_keys: Sequence[str] | None = None,
+        variable_names: Sequence[str] | None = None,
         **kwargs,
     ) -> dict[str, plt.Figure]:
         """
@@ -939,9 +939,9 @@ class BasicWorkflow(Workflow):
         test_data: Mapping[str, np.ndarray] | int,
         plot_fns: Mapping[str, Callable],
         num_samples: int = 1000,
-        samples: Mapping[str, np.ndarray] = None,
-        variable_keys: Sequence[str] = None,
-        variable_names: Sequence[str] = None,
+        samples: Mapping[str, np.ndarray] | None = None,
+        variable_keys: Sequence[str] | None = None,
+        variable_names: Sequence[str] | None = None,
         **kwargs,
     ) -> dict[str, plt.Figure]:
         """
@@ -1009,9 +1009,9 @@ class BasicWorkflow(Workflow):
         self,
         test_data: Mapping[str, np.ndarray] | int,
         num_samples: int = 1000,
-        samples: Mapping[str, np.ndarray] = None,
-        variable_keys: Sequence[str] = None,
-        variable_names: Sequence[str] = None,
+        samples: Mapping[str, np.ndarray] | None = None,
+        variable_keys: Sequence[str] | None = None,
+        variable_names: Sequence[str] | None = None,
         as_data_frame: bool = True,
         **kwargs,
     ) -> Sequence[dict] | pd.DataFrame:
@@ -1121,9 +1121,9 @@ class BasicWorkflow(Workflow):
         test_data: Mapping[str, np.ndarray] | int,
         metrics: Mapping[str, Callable],
         num_samples: int = 1000,
-        samples: Mapping[str, np.ndarray] = None,
-        variable_keys: Sequence[str] = None,
-        variable_names: Sequence[str] = None,
+        samples: Mapping[str, np.ndarray] | None = None,
+        variable_keys: Sequence[str] | None = None,
+        variable_names: Sequence[str] | None = None,
         as_data_frame: bool = True,
         **kwargs,
     ) -> Sequence[Mapping] | pd.DataFrame:
@@ -1200,7 +1200,7 @@ class BasicWorkflow(Workflow):
         self,
         test_data: Mapping[str, np.ndarray] | int,
         num_samples: int = 1000,
-        samples: Mapping[str, np.ndarray] = None,
+        samples: Mapping[str, np.ndarray] | None = None,
         **kwargs,
     ):
         if samples is not None:

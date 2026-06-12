@@ -188,8 +188,8 @@ class EnsembleWorkflow(BasicWorkflow):
         batch_size: int = 32,
         data_reuse: float = 1.0,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -257,8 +257,8 @@ class EnsembleWorkflow(BasicWorkflow):
         batch_size: int = 32,
         data_reuse: float = 1.0,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -324,11 +324,11 @@ class EnsembleWorkflow(BasicWorkflow):
         pattern: str = "*.pkl",
         batch_size: int = 32,
         data_reuse: float = 1.0,
-        load_fn: callable = None,
+        load_fn: callable | None = None,
         epochs: int = 100,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """

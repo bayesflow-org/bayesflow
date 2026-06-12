@@ -100,7 +100,7 @@ def bayes_factor_recovery(
     panel_titles = [f"{name} vs. {ref_name}" for name in competing]
 
     # Categorical colors — one per model
-    cmap = plt.cm.get_cmap("tab10", num_models)
+    cmap = plt.colormaps["tab10"].resampled(num_models)
     model_colors = [cmap(m) for m in range(num_models)]
 
     # Layout

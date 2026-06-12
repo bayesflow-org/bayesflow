@@ -111,12 +111,12 @@ def test_ancestral_sampling():
             return {"mu": mu, "beta": beta, "x": x}
 
     workflow = BasicWorkflow(
-        inference_network=ConsistencyModel(subnet_kwargs=dict(widths=(8,)), total_steps=2 * 2),
+        inference_network=ConsistencyModel(subnet_kwargs=dict(widths=(8,)), total_steps=10),
         inference_variables=["beta"],
         inference_conditions=["mu", "x"],
         simulator=LocalSimulator(),
     )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=5, verbose=0)
 
     n_test = 3
     local_n = 4

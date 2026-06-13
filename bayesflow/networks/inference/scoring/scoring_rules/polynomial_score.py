@@ -63,7 +63,6 @@ class PolynomialScore(CategoricalScoringRule):
         Tensor
             (Optionally weighted) mean Tsallis polynomial score over the batch.
         """
-        targets = keras.ops.convert_to_tensor(targets)
         probs = keras.ops.softmax(estimates["logits"], axis=-1)
         scores = keras.ops.sum(
             (self.alpha - 1.0) / self.alpha * probs**self.alpha - targets * probs ** (self.alpha - 1.0),

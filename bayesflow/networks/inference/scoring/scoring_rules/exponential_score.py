@@ -24,7 +24,7 @@ class ExponentialScore(CategoricalScoringRule):
         S(\{f_k\}, m; \alpha) = \sum_{k \neq m}
             \exp\!\left(\frac{\alpha}{2}(f_k(x) - f_m(x))\right)
 
-    The unique minimiser satisfies
+    The unique minimizer satisfies:
     :math:`f_k^*(x) = \frac{1}{\alpha} \log K_{k,0}`,
     so network outputs are multiplied by :math:`\alpha` to recover log Bayes
     factors. Setting :math:`\alpha = 1` (default) gives the plain rule where

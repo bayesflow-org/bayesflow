@@ -12,7 +12,7 @@ from bayesflow.utils.keras_utils import pairwise_diff
 class LogisticScore(CategoricalScoringRule):
     r""":math:`S(\{f_k\}, m) = \sum_{k \neq m} \log\!\left(1 + e^{f_k - f_m}\right)`
 
-    The unique minimiser is :math:`f_k^*(x) = \log K_{k,0}(x)`, so the
+    The unique minimizer is :math:`f_k^*(x) = \log K_{k,0}(x)`, so the
     network directly estimates log Bayes factors.
     """
 

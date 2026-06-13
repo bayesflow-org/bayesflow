@@ -11,7 +11,7 @@ from .categorical_scoring_rule import CategoricalScoringRule
 class BrierScore(CategoricalScoringRule):
     r""":math:`S(\hat p_{1\ldots C}, y) = \sum_{c=1}^C (\hat p_c - y_c)^2`
 
-    Minimised when the predicted probabilities exactly match the one-hot
+    Minimized when the predicted probabilities exactly match the one-hot
     targets, i.e. when :math:`\mathrm{softmax}(\hat y)_m = 1` for the true
     model :math:`m`.
 

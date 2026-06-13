@@ -21,7 +21,8 @@ from .scoring_rule_approximator import ScoringRuleApproximator
 class ModelComparisonApproximator(ScoringRuleApproximator):
     """
     Defines an approximator for model (simulator) comparison, where the (discrete)
-    posterior model probabilities are learned with a classifier.
+    posterior model probabilities are learned with a classifier implementing multi-
+    class, stabilized versions of all losses described in [1].
 
     Uses a :class:`~bayesflow.networks.ScoringRuleNetwork` with a categorical scoring
     rule (e.g. :class:`~bayesflow.scoring_rules.CrossEntropyScore`) to map
@@ -58,9 +59,9 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         self,
         *,
         inference_network: ScoringRuleNetwork,
-        adapter: Adapter = None,
-        summary_network: SummaryNetwork = None,
-        standardize: str | Sequence[str] = None,
+        adapter: Adapter | None = None,
+        summary_network: SummaryNetwork | None = None,
+        standardize: str | Sequence[str] | None = None,
         **kwargs,
     ):
         # Model indices (one-hot encoded) must never be standardized.
@@ -76,22 +77,45 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
 
     @staticmethod
     def _filter_standardize(standardize):
-        """Remove 'inference_variables' from standardize — model indices must not be standardized."""
-        if standardize == "all":
-            return ["summary_variables", "inference_conditions"]
-        if standardize is None:
-            return None
-        if isinstance(standardize, str):
-            return None if standardize == "inference_variables" else standardize
-        filtered = [s for s in standardize if s != "inference_variables"]
-        return filtered if filtered else None
+        """Exclude model indices from standardization."""
+        match standardize:
+            case None | "inference_variables":
+                return None
+            case "all":
+                return ["summary_variables", "inference_conditions"]
+            case str():
+                return standardize
+            case _:
+                return [item for item in standardize if item != "inference_variables"] or None
+
+    @staticmethod
+    def _rule_output_to_model_probs(
+        rule: CategoricalScoringRule, rule_output: dict[str, Tensor]
+    ) -> dict[str, np.ndarray]:
+        """Convert a single scoring rule's raw network output to model probabilities."""
+        if "logits" in rule_output:
+            logits = rule_output["logits"]
+            return {
+                "logits": keras.ops.convert_to_numpy(logits),
+                "model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(logits)),
+            }
+
+        # Bayes factor mode
+        log_bfs = rule.to_bayes_factors(rule_output["log_bayes_factors"])
+        f0 = keras.ops.zeros_like(log_bfs[..., :1])
+        model_probs = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
+
+        return {
+            "log_bayes_factors": keras.ops.convert_to_numpy(log_bfs),
+            "model_probs": keras.ops.convert_to_numpy(model_probs),
+        }
 
     def build_dataset(
         self,
         *,
-        dataset: keras.utils.PyDataset = None,
-        simulator: ModelComparisonSimulator = None,
-        simulators: Sequence[Simulator] = None,
+        dataset: keras.utils.PyDataset | None = None,
+        simulator: ModelComparisonSimulator | None = None,
+        simulators: Sequence[Simulator] | None = None,
         **kwargs,
     ) -> keras.utils.PyDataset:
         if sum(arg is not None for arg in (dataset, simulator, simulators)) != 1:
@@ -166,6 +190,7 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         self,
         *,
         conditions: Mapping[str, np.ndarray],
+        return_summaries: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -186,6 +211,9 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         ----------
         conditions : Mapping[str, np.ndarray]
             Dictionary of conditioning variables as NumPy arrays.
+        return_summaries: bool, optional
+            If set to True and a summary network is present, will return the learned summary statistics for
+            the provided conditions.
         **kwargs
             Additional keyword arguments forwarded to the adapter and classifier.
 
@@ -211,36 +239,16 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
             for rule_key, rule_output in raw.items()
         }
 
-        # Backwards compatibility: single rule → flat dict
+        # Backward compatibility: single rule → flat dict
         if len(per_rule) == 1:
             result = next(iter(per_rule.values()))
         else:
             result = per_rule
 
-        if summary_outputs is not None:
+        if return_summaries and summary_outputs is not None:
             result["_summaries"] = keras.ops.convert_to_numpy(summary_outputs)
 
         return result
 
     def log_prob(self, *args, **kwargs):
         raise NotImplementedError("ModelComparisonApproximator does not support log_prob(). Use estimate() instead.")
-
-    @staticmethod
-    def _rule_output_to_model_probs(
-        rule: CategoricalScoringRule, rule_output: dict[str, Tensor]
-    ) -> dict[str, np.ndarray]:
-        """Convert a single scoring rule's raw network output to model probabilities."""
-        if "logits" in rule_output:
-            logits = rule_output["logits"]
-            return {
-                "logits": keras.ops.convert_to_numpy(logits),
-                "model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(logits)),
-            }
-        # Bayes factor mode
-        log_bfs = rule.to_bayes_factors(rule_output["log_bayes_factors"])
-        f0 = keras.ops.zeros_like(log_bfs[..., :1])
-        model_probs = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
-        return {
-            "log_bayes_factors": keras.ops.convert_to_numpy(log_bfs),
-            "model_probs": keras.ops.convert_to_numpy(model_probs),
-        }

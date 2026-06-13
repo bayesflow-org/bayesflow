@@ -108,23 +108,23 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
     def __init__(
         self,
-        simulator: Sequence[Simulator] | ModelComparisonSimulator = None,
-        adapter: Adapter = None,
+        simulator: Sequence[Simulator] | ModelComparisonSimulator | None = None,
+        adapter: Adapter | None = None,
         classifier_network: keras.Layer | str = "mlp",
-        summary_network: SummaryNetwork | str = None,
-        scoring_rules: CategoricalScoringRule | dict[str, CategoricalScoringRule] | str = None,
+        summary_network: SummaryNetwork | str | None = None,
+        scoring_rules: CategoricalScoringRule | dict[str, CategoricalScoringRule] | str | None = None,
         initial_learning_rate: float = 5e-4,
-        optimizer: keras.optimizers.Optimizer | type = None,
-        checkpoint_filepath: str = None,
+        optimizer: keras.optimizers.Optimizer | type | None = None,
+        checkpoint_filepath: str | None = None,
         checkpoint_name: str = "model",
         save_weights_only: bool = False,
         save_best_only: bool = False,
-        inference_conditions: Sequence[str] | str = None,
-        summary_variables: Sequence[str] | str = None,
-        shared_simulator: Simulator | Callable = None,
+        inference_conditions: Sequence[str] | str | None = None,
+        summary_variables: Sequence[str] | str | None = None,
+        shared_simulator: Simulator | Callable | None = None,
         use_mixed_batches: bool = True,
-        model_names: Sequence[str] = None,
-        standardize: Sequence[str] | str = None,
+        model_names: Sequence[str] | None = None,
+        standardize: Sequence[str] | str | None = None,
         **kwargs,
     ):
         if isinstance(simulator, Sequence):
@@ -241,6 +241,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         self,
         *,
         conditions: dict,
+        return_summaries: bool = False,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -250,6 +251,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
         ----------
         conditions : dict[str, np.ndarray]
             Conditioning data as produced by the simulator (or real observations).
+        return_summaries: bool, optional
+            If set to True and a summary network is present, will return the learned summary statistics for
+            the provided conditions.
         **kwargs
             Forwarded to :meth:`~bayesflow.approximators.ModelComparisonApproximator.estimate`.
 
@@ -262,7 +266,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
             ``(num_datasets, num_models - 1)``.
         """
         start_time = time.perf_counter()
-        estimates = self.approximator.estimate(conditions=conditions, **kwargs)
+        estimates = self.approximator.estimate(conditions=conditions, return_summaries=return_summaries, **kwargs)
         elapsed = time.perf_counter() - start_time
         logging.info(f"Estimation completed in {format_duration(elapsed)}.")
         return estimates

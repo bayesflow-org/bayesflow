@@ -88,12 +88,13 @@ def test_estimate(approximator, train_dataset, simulator):
         assert "log_bayes_factors" in output
         assert output["log_bayes_factors"].shape == (num_conditions, num_models - 1)
 
+    assert "_summaries" not in output
+
     if approximator.summary_network is not None:
-        assert "_summaries" in output
-        assert output["_summaries"].ndim == 2
-        assert output["_summaries"].shape[0] == num_conditions
-    else:
-        assert "_summaries" not in output
+        output_with_summaries = approximator.estimate(conditions=conditions, return_summaries=True)
+        assert "_summaries" in output_with_summaries
+        assert output_with_summaries["_summaries"].ndim == 2
+        assert output_with_summaries["_summaries"].shape[0] == num_conditions
 
 
 def test_multi_rule_estimate(train_dataset, simulator):
@@ -140,8 +141,11 @@ def test_multi_rule_estimate(train_dataset, simulator):
         assert output[rule_key]["model_probs"].shape == (num_conditions, num_models)
         assert "logits" in output[rule_key]
 
-    assert "_summaries" in output
-    assert output["_summaries"].shape[0] == num_conditions
+    assert "_summaries" not in output
+
+    output_with_summaries = approx.estimate(conditions=conditions, return_summaries=True)
+    assert "_summaries" in output_with_summaries
+    assert output_with_summaries["_summaries"].shape[0] == num_conditions
 
 
 def test_build_dataset_with_simulators_list(approximator, adapter):

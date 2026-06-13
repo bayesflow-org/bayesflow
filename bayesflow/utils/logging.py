@@ -1,12 +1,14 @@
-import keras
+from collections.abc import Callable
+
 import logging
 from functools import lru_cache
 
+import keras
 
 logger = logging.getLogger("bayesflow")
 
 
-def _log(msg, *args, callback_fn: callable = print, **kwargs):
+def _log(msg, *args, callback_fn: Callable = print, **kwargs):
     if keras.backend.backend() == "jax":
         import jax
 

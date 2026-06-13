@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Callable
 
 import numpy as np
 
@@ -7,7 +7,7 @@ from bayesflow.utils.decorators import allow_batch_size
 
 
 class Workflow:
-    def make_simulator(self, simulators_list: Sequence[callable], meta_fn: callable):
+    def make_simulator(self, simulators_list: Sequence[Callable], meta_fn: Callable):
         raise NotImplementedError("Method must be implemented by caller.")
 
     @allow_batch_size

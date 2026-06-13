@@ -32,6 +32,7 @@ dependencies = [
   "pandas>=2.3.3",
   "scipy>=1.15.3",
   "seaborn>=0.13.2",
+  "sympy>=1.14.0",
   "tqdm>=4.67.1",
 ]
 [project.optional-dependencies]

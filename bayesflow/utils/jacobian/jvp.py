@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Callable
 
 import keras
@@ -10,6 +11,12 @@ def jvp(
     f: Callable, x: Tensor | tuple[Tensor, ...], tangents: Tensor | tuple[Tensor, ...], return_output: bool = False
 ):
     """Compute the Jacobian-vector product of f at x with tangents."""
+    warnings.warn(
+        "jvp is deprecated; we are working on moving these utilities upstream or into their own module with "
+        "improved signatures.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if keras.ops.is_tensor(x):
         x = (x,)
 

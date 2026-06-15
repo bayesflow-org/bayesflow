@@ -1,10 +1,10 @@
+import warnings
 from collections.abc import Callable
 
 import keras
 import numpy as np
 
 from bayesflow.types import Tensor
-
 from .vjp import vjp
 
 
@@ -33,6 +33,12 @@ def jacobian(f: Callable[[Tensor], Tensor], x: Tensor, return_output: bool = Fal
             The Jacobian matrix of f with respect to x.
 
     """
+    warnings.warn(
+        "`jacobian` is deprecated; we are working on moving these utilities upstream or into their own module "
+        "with improved signatures.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     fx, vjp_fn = vjp(f, x, return_output=True)
 
     batch_shape = keras.ops.shape(x)[:-1]

@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Callable
 
 import keras
@@ -41,6 +42,13 @@ def jacobian_trace(
         2. Tensor of shape (n,)
             An unbiased estimate or the exact trace of the Jacobian of f.
     """
+    warnings.warn(
+        "jacobian_trace is deprecated; we are working on moving these utilities upstream or into their own "
+        "module with improved signatures.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     dims = keras.ops.shape(x)[-1]
 
     if max_steps is None or dims <= max_steps:

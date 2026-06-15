@@ -52,16 +52,21 @@ def value_and_grad(fn, argnums=0, has_aux=False):
 
 
 def jvp(fn, primals, tangents, has_aux=False):
+    primals = tuple(primals)
+    tangents = tuple(tangents)
+
     with tf.autodiff.ForwardAccumulator(primals, tangents) as acc:
         if has_aux:
             primals_out, aux = fn(*primals)
-            out = primals_out, aux
         else:
             primals_out = fn(*primals)
-            out = primals_out
 
     tangents_out = acc.jvp(primals_out)
-    return out, tangents_out
+
+    if has_aux:
+        return primals_out, tangents_out, aux
+
+    return primals_out, tangents_out
 
 
 def vjp(fn, *primals, has_aux=False) -> tuple:

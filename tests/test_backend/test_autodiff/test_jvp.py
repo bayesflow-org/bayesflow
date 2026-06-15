@@ -95,7 +95,7 @@ def test_jvp_with_aux():
         aux = keras.ops.sum(x)
         return keras.ops.sum(keras.ops.square(x)), aux
 
-    (actual_value, actual_aux), actual_jvp = jvp(fn_with_aux, [x], [tangent], has_aux=True)
+    (actual_value, actual_jvp, actual_aux) = jvp(fn_with_aux, [x], [tangent], has_aux=True)
 
     expected_value = keras.ops.sum(keras.ops.square(x))
     expected_aux = keras.ops.sum(x)

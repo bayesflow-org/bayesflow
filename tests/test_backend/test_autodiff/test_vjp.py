@@ -144,7 +144,7 @@ def test_vjp_with_aux(jit_compile):
         aux = keras.ops.sum(x)
         return keras.ops.sum(keras.ops.square(x)), aux
 
-    (actual_value, actual_aux), vjp_fn = vjp(fn_with_aux, x, has_aux=True)
+    actual_value, vjp_fn, actual_aux = vjp(fn_with_aux, x, has_aux=True)
 
     if jit_compile:
         vjp_fn = jit(vjp_fn)

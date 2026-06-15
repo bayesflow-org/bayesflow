@@ -55,7 +55,7 @@ def posterior_z_score(
         ``(batch_size,)``.
         The functions do not have to deal with an additional
         sample dimension, as appropriate reshaping is done internally.
-    aggregation    : callable or None, optional (default = np.median)
+    aggregation    : Callable or None, optional (default = np.median)
         Function to aggregate the PC across draws. Typically `np.mean` or `np.median`.
         If None is provided, the individual values are returned.
 

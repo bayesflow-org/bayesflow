@@ -314,13 +314,13 @@ class Approximator(BackendApproximator):
     def build_adapter(
         cls,
         inference_variables: str | Sequence[str],
-        inference_conditions: str | Sequence[str] = None,
-        summary_variables: str | Sequence[str] = None,
-        sample_weight: str = None,
-        summary_attention_mask: str = None,
-        summary_mask: str = None,
-        inference_attention_mask: str = None,
-        inference_mask: str = None,
+        inference_conditions: str | Sequence[str] | None = None,
+        summary_variables: str | Sequence[str] | None = None,
+        sample_weight: str | None = None,
+        summary_attention_mask: str | None = None,
+        summary_mask: str | None = None,
+        inference_attention_mask: str | None = None,
+        inference_mask: str | None = None,
     ) -> Adapter:
         """Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.
 
@@ -433,8 +433,8 @@ class Approximator(BackendApproximator):
     def compile(
         self,
         *args,
-        inference_metrics: Any = None,
-        summary_metrics: Any = None,
+        inference_metrics: Any | None = None,
+        summary_metrics: Any | None = None,
         **kwargs,
     ):
         """
@@ -460,7 +460,7 @@ class Approximator(BackendApproximator):
 
         return super().compile(*args, **kwargs)
 
-    def fit(self, *, dataset: keras.utils.PyDataset = None, simulator: Simulator = None, **kwargs):
+    def fit(self, *, dataset: keras.utils.PyDataset | None = None, simulator: Simulator | None = None, **kwargs):
         """
         Trains the approximator on the provided dataset or on-demand data generated from the given simulator.
         If `dataset` is not provided, a dataset is built from the `simulator`.

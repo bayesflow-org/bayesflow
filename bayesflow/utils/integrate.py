@@ -228,11 +228,11 @@ def integrate_fixed(
 
     match method:
         case "euler":
-            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -263,11 +263,11 @@ def integrate_scheduled(
 ) -> StateDict:
     match method:
         case "euler":
-            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -305,7 +305,7 @@ def integrate_adaptive(
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=True)
         case "euler":
             raise ValueError("Adaptive step sizing is not supported for the 'euler' method.")
         case str() as name:
@@ -1429,7 +1429,7 @@ def integrate_glass(
 
     Parameters
     ----------
-    fn : callable
+    fn : Callable
         Model forward function in integrate-compatible form. It receives
         ``fn(time, **state)`` velocity field and returns a state dictionary with matching keys.
     state : dict
@@ -1556,10 +1556,10 @@ def integrate_stochastic(
 
     Parameters
     ----------
-    drift_fn : callable
+    drift_fn : Callable
         Function computing the drift term of the SDE. It should accept the current
         state and time as inputs.
-    diffusion_fn : callable
+    diffusion_fn : Callable
         Function computing the diffusion term of the SDE. It should accept the current
         state and time as inputs.
     state : StateDict
@@ -1583,8 +1583,8 @@ def integrate_stochastic(
         Maximum number of steps for adaptive integration. Noise is pre-generated
         up to this number of steps, which may increase memory usage. Default is
         ``1000``.
-    score_fn : callable, optional
-        Score function used for predictor–corrector sampling. If ``None``,
+    score_fn : Callable, optional
+        Score function used for predictor-corrector sampling. If ``None``,
         no corrector step is applied.
     corrector_steps : int, optional
         Number of corrector steps applied after each predictor step. Default is ``0``.

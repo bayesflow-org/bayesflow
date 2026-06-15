@@ -126,6 +126,7 @@ def test_three_level_simulator(three_level_simulator):
     assert isinstance(simulator, GraphicalSimulator)
     assert isinstance(simulator.sample(5), SimulationOutput)
     assert isinstance(simulator.sample(5, sample_shape=(2, 3)), SimulationOutput)
+    assert isinstance(simulator.sample(5, meta={"N_classrooms": 5, "N_students": 5, "N_scores": 10}), SimulationOutput)
 
     samples = simulator.sample(15)
     expected_keys = [

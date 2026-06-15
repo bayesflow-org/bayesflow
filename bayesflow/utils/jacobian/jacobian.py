@@ -14,7 +14,7 @@ def jacobian(f: Callable[[Tensor], Tensor], x: Tensor, return_output: bool = Fal
 
     Parameters
     ----------
-    f : callable
+    f : Callable
         The function to be differentiated.
     x : Tensor of shape (..., D_in)
         The input tensor to f.

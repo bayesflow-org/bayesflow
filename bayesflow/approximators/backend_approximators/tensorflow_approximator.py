@@ -70,7 +70,7 @@ class TensorFlowApproximator(keras.Model):
         self._update_metrics(metrics, self._batch_size_from_data(data))
         return metrics
 
-    def _update_metrics(self, metrics: dict[str, Any], sample_weight: tf.Tensor = None):
+    def _update_metrics(self, metrics: dict[str, Any], sample_weight: tf.Tensor | None = None):
         """Update internal Keras metric trackers with the given values.
 
         New metric names are lazily registered as

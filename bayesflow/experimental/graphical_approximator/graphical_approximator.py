@@ -1,34 +1,26 @@
 import multiprocessing as mp
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import Literal
 
 import keras
 import numpy as np
+import sympy as sp
 
-from bayesflow.utils import filter_kwargs, logging
+from bayesflow.approximators import Approximator
+from bayesflow.networks import InferenceNetwork, SummaryNetwork
+from bayesflow.types import Shape
+from bayesflow.utils import find_batch_size, logging
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...adapters import Adapter
-from ...approximators import Approximator
 from ...datasets import OfflineDataset, OnlineDataset
-from ...networks import InferenceNetwork, SummaryNetwork
-from ...networks.helpers import Standardization
+from ...networks.helpers.standardization.standardize import Standardize
 from ..graphical_simulator import GraphicalSimulator, SimulationOutput
 from ..graphs import InvertedGraph
-from .utils import (
-    inference_condition_shapes_by_network,
-    inference_conditions_by_network,
-    inference_variable_shapes_by_network,
-    inference_variable_shapes_from_meta,
-    inference_variables_by_network,
-    meta_dict_from_data_shapes,
-    prepare_inference_conditions,
-    split_network_output,
-    summary_input_shapes_by_network,
-    summary_inputs_by_network,
-    summary_outputs_by_network,
-)
+from .inference_conditions import inference_conditions_by_network
+from .inference_variables import inference_variable_shapes_by_network, inference_variables_by_network, resolve_shapes
+from .non_exchangeable_wrapper import NonExchangeableWrapper
 
 
 @serializable("bayesflow.experimental")  # type: ignore[missing-argument]
@@ -50,7 +42,7 @@ class GraphicalApproximator(Approximator):
         adapter: Adapter | Literal["auto"] = "auto",
         inference_networks: Sequence[InferenceNetwork],
         summary_networks: Sequence[SummaryNetwork] | None = None,
-        standardize: str | Sequence[str] | None = "all",
+        standardize: str | list[str] | None = "all",
         **kwargs,
     ):
         """
@@ -84,18 +76,66 @@ class GraphicalApproximator(Approximator):
         self.inference_networks = inference_networks
         self.summary_networks = summary_networks
 
+        required = self.graph.summary_network_input_shapes()
+        data_keys = [k for k in required if k.mode != "non_exchangeable"]
+        n_data = len(data_keys)
+        n_nonex = len(required) - n_data
+        n_provided = len(summary_networks or [])
+
+        if n_provided != len(required):
+            if n_nonex:
+                raise ValueError(
+                    f"Expected {len(required)} summary networks ({n_data} data + {n_nonex} non-exchangeable), "
+                    f"got {n_provided}."
+                )
+            else:
+                raise ValueError(f"Expected {n_data} summary networks, got {n_provided}.")
+
+        data_summary_networks = (summary_networks or [])[:n_data]
+        nonex_summary_networks = (summary_networks or [])[n_data:]
+        self.summary_registry = dict(zip(data_keys, data_summary_networks))
+
+        # precompute frequently used quantities
+        self.output_shapes = self.graph.simulation_graph.output_shapes()
+        self.network_composition = self.graph.network_composition()
+        self.network_conditions = self.graph.network_conditions()
+        self.variable_names = self.graph.simulation_graph.variable_names()
+
         if isinstance(standardize, str) and standardize != "all":
             self.standardize = [standardize]
         else:
             self.standardize = standardize or []
 
         if standardize == "all":
-            self.standardize_layers = None
+            self._standardize_layers = None
         else:
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+            self._standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
 
         if adapter == "auto":
             self.adapter = GraphicalApproximator.build_adapter()
+
+        # wrap non-amortizable inference networks in NonExchangeableWrapper
+        required_nonex = self.graph.non_amortizable_summary_input_shapes()
+        for i, network_idx in enumerate(required_nonex):
+            self.inference_networks[network_idx] = NonExchangeableWrapper(
+                self.inference_networks[network_idx], nonex_summary_networks[i]
+            )
+
+    @property
+    def standardize_layers(self):
+        return self._standardize_layers
+
+    @classmethod
+    def build_adapter(
+        cls,
+    ) -> Adapter:
+        """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator."""
+
+        adapter = Adapter()
+        adapter.to_array()
+        adapter.convert_dtype("float64", "float32")
+
+        return adapter
 
     def build_dataset(
         self,
@@ -124,19 +164,8 @@ class GraphicalApproximator(Approximator):
             use_multiprocessing=use_multiprocessing,
             max_queue_size=max_queue_size,
             augmentations=lambda x: dict(x),
+            **kwargs,
         )
-
-    @classmethod
-    def build_adapter(
-        cls,
-    ) -> Adapter:
-        """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator."""
-
-        adapter = Adapter()
-        adapter.to_array()
-        adapter.convert_dtype("float64", "float32")
-
-        return adapter
 
     @classmethod
     def from_config(cls, config):
@@ -144,42 +173,57 @@ class GraphicalApproximator(Approximator):
 
     def get_config(self):
         base_config = super().get_config()
+        # Unwrap NonExchangeableWrapper so __init__ doesn't double-wrap on reload.
+        inference_networks = [
+            n.inference_network if isinstance(n, NonExchangeableWrapper) else n for n in self.inference_networks
+        ]
         config = {
             "graph": self.graph,
             "adapter": self.adapter,
-            "inference_networks": self.inference_networks,
+            "inference_networks": inference_networks,
             "summary_networks": self.summary_networks,
             "standardize": self.standardize,
         }
 
         return base_config | serialize(config)
 
-    def build(self, data_shapes: dict[str, tuple[int]]) -> None:
-        # build summary networks
-        input_shapes = summary_input_shapes_by_network(self, data_shapes)
+    def build(self, data_shapes: dict | None = None, meta_dict: dict | None = None) -> None:
+        if not data_shapes:
+            data_shapes = self.output_shapes
 
-        for i, summary_network in enumerate(self.summary_networks or []):
-            if not summary_network.built:
-                summary_network.build(input_shapes[i])
+        resolved_meta = self._meta_dict_from_data_shapes(data_shapes) | (meta_dict or {})
 
-        # build inference networks
-        variable_shapes = inference_variable_shapes_by_network(self, data_shapes)
-        condition_shapes = inference_condition_shapes_by_network(self, data_shapes)
+        def _build_network(network, input_shape):
+            if not network.built:
+                concrete_shape = tuple(int(d.subs(resolved_meta)) if isinstance(d, sp.Expr) else d for d in input_shape)
+                network.build(concrete_shape)
 
-        for i, inference_network in enumerate(self.inference_networks or []):
-            if not inference_network.built:
-                inference_network.build(variable_shapes[i], condition_shapes[i])
+        # build non-exchangeable summary networks inside their wrappers
+        for network_idx, input_shape in self.graph.non_amortizable_summary_input_shapes().items():
+            wrapper = self.inference_networks[network_idx]
+            if isinstance(wrapper, NonExchangeableWrapper):
+                _build_network(wrapper.summary_network, input_shape)
 
         # build standardization layers
+        output_shapes = resolve_shapes(data_shapes, meta_dict)
+
         if self.standardize == "all":
-            # Only include variables present in data_shapes
-            self.standardize = list(data_shapes.keys())
-            self.standardize_layers = {var: Standardization(trainable=False) for var in self.standardize}
+            self.standardize = list(output_shapes.keys())
+            self._standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
 
         for var in self.standardize:
-            self.standardize_layers[var].build(data_shapes[var])
+            self._standardize_layers[var].build(output_shapes[var])
 
         self.built = True
+
+    def build_from_data(self, adapted_data):
+        Approximator.build_from_data(self, adapted_data)
+        # run a forward pass so inference networks are lazily built before
+        # Keras's _symbolic_build checks for unbuilt layers
+        self.compute_metrics(**adapted_data)
+
+    def call(self, data, **kwargs):
+        return self.compute_metrics(**data, **kwargs)
 
     def compute_metrics(self, stage: str = "training", **kwargs):
         """
@@ -201,38 +245,25 @@ class GraphicalApproximator(Approximator):
         -------
         metrics : dict[str, Tensor]
             Dictionary containing the total loss under the key "loss", as well as all tracked
-            metrics for the inference and summary networks. Each metric key is prefixed with
-            "inference_" or "summary_" to indicate its source.
+            metrics for the inference networks. Each metric key is prefixed with
+            ``inference_metrics_<i>/`` where ``i`` is the network index.
         """
-        # compute summary metrics
-        summary_metrics = {}
-
-        summary_inputs = summary_inputs_by_network(self, kwargs)
-
-        for i, summary_network in enumerate(self.summary_networks or []):
-            summary_metrics[i] = summary_network.compute_metrics(summary_inputs[i], stage=stage)
-            summary_metrics[i].pop("outputs")
-
-        # compute inference metrics
         inference_variables = inference_variables_by_network(self, kwargs)
-        inference_conditions = inference_conditions_by_network(self, kwargs)
+        inference_conditions = inference_conditions_by_network(
+            self, kwargs, self.summary_registry, training=stage == "training"
+        )
 
-        inference_metrics = {}
-        for i, inference_network in enumerate(self.inference_networks):
-            inference_metrics[i] = inference_network.compute_metrics(
-                inference_variables[i], conditions=inference_conditions[i], stage=stage
-            )
-        # combine metrics
         total_loss = 0
         combined_metrics = {}
 
-        for i, metric_type in enumerate([summary_metrics, inference_metrics]):
-            prefix = "summary_metrics" if i == 0 else "inference_metrics"
-            for val, metrics in metric_type.items():
-                if "loss" in metrics:
-                    total_loss += metrics["loss"]
-                for k, v in metrics.items():
-                    combined_metrics[f"{prefix}_{val}/{k}"] = v
+        for i, inference_network in enumerate(self.inference_networks):
+            metrics = inference_network.compute_metrics(
+                inference_variables[i], conditions=inference_conditions[i], stage=stage
+            )
+            if "loss" in metrics:
+                total_loss += metrics["loss"]
+            for k, v in metrics.items():
+                combined_metrics[f"inference_metrics_{i}/{k}"] = v
 
         combined_metrics["loss"] = total_loss
 
@@ -290,111 +321,107 @@ class GraphicalApproximator(Approximator):
         ValueError
             If both `dataset` and `simulator` are provided or neither is provided.
         """
-        # special case tensorflow because we need to add output signatures
+        if "dataset" in kwargs:
+            raw_data = kwargs.pop("dataset")
+            batch_size = kwargs.get("batch_size", "auto")
+            if batch_size == "auto":
+                first_sample = {k: v[:1] for k, v in raw_data.items()}
+                batch_size = find_batch_size(sample=first_sample)
+                logging.info(f"Using a batch size of {batch_size}.")
+            dataset = OfflineDataset(
+                raw_data,
+                batch_size=batch_size,
+                num_samples=kwargs.get("num_samples"),  # type: ignore[invalid-argument-type]
+                adapter=self.adapter,
+                augmentations=self.subset_data,
+            )
+
+            def generator():
+                for i in range(dataset.num_batches or 0):
+                    yield dataset[i]
+
+        if "simulator" in kwargs:
+            dataset = self.build_dataset(
+                simulator=kwargs.pop("simulator"),
+                adapter=kwargs.get("adapter"),
+                batch_size=kwargs["batch_size"],
+                num_batches=kwargs["num_batches"],
+            )
+
+            def generator():
+                i = 0
+                while True:
+                    yield dataset[i]
+                    i += 1
+
         if keras.backend.backend() == "tensorflow":
             import tensorflow as tf
 
-            if "simulator" in kwargs:
-                ds = self.build_dataset(**filter_kwargs(kwargs, self.build_dataset))
-                del kwargs["simulator"]
+            first_batch = dataset[0]
+            data_shapes = self._data_shapes(first_batch)
+            self.compute_metrics(**first_batch)
+            if not self.built:
+                self.build(data_shapes)
 
-            elif "dataset" in kwargs:
-                ds = OfflineDataset(
-                    kwargs["dataset"],
-                    batch_size=kwargs.get("batch_size"),  # type: ignore[invalid-argument-type]
-                    num_samples=kwargs.get("num_samples"),  # type: ignore[invalid-argument-type]
-                    adapter=self.adapter,
-                    augmentations=self.subset_data,
-                )
+            signature = {
+                k: tf.TensorSpec(shape=[None] * (len(v) - 1) + [v[-1]], dtype=tf.float32)
+                for k, v in data_shapes.items()
+            }
+            kwargs.setdefault("steps_per_epoch", dataset.num_batches)
+            kwargs["dataset"] = tf.data.Dataset.from_generator(generator, output_signature=signature).repeat()
+        else:  # pragma: no cover
+            kwargs["dataset"] = dataset
 
-            data_shapes = self._data_shapes(self.adapter(ds[0]))
-            num_batches = ds.num_batches
+        return super().fit(*args, **kwargs, adapter=self.adapter)
 
-            signature = {}
-            for element in data_shapes.keys():
-                shape = [None] * (len(data_shapes[element]) - 1) + [data_shapes[element][-1]]
-                signature[element] = tf.TensorSpec(shape=shape, dtype=tf.float32)
+    def sample(self, *, num_samples: int, conditions: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        meta_dict = self._meta_dict_from_data(conditions)
 
-            kwargs["dataset"] = tf.data.Dataset.from_generator(
-                lambda: (ds[i] for i in range(num_batches)),  # type: ignore[invalid-argument-type]
-                output_signature=signature,
-            ).repeat()
-
-            return super(GraphicalApproximator, self).fit(*args, **kwargs, steps_per_epoch=num_batches)
-        else:
-            if "dataset" in kwargs:
-                if isinstance(kwargs["dataset"], dict) or isinstance(kwargs["dataset"], SimulationOutput):
-                    kwargs["dataset"] = OfflineDataset(
-                        kwargs["dataset"],
-                        batch_size=kwargs.get("batch_size"),  # type: ignore[invalid-argument-type]
-                        num_samples=kwargs.get("num_samples"),  # type: ignore[invalid-argument-type]
-                        adapter=self.adapter,
-                        augmentations=self.subset_data,
-                    )
-
-            return super().fit(*args, **kwargs, adapter=self.adapter)
-
-    def sample(self, *, num_samples: int, conditions: Mapping[str, np.ndarray]) -> Mapping[str, np.ndarray]:
-        """
-        Generates samples from the approximator given input conditions. The `conditions` dictionary is preprocessed
-        using the `adapter`. Samples are converted to NumPy arrays after inference.
-
-        Parameters
-        ----------
-        num_samples : int
-            Number of samples to generate.
-        conditions : dict[str, np.ndarray]
-            Dictionary of conditioning variables as NumPy arrays.
-        split : bool, default=False
-            Whether to split the output arrays along the last axis and return one column vector per target variable
-            samples.
-        **kwargs : dict
-            Additional keyword arguments for the adapter and sampling process.
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Dictionary containing generated samples with the same keys as `conditions`.
-        """
-
-        summary_outputs = summary_outputs_by_network(self, conditions)
-        batch_size = keras.ops.shape(summary_outputs[0])[0]
-        data_node = self.graph.simulation_graph.data_node()
         variable_names = self.graph.simulation_graph.variable_names()
+        data_node = self.graph.simulation_graph.data_node()
+        batch_size = self._batch_size_from_data(conditions)
+        batch_n = batch_size * num_samples
 
-        meta = getattr(conditions, "meta", None)
-        if isinstance(meta, dict):
-            meta_dict = meta | meta_dict_from_data_shapes(self, self._data_shapes(conditions))
-        else:
-            meta_dict = meta_dict_from_data_shapes(self, self._data_shapes(conditions))
-
-        variable_shapes = inference_variable_shapes_from_meta(self, meta_dict)
-
+        variable_shapes = inference_variable_shapes_by_network(self, meta_dict=meta_dict)
+        data_variables = variable_names[data_node]
         inference_conditions = {}
 
         # add num_samples as repeats across the batch dimension
-        for name in variable_names[data_node]:
+        for name in data_variables:
             inference_conditions[name] = keras.ops.repeat(conditions[name], num_samples, axis=0)
 
+        # build new inference conditions incrementally: after each network samples,
+        # add its output to inference_conditions so later networks can condition on it
         for i, inference_network in enumerate(self.inference_networks):
-            cond = prepare_inference_conditions(self, inference_conditions, i)
+            all_conds = inference_conditions_by_network(
+                self, inference_conditions, self.summary_registry, only_network=i
+            )
+            cond = all_conds[i]
             variable_shape = list(variable_shapes[i])
-            variable_shape[0] = batch_size * num_samples
+            variable_shape[0] = batch_n
 
             samples = inference_network.sample(tuple(variable_shape[:-1]), conditions=cond)
-            split_output = split_network_output(self, samples, meta_dict, i)
 
-            for k, v in split_output.items():
-                inference_conditions[k] = v
+            j = 0
+            for node in self.network_composition[i]:
+                for variable in variable_names[node]:
+                    var_dim = int(self.output_shapes[variable][-1])
+                    sample = samples[..., j : (j + var_dim)]
+                    if variable in self.standardize:
+                        sample = self._standardize_layers[variable](sample, forward=False)
+                    inference_conditions[variable] = sample
+                    j += var_dim
 
-        # build sample dict with introduced num_samples dimension at axis 1
-        sample_dict = {}
+        # reshape samples
+        result = {}
         for k, v in inference_conditions.items():
-            if k not in variable_names[data_node]:
-                target_shape = (batch_size, num_samples, *keras.ops.shape(v)[1:])
-                sample_dict[k] = keras.ops.convert_to_numpy(keras.ops.reshape(v, target_shape))
+            if k not in data_variables:
+                result[k] = keras.ops.convert_to_numpy(
+                    keras.ops.reshape(v, (batch_size, num_samples, *keras.ops.shape(v)[1:]))
+                )
 
-        return sample_dict
+        result = self.adapter.inverse(result)
+        return result
 
     def log_prob(self, data):
         variable_names = self.graph.simulation_graph.variable_names()
@@ -403,7 +430,7 @@ class GraphicalApproximator(Approximator):
         log_prob = keras.ops.zeros(batch_size)
 
         variables = inference_variables_by_network(self, adapted)
-        conditions = inference_conditions_by_network(self, adapted)
+        conditions = inference_conditions_by_network(self, adapted, self.summary_registry)
 
         # log_probs
         for i, inference_network in enumerate(self.inference_networks):
@@ -413,13 +440,14 @@ class GraphicalApproximator(Approximator):
         # log_det_jac for standardization layers
         for node, variable_names in variable_names.items():
             for variable_name in variable_names:
-                if variable_name in self.standardize_layers:
-                    result, ldj = self.standardize_layers[variable_name](adapted[variable_name], log_det_jac=True)
+                if variable_name in (self._standardize_layers or {}):
+                    result, ldj = self._standardize_layers[variable_name](adapted[variable_name], log_det_jac=True)
                     log_prob += keras.ops.sum(keras.ops.reshape(ldj, (batch_size, -1)), axis=-1)
 
         # log_det_jac for adapter
         for key in ldj_adapter:
-            log_prob += keras.ops.sum(keras.ops.reshape(ldj_adapter[key], (batch_size, -1)), axis=-1)
+            ldj = keras.ops.cast(ldj_adapter[key], "float32")
+            log_prob += keras.ops.sum(keras.ops.reshape(ldj, (batch_size, -1)), axis=-1)
 
         return log_prob
 
@@ -440,7 +468,12 @@ class GraphicalApproximator(Approximator):
             begin = (0,) * len(keras.ops.shape(v))
 
             output_shape = list(output_shapes[k])
-            output_shape[0] = keras.ops.shape(v)[0]  # replace batch size placeholder
+            actual_shape = keras.ops.shape(v)
+            for j in range(len(output_shape)):
+                if isinstance(output_shape[j], sp.Expr):
+                    output_shape[j] = actual_shape[j]
+                else:
+                    output_shape[j] = min(output_shape[j], int(actual_shape[j]))
             output_shape = tuple(output_shape)
 
             # current keras version throws a deprecation warning when using keras.ops.slice even if
@@ -451,6 +484,27 @@ class GraphicalApproximator(Approximator):
 
         return output
 
+    def _meta_dict_from_data(self, data: dict[str, np.ndarray]) -> dict[str, Shape]:
+        """
+        Infers meta information (sympy symbol → concrete value) from data shapes by comparing
+        the symbolic template shapes against the concrete shapes of the observed data.
+        """
+        data_shapes = self._data_shapes(data)
+        return self._meta_dict_from_data_shapes(data_shapes)
+
+    def _meta_dict_from_data_shapes(self, data_shapes) -> dict[str, Shape]:
+        meta_dict = {}
+        output_shapes = self.graph.simulation_graph.output_shapes()
+
+        for k, v in data_shapes.items():
+            for dim_t, dim_c in zip(output_shapes.get(k, ()), v):
+                if isinstance(dim_t, sp.Expr):
+                    for sym in dim_t.free_symbols:
+                        if sym not in meta_dict:
+                            meta_dict[sym] = dim_c
+
+        return meta_dict
+
     def _batch_size_from_data(self, data):
         """
         Fetches the current batch size from an input dictionary.
@@ -459,5 +513,9 @@ class GraphicalApproximator(Approximator):
             if hasattr(value, "shape"):
                 return keras.ops.shape(value)[0]
 
-    def _data_shapes(self, adapted_data: SimulationOutput | Mapping) -> dict[str, tuple[int]]:
-        return keras.tree.map_structure(keras.ops.shape, dict(adapted_data))
+    def _data_shapes(self, adapted_data: SimulationOutput | dict) -> dict[str, tuple[int]]:
+        def _shape_tuple(x) -> tuple[int, ...]:
+            shape = keras.ops.shape(x)
+            return tuple(int(i) for i in keras.ops.convert_to_numpy(shape))
+
+        return keras.tree.map_structure(_shape_tuple, dict(adapted_data))

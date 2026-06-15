@@ -51,7 +51,7 @@ def calibration_error(
         sample dimension, as appropriate reshaping is done internally.
     resolution    : int, optional, default: 20
         The number of credibility intervals (CIs) to consider
-    aggregation   : callable or None, optional, default: np.median
+    aggregation   : Callable or None, optional, default: np.median
         The function used to aggregate the marginal calibration errors.
         If ``None`` provided, the per-alpha calibration errors will be returned.
     min_quantile  : float in (0, 1), optional, default: 0.005

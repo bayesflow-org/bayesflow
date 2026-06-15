@@ -44,7 +44,7 @@ class NeuralDistribution:
         is vmapped over trials and returns a per-trial log-value vector which
         PyMC sums.  If ``False`` the full dataset is forwarded to the network
         at once and a scalar log-value is returned.
-    simulator_fn : callable or None, optional
+    simulator_fn : Callable or None, optional
         A function ``(rng, *params, size) -> ndarray`` for prior/posterior
         predictive sampling.  Required only when
         :func:`pm.sample_prior_predictive` or similar is used.

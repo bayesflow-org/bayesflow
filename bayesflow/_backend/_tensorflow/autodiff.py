@@ -120,105 +120,144 @@ def jacfwd(fn, argnums=0, has_aux=False):
 
     @wraps(fn)
     def jacobian_fn(*args, **kwargs):
-        # Resolve negative indices and validate them.
         resolved_argnums = tuple(index if index >= 0 else len(args) + index for index in argnums)
 
         if any(index < 0 or index >= len(args) for index in resolved_argnums):
             raise IndexError(f"argnums={argnums} is invalid for {len(args)} arguments")
 
         if len(set(resolved_argnums)) != len(resolved_argnums):
-            raise ValueError("argnums must not contain duplicate arguments")
+            raise ValueError("argnums must not contain duplicates")
 
         primals = tuple(args[index] for index in resolved_argnums)
 
-        for _, primal in zip(resolved_argnums, primals):
+        for primal in primals:
             if tf.nest.is_nested(primal):
-                raise NotImplementedError("Each differentiated argument must currently be a single tensor.")
-
-        # Evaluate once for the primal output structure and aux value.
-        result = fn(*args, **kwargs)
-
-        if has_aux:
-            primals_out, aux = result
-        else:
-            primals_out = result
+                raise NotImplementedError("Nested differentiated arguments are not supported.")
 
         input_sizes = tf.stack([tf.size(primal) for primal in primals])
-        input_offsets = tf.cumsum(input_sizes, exclusive=True)
+        input_offsets = tf.cumsum(
+            input_sizes,
+            exclusive=True,
+        )
         total_input_size = tf.reduce_sum(input_sizes)
+
+        sizes = tf.unstack(input_sizes)
+        offsets = tf.unstack(input_offsets)
 
         def directional_jvp(global_index):
             tangents = []
 
             for primal, size, offset in zip(
                 primals,
-                tf.unstack(input_sizes),
-                tf.unstack(input_offsets),
+                sizes,
+                offsets,
             ):
                 local_index = global_index - offset
 
-                # Out-of-range one_hot indices produce zero vectors,
-                # so only the active primal receives a basis tangent.
+                # An out-of-range one-hot index produces all zeros,
+                # so exactly one selected argument receives a basis
+                # tangent for each global index.
                 tangent = tf.one_hot(
                     local_index,
                     depth=size,
                     dtype=primal.dtype,
                 )
-                tangent = tf.reshape(tangent, tf.shape(primal))
+                tangent = tf.reshape(
+                    tangent,
+                    tf.shape(primal),
+                )
                 tangents.append(tangent)
 
-            with tf.autodiff.ForwardAccumulator(primals, tuple(tangents)) as accumulator:
-                directional_result = fn(*args, **kwargs)
+            with tf.autodiff.ForwardAccumulator(
+                primals,
+                tuple(tangents),
+            ) as accumulator:
+                result = fn(*args, **kwargs)
 
                 if has_aux:
-                    directional_out, _ = directional_result
+                    directional_out, aux = result
                 else:
-                    directional_out = directional_result
+                    directional_out = result
 
-            return accumulator.jvp(
+            jvp_out = accumulator.jvp(
                 directional_out,
                 unconnected_gradients=tf.UnconnectedGradients.ZERO,
             )
 
-        # Every output leaf initially has shape:
-        # (total_input_size, *output_shape)
-        batched_jvps = tf.vectorized_map(
+            if has_aux:
+                return jvp_out, aux
+
+            return jvp_out
+
+        # No separate primal-only call.
+        batched = tf.vectorized_map(
             directional_jvp,
             tf.range(total_input_size),
         )
 
-        output_leaves = tf.nest.flatten(primals_out)
-        jvp_leaves = tf.nest.flatten(batched_jvps)
+        if has_aux:
+            batched_jvps, batched_aux = batched
+
+            # Aux is identical for every basis direction.
+            aux = tf.nest.map_structure(
+                lambda leaf: leaf[0],
+                batched_aux,
+            )
+        else:
+            batched_jvps = batched
 
         jacobian_leaves = []
 
-        for output_leaf, leaf_jvps in zip(output_leaves, jvp_leaves):
-            # Split the combined input basis back into one block per argnum.
-            blocks = tf.split(leaf_jvps, input_sizes, axis=0)
+        for leaf_jvps in tf.nest.flatten(batched_jvps):
+            # leaf_jvps:
+            # (total_input_size, *output_shape)
+            blocks = tf.split(
+                leaf_jvps,
+                input_sizes,
+                axis=0,
+            )
 
             jacobians_for_output = []
 
             for block, primal in zip(blocks, primals):
                 # (input_size, *output_shape)
                 # -> (*output_shape, input_size)
-                const = tf.constant([0], dtype=tf.int32)
-                permutation = tf.concat([tf.range(1, tf.rank(block)), const], axis=0)
-                block = tf.transpose(block, permutation)
+                permutation = tf.concat(
+                    [
+                        tf.range(1, tf.rank(block)),
+                        tf.constant([0], dtype=tf.int32),
+                    ],
+                    axis=0,
+                )
+                block = tf.transpose(
+                    block,
+                    permutation,
+                )
 
                 # (*output_shape, input_size)
                 # -> (*output_shape, *input_shape)
-                jacobian = tf.reshape(block, tf.concat([tf.shape(output_leaf), tf.shape(primal)], axis=0))
-
+                jacobian = tf.reshape(
+                    block,
+                    tf.concat(
+                        [
+                            tf.shape(leaf_jvps)[1:],
+                            tf.shape(primal),
+                        ],
+                        axis=0,
+                    ),
+                )
                 jacobians_for_output.append(jacobian)
 
             if single_argnum:
                 jacobian_leaves.append(jacobians_for_output[0])
             else:
-                # For argnums=(0,), preserve the one-element tuple.
                 jacobian_leaves.append(tuple(jacobians_for_output))
 
-        # Output structure is outermost, matching JAX and Torch.
-        jacobians = tf.nest.pack_sequence_as(primals_out, jacobian_leaves)
+        # Preserve the output tree as the outer structure.
+        jacobians = tf.nest.pack_sequence_as(
+            batched_jvps,
+            jacobian_leaves,
+        )
 
         if has_aux:
             return jacobians, aux

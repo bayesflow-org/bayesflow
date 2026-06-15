@@ -131,3 +131,43 @@ def test_vjp_binary_vectors(fn_binary_vectors, jit_compile):
         assert keras.ops.is_tensor(expected_vjps[i])
         assert keras.ops.shape(actual_vjps[i]) == keras.ops.shape(expected_vjps[i])
         np.testing.assert_allclose(to_np(actual_vjps[i]), to_np(expected_vjps[i]))
+
+
+def test_vjp_with_aux(jit_compile):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's vjp is not yet compatible with jit compilation.")
+
+    x = keras.random.uniform((2,))
+    cotangent = keras.random.uniform(())
+
+    def fn_with_aux(x):
+        aux = keras.ops.sum(x)
+        return keras.ops.sum(keras.ops.square(x)), aux
+
+    (actual_value, actual_aux), vjp_fn = vjp(fn_with_aux, x, has_aux=True)
+
+    if jit_compile:
+        vjp_fn = jit(vjp_fn)
+
+    out = vjp_fn(cotangent)
+
+    assert isinstance(out, tuple)
+    assert len(out) == 1
+    actual_vjp = out[0]
+
+    expected_value = keras.ops.sum(keras.ops.square(x))
+    expected_aux = keras.ops.sum(x)
+    # grad of sum(x^2) = 2x, VJP = cotangent * 2x
+    expected_vjp = cotangent * 2 * x
+
+    assert keras.ops.is_tensor(actual_value)
+    assert keras.ops.shape(actual_value) == keras.ops.shape(expected_value)
+    np.testing.assert_allclose(to_np(actual_value), to_np(expected_value), rtol=1e-5)
+
+    assert keras.ops.is_tensor(actual_aux)
+    assert keras.ops.shape(actual_aux) == keras.ops.shape(expected_aux)
+    np.testing.assert_allclose(to_np(actual_aux), to_np(expected_aux), rtol=1e-5)
+
+    assert keras.ops.is_tensor(actual_vjp)
+    assert keras.ops.shape(actual_vjp) == keras.ops.shape(expected_vjp)
+    np.testing.assert_allclose(to_np(actual_vjp), to_np(expected_vjp), rtol=1e-5)

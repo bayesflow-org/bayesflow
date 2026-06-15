@@ -137,3 +137,35 @@ def test_value_and_grad_binary_vectors(fn_binary_vectors, jit_compile):
     assert keras.ops.shape(actual_grad[1]) == keras.ops.shape(expected_grad[1])
     np.testing.assert_allclose(to_np(actual_grad[0]), to_np(expected_grad[0]))
     np.testing.assert_allclose(to_np(actual_grad[1]), to_np(expected_grad[1]))
+
+
+def test_value_and_grad_with_aux(jit_compile):
+    x = keras.random.uniform((2,))
+
+    def fn_with_aux(x):
+        aux = keras.ops.sum(x)
+        return keras.ops.sum(keras.ops.square(x)), aux
+
+    v_and_g = value_and_grad(fn_with_aux, has_aux=True)
+
+    if jit_compile:
+        v_and_g = jit(v_and_g)
+
+    (actual_value, actual_aux), actual_grad = v_and_g(x)
+
+    expected_value = keras.ops.sum(keras.ops.square(x))
+    expected_aux = keras.ops.sum(x)
+    # grad of sum(x^2) = 2x
+    expected_grad = 2 * x
+
+    assert keras.ops.is_tensor(actual_value)
+    assert keras.ops.shape(actual_value) == keras.ops.shape(expected_value)
+    np.testing.assert_allclose(to_np(actual_value), to_np(expected_value), rtol=1e-5)
+
+    assert keras.ops.is_tensor(actual_aux)
+    assert keras.ops.shape(actual_aux) == keras.ops.shape(expected_aux)
+    np.testing.assert_allclose(to_np(actual_aux), to_np(expected_aux), rtol=1e-5)
+
+    assert keras.ops.is_tensor(actual_grad)
+    assert keras.ops.shape(actual_grad) == keras.ops.shape(expected_grad)
+    np.testing.assert_allclose(to_np(actual_grad), to_np(expected_grad), rtol=1e-5)

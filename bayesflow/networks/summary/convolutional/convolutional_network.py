@@ -4,14 +4,13 @@ from typing import Literal
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import layer_kwargs, logging
+from bayesflow.utils import logging
 from bayesflow.utils.serialization import serializable, serialize
 
 from .double_conv import DoubleConv
 
 from ..transformers.attention import PoolingByMultiHeadAttention
 
-from ...helpers import Residual
 from ...summary import SummaryNetwork
 
 
@@ -84,7 +83,7 @@ class ConvolutionalNetwork(SummaryNetwork):
         pool_num_heads: int = 4,
         **kwargs,
     ):
-        super().__init__(**layer_kwargs(kwargs))
+        super().__init__(**kwargs)
 
         if norm != "batch" and activation in ("relu", "relu6", "leaky_relu"):
             logging.warning(
@@ -117,8 +116,8 @@ class ConvolutionalNetwork(SummaryNetwork):
         layers = []
         for width, num_blocks, downsample in zip(self.widths, self.blocks_per_stage, self.downsample_stage):
             for _ in range(num_blocks):
-                block = DoubleConv(width, self.norm, self.groups, self.dropout, self.activation)
-                layers.append(Residual(block) if self.residual else block)
+                block = DoubleConv(width, self.norm, self.groups, self.dropout, self.activation, residual=self.residual)
+                layers.append(block)
 
             if downsample:
                 layers.extend(self._make_downsample_layers(width))
@@ -182,6 +181,7 @@ class ConvolutionalNetwork(SummaryNetwork):
             "summary_dim": self.summary_dim,
             "widths": self.widths,
             "blocks_per_stage": self.blocks_per_stage,
+            "downsample_stage": self.downsample_stage,
             "norm": self.norm,
             "residual": self.residual,
             "groups": self.groups,

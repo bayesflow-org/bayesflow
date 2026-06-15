@@ -85,3 +85,31 @@ def test_jvp_binary_vectors(fn_binary_vectors):
     assert keras.ops.is_tensor(expected_jvp)
     assert keras.ops.shape(actual_jvp) == keras.ops.shape(expected_jvp)
     np.testing.assert_allclose(to_np(actual_jvp), to_np(expected_jvp))
+
+
+def test_jvp_with_aux():
+    x = keras.random.uniform((2,))
+    tangent = keras.random.uniform((2,))
+
+    def fn_with_aux(x):
+        aux = keras.ops.sum(x)
+        return keras.ops.sum(keras.ops.square(x)), aux
+
+    (actual_value, actual_jvp, actual_aux) = jvp(fn_with_aux, [x], [tangent], has_aux=True)
+
+    expected_value = keras.ops.sum(keras.ops.square(x))
+    expected_aux = keras.ops.sum(x)
+    # d/dx sum(x^2) = 2x, so JVP = dot(2x, tangent)
+    expected_jvp = keras.ops.dot(2 * x, tangent)
+
+    assert keras.ops.is_tensor(actual_value)
+    assert keras.ops.shape(actual_value) == keras.ops.shape(expected_value)
+    np.testing.assert_allclose(to_np(actual_value), to_np(expected_value), rtol=1e-5)
+
+    assert keras.ops.is_tensor(actual_aux)
+    assert keras.ops.shape(actual_aux) == keras.ops.shape(expected_aux)
+    np.testing.assert_allclose(to_np(actual_aux), to_np(expected_aux), rtol=1e-5)
+
+    assert keras.ops.is_tensor(actual_jvp)
+    assert keras.ops.shape(actual_jvp) == keras.ops.shape(expected_jvp)
+    np.testing.assert_allclose(to_np(actual_jvp), to_np(expected_jvp), rtol=1e-5)

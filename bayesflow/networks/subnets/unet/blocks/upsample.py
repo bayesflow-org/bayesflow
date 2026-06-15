@@ -6,8 +6,6 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
-from ....helpers import Sequential
-
 
 @serializable("bayesflow.networks")
 class UpSample2D(keras.Layer):
@@ -61,30 +59,13 @@ class UpSample2D(keras.Layer):
         self.interpolation = interpolation
         self.kernel_initializer = kernel_initializer
 
-        if self.conv_first:
-            self.up = Sequential(
-                [
-                    keras.layers.Conv2D(
-                        filters=self.width,
-                        kernel_size=self.kernel_size,
-                        padding="same",
-                        kernel_initializer=self.kernel_initializer,
-                    ),
-                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation),
-                ]
-            )
-        else:
-            self.up = Sequential(
-                [
-                    keras.layers.UpSampling2D(size=2, interpolation=self.interpolation),
-                    keras.layers.Conv2D(
-                        filters=self.width,
-                        kernel_size=self.kernel_size,
-                        padding="same",
-                        kernel_initializer=self.kernel_initializer,
-                    ),
-                ]
-            )
+        self.conv = keras.layers.Conv2D(
+            filters=self.width,
+            kernel_size=self.kernel_size,
+            padding="same",
+            kernel_initializer=self.kernel_initializer,
+        )
+        self.upsample = keras.layers.UpSampling2D(size=2, interpolation=self.interpolation)
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
@@ -106,10 +87,19 @@ class UpSample2D(keras.Layer):
     def build(self, input_shape):
         if self.built:
             return
-        self.up.build(input_shape)
+        if self.conv_first:
+            self.conv.build(input_shape)
+            self.upsample.build(self.conv.compute_output_shape(input_shape))
+        else:
+            self.upsample.build(input_shape)
+            self.conv.build(self.upsample.compute_output_shape(input_shape))
 
     def compute_output_shape(self, input_shape):
-        return self.up.compute_output_shape(input_shape)
+        if self.conv_first:
+            return self.upsample.compute_output_shape(self.conv.compute_output_shape(input_shape))
+        return self.conv.compute_output_shape(self.upsample.compute_output_shape(input_shape))
 
-    def call(self, x: Tensor, training: bool | None = None, **kwargs) -> Tensor:
-        return self.up(x, training=training)
+    def call(self, x: Tensor, **kwargs) -> Tensor:
+        if self.conv_first:
+            return self.upsample(self.conv(x))
+        return self.conv(self.upsample(x))

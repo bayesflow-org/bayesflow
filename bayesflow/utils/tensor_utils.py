@@ -5,7 +5,6 @@ import keras
 import numpy as np
 
 from bayesflow.types import Tensor, Shape
-from . import logging
 
 T = TypeVar("T")
 
@@ -209,8 +208,6 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
             import jax
             import jax.numpy as jnp
 
-            logging.warn_once(f"searchsorted is not yet optimized for backend {keras.backend.backend()!r}")
-
             # do not vmap over the side argument (we have to pass it as a positional argument)
             in_axes = [0, 0, None]
 
@@ -248,6 +245,13 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
             return indices
         case _:
             raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")
+
+
+def linsolve_batched(lambda_matrix: Tensor, rhs: Tensor) -> Tensor:
+    """Solve Λ x = rhs for x, batched.  Lambda: (B,m,m), rhs: (B,m)."""
+    rhs_col = keras.ops.expand_dims(rhs, -1)
+    x = keras.ops.solve(lambda_matrix, rhs_col)
+    return keras.ops.squeeze(x, axis=-1)
 
 
 def size_of(x) -> int:

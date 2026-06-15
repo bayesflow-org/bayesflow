@@ -1,7 +1,10 @@
 from datetime import datetime
 import logging
 from pathlib import Path
-from docsrc.polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder, version_key
+import sys
+
+sys.path.insert(0, str(Path(__file__).parent))
+from polyversion_patches import DynamicPip, CustomDriver, PyDataVersionEncoder, version_key
 
 from sphinx_polyversion.api import apply_overrides
 from sphinx_polyversion.git import Git, GitRef, GitRefType, file_predicate, refs_by_type

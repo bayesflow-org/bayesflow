@@ -105,7 +105,7 @@ class TorchApproximator(keras.Model):
         self._update_metrics(metrics, self._batch_size_from_data(data))
         return metrics
 
-    def _update_metrics(self, metrics: dict[str, Any], sample_weight: torch.Tensor = None):
+    def _update_metrics(self, metrics: dict[str, Any], sample_weight: torch.Tensor | None = None):
         """
         Updates internal Keras metric trackers using provided metric values.
 

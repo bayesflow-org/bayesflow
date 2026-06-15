@@ -10,12 +10,14 @@ from .metrics import (
     posterior_z_score,
     summary_space_comparison,
     correlation,
+    accuracy_random_points,
 )
 
 from .plots import (
     calibration_ecdf,
     calibration_ecdf_from_quantiles,
     calibration_histogram,
+    coverage,
     loss,
     mc_calibration,
     mc_confusion_matrix,

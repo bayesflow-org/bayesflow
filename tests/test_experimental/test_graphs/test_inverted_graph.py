@@ -1,5 +1,7 @@
 import pytest
 
+from bayesflow.experimental.graphs import InvertedGraph
+
 
 def test_num_summary_networks(single_level_graph, two_level_graph, three_level_graph, crossed_design_irt_graph):
     assert single_level_graph.num_summary_networks() == 1
@@ -164,3 +166,41 @@ def test_detailed_conditions_by_node(single_level_graph, two_level_graph, three_
         "students_1": ["observations_11", "observations_21", "schools", "questions_1", "questions_2"],
         "students_2": ["observations_12", "observations_22", "schools", "questions_1", "questions_2"],
     }
+
+
+def test_inference_variable_shapes(single_level_graph, two_level_graph, crossed_design_irt_graph):
+    shapes = single_level_graph.inference_variable_shapes()
+    assert isinstance(shapes, dict)
+    assert all(isinstance(v, tuple) for v in shapes.values())
+
+    shapes = two_level_graph.inference_variable_shapes()
+    assert len(shapes) == 2
+
+    shapes = crossed_design_irt_graph.inference_variable_shapes()
+    assert len(shapes) == 3
+
+
+def test_required_summary_networks(single_level_graph, two_level_graph, three_level_graph, crossed_design_irt_graph):
+    for graph in [single_level_graph, two_level_graph, three_level_graph, crossed_design_irt_graph]:
+        result = graph.summary_network_input_shapes()
+        assert isinstance(result, dict)
+
+
+def test_non_amortizable_summary_input_shapes(crossed_design_irt_graph):
+    result = crossed_design_irt_graph.non_amortizable_summary_input_shapes()
+    assert isinstance(result, dict)
+    assert len(result) > 0
+
+
+def test_is_per_level_summary(three_level_graph):
+    # schools is merged with shared in the inverted graph, so no classrooms condition on it directly
+    assert three_level_graph.is_per_level_summary("classrooms", "schools") is False
+    # scores are nested within classrooms, not shared across groups
+    assert three_level_graph.is_per_level_summary("classrooms", "scores") is True
+
+
+def test_inverted_graph_serialization(single_level_graph):
+    config = single_level_graph.get_config()
+    restored = InvertedGraph.from_config(config)
+    assert isinstance(restored, InvertedGraph)
+    assert set(restored.nodes) == set(single_level_graph.nodes)

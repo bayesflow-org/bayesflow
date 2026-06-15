@@ -167,11 +167,11 @@ class EnsembleWorkflow(BasicWorkflow):
                 summary_network=_summary_networks.get(k, None),
                 adapter=adapter,
                 standardize=standardize,
-                **filter_kwargs(kwargs, keras.Model.__init__),
+                **filter_kwargs(kwargs, constructor.__init__),
             )
 
         self.approximator = EnsembleApproximator(
-            approximators=approximators, **filter_kwargs(kwargs, keras.Model.__init__)
+            approximators=approximators, **filter_kwargs(kwargs, EnsembleApproximator.__init__)
         )
 
         self.member_names = tuple(self.approximator.approximators.keys())
@@ -179,6 +179,7 @@ class EnsembleWorkflow(BasicWorkflow):
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
         self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
         self.history = None
+        self._needs_compile = True
 
     def fit_offline(
         self,
@@ -187,8 +188,8 @@ class EnsembleWorkflow(BasicWorkflow):
         batch_size: int = 32,
         data_reuse: float = 1.0,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -256,8 +257,8 @@ class EnsembleWorkflow(BasicWorkflow):
         batch_size: int = 32,
         data_reuse: float = 1.0,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -323,11 +324,11 @@ class EnsembleWorkflow(BasicWorkflow):
         pattern: str = "*.pkl",
         batch_size: int = 32,
         data_reuse: float = 1.0,
-        load_fn: callable = None,
+        load_fn: Callable | None = None,
         epochs: int = 100,
         keep_optimizer: bool = False,
-        validation_data: Mapping[str, np.ndarray] | int = None,
-        augmentations: Mapping[str, Callable] | Callable = None,
+        validation_data: Mapping[str, np.ndarray] | int | None = None,
+        augmentations: Mapping[str, Callable] | Callable | None = None,
         **kwargs,
     ) -> keras.callbacks.History:
         """
@@ -345,7 +346,7 @@ class EnsembleWorkflow(BasicWorkflow):
         data_reuse : float, optional
             Similarity of training data for ensemble members in ``[0, 1]``, by default 1.0.
             See also :py:class:`bayesflow.datasets.EnsembleDataset`.
-        load_fn : callable, optional
+        load_fn : Callable, optional
             A function to load dataset files. If None, a default loading
             function is used.
         epochs : int, optional

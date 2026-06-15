@@ -20,7 +20,7 @@ class DiagonalStudentT(Distribution):
 
     def __init__(
         self,
-        df: int | float,
+        df: int | float = 25,
         loc: int | float | np.ndarray | Tensor = 0.0,
         scale: int | float | np.ndarray | Tensor = 1.0,
         trainable_parameters: bool = False,
@@ -38,9 +38,9 @@ class DiagonalStudentT(Distribution):
 
         Parameters
         ----------
-        df : int or float
+        df : int or float, optional
             Degrees of freedom for the Student's t-distribution. Lower values result in
-            heavier tails, making it more robust to outliers.
+            heavier tails, making it more robust to outliers. Default is 25.
         loc : int, float, np.ndarray, or Tensor, optional
             The location parameter (mean) of the distribution. Default is 0.0.
         scale : int, float, np.ndarray, or Tensor, optional

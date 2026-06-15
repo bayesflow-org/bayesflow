@@ -72,9 +72,9 @@ def recovery(
         ``(batch_size,)``.
         The functions do not have to deal with an additional
         sample dimension, as appropriate reshaping is done internally.
-    point_agg         : callable, optional, default: median
+    point_agg         : Callable, optional, default: median
         Function to compute point estimates.
-    uncertainty_agg   : callable, optional, default: credible_interval with coverage probability 95%
+    uncertainty_agg   : Callable, optional, default: credible_interval with coverage probability 95%
         Function to compute a measure of uncertainty. Can either be the lower and upper
         uncertainty bounds provided with the shape (2, num_datasets, num_params) or a
         scalar measure of uncertainty (e.g., the median absolute deviation) with shape

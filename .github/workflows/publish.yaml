@@ -1,53 +1,100 @@
-name: Publish Python 🐍 distribution 📦 to PyPI
+name: Publish to PyPI and Release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      bump_version:
+        description: "The type of version bump to perform automatically. Select none if you have already updated the version string in pyproject.toml."
+        required: true
+        type: choice
+        # We explicitly only support minor and patch releases with this workflow.
+        # Other release types should be handled manually by selecting none.
+        options: [minor, patch, none]
+        default: patch
+      tag_version:
+        description: "Whether to create a git tag for the new version."
+        required: true
+        type: boolean
+        default: true
+      publish_package:
+        description: "Whether to publish the package to PyPI."
+        required: true
+        type: boolean
+        default: true
+      dry_run:
+        description: "Whether to perform a dry run, which skips tagging and publishing even if they are selected above."
+        required: true
+        type: boolean
+        default: true
 
 jobs:
-  build:
-    name: Build distribution 📦
+  publish:
     runs-on: ubuntu-latest
+    env:
+      # Use environment variables to avoid security vulnerabilities from input injection.
+      BUMP_VERSION: ${{ github.event.inputs.bump_version }}
+      TAG_VERSION: ${{ github.event.inputs.tag_version }}
+      PUBLISH_PACKAGE: ${{ github.event.inputs.publish_package }}
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
+
+    # PyPI trusted publishing permissions
+    permissions:
+      id-token: write
+      contents: write
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         persist-credentials: false
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
-    - name: Build a binary wheel and a source tarball
-      run: python3 -m build
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
 
-  publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    needs:
-    - build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/bayesflow  # Replace <package-name> with your PyPI project name
-    permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+    - name: Install uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
-    steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+    - name: Update version string
+      if: ${{ env.BUMP_VERSION != 'none' }}
+      run: uv version --bump "${BUMP_VERSION}"
+
+    - name: Build wheel
+      run: uv build
+
+    - name: Check wheel contents
+      run: uvx check-wheel-contents dist/*.whl
+
+    - name: Commit and Tag Version
+      if: ${{ env.TAG_VERSION == 'true' }}
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add pyproject.toml
+        if [[ $DRY_RUN == true ]]; then
+          echo "Committing version v$VERSION (dry run)"
+          git commit -m "🚀 Release $VERSION" --dry-run
+
+          if [[ $TAG_VERSION == true ]]; then
+            echo "Creating git tag v$VERSION (dry run)"
+            git tag v$VERSION
+          fi
+
+          git push origin --tags --dry-run
+        else
+          echo "Committing version $VERSION"
+          git commit -m "🚀 Release $VERSION"
+
+          if [[ $TAG_VERSION == true ]]; then
+            echo "Creating git tag v$VERSION"
+            git tag v$VERSION
+          fi
+
+          git push origin --tags
+        fi
+
+    - name: Publish package to PyPI
+      if: ${{ env.PUBLISH_PACKAGE == 'true' }}
+      run: |
+        if [[ $DRY_RUN == true ]]; then
+          echo "Publishing package to PyPI (dry run)"
+          uv publish --dry-run
+        else
+          echo "Publishing package to PyPI."
+          uv publish
+        fi

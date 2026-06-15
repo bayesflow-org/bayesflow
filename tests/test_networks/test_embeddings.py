@@ -105,15 +105,15 @@ def test_film_modulation():
 
 
 def test_film_integration_with_conditional_residual():
-    """Test FiLM works correctly when used in ConditionalResidual."""
-    from bayesflow.networks.helpers import ConditionalResidual
+    """Test FiLM works correctly when used in ConditionalDenseBlock."""
+    from bayesflow.networks.helpers import ConditionalDenseBlock
 
     width = 32
     batch_size = 4
     input_dim = 16
     cond_dim = 64
 
-    block = ConditionalResidual(
+    block = ConditionalDenseBlock(
         width=width,
         residual=True,
         activation="relu",

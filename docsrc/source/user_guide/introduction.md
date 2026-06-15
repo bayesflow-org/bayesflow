@@ -1,22 +1,67 @@
 # Introduction
 
-*Disclaimer: This guide is in an early stage. We welcome contributions to the guide in form of issues and pull requests.*
+Bayesian inference gives us a principled language for learning from data under uncertainty. We write down a generative model, combine prior knowledge with observations, and obtain a posterior distribution over the quantities we care about. This posterior is often the real object of interest: it tells us not only *what values are plausible*, but also *how (un)certain we should be*.
 
-Welcome to the User Guide! This guide is still in a very early stage, but we plan to evolve it into a comprehensive guide to using BayesFlow.
+The challenge is computation.
 
-## Why (and When) Do We Need Amortized Bayesian Inference (ABI)?
+For many modern models, posterior inference is slow or unavailable with standard methods. The likelihood may be impossible to evaluate. The simulator may be stochastic, high-dimensional, ill-defined, or expensive. The data may have variable size or complex structure. And even when conventional Markov chain Monte Carlo or variational methods work, they often need to be rerun from scratch for every new dataset, every new participant, every new experimental design, or every new observation.
 
-In traditional Bayesian inference, we seek to approximate the posterior distribution of model parameters given observed data for each new data instance separately. This process can be computationally expensive, especially for complex models or large datasets, because it often involves iterative optimization or sampling methods. This step needs to be repeated for each new instance of data.
+**Amortized Bayesian inference** addresses this bottleneck by changing the unit of computation. Instead of solving a new inference problem from scratch every time we observe new data, we first invest in learning an inference machine. We simulate many datasets from a generative model and train a neural network to map simulated observations to the corresponding Bayesian quantities of interest: posterior samples, likelihoods, likelihood ratios, Bayes estimators, point estimates, model probabilities, or any distribution we may care about.
 
-Amortized Bayesian inference offers a solution to this problem. “Amortization” here refers to spreading out the computational cost over multiple instances. Instead of computing a new posterior from scratch for each data instance, amortized inference learns a function. This function is parameterized by a neural network, that directly maps observations to an approximation of the posterior distribution. This function is trained over the dataset to approximate the posterior for *any* new data instance efficiently. In this example, we will use a simple Gaussian model to illustrate the basic concepts of amortized posterior estimation.
+After training, inference becomes fast.
 
-At a high level, our architecture consists of a summary network $\mathbf{h}$ and an inference network $\mathbf{f}$ which jointly learn to invert a generative model. The summary network transforms input data $\mathbf{x}$ of potentially variable size to a fixed-length representations. The inference network generates random draws from an approximate posterior $\mathbf{q}$ via a conditional generative networks (here, an invertible network).
+This is the core idea of *amortization*: we pay an upfront simulation-and-training cost once, and then reuse the learned estimator for many future inference tasks from the same model family. In settings where we want to test models on simulated data, data arrive repeatedly, experiments are run sequentially, models are compared many times, or inference must be performed interactively, this changes Bayesian inference from a slow per-dataset computation into a reusable workflow.
 
-## BayesFlow
+## Amortized Bayesian Workflows
 
-BayesFlow offers flexible modules you can adapt to different Amortized Bayesian Inference (ABI) workflows. In brief:
+At a high level, an amortized Bayesian workflow has three ingredients:
 
-* The module {py:mod}`~bayesflow.simulators` contains high-level wrappers for gluing together priors, simulators, and meta-functions, and generating all quantities of interest for a modeling scenario.
-* The module {py:mod}`~bayesflow.adapters` contains utilities that preprocess the generated data from the simulator to a format more friendly for the neural approximators.
-* The module {py:mod}`~bayesflow.networks` contains the core neural architecture used for various tasks, e.g., a generative {py:class}`~bayesflow.networks.FlowMatching` architecture for approximating distributions, or a {py:class}`~bayesflow.networks.DeepSet` for learning permutation-invariant summary representations (embeddings).
-* The module {py:mod}`~bayesflow.approximators` contains high-level wrappers which connect the various networks together and instruct them about their particular goals in the inference pipeline.
+1. **A generative model** that can simulate parameters, latent variables, observations, metadata or other quantities of interest.
+2. **A data representation pipeline** that converts raw simulator output into the structured tensors required by neural networks.
+3. **A neural inference engine** that learns the inverse mapping from observations back to uncertainty-aware Bayesian conclusions.
+
+BayesFlow is the workflow layer that connects these pieces.
+
+It lets you define the generative process, adapt simulator output into training-ready form, choose from modern neural architectures for the inference task, train the estimator, and evaluate its fidelity with simulation-based diagnostics. The goal is not merely to fit a neural network. The goal is to build a reusable Bayesian inference workflow that scales to complex simulators and produces uncertainty-aware outputs quickly once trained.
+
+This guide introduces all components that let you create and run amortized workflows. These component are organized around several modules:
+
+- {py:mod}`~bayesflow.simulators` provides tools for defining and combining priors, simulators, and meta-functions. These components generate the model-implied quantities used for training, validation, diagnostics, and inference.
+- {py:mod}`~bayesflow.adapters` defines the bridge between simulator output and neural-network input. Adapters make preprocessing explicit, reproducible, and shared between training and inference.
+- {py:mod}`~bayesflow.networks` contains neural architectures for amortized inference and representation learning, including generative networks for posterior approximation and summary networks for structured or variable-size observations.
+- {py:mod}`~bayesflow.approximators` connects networks to concrete inference goals, such as posterior estimation, likelihood estimation, ratio estimation, or point estimation.
+High-level workflows, such as {py:class}`~bayesflow.workflows.BasicWorkflow`, orchestrate the full process from simulation to training, diagnostics, and application.
+
+## Why BayesFlow?
+
+BayesFlow is useful because it gives you a complete, flexible workflow for amortized Bayesian inference:
+
+* **One workflow from simulation to inference.**
+  BayesFlow connects the full pipeline: simulate data, adapt simulator outputs, train neural approximators, diagnoze the results, and apply the trained workflow to new data.
+
+* **Multi-backend support.**
+  BayesFlow runs on the Keras 3 ecosystem, so the same workflow can use JAX, PyTorch, or TensorFlow backends depending on your hardware, speed requirements, and existing ML stack.
+
+* **Interchangeable components.**
+  Every major part of the workflow is modular. You can swap the simulator, adapter, summary network, inference network, inference tragets, or training strategy without rewriting the entire project.
+
+* **Reusable inference after training.**
+  Once trained, the amortized estimator can produce fast posterior samples, point estimates, likelihoods, ratios, model probabilities, or other model-implied quantities for new data.
+
+* **Explicit preprocessing with adapters.**
+  BayesFlow makes preprocessing part of the workflow. Adapters define how raw simulator outputs become neural-network-ready inputs, helping keep training and inference consistent.
+
+* **Built-in diagnostics.**
+  BayesFlow includes many diagnostics for checking whether the approximation is trustworthy, including calibration, parameter recovery, posterior contraction, and posterior predictive checks.
+
+* **High-level workflows, low-level flexibility.**
+  You can use high-level workflow objects for convenience, while still accessing lower-level components compatible with the entire deep learning ecosystem when you need more control.
+
+* **Agentic AI-ready by design.**
+  Because BayesFlow workflows are explicit, modular, and diagnostic-driven, they are well suited for AI agents that need to reason about simulator design, adapter choices, neural architectures, training modes, and validation checks. See the [amortized workflow skill](https://github.com/Learning-Bayesian-Statistics/baygent-skills/tree/main) for an example.
+
+## Further Reading
+
+- Read our [software paper](https://arxiv.org/abs/2602.07098) for a deeper overview of the project’s design, methodology, and implementation.
+- Explore our [diffusion model tutorial review](https://arxiv.org/abs/2512.20685) for background and benchmarks on diffusion-based methods.
+- Browse the [bayesflow-org GitHub organization](https://github.com/bayesflow-org) for application-specific repositories and examples.

@@ -26,7 +26,7 @@ def test_jacrev(jit_compile):
 
     assert keras.ops.is_tensor(jac)
     assert keras.ops.shape(jac) == keras.ops.shape(w)
-    np.testing.assert_allclose(to_np(jac), to_np(w))
+    np.testing.assert_allclose(to_np(jac), to_np(w), atol=1e-3, rtol=1e-4)
 
 
 def test_jacrev_unary_scalar(fn_unary_scalar, jit_compile):

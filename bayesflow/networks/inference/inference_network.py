@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Callable
 
 import keras
 
@@ -36,11 +36,6 @@ class InferenceNetwork(keras.Layer):
 
     Optionally override:
 
-    ``build(xz_shape, conditions_shape)``
-        Allocate weights that depend on the concrete tensor shapes.  Call
-        ``super().build(...)`` to build the ``base_distribution`` and trigger a
-        forward pass for shape inference.
-
     ``sample(batch_shape, conditions, **kwargs)``
         Draw samples from the learned distribution.  The default implementation
         samples from ``base_distribution`` and passes the result through
@@ -52,9 +47,12 @@ class InferenceNetwork(keras.Layer):
 
     Parameters
     ----------
-    base_distribution : str, optional
-        Identifier for the base (latent) distribution, resolved via
-        :func:`~bayesflow.utils.find_distribution`.  Default is ``"normal"``.
+    base_distribution : str or ~bayesflow.distributions.Distribution, optional
+        The base (latent) distribution.  Accepts the string shortcuts
+        ``"normal"`` (:class:`~bayesflow.distributions.DiagonalNormal`) and
+        ``"student_t"`` (:class:`~bayesflow.distributions.DiagonalStudentT`),
+        or an explicit :class:`~bayesflow.distributions.Distribution` instance
+        for full control.  Default is ``"normal"``.
     **kwargs
         Forwarded to ``keras.Layer`` after filtering with
         :func:`~bayesflow.utils.layer_kwargs`.
@@ -63,7 +61,7 @@ class InferenceNetwork(keras.Layer):
     # Valid mask keys to pass to subnet
     _SUBNET_MASK_KEYS = {"attention_mask", "mask"}
 
-    def __init__(self, base_distribution: str = "normal", **kwargs):
+    def __init__(self, base_distribution: str | keras.Layer = "normal", **kwargs):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
 
@@ -75,17 +73,6 @@ class InferenceNetwork(keras.Layer):
         is not ``None``.
         """
         return {key: source[key] for key in keys if source.get(key) is not None}
-
-    def build(self, xz_shape: Shape, conditions_shape: Shape = None) -> None:
-        if self.built:
-            # building when the network is already built can cause issues with serialization
-            # see https://github.com/keras-team/keras/issues/21147
-            return
-
-        self.base_distribution.build(xz_shape)
-        x = keras.ops.zeros(xz_shape)
-        conditions = keras.ops.zeros(conditions_shape) if conditions_shape is not None else None
-        self.call(x, conditions, training=True)
 
     def call(
         self,
@@ -110,6 +97,18 @@ class InferenceNetwork(keras.Layer):
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
 
+    def _inverse_compositional(
+        self,
+        z: Tensor,
+        conditions: Tensor,
+        compute_prior_score: Callable = None,
+        density: bool = False,
+        training: bool = False,
+        seed: int | keras.random.SeedGenerator | None = None,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        raise NotImplementedError
+
     @allow_batch_size
     def sample(
         self,
@@ -120,7 +119,12 @@ class InferenceNetwork(keras.Layer):
     ) -> Tensor:
         seed = resolve_seed(seed)
         samples = self.base_distribution.sample(batch_shape, seed=seed)
-        samples = self(samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs)
+        if "compute_prior_score" in kwargs:
+            samples = self._inverse_compositional(
+                samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs
+            )
+        else:
+            samples = self(samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs)
         return samples
 
     def log_prob(self, samples: Tensor, conditions: Tensor = None, **kwargs) -> Tensor:

@@ -1,3 +1,5 @@
+from typing import Any
+
 import keras
 from keras import ops
 
@@ -58,6 +60,7 @@ class LatentInferenceNetwork(InferenceNetwork):
     >>> lin = LatentInferenceNetwork(
     ...     inference_network=DiffusionModel(subnet="unet"),
     ...     latent_shape=(7, 7, 4),
+    ...     # not wrapped in Encoder or Decoder
     ...     encoder=my_conv_downsampler,  # (B, 28, 28, 1) -> (B, 7, 7, *)
     ...     decoder=my_conv_upsampler,  # (B, 7, 7, 4)   -> (B, 28, 28, *)
     ... )
@@ -71,14 +74,18 @@ class LatentInferenceNetwork(InferenceNetwork):
         latent_dim: int | str = "auto",
         encoder: str | type | keras.Layer = "mlp",
         decoder: str | type | keras.Layer = "mlp",
-        encoder_kwargs: dict[str, any] = None,
-        decoder_kwargs: dict[str, any] = None,
+        encoder_kwargs: dict[str, Any] = None,
+        decoder_kwargs: dict[str, Any] = None,
         kl_weight: float = 1e-3,
         reconstruction_weight: float = 1.0,
         warmup_steps: int = 1000,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
+
+        if isinstance(inference_network, LatentInferenceNetwork):
+            # this is technically possible but pointless, so we protect the user here
+            raise TypeError("Cannot recurse latent inference networks.")
 
         if latent_shape is None:
             if encoder_kwargs is not None and "latent_shape" in encoder_kwargs:
@@ -98,15 +105,21 @@ class LatentInferenceNetwork(InferenceNetwork):
         self._decoder_subnet = decoder
         self._decoder_kwargs = decoder_kwargs or {}
 
-        self.encoder = Encoder(
-            latent_shape=latent_shape,
-            subnet=encoder,
-            subnet_kwargs=self._encoder_kwargs,
-        )
-        self.decoder = Decoder(
-            subnet=decoder,
-            subnet_kwargs=self._decoder_kwargs,
-        )
+        if not isinstance(encoder, Encoder):
+            encoder = Encoder(
+                latent_shape=latent_shape,
+                subnet=encoder,
+                subnet_kwargs=self._encoder_kwargs,
+            )
+
+        if not isinstance(decoder, Decoder):
+            decoder = Decoder(
+                subnet=decoder,
+                subnet_kwargs=self._decoder_kwargs,
+            )
+
+        self.encoder = encoder
+        self.decoder = decoder
 
         self.inference_network = inference_network
 

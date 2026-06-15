@@ -26,9 +26,11 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
       - name: Setup Environment
+        working-directory: repo
         run: uv venv
 
       - name: Install dependencies
+        working-directory: repo
         run: uv sync --extra docs
 
       - name: Create local branches

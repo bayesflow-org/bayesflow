@@ -4,11 +4,11 @@ from typing import Any, Literal, Callable
 import keras
 from keras import ops
 
+from bayesflow._backend import grad
 from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
     find_network,
-    grad,
     integrate,
     integrate_stochastic,
     jacobian_trace,

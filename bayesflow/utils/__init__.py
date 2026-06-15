@@ -60,7 +60,6 @@ from .io import (
 )
 
 from .jacobian import (
-    grad,
     jacobian,
     jacobian_trace,
     jvp,

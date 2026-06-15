@@ -1,4 +1,3 @@
-from .grad import grad
 from .jacobian import jacobian
 from .jacobian_trace import jacobian_trace
 from .jvp import jvp

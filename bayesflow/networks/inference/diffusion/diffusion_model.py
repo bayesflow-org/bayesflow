@@ -8,6 +8,7 @@ from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
     find_network,
+    grad,
     integrate,
     integrate_stochastic,
     jacobian_trace,
@@ -18,6 +19,7 @@ from bayesflow.utils import (
     random_mask,
     randomly_mask_along_axis,
     resolve_seed,
+    vjp,
     weighted_mean,
     DETERMINISTIC_METHODS,
     STOCHASTIC_METHODS,
@@ -328,37 +330,8 @@ class DiffusionModel(InferenceNetwork):
                 logp = logp - keras.ops.softplus(st * ck)
             return keras.ops.sum(logp) if reduce == "sum" else keras.ops.mean(logp)
 
-        backend = keras.backend.backend()
-
-        match backend:
-            case "jax":
-                import jax
-
-                grad = jax.grad(objective_fn)(x_pred)
-
-            case "tensorflow":
-                import tensorflow as tf
-
-                with tf.GradientTape() as tape:
-                    tape.watch(x_pred)
-                    objective = objective_fn(x_pred)
-                grad = tape.gradient(objective, x_pred)
-
-            case "torch":
-                import torch
-
-                with torch.enable_grad():
-                    x_grad = x_pred.clone().detach().requires_grad_(True)
-                    objective = objective_fn(x_grad)
-                    grad = torch.autograd.grad(
-                        outputs=objective,
-                        inputs=x_grad,
-                    )[0]
-
-            case _:
-                raise NotImplementedError(f"Unsupported backend: {backend}")
-
-        return score + guidance_strength * grad
+        grad_val = grad(objective_fn)(x_pred)
+        return score + guidance_strength * grad_val
 
     def convert_prediction_to_x(
         self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, prediction_type: str
@@ -643,69 +616,17 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             Output of the same shape as *xz*, equal to some parameterization of ∇_xz phi(xz, t, cond).
         """
-        backend = keras.backend.backend()
 
-        match backend:
-            case "jax":
-                import jax
-                import jax.numpy as jnp
+        def phi_fn(x):
+            subnet_out = self.subnet(
+                (x, norm_log_snr, conditions),
+                training=training,
+                **subnet_kwargs,
+            )
+            return self.output_projector(subnet_out)
 
-                def phi_fn(x):
-                    subnet_out = self.subnet(
-                        (x, norm_log_snr, conditions),
-                        training=training,
-                        **subnet_kwargs,
-                    )
-                    return self.output_projector(subnet_out)
-
-                phi, vjp_fn = jax.vjp(phi_fn, xz)
-                out = vjp_fn(jnp.ones_like(phi))[0]
-                return out
-
-            case "tensorflow":
-                import tensorflow as tf
-
-                with tf.GradientTape() as tape:
-                    tape.watch(xz)
-                    subnet_out = self.subnet(
-                        (xz, norm_log_snr, conditions),
-                        training=training,
-                        **subnet_kwargs,
-                    )
-                    phi = self.output_projector(subnet_out)
-
-                out = tape.gradient(
-                    target=phi,
-                    sources=xz,
-                    output_gradients=tf.ones_like(phi),
-                )
-                return out
-
-            case "torch":
-                import torch
-
-                with torch.enable_grad():
-                    xz_leaf = xz.requires_grad_(True)
-
-                    subnet_out = self.subnet(
-                        (xz_leaf, norm_log_snr, conditions),
-                        training=training,
-                        **subnet_kwargs,
-                    )
-                    phi = self.output_projector(subnet_out)
-
-                    out = torch.autograd.grad(
-                        outputs=phi,
-                        inputs=xz_leaf,
-                        grad_outputs=torch.ones_like(phi),
-                        create_graph=training,
-                        retain_graph=training,
-                    )[0]
-
-                return out
-
-            case _:
-                raise NotImplementedError(f"Unsupported backend for potential prediction type: {backend}")
+        phi, vjp_fn = vjp(phi_fn, xz, return_output=True)
+        return vjp_fn(ops.ones_like(phi))
 
     def _transform_log_snr(self, log_snr: Tensor) -> Tensor:
         """Transform the log_snr to the range [-1, 1] for the diffusion process."""
@@ -1322,90 +1243,28 @@ class DiffusionModel(InferenceNetwork):
             Σ̂⁻¹ = (α_t/υ_t)(I + υ_t J)⁻¹
         """
         m = ops.shape(xz)[-1]
-        backend = keras.backend.backend()
 
-        match backend:
-            case "jax":
-                import jax
-                import jax.numpy as jnp
+        def score_fn(x):
+            return self.score(
+                xz=x,
+                log_snr_t=log_snr_t,
+                conditions=conditions,
+                training=training,
+                **kwargs,
+            )
 
-                def phi_fn(x):
-                    return self.score(
-                        xz=x,
-                        log_snr_t=log_snr_t,
-                        conditions=conditions,
-                        training=training,
-                        **kwargs,
-                    )
+        score, vjp_fn = vjp(score_fn, xz, return_output=True)
 
-                score, vjp_fn = jax.vjp(phi_fn, xz)
+        rows = []
+        for i in range(m):
+            e_i = ops.broadcast_to(
+                ops.reshape(keras.ops.one_hot(i, num_classes=m, dtype=ops.dtype(score)), (1, m)),
+                (ops.shape(score)[0], m),
+            )
+            row_i = vjp_fn(e_i)
+            rows.append(ops.expand_dims(row_i, axis=1))
 
-                rows = []
-                for i in range(m):
-                    e_i = jnp.zeros_like(score).at[:, i].set(1.0)
-                    (row_i,) = vjp_fn(e_i)
-                    rows.append(jnp.expand_dims(row_i, axis=1))
-
-                jacobian = jnp.concatenate(rows, axis=1)
-
-            case "tensorflow":
-                import tensorflow as tf
-
-                with tf.GradientTape(persistent=True) as tape:
-                    tape.watch(xz)
-                    score = self.score(
-                        xz=xz,
-                        log_snr_t=log_snr_t,
-                        conditions=conditions,
-                        training=training,
-                        **kwargs,
-                    )
-
-                if m <= 32:  # for larger dimension
-                    rows = []
-                    for i in range(m):
-                        e_i = tf.one_hot(tf.fill([tf.shape(score)[0]], i), depth=m, dtype=score.dtype)
-                        row_i = tape.gradient(score, xz, output_gradients=e_i)
-                        rows.append(tf.expand_dims(row_i, axis=1))
-                    jacobian = tf.concat(rows, axis=1)
-                else:
-                    jacobian = tape.batch_jacobian(score, xz, experimental_use_pfor=False)
-
-                del tape
-
-            case "torch":
-                import torch
-
-                with torch.enable_grad():
-                    xz_leaf = xz.detach().requires_grad_(True)
-
-                    score = self.score(
-                        xz=xz_leaf,
-                        log_snr_t=log_snr_t,
-                        conditions=conditions,
-                        training=training,
-                        **kwargs,
-                    )
-
-                    rows = []
-                    for i in range(m):
-                        e_i = torch.zeros_like(score)
-                        e_i[:, i] = 1.0
-                        (row_i,) = torch.autograd.grad(
-                            outputs=score,
-                            inputs=xz_leaf,
-                            grad_outputs=e_i,
-                            create_graph=False,
-                            retain_graph=(i < m - 1),
-                        )
-                        rows.append(row_i.unsqueeze(1))
-
-                    jacobian = torch.cat(rows, dim=1)
-
-                score = score.detach()
-
-            case _:
-                raise NotImplementedError(f"JAC Jacobian not implemented for backend '{backend}'. ")
+        jacobian = ops.concatenate(rows, axis=1)
         return score, jacobian
 
     @staticmethod

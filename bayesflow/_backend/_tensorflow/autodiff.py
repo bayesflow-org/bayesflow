@@ -9,8 +9,9 @@ def grad(fn, argnums=0, has_aux=False):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         val, dy = grad_fn(*args, **kwargs)
+
         if has_aux:
-            y, aux = val
+            _, aux = val
             return dy, aux
         return dy
 
@@ -18,29 +19,36 @@ def grad(fn, argnums=0, has_aux=False):
 
 
 def value_and_grad(fn, argnums=0, has_aux=False):
-    if isinstance(argnums, int):
-        argnums = [argnums]
+    single_argnum = isinstance(argnums, int)
+    argnums = (argnums,) if single_argnum else tuple(argnums)
 
     @wraps(fn)
     def grad_fn(*args, **kwargs):
-        primals = [args[i] for i in argnums]
-        with tf.GradientTape(persistent=False, watch_accessed_variables=False) as tape:
-            for p in primals:
-                tape.watch(p)
+        primals = tuple(args[i] for i in argnums)
+
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
+            # Handles nested tensor arguments too.
+            for primal in tf.nest.flatten(primals):
+                tape.watch(primal)
 
             if has_aux:
                 y, aux = fn(*args, **kwargs)
             else:
                 y = fn(*args, **kwargs)
 
-        if tf.executing_eagerly():
-            dydx = tape.gradient(y, primals)
-        else:
-            dydx = tf.gradients(y, primals)
+            # JAX/Torch grad require a scalar output.
+            if y.shape.rank is not None and y.shape.rank != 0:
+                raise ValueError(f"grad requires fn to return a scalar tensor, but got shape {y.shape}")
 
-        dydx = tuple(dydx)
+        dydx = tape.gradient(
+            y,
+            primals,
+            unconnected_gradients=tf.UnconnectedGradients.ZERO,
+        )
 
-        if len(argnums) == 1:
+        # argnums=0 returns a tensor.
+        # argnums=(0,) returns a one-element tuple.
+        if single_argnum:
             dydx = dydx[0]
 
         if has_aux:
@@ -61,7 +69,10 @@ def jvp(fn, primals, tangents, has_aux=False):
         else:
             primals_out = fn(*primals)
 
-    tangents_out = acc.jvp(primals_out)
+    tangents_out = acc.jvp(
+        primals_out,
+        unconnected_gradients=tf.UnconnectedGradients.ZERO,
+    )
 
     if has_aux:
         return primals_out, tangents_out, aux
@@ -69,22 +80,35 @@ def jvp(fn, primals, tangents, has_aux=False):
     return primals_out, tangents_out
 
 
-def vjp(fn, *primals, has_aux=False) -> tuple:
-    with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
-        for p in primals:
-            tape.watch(p)
+def vjp(fn, *primals, has_aux=False):
+    primals = tuple(primals)
+
+    with tf.GradientTape(
+        persistent=True,
+        watch_accessed_variables=False,
+    ) as tape:
+        for primal in tf.nest.flatten(primals):
+            tape.watch(primal)
+
+        result = fn(*primals)
 
         if has_aux:
-            y, aux = fn(*primals)
-            out = y, aux
+            y, aux = result
         else:
-            y = fn(*primals)
-            out = y
+            y = result
 
-    def vjp_fn(cotangent):
-        return tape.gradient(y, primals, output_gradients=cotangent)
+    def vjp_fn(cotangents):
+        return tape.gradient(
+            y,
+            primals,
+            output_gradients=cotangents,
+            unconnected_gradients=tf.UnconnectedGradients.ZERO,
+        )
 
-    return out, vjp_fn
+    if has_aux:
+        return y, vjp_fn, aux
+
+    return y, vjp_fn
 
 
 def jacfwd(fn, argnums=0, has_aux=False):

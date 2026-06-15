@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 @serializable("bayesflow.networks")
 class Encoder(keras.Layer):
     """Encoder network that maps input to a latent distribution.
-    
+
     Parameters
     ----------
     latent_shape : int, tuple, or ``"auto"``, optional

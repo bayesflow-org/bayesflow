@@ -1,6 +1,5 @@
 import keras
 import numpy as np
-import pytest
 
 from bayesflow.utils.serialization import serialize, deserialize
 from tests.utils import assert_layers_equal

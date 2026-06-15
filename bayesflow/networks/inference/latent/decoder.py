@@ -75,7 +75,9 @@ class Decoder(keras.Layer):
     def _resolve_target_shape(self) -> tuple:
         arg = self._output_shape_arg
         if arg == "auto" or arg is None:
-            raise ValueError("output_dim must be set before building the decoder (pass `output_shape` or `output_dim`).")
+            raise ValueError(
+                "output_dim must be set before building the decoder (pass `output_shape` or `output_dim`)."
+            )
         if isinstance(arg, int):
             return (arg,)
         return tuple(arg)

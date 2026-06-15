@@ -4,10 +4,9 @@ from keras import ops
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, weighted_mean
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-
-from ..inference_network import InferenceNetwork
-from .encoder import Encoder
 from .decoder import Decoder
+from .encoder import Encoder
+from ..inference_network import InferenceNetwork
 
 
 @serializable("bayesflow.networks")
@@ -59,8 +58,8 @@ class LatentInferenceNetwork(InferenceNetwork):
     >>> lin = LatentInferenceNetwork(
     ...     inference_network=DiffusionModel(subnet="unet"),
     ...     latent_shape=(7, 7, 4),
-    ...     encoder=my_conv_downsampler,   # (B, 28, 28, 1) -> (B, 7, 7, *)
-    ...     decoder=my_conv_upsampler,     # (B, 7, 7, 4)   -> (B, 28, 28, *)
+    ...     encoder=my_conv_downsampler,  # (B, 28, 28, 1) -> (B, 7, 7, *)
+    ...     decoder=my_conv_upsampler,  # (B, 7, 7, 4)   -> (B, 28, 28, *)
     ... )
     """
 

@@ -85,7 +85,7 @@ Then, check out the development branch and install dependencies:
 ```bash
 cd bayesflow
 git checkout dev
-uv sync --extra dev --extra docs --extra test
+uv sync --extra all
 pre-commit install
 ```
 
@@ -94,7 +94,7 @@ If you are using pip instead of uv:
 ```bash
 cd bayesflow
 git checkout dev
-pip install -e .[dev,docs,test]
+pip install -e .[all]
 pre-commit install
 ```
 

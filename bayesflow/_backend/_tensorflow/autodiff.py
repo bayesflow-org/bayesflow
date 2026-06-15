@@ -112,130 +112,158 @@ def vjp(fn, *primals, has_aux=False):
 
 
 def jacfwd(fn, argnums=0, has_aux=False):
-    if isinstance(argnums, int):
-        argnums_list = [argnums]
-    else:
-        argnums_list = list(argnums)
+    single_argnum = isinstance(argnums, int)
+    argnums = (argnums,) if single_argnum else tuple(argnums)
 
-    def jacobian_fn(*args):
-        with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
-            for i in argnums_list:
-                tape.watch(args[i])
+    if not argnums:
+        raise ValueError("argnums must not be empty")
 
-            out_all = fn(*args)
-            if has_aux:
-                primals_out, aux = out_all
-            else:
-                primals_out = out_all
-                aux = None
+    @wraps(fn)
+    def jacobian_fn(*args, **kwargs):
+        # Resolve negative indices and validate them.
+        resolved_argnums = tuple(index if index >= 0 else len(args) + index for index in argnums)
 
-        jacs = []
+        if any(index < 0 or index >= len(args) for index in resolved_argnums):
+            raise IndexError(f"argnums={argnums} is invalid for {len(args)} arguments")
 
-        for arg_idx in argnums_list:
-            target_arg = args[arg_idx]
+        if len(set(resolved_argnums)) != len(resolved_argnums):
+            raise ValueError("argnums must not contain duplicate arguments")
 
-            if not isinstance(primals_out, tuple):
-                # single output, compute jacobian directly
-                jac = tape.jacobian(primals_out, target_arg)
-                jacs.append(jac)
-            else:
-                # multiple outputs, compute Jacobians individually
-                output_jacs = []
-                for output_idx, single_output in enumerate(primals_out):
-                    jac = tape.jacobian(single_output, target_arg)
-                    output_jacs.append(jac)
-                jacs.append(tuple(output_jacs))
+        primals = tuple(args[index] for index in resolved_argnums)
 
-        if isinstance(argnums, int):
-            jacs = jacs[0]
+        for _, primal in zip(resolved_argnums, primals):
+            if tf.nest.is_nested(primal):
+                raise NotImplementedError("Each differentiated argument must currently be a single tensor.")
+
+        # Evaluate once for the primal output structure and aux value.
+        result = fn(*args, **kwargs)
+
+        if has_aux:
+            primals_out, aux = result
         else:
-            jacs = tuple(jacs)
+            primals_out = result
 
-        return (jacs, aux) if has_aux else jacs
+        input_sizes = tf.stack([tf.size(primal) for primal in primals])
+        input_offsets = tf.cumsum(input_sizes, exclusive=True)
+        total_input_size = tf.reduce_sum(input_sizes)
+
+        def directional_jvp(global_index):
+            tangents = []
+
+            for primal, size, offset in zip(
+                primals,
+                tf.unstack(input_sizes),
+                tf.unstack(input_offsets),
+            ):
+                local_index = global_index - offset
+
+                # Out-of-range one_hot indices produce zero vectors,
+                # so only the active primal receives a basis tangent.
+                tangent = tf.one_hot(
+                    local_index,
+                    depth=size,
+                    dtype=primal.dtype,
+                )
+                tangent = tf.reshape(tangent, tf.shape(primal))
+                tangents.append(tangent)
+
+            with tf.autodiff.ForwardAccumulator(primals, tuple(tangents)) as accumulator:
+                directional_result = fn(*args, **kwargs)
+
+                if has_aux:
+                    directional_out, _ = directional_result
+                else:
+                    directional_out = directional_result
+
+            return accumulator.jvp(
+                directional_out,
+                unconnected_gradients=tf.UnconnectedGradients.ZERO,
+            )
+
+        # Every output leaf initially has shape:
+        # (total_input_size, *output_shape)
+        batched_jvps = tf.vectorized_map(
+            directional_jvp,
+            tf.range(total_input_size),
+        )
+
+        output_leaves = tf.nest.flatten(primals_out)
+        jvp_leaves = tf.nest.flatten(batched_jvps)
+
+        jacobian_leaves = []
+
+        for output_leaf, leaf_jvps in zip(output_leaves, jvp_leaves):
+            # Split the combined input basis back into one block per argnum.
+            blocks = tf.split(leaf_jvps, input_sizes, axis=0)
+
+            jacobians_for_output = []
+
+            for block, primal in zip(blocks, primals):
+                # (input_size, *output_shape)
+                # -> (*output_shape, input_size)
+                const = tf.constant([0], dtype=tf.int32)
+                permutation = tf.concat([tf.range(1, tf.rank(block)), const], axis=0)
+                block = tf.transpose(block, permutation)
+
+                # (*output_shape, input_size)
+                # -> (*output_shape, *input_shape)
+                jacobian = tf.reshape(block, tf.concat([tf.shape(output_leaf), tf.shape(primal)], axis=0))
+
+                jacobians_for_output.append(jacobian)
+
+            if single_argnum:
+                jacobian_leaves.append(jacobians_for_output[0])
+            else:
+                # For argnums=(0,), preserve the one-element tuple.
+                jacobian_leaves.append(tuple(jacobians_for_output))
+
+        # Output structure is outermost, matching JAX and Torch.
+        jacobians = tf.nest.pack_sequence_as(primals_out, jacobian_leaves)
+
+        if has_aux:
+            return jacobians, aux
+
+        return jacobians
 
     return jacobian_fn
 
 
 def jacrev(fn, argnums=0, has_aux=False):
-    if isinstance(argnums, int):
-        argnums_list = [argnums]
-    else:
-        argnums_list = list(argnums)
+    single_argnum = isinstance(argnums, int)
+    argnums = (argnums,) if single_argnum else tuple(argnums)
 
-    def jacobian_fn(*args):
-        with tf.GradientTape(persistent=True) as tape:
-            diff_args = []
-            for i in argnums_list:
-                tape.watch(args[i])
-                diff_args.append(args[i])
+    @wraps(fn)
+    def jacobian_fn(*args, **kwargs):
+        primals = tuple(args[i] for i in argnums)
 
-            out_all = fn(*args)
-            primals_out, aux = out_all if has_aux else (out_all, None)
+        with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
+            tape.watch(tf.nest.flatten(primals))
 
-        if not isinstance(primals_out, tuple):
-            # single output
-            output_shape = tf.shape(primals_out)
-            n_out = tf.reduce_prod(output_shape)
+            result = fn(*args, **kwargs)
 
-            # basis for the output (n_out, *output_shape)
-            output_basis = tf.eye(n_out, dtype=primals_out.dtype)
-            output_basis = tf.reshape(output_basis, tf.concat([[n_out], output_shape], axis=0))
-
-            def scan_vjp(v):
-                nonlocal tape
-                return tape.gradient(primals_out, diff_args, output_gradients=v)
-
-            # use vmap to run the backward pass efficiently
-            # the result is a list (per arg) of tensors (n_out, *arg_shape)
-            jacs = tf.vectorized_map(scan_vjp, output_basis)
-
-            # jax contract: (out_dims..., in_dims...)
-            # tape.gradient returns a list if diff_args is a list
-            final_results = []
-            for i, jaco_arg in enumerate(jacs):
-                arg_shape = tf.shape(args[argnums_list[i]])
-                reshaped_jac = tf.reshape(jaco_arg, tf.concat([output_shape, arg_shape], axis=0))
-                final_results.append(reshaped_jac)
-
-            jacs = tuple(final_results) if not isinstance(argnums, int) else final_results[0]
-        else:
-            # multiple outputs, compute Jacobians individually
-            all_jacobians_per_arg = [[] for _ in range(len(argnums_list))]
-
-            for output_idx, single_output in enumerate(primals_out):
-                output_shape = tf.shape(single_output)
-                n_out = tf.reduce_prod(output_shape)
-
-                # basis vectors for the vjp (n_out, *output_shape)
-                output_basis = tf.eye(n_out, dtype=single_output.dtype)
-                output_basis = tf.reshape(output_basis, tf.concat([[n_out], output_shape], axis=0))
-
-                def scan_vjp(v):
-                    nonlocal tape
-                    return tape.gradient(single_output, diff_args, output_gradients=v)
-
-                # use vmap to run the backward pass efficiently
-                # the result is a list (per arg) of tensors (n_out, *arg_shape)
-                jacos = tf.vectorized_map(scan_vjp, output_basis)
-
-                # jax contract: (out_dims..., in_dims...)
-                for arg_idx, jaco_arg in enumerate(jacos):
-                    arg_shape = tf.shape(args[argnums_list[arg_idx]])
-                    # Reshape from (n_out, *arg_shape) to (*out_shape, *arg_shape)
-                    reshaped_jaco = tf.reshape(jaco_arg, tf.concat([output_shape, arg_shape], axis=0))
-                    all_jacobians_per_arg[arg_idx].append(reshaped_jaco)
-
-            # convert list of jacobians to tuple of jacobians (one per output)
-            final_results = []
-            for arg_idx in range(len(argnums_list)):
-                # all_jacobians_per_arg[arg_idx] is a list of jacobians (one per output)
-                final_results.append(tuple(all_jacobians_per_arg[arg_idx]))
-
-            if isinstance(argnums, int):
-                jacs = final_results[0]
+            if has_aux:
+                primals_out, aux = result
             else:
-                jacs = tuple(final_results)
+                primals_out = result
 
-        return (jacs, aux) if has_aux else jacs
+        def compute_leaf_jacobian(output_leaf):
+            jacobians = tape.jacobian(  # noqa: F821
+                output_leaf, primals, unconnected_gradients=tf.UnconnectedGradients.ZERO
+            )
+
+            # argnums=0 returns a Jacobian directly.
+            # argnums=(0,) preserves the one-element tuple.
+            if single_argnum:
+                return jacobians[0]
+
+            return tuple(jacobians)
+
+        # Preserves the output tree as the outer structure.
+        jacobians = tf.nest.map_structure(compute_leaf_jacobian, primals_out)
+
+        if has_aux:
+            return jacobians, aux
+
+        return jacobians
 
     return jacobian_fn

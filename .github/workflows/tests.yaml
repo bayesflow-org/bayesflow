@@ -27,6 +27,8 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    permissions: {}
+
     env:
       KERAS_BACKEND: ${{ matrix.backend }}
 

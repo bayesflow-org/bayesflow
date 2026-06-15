@@ -9,6 +9,9 @@ on:
 jobs:
   build_docs:
     runs-on: ubuntu-latest
+
+    permissions: {}
+
     env:
       KERAS_BACKEND: "jax"
 

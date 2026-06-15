@@ -3,6 +3,8 @@ name: Experimental Tests
 on:
   workflow_dispatch:
 
+permissions: {}
+
 defaults:
   run:
     shell: bash
@@ -18,6 +20,8 @@ jobs:
         backend: ["jax", "tensorflow", "torch"]
 
     runs-on: ${{ matrix.os }}
+
+    permissions: {}
 
     env:
       KERAS_BACKEND: ${{ matrix.backend }}

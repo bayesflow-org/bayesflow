@@ -33,6 +33,12 @@ We currently support Python 3.11 to 3.13. You can install the latest stable vers
 pip install "bayesflow>=2.0"
 ```
 
+Or with [uv](https://docs.astral.sh/uv/) (recommended for faster installs):
+
+```bash
+uv add bayesflow
+```
+
 If you want the latest features, you can install from source:
 
 ```bash

@@ -17,6 +17,8 @@ def test_build(inference_network, random_samples, random_conditions):
     inference_network.build(samples_shape, conditions_shape=conditions_shape)
 
     assert inference_network.built is True
+    for layer in inference_network._flatten_layers():
+        assert layer.built, f"Layer of type {type(layer)!r} with name {layer.name} is not built."
 
     # check the model has variables
     assert inference_network.variables, "Model has no variables."
@@ -24,6 +26,7 @@ def test_build(inference_network, random_samples, random_conditions):
 
 def test_variable_batch_size(inference_network, random_samples, random_conditions):
     from bayesflow.networks import ScoringRuleNetwork, ConsistencyModel, StableConsistencyModel
+    from bayesflow.experimental import LatentIN
 
     # build with one batch size
     samples_shape = keras.ops.shape(random_samples)
@@ -47,7 +50,8 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
             inference_network(new_input, conditions=new_conditions)
 
         # scoring rule networks don't have an inverse
-        if not isinstance(inference_network, ScoringRuleNetwork):
+        # we also skip the LatentIN here since its inverse has a different dimension
+        if not isinstance(inference_network, (ScoringRuleNetwork, LatentIN)):
             inference_network(new_input, conditions=new_conditions, inverse=True)
 
 
@@ -178,6 +182,9 @@ def test_save_and_load(tmp_path, inference_network, random_samples, random_condi
 def test_compute_metrics(inference_network, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+
+    print(f"{inference_network.__class__.__name__=}")
+    print(f"{xz_shape=}, {conditions_shape=}")
     inference_network.build(xz_shape, conditions_shape)
 
     metrics = inference_network.compute_metrics(random_samples, conditions=random_conditions)

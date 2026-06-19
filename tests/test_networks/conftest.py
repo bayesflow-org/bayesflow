@@ -125,26 +125,32 @@ def typical_scoring_rule_network_subnet():
 
 @pytest.fixture()
 def latent_diffusion_model():
-    from bayesflow.networks import DiffusionModel, LatentInferenceNetwork, MLP
+    from bayesflow.networks import DiffusionModel, MLP, TimeMLP
+    from bayesflow.experimental import LatentIN, VariationalAutoEncoder
 
-    return LatentInferenceNetwork(
-        inference_network=DiffusionModel(subnet=MLP([8, 8])),
-        latent_shape=(4,),
-        encoder=MLP([8, 8]),
-        decoder=MLP([8, 8]),
+    autoencoder = VariationalAutoEncoder(
+        4,
+        MLP([8, 8]),
+        MLP([8, 8]),
     )
+    inference_network = DiffusionModel(subnet=TimeMLP([8, 8]))
+
+    return LatentIN(autoencoder, inference_network)
 
 
 @pytest.fixture()
 def latent_coupling_flow():
-    from bayesflow.networks import CouplingFlow, LatentInferenceNetwork, MLP
+    from bayesflow.networks import CouplingFlow, MLP
+    from bayesflow.experimental import LatentIN, VariationalAutoEncoder
 
-    return LatentInferenceNetwork(
-        inference_network=CouplingFlow(subnet=MLP, subnet_kwargs=dict(widths=[8, 8])),
-        latent_shape=(4,),
-        encoder=MLP([8, 8]),
-        decoder=MLP([8, 8]),
+    autoencoder = VariationalAutoEncoder(
+        4,
+        MLP([8, 8]),
+        MLP([8, 8]),
     )
+    inference_network = CouplingFlow(subnet_kwargs=dict(widths=[8, 8]))
+
+    return LatentIN(autoencoder, inference_network)
 
 
 @pytest.fixture(

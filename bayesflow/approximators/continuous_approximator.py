@@ -146,8 +146,12 @@ class ContinuousApproximator(Approximator):
         else:
             loss = inference_metrics.pop("loss")
 
-        inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
-        summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
+        inference_metrics = {
+            f"{self.inference_network.__class__.__name__}/{key}": value for key, value in inference_metrics.items()
+        }
+        summary_metrics = {
+            f"{self.summary_network.__class__.__name__}/{key}": value for key, value in summary_metrics.items()
+        }
 
         metrics = {"loss": loss} | inference_metrics | summary_metrics
         return metrics

@@ -35,7 +35,9 @@ class VariationalAutoEncoder(AutoEncoder):
         }
         return base_config | serialize(config)
 
-    def _encode(self, x, training=False, seed=None, **kwargs):
+    def _encode(
+        self, x: Tensor, training: bool = False, seed: int | keras.random.SeedGenerator | None = None, **kwargs
+    ):
         if seed is None:
             seed = self.seed_generator
 
@@ -45,7 +47,7 @@ class VariationalAutoEncoder(AutoEncoder):
         sample = mean + keras.ops.exp(log_var / 2) * epsilon
         return z, mean, log_var, epsilon, sample
 
-    def _forward(self, x, training=False, **kwargs):
+    def _forward(self, x: Tensor, training: bool = False, **kwargs):
         *_, sample = self._encode(x, training=training, **kwargs)
         return sample
 

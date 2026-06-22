@@ -6,17 +6,17 @@ from bayesflow._backend import jacrev
 from bayesflow.networks.inference import InferenceNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, issue_url
-from bayesflow.utils.serialization import deserialize, serializable, serialize
+from bayesflow.utils.serialization import serializable, serialize
 
 from ..autoencoder import AutoEncoder
 
 
 @serializable("bayesflow.experimental")
-class LatentIN(InferenceNetwork):
+class LatentInferenceNetwork(InferenceNetwork):
     def __init__(self, autoencoder: AutoEncoder, inference_network: InferenceNetwork, **kwargs):
         super().__init__(**kwargs)
 
-        if isinstance(inference_network, LatentIN):
+        if isinstance(inference_network, LatentInferenceNetwork):
             raise TypeError("Cannot recurse latent inference networks.")
 
         self.autoencoder = autoencoder
@@ -33,8 +33,6 @@ class LatentIN(InferenceNetwork):
 
         self.base_distribution.build(shape)
 
-        self.built = True
-
     def get_config(self):
         base_config = super().get_config()
         config = {
@@ -44,11 +42,9 @@ class LatentIN(InferenceNetwork):
 
         return base_config | serialize(config)
 
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
-
-    def _forward(self, x, conditions=None, density=False, training=False, **kwargs):
+    def _forward(
+        self, x: Tensor, conditions: Tensor | None = None, density: bool = False, training: bool = False, **kwargs
+    ):
         if not density:
             y = self.autoencoder(x, training=training, **kwargs)
             z = self.inference_network(y, conditions=conditions, training=training, **kwargs)
@@ -71,7 +67,9 @@ class LatentIN(InferenceNetwork):
 
         return z, log_density
 
-    def _inverse(self, z, conditions=None, density=False, training=False, **kwargs):
+    def _inverse(
+        self, z: Tensor, conditions: Tensor | None = None, density: bool = False, training: bool = False, **kwargs
+    ):
         if not density:
             y = self.inference_network(z, conditions=conditions, inverse=True, training=training, **kwargs)
             x = self.autoencoder(y, training=training, inverse=True, **kwargs)

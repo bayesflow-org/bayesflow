@@ -26,7 +26,7 @@ def test_build(inference_network, random_samples, random_conditions):
 
 def test_variable_batch_size(inference_network, random_samples, random_conditions):
     from bayesflow.networks import ScoringRuleNetwork, ConsistencyModel, StableConsistencyModel
-    from bayesflow.experimental import LatentIN
+    from bayesflow.experimental import LatentInferenceNetwork
 
     # build with one batch size
     samples_shape = keras.ops.shape(random_samples)
@@ -50,8 +50,8 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
             inference_network(new_input, conditions=new_conditions)
 
         # scoring rule networks don't have an inverse
-        # we also skip the LatentIN here since its inverse has a different dimension
-        if not isinstance(inference_network, (ScoringRuleNetwork, LatentIN)):
+        # we also skip the LatentInferenceNetwork here since its inverse has a different dimension
+        if not isinstance(inference_network, (ScoringRuleNetwork, LatentInferenceNetwork)):
             inference_network(new_input, conditions=new_conditions, inverse=True)
 
 

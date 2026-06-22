@@ -12,13 +12,12 @@ class AutoEncoder(keras.Layer):
         latent_dim: int,
         encoder_network: keras.Layer,
         decoder_network: keras.Layer,
-        projector_type: type = keras.layers.Dense,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
         self.latent_dim = latent_dim
         self.encoder_network = encoder_network
-        self.encoder_projector = keras.layers.Dense(latent_dim, use_bias=False, name="encoder_projector")
+        self.encoder_projector = keras.layers.Dense(latent_dim, use_bias=False)
         self.decoder_network = decoder_network
         self.decoder_projector = None
 
@@ -36,14 +35,8 @@ class AutoEncoder(keras.Layer):
         shape = self.decoder_network.compute_output_shape(shape)
 
         if self.decoder_projector is None:
-            self.decoder_projector = keras.layers.Dense(units=input_shape[-1], use_bias=False, name="decoder_projector")
+            self.decoder_projector = keras.layers.Dense(units=input_shape[-1], use_bias=False)
         self.decoder_projector.build(shape)
-
-        self.built = True
-        for layer in self._flatten_layers():
-            if not layer.built:
-                print(layer.__class__.__name__, "not built")
-            layer.built = True
 
     def compute_output_shape(self, input_shape):
         output_shape = *input_shape[:-1], self.latent_dim
@@ -63,22 +56,22 @@ class AutoEncoder(keras.Layer):
     def from_config(cls, config, custom_objects=None):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
-    def call(self, xz, training=False, inverse: bool = False, **kwargs):
+    def call(self, xz: Tensor, training: bool = False, inverse: bool = False, **kwargs):
         if inverse:
             return self._inverse(xz, training=training, **kwargs)
         return self._forward(xz, training=training, **kwargs)
 
-    def _forward(self, x, conditions=None, training=False, **kwargs):
+    def _forward(self, x: Tensor, training: bool = False, **kwargs):
         y = self.encoder_network(x, training=training, **filter_kwargs(kwargs, self.encoder_network.call))
-        z = self.encoder_projector(y, training=training, **filter_kwargs(kwargs, self.encoder_projector.call))
+        z = self.encoder_projector(y)
         return z
 
-    def _inverse(self, z, training=False, **kwargs):
+    def _inverse(self, z: Tensor, training: bool = False, **kwargs):
         if self.decoder_projector is None:
             raise RuntimeError("Must call build before calling inverse.")
 
         y = self.decoder_network(z, training=training, **filter_kwargs(kwargs, self.decoder_network.call))
-        x = self.decoder_projector(y, training=training, **filter_kwargs(kwargs, self.decoder_projector.call))
+        x = self.decoder_projector(y)
         return x
 
     def compute_metrics(

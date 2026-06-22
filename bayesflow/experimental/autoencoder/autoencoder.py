@@ -48,7 +48,6 @@ class AutoEncoder(keras.Layer):
             "latent_dim": self.latent_dim,
             "encoder_network": self.encoder_network,
             "decoder_network": self.decoder_network,
-            "decoder_projector": self.decoder_projector,
         }
         return base_config | serialize(config)
 

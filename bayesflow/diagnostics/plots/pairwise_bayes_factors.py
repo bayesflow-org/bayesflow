@@ -121,6 +121,7 @@ def pairwise_bayes_factors(
     im = ax.imshow(mean_matrix, interpolation="nearest", cmap=cmap, norm=norm)
     cbar = ax.figure.colorbar(im, ax=ax, shrink=0.75)
     cbar.ax.tick_params(labelsize=value_fontsize)
+    cbar.set_label(r"mean log Bayes factor  $\log \mathrm{BF}_{m,j}$", fontsize=label_fontsize)
 
     ax.set_xticks(range(M))
     ax.set_xticklabels(model_names, fontsize=tick_fontsize)
@@ -136,7 +137,7 @@ def pairwise_bayes_factors(
             ax.text(j, i, format(val, fmt), ha="center", va="center", fontsize=value_fontsize, color=text_color)
 
     if title:
-        ax.set_title(r"Mean $\log K_{m,j}$ by true model", fontsize=title_fontsize)
+        ax.set_title(r"Mean log Bayes factor by true model", fontsize=title_fontsize)
 
     fig.tight_layout()
     return fig

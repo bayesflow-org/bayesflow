@@ -1,7 +1,7 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import weighted_mean
+from bayesflow.utils import filter_kwargs, weighted_mean
 from bayesflow.utils.serialization import serializable, serialize
 
 from .autoencoder import AutoEncoder
@@ -41,7 +41,8 @@ class VariationalAutoEncoder(AutoEncoder):
         if seed is None:
             seed = self.seed_generator
 
-        z = super()._forward(x, training=training, **kwargs)
+        y = self.encoder_network(x, training=training, **filter_kwargs(kwargs, self.encoder_network.call))
+        z = self.encoder_projector(y, training=training, **filter_kwargs(kwargs, self.encoder_projector.call))
         mean, log_var = keras.ops.split(z, 2, axis=-1)
         epsilon = keras.random.normal(keras.ops.shape(mean), seed=seed, dtype=mean.dtype)
         sample = mean + keras.ops.exp(log_var / 2) * epsilon

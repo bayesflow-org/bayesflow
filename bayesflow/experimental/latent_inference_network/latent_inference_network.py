@@ -13,7 +13,13 @@ from ..autoencoder import AutoEncoder
 
 @serializable("bayesflow.experimental")
 class LatentInferenceNetwork(InferenceNetwork):
-    def __init__(self, autoencoder: AutoEncoder, inference_network: InferenceNetwork, **kwargs):
+    def __init__(
+        self,
+        autoencoder: AutoEncoder,
+        inference_network: InferenceNetwork,
+        conditions_network: keras.Layer | None = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
 
         if isinstance(inference_network, LatentInferenceNetwork):
@@ -21,6 +27,7 @@ class LatentInferenceNetwork(InferenceNetwork):
 
         self.autoencoder = autoencoder
         self.inference_network = inference_network
+        self.conditions_network = conditions_network
 
     def build(self, xz_shape, conditions_shape=None):
         if self.built:
@@ -29,6 +36,11 @@ class LatentInferenceNetwork(InferenceNetwork):
         shape = xz_shape
         self.autoencoder.build(shape)
         shape = self.autoencoder.compute_output_shape(shape)
+
+        if self.conditions_network is not None:
+            self.conditions_network.build(conditions_shape)
+            conditions_shape = self.conditions_network.compute_output_shape(conditions_shape)
+
         self.inference_network.build(shape, conditions_shape)
 
         self.base_distribution.build(shape)
@@ -38,6 +50,7 @@ class LatentInferenceNetwork(InferenceNetwork):
         config = {
             "autoencoder": self.autoencoder,
             "inference_network": self.inference_network,
+            "conditions_network": self.conditions_network,
         }
 
         return base_config | serialize(config)
@@ -45,14 +58,25 @@ class LatentInferenceNetwork(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor | None = None, density: bool = False, training: bool = False, **kwargs
     ):
+        if self.conditions_network is not None:
+            if conditions is None:
+                raise ValueError("Conditions must be provided when using a conditions network.")
+            conditions = self.conditions_network(
+                conditions, training=training, **filter_kwargs(kwargs, self.conditions_network.call)
+            )
+
         if not density:
-            y = self.autoencoder(x, training=training, **kwargs)
-            z = self.inference_network(y, conditions=conditions, training=training, **kwargs)
+            y = self.autoencoder(x, training=training, **filter_kwargs(kwargs, self.autoencoder.call))
+            z = self.inference_network(
+                y, conditions=conditions, training=training, **filter_kwargs(kwargs, self.inference_network.call)
+            )
             return z
 
         @lru_cache(1)
         def fn(_x):
-            return self.autoencoder(_x, inverse=False, training=training, **filter_kwargs(kwargs, self.autoencoder))
+            return self.autoencoder(
+                _x, inverse=False, training=training, **filter_kwargs(kwargs, self.autoencoder.call)
+            )
 
         # the general case is that the encoder projects down, so we use jacrev to save on compute as compared to jacfwd
         jac_fn = jacrev(fn, argnums=0, has_aux=False)
@@ -60,25 +84,41 @@ class LatentInferenceNetwork(InferenceNetwork):
         y = fn(x)
         jac = jac_fn(x)
 
-        z, log_density = self.inference_network(y, inverse=False, density=True, training=training, **kwargs)
+        z, log_density = self.inference_network(
+            y, inverse=False, density=True, training=training, **filter_kwargs(kwargs, self.inference_network.call)
+        )
 
         # modified change of variables; p(x) = p(f(x)) / sqrt(|J^T J|)
-        log_density = log_density - 0.5 * keras.ops.logdet(jac.T @ jac)
+        log_density = log_density - 0.5 * keras.ops.logdet(keras.ops.matmul(keras.ops.transpose(jac), jac))
 
         return z, log_density
 
     def _inverse(
         self, z: Tensor, conditions: Tensor | None = None, density: bool = False, training: bool = False, **kwargs
     ):
-        if not density:
-            y = self.inference_network(z, conditions=conditions, inverse=True, training=training, **kwargs)
-            x = self.autoencoder(y, training=training, inverse=True, **kwargs)
-            return x
+        if not self.built:
+            raise RuntimeError("Must call build before calling inverse.")
 
-        raise NotImplementedError(
-            f"Inverse mode density estimation is not supported; use forward-mode estimation instead. "
-            f"If you need this feature, please open an issue at {issue_url}."
+        if self.conditions_network is not None:
+            if conditions is None:
+                raise ValueError("Conditions must be provided when using a conditions network.")
+            conditions = self.conditions_network(conditions, **filter_kwargs(kwargs, self.conditions_network.call))
+
+        if density:
+            raise NotImplementedError(
+                f"Inverse mode density estimation is not supported; use forward-mode estimation instead. "
+                f"If you need this feature, please open an issue at {issue_url}."
+            )
+
+        y = self.inference_network(
+            z,
+            conditions=conditions,
+            inverse=True,
+            training=training,
+            **filter_kwargs(kwargs, self.inference_network.call),
         )
+        x = self.autoencoder(y, training=training, inverse=True, **filter_kwargs(kwargs, self.autoencoder.call))
+        return x
 
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training", **kwargs
@@ -97,6 +137,11 @@ class LatentInferenceNetwork(InferenceNetwork):
             raise TypeError(
                 f"Expected the autoencoder's cached latent vector (key 'z') to be a Tensor, got {type(y)!r} instead."
             )
+
+        if self.conditions_network is not None:
+            if conditions is None:
+                raise ValueError("Conditions must be provided when using a conditions network.")
+            conditions = self.conditions_network(conditions, **filter_kwargs(kwargs, self.conditions_network.call))
 
         # decouple the autoencoder and inference network to avoid representation drift issues
         y = keras.ops.stop_gradient(y)

@@ -30,17 +30,26 @@ class AutoEncoder(keras.Layer):
         shape = self.encoder_network.compute_output_shape(shape)
         self.encoder_projector.build(shape)
 
-        shape = (*input_shape[:-1], self.latent_dim)
+        # ensure consistency in VAE
+        shape = self.compute_output_shape(input_shape)
+
         self.decoder_network.build(shape)
         shape = self.decoder_network.compute_output_shape(shape)
 
         if self.decoder_projector is None:
             self.decoder_projector = keras.layers.Dense(units=input_shape[-1], use_bias=False)
+
         self.decoder_projector.build(shape)
 
     def compute_output_shape(self, input_shape):
-        output_shape = *input_shape[:-1], self.latent_dim
-        return output_shape
+        shape = input_shape
+        shape = self.encoder_network.compute_output_shape(shape)
+        shape = self.encoder_projector.compute_output_shape(shape)
+
+        # ensure consistency in VAE
+        shape = *shape[:-1], self.latent_dim
+
+        return shape
 
     def get_config(self):
         base_config = super().get_config()
@@ -62,7 +71,7 @@ class AutoEncoder(keras.Layer):
 
     def _forward(self, x: Tensor, training: bool = False, **kwargs):
         y = self.encoder_network(x, training=training, **filter_kwargs(kwargs, self.encoder_network.call))
-        z = self.encoder_projector(y)
+        z = self.encoder_projector(y, training=training, **filter_kwargs(kwargs, self.encoder_projector.call))
         return z
 
     def _inverse(self, z: Tensor, training: bool = False, **kwargs):
@@ -70,7 +79,7 @@ class AutoEncoder(keras.Layer):
             raise RuntimeError("Must call build before calling inverse.")
 
         y = self.decoder_network(z, training=training, **filter_kwargs(kwargs, self.decoder_network.call))
-        x = self.decoder_projector(y)
+        x = self.decoder_projector(y, training=training, **filter_kwargs(kwargs, self.decoder_projector.call))
         return x
 
     def compute_metrics(

@@ -9,6 +9,18 @@ from .autoencoder import AutoEncoder
 
 @serializable("bayesflow.experimental")
 class VariationalAutoEncoder(AutoEncoder):
+    r"""Variational autoencoder, which compresses data into a low-dimensional latent representation.
+    Applies a variational assumption; i.e., the forward pass is stochastic under the assumption that the latent vector
+
+    :math:`z = E(x) \sim \mathcal{N}(\mu(x), \sigma(x)^2)`
+
+    where :math:`\mu` and :math:`\sigma^2` are the variational parameters inferred from the input :math:`x`.
+
+    The inverse pass is deterministic:
+
+    :math:`x = D(z)`
+    """
+
     def __init__(
         self,
         latent_dim: int,

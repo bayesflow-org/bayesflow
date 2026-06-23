@@ -13,11 +13,35 @@ from ..autoencoder import AutoEncoder
 
 @serializable("bayesflow.experimental")
 class LatentInferenceNetwork(InferenceNetwork):
+    """Inference network wrapper that operates on a compressed latent representation.
+
+    This class wraps an autoencoder as a feature extractor, projecting input data into a lower-dimensional
+    latent space before passing it to the internal inference network. This approach can significantly
+    reduce computational costs, especially for high-dimensional or image data where redundancy is present.
+
+    The latent inference paradigm was originally introduced in [1] and is also known as "Stable Diffusion".
+    To closely match this architecture, configure the network as follows:
+
+        >>> from bayesflow.experimental import VariationalAutoEncoder
+        >>> from bayesflow.networks import DiffusionModel
+        >>> inference_network = LatentInferenceNetwork(VariationalAutoEncoder(...), DiffusionModel(...))
+
+    Parameters
+    ----------
+    autoencoder : AutoEncoder
+        The autoencoder serving as the feature extractor.
+    inference_network : InferenceNetwork
+        The inference network to be applied to the latent representation.
+
+    References
+    ----------
+    [1]: Rombach et al. (2021). High-Resolution Image Synthesis with Latent Diffusion Models. arXiv:2112.10752.
+    """
+
     def __init__(
         self,
         autoencoder: AutoEncoder,
         inference_network: InferenceNetwork,
-        conditions_network: keras.Layer | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -27,7 +51,6 @@ class LatentInferenceNetwork(InferenceNetwork):
 
         self.autoencoder = autoencoder
         self.inference_network = inference_network
-        self.conditions_network = conditions_network
 
     def build(self, xz_shape, conditions_shape=None):
         if self.built:
@@ -36,10 +59,6 @@ class LatentInferenceNetwork(InferenceNetwork):
         shape = xz_shape
         self.autoencoder.build(shape)
         shape = self.autoencoder.compute_output_shape(shape)
-
-        if self.conditions_network is not None:
-            self.conditions_network.build(conditions_shape)
-            conditions_shape = self.conditions_network.compute_output_shape(conditions_shape)
 
         self.inference_network.build(shape, conditions_shape)
 
@@ -50,7 +69,6 @@ class LatentInferenceNetwork(InferenceNetwork):
         config = {
             "autoencoder": self.autoencoder,
             "inference_network": self.inference_network,
-            "conditions_network": self.conditions_network,
         }
 
         return base_config | serialize(config)
@@ -58,13 +76,6 @@ class LatentInferenceNetwork(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor | None = None, density: bool = False, training: bool = False, **kwargs
     ):
-        if self.conditions_network is not None:
-            if conditions is None:
-                raise ValueError("Conditions must be provided when using a conditions network.")
-            conditions = self.conditions_network(
-                conditions, training=training, **filter_kwargs(kwargs, self.conditions_network.call)
-            )
-
         if not density:
             y = self.autoencoder(x, training=training, **filter_kwargs(kwargs, self.autoencoder.call))
             z = self.inference_network(
@@ -99,11 +110,6 @@ class LatentInferenceNetwork(InferenceNetwork):
         if not self.built:
             raise RuntimeError("Must call build before calling inverse.")
 
-        if self.conditions_network is not None:
-            if conditions is None:
-                raise ValueError("Conditions must be provided when using a conditions network.")
-            conditions = self.conditions_network(conditions, **filter_kwargs(kwargs, self.conditions_network.call))
-
         if density:
             raise NotImplementedError(
                 f"Inverse mode density estimation is not supported; use forward-mode estimation instead. "
@@ -137,11 +143,6 @@ class LatentInferenceNetwork(InferenceNetwork):
             raise TypeError(
                 f"Expected the autoencoder's cached latent vector (key 'z') to be a Tensor, got {type(y)!r} instead."
             )
-
-        if self.conditions_network is not None:
-            if conditions is None:
-                raise ValueError("Conditions must be provided when using a conditions network.")
-            conditions = self.conditions_network(conditions, **filter_kwargs(kwargs, self.conditions_network.call))
 
         # decouple the autoencoder and inference network to avoid representation drift issues
         y = keras.ops.stop_gradient(y)

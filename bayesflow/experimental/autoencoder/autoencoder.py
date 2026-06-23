@@ -7,6 +7,11 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 @serializable("bayesflow.experimental")
 class AutoEncoder(keras.Layer):
+    """A standard (non-variational) autoencoder, which compresses data into a low-dimensional latent representation.
+    This variant of autoencoder is trained only on a reconstruction loss. For a variational variant, see
+    :class:`VariationalAutoEncoder`.
+    """
+
     def __init__(
         self,
         latent_dim: int,

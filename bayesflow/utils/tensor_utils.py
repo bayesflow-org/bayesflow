@@ -37,6 +37,10 @@ def maybe_mask_tensor(data: Tensor, mask: Tensor | None = None, replacement: Ten
     return mask * data + (1 - mask) * replacement
 
 
+def non_batch_axis(x: Tensor):
+    return tuple(range(1, keras.ops.ndim(x)))
+
+
 def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor | None:
     """Concatenate multiple tensors along axis, ignoring None values."""
     tensors = [t for t in tensors if t is not None]

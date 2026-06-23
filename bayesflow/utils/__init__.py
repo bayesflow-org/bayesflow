@@ -94,6 +94,7 @@ from .tensor_utils import (
     expand_tile,
     fill_triangular_matrix,
     maybe_mask_tensor,
+    non_batch_axis,
     pad,
     positive_diag,
     random_mask,

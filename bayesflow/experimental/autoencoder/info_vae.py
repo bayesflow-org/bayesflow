@@ -10,14 +10,27 @@ from .autoencoder import AutoEncoder
 
 @serializable("bayesflow.experimental")
 class InfoVAE(AutoEncoder):
-    """Information-Maximizing Variational Autoencoder.
+    """Information-Maximizing Variational Autoencoder according to [1].
 
-    This implements the MMD version of the InfoVAE objective from Zhao et al.
-    The loss is written as
+    The loss is computed as
 
         loss = reconstruction_loss
              + w_kl  * KL[q(z | x) || p(z)]
              + w_mmd * MMD[q(z), p(z)]
+    with
+        w_kl  = 1 - alpha
+        w_mmd = alpha + lambd - 1
+
+    Useful settings are:
+
+        Vanilla VAE:      w_kl=1,    w_mmd=0    -> alpha=0,        lambd=1
+        beta-VAE:         w_kl=beta, w_mmd=0    -> alpha=1-beta,   lambd=beta
+        MMD/InfoVAE:      w_kl=0,    w_mmd=lam  -> alpha=1,        lambd=lam
+        Mixed objective:  w_kl=a,    w_mmd=b    -> alpha=1-a,      lambd=a+b
+
+    [1] Zhao, S., Song, J., & Ermon, S. (2019). InfoVAE: Balancing learning and
+    inference in variational autoencoders. In Proceedings of the AAAI Conference on
+    Artificial Intelligence (Vol. 33, No. 01, pp. 5885-5892).
 
     Parameters
     ----------
@@ -59,17 +72,19 @@ class InfoVAE(AutoEncoder):
         self.lambd = lambd
         self.mmd_kwargs = mmd_kwargs or {}
 
-        self.mmd_weight = self.alpha + self.lambd - 1.0
-        self.kl_weight = 1.0 - self.alpha
-
         self.seed_generator = keras.random.SeedGenerator()
+
+    @property
+    def kl_weight(self) -> float:
+        return 1.0 - self.alpha
+
+    @property
+    def mmd_weight(self) -> float:
+        return self.alpha + self.lambd - 1.0
 
     def get_config(self):
         base_config = super().get_config()
-        config = {
-            "alpha": self.alpha,
-            "lambd": self.lambd,
-        }
+        config = {"alpha": self.alpha, "lambd": self.lambd, "mmd_kwargs": self.mmd_kwargs}
         return base_config | serialize(config)
 
     def _encode(
@@ -117,6 +132,18 @@ class InfoVAE(AutoEncoder):
             axis=non_batch_axis(mean),
         )
 
+    def _marginal_mmd(self, sample: Tensor, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
+        """MMD[q(z), p(z)] using samples from the aggregate posterior and prior."""
+
+        seed = resolve_seed(seed)
+        targets = keras.random.normal(
+            shape=keras.ops.shape(sample),
+            seed=seed,
+            dtype=sample.dtype,
+        )
+
+        return maximum_mean_discrepancy(sample, targets, **self.mmd_kwargs)
+
     def _reconstruction_loss(self, x: Tensor, reconstruction: Tensor) -> Tensor:
         """Per-example mean squared reconstruction error."""
 
@@ -157,9 +184,7 @@ class InfoVAE(AutoEncoder):
 
         if self.mmd_weight != 0.0:
             mmd_targets = keras.random.normal(shape=keras.ops.shape(sample), seed=seed, dtype=sample.dtype)
-
             marginal_mmd = maximum_mean_discrepancy(sample, mmd_targets, **self.mmd_kwargs)
-
             loss = loss + self.mmd_weight * marginal_mmd
         else:
             marginal_mmd = keras.ops.zeros((), dtype=sample.dtype)

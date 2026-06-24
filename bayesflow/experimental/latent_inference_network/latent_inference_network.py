@@ -1,13 +1,12 @@
-import keras
-
 from functools import lru_cache
+
+import keras
 
 from bayesflow._backend import jacrev
 from bayesflow.networks.inference import InferenceNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, issue_url
 from bayesflow.utils.serialization import serializable, serialize
-
 from ..autoencoder import AutoEncoder
 
 
@@ -25,6 +24,8 @@ class LatentInferenceNetwork(InferenceNetwork):
         >>> from bayesflow.experimental import VariationalAutoEncoder
         >>> from bayesflow.networks import DiffusionModel
         >>> inference_network = LatentInferenceNetwork(VariationalAutoEncoder(...), DiffusionModel(...))
+
+    For best results, we recommend using :class:`InfoVAE` instead.
 
     Parameters
     ----------

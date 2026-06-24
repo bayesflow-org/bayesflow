@@ -1,10 +1,9 @@
 import keras
 
-from bayesflow.types import Tensor
 from bayesflow.metrics.functional import maximum_mean_discrepancy
+from bayesflow.types import Tensor
 from bayesflow.utils import resolve_seed, non_batch_axis, weighted_mean
 from bayesflow.utils.serialization import serializable, serialize
-
 from .autoencoder import AutoEncoder
 
 
@@ -19,14 +18,14 @@ class InfoVAE(AutoEncoder):
              + w_mmd * MMD[q(z), p(z)]
     with
         w_kl  = 1 - alpha
-        w_mmd = alpha + lambd - 1
+        w_mmd = alpha + beta - 1
 
     Useful settings are:
 
-        Vanilla VAE:      w_kl=1,    w_mmd=0    -> alpha=0,        lambd=1
-        beta-VAE:         w_kl=beta, w_mmd=0    -> alpha=1-beta,   lambd=beta
-        MMD/InfoVAE:      w_kl=0,    w_mmd=lam  -> alpha=1,        lambd=lam
-        Mixed objective:  w_kl=a,    w_mmd=b    -> alpha=1-a,      lambd=a+b
+        Vanilla VAE:      w_kl=1,    w_mmd=0    -> alpha=0,        beta=1
+        beta-VAE:         w_kl=beta, w_mmd=0    -> alpha=1-beta,   beta=beta
+        MMD/InfoVAE:      w_kl=0,    w_mmd=lam  -> alpha=1,        beta=lam
+        Mixed objective:  w_kl=a,    w_mmd=b    -> alpha=1-a,      beta=a+b
 
     [1] Zhao, S., Song, J., & Ermon, S. (2019). InfoVAE: Balancing learning and
     inference in variational autoencoders. In Proceedings of the AAAI Conference on
@@ -43,9 +42,9 @@ class InfoVAE(AutoEncoder):
     alpha
         InfoVAE information parameter. Controls the weight of the conditional
         encoder KL through ``1 - alpha``.
-    lambd
+    beta
         InfoVAE aggregate-posterior matching parameter. Together with alpha,
-        controls the MMD weight through ``alpha + lambda_ - 1``.
+        controls the MMD weight through ``alpha + beta - 1``. In [1], this parameter is named lambda.
     mmd_kwargs
         Optional keyword arguments forwarded to ``maximum_mean_discrepancy``.
     """
@@ -56,7 +55,7 @@ class InfoVAE(AutoEncoder):
         encoder_network: keras.Layer,
         decoder_network: keras.Layer,
         alpha: float = 0.0,
-        lambd: float = 1.0,
+        beta: float = 1.0,
         mmd_kwargs: dict | None = None,
         **kwargs,
     ):
@@ -69,7 +68,7 @@ class InfoVAE(AutoEncoder):
 
         self.encoder_projector.units = 2 * latent_dim
         self.alpha = alpha
-        self.lambd = lambd
+        self.beta = beta
         self.mmd_kwargs = mmd_kwargs or {}
 
         self.seed_generator = keras.random.SeedGenerator()
@@ -80,11 +79,11 @@ class InfoVAE(AutoEncoder):
 
     @property
     def mmd_weight(self) -> float:
-        return self.alpha + self.lambd - 1.0
+        return self.alpha + self.beta - 1.0
 
     def get_config(self):
         base_config = super().get_config()
-        config = {"alpha": self.alpha, "lambd": self.lambd, "mmd_kwargs": self.mmd_kwargs}
+        config = {"alpha": self.alpha, "lambd": self.beta, "mmd_kwargs": self.mmd_kwargs}
         return base_config | serialize(config)
 
     def _encode(

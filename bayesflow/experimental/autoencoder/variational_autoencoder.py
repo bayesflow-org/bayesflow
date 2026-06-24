@@ -22,10 +22,10 @@ class VariationalAutoEncoder(AutoEncoder):
 
     Useful settings are:
 
-        Vanilla VAE (default):  w_kl=1,    w_mmd=0    -> alpha=0,        beta=1
-        beta-VAE:               w_kl=beta, w_mmd=0    -> alpha=1-beta,   beta=beta
-        MMD/InfoVAE:            w_kl=0,    w_mmd=lam  -> alpha=1,        beta=lam
-        Mixed objective:        w_kl=a,    w_mmd=b    -> alpha=1-a,      beta=a+b
+        Vanilla VAE (default):  w_kl=1,    w_mmd=0  -> alpha=0,        beta=1
+        beta-VAE:               w_kl=a,    w_mmd=0  -> alpha=1-a,      beta=a
+        MMD/InfoVAE:            w_kl=0,    w_mmd=b  -> alpha=1,        beta=b
+        Mixed objective:        w_kl=a,    w_mmd=b  -> alpha=1-a,      beta=a+b
 
     [1] Zhao, S., Song, J., & Ermon, S. (2019). InfoVAE: Balancing learning and
     inference in variational autoencoders. In Proceedings of the AAAI Conference on
@@ -43,8 +43,9 @@ class VariationalAutoEncoder(AutoEncoder):
         InfoVAE information parameter. Controls the weight of the conditional
         encoder KL through ``1 - alpha``.
     beta
-        InfoVAE aggregate-posterior matching parameter. Together with alpha,
-        controls the MMD weight through ``alpha + beta - 1``. In [1], this parameter is named lambda.
+        InfoVAE marginal distribution matching parameter. Together with alpha,
+        controls the MMD weight through ``alpha + beta - 1``. In [1], this parameter
+        is named lambda.
     mmd_kwargs
         Optional keyword arguments forwarded to ``maximum_mean_discrepancy``.
     """
@@ -134,7 +135,6 @@ class VariationalAutoEncoder(AutoEncoder):
     def _marginal_mmd(self, sample: Tensor, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
         """MMD[q(z), p(z)] using samples from the aggregate posterior and prior."""
 
-        seed = resolve_seed(seed)
         targets = keras.random.normal(
             shape=keras.ops.shape(sample),
             seed=seed,
@@ -182,10 +182,9 @@ class VariationalAutoEncoder(AutoEncoder):
         loss = recon_loss + self.kl_weight * kl_loss
 
         if self.mmd_weight != 0.0:
-            mmd_targets = keras.random.normal(shape=keras.ops.shape(sample), seed=seed, dtype=sample.dtype)
-            marginal_mmd = maximum_mean_discrepancy(sample, mmd_targets, **self.mmd_kwargs)
-            loss = loss + self.mmd_weight * marginal_mmd
+            mmd_loss = self._marginal_mmd(sample, seed=seed)
+            loss = loss + self.mmd_weight * mmd_loss
         else:
-            marginal_mmd = keras.ops.zeros((), dtype=sample.dtype)
+            mmd_loss = keras.ops.zeros((), dtype=sample.dtype)
 
-        return {"loss": loss, "recon_loss": recon_loss, "kl_loss": kl_loss, "mmd_loss": marginal_mmd, "z": sample}
+        return {"loss": loss, "recon_loss": recon_loss, "kl_loss": kl_loss, "mmd_loss": mmd_loss, "z": sample}

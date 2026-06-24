@@ -25,8 +25,6 @@ class LatentInferenceNetwork(InferenceNetwork):
         >>> from bayesflow.networks import DiffusionModel
         >>> inference_network = LatentInferenceNetwork(VariationalAutoEncoder(...), DiffusionModel(...))
 
-    For best results, we recommend using :class:`InfoVAE` instead.
-
     Parameters
     ----------
     autoencoder : AutoEncoder

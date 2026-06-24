@@ -14,7 +14,7 @@ from bayesflow.utils.serialization import deserialize, serialize, serializable
 class SelfConsistencyLoss:
     """Self-consistency loss for joint training of prior, likelihood, and posterior.
 
-    Implements the self-consistency loss from Mishra et al. (2026). The key identity is
+    Implements the self-consistency loss from Schmitt et al. (2023) and Mishra et al. (2026). The key identity is
     that for any parameter value theta, Bayes' theorem implies:
 
         log p(y) = log p(theta) + log p(y | theta) - log p(theta | y)
@@ -27,6 +27,12 @@ class SelfConsistencyLoss:
     approximators are therefore trained only through `.log_prob` evaluation rather than
     sampling. Only approximators listed in ``gradient`` receive gradients. By default only the
     posterior is trained through the SC loss.
+
+    Schmitt, M., Ivanova, D. R., Habermann, D., Köthe, U., Bürkner, P. C., & Radev, S. T. (2023).
+    Leveraging self-consistency for data-efficient amortized Bayesian inference. arXiv preprint arXiv:2310.04395.
+
+    Mishra, A., Habermann, D., Schmitt, M., Radev, S. T., & Bürkner, P. C. (2025).
+    Robust Amortized Bayesian Inference with Self-Consistency Losses on Unlabeled Data. arXiv preprint arXiv:2501.13483.
 
     Parameters
     ----------

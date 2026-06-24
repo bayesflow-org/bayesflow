@@ -24,6 +24,9 @@ class ElementwiseTransform:
         raise NotImplementedError
 
     def forward(self, data: ArrayOrTensor, keras: bool = False, **kwargs) -> ArrayOrTensor:
+        # We do a general "dispatch", individual subclasses of ElementwiseTransform
+        # implement _forward, _forward_keras, _inverse, _inverse_keras, _log_det_jac, and _log_det_jac_keras.
+        # This avoids having to dispatch on the keras bool inside of the subclass implementations.
         if keras:
             return self._forward_keras(data, **kwargs)
         else:

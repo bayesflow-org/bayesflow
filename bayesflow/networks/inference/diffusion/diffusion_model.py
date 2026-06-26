@@ -266,7 +266,6 @@ class DiffusionModel(InferenceNetwork):
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)
         self.subnet.build((xz_shape, time_shape, conditions_shape))
-        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)

@@ -27,7 +27,7 @@ TIME_MLP_DEFAULTS = MappingProxyType(
 
 TIME_TRANSFORMER_DEFAULTS = MappingProxyType(
     {
-        "widths": (256, 256, 256),
+        "widths": (128, 128, 128),
         "time_embedding_dim": 32,
         "fourier_scale": 30.0,
         "num_heads": 4,

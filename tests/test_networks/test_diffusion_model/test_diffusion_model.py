@@ -163,6 +163,44 @@ def test_compute_metrics_with_masking(diffusion_model_with_masking, random_sampl
     assert np.isfinite(loss), f"Loss is not finite: {loss}"
 
 
+def test_mask_aware_subnet_receives_target_inference_mask(random_samples, random_conditions):
+    from bayesflow.networks import DiffusionModel
+
+    class MaskAwareSubnet(keras.Layer):
+        def __init__(self):
+            super().__init__()
+            self.last_target_inference_mask = None
+
+        def call(self, inputs, training=None, target_inference_mask=None):
+            self.last_target_inference_mask = target_inference_mask
+            return inputs[0]
+
+        def compute_output_shape(self, input_shape):
+            return input_shape[0]
+
+    subnet = MaskAwareSubnet()
+    model = DiffusionModel(subnet=subnet, drop_target_prob=0.5)
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    model.build(xz_shape, conditions_shape=cond_shape)
+
+    model.compute_metrics(random_samples, conditions=random_conditions)
+    assert subnet.last_target_inference_mask is not None
+    assert keras.ops.shape(subnet.last_target_inference_mask) == keras.ops.shape(random_samples)
+
+    target_inference_mask = keras.ops.ones_like(random_samples)
+    model.velocity(
+        random_samples,
+        time=0.5,
+        stochastic_solver=False,
+        conditions=random_conditions,
+        target_inference_mask=target_inference_mask,
+    )
+    assert np.allclose(
+        keras.ops.convert_to_numpy(subnet.last_target_inference_mask), keras.ops.convert_to_numpy(target_inference_mask)
+    )
+
+
 # ---- Guidance (slow, trains a model) ----------------------------------------
 
 
@@ -202,3 +240,64 @@ def test_diffusion_guidance(simple_diffusion_model):
         conditions=test_conditions,
     )["parameters"]
     assert samples_guided_func.shape == samples.shape
+
+
+# ---- Joint condition tokenization -----------------------------------------
+
+
+def test_time_transformer_conditions_as_tokens_training_step():
+    """Conditions are tokenized per-dimension; the diffusion output still matches the
+    target shape and a training step produces a finite loss."""
+    from bayesflow.networks import DiffusionModel
+
+    dm = DiffusionModel(subnet="time_transformer", subnet_kwargs=dict(widths=(8, 8)))
+    x = keras.random.normal((4, 5))
+    cond = keras.random.normal((4, 3))
+    dm.build(keras.ops.shape(x), keras.ops.shape(cond))
+
+    metrics = dm.compute_metrics(x, conditions=cond, stage="training")
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics["loss"]))
+
+    restored = deserialize(serialize(dm))
+    metrics_r = restored.compute_metrics(x, conditions=cond, stage="training")
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics_r["loss"]))
+
+
+def test_time_transformer_condition_mask_forwarded():
+    """A per-condition condition_mask is accepted and the output keeps the target shape."""
+    from bayesflow.networks import DiffusionModel
+
+    dm = DiffusionModel(subnet="time_transformer", subnet_kwargs=dict(widths=(8, 8)))
+    x = keras.random.normal((4, 5))
+    cond = keras.random.normal((4, 3))
+    dm.build(keras.ops.shape(x), keras.ops.shape(cond))
+
+    condition_mask = keras.ops.convert_to_tensor(
+        np.array([[1, 1, 0]] * 4, dtype="float32")  # third condition missing
+    )
+    metrics = dm.compute_metrics(x, conditions=cond, stage="training", condition_mask=condition_mask)
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics["loss"]))
+
+
+def test_drop_missing_prob_training_and_serialization():
+    """Missingness training runs and the flag round-trips through serialization."""
+    from bayesflow.networks import DiffusionModel
+
+    dm = DiffusionModel(
+        subnet="time_transformer",
+        subnet_kwargs=dict(widths=(8, 8)),
+        drop_target_prob=0.5,
+        drop_missing_prob=0.3,
+    )
+    x = keras.random.normal((4, 5))
+    cond = keras.random.normal((4, 3))
+    dm.build(keras.ops.shape(x), keras.ops.shape(cond))
+
+    metrics = dm.compute_metrics(x, conditions=cond, stage="training")
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics["loss"]))
+
+    restored = deserialize(serialize(dm))
+    assert restored.drop_missing_prob == 0.3
+    # Missingness must not fire outside training.
+    metrics_val = dm.compute_metrics(x, conditions=cond, stage="validation")
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics_val["loss"]))

@@ -18,6 +18,10 @@ def _(name: str, *args, **kwargs):
             from bayesflow.networks import TimeMLP
 
             network = TimeMLP(*args, **kwargs)
+        case "time_transformer":
+            from bayesflow.networks import TimeTransformer
+
+            network = TimeTransformer(*args, **kwargs)
         case other:
             raise ValueError(f"Unsupported network name: '{other}'.")
 

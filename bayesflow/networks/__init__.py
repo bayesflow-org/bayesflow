@@ -32,7 +32,7 @@ from .summary import SetTransformer, TimeSeriesTransformer, FusionTransformer
 
 # Subnets (backbones for inference / summary networks)
 from . import subnets
-from .subnets import MLP, TimeMLP
+from .subnets import MLP, TimeMLP, TimeTransformer
 from .subnets import UViT, UNet, ResidualUViT
 
 from . import defaults

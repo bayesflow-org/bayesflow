@@ -7,6 +7,7 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
     expand_right_as,
     find_network,
+    filter_kwargs,
     integrate,
     integrate_stochastic,
     jacobian_trace,
@@ -14,15 +15,19 @@ from bayesflow.utils import (
     logging,
     maybe_mask_tensor,
     optimal_transport,
-    random_mask,
-    randomly_mask_along_axis,
     resolve_seed,
+    sample_input_masks,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serialize, serializable
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, FLOW_MATCHING_INTEGRATE_DEFAULTS, OPTIMAL_TRANSPORT_DEFAULTS
+from ...defaults import (
+    TIME_MLP_DEFAULTS,
+    TIME_TRANSFORMER_DEFAULTS,
+    FLOW_MATCHING_INTEGRATE_DEFAULTS,
+    OPTIMAL_TRANSPORT_DEFAULTS,
+)
 
 
 @serializable("bayesflow.networks")
@@ -64,12 +69,14 @@ class FlowMatching(InferenceNetwork):
         Changes the distribution of sampled times during training.  Time is sampled
         from a power-law distribution ``p(t) ~ t^(1/(1+alpha))``, where
         ``alpha`` is the provided value.  Default is 0 (uniform sampling).
-    drop_cond_prob : float, optional
-        Probability of dropping conditions during training (i.e., classifier-free guidance).
-        Default is 0.0.
-    drop_target_prob : float, optional
+        drop_target_prob : float, optional
         Probability of dropping target values during training (i.e., learning arbitrary
-        distributions). Default is 0.0.
+        conditionals). Default is 0.0.
+    drop_missing_prob : float, optional
+        Probability of marking each condition and target as
+        missing during training, so the network learns to handle missing inputs.
+        Only takes effect when the subnet accepts ``condition_mask`` / ``target_inference_mask``
+        (e.g. ``time_transformer``). Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -93,6 +100,13 @@ class FlowMatching(InferenceNetwork):
         Inference.
     """
 
+    _SUBNET_MASK_KEYS = {
+        "attention_mask",
+        "target_inference_mask",
+        "target_condition_mask",
+        "condition_mask",
+    }
+
     def __init__(
         self,
         subnet: str | type | keras.Layer = "time_mlp",
@@ -103,8 +117,8 @@ class FlowMatching(InferenceNetwork):
         optimal_transport_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
         time_power_law_alpha: float = 0.0,
-        drop_cond_prob: float = 0.0,
         drop_target_prob: float = 0.0,
+        drop_missing_prob: float = 0.0,
         **kwargs,
     ):
         super().__init__(base_distribution, **kwargs)
@@ -124,12 +138,14 @@ class FlowMatching(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+        if subnet == "time_transformer":
+            subnet_kwargs = TIME_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
+        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
-        self.drop_cond_prob = drop_cond_prob
-        self.unconditional_mode = False
         self.drop_target_prob = drop_target_prob
+        self.drop_missing_prob = drop_missing_prob
 
     def compute_metrics(
         self,
@@ -166,15 +182,25 @@ class FlowMatching(InferenceNetwork):
             x = t * x1 + (1 - t) * x0
             target_velocity = x1 - x0
 
-        if self.drop_cond_prob > 0 and conditions is not None:
-            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
-
-        mask_x = random_mask(keras.ops.shape(x), self.drop_target_prob, self.seed_generator)
+        # Generate target / condition / missingness masks
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        mask_x, loss_mask, subnet_kwargs = sample_input_masks(
+            self.subnet,
+            x,
+            conditions,
+            subnet_kwargs,
+            stage == "training",
+            self.drop_target_prob,
+            self.drop_missing_prob,
+            self.seed_generator,
+        )
         x = maybe_mask_tensor(x, mask=mask_x, replacement=x1)
 
-        predicted_velocity = self.velocity(x, time=t, conditions=conditions, training=stage == "training", **kwargs)
+        predicted_velocity = self.velocity(
+            x, time=t, conditions=conditions, training=stage == "training", **subnet_kwargs
+        )
 
-        loss = self.loss_fn(mask_x * target_velocity, mask_x * predicted_velocity)
+        loss = self.loss_fn(loss_mask * target_velocity, loss_mask * predicted_velocity)
         loss = weighted_mean(loss, sample_weight)
 
         return {"loss": loss}
@@ -212,8 +238,8 @@ class FlowMatching(InferenceNetwork):
             "integrate_kwargs": self.integrate_kwargs,
             "optimal_transport_kwargs": self.optimal_transport_kwargs,
             "time_power_law_alpha": self.time_power_law_alpha,
-            "drop_cond_prob": self.drop_cond_prob,
             "drop_target_prob": self.drop_target_prob,
+            "drop_missing_prob": self.drop_missing_prob,
             # we do not need to store subnet_kwargs
         }
 
@@ -222,8 +248,7 @@ class FlowMatching(InferenceNetwork):
     def velocity(
         self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False, **kwargs
     ) -> Tensor:
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
         time = expand_right_as(time, xz)
@@ -233,8 +258,8 @@ class FlowMatching(InferenceNetwork):
 
         # Zero out velocity where target is fixed (during inference only)
         if not training:
-            target_mask = kwargs.get("target_mask", None)
-            out = maybe_mask_tensor(out, mask=target_mask)
+            target_inference_mask = kwargs.get("target_inference_mask", None)
+            out = maybe_mask_tensor(out, mask=target_inference_mask)
         return out
 
     def _velocity_trace(
@@ -266,16 +291,12 @@ class FlowMatching(InferenceNetwork):
             integrate_kwargs["method"] = "tsit5"
 
         # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
+        target_inference_mask = kwargs.get("target_inference_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+        if target_inference_mask is not None:
+            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
+            x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
 
         if density:
 
@@ -326,16 +347,12 @@ class FlowMatching(InferenceNetwork):
             integrate_kwargs["method"] = "tsit5"
 
         # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
+        target_inference_mask = kwargs.get("target_inference_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+        if target_inference_mask is not None:
+            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(z))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = maybe_mask_tensor(z, mask=target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
+            z = maybe_mask_tensor(z, mask=target_inference_mask, replacement=targets_fixed)
 
         if density:
 

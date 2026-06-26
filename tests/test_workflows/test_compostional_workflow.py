@@ -95,13 +95,13 @@ def test_compositional_masking():
     )["parameters"]
 
     test_conditions_adapted = workflow.adapter(test_conditions)
-    target_mask = keras.ops.concatenate(
+    target_inference_mask = keras.ops.concatenate(
         (
             keras.ops.ones(1),  # param 1 is inferred
             keras.ops.zeros(1),  # param 2 is fixed
         )
     )
-    target_mask = np.broadcast_to(target_mask, (5, 2))
+    target_inference_mask = np.broadcast_to(target_inference_mask, (5, 2))
     targets_fixed = test_conditions_adapted["inference_variables"]
     if "inference_variables" in workflow.approximator.standardize_layers:
         targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
@@ -111,7 +111,7 @@ def test_compositional_masking():
         num_samples=num_samples,
         compute_prior_score=prior_score_fn,
         targets_fixed=targets_fixed,
-        target_mask=target_mask,
+        target_inference_mask=target_inference_mask,
     )["parameters"]
     assert samples.shape == fixed_samples.shape
     assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()

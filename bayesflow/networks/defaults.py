@@ -25,6 +25,20 @@ TIME_MLP_DEFAULTS = MappingProxyType(
     }
 )
 
+TIME_TRANSFORMER_DEFAULTS = MappingProxyType(
+    {
+        "widths": (256, 256, 256),
+        "time_embedding_dim": 32,
+        "fourier_scale": 30.0,
+        "num_heads": 4,
+        "dropout": 0.05,
+        "expansion_factor": 4.0,
+        "glu_variant": "swiglu",
+        "use_bias": False,
+        "kernel_initializer": "glorot_uniform",
+    }
+)
+
 WEIGHT_MLP_DEFAULTS = MappingProxyType(
     {
         "widths": (256,),

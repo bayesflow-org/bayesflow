@@ -3,11 +3,12 @@ import pytest
 from bayesflow.networks import MLP
 
 
-def _make_diffusion_model(noise_schedule, prediction_type):
+def _make_diffusion_model(noise_schedule, prediction_type, subnet):
     """Factory for DiffusionModel instances, avoiding 6 near-identical fixtures."""
     from bayesflow.networks import DiffusionModel
 
     return DiffusionModel(
+        subnet=subnet,
         subnet_kwargs=dict(widths=[8, 8]),
         noise_schedule=noise_schedule,
         prediction_type=prediction_type,
@@ -16,22 +17,27 @@ def _make_diffusion_model(noise_schedule, prediction_type):
 
 @pytest.fixture()
 def diffusion_model_edm_F():
-    return _make_diffusion_model("edm", "F")
+    return _make_diffusion_model("edm", "F", "time_mlp")
 
 
 @pytest.fixture()
 def diffusion_model_cosine_velocity():
-    return _make_diffusion_model("cosine", "velocity")
+    return _make_diffusion_model("cosine", "velocity", "time_mlp")
 
 
 @pytest.fixture()
 def diffusion_model_cosine_noise():
-    return _make_diffusion_model("cosine", "noise")
+    return _make_diffusion_model("cosine", "noise", "time_mlp")
 
 
 @pytest.fixture()
 def diffusion_model_edm_potential():
-    return _make_diffusion_model("edm", "potential")
+    return _make_diffusion_model("edm", "potential", "time_mlp")
+
+
+@pytest.fixture()
+def diffusion_model_transformer():
+    return _make_diffusion_model("edm", "F", "time_transformer")
 
 
 @pytest.fixture()
@@ -39,6 +45,16 @@ def flow_matching():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
+        subnet_kwargs=dict(widths=[8, 8]),
+    )
+
+
+@pytest.fixture()
+def flow_matching_transformer():
+    from bayesflow.networks import FlowMatching
+
+    return FlowMatching(
+        subnet="time_transformer",
         subnet_kwargs=dict(widths=[8, 8]),
     )
 
@@ -133,6 +149,7 @@ def typical_scoring_rule_network_subnet():
         "consistency_model",
         "stable_consistency_model",
         pytest.param("diffusion_model_edm_F"),
+        pytest.param("diffusion_model_transformer"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_cosine_noise", marks=pytest.mark.slow),
         pytest.param("diffusion_model_edm_potential", marks=pytest.mark.slow),
@@ -145,19 +162,6 @@ def inference_network(request):
 
 @pytest.fixture(
     params=[
-        "typical_scoring_rule_network_subnet",
-        "coupling_flow_subnet",
-        "flow_matching_subnet",
-        "free_form_flow_subnet",
-    ],
-    scope="function",
-)
-def inference_network_subnet(request):
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(
-    params=[
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
@@ -165,6 +169,8 @@ def inference_network_subnet(request):
         "consistency_model",
         "stable_consistency_model",
         pytest.param("diffusion_model_edm_F"),
+        pytest.param("diffusion_model_transformer"),
+        pytest.param("flow_matching_transformer"),
         pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
         pytest.param("diffusion_model_edm_potential", marks=pytest.mark.slow),
     ],
@@ -180,6 +186,10 @@ def generative_inference_network(request):
         "consistency_model",
         "stable_consistency_model",
         "diffusion_model",
+        "flow_matching_transformer",
+        "consistency_model_transformer",
+        "stable_consistency_model_transformer",
+        "diffusion_model_transformer",
     ],
     scope="function",
 )
@@ -200,6 +210,30 @@ def diffusion_type_inference_network(request):
         from bayesflow.networks import DiffusionModel
 
         network = DiffusionModel
+    elif request.param == "flow_matching_transformer":
+        import functools
+
+        from bayesflow.networks import FlowMatching
+
+        network = functools.partial(FlowMatching, subnet="time_transformer")
+    elif request.param == "consistency_model_transformer":
+        import functools
+
+        from bayesflow.networks import ConsistencyModel
+
+        network = functools.partial(ConsistencyModel, subnet="time_transformer")
+    elif request.param == "stable_consistency_model_transformer":
+        import functools
+
+        from bayesflow.networks import StableConsistencyModel
+
+        network = functools.partial(StableConsistencyModel, subnet="time_transformer")
+    elif request.param == "diffusion_model_transformer":
+        import functools
+
+        from bayesflow.networks import DiffusionModel
+
+        network = functools.partial(DiffusionModel, subnet="time_transformer")
     else:
         raise ValueError(f"Unknown request param: {request.param}")
     return network

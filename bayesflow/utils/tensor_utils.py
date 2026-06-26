@@ -5,6 +5,7 @@ import keras
 import numpy as np
 
 from bayesflow.types import Tensor, Shape
+from .keras_utils import call_accepts_kwarg
 
 T = TypeVar("T")
 
@@ -442,7 +443,9 @@ def positive_diag(x: Tensor, method="default") -> Tensor:
     return x
 
 
-def random_mask(shape: Shape, drop_prob: float, seed_generator: keras.random.SeedGenerator = None) -> Tensor | float:
+def random_mask(
+    shape: Shape, drop_prob: float, keep_one: bool = False, seed_generator: keras.random.SeedGenerator = None
+) -> Tensor | float:
     """Generate an element-wise random mask.
 
     Each element is independently drawn as 1 (keep) with probability
@@ -454,6 +457,8 @@ def random_mask(shape: Shape, drop_prob: float, seed_generator: keras.random.See
         Shape of the mask to generate.
     drop_prob : float
         Probability of dropping each element. Must be in ``[0, 1]``.
+    keep_one : bool
+        If True, ensures that at least one element is kept along the last axis.
     seed_generator : keras.random.SeedGenerator, optional
         Seed generator used for randomness.
 
@@ -467,38 +472,96 @@ def random_mask(shape: Shape, drop_prob: float, seed_generator: keras.random.See
 
     dtype = keras.backend.floatx()
     random_vals = keras.random.uniform(shape=shape, dtype=dtype, seed=seed_generator)
-    return keras.ops.cast(random_vals > drop_prob, dtype=dtype)
+    mask = keras.ops.cast(random_vals > drop_prob, dtype=dtype)
+    if keep_one:
+        # Force the largest draw in each last-axis row to be kept, so no row is ever fully dropped.
+        mask_keep_one = keras.ops.cast(random_vals >= keras.ops.max(random_vals, axis=-1, keepdims=True), dtype=dtype)
+        mask = keras.ops.maximum(mask, mask_keep_one)
+    return mask
 
 
-def randomly_mask_along_axis(
-    x: Tensor, drop_prob: float, axis: int = 0, seed_generator: keras.random.SeedGenerator = None
-) -> Tensor:
-    """Randomly zero out entire slices of a tensor along an axis.
+def sample_input_masks(
+    subnet: keras.Layer,
+    x: Tensor,
+    conditions: Tensor | None,
+    subnet_kwargs: dict,
+    training: bool,
+    drop_target_prob: float,
+    drop_missing_prob: float,
+    seed_generator: keras.random.SeedGenerator = None,
+) -> tuple[Tensor | float, Tensor | float, dict]:
+    """Generate the target and condition masks and populate ``subnet_kwargs``.
 
-    Each slice along *axis* is independently zeroed with probability
-    ``drop_prob``.  With ``axis=0`` (default) this drops entire batch
-    samples, which is the standard approach for classifier-free guidance.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    drop_prob : float
-        Probability of dropping each slice. Must be in ``[0, 1]``.
-    axis : int, optional
-        Axis along which to mask. Default is ``0`` (batch axis).
-    seed_generator : keras.random.SeedGenerator, optional
-        Seed generator used for randomness.
+    The diffusion type inference networks (diffusion, flow matching, consistency) share
+    the same input-masking scheme: ``drop_target_prob`` randomly keeps some targets
+    clean (so the network can condition on them), and ``drop_missing_prob`` randomly
+    marks clean targets and conditions as missing so the network learns to handle missing
+    fields. The masks are forwarded to subnets that accept them (e.g. ``time_transformer``).
 
     Returns
     -------
-    Tensor
-        Tensor with the same shape as *x*, with some slices zeroed out.
+    mask_x : Tensor or float
+        The per-target inference mask (``1`` = noised/inferred, ``0`` = clean).
+    loss_mask : Tensor or float
+        The mask the caller applies to the loss.
+    subnet_kwargs : dict
+        The keyword arguments, with mask entries added for subnets that accept them.
     """
-    if drop_prob <= 0:
-        return x
+    mask_x = random_mask(keras.ops.shape(x), drop_target_prob, keep_one=True, seed_generator=seed_generator)
+    if (
+        not isinstance(mask_x, float)
+        and "target_inference_mask" not in subnet_kwargs
+        and call_accepts_kwarg(subnet.call, "target_inference_mask")
+    ):
+        subnet_kwargs["target_inference_mask"] = mask_x
 
-    rank = keras.ops.ndim(x)
-    mask_shape = tuple(keras.ops.shape(x)[i] if i == axis else 1 for i in range(rank))
-    mask = random_mask(mask_shape, drop_prob, seed_generator)
-    return mask * x
+    loss_mask = mask_x
+    if training and drop_missing_prob > 0:
+        if "target_condition_mask" not in subnet_kwargs and call_accepts_kwarg(subnet.call, "target_condition_mask"):
+            # Only clean targets (mask_x == 0) may be marked missing -> loss_mask stays equal to mask_x
+            raw_missing = random_mask(keras.ops.shape(x), drop_missing_prob, seed_generator=seed_generator)
+            target_condition_mask = keras.ops.maximum(mask_x, raw_missing)
+            subnet_kwargs["target_condition_mask"] = target_condition_mask
+
+        if (
+            conditions is not None
+            and "condition_mask" not in subnet_kwargs
+            and call_accepts_kwarg(subnet.call, "condition_mask")
+        ):
+            subnet_kwargs["condition_mask"] = random_mask(
+                keras.ops.shape(conditions), drop_missing_prob, seed_generator=seed_generator
+            )
+    return mask_x, loss_mask, subnet_kwargs
+
+
+def feature_mask(mask: Tensor | None, x: Tensor) -> Tensor | None:
+    """Convert a feature mask to shape ``(batch, features, 1)``.
+
+    Parameters
+    ----------
+    mask : Tensor or None
+        A binary feature mask. Supports unbatched masks of shape ``(features,)``,
+        batched masks of shape ``(batch, features)``, and masks with a trailing
+        singleton or feature axis.
+    x : Tensor
+        Reference tensor whose dtype and rank determine the returned mask shape.
+
+    Returns
+    -------
+    Tensor or None
+        The mask cast to ``x.dtype`` and expanded to ``(batch, features, 1)``,
+        or ``None`` if no mask is passed.
+    """
+    if mask is None:
+        return None
+
+    mask = keras.ops.cast(mask, x.dtype)
+    if len(mask.shape) == len(x.shape) and mask.shape[-1] == 1:
+        mask = keras.ops.squeeze(mask, axis=-1)
+    elif len(mask.shape) == len(x.shape) and len(mask.shape) > 2:
+        mask = keras.ops.max(mask, axis=-1)
+
+    if len(mask.shape) == 1:
+        mask = keras.ops.expand_dims(mask, axis=0)
+
+    return keras.ops.expand_dims(mask, axis=-1)

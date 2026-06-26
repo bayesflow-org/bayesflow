@@ -8,19 +8,19 @@ from bayesflow.utils import (
     expand_right_as,
     expand_right_to,
     find_network,
+    filter_kwargs,
     jvp,
     layer_kwargs,
     logging,
     maybe_mask_tensor,
-    random_mask,
-    randomly_mask_along_axis,
     resolve_seed,
+    sample_input_masks,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serializable, serialize
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, WEIGHT_MLP_DEFAULTS
+from ...defaults import TIME_MLP_DEFAULTS, TIME_TRANSFORMER_DEFAULTS, WEIGHT_MLP_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -48,9 +48,6 @@ class StableConsistencyModel(InferenceNetwork):
     weight_mlp_kwargs : dict[str, any], optional
         Keyword arguments for an auxiliary MLP used to generate weights within the
         consistency model (e.g., depth, hidden sizes, non-linearity choices).
-    drop_cond_prob : float, optional
-        Probability of dropping conditions during training (i.e., classifier-free guidance).
-        Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``
         (e.g., ``name``, ``dtype``, or ``trainable``).
@@ -64,6 +61,12 @@ class StableConsistencyModel(InferenceNetwork):
     """
 
     EPS_WARN = 0.1
+    _SUBNET_MASK_KEYS = {
+        "attention_mask",
+        "target_inference_mask",
+        "target_condition_mask",
+        "condition_mask",
+    }
 
     def __init__(
         self,
@@ -71,7 +74,6 @@ class StableConsistencyModel(InferenceNetwork):
         sigma: float = 1.0,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
-        drop_cond_prob: float = 0.0,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -79,7 +81,10 @@ class StableConsistencyModel(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+        if subnet == "time_transformer":
+            subnet_kwargs = TIME_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
+        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.subnet_projector = None
 
@@ -95,9 +100,8 @@ class StableConsistencyModel(InferenceNetwork):
         self.p_mean = float(kwargs.get("p_mean", -1.0))
         self.p_std = float(kwargs.get("p_std", 1.6))
         self.c = float(kwargs.get("c", 0.1))
-        self.drop_cond_prob = drop_cond_prob
-        self.unconditional_mode = False
         self.drop_target_prob = float(kwargs.get("drop_target_prob", 0.0))
+        self.drop_missing_prob = float(kwargs.get("drop_missing_prob", 0.0))
         self.seed_generator = keras.random.SeedGenerator()
 
     def get_config(self):
@@ -110,8 +114,8 @@ class StableConsistencyModel(InferenceNetwork):
             "p_mean": self.p_mean,
             "p_std": self.p_std,
             "c": self.c,
-            "drop_cond_prob": self.drop_cond_prob,
             "drop_target_prob": self.drop_target_prob,
+            "drop_missing_prob": self.drop_missing_prob,
         }
 
         return base_config | serialize(config)
@@ -180,8 +184,7 @@ class StableConsistencyModel(InferenceNetwork):
             The approximate samples
         """
         seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
         steps = kwargs.get("steps", 15)
         rho = kwargs.get("rho", 3.5)
@@ -192,28 +195,24 @@ class StableConsistencyModel(InferenceNetwork):
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
 
         # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
+        target_inference_mask = kwargs.get("target_inference_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+        if target_inference_mask is not None:
+            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
+            x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
 
         # apply consistency function at t_1
         x = self.consistency_function(x, t, conditions=conditions, **subnet_kwargs)
-        x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+        x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
             x_n = ops.cos(t) * x + ops.sin(t) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x_n = maybe_mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
+            x_n = maybe_mask_tensor(x_n, mask=target_inference_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, **subnet_kwargs)
-            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(
@@ -244,11 +243,7 @@ class StableConsistencyModel(InferenceNetwork):
     ) -> dict[str, Tensor]:
         training = stage == "training"
 
-        # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
-
-        if self.drop_cond_prob > 0 and conditions is not None:
-            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
         # generate noise vector
         z = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.sigma
@@ -264,8 +259,17 @@ class StableConsistencyModel(InferenceNetwork):
         # generate noisy sample
         xt = ops.cos(t) * x + ops.sin(t) * z
 
-        # Generate optional target dropout mask
-        mask_x = random_mask(ops.shape(xt), self.drop_target_prob, self.seed_generator)
+        # Generate target / condition / missingness masks
+        mask_x, loss_mask, subnet_kwargs = sample_input_masks(
+            self.subnet,
+            x,
+            conditions,
+            subnet_kwargs,
+            training,
+            self.drop_target_prob,
+            self.drop_missing_prob,
+            self.seed_generator,
+        )
         xt = maybe_mask_tensor(xt, mask=mask_x, replacement=x)
 
         # calculate estimator for dx_t/dt
@@ -306,7 +310,8 @@ class StableConsistencyModel(InferenceNetwork):
         D = ops.shape(x)[-1]
 
         loss = ops.mean(
-            ops.reshape((mask_x * (student_out - teacher_output - g) ** 2), (ops.shape(teacher_output)[0], -1)), axis=-1
+            ops.reshape((loss_mask * (student_out - teacher_output - g) ** 2), (ops.shape(teacher_output)[0], -1)),
+            axis=-1,
         )
         loss = (ops.exp(w) / D) * loss - w
         loss = weighted_mean(loss, sample_weight)

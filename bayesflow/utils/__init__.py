@@ -2,7 +2,7 @@
 A collection of utility functions, mostly used for internal purposes.
 """
 
-from .keras_utils import resolve_seed
+from .keras_utils import resolve_seed, call_accepts_kwarg
 
 from . import (
     keras_utils,
@@ -92,12 +92,12 @@ from .tensor_utils import (
     expand_right_as,
     expand_right_to,
     expand_tile,
+    feature_mask,
     fill_triangular_matrix,
     maybe_mask_tensor,
     pad,
     positive_diag,
-    random_mask,
-    randomly_mask_along_axis,
+    sample_input_masks,
     searchsorted,
     linsolve_batched,
     size_of,

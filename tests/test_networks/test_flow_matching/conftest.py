@@ -60,6 +60,6 @@ def flow_matching_with_masking():
 
     return FlowMatching(
         subnet_kwargs=dict(widths=(8, 8)),
-        drop_cond_prob=0.1,
         drop_target_prob=0.5,
+        drop_missing_prob=0.5,
     )

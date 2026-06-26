@@ -85,7 +85,11 @@ class Sampler:
                 conditions=None,
                 sample_shape=sample_shape,
                 seed=seed,
-                masking_names=("target_mask", "targets_fixed"),  # only needed for unconditional sampling
+                masking_names=(
+                    "target_inference_mask",
+                    "targets_fixed",
+                    "target_condition_mask",
+                ),  # only needed for unconditional sampling
                 **kwargs,
             )
 
@@ -126,7 +130,8 @@ class Sampler:
     ):
         conditions = self.repeat_and_flatten_conditions(conditions, num_samples)
 
-        # tensors like target_mask (shape [feature_dim]) are passed through unchanged when no conditions are given
+        # tensors like target_inference_mask (shape [feature_dim]) are passed through
+        # unchanged when no conditions are given
         kwargs = {
             k: self.repeat_and_flatten_conditions(v, num_samples)
             if hasattr(v, "shape") and k not in masking_names

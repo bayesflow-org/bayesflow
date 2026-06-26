@@ -9,6 +9,7 @@ from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
     find_network,
+    filter_kwargs,
     integrate,
     integrate_stochastic,
     jacobian_trace,
@@ -16,9 +17,8 @@ from bayesflow.utils import (
     logging,
     linsolve_batched,
     maybe_mask_tensor,
-    random_mask,
-    randomly_mask_along_axis,
     resolve_seed,
+    sample_input_masks,
     vjp,
     weighted_mean,
     DETERMINISTIC_METHODS,
@@ -30,7 +30,7 @@ from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_INTEGRATE_DEFAULTS
+from ...defaults import TIME_MLP_DEFAULTS, TIME_TRANSFORMER_DEFAULTS, DIFFUSION_INTEGRATE_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -41,6 +41,8 @@ class DiffusionModel(InferenceNetwork):
     noise schedule, and prediction/loss types for amortized SBI as described in [1].
     The diffusion model allows for post-hoc guidance (see [1]) and composition [2],
     implementing, stabilizing, and scaling initial ideas from [3] and [4].
+    To learn arbitrary conditional distributions, the model can be trained with a
+    transformer backbone and masking based on ideas from [5].
 
     Note that score-based diffusion is the most sluggish of all available samplers,
     so expect slower inference times than flow matching and much slower than
@@ -68,12 +70,14 @@ class DiffusionModel(InferenceNetwork):
         Additional keyword arguments passed to the noise schedule constructor.
     integrate_kwargs : dict[str, Any], optional
         Configuration dictionary for the ODE/SDE integrator used at inference time.
-    drop_cond_prob : float, optional
-        Probability of dropping conditions during training (i.e., classifier-free guidance).
-        Default is 0.0.
     drop_target_prob : float, optional
         Probability of dropping target values during training (i.e., learning arbitrary
-        distributions). Default is 0.0.
+        conditionals). Default is 0.0.
+    drop_missing_prob : float, optional
+        Probability of marking each condition and target as
+        missing during training, so the network learns to handle missing inputs.
+        Only takes effect when the subnet accepts ``condition_mask`` / ``target_inference_mask``
+        (e.g. ``time_transformer``). Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -88,7 +92,16 @@ class DiffusionModel(InferenceNetwork):
         https://arxiv.org/abs/2209.14249
     [4] Linhart et al., (2024). Diffusion posterior sampling for simulation-based inference in tall data settings.
         https://arxiv.org/abs/2404.07593
+    [5] Gloeckler et al. (2024). All-in-one simulation-based inference.
+        https://dl.acm.org/doi/proceedings/10.5555/3692070
     """
+
+    _SUBNET_MASK_KEYS = {
+        "attention_mask",
+        "target_inference_mask",
+        "target_condition_mask",
+        "condition_mask",
+    }
 
     def __init__(
         self,
@@ -100,8 +113,8 @@ class DiffusionModel(InferenceNetwork):
         subnet_kwargs: dict[str, Any] = None,
         schedule_kwargs: dict[str, Any] = None,
         integrate_kwargs: dict[str, Any] = None,
-        drop_cond_prob: float = 0.0,
         drop_target_prob: float = 0.0,
+        drop_missing_prob: float = 0.0,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -131,12 +144,14 @@ class DiffusionModel(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+        if subnet == "time_transformer":
+            subnet_kwargs = TIME_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
+        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
-        self.drop_cond_prob = drop_cond_prob
-        self.unconditional_mode = False
         self.drop_target_prob = drop_target_prob
+        self.drop_missing_prob = drop_missing_prob
 
         self.compositional_bridge_d0 = 1.0
         self.compositional_bridge_d1 = 1.0
@@ -149,13 +164,10 @@ class DiffusionModel(InferenceNetwork):
         stage: str = "training",
         **kwargs,
     ) -> dict[str, Tensor]:
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
         training = stage == "training"
         noise_schedule_training_stage = stage == "training" or stage == "validation"
-
-        if conditions is not None:
-            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
 
         # Sample training diffusion time as a low discrepancy sequence to decrease variance
         u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
@@ -175,8 +187,17 @@ class DiffusionModel(InferenceNetwork):
         # Diffuse x to get noisy input to the network
         diffused_x = alpha_t * x + sigma_t * eps_t
 
-        # Generate optional target dropout mask
-        mask_x = random_mask(ops.shape(x), self.drop_target_prob, self.seed_generator)
+        # Generate target / condition / missingness masks.
+        mask_x, loss_mask, subnet_kwargs = sample_input_masks(
+            self.subnet,
+            x,
+            conditions,
+            subnet_kwargs,
+            training,
+            self.drop_target_prob,
+            self.drop_missing_prob,
+            self.seed_generator,
+        )
         diffused_x = maybe_mask_tensor(diffused_x, mask=mask_x, replacement=x)
 
         # Obtain output of the network and transform to prediction of the clean signal x
@@ -211,12 +232,12 @@ class DiffusionModel(InferenceNetwork):
         match self._loss_type:
             case "noise":
                 noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
-                loss = weights_for_snr * ops.mean(mask_x * (noise_pred - eps_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(loss_mask * (noise_pred - eps_t) ** 2, axis=-1)
 
             case "velocity":
                 velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
                 v_t = alpha_t * eps_t - sigma_t * x
-                loss = weights_for_snr * ops.mean(mask_x * (velocity_pred - v_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(loss_mask * (velocity_pred - v_t) ** 2, axis=-1)
 
             case "F":
                 sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
@@ -224,7 +245,7 @@ class DiffusionModel(InferenceNetwork):
                 x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
                 f_pred = x1 * x_pred - x2 * diffused_x
                 f_t = x1 * x - x2 * diffused_x
-                loss = weights_for_snr * ops.mean(mask_x * (f_pred - f_t) ** 2, axis=-1)
+                loss = weights_for_snr * ops.mean(loss_mask * (f_pred - f_t) ** 2, axis=-1)
 
             case _:
                 raise ValueError(f"Unknown loss type: {self._loss_type}")
@@ -245,6 +266,7 @@ class DiffusionModel(InferenceNetwork):
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)
         self.subnet.build((xz_shape, time_shape, conditions_shape))
+        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         self.output_projector.build(out_shape)
@@ -259,8 +281,8 @@ class DiffusionModel(InferenceNetwork):
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
-            "drop_cond_prob": self.drop_cond_prob,
             "drop_target_prob": self.drop_target_prob,
+            "drop_missing_prob": self.drop_missing_prob,
         }
         return base_config | serialize(config)
 
@@ -432,7 +454,7 @@ class DiffusionModel(InferenceNetwork):
             The velocity tensor of the same shape as `xz`, representing the right-hand
             side of the probability-flow SDE or ODE at the given `time`.
         """
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
         if log_snr_t is None:
             log_snr_t = self.noise_schedule.get_log_snr(t=time, training=training)
@@ -525,8 +547,8 @@ class DiffusionModel(InferenceNetwork):
 
         # Zero out velocity where target is fixed (during inference only)
         if not training:
-            target_mask = kwargs.get("target_mask", None)
-            out = maybe_mask_tensor(out, mask=target_mask)
+            target_inference_mask = kwargs.get("target_inference_mask", None)
+            out = maybe_mask_tensor(out, mask=target_inference_mask)
 
         return out
 
@@ -561,8 +583,8 @@ class DiffusionModel(InferenceNetwork):
 
         # Zero out diffusion where target is fixed (during inference only)
         if not training:
-            target_mask = kwargs.get("target_mask", None)
-            g = maybe_mask_tensor(g, mask=target_mask)
+            target_inference_mask = kwargs.get("target_inference_mask", None)
+            g = maybe_mask_tensor(g, mask=target_inference_mask)
 
         return g
 
@@ -659,16 +681,12 @@ class DiffusionModel(InferenceNetwork):
             integrate_kwargs["method"] = "tsit5"
 
         # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
+        target_inference_mask = kwargs.get("target_inference_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+        if target_inference_mask is not None:
+            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = maybe_mask_tensor(x, target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
+            x = maybe_mask_tensor(x, target_inference_mask, replacement=targets_fixed)
 
         if density:
 
@@ -710,16 +728,12 @@ class DiffusionModel(InferenceNetwork):
         integrate_kwargs |= kwargs
 
         # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
+        target_inference_mask = kwargs.get("target_inference_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+        if target_inference_mask is not None:
+            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(z))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = maybe_mask_tensor(z, target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
+            z = maybe_mask_tensor(z, target_inference_mask, replacement=targets_fixed)
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
@@ -883,8 +897,8 @@ class DiffusionModel(InferenceNetwork):
 
         # Zero out velocity where target is fixed (during inference only)
         if not training:
-            target_mask = kwargs.get("target_mask", None)
-            out = maybe_mask_tensor(out, mask=target_mask)
+            target_inference_mask = kwargs.get("target_inference_mask", None)
+            out = maybe_mask_tensor(out, mask=target_inference_mask)
 
         return out
 
@@ -1318,12 +1332,12 @@ class DiffusionModel(InferenceNetwork):
             z = z / ops.sqrt(ops.cast(z_scaling, dtype=ops.dtype(z)))
 
         # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
+        target_inference_mask = kwargs.get("target_inference_mask", None)
         targets_fixed = kwargs.get("targets_fixed", None)
-        if target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(z))
+        if target_inference_mask is not None:
+            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(z))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = maybe_mask_tensor(z, target_mask, replacement=targets_fixed)
+            z = maybe_mask_tensor(z, target_inference_mask, replacement=targets_fixed)
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:

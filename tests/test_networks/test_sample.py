@@ -2,6 +2,8 @@ import keras
 import numpy as np
 import pytest
 
+from bayesflow.experimental import LatentInferenceNetwork
+
 
 def test_sample_seed_determinism(inference_network):
     from bayesflow.networks import ScoringRuleNetwork
@@ -42,10 +44,20 @@ def test_sample_seed_determinism(inference_network):
         arr2 = keras.ops.convert_to_numpy(s2)
         arr_unseeded = keras.ops.convert_to_numpy(s_unseeded)
 
+        atol = 1e-8
+        rtol = 1e-5
+
+        if isinstance(inference_network, LatentInferenceNetwork):
+            # latent inference networks have lower precision
+            atol = 1e-3
+            rtol = 1e-3
+
         np.testing.assert_allclose(
             arr1,
             arr2,
             err_msg=f"{inference_network}: samples differ for identical seed",
+            atol=atol,
+            rtol=rtol,
         )
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(

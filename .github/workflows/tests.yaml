@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -99,7 +99,7 @@ jobs:
           coverage xml
 
       - name: Upload Coverage Reports to CodeCov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           # do not use the files attribute here, otherwise the reports are not merged correctly
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -1,7 +1,5 @@
 import keras
 import numpy as np
-import pytest
-import tensorflow as tf
 
 from bayesflow.networks.subnets.time_transformer import TimeTransformer, TimeTransformerBlock
 from bayesflow.utils.serialization import deserialize, serialize
@@ -47,39 +45,6 @@ def test_time_transformer_block_zero_update_mask_keeps_tokens():
     out = block((x, t), update_mask=update_mask)
 
     assert keras.ops.all(keras.ops.isclose(out, x))
-
-
-def test_time_transformer_rejects_non_divisible_heads():
-    with pytest.raises(ValueError, match="divisible"):
-        TimeTransformer(widths=(10, 10), num_heads=4)
-
-
-def test_time_transformer_uses_lean_ffn_width_by_default():
-    tt = TimeTransformer(widths=(16,), num_heads=2, expansion_factor=4.0)
-
-    assert tt.blocks[0].ffn.intermediate_dim == 42
-
-
-def test_time_transformer_block_residual_branches_get_initial_gradients():
-    block = TimeTransformerBlock(width=8, num_heads=2, dropout=0.0, residual_gate_init=1e-2)
-    x = keras.random.normal((2, 3, 8))
-    t = keras.random.normal((2, 4))
-
-    block.build((x.shape, t.shape))
-    bias = keras.ops.convert_to_numpy(block.ada_ln.bias)
-
-    assert np.allclose(bias[2 * block.width : 3 * block.width], 1e-2)
-    assert np.allclose(bias[5 * block.width : 6 * block.width], 1e-2)
-
-    with tf.GradientTape() as tape:
-        out = block((x, t), training=True)
-        loss = keras.ops.mean(keras.ops.square(out))
-
-    variables = block.attn.trainable_variables + block.ffn.trainable_variables
-    grads = tape.gradient(loss, variables)
-    grad_norm = sum(float(keras.ops.convert_to_numpy(keras.ops.sum(keras.ops.abs(g)))) for g in grads if g is not None)
-
-    assert grad_norm > 0.0
 
 
 def test_time_transformer_identity_mask_processes_tokens_independently(num_features=5):

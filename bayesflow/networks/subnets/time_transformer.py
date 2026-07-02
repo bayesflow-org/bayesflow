@@ -28,7 +28,6 @@ def conditioning_attention_mask(
     num_targets: int,
     num_conditions: int,
     batch_size: Tensor,
-    dtype: str,
     target_condition_mask: Tensor | None = None,
 ) -> Tensor:
     """Build the directed dependency mask for a joint ``[targets, conditions]`` sequence.
@@ -53,51 +52,52 @@ def conditioning_attention_mask(
         Number of target and condition tokens.
     batch_size : Tensor
         Batch size.
-    dtype : str
-        Float dtype of the mask.
     target_condition_mask : Tensor or None
         Per-target ``(batch, num_targets)`` with ``1`` = present, ``0`` = missing.
 
     Returns
     -------
     Tensor
-        A ``(batch, seq, seq)`` mask with ``1`` where a query token may attend to a key.
+        A boolean ``(batch, seq, seq)`` mask, ``True`` where a query token may attend to a key.
     """
     target_latent = (
-        keras.ops.ones((batch_size, num_targets), dtype=dtype)
+        keras.ops.ones((batch_size, num_targets), dtype="bool")
         if target_inference_mask is None
-        else keras.ops.cast(target_inference_mask, dtype)
+        else keras.ops.cast(target_inference_mask, "bool")
     )
-    target_condition_mask = (
-        keras.ops.ones((batch_size, num_targets), dtype=dtype)
+    target_present = (
+        keras.ops.ones((batch_size, num_targets), dtype="bool")
         if target_condition_mask is None
-        else keras.ops.cast(target_condition_mask, dtype)
+        else keras.ops.cast(target_condition_mask, "bool")
     )
-    target_observed = target_condition_mask * (1.0 - target_latent)
+    target_observed = keras.ops.logical_and(target_present, keras.ops.logical_not(target_latent))
 
     if num_conditions > 0:
         condition_present = (
-            keras.ops.ones((batch_size, num_conditions), dtype=dtype)
+            keras.ops.ones((batch_size, num_conditions), dtype="bool")
             if condition_mask is None
-            else keras.ops.cast(condition_mask, dtype)
+            else keras.ops.cast(condition_mask, "bool")
         )
         observed = keras.ops.concatenate([target_observed, condition_present], axis=1)
-        present = keras.ops.concatenate([target_condition_mask, condition_present], axis=1)
+        present = keras.ops.concatenate([target_present, condition_present], axis=1)
     else:
         observed = target_observed
-        present = target_condition_mask
+        present = target_present
 
     seq_len = num_targets + num_conditions
     o_i = observed[:, :, None]
     o_j = observed[:, None, :]
     p_i = present[:, :, None]
     p_j = present[:, None, :]
-    eye = keras.ops.eye(seq_len, dtype=dtype)[None]
+    eye = keras.ops.cast(keras.ops.eye(seq_len), "bool")[None]
 
     # Present queries: observed -> observed keys; latent -> all present keys.
-    present_block = o_i * o_j + (1.0 - o_i) * p_j
+    present_block = keras.ops.logical_or(
+        keras.ops.logical_and(o_i, o_j),
+        keras.ops.logical_and(keras.ops.logical_not(o_i), p_j),
+    )
     # Absent queries keep only self-attention to avoid fully-masked rows.
-    return p_i * present_block + (1.0 - p_i) * eye
+    return keras.ops.where(p_i, present_block, eye)
 
 
 @serializable("bayesflow.networks")
@@ -159,16 +159,17 @@ class TimeTransformerBlock(keras.Layer):
 
         self.attn_norm = keras.layers.RMSNormalization(axis=-1)
         self.ffn_norm = keras.layers.RMSNormalization(axis=-1)
+        # MHA-internal dropout is 0, so regularize the attention output instead of the probs is faster.
         self.attn = layers.MultiHeadAttention(
             key_dim=width // num_heads,
             num_heads=num_heads,
-            dropout=dropout,
+            dropout=0.0,
             use_bias=use_bias,
             output_shape=width,
             kernel_initializer=kernel_initializer,
         )
-        # adaLN-Zero: project time embedding to (shift, scale, gate) for both
-        # the attention and feedforward sub-layers.
+        self.attn_dropout = keras.layers.Dropout(dropout)
+        # adaLN-Zero: project time embedding to (shift, scale, gate) for both the attention and feedforward sub-layers
         self.ada_ln = keras.layers.Dense(6 * width, kernel_initializer="zeros", bias_initializer="zeros")
         self.ffn = FFN(
             embed_dim=width,
@@ -212,7 +213,8 @@ class TimeTransformerBlock(keras.Layer):
         shift_attn, scale_attn, gate_attn, shift_ffn, scale_ffn, gate_ffn = keras.ops.split(mod, 6, axis=-1)
 
         attn_in = modulate(self.attn_norm(x, training=training), shift_attn, scale_attn)
-        h = x + gate_attn * self.attn(attn_in, attn_in, attention_mask=attention_mask, training=training)
+        attn_out = self.attn(attn_in, attn_in, attention_mask=attention_mask, training=training)
+        h = x + gate_attn * self.attn_dropout(attn_out, training=training)
 
         ffn_in = modulate(self.ffn_norm(h, training=training), shift_ffn, scale_ffn)
         h = h + gate_ffn * self.ffn(ffn_in, training=training)
@@ -264,7 +266,7 @@ class TimeTransformer(keras.Layer):
     ----------
     widths : Sequence[int], optional
         Hidden widths for the transformer blocks. All widths must be equal.
-        Default is ``(256, 256, 256)``.
+        Default is ``(128, 128, 128)``.
     time_embedding_dim : int, optional
         Dimensionality of the learned time embedding. Default is ``32``.
         Set to ``1`` to use time directly without embedding.
@@ -300,7 +302,7 @@ class TimeTransformer(keras.Layer):
 
     def __init__(
         self,
-        widths: Sequence[int] = (256, 256, 256),
+        widths: Sequence[int] = (128, 128, 128),
         *,
         time_embedding_dim: int = 32,
         time_emb: keras.Layer | None = None,
@@ -443,14 +445,14 @@ class TimeTransformer(keras.Layer):
         t_emb = self.time_emb(t, training=training)
 
         attention_mask = kwargs.get("attention_mask", None)
-        if attention_mask is None:
+        no_mask_inputs = target_inference_mask is None and condition_mask is None and target_condition_mask is None
+        if attention_mask is None and not (no_mask_inputs and num_conditions == 0):
             attention_mask = conditioning_attention_mask(
                 target_inference_mask,
                 condition_mask,
                 num_targets,
                 num_conditions,
                 batch_size,
-                h.dtype,
                 target_condition_mask,
             )
 

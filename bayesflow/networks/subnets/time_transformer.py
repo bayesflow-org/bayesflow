@@ -124,8 +124,7 @@ class TimeTransformerBlock(keras.Layer):
     """Transformer block with time conditioning.
 
     Target tokens are the residual stream; optional condition tokens enter only as
-    frozen keys/values (cross-attention style), so attention queries, the feedforward
-    network, and the adaLN modulation all run over the target tokens alone.
+    frozen keys/values (cross-attention style).
 
     Parameters
     ----------
@@ -284,20 +283,14 @@ class TimeTransformer(keras.Layer):
     Every entry of ``x`` and every condition dimension is tokenized per-dimension. Target
     tokens form the residual stream; condition tokens are embedded once and enter every
     block only as frozen keys/values (cross-attention style), so per-block compute scales
-    with the number of targets rather than targets + conditions. Three masks govern the
-    structure: ``target_inference_mask`` (``1`` = noised/inferred, ``0`` = clean),
-    ``target_condition_mask`` (``1`` = present, ``0`` = missing) and ``condition_mask``
-    (``1`` = present, ``0`` = missing). From them a directed dependency mask is built so
-    observed inputs (present clean targets + present conditions) form a set that inferred
-    targets attend to, while missing targets and conditions are excluded. Because condition
-    tokens are never updated, the observed context is noise-independent by construction.
-    An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +
-    num_conditions)`` may be supplied via kwargs to override the derived one.
-
-    The scalar time is embedded with Fourier features followed by a shared
-    ``Linear -> SiLU -> Linear`` MLP (DiT-style); each block and the output layer derive
-    their adaLN modulation from this shared embedding. Attention uses RMS-normalized
-    queries and keys (QK-norm), and all adaLN-modulated norms are non-affine.
+    with the number of targets. Three masks govern the structure:
+    ``target_inference_mask`` (``1`` = noised/inferred, ``0`` = clean),
+    ``target_condition_mask`` (``1`` = present, ``0`` = missing) and
+    ``condition_mask`` (``1`` = present, ``0`` = missing).
+    From them a directed dependency mask is built so observed inputs (present clean targets + present conditions)
+    form a set that inferred targets attend to, while missing targets and conditions are excluded.
+    An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +num_conditions)`` may be
+    supplied via kwargs to override the derived one.
 
     Parameters
     ----------

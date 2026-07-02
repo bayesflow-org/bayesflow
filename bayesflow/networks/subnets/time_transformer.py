@@ -30,13 +30,14 @@ def conditioning_attention_mask(
     batch_size: Tensor,
     target_condition_mask: Tensor | None = None,
 ) -> Tensor:
-    """Build the directed dependency mask for a joint ``[targets, conditions]`` sequence.
+    """Build the directed dependency mask for target queries over ``[targets, conditions]`` keys.
 
-    Tokens fall into three states: *latent* (noised targets being inferred), *observed*
-    (clean targets or present conditions), and *absent* (missing conditions). The
-    returned mask encodes:
+    Target tokens fall into three states: *latent* (noised targets being inferred),
+    *observed* (clean present targets), and *absent* (missing targets). Condition tokens
+    are *observed* when present and *absent* when missing; they are frozen context and
+    never issue queries, so the mask only has target query rows. It encodes:
 
-    * latent queries attend to every present key (observed + latent),
+    * latent queries attend to every present key (observed + latent targets + present conditions),
     * observed queries attend only to observed keys (a closed, noise-independent set),
     * absent keys are never attended to, and absent queries keep only self-attention.
 
@@ -58,7 +59,8 @@ def conditioning_attention_mask(
     Returns
     -------
     Tensor
-        A boolean ``(batch, seq, seq)`` mask, ``True`` where a query token may attend to a key.
+        A boolean ``(batch, num_targets, num_targets + num_conditions)`` mask,
+        ``True`` where a target query may attend to a key.
     """
     target_latent = (
         keras.ops.ones((batch_size, num_targets), dtype="bool")
@@ -78,18 +80,20 @@ def conditioning_attention_mask(
             if condition_mask is None
             else keras.ops.cast(condition_mask, "bool")
         )
-        observed = keras.ops.concatenate([target_observed, condition_present], axis=1)
-        present = keras.ops.concatenate([target_present, condition_present], axis=1)
+        keys_observed = keras.ops.concatenate([target_observed, condition_present], axis=1)
+        keys_present = keras.ops.concatenate([target_present, condition_present], axis=1)
     else:
-        observed = target_observed
-        present = target_present
+        keys_observed = target_observed
+        keys_present = target_present
 
-    seq_len = num_targets + num_conditions
-    o_i = observed[:, :, None]
-    o_j = observed[:, None, :]
-    p_i = present[:, :, None]
-    p_j = present[:, None, :]
-    eye = keras.ops.cast(keras.ops.eye(seq_len), "bool")[None]
+    o_i = target_observed[:, :, None]
+    p_i = target_present[:, :, None]
+    o_j = keys_observed[:, None, :]
+    p_j = keys_present[:, None, :]
+    eye = keras.ops.cast(keras.ops.eye(num_targets), "bool")
+    if num_conditions > 0:
+        eye = keras.ops.concatenate([eye, keras.ops.zeros((num_targets, num_conditions), dtype="bool")], axis=1)
+    eye = eye[None]
 
     # Present queries: observed -> observed keys; latent -> all present keys.
     present_block = keras.ops.logical_or(
@@ -100,9 +104,28 @@ def conditioning_attention_mask(
     return keras.ops.where(p_i, present_block, eye)
 
 
+class QKNormMultiHeadAttention(layers.MultiHeadAttention):
+    """Multi-head attention with RMS-normalized queries and keys (QK-norm)."""
+
+    def build(self, query_shape, value_shape, key_shape=None):
+        super().build(query_shape, value_shape, key_shape)
+        head_shape = (None, None, self._num_heads, self._key_dim)
+        self.query_norm = keras.layers.RMSNormalization(axis=-1)
+        self.query_norm.build(head_shape)
+        self.key_norm = keras.layers.RMSNormalization(axis=-1)
+        self.key_norm.build(head_shape)
+
+    def _compute_attention(self, query, key, value, *args, **kwargs):
+        return super()._compute_attention(self.query_norm(query), self.key_norm(key), value, *args, **kwargs)
+
+
 @serializable("bayesflow.networks")
 class TimeTransformerBlock(keras.Layer):
     """Transformer block with time conditioning.
+
+    Target tokens are the residual stream; optional condition tokens enter only as
+    frozen keys/values (cross-attention style), so attention queries, the feedforward
+    network, and the adaLN modulation all run over the target tokens alone.
 
     Parameters
     ----------
@@ -157,10 +180,11 @@ class TimeTransformerBlock(keras.Layer):
         self.kernel_initializer = kernel_initializer
         self.residual_gate_init = kwargs.get("residual_gate_init", 1e-2)
 
-        self.attn_norm = keras.layers.RMSNormalization(axis=-1)
-        self.ffn_norm = keras.layers.RMSNormalization(axis=-1)
+        # adaLN supplies the affine part, so the norms are non-affine (DiT-style).
+        self.attn_norm = keras.layers.LayerNormalization(center=False, scale=False)
+        self.ffn_norm = keras.layers.LayerNormalization(center=False, scale=False)
         # MHA-internal dropout is 0, so regularize the attention output instead of the probs is faster.
-        self.attn = layers.MultiHeadAttention(
+        self.attn = QKNormMultiHeadAttention(
             key_dim=width // num_heads,
             num_heads=num_heads,
             dropout=0.0,
@@ -187,6 +211,8 @@ class TimeTransformerBlock(keras.Layer):
         x_shape, time_shape = input_shape
         self.attn_norm.build(x_shape)
         self.ffn_norm.build(x_shape)
+        # Weights are independent of the key/value sequence length, so building with
+        # the target shape also covers calls with appended condition tokens.
         self.attn.build(query_shape=x_shape, value_shape=x_shape)
         self.ada_ln.build(time_shape)
         if self.residual_gate_init != 0.0:
@@ -201,6 +227,7 @@ class TimeTransformerBlock(keras.Layer):
         self,
         inputs: tuple[Tensor, Tensor],
         *,
+        conditions: Tensor | None = None,
         attention_mask: Tensor | None = None,
         update_mask: Tensor | None = None,
         training: bool | None = None,
@@ -213,7 +240,8 @@ class TimeTransformerBlock(keras.Layer):
         shift_attn, scale_attn, gate_attn, shift_ffn, scale_ffn, gate_ffn = keras.ops.split(mod, 6, axis=-1)
 
         attn_in = modulate(self.attn_norm(x, training=training), shift_attn, scale_attn)
-        attn_out = self.attn(attn_in, attn_in, attention_mask=attention_mask, training=training)
+        kv = attn_in if conditions is None else keras.ops.concatenate([attn_in, conditions], axis=1)
+        attn_out = self.attn(attn_in, kv, attention_mask=attention_mask, training=training)
         h = x + gate_attn * self.attn_dropout(attn_out, training=training)
 
         ffn_in = modulate(self.ffn_norm(h, training=training), shift_ffn, scale_ffn)
@@ -253,14 +281,23 @@ class TimeTransformer(keras.Layer):
     time ``t``, and an optional conditioning variable ``conditions``.  The input
     and conditions are projected into a shared feature space matching ``TimeMLP``.
 
-    Every entry of ``x`` and every condition dimension is tokenized per-dimension into one
-    joint sequence, so attention can model dependencies. Three masks govern the structure:
-    ``target_inference_mask`` (``1`` = noised/inferred, ``0`` = clean), ``target_condition_mask``
-    (``1`` = present, ``0`` = missing) and ``condition_mask`` (``1`` = present, ``0`` = missing).
-    From them a directed dependency mask is built so observed inputs (present clean targets +
-    present conditions) form a set that inferred targets attend to, while missing targets
-    and conditions are excluded. An explicit joint ``attention_mask`` may be supplied via kwargs
-    to override the derived one.
+    Every entry of ``x`` and every condition dimension is tokenized per-dimension. Target
+    tokens form the residual stream; condition tokens are embedded once and enter every
+    block only as frozen keys/values (cross-attention style), so per-block compute scales
+    with the number of targets rather than targets + conditions. Three masks govern the
+    structure: ``target_inference_mask`` (``1`` = noised/inferred, ``0`` = clean),
+    ``target_condition_mask`` (``1`` = present, ``0`` = missing) and ``condition_mask``
+    (``1`` = present, ``0`` = missing). From them a directed dependency mask is built so
+    observed inputs (present clean targets + present conditions) form a set that inferred
+    targets attend to, while missing targets and conditions are excluded. Because condition
+    tokens are never updated, the observed context is noise-independent by construction.
+    An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +
+    num_conditions)`` may be supplied via kwargs to override the derived one.
+
+    The scalar time is embedded with Fourier features followed by a shared
+    ``Linear -> SiLU -> Linear`` MLP (DiT-style); each block and the output layer derive
+    their adaLN modulation from this shared embedding. Attention uses RMS-normalized
+    queries and keys (QK-norm), and all adaLN-modulated norms are non-affine.
 
     Parameters
     ----------
@@ -346,9 +383,13 @@ class TimeTransformer(keras.Layer):
                     scale=self.fourier_scale,
                     include_identity=True,
                 )
+        # DiT-style shared time MLP on top of the Fourier features
+        self.time_mlp_in = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer)
+        self.time_mlp_out = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer)
 
         self.value_proj = keras.layers.Dense(self.width, use_bias=use_bias, kernel_initializer=kernel_initializer)
         self.condition_proj = None
+        self.condition_norm = keras.layers.RMSNormalization(axis=-1)
         # Learnable node-identifier and condition-state embeddings
         self.emb_initializer = keras.initializers.RandomNormal(stddev=0.02)
         self.target_id = None
@@ -367,8 +408,11 @@ class TimeTransformer(keras.Layer):
             )
             for _ in self.widths
         ]
-        self.out_norm = keras.layers.RMSNormalization(axis=-1)
-        self.token_out = keras.layers.Dense(1, kernel_initializer=kernel_initializer)
+        # DiT-style final layer: non-affine norm with time-conditioned shift/scale,
+        # zero-initialized so the network starts by predicting exactly zero.
+        self.out_norm = keras.layers.LayerNormalization(center=False, scale=False)
+        self.final_ada_ln = keras.layers.Dense(2 * self.width, kernel_initializer="zeros", bias_initializer="zeros")
+        self.token_out = keras.layers.Dense(1, kernel_initializer="zeros")
 
     def build(self, input_shape):
         if self.built:
@@ -385,7 +429,10 @@ class TimeTransformer(keras.Layer):
 
         t_shape = (t_shape[0], 1)
         self.time_emb.build(t_shape)
-        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
+        t_fourier_shape = self.time_emb.compute_output_shape(t_shape)
+        self.time_mlp_in.build(t_fourier_shape)
+        t_emb_shape = self.time_mlp_in.compute_output_shape(t_fourier_shape)
+        self.time_mlp_out.build(t_emb_shape)
 
         # Per-node identifier embeddings
         self.target_id = self.add_weight(
@@ -405,11 +452,13 @@ class TimeTransformer(keras.Layer):
             self.condition_id = self.add_weight(
                 shape=(num_conditions, self.width), initializer=self.emb_initializer, name="condition_id_embedding"
             )
+            self.condition_norm.build((conditions_shape[0], num_conditions, self.width))
 
         for block in self.blocks:
             block.build((h_shape, t_emb_shape))
 
         self.out_norm.build(h_shape)
+        self.final_ada_ln.build(t_emb_shape)
         self.token_out.build(h_shape)
         super().build(input_shape)
 
@@ -429,24 +478,29 @@ class TimeTransformer(keras.Layer):
         num_targets = x.shape[-1]
         batch_size = keras.ops.shape(x)[0]
 
-        # Tokenize x and conditions per-dimension into one joint sequence
+        # Tokenize targets per-dimension; they form the residual stream.
         h = self.value_proj(keras.ops.expand_dims(x, axis=-1), training=training)
         h = h + self.target_id[None]
         h = h + self._state_embedding(target_inference_mask, target_condition_mask, num_targets, batch_size, h.dtype)
+
+        # Conditions are embedded once and enter the blocks only as frozen keys/values.
+        cond_h = None
         num_conditions = 0
         if conditions is not None and self.condition_proj is not None:
             num_conditions = conditions.shape[-1]
-            h_c = self.condition_proj(keras.ops.expand_dims(conditions, axis=-1), training=training)
-            h_c = h_c + self.condition_id[None]
-            h_c = h_c + self._state_embedding(None, condition_mask, num_conditions, batch_size, h_c.dtype, latent=False)
-            h = keras.ops.concatenate([h, h_c], axis=1)
+            cond_h = self.condition_proj(keras.ops.expand_dims(conditions, axis=-1), training=training)
+            cond_h = cond_h + self.condition_id[None]
+            cond_h = cond_h + self._state_embedding(
+                None, condition_mask, num_conditions, batch_size, cond_h.dtype, latent=False
+            )
+            cond_h = self.condition_norm(cond_h, training=training)
 
         t = keras.ops.reshape(t, (keras.ops.shape(t)[0], -1))[:, :1]
-        t_emb = self.time_emb(t, training=training)
+        t_emb = self.time_mlp_out(keras.ops.silu(self.time_mlp_in(self.time_emb(t, training=training))))
 
         attention_mask = kwargs.get("attention_mask", None)
         no_mask_inputs = target_inference_mask is None and condition_mask is None and target_condition_mask is None
-        if attention_mask is None and not (no_mask_inputs and num_conditions == 0):
+        if attention_mask is None and not no_mask_inputs:
             attention_mask = conditioning_attention_mask(
                 target_inference_mask,
                 condition_mask,
@@ -456,21 +510,22 @@ class TimeTransformer(keras.Layer):
                 target_condition_mask,
             )
 
-        update_mask = self._joint_update_mask(target_inference_mask, x, num_conditions, h.dtype)
+        update_mask = feature_mask(target_inference_mask, x)
 
         for block in self.blocks:
             h = block(
                 (h, t_emb),
+                conditions=cond_h,
                 attention_mask=attention_mask,
                 update_mask=update_mask,
                 training=training,
             )
 
-        h = self.out_norm(h, training=training)
+        final_mod = keras.ops.expand_dims(self.final_ada_ln(keras.ops.silu(t_emb), training=training), axis=1)
+        shift_out, scale_out = keras.ops.split(final_mod, 2, axis=-1)
+        h = modulate(self.out_norm(h, training=training), shift_out, scale_out)
         out = self.token_out(h, training=training)
-        out = keras.ops.squeeze(out, axis=-1)
-        # Only the target tokens carry scores; conditions are context.
-        return out[:, :num_targets]
+        return keras.ops.squeeze(out, axis=-1)
 
     def _state_embedding(
         self,
@@ -508,22 +563,6 @@ class TimeTransformer(keras.Layer):
 
         present_state = latent_w * e_latent + (1.0 - latent_w) * e_observed
         return present * present_state + (1.0 - present) * e_missing
-
-    @staticmethod
-    def _joint_update_mask(
-        target_inference_mask: Tensor | None, x: Tensor, num_conditions: int, dtype: str
-    ) -> Tensor | None:
-        """Build the residual mask over the joint ``[targets, conditions]`` sequence.
-        Fixed targets (``target_inference_mask == 0``) are frozen.
-        """
-        target_update = feature_mask(target_inference_mask, x)
-        if target_update is None:
-            return None
-        if num_conditions > 0:
-            batch_size = keras.ops.shape(target_update)[0]
-            condition_update = keras.ops.ones((batch_size, num_conditions, 1), dtype=dtype)
-            return keras.ops.concatenate([target_update, condition_update], axis=1)
-        return target_update
 
     def get_config(self):
         base_config = layer_kwargs(super().get_config())

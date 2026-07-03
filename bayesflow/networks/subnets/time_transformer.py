@@ -192,8 +192,8 @@ class TimeTransformerBlock(keras.Layer):
             kernel_initializer=kernel_initializer,
         )
         self.attn_dropout = keras.layers.Dropout(dropout)
-        # adaLN-Zero: project time embedding to (shift, scale, gate) for both the attention and feedforward sub-layers
-        self.ada_ln = keras.layers.Dense(6 * width, kernel_initializer="zeros", bias_initializer="zeros")
+        # adaLN-single: the (shift, scale, gate) modulation for sub-layers
+        self.ada_ln_table = None
         self.ffn = FFN(
             embed_dim=width,
             expansion_factor=expansion_factor,
@@ -207,15 +207,13 @@ class TimeTransformerBlock(keras.Layer):
         if self.built:
             return
 
-        x_shape, time_shape = input_shape
+        x_shape, _ = input_shape
         self.attn_norm.build(x_shape)
         self.ffn_norm.build(x_shape)
-        # Weights are independent of the key/value sequence length, so building with
-        # the target shape also covers calls with appended condition tokens.
         self.attn.build(query_shape=x_shape, value_shape=x_shape)
-        self.ada_ln.build(time_shape)
+        self.ada_ln_table = self.add_weight(shape=(6 * self.width,), initializer="zeros", name="ada_ln_table")
         if self.residual_gate_init != 0.0:
-            self.ada_ln.bias.assign(ada_ln_bias(self.width, self.residual_gate_init, self.ada_ln.bias.dtype))
+            self.ada_ln_table.assign(ada_ln_bias(self.width, self.residual_gate_init, self.ada_ln_table.dtype))
         self.ffn.build(x_shape)
         super().build(input_shape)
 
@@ -231,10 +229,11 @@ class TimeTransformerBlock(keras.Layer):
         update_mask: Tensor | None = None,
         training: bool | None = None,
     ) -> Tensor:
-        x, t_emb = inputs
+        x, base_mod = inputs
         residual = x
 
-        mod = self.ada_ln(keras.ops.silu(t_emb), training=training)
+        # adaLN-single: shared modulation from the network-level MLP plus this block's offset.
+        mod = base_mod + self.ada_ln_table[None]
         mod = keras.ops.expand_dims(mod, axis=1)  # broadcast over the token axis
         shift_attn, scale_attn, gate_attn, shift_ffn, scale_ffn, gate_ffn = keras.ops.split(mod, 6, axis=-1)
 
@@ -379,6 +378,7 @@ class TimeTransformer(keras.Layer):
         # DiT-style shared time MLP on top of the Fourier features
         self.time_mlp_in = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer)
         self.time_mlp_out = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer)
+        self.ada_ln_shared = keras.layers.Dense(6 * self.width, kernel_initializer="zeros", bias_initializer="zeros")
 
         self.value_proj = keras.layers.Dense(self.width, use_bias=use_bias, kernel_initializer=kernel_initializer)
         self.condition_proj = None
@@ -426,6 +426,7 @@ class TimeTransformer(keras.Layer):
         self.time_mlp_in.build(t_fourier_shape)
         t_emb_shape = self.time_mlp_in.compute_output_shape(t_fourier_shape)
         self.time_mlp_out.build(t_emb_shape)
+        self.ada_ln_shared.build(t_emb_shape)
 
         # Per-node identifier embeddings
         self.target_id = self.add_weight(
@@ -490,6 +491,8 @@ class TimeTransformer(keras.Layer):
 
         t = keras.ops.reshape(t, (keras.ops.shape(t)[0], -1))[:, :1]
         t_emb = self.time_mlp_out(keras.ops.silu(self.time_mlp_in(self.time_emb(t, training=training))))
+        # Shared adaLN-single modulation, computed once and reused by every block.
+        base_mod = self.ada_ln_shared(keras.ops.silu(t_emb), training=training)
 
         attention_mask = kwargs.get("attention_mask", None)
         no_mask_inputs = target_inference_mask is None and condition_mask is None and target_condition_mask is None
@@ -507,7 +510,7 @@ class TimeTransformer(keras.Layer):
 
         for block in self.blocks:
             h = block(
-                (h, t_emb),
+                (h, base_mod),
                 conditions=cond_h,
                 attention_mask=attention_mask,
                 update_mask=update_mask,

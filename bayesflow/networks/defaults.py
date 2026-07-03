@@ -27,12 +27,12 @@ TIME_MLP_DEFAULTS = MappingProxyType(
 
 TIME_TRANSFORMER_DEFAULTS = MappingProxyType(
     {
-        "widths": (128, 128, 128),
+        "widths": (128, 128, 128, 128, 128, 128),
         "time_embedding_dim": 32,
         "fourier_scale": 30.0,
         "num_heads": 4,
         "dropout": 0.05,
-        "expansion_factor": 4.0,
+        "expansion_factor": 3,
         "glu_variant": "swiglu",
         "use_bias": False,
         "kernel_initializer": "glorot_uniform",

@@ -82,6 +82,30 @@ def test_time2vec_shapes_and_output():
     assert emb.shape == (batch_size, seq_len, expected_dim)
 
 
+@pytest.mark.parametrize(
+    "make_layer",
+    [
+        lambda: Time2Vec(num_periodic_features=4),
+        lambda: RecurrentEmbedding(embed_dim=6, embedding="lstm"),
+        lambda: RecurrentEmbedding(embed_dim=6, embedding="gru"),
+    ],
+    ids=["time2vec", "lstm", "gru"],
+)
+def test_implicit_steps_length_invariant(make_layer):
+    """With t=None implicit time steps, the embedding of
+    the first real steps is unchanged when the sequence is right-padded with extra steps."""
+    batch, real_len, pad_len, dim = 2, 5, 4, 3
+    layer = make_layer()
+
+    x_short = keras.ops.zeros((batch, real_len, dim), dtype="float32")
+    x_padded = keras.ops.zeros((batch, real_len + pad_len, dim), dtype="float32")
+
+    emb_short = keras.ops.convert_to_numpy(layer(x_short))
+    emb_padded = keras.ops.convert_to_numpy(layer(x_padded))
+
+    np.testing.assert_allclose(emb_short, emb_padded[:, :real_len], rtol=1e-5, atol=1e-6)
+
+
 def test_film_modulation():
     """Test that FiLM correctly applies affine transformation."""
     batch_size = 2

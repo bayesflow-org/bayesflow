@@ -107,8 +107,9 @@ class TimeSeriesTransformer(Transformer):
 
         self.summary_dim = summary_dim
         self.time_axis = time_axis
+        self.return_sequences = return_sequences
 
-    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None, mask: Tensor = None) -> Tensor:
         """Compresses the input sequence into a summary vector of size ``summary_dim``.
 
         Parameters
@@ -118,7 +119,13 @@ class TimeSeriesTransformer(Transformer):
         training : bool, optional
             Passed to dropout and norm layers, by default False.
         attention_mask : Tensor, optional
-            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask.
+            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask. Takes
+            precedence over any mask derived from ``mask``.
+        mask : Tensor, optional
+            Boolean padding mask of shape ``(B, T)`` where 1 = real time step,
+            0 = padding. Used for variable-length trajectories padded to a common
+            length: it builds a key-padding ``attention_mask`` (when none is given)
+            and excludes padded steps from the pooling average.
 
         Returns
         -------
@@ -139,9 +146,16 @@ class TimeSeriesTransformer(Transformer):
         if self.time_embedding:
             inp = self.time_embedding(inp, t=t)
 
+        if attention_mask is None and mask is not None:
+            attention_mask = keras.ops.expand_dims(keras.ops.cast(mask, "bool"), axis=1)
+
         for layer in self.attention_blocks:
             inp = layer(inp, inp, training=training, attention_mask=attention_mask)
 
-        summary = self.pooling(inp)
+        if self.return_sequences:
+            # sequence returned unreduced so caller needs to mask the padded steps
+            summary = self.pooling(inp)
+        else:
+            summary = self.pooling(inp, mask=mask)
         summary = self.output_projector(summary)
         return summary

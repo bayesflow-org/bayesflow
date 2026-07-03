@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import keras
 
@@ -5,6 +6,7 @@ from bayesflow.networks import TimeSeriesTransformer
 
 from .conftest import (
     BATCH,
+    FEATURE_DIM,
     SUMMARY_DIM,
     make_3d_input,
     check_output_shape,
@@ -133,3 +135,27 @@ def test_use_bias():
     net = _make(use_bias=True)
     y = net(make_3d_input(set_size=12), training=False)
     assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def _padding_mask(real_len, pad_len):
+    return keras.ops.concatenate([keras.ops.ones((BATCH, real_len)), keras.ops.zeros((BATCH, pad_len))], axis=1)
+
+
+def test_padding_mask_invariance():
+    """Right-padding with a matching mask leaves the summary unchanged."""
+    real_len, pad_len = 5, 4
+    net = _make()
+
+    x_real = make_3d_input(set_size=real_len)
+    s_short = keras.ops.convert_to_numpy(net(x_real, training=False))
+
+    pad = keras.ops.full((BATCH, pad_len, FEATURE_DIM), 1e3)
+    x_pad = keras.ops.concatenate([x_real, keras.ops.cast(pad, x_real.dtype)], axis=1)
+    mask = _padding_mask(real_len, pad_len)
+
+    s_masked = keras.ops.convert_to_numpy(net(x_pad, training=False, mask=mask))
+    s_nomask = keras.ops.convert_to_numpy(net(x_pad, training=False))
+
+    assert s_masked.shape == (BATCH, SUMMARY_DIM)
+    assert np.allclose(s_short, s_masked, rtol=1e-4, atol=1e-5)
+    assert not np.allclose(s_short, s_nomask, atol=1e-3)

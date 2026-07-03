@@ -79,7 +79,7 @@ class Time2Vec(keras.Layer):
         """
 
         if t is None:
-            t = keras.ops.linspace(0, keras.ops.shape(x)[1], keras.ops.shape(x)[1], dtype=x.dtype)
+            t = keras.ops.arange(keras.ops.shape(x)[1], dtype=x.dtype)
             t = expand_tile(t, keras.ops.shape(x)[0], axis=0)
 
         linear = t * self.linear_weight + self.linear_bias

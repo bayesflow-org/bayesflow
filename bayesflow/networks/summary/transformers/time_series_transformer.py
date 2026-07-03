@@ -61,7 +61,7 @@ class TimeSeriesTransformer(Transformer):
             Dimensionality of the Time2Vec or recurrent embedding, by default 8.
         time_axis : int or None, optional
             The time axis from which to grab the time vector for the embedding.
-            If None, a uniform time interval between [0, sequence_len] is assumed.
+            If None, integer time steps 0, 1, ..., sequence_len - 1 are assumed.
         return_sequences : bool, optional
             If True, acts as a many-to-many encoder. If False (default), acts as a
             many-to-one embedding network and ``summary_dim`` is the output dimension.

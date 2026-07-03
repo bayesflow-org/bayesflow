@@ -25,7 +25,7 @@ class TimeSeriesTransformer(Transformer):
         layer_norm: bool = True,
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
-        time_axis: int = None,
+        time_axis: int | None = None,
         return_sequences: bool = False,
         **kwargs,
     ):
@@ -109,7 +109,9 @@ class TimeSeriesTransformer(Transformer):
         self.time_axis = time_axis
         self.return_sequences = return_sequences
 
-    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None, mask: Tensor = None) -> Tensor:
+    def call(
+        self, x: Tensor, training: bool = False, attention_mask: Tensor | None = None, mask: Tensor | None = None
+    ) -> Tensor:
         """Compresses the input sequence into a summary vector of size ``summary_dim``.
 
         Parameters

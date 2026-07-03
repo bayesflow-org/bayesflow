@@ -39,7 +39,7 @@ class RecurrentEmbedding(keras.Layer):
         """
 
         if t is None:
-            t = keras.ops.linspace(0, keras.ops.shape(x)[1], keras.ops.shape(x)[1], dtype=x.dtype)
+            t = keras.ops.arange(keras.ops.shape(x)[1], dtype=x.dtype)
             t = expand_tile(t, keras.ops.shape(x)[0], axis=0)
 
         emb = self.embedder(t[..., None])

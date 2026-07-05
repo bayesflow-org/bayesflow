@@ -128,6 +128,9 @@ def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile, subtests):
 
 
 def test_jacfwd_with_aux(jit_compile):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's jacfwd with auxiliary outputs is not yet compatible with jit compilation.")
+
     w = keras.random.normal((4, 2))
 
     def fn_with_aux(x):

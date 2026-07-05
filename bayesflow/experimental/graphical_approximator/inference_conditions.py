@@ -335,7 +335,6 @@ def inference_condition_shapes_by_network(
     data_shapes: dict | None = None,
     meta_dict: dict | None = None,
 ) -> dict[int, tuple[int | sp.Expr, ...]]:
-
     if not data_shapes:
         data_shapes = approximator.output_shapes
 

@@ -20,7 +20,7 @@ def mc_confusion_matrix(
     tick_fontsize: int = 12,
     xtick_rotation: int = None,
     ytick_rotation: int = None,
-    normalize: str = None,
+    normalize: str | None = "true",
     cmap: matplotlib.colors.Colormap | str = None,
     title: bool = True,
 ) -> plt.Figure:
@@ -48,10 +48,12 @@ def mc_confusion_matrix(
         Rotation of x-axis tick labels (helps with long model names).
     ytick_rotation: int, optional, default: None
         Rotation of y-axis tick labels (helps with long model names).
-    normalize : {'true', 'pred', 'all'}, default=None
-        Passed to confusion matrix. Normalizes confusion matrix over the true (rows),
-        predicted (columns) conditions or all the population. If None, confusion matrix
-        will not be normalized.
+    normalize : {'true', 'pred', 'all'} or None, optional, default: 'true'
+        Passed to the confusion matrix. Normalizes the counts over the true (rows),
+        predicted (columns) conditions, or the whole population, yielding values in
+        ``[0, 1]`` that are annotated as fractions (``.2f``). With the default ``'true'``
+        each row sums to 1, so the diagonal reads as the per-model classification accuracy.
+        Pass ``None`` to display raw integer counts instead.
     cmap           : matplotlib.colors.Colormap or str, optional, default: None
         Colormap to be used for the cells. If a str, it should be the name of a registered colormap,
         e.g., 'viridis'. Default colormap matches the BayesFlow defaults by ranging from white to red.

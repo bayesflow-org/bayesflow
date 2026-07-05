@@ -45,15 +45,17 @@ def confusion_matrix(targets: np.ndarray, estimates: np.ndarray, labels: Sequenc
         if t in label_to_index and p in label_to_index:
             cm[label_to_index[t], label_to_index[p]] += 1
 
-    # Normalize if required
+    # Normalize if required. Rows/columns whose sum is zero (a label that never
+    # occurs) are left as 0 via a zero-initialized ``out`` — this also avoids the
+    # "'where' used without 'out'" uninitialized-memory warning from ``np.divide``.
     if normalize == "true":
-        with np.errstate(all="ignore"):
-            cm = cm.astype(np.float64)
-            cm = np.divide(cm, cm.sum(axis=1, keepdims=True), where=cm.sum(axis=1, keepdims=True) != 0)
+        cm = cm.astype(np.float64)
+        row_sums = cm.sum(axis=1, keepdims=True)
+        cm = np.divide(cm, row_sums, out=np.zeros_like(cm), where=row_sums != 0)
     elif normalize == "pred":
-        with np.errstate(all="ignore"):
-            cm = cm.astype(np.float64)
-            cm = np.divide(cm, cm.sum(axis=0, keepdims=True), where=cm.sum(axis=0, keepdims=True) != 0)
+        cm = cm.astype(np.float64)
+        col_sums = cm.sum(axis=0, keepdims=True)
+        cm = np.divide(cm, col_sums, out=np.zeros_like(cm), where=col_sums != 0)
     elif normalize == "all":
         cm = cm.astype(np.float64)
         cm /= cm.sum()

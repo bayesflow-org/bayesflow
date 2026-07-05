@@ -1,5 +1,6 @@
 import keras
 import numpy as np
+import pytest
 from keras.ops import convert_to_numpy as to_np
 
 from bayesflow._backend import jacfwd, jit
@@ -89,6 +90,9 @@ def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile, subtests):
 
 
 def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile, subtests):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's jacfwd is not yet compatible with jit compilation for binary vector inputs.")
+
     x = keras.random.uniform((2,))
     y = keras.random.uniform((2,))
 

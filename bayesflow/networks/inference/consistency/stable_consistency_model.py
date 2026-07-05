@@ -207,8 +207,8 @@ class StableConsistencyModel(InferenceNetwork):
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
-            x_n = ops.cos(t) * x + ops.sin(t) * noise
             t = keras.ops.full_like(t, discretized_time[n])
+            x_n = ops.cos(t) * x + ops.sin(t) * noise
             x_n = maybe_mask_tensor(x_n, mask=target_inference_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, **subnet_kwargs)
             x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)

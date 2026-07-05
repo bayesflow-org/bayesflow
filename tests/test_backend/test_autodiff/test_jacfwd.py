@@ -152,6 +152,9 @@ def test_jacfwd_with_aux(jit_compile):
 
 
 def test_jacfwd_multiple_outputs(jit_compile):
+    if jit_compile and keras.backend.backend() == "torch":
+        pytest.skip("torch's jacfwd with multiple outputs is not yet compatible with jit compilation.")
+
     w = keras.random.normal((3, 2))
 
     def fn(x):

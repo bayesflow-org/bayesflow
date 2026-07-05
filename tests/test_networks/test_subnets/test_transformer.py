@@ -1,7 +1,7 @@
 import keras
 import numpy as np
 
-from bayesflow.networks.subnets.time_transformer import TimeTransformer, TimeTransformerBlock
+from bayesflow.networks.subnets.transformer.time_transformer import TimeTransformer, TimeTransformerBlock
 from bayesflow.utils.serialization import deserialize, serialize
 
 from ...utils import assert_layers_equal
@@ -39,10 +39,10 @@ def test_time_transformer_output_shape(time_transformer):
 def test_time_transformer_block_zero_update_mask_keeps_tokens():
     block = TimeTransformerBlock(width=8, num_heads=2)
     x = keras.random.normal((2, 3, 8))
-    t = keras.random.normal((2, 4))
+    base_mod = keras.random.normal((2, 6 * 8))
     update_mask = keras.ops.zeros((2, 3, 1))
 
-    out = block((x, t), update_mask=update_mask)
+    out = block((x, base_mod), update_mask=update_mask)
 
     assert keras.ops.all(keras.ops.isclose(out, x))
 
@@ -59,8 +59,8 @@ def test_time_transformer_identity_mask_processes_tokens_independently(num_featu
     # Make the adaLN modulation time-dependent so the masking behaviour is exercised
     # beyond the small constant residual gate used at initialization.
     for block in tt.blocks:
-        block.ada_ln.kernel.assign(
-            keras.ops.convert_to_tensor(0.1 * rng.standard_normal(block.ada_ln.kernel.shape).astype("float32"))
+        block.ada_ln_table.assign(
+            keras.ops.convert_to_tensor(0.1 * rng.standard_normal(block.ada_ln_table.shape).astype("float32"))
         )
 
     rng = np.random.default_rng(1)

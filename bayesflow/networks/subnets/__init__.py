@@ -3,7 +3,7 @@ Reusable network components.
 """
 
 from .mlp import MLP, TimeMLP
-from .time_transformer import TimeTransformer
+from .transformer import TimeTransformer
 from .unet import UNet, ResidualUViT, UViT
 
 from bayesflow.utils._docs import _add_imports_to_all

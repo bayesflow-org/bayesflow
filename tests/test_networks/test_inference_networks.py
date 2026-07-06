@@ -8,6 +8,18 @@ from bayesflow.utils import filter_kwargs
 from tests.utils import assert_allclose, assert_layers_equal
 
 
+def _skip_torch_cpu_masking_workflow():
+    if keras.backend.backend() != "torch":
+        return
+
+    import torch
+
+    if torch.cuda.device_count() == 0:
+        pytest.skip(
+            "PyTorch CPU scaled-dot-product attention does not support forward-mode AD used by the masking workflow."
+        )
+
+
 def test_build(inference_network, random_samples, random_conditions):
     assert inference_network.built is False
 
@@ -185,6 +197,8 @@ def test_compute_metrics(inference_network, random_samples, random_conditions):
 
 
 def test_masking(diffusion_type_inference_network):
+    _skip_torch_cpu_masking_workflow()
+
     from bayesflow import BasicWorkflow
     from bayesflow.simulators import TwoMoons
 
@@ -250,6 +264,8 @@ def test_masking(diffusion_type_inference_network):
 
 
 def test_masking_unconditional(diffusion_type_inference_network):
+    _skip_torch_cpu_masking_workflow()
+
     from bayesflow import BasicWorkflow
     from bayesflow.simulators import TwoMoons
 

@@ -31,6 +31,9 @@ class StableConsistencyModel(InferenceNetwork):
     continuous-time Consistency Training (CT) as described in [1].  The sampling
     procedure is taken from [2].
 
+    Note: With the PyTorch backend on CPU, ``subnet="time_transformer"`` is not supported because PyTorch CPU
+    scaled-dot-product attention lacks forward-mode AD support.
+
     Parameters
     ----------
     subnet : str, type, or keras.Layer, optional

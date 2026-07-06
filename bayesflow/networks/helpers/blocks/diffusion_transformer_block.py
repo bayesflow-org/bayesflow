@@ -25,7 +25,7 @@ class QKNormMultiHeadAttention(layers.MultiHeadAttention):
 
 
 @serializable("bayesflow.networks")
-class TimeTransformerBlock(keras.Layer):
+class DiffusionTransformerBlock(keras.Layer):
     """Transformer block with adaLN-single time conditioning and QK-normalized attention.
 
     Target tokens are the residual stream; optional condition tokens enter only as

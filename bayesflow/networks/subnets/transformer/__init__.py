@@ -1,1 +1,1 @@
-from .time_transformer import TimeTransformer
+from .diffusion_transformer import DiffusionTransformer

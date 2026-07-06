@@ -37,7 +37,7 @@ def diffusion_model_edm_potential():
 
 @pytest.fixture()
 def diffusion_model_transformer():
-    return _make_diffusion_model("edm", "F", "time_transformer")
+    return _make_diffusion_model("edm", "F", "diffusion_transformer")
 
 
 @pytest.fixture()
@@ -54,7 +54,7 @@ def flow_matching_transformer():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
-        subnet="time_transformer",
+        subnet="diffusion_transformer",
         subnet_kwargs=dict(widths=[8, 8]),
     )
 
@@ -215,25 +215,25 @@ def diffusion_type_inference_network(request):
 
         from bayesflow.networks import FlowMatching
 
-        network = functools.partial(FlowMatching, subnet="time_transformer")
+        network = functools.partial(FlowMatching, subnet="diffusion_transformer")
     elif request.param == "consistency_model_transformer":
         import functools
 
         from bayesflow.networks import ConsistencyModel
 
-        network = functools.partial(ConsistencyModel, subnet="time_transformer")
+        network = functools.partial(ConsistencyModel, subnet="diffusion_transformer")
     elif request.param == "stable_consistency_model_transformer":
         import functools
 
         from bayesflow.networks import StableConsistencyModel
 
-        network = functools.partial(StableConsistencyModel, subnet="time_transformer")
+        network = functools.partial(StableConsistencyModel, subnet="diffusion_transformer")
     elif request.param == "diffusion_model_transformer":
         import functools
 
         from bayesflow.networks import DiffusionModel
 
-        network = functools.partial(DiffusionModel, subnet="time_transformer")
+        network = functools.partial(DiffusionModel, subnet="diffusion_transformer")
     else:
         raise ValueError(f"Unknown request param: {request.param}")
     return network

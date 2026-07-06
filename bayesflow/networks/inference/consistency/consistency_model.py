@@ -18,7 +18,7 @@ from bayesflow.utils import (
 from bayesflow.utils.serialization import serializable, serialize
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, TIME_TRANSFORMER_DEFAULTS
+from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -94,8 +94,8 @@ class ConsistencyModel(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
-        if subnet == "time_transformer":
-            subnet_kwargs = TIME_TRANSFORMER_DEFAULTS | subnet_kwargs
+        if subnet == "diffusion_transformer":
+            subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 

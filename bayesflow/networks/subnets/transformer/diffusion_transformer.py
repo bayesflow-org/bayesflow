@@ -6,13 +6,13 @@ from bayesflow.types import Tensor
 from bayesflow.utils import feature_mask, layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
-from ...helpers import FourierEmbedding, TimeTransformerBlock
+from ...helpers import FourierEmbedding, DiffusionTransformerBlock
 
 
 @serializable("bayesflow.networks")
-class TimeTransformer(keras.Layer):
-    """Time-conditioned transformer with AdaLN conditioning for the time. Needs longer training than the TimeMLP,
-    but allows for masking to learn arbitrary conditionals and marginals.
+class DiffusionTransformer(keras.Layer):
+    """Time-conditioned transformer with AdaLN conditioning for the time in DiT style [1]. Needs longer training than
+    the TimeMLP, but allows for masking to learn arbitrary conditionals and marginals.
 
     Processes three inputs: a state variable ``x``, a scalar or vector-valued
     time ``t``, and an optional conditioning variable ``conditions``.  The input
@@ -29,6 +29,8 @@ class TimeTransformer(keras.Layer):
     form a set that inferred targets attend to, while missing targets and conditions are excluded.
     An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +num_conditions)`` may be
     supplied via kwargs to override the derived one.
+
+    [1] Peebles, William, and Saining Xie. "Scalable diffusion models with transformers." 2023.
 
     Parameters
     ----------
@@ -117,8 +119,12 @@ class TimeTransformer(keras.Layer):
                 )
 
         # DiT-style shared time MLP on top of the Fourier features
-        self.time_mlp_in = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer)
-        self.time_mlp_out = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer)
+        self.time_mlp = keras.Sequential(
+            [
+                keras.layers.Dense(self.width, activation="silu", kernel_initializer=kernel_initializer),
+                keras.layers.Dense(self.width, activation="silu", kernel_initializer=kernel_initializer),
+            ]
+        )
         self.ada_ln_shared = keras.layers.Dense(6 * self.width, kernel_initializer="zeros", bias_initializer="zeros")
 
         self.value_proj = keras.layers.Dense(self.width, use_bias=use_bias, kernel_initializer=kernel_initializer)
@@ -132,7 +138,7 @@ class TimeTransformer(keras.Layer):
         self.state_embeddings = None
 
         self.blocks = [
-            TimeTransformerBlock(
+            DiffusionTransformerBlock(
                 width=self.width,
                 num_heads=num_heads,
                 dropout=dropout,
@@ -166,9 +172,8 @@ class TimeTransformer(keras.Layer):
         t_shape = (t_shape[0], 1)
         self.time_emb.build(t_shape)
         t_fourier_shape = self.time_emb.compute_output_shape(t_shape)
-        self.time_mlp_in.build(t_fourier_shape)
-        t_emb_shape = self.time_mlp_in.compute_output_shape(t_fourier_shape)
-        self.time_mlp_out.build(t_emb_shape)
+        self.time_mlp.build(t_fourier_shape)
+        t_emb_shape = self.time_mlp.compute_output_shape(t_fourier_shape)
         self.ada_ln_shared.build(t_emb_shape)
 
         # Per-node identifier embeddings
@@ -230,12 +235,10 @@ class TimeTransformer(keras.Layer):
             cond_h = self.condition_norm(cond_h, training=training)
 
         t = keras.ops.reshape(t, (keras.ops.shape(t)[0], -1))[:, :1]
-        t_emb = self.time_emb(t)
-        t_emb = keras.ops.silu(self.time_mlp_in(t_emb))
-        t_emb = self.time_mlp_out(t_emb)
+        t_emb = self.time_mlp(self.time_emb(t))
 
         # Shared adaLN-single modulation, computed once and reused by every block.
-        base_mod = self.ada_ln_shared(keras.ops.silu(t_emb), training=training)
+        base_mod = self.ada_ln_shared(t_emb, training=training)
 
         attention_mask = kwargs.get("attention_mask", None)
         no_mask_inputs = target_inference_mask is None and condition_mask is None and target_condition_mask is None
@@ -260,10 +263,10 @@ class TimeTransformer(keras.Layer):
                 training=training,
             )
 
-        final_mod = keras.ops.expand_dims(self.final_ada_ln(keras.ops.silu(t_emb)), axis=1)
+        final_mod = keras.ops.expand_dims(self.final_ada_ln(t_emb), axis=1)
         shift_out, scale_out = keras.ops.split(final_mod, 2, axis=-1)
 
-        h = TimeTransformerBlock.modulate(self.out_norm(h, training=training), shift_out, scale_out)
+        h = DiffusionTransformerBlock.modulate(self.out_norm(h, training=training), shift_out, scale_out)
 
         out = self.token_out(h)
         out = keras.ops.squeeze(out, axis=-1)

@@ -25,7 +25,7 @@ TIME_MLP_DEFAULTS = MappingProxyType(
     }
 )
 
-TIME_TRANSFORMER_DEFAULTS = MappingProxyType(
+DIFFUSION_TRANSFORMER_DEFAULTS = MappingProxyType(
     {
         "widths": (128, 128, 128, 128, 128),
         "time_embedding_dim": 32,

@@ -131,7 +131,7 @@ class DiffusionTransformer(keras.Layer):
 
         self.value_proj = keras.layers.Dense(self.width, use_bias=use_bias, kernel_initializer=kernel_initializer)
         self.condition_proj = None
-        self.condition_norm = keras.layers.RMSNormalization(axis=-1)
+        self.condition_norm = None
 
         # Learnable node-identifier and condition-state embeddings
         self.emb_initializer = keras.initializers.RandomNormal(stddev=0.02)
@@ -196,6 +196,7 @@ class DiffusionTransformer(keras.Layer):
             self.condition_id = self.add_weight(
                 shape=(num_conditions, self.width), initializer=self.emb_initializer, name="condition_id_embedding"
             )
+            self.condition_norm = keras.layers.RMSNormalization(axis=-1)
             self.condition_norm.build((conditions_shape[0], num_conditions, self.width))
 
         for block in self.blocks:

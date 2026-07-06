@@ -129,10 +129,14 @@ def test_multi_rule_estimate(train_dataset, simulator):
     approx.build(data_shapes)
     approx.compute_metrics(**train_dataset[0])
 
+    import numpy as np
+
     num_conditions = 2
     num_models = len(simulator.simulators)
     conditions = simulator.sample(num_conditions)
-    output = approx.estimate(conditions=conditions)
+
+    # merge_scores=False -> nested dict keyed by rule name, each with the single-rule structure
+    output = approx.estimate(conditions=conditions, merge_scores=False)
 
     assert isinstance(output, dict)
     for rule_key in ("ce", "brier"):
@@ -143,9 +147,36 @@ def test_multi_rule_estimate(train_dataset, simulator):
 
     assert "_summaries" not in output
 
-    output_with_summaries = approx.estimate(conditions=conditions, return_summaries=True)
+    # merge_scores=True (default) -> flat dict with model_probs averaged across rules
+    merged = approx.estimate(conditions=conditions)
+    assert set(merged) == {"model_probs"}
+    assert merged["model_probs"].shape == (num_conditions, num_models)
+    expected = np.mean([output[rule_key]["model_probs"] for rule_key in ("ce", "brier")], axis=0)
+    assert np.allclose(merged["model_probs"], expected, atol=1e-6)
+
+    # return_summaries adds a top-level _summaries key (here checked in nested mode)
+    output_with_summaries = approx.estimate(conditions=conditions, merge_scores=False, return_summaries=True)
     assert "_summaries" in output_with_summaries
     assert output_with_summaries["_summaries"].shape[0] == num_conditions
+
+
+def test_mixing_pmp_and_bf_rules_raises_in_network_and_approximator():
+    """Mixing PMP and Bayes factor categorical rules is rejected by both the network and the approximator."""
+    from bayesflow.networks import MLP, ScoringRuleNetwork
+    from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore
+
+    # ScoringRuleNetwork guards at construction.
+    with pytest.raises(ValueError, match="mix PMP and Bayes factor"):
+        ScoringRuleNetwork(
+            scoring_rules={"ce": CrossEntropyScore(), "exp": ExponentialScore()},
+            subnet=MLP(widths=(8,)),
+        )
+
+    # ModelComparisonApproximator applies the same guard on its inference network.
+    from bayesflow.scoring_rules import check_categorical_rules_not_mixed
+
+    with pytest.raises(ValueError, match="mix PMP and Bayes factor"):
+        check_categorical_rules_not_mixed({"ce": CrossEntropyScore(), "exp": ExponentialScore()})
 
 
 def test_build_dataset_with_simulators_list(approximator, adapter):

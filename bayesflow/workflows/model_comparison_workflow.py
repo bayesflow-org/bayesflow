@@ -1,4 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
+import re
 import time
 
 import numpy as np
@@ -10,7 +11,7 @@ from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ModelComparisonApproximator
-from bayesflow.scoring_rules import CategoricalScoringRule
+from bayesflow.scoring_rules import CategoricalScoringRule, check_categorical_rules_not_mixed
 from bayesflow.utils import (
     find_network,
     find_scoring_rule,
@@ -45,18 +46,28 @@ class ModelComparisonWorkflow(BasicWorkflow):
         The classifier backbone used inside the approximator (default: ``"mlp"``).
         Accepts a Keras layer instance or any name recognised by
         :func:`~bayesflow.utils.find_network` (e.g. ``"mlp"``).
-    scoring_rules : CategoricalScoringRule or dict[str, CategoricalScoringRule] or str, optional
-        Scoring rule(s) used to train the classifier. Accepts a single
-        :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance, a string recognised by
-        :func:`~bayesflow.utils.find_scoring_rule`, or a mapping of rule names to rules for
-        co-learning multiple scoring rules simultaneously (default: ``"cross_entropy"``).
-        Determines what the network learns to estimate:
+    scoring_rules : CategoricalScoringRule or Sequence or dict[str, CategoricalScoringRule] or str, optional
+        Scoring rule(s) used to train the classifier. Accepts, in increasing generality:
+
+        - a single :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance;
+        - a string name recognised by :func:`~bayesflow.utils.find_scoring_rule`;
+        - a **list/tuple** of rules (or names) to co-learn several rules simultaneously,
+          which are auto-named after their class (e.g. ``"cross_entropy_score"``);
+        - a mapping of explicit names to rules.
+
+        Multiple rules share one classifier body but get separate heads and are trained
+        jointly. Their outputs can then be kept per-rule or aggregated at estimation time
+        via the ``merge_scores`` argument of :meth:`estimate`. Defaults to ``"cross_entropy"``.
+        The chosen rule(s) determine what the network learns to estimate:
 
         - **PMP rules** (``"cross_entropy"``, ``"brier"``, ``"polynomial"``): network
           outputs softmax probabilities over all ``num_models`` models.
         - **Bayes factor rules** (``"exponential"``, ``"scaled_exponential"``,
           ``"leaky_exponential"``, ``"logistic"``, ``"power_logistic"``): network outputs
           ``num_models - 1`` log Bayes factors relative to model 0.
+
+        PMP and Bayes factor rules **cannot be mixed** in a single workflow; doing so raises
+        a ``ValueError``, since the two families estimate different quantities.
     summary_network : SummaryNetwork or str, optional
         Optional summary network for data compression (default: None).
     initial_learning_rate : float, optional
@@ -112,7 +123,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
         adapter: Adapter | None = None,
         classifier_network: keras.Layer | str = "mlp",
         summary_network: SummaryNetwork | str | None = None,
-        scoring_rules: CategoricalScoringRule | dict[str, CategoricalScoringRule] | str | None = None,
+        scoring_rules: CategoricalScoringRule
+        | Sequence[CategoricalScoringRule | str]
+        | dict[str, CategoricalScoringRule]
+        | str
+        | None = None,
         initial_learning_rate: float = 5e-4,
         optimizer: keras.optimizers.Optimizer | type | None = None,
         checkpoint_filepath: str | None = None,
@@ -162,11 +177,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         if standardize is None and summary_network is not None:
             standardize = ["summary_variables"]
 
-        resolved_scoring_rules = find_scoring_rule(scoring_rules) if isinstance(scoring_rules, str) else scoring_rules
-        if resolved_scoring_rules is None:
-            resolved_scoring_rules = find_scoring_rule("cross_entropy")
-        if isinstance(resolved_scoring_rules, CategoricalScoringRule):
-            resolved_scoring_rules = {"scoring_rule": resolved_scoring_rules}
+        resolved_scoring_rules = ModelComparisonWorkflow._resolve_scoring_rules(scoring_rules)
 
         self.approximator = ModelComparisonApproximator(
             inference_network=ScoringRuleNetwork(
@@ -188,6 +199,57 @@ class ModelComparisonWorkflow(BasicWorkflow):
     def classifier_network(self) -> keras.Layer:
         """The classifier backbone (subnet of the internal ScoringRuleNetwork)."""
         return self.approximator.inference_network.subnet
+
+    @staticmethod
+    def _resolve_scoring_rules(
+        scoring_rules: CategoricalScoringRule
+        | Sequence[CategoricalScoringRule | str]
+        | Mapping[str, CategoricalScoringRule | str]
+        | str
+        | None,
+    ) -> dict[str, CategoricalScoringRule]:
+        """Normalize the ``scoring_rules`` argument to a ``dict[str, CategoricalScoringRule]``.
+
+        Accepts a single rule (or its string name), a list/tuple of rules (or names), or a
+        mapping of names to rules. ``None`` defaults to a single ``CrossEntropyScore``.
+        Rules given without an explicit name (i.e. in a list) are keyed by a snake-cased
+        version of their class name, de-duplicated with a numeric suffix.
+
+        Raises
+        ------
+        ValueError
+            If PMP scoring rules and Bayes factor scoring rules are mixed. The two families
+            answer different questions (posterior model probabilities vs. log Bayes factors)
+            and cannot be co-trained in a single workflow.
+        TypeError
+            If ``scoring_rules`` is of an unsupported type.
+        """
+        if scoring_rules is None:
+            return {"scoring_rule": find_scoring_rule("cross_entropy")}
+        if isinstance(scoring_rules, (str, CategoricalScoringRule)):
+            return {"scoring_rule": find_scoring_rule(scoring_rules)}
+
+        if isinstance(scoring_rules, Mapping):
+            resolved = {key: find_scoring_rule(rule) for key, rule in scoring_rules.items()}
+        elif isinstance(scoring_rules, Sequence):
+            resolved: dict[str, CategoricalScoringRule] = {}
+            counts: dict[str, int] = {}
+            for item in scoring_rules:
+                rule = find_scoring_rule(item)
+                base = re.sub(r"(?<!^)(?=[A-Z])", "_", type(rule).__name__).lower()
+                counts[base] = counts.get(base, 0) + 1
+                key = base if counts[base] == 1 else f"{base}_{counts[base]}"
+                resolved[key] = rule
+        else:
+            raise TypeError(
+                "`scoring_rules` must be a CategoricalScoringRule, a string name, a list of "
+                f"rules/names, or a dict of name -> rule, got {type(scoring_rules).__name__}."
+            )
+
+        # Disallow mixing PMP rules (output posterior model probabilities) with Bayes factor
+        # rules (output log Bayes factors): they target different quantities and cannot be merged.
+        check_categorical_rules_not_mixed(resolved)
+        return resolved
 
     @staticmethod
     def default_adapter(
@@ -242,6 +304,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         *,
         conditions: dict,
         return_summaries: bool = False,
+        merge_scores: bool = True,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -254,19 +317,33 @@ class ModelComparisonWorkflow(BasicWorkflow):
         return_summaries: bool, optional
             If set to True and a summary network is present, will return the learned summary statistics for
             the provided conditions.
+        merge_scores : bool, optional
+            Only relevant when the workflow was configured with more than one scoring rule
+            (default: True). If True, the per-rule estimates are pooled into the flat
+            single-rule structure: Bayes factor rules average their ``"log_bayes_factors"``
+            (logarithmic opinion pool) and keep both keys, deriving a consistent
+            ``"model_probs"``; PMP rules average their ``"model_probs"`` (linear opinion pool)
+            and drop the pre-softmax ``"logits"``. If False, results are returned as a nested
+            dict keyed by rule name. Has no effect for a single scoring rule.
         **kwargs
             Forwarded to :meth:`~bayesflow.approximators.ModelComparisonApproximator.estimate`.
 
         Returns
         -------
         dict[str, np.ndarray]
-            Always contains ``"model_probs"`` of shape ``(num_datasets, num_models)``.
-            PMP rules additionally contain ``"logits"`` of shape ``(num_datasets, num_models)``.
-            Bayes factor rules additionally contain ``"log_bayes_factors"`` of shape
-            ``(num_datasets, num_models - 1)``.
+            Single scoring rule (or multiple rules with ``merge_scores=True``): always contains
+            ``"model_probs"`` of shape ``(num_datasets, num_models)``. Bayes factor rules (single
+            or pooled) additionally contain ``"log_bayes_factors"`` of shape
+            ``(num_datasets, num_models - 1)``; a single PMP rule additionally contains
+            ``"logits"`` of shape ``(num_datasets, num_models)``.
+
+            Multiple scoring rules with ``merge_scores=False``: a nested dict keyed by rule name,
+            each value having the single-rule structure above.
         """
         start_time = time.perf_counter()
-        estimates = self.approximator.estimate(conditions=conditions, return_summaries=return_summaries, **kwargs)
+        estimates = self.approximator.estimate(
+            conditions=conditions, return_summaries=return_summaries, merge_scores=merge_scores, **kwargs
+        )
         elapsed = time.perf_counter() - start_time
         logging.info(f"Estimation completed in {format_duration(elapsed)}.")
         return estimates
@@ -282,6 +359,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         Produces a loss curve (when training history is available) followed by
         a set of plots that depend on the active scoring rule:
+
+        With multiple scoring rules the diagnostics run on the pooled estimates (see
+        :meth:`estimate`). PMP diagnostics use the linearly pooled ``model_probs``; Bayes factor
+        diagnostics use the logarithmically pooled ``log_bayes_factors``. All plots are therefore
+        produced for a single rule and for multiple rules alike.
 
         **PMP scoring rules** (:class:`~bayesflow.scoring_rules.CrossEntropyScore`,
         :class:`~bayesflow.scoring_rules.BrierScore`,
@@ -365,16 +447,13 @@ class ModelComparisonWorkflow(BasicWorkflow):
             )
 
         scoring_rules = self.approximator.inference_network.scoring_rules
-        if len(scoring_rules) > 1:
-            raise NotImplementedError(
-                "Default diagnostics for multiple scoring rules are not yet implemented. "
-                "Use approximator.estimate() to obtain a dict of per-rule estimates keyed by rule name, "
-                "then pass each rule's 'model_probs' (and 'logits' or 'log_bayes_factors') "
-                "to the bayesflow.diagnostics functions directly."
-            )
+        # All rules share one family (PMP/BF is enforced at construction), so any rule decides the mode.
         is_pmp_mode = next(iter(scoring_rules.values())).is_pmp_rule
 
-        estimates = self.estimate(conditions=test_data, **kwargs.get("estimate_kwargs", {}))
+        # Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
+        estimate_kwargs = dict(kwargs.get("estimate_kwargs", {}))
+        estimate_kwargs.pop("merge_scores", None)
+        estimates = self.estimate(conditions=test_data, merge_scores=True, **estimate_kwargs)
 
         if is_pmp_mode:
             figures["confusion_matrix"] = bf_plots.mc_confusion_matrix(
@@ -397,6 +476,8 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 model_names=self.model_names,
                 **{**bf_calibration_defaults, **kwargs.get("calibration_kwargs", {})},
             )
+            # Merged Bayes factor estimates carry pooled log_bayes_factors (log opinion pool),
+            # so the log-BF plots work for a single rule and for multiple rules alike.
             figures["pairwise_bayes_factors"] = bf_plots.pairwise_bayes_factors(
                 pred_log_bayes_factors=estimates["log_bayes_factors"],
                 true_models=true_models,
@@ -465,7 +546,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 raise ValueError(f"No simulator attached. Cannot generate {test_data} test datasets.")
             test_data = self.simulate(test_data, **kwargs.get("test_data_kwargs", {}))
 
-        estimates = self.estimate(conditions=test_data, **kwargs.get("estimate_kwargs", {}))
+        # Metrics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
+        estimate_kwargs = dict(kwargs.get("estimate_kwargs", {}))
+        estimate_kwargs.pop("merge_scores", None)
+        estimates = self.estimate(conditions=test_data, merge_scores=True, **estimate_kwargs)
 
         if "model_indices" in test_data:
             true_models = test_data["model_indices"]
@@ -478,13 +562,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
             )
 
         scoring_rules = self.approximator.inference_network.scoring_rules
-        if len(scoring_rules) > 1:
-            raise NotImplementedError(
-                "Default diagnostics for multiple scoring rules are not yet implemented. "
-                "Use approximator.estimate() to obtain a dict of per-rule estimates keyed by rule name, "
-                "then pass each rule's 'model_probs' (and 'logits' or 'log_bayes_factors') "
-                "to the bayesflow.diagnostics functions directly."
-            )
+        # All rules share one family (PMP/BF is enforced at construction), so any rule decides the mode.
         is_pmp_mode = next(iter(scoring_rules.values())).is_pmp_rule
 
         metrics = {"accuracy": bf_metrics.model_comparison_accuracy(estimates["model_probs"], true_models)}

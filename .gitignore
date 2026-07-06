@@ -44,3 +44,6 @@ uv.lock
 
 # Rproj
 .Rproj.user
+
+# Secrets
+.claude

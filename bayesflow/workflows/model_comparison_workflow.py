@@ -297,7 +297,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
           blind coverage): predicted posterior model probability on x, observed
           fraction on y, with ECE annotations.
         - ``"pairwise_bayes_factors"`` — heatmap of the mean predicted
-          :math:`\log K_{m,j}` stratified by true model, showing pairwise
+          :math:`\log \mathrm{BF}_{m,j}` stratified by true model, showing pairwise
           model separability across all :math:`M \times M` pairs.
         - ``"bayes_factor_recovery"`` — scatter of predicted vs. true log Bayes
           factors, one panel per competing model.  Only produced when

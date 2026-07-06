@@ -33,7 +33,7 @@ def bayes_factor_recovery(
     Parameters
     ----------
     pred_log_bayes_factors : np.ndarray of shape (num_datasets, num_models - 1)
-        Predicted log Bayes factors ``log K_{k, reference}`` for
+        Predicted log Bayes factors ``log BF_{k, reference}`` for
         ``k != reference``, as output by a Bayes factor scoring rule network.
     true_log_bayes_factors : np.ndarray of shape (num_datasets, num_models - 1)
         Ground-truth log Bayes factors with the same column ordering as
@@ -191,8 +191,8 @@ def bayes_factor_recovery(
         axes=np.asarray(axes),
         num_row=num_row,
         num_col=num_col,
-        xlabel=f"True $\\log K_{{k,{reference_model}}}$",
-        ylabel=f"Predicted $\\log K_{{k,{reference_model}}}$",
+        xlabel=f"True $\\log \\mathrm{{BF}}_{{k,{reference_model}}}$",
+        ylabel=f"Predicted $\\log \\mathrm{{BF}}_{{k,{reference_model}}}$",
         label_fontsize=label_fontsize,
     )
 

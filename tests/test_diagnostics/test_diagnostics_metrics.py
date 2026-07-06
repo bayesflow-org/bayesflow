@@ -155,7 +155,7 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
     assert len(out["probs_true"]) == pred_models.shape[-1]
     assert len(out["probs_pred"]) == pred_models.shape[-1]
     # default: auto model names
-    assert out["model_names"] == ["M_0", "M_1", "M_2"]
+    assert out["model_names"] == ["M_1", "M_2", "M_3"]
 
     # handles incorrect input?
     with pytest.raises(Exception):

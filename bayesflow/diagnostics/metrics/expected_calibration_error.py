@@ -62,7 +62,7 @@ def expected_calibration_error(
         raise ShapeError("`estimates` and `targets` must have the same shape.")
 
     if model_names is None:
-        model_names = ["M_" + str(i) for i in range(estimates.shape[-1])]
+        model_names = ["M_" + str(i) for i in range(1, estimates.shape[-1] + 1)]
     elif len(model_names) != estimates.shape[-1]:
         raise ShapeError("There must be exactly one `model_name` for each model in `estimates`")
 

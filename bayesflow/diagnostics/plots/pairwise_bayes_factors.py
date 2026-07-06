@@ -24,25 +24,25 @@ def pairwise_bayes_factors(
     r"""Mean pairwise log Bayes factor heatmap, stratified by true generating model.
 
     For each true model :math:`\mathcal{M}_m`, computes the mean predicted
-    log Bayes factor :math:`\log K_{m,j}` over all datasets generated from
+    log Bayes factor :math:`\log \mathrm{BF}_{m,j}` over all datasets generated from
     :math:`\mathcal{M}_m`:
 
     .. math::
 
-        \hat{\mu}_{m,j} = \mathbb{E}\!\left[\log K_{m,j}(x) \mid \mathcal{M}_m\right]
+        \hat{\mu}_{m,j} = \mathbb{E}\!\left[\log \mathrm{BF}_{m,j}(x) \mid \mathcal{M}_m\right]
 
-    where :math:`\log K_{m,j} = f_m - f_j` and the full :math:`M \times M`
+    where :math:`\log \mathrm{BF}_{m,j} = f_m - f_j` and the full :math:`M \times M`
     pairwise matrix is obtained by prepending the reference anchor
     :math:`f_0 \equiv 0` to the :math:`M - 1` network outputs.
 
     A well-trained network produces **positive** off-diagonal entries in each
     row (the predicted evidence favours the true model over alternatives) and
-    zeros on the diagonal (trivially, :math:`K_{m,m} = 1`).
+    zeros on the diagonal (trivially, :math:`\mathrm{BF}_{m,m} = 1`).
 
     Parameters
     ----------
     pred_log_bayes_factors : np.ndarray of shape (num_datasets, num_models - 1)
-        Predicted log Bayes factors :math:`\log K_{k,0}` for
+        Predicted log Bayes factors :math:`\log \mathrm{BF}_{k,0}` for
         :math:`k = 1, \ldots, M-1`, as returned by
         :meth:`~bayesflow.workflows.ModelComparisonWorkflow.predict` with
         ``probs=False`` when a Bayes factor scoring rule is active.
@@ -91,14 +91,14 @@ def pairwise_bayes_factors(
     if model_names is None:
         model_names = [rf"$M_{{{m}}}$" for m in range(1, M + 1)]
 
-    # Prepend f_0 = 0 to obtain (N, M) with entry k = log K_{k,0}
+    # Prepend f_0 = 0 to obtain (N, M) with entry k = log BF_{k,0}
     f0 = np.zeros((N, 1), dtype=pred_log_bayes_factors.dtype)
     f = np.concatenate([f0, pred_log_bayes_factors], axis=-1)
 
-    # Full (N, M, M) pairwise matrix: entry [n, i, j] = f_i - f_j = log K_{i,j}
+    # Full (N, M, M) pairwise matrix: entry [n, i, j] = f_i - f_j = log BF_{i,j}
     pairwise = f[:, :, np.newaxis] - f[:, np.newaxis, :]
 
-    # Stratified mean: row m = mean log K_{m,j} over datasets from M_m
+    # Stratified mean: row m = mean log BF_{m,j} over datasets from M_m
     mean_matrix = np.zeros((M, M))
     for m in range(M):
         mask = true_model_idx == m

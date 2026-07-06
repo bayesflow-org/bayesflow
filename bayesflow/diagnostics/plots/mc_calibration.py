@@ -75,6 +75,11 @@ def mc_calibration(
     fig : plt.Figure - the figure instance for optional saving
     """
 
+    # Default to the same 1-based names as the other model comparison plots
+    if model_names is None and not isinstance(true_models, Mapping):
+        num_models = np.asarray(true_models).shape[-1]
+        model_names = [rf"$M_{{{m}}}$" for m in range(1, num_models + 1)]
+
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
         estimates=pred_models,

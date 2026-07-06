@@ -7,6 +7,7 @@ from bayesflow.utils import feature_mask, layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...helpers import FourierEmbedding, DiffusionTransformerBlock
+from ..mlp import MLP
 
 
 @serializable("bayesflow.networks")
@@ -119,13 +120,14 @@ class DiffusionTransformer(keras.Layer):
                 )
 
         # DiT-style shared time MLP on top of the Fourier features
-        self.time_mlp = keras.Sequential(
-            [
-                keras.layers.Dense(self.width, activation="silu", kernel_initializer=kernel_initializer),
-                keras.layers.Dense(self.width, activation="silu", kernel_initializer=kernel_initializer),
-            ]
+        self.time_mlp = MLP(
+            widths=(self.width, self.width),
+            activation="silu",
+            kernel_initializer=kernel_initializer,
+            residual=True,
+            dropout=dropout,
         )
-        self.ada_ln_shared = keras.layers.Dense(6 * self.width, kernel_initializer="zeros", bias_initializer="zeros")
+        self.ada_shared = keras.layers.Dense(6 * self.width, kernel_initializer="zeros", bias_initializer="zeros")
 
         self.value_proj = keras.layers.Dense(self.width, use_bias=use_bias, kernel_initializer=kernel_initializer)
         self.condition_proj = None
@@ -174,7 +176,7 @@ class DiffusionTransformer(keras.Layer):
         t_fourier_shape = self.time_emb.compute_output_shape(t_shape)
         self.time_mlp.build(t_fourier_shape)
         t_emb_shape = self.time_mlp.compute_output_shape(t_fourier_shape)
-        self.ada_ln_shared.build(t_emb_shape)
+        self.ada_shared.build(t_emb_shape)
 
         # Per-node identifier embeddings
         self.target_id = self.add_weight(
@@ -238,7 +240,7 @@ class DiffusionTransformer(keras.Layer):
         t_emb = self.time_mlp(self.time_emb(t))
 
         # Shared adaLN-single modulation, computed once and reused by every block.
-        base_mod = self.ada_ln_shared(t_emb)
+        base_mod = self.ada_shared(t_emb)
 
         attention_mask = kwargs.get("attention_mask", None)
         no_mask_inputs = target_inference_mask is None and condition_mask is None and target_condition_mask is None

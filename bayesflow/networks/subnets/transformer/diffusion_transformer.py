@@ -220,7 +220,7 @@ class DiffusionTransformer(keras.Layer):
         batch_size = keras.ops.shape(x)[0]
 
         # Tokenize targets per-dimension; they form the residual stream.
-        h = self.value_proj(keras.ops.expand_dims(x, axis=-1), training=training)
+        h = self.value_proj(keras.ops.expand_dims(x, axis=-1))
         h = h + self.target_id[None]
         h = h + self.state_embedding(target_inference_mask, target_condition_mask, num_targets, batch_size)
 
@@ -238,7 +238,7 @@ class DiffusionTransformer(keras.Layer):
         t_emb = self.time_mlp(self.time_emb(t))
 
         # Shared adaLN-single modulation, computed once and reused by every block.
-        base_mod = self.ada_ln_shared(t_emb, training=training)
+        base_mod = self.ada_ln_shared(t_emb)
 
         attention_mask = kwargs.get("attention_mask", None)
         no_mask_inputs = target_inference_mask is None and condition_mask is None and target_condition_mask is None

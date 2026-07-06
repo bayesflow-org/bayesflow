@@ -1,6 +1,6 @@
 import pytest
 
-from bayesflow.networks import MLP, TimeMLP, TimeTransformer
+from bayesflow.networks import MLP, TimeMLP, DiffusionTransformer
 
 
 @pytest.fixture(params=[None, 0.0, 0.1])
@@ -30,7 +30,7 @@ def time_mlp(dropout, norm, residual):
 
 @pytest.fixture()
 def time_transformer(dropout):
-    return TimeTransformer(widths=[64, 64], num_heads=4, dropout=0.0 if dropout is None else dropout)
+    return DiffusionTransformer(widths=[64, 64], num_heads=4, dropout=0.0 if dropout is None else dropout)
 
 
 @pytest.fixture()

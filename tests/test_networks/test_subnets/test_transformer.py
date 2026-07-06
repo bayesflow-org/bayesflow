@@ -1,7 +1,7 @@
 import keras
 import numpy as np
 
-from bayesflow.networks.subnets.transformer.time_transformer import TimeTransformer, TimeTransformerBlock
+from bayesflow.networks.subnets.transformer.diffusion_transformer import DiffusionTransformer, DiffusionTransformerBlock
 from bayesflow.utils.serialization import deserialize, serialize
 
 from ...utils import assert_layers_equal
@@ -37,7 +37,7 @@ def test_time_transformer_output_shape(time_transformer):
 
 
 def test_time_transformer_block_zero_update_mask_keeps_tokens():
-    block = TimeTransformerBlock(width=8, num_heads=2)
+    block = DiffusionTransformerBlock(width=8, num_heads=2)
     x = keras.random.normal((2, 3, 8))
     base_mod = keras.random.normal((2, 6 * 8))
     update_mask = keras.ops.zeros((2, 3, 1))
@@ -51,7 +51,7 @@ def test_time_transformer_identity_mask_processes_tokens_independently(num_featu
     """An identity dependency mask must make each output token a function of only
     its own input token (i.e. the model estimates one-dimensional marginals)."""
 
-    tt = TimeTransformer(widths=(16, 16, 16), num_heads=2, dropout=0.0)
+    tt = DiffusionTransformer(widths=(16, 16, 16), num_heads=2, dropout=0.0)
     cond_shape = None
     tt.build(((1, num_features), (1, 1), cond_shape))
     rng = np.random.default_rng(0)

@@ -7,36 +7,36 @@ from bayesflow.utils.serialization import deserialize, serialize
 from ...utils import assert_layers_equal
 
 
-def test_time_transformer_serialize_deserialize(time_transformer, build_shapes_time):
-    time_transformer.build(**build_shapes_time)
+def test_diffusion_transformer_serialize_deserialize(diffusion_transformer, build_shapes_time):
+    diffusion_transformer.build(**build_shapes_time)
 
-    serialized = serialize(time_transformer)
+    serialized = serialize(diffusion_transformer)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
 
     assert reserialized == serialized
 
 
-def test_save_and_load_time_transformer(tmp_path, time_transformer, build_shapes_time):
-    time_transformer.build(**build_shapes_time)
+def test_save_and_load_diffusion_transformer(tmp_path, diffusion_transformer, build_shapes_time):
+    diffusion_transformer.build(**build_shapes_time)
 
-    keras.saving.save_model(time_transformer, tmp_path / "model.keras")
+    keras.saving.save_model(diffusion_transformer, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
 
-    assert_layers_equal(time_transformer, loaded)
+    assert_layers_equal(diffusion_transformer, loaded)
 
 
-def test_time_transformer_output_shape(time_transformer):
+def test_diffusion_transformer_output_shape(diffusion_transformer):
     x = keras.ops.ones((4, 3))
     t = keras.ops.ones((4, 1))
     conditions = keras.ops.ones((4, 5))
 
-    out = time_transformer((x, t, conditions), target_inference_mask=keras.ops.array([[1, 0, 1]] * 4))
+    out = diffusion_transformer((x, t, conditions), target_inference_mask=keras.ops.array([[1, 0, 1]] * 4))
 
     assert tuple(out.shape) == (4, 3)
 
 
-def test_time_transformer_block_zero_update_mask_keeps_tokens():
+def test_diffusion_transformer_block_zero_update_mask_keeps_tokens():
     block = DiffusionTransformerBlock(width=8, num_heads=2)
     x = keras.random.normal((2, 3, 8))
     base_mod = keras.random.normal((2, 6 * 8))
@@ -47,7 +47,7 @@ def test_time_transformer_block_zero_update_mask_keeps_tokens():
     assert keras.ops.all(keras.ops.isclose(out, x))
 
 
-def test_time_transformer_identity_mask_processes_tokens_independently(num_features=5):
+def test_diffusion_transformer_identity_mask_processes_tokens_independently(num_features=5):
     """An identity dependency mask must make each output token a function of only
     its own input token (i.e. the model estimates one-dimensional marginals)."""
 

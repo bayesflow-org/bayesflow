@@ -29,7 +29,7 @@ def time_mlp(dropout, norm, residual):
 
 
 @pytest.fixture()
-def time_transformer(dropout):
+def diffusion_transformer(dropout):
     return DiffusionTransformer(widths=[64, 64], num_heads=4, dropout=0.0 if dropout is None else dropout)
 
 

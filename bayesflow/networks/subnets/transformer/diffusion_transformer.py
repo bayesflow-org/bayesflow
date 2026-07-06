@@ -291,12 +291,13 @@ class DiffusionTransformer(keras.Layer):
         present, ``0`` = missing). ``None`` masks default to all-latent / all-present. When
         ``latent`` is ``False`` (conditions), present tokens are always *observed*.
         """
-        ones = keras.ops.ones((batch_size, num_tokens))
-        present = (ones if present_mask is None else present_mask)[..., None]
+        dtype = self.state_embeddings.dtype
+        ones = keras.ops.ones((batch_size, num_tokens), dtype=dtype)
+        present = (ones if present_mask is None else keras.ops.cast(present_mask, dtype))[..., None]
         latent_w = (
-            (ones if latent_mask is None else latent_mask)[..., None]
+            (ones if latent_mask is None else keras.ops.cast(latent_mask, dtype))[..., None]
             if latent
-            else keras.ops.zeros((batch_size, num_tokens, 1))
+            else keras.ops.zeros((batch_size, num_tokens, 1), dtype=dtype)
         )
 
         e_latent = self.state_embeddings[self._STATE_LATENT]

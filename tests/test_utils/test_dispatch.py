@@ -18,7 +18,7 @@ class DummyNetwork:
     [
         ("mlp", "bayesflow.networks.MLP"),
         ("time_mlp", "bayesflow.networks.TimeMLP"),
-        ("time_transformer", "bayesflow.networks.TimeTransformer"),
+        ("diffusion_transformer", "bayesflow.networks.DiffusionTransformer"),
     ],
 )
 def test_find_network_by_name(monkeypatch, name, expected_class_path):

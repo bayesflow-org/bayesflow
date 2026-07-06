@@ -46,6 +46,22 @@ class Approximator(BackendApproximator):
         if hasattr(self, "standardizer"):
             return self.standardizer.standardize_layers
 
+    def _maybe_inject_guidance_unstandardize(self, kwargs: dict) -> dict:
+        """Inject an ``unstandardize`` callable into ``guidance_kwargs`` for sampling.
+
+        Only acts when ``guidance_kwargs`` is present.
+        """
+        guidance_kwargs = kwargs.get("guidance_kwargs")
+        if guidance_kwargs is None or not hasattr(self, "standardizer"):
+            return kwargs
+
+        def unstandardize(x):
+            return self.standardizer.maybe_standardize(x, key="inference_variables", stage="inference", forward=False)
+
+        kwargs = dict(kwargs)
+        kwargs["guidance_kwargs"] = {"unstandardize": unstandardize, **guidance_kwargs}
+        return kwargs
+
     def build(self, data_shapes: Mapping[str, tuple[int] | Mapping[str, Mapping]]):
         """
         Template method for building all network components.

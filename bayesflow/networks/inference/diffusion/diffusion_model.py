@@ -294,6 +294,7 @@ class DiffusionModel(InferenceNetwork):
         guidance_strength: float = 1.0,
         scaling_function: Callable = None,
         reduce: Literal["sum", "mean"] = "sum",
+        unstandardize: Callable = None,
     ) -> Tensor:
         """
         Takes the current denoised estimate and the diffusion time. By default, it computes a guidance constraint term
@@ -301,9 +302,9 @@ class DiffusionModel(InferenceNetwork):
          user to implement custom guidance.
 
         Custom guidance:
-        def guidance_function(x_pred, time, score):
-            # do something here, needs to return the new score
-            return score
+        def guidance_function(x_pred, time, score, unstandardize=None, **kwargs):
+            # x_pred is in the standardized space; call unstandardize(x_pred) to map it
+            # back to the original parameter space.
         workflow.approximator.inference_network.guidance_function = guidance_function
 
         Parameters
@@ -324,6 +325,12 @@ class DiffusionModel(InferenceNetwork):
             If None, a default scaling based on the noise schedule is used. Default is None.
         reduce : {'sum', 'mean'}
             Method to reduce the log-probabilities from multiple constraints. Default is 'sum'.
+        unstandardize : Callable, optional
+            A function mapping the standardized denoised estimate back to the original
+            (unstandardized) inference-variable space. When set, constraints are evaluated
+            on the unstandardized estimate, so they can be expressed directly in the
+            original parameter space. Injected automatically by the approximator during
+            sampling; the gradient flows back through the transformation. Default is None.
 
         Returns
         -------
@@ -343,8 +350,14 @@ class DiffusionModel(InferenceNetwork):
                 alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr)
                 return ops.square(alpha_t) / ops.square(sigma_t)
 
+        if unstandardize is None:
+
+            def unstandardize(x):
+                return x
+
         def objective_fn(x: Tensor) -> Tensor:
             st = scaling_function(time)
+            x = unstandardize(x)
             logp = keras.ops.zeros((), dtype=x.dtype)
             for c in constraints:
                 ck = c(x)

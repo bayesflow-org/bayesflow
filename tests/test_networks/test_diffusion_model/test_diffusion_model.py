@@ -220,8 +220,8 @@ def test_diffusion_guidance(simple_diffusion_model):
     test_conditions = workflow.simulate(5)
     samples = workflow.sample(num_samples=2, conditions=test_conditions)["parameters"]
 
-    def constraint(z):
-        params = workflow.approximator.standardize_layers["inference_variables"](z, forward=False)
+    def constraint(params):
+        # params are automatically unstandardized before the constraint is called
         a1 = params[..., 0]
         return a1
 
@@ -232,6 +232,9 @@ def test_diffusion_guidance(simple_diffusion_model):
     assert (samples_guided[..., 0] < 0).all()
 
     def guidance_function(x_pred, time, score, **guidance_kwargs):
+        # params are not automatically unstandardized before the guidance is called
+        unstandardize = guidance_kwargs.get("unstandardize", lambda x: x)
+        x_pred = unstandardize(x_pred)
         return x_pred * 0
 
     workflow.approximator.inference_network.guidance_function = guidance_function

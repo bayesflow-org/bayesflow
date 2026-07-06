@@ -265,6 +265,7 @@ class ContinuousApproximator(Approximator):
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
 
         kwargs = self._standardize_targets_fixed(kwargs)
+        kwargs = self._inject_guidance_unstandardize(kwargs)
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         samples = self.sampler.sample(
@@ -419,6 +420,7 @@ class ContinuousApproximator(Approximator):
         )
 
         kwargs = self._standardize_targets_fixed(kwargs)
+        kwargs = self._maybe_inject_guidance_unstandardize(kwargs)
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         samples = self.sampler.sample(

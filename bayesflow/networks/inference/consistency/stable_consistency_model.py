@@ -45,6 +45,22 @@ class StableConsistencyModel(InferenceNetwork):
     sigma : float, optional
         Standard deviation of the target distribution for the consistency loss.
         Controls the scale of the noise injected during training.  Default is 1.0.
+    noise_dist_mean : float, optional
+        Mean of the log-normal proposal distribution over noise levels used to
+        sample training times (``P_mean`` in [1]). Default is ``-1.0``.
+    noise_dist_std : float, optional
+        Standard deviation of that proposal distribution (``P_std`` in [1]).
+        Default is ``1.6``.
+    tangent_norm_eps : float, optional
+        Small constant added to the tangent norm when normalizing the training
+        target for stability (``c`` in [1]). Default is ``0.1``.
+    steps : int, optional
+        Default number of steps used by the multistep sampler. Can be overridden
+        per call by passing ``steps=`` to sampling. Default is ``15``.
+    rho : float, optional
+        Exponent controlling the curvature of the time discretization schedule
+        used at sampling time. Can be overridden per call by passing ``rho=`` to
+        sampling. Default is ``3.5``.
     subnet_kwargs : dict[str, any], optional
         Keyword arguments passed to the constructor of the chosen *subnet*
         (e.g., number of hidden units, activation functions, or dropout settings).
@@ -75,6 +91,11 @@ class StableConsistencyModel(InferenceNetwork):
         self,
         subnet: str | type | keras.Layer = "time_mlp",
         sigma: float = 1.0,
+        noise_dist_mean: float = -1.0,
+        noise_dist_std: float = 1.6,
+        tangent_norm_eps: float = 0.1,
+        steps: int = 15,
+        rho: float = 3.5,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
         **kwargs,
@@ -100,11 +121,13 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         self.sigma = sigma
-        self.p_mean = float(kwargs.get("p_mean", -1.0))
-        self.p_std = float(kwargs.get("p_std", 1.6))
-        self.c = float(kwargs.get("c", 0.1))
-        self.drop_target_prob = float(kwargs.get("drop_target_prob", 0.0))
-        self.drop_missing_prob = float(kwargs.get("drop_missing_prob", 0.0))
+        self.noise_dist_mean = noise_dist_mean
+        self.noise_dist_std = noise_dist_std
+        self.tangent_norm_eps = tangent_norm_eps
+        self.steps = steps
+        self.rho = rho
+        self.drop_target_prob = kwargs.get("drop_target_prob", 0.0)
+        self.drop_missing_prob = kwargs.get("drop_missing_prob", 0.0)
         self.seed_generator = keras.random.SeedGenerator()
 
     def get_config(self):
@@ -114,9 +137,11 @@ class StableConsistencyModel(InferenceNetwork):
         config = {
             "subnet": self.subnet,
             "sigma": self.sigma,
-            "p_mean": self.p_mean,
-            "p_std": self.p_std,
-            "c": self.c,
+            "noise_dist_mean": self.noise_dist_mean,
+            "noise_dist_std": self.noise_dist_std,
+            "tangent_norm_eps": self.tangent_norm_eps,
+            "steps": self.steps,
+            "rho": self.rho,
             "drop_target_prob": self.drop_target_prob,
             "drop_missing_prob": self.drop_missing_prob,
         }
@@ -124,7 +149,7 @@ class StableConsistencyModel(InferenceNetwork):
         return base_config | serialize(config)
 
     @staticmethod
-    def _discretize_time(num_steps: int, rho: float = 3.5):
+    def _discretize_time(num_steps: int, rho: float):
         t = keras.ops.linspace(0.0, pi / 2, num_steps)
         times = keras.ops.exp((t - pi / 2) * rho) * pi / 2
 
@@ -176,9 +201,9 @@ class StableConsistencyModel(InferenceNetwork):
         conditions  : Tensor, optional, default: None
             Conditions for an approximate conditional distribution
         **kwargs    : dict, optional, default: {}
-            Additional keyword arguments. Include `steps` (default: 15) and `rho` (default: 3.5) to
-            adjust the number of sampling steps and time discretization. Subnet-related kwargs
-            (e.g., masks) are passed to the subnet.
+            Additional keyword arguments. Pass `steps` and `rho` to override the
+            constructor defaults for the number of sampling steps and the time
+            discretization. Subnet-related kwargs (e.g., masks) are passed to the subnet.
 
         Returns
         -------
@@ -188,8 +213,8 @@ class StableConsistencyModel(InferenceNetwork):
         seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
         subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
-        steps = kwargs.get("steps", 15)
-        rho = kwargs.get("rho", 3.5)
+        steps = kwargs.get("steps", self.steps)
+        rho = kwargs.get("rho", self.rho)
 
         # noise distribution has variance sigma
         x = keras.ops.copy(z) * self.sigma
@@ -252,8 +277,9 @@ class StableConsistencyModel(InferenceNetwork):
 
         # sample time
         tau = (
-            keras.random.normal(keras.ops.shape(x)[:1], dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.p_std
-            + self.p_mean
+            keras.random.normal(keras.ops.shape(x)[:1], dtype=keras.ops.dtype(x), seed=self.seed_generator)
+            * self.noise_dist_std
+            + self.noise_dist_mean
         )
         t_ = ops.arctan(ops.exp(tau) / self.sigma)
         t = expand_right_as(t_, x)
@@ -304,7 +330,7 @@ class StableConsistencyModel(InferenceNetwork):
         )
 
         # apply normalization to stabilize training
-        g = g / (ops.norm(g, axis=-1, keepdims=True) + self.c)
+        g = g / (ops.norm(g, axis=-1, keepdims=True) + self.tangent_norm_eps)
 
         # compute adaptive weights and calculate loss
         w = self.weight_fn_projector(self.weight_fn(expand_right_to(t_, 2)))

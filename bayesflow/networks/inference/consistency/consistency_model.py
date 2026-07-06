@@ -48,9 +48,20 @@ class ConsistencyModel(InferenceNetwork):
     eps : float, optional
         The minimum time.  Default is 0.001.
     s0 : int or float, optional
-        Initial number of discretisation steps.  Default is 10.
+        Initial number of discretisation steps and s0+1 steps will be used for sampling.
+         Default is 10. During sampling, you can pass `steps` to change nmuber of multistep sampling.
     s1 : int or float, optional
         Final number of discretisation steps.  Default is 150.
+    rho : float, optional
+        Exponent controlling the curvature of the (Karras-style) time
+        discretisation schedule. Default is ``7.0``.
+    noise_dist_mean : float, optional
+        Mean of the log-normal proposal distribution over noise levels used to
+        weight the sampled discretisation times (``P_mean`` in [2]).
+        Default is ``-1.1``.
+    noise_dist_std : float, optional
+        Standard deviation of that proposal distribution (``P_std`` in [2]).
+        Default is ``2.0``.
     subnet_kwargs : dict[str, any], optional
         Keyword arguments passed to the subnet constructor or used to update the
         default MLP settings.
@@ -84,6 +95,9 @@ class ConsistencyModel(InferenceNetwork):
         eps: float = 0.001,
         s0: int | float = 10,
         s1: int | float = 150,
+        rho: float = 7.0,
+        noise_dist_mean: float = -1.1,
+        noise_dist_std: float = 2.0,
         subnet_kwargs: dict[str, any] = None,
         **kwargs,
     ):
@@ -105,28 +119,28 @@ class ConsistencyModel(InferenceNetwork):
         self.sigma = ops.sqrt(sigma2)
         self.eps = eps
         self.max_time = max_time
-        self.rho = float(kwargs.get("rho", 7.0))
-        self.p_mean = float(kwargs.get("p_mean", -1.1))
-        self.p_std = float(kwargs.get("p_std", 2.0))
+        self.rho = rho
+        self.noise_dist_mean = noise_dist_mean
+        self.noise_dist_std = noise_dist_std
 
-        self.s0 = float(s0)
-        self.s1 = float(s1)
+        self.s0 = s0
+        self.s1 = s1
 
         if self.total_steps < self.s0:
             raise ValueError(f"total_steps={self.total_steps} must be greater than or equal to s0={self.s0}.")
 
         # create variable that works with JIT compilation
-        self.current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
-        self.current_step.assign(0)
+        self._current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
+        self._current_step.assign(0)
 
         self.seed_generator = keras.random.SeedGenerator()
-        self.discretized_times = None
-        self.discretization_map = None
-        self.c_huber = None
-        self.c_huber2 = None
-        self.unique_n = None
-        self.drop_target_prob = float(kwargs.get("drop_target_prob", 0.0))
-        self.drop_missing_prob = float(kwargs.get("drop_missing_prob", 0.0))
+        self._discretized_times = None
+        self._discretization_map = None
+        self._c_huber = None
+        self._c_huber2 = None
+        self._unique_n = None
+        self.drop_target_prob = kwargs.get("drop_target_prob", 0.0)
+        self.drop_missing_prob = kwargs.get("drop_missing_prob", 0.0)
 
     @property
     def student(self):
@@ -145,8 +159,8 @@ class ConsistencyModel(InferenceNetwork):
             "s0": self.s0,
             "s1": self.s1,
             "rho": self.rho,
-            "p_mean": self.p_mean,
-            "p_std": self.p_std,
+            "noise_dist_mean": self.noise_dist_mean,
+            "noise_dist_std": self.noise_dist_std,
             "drop_target_prob": self.drop_target_prob,
             "drop_missing_prob": self.drop_missing_prob,
             # we do not need to store subnet_kwargs
@@ -199,8 +213,8 @@ class ConsistencyModel(InferenceNetwork):
         self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3
-        self.c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
-        self.c_huber2 = self.c_huber**2
+        self._c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
+        self._c_huber2 = self._c_huber**2
 
         # Calculate discretization schedule in advance
         # The Jax compiler requires fixed-size arrays, so we have
@@ -216,7 +230,7 @@ class ConsistencyModel(InferenceNetwork):
         unique_n = set()
         for step in range(int(self.total_steps)):
             unique_n.add(int(self._schedule_discretization(step)))
-        self.unique_n = sorted(list(unique_n))
+        self._unique_n = sorted(list(unique_n))
 
         # Next, we calculate the discretized times for each n
         # and establish a mapping between n and the position i of the
@@ -229,8 +243,8 @@ class ConsistencyModel(InferenceNetwork):
             discretization_map[n] = i
 
         # Finally, we convert the vectors to tensors
-        self.discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
-        self.discretization_map = ops.convert_to_tensor(discretization_map)
+        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
+        self._discretization_map = ops.convert_to_tensor(discretization_map)
 
     def _forward_train(
         self,
@@ -279,7 +293,7 @@ class ConsistencyModel(InferenceNetwork):
         subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
         steps = int(kwargs.get("steps", self.s0 + 1))
 
-        if steps not in self.unique_n:
+        if steps not in self._unique_n:
             logging.warning(
                 "The number of discretization steps is not equal to the number of unique steps used during training. "
                 "This might lead to suboptimal sample quality."
@@ -353,20 +367,20 @@ class ConsistencyModel(InferenceNetwork):
         # The discretization schedule requires the number of passed training steps.
         # To be independent of external information, we track it here.
         if training:
-            self.current_step.assign_add(1)
-            self.current_step.assign(ops.minimum(self.current_step, self.total_steps - 1))
+            self._current_step.assign_add(1)
+            self._current_step.assign(ops.minimum(self._current_step, self.total_steps - 1))
 
         discretization_index = ops.take(
-            self.discretization_map, ops.cast(self._schedule_discretization(self.current_step), "int")
+            self._discretization_map, ops.cast(self._schedule_discretization(self._current_step), "int")
         )
-        discretized_time = ops.take(self.discretized_times, discretization_index, axis=0)
+        discretized_time = ops.take(self._discretized_times, discretization_index, axis=0)
 
         # Randomly sample t_n and t_[n+1] and reshape to (batch_size, 1)
         # adapted noise schedule from [2], Section 3.5
         p = ops.where(
             discretized_time[1:] > 0.0,
-            ops.erf((ops.log(discretized_time[1:]) - self.p_mean) / (ops.sqrt(2.0) * self.p_std))
-            - ops.erf((ops.log(discretized_time[:-1]) - self.p_mean) / (ops.sqrt(2.0) * self.p_std)),
+            ops.erf((ops.log(discretized_time[1:]) - self.noise_dist_mean) / (ops.sqrt(2.0) * self.noise_dist_std))
+            - ops.erf((ops.log(discretized_time[:-1]) - self.noise_dist_mean) / (ops.sqrt(2.0) * self.noise_dist_std)),
             0.0,
         )
 
@@ -404,7 +418,7 @@ class ConsistencyModel(InferenceNetwork):
         lam = 1 / (t2 - t1)
 
         # Pseudo-huber loss, see [2], Section 3.3
-        loss = lam * (ops.sqrt(loss_mask * ops.square(teacher_out - student_out) + self.c_huber2) - self.c_huber)
+        loss = lam * (ops.sqrt(loss_mask * ops.square(teacher_out - student_out) + self._c_huber2) - self._c_huber)
         loss = weighted_mean(loss, sample_weight)
 
         return {"loss": loss}

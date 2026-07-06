@@ -248,12 +248,12 @@ def test_diffusion_guidance(simple_diffusion_model):
 # ---- Joint condition tokenization -----------------------------------------
 
 
-def test_time_transformer_conditions_as_tokens_training_step():
+def test_diffusion_transformer_conditions_as_tokens_training_step():
     """Conditions are tokenized per-dimension; the diffusion output still matches the
     target shape and a training step produces a finite loss."""
     from bayesflow.networks import DiffusionModel
 
-    dm = DiffusionModel(subnet="time_transformer", subnet_kwargs=dict(widths=(8, 8)))
+    dm = DiffusionModel(subnet="diffusion_transformer", subnet_kwargs=dict(widths=(8, 8)))
     x = keras.random.normal((4, 5))
     cond = keras.random.normal((4, 3))
     dm.build(keras.ops.shape(x), keras.ops.shape(cond))
@@ -266,11 +266,11 @@ def test_time_transformer_conditions_as_tokens_training_step():
     assert np.isfinite(keras.ops.convert_to_numpy(metrics_r["loss"]))
 
 
-def test_time_transformer_condition_mask_forwarded():
+def test_tdiffusion_transformer_condition_mask_forwarded():
     """A per-condition condition_mask is accepted and the output keeps the target shape."""
     from bayesflow.networks import DiffusionModel
 
-    dm = DiffusionModel(subnet="time_transformer", subnet_kwargs=dict(widths=(8, 8)))
+    dm = DiffusionModel(subnet="diffusion_transformer", subnet_kwargs=dict(widths=(8, 8)))
     x = keras.random.normal((4, 5))
     cond = keras.random.normal((4, 3))
     dm.build(keras.ops.shape(x), keras.ops.shape(cond))
@@ -287,7 +287,7 @@ def test_drop_missing_prob_training_and_serialization():
     from bayesflow.networks import DiffusionModel
 
     dm = DiffusionModel(
-        subnet="time_transformer",
+        subnet="diffusion_transformer",
         subnet_kwargs=dict(widths=(8, 8)),
         drop_target_prob=0.5,
         drop_missing_prob=0.3,

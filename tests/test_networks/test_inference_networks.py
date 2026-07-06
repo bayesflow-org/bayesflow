@@ -235,8 +235,6 @@ def test_masking(diffusion_type_inference_network):
     )
     target_inference_mask = np.broadcast_to(target_inference_mask, (n_test_data, 2))
     targets_fixed = test_conditions_adapted["inference_variables"]
-    if "inference_variables" in workflow.approximator.standardize_layers:
-        targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
 
     fixed_samples = workflow.sample(
         conditions=test_conditions,
@@ -299,8 +297,6 @@ def test_masking_unconditional(diffusion_type_inference_network):
     target_inference_mask = np.broadcast_to(target_inference_mask, (5, num_samples, 2)).reshape(-1, 2)
     targets_fixed = test_conditions_adapted["inference_variables"]
     targets_fixed = np.broadcast_to(np.expand_dims(targets_fixed, axis=1), (5, num_samples, 2)).reshape(-1, 2)
-    if "inference_variables" in workflow.approximator.standardize_layers:
-        targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
 
     fixed_samples = workflow.sample(
         num_samples=num_samples * 5, targets_fixed=targets_fixed, target_inference_mask=target_inference_mask

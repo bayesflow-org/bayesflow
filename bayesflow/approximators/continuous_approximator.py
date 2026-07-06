@@ -192,6 +192,25 @@ class ContinuousApproximator(Approximator):
 
         return base_config | serialize(config)
 
+    def _standardize_targets_fixed(self, kwargs: Mapping) -> dict:
+        """Standardize a user-provided ``targets_fixed`` array in place within ``kwargs``.
+
+        ``targets_fixed`` clamps inferred variables to known values during sampling. Users
+        pass it in the same (unstandardized) space as ``inference_variables``; here we apply
+        the inference-variable standardization so the value matches the network's internal
+        space. No-op if ``targets_fixed`` is absent or ``inference_variables`` is not
+        standardized.
+        """
+        targets_fixed = kwargs.get("targets_fixed")
+        if targets_fixed is None:
+            return dict(kwargs)
+
+        kwargs = dict(kwargs)
+        kwargs["targets_fixed"] = self.standardizer.maybe_standardize(
+            targets_fixed, key="inference_variables", stage="inference", forward=True
+        )
+        return kwargs
+
     def sample(
         self,
         *,
@@ -245,6 +264,7 @@ class ContinuousApproximator(Approximator):
         """
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
 
+        kwargs = self._standardize_targets_fixed(kwargs)
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         samples = self.sampler.sample(
@@ -398,6 +418,7 @@ class ContinuousApproximator(Approximator):
             summary_outputs=summary_outputs,
         )
 
+        kwargs = self._standardize_targets_fixed(kwargs)
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         samples = self.sampler.sample(

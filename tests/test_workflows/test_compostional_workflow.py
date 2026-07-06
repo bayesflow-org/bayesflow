@@ -103,8 +103,6 @@ def test_compositional_masking():
     )
     target_inference_mask = np.broadcast_to(target_inference_mask, (5, 2))
     targets_fixed = test_conditions_adapted["inference_variables"]
-    if "inference_variables" in workflow.approximator.standardize_layers:
-        targets_fixed = workflow.approximator.standardize_layers["inference_variables"](targets_fixed, forward=True)
 
     fixed_samples = workflow.compositional_sample(
         conditions=test_conditions,

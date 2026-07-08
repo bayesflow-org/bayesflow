@@ -403,6 +403,7 @@ class ConsistencyModel(InferenceNetwork):
             self.drop_target_prob,
             self.drop_missing_prob,
             self.seed_generator,
+            mask_conditions=kwargs.get("mask_conditions", True),
         )
 
         teacher_out = self._forward_train(

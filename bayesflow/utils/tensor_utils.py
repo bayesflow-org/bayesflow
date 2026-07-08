@@ -502,6 +502,7 @@ def sample_input_masks(
     drop_target_prob: float,
     drop_missing_prob: float,
     seed_generator: keras.random.SeedGenerator = None,
+    mask_conditions: bool = True,
 ) -> tuple[Tensor | float, Tensor | float, dict]:
     """Generate the target and condition masks and populate ``subnet_kwargs``.
 
@@ -510,6 +511,10 @@ def sample_input_masks(
     clean (so the network can condition on them), and ``drop_missing_prob`` randomly
     marks clean targets and conditions as missing so the network learns to handle missing
     fields. The masks are forwarded to subnets that accept them (e.g. ``time_transformer``).
+
+    ``mask_conditions`` controls whether a ``condition_mask`` is generated for the
+    conditions. It should be ``False`` when the conditions are the output of a summary
+    network, since randomly masking a learned summary embedding is not meaningful.
 
     Returns
     -------
@@ -537,7 +542,8 @@ def sample_input_masks(
             subnet_kwargs["target_condition_mask"] = target_condition_mask
 
         if (
-            conditions is not None
+            mask_conditions
+            and conditions is not None
             and "condition_mask" not in subnet_kwargs
             and call_accepts_kwarg(subnet.call, "condition_mask")
         ):

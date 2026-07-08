@@ -138,6 +138,8 @@ class ContinuousApproximator(Approximator):
             conditions=resolved_conditions,
             sample_weight=sample_weight,
             stage=stage,
+            # A summary network produces a learned embedding, no masking of the condition
+            mask_conditions=self.summary_network is None,
             **inference_kwargs,
         )
 

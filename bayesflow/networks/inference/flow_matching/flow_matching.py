@@ -193,6 +193,7 @@ class FlowMatching(InferenceNetwork):
             self.drop_target_prob,
             self.drop_missing_prob,
             self.seed_generator,
+            mask_conditions=kwargs.get("mask_conditions", True),
         )
         x = maybe_mask_tensor(x, mask=mask_x, replacement=x1)
 

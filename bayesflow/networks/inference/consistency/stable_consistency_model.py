@@ -297,6 +297,7 @@ class StableConsistencyModel(InferenceNetwork):
             self.drop_target_prob,
             self.drop_missing_prob,
             self.seed_generator,
+            mask_conditions=kwargs.get("mask_conditions", True),
         )
         xt = maybe_mask_tensor(xt, mask=mask_x, replacement=x)
 

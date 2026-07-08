@@ -198,6 +198,7 @@ class DiffusionModel(InferenceNetwork):
             self.drop_target_prob,
             self.drop_missing_prob,
             self.seed_generator,
+            mask_conditions=kwargs.get("mask_conditions", True),
         )
         diffused_x = maybe_mask_tensor(diffused_x, mask=mask_x, replacement=x)
 

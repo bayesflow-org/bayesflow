@@ -67,7 +67,8 @@ def test_compositional_masking():
         inference_network=DiffusionModel(
             subnet="diffusion_transformer",
             subnet_kwargs=dict(widths=(8, 8)),
-            drop_target_prob=0.5,
+            fixed_target_prob=0.3,
+            missing_target_prob=0.3,
         ),
         inference_variables=["parameters"],
         inference_conditions=["observables"],
@@ -95,21 +96,21 @@ def test_compositional_masking():
     )["parameters"]
 
     test_conditions_adapted = workflow.adapter(test_conditions)
-    target_inference_mask = keras.ops.concatenate(
+    fixed_target_mask = keras.ops.concatenate(
         (
             keras.ops.ones(1),  # param 1 is inferred
             keras.ops.zeros(1),  # param 2 is fixed
         )
     )
-    target_inference_mask = np.broadcast_to(target_inference_mask, (5, 2))
+    fixed_target_mask = np.broadcast_to(fixed_target_mask, (5, 2))
     targets_fixed = test_conditions_adapted["inference_variables"]
 
     fixed_samples = workflow.compositional_sample(
         conditions=test_conditions,
         num_samples=num_samples,
         compute_prior_score=prior_score_fn,
-        targets_fixed=targets_fixed,
-        target_inference_mask=target_inference_mask,
+        fixed_target_value=targets_fixed,
+        fixed_target_mask=fixed_target_mask,
     )["parameters"]
     assert samples.shape == fixed_samples.shape
     assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()
@@ -119,7 +120,7 @@ def test_compositional_masking():
         conditions=test_conditions,
         num_samples=num_samples,
         compute_prior_score=prior_score_fn,
-        target_condition_mask=target_inference_mask,
+        infer_target_mask=fixed_target_mask,
     )["parameters"]
     assert samples.shape == marginalized_samples.shape
 

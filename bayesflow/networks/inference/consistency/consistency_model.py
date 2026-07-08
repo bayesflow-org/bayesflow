@@ -10,6 +10,7 @@ from bayesflow.utils import (
     filter_kwargs,
     layer_kwargs,
     logging,
+    MaskName,
     maybe_mask_tensor,
     resolve_seed,
     sample_input_masks,
@@ -33,33 +34,33 @@ class ConsistencyModel(InferenceNetwork):
     total_steps : int or float
         The total number of training steps, must be calculated as
         ``num_epochs * num_batches`` and cannot be inferred during construction.
-    subnet : str or keras.Layer, optional
+    subnet : str or keras.Layer
         A neural network type for the consistency model, will be instantiated using
         *subnet_kwargs*.  If a string is provided, it should be a registered name
         (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
         be directly instantiated with the given *subnet_kwargs*.  Any subnet must
         accept a tuple of tensors ``(target, time, conditions)``.
         Default is ``"time_mlp"``.
-    max_time : int or float, optional
+    max_time : int or float
         The maximum time of the diffusion, equivalent to the maximum noise level
         (``x_1 = z * max_time``).  Default is 80.
-    sigma2 : float, optional
+    sigma2 : float
         Controls the shape of the skip-function.  Default is 1.0.
-    eps : float, optional
+    eps : float
         The minimum time.  Default is 0.001.
-    s0 : int or float, optional
+    s0 : int or float
         Initial number of discretisation steps and s0+1 steps will be used for sampling.
          Default is 10. During sampling, you can pass `steps` to change nmuber of multistep sampling.
     s1 : int or float, optional
         Final number of discretisation steps.  Default is 150.
-    rho : float, optional
+    rho : float
         Exponent controlling the curvature of the (Karras-style) time
         discretisation schedule. Default is ``7.0``.
-    noise_dist_mean : float, optional
+    noise_dist_mean : float
         Mean of the log-normal proposal distribution over noise levels used to
         weight the sampled discretisation times (``P_mean`` in [2]).
         Default is ``-1.1``.
-    noise_dist_std : float, optional
+    noise_dist_std : float
         Standard deviation of that proposal distribution (``P_std`` in [2]).
         Default is ``2.0``.
     subnet_kwargs : dict[str, any], optional
@@ -81,9 +82,9 @@ class ConsistencyModel(InferenceNetwork):
 
     _SUBNET_MASK_KEYS = {
         "attention_mask",
-        "target_inference_mask",
-        "target_condition_mask",
-        "condition_mask",
+        MaskName.FIXED_TARGET,
+        MaskName.INFER_TARGET,
+        MaskName.OBSERVED_CONDITION,
     }
 
     def __init__(
@@ -139,8 +140,9 @@ class ConsistencyModel(InferenceNetwork):
         self._c_huber = None
         self._c_huber2 = None
         self._unique_n = None
-        self.drop_target_prob = kwargs.get("drop_target_prob", 0.0)
-        self.drop_missing_prob = kwargs.get("drop_missing_prob", 0.0)
+        self.fixed_target_prob = kwargs.get("fixed_target_prob", 0.0)
+        self.missing_target_prob = kwargs.get("missing_target_prob", 0.0)
+        self.missing_conditions_prob = kwargs.get("missing_conditions_prob", 0.0)
 
     @property
     def student(self):
@@ -161,8 +163,9 @@ class ConsistencyModel(InferenceNetwork):
             "rho": self.rho,
             "noise_dist_mean": self.noise_dist_mean,
             "noise_dist_std": self.noise_dist_std,
-            "drop_target_prob": self.drop_target_prob,
-            "drop_missing_prob": self.drop_missing_prob,
+            "fixed_target_prob": self.fixed_target_prob,
+            "missing_target_prob": self.missing_target_prob,
+            "missing_conditions_prob": self.missing_conditions_prob,
             # we do not need to store subnet_kwargs
         }
 
@@ -304,23 +307,23 @@ class ConsistencyModel(InferenceNetwork):
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
 
         # Apply user-provided target mask if available
-        target_inference_mask = kwargs.get("target_inference_mask", None)
-        targets_fixed = kwargs.get("targets_fixed", None)
-        if target_inference_mask is not None:
-            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(x))
+        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
+        targets_fixed = kwargs.get(MaskName.FIXED_TARGET_VALUE, None)
+        if fixed_target_mask is not None:
+            fixed_target_mask = keras.ops.broadcast_to(fixed_target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
 
         x = self.consistency_function(x, t, conditions=conditions, training=training, **subnet_kwargs)
-        x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
+        x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
             x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x_n = maybe_mask_tensor(x_n, mask=target_inference_mask, replacement=targets_fixed)
+            x_n = maybe_mask_tensor(x_n, mask=fixed_target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, training=training, **subnet_kwargs)
-            x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(
@@ -400,10 +403,10 @@ class ConsistencyModel(InferenceNetwork):
             conditions,
             subnet_kwargs,
             training,
-            self.drop_target_prob,
-            self.drop_missing_prob,
-            self.seed_generator,
-            mask_conditions=kwargs.get("mask_conditions", True),
+            fixed_target_prob=self.fixed_target_prob,
+            missing_target_prob=self.missing_target_prob,
+            missing_conditions_prob=self.missing_conditions_prob,
+            seed_generator=self.seed_generator,
         )
 
         teacher_out = self._forward_train(

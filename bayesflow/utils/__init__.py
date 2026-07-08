@@ -92,13 +92,10 @@ from .tensor_utils import (
     expand_right_as,
     expand_right_to,
     expand_tile,
-    feature_mask,
     fill_triangular_matrix,
-    maybe_mask_tensor,
     pad,
     positive_diag,
     repeat_and_flatten,
-    sample_input_masks,
     searchsorted,
     linsolve_batched,
     size_of,
@@ -108,6 +105,8 @@ from .tensor_utils import (
     tree_stack,
     weighted_mean,
 )
+
+from .masks import MaskName, feature_mask, maybe_mask_tensor, sample_input_masks
 
 from .classification import calibration_curve, confusion_matrix
 

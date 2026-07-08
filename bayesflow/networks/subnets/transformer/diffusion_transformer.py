@@ -23,9 +23,9 @@ class DiffusionTransformer(keras.Layer):
     tokens form the residual stream; condition tokens are embedded once and enter every
     block only as frozen keys/values (cross-attention style), so per-block compute scales
     with the number of targets. Three masks govern the structure:
-    ``target_inference_mask`` (``1`` = noised/inferred, ``0`` = clean),
-    ``target_condition_mask`` (``1`` = present, ``0`` = missing) and
-    ``condition_mask`` (``1`` = present, ``0`` = missing).
+    ``fixed_target_mask`` (``1`` = noised/inferred, ``0`` = clean),
+    ``infer_target_mask`` (``1`` = present, ``0`` = missing) and
+    ``observed_condition_mask`` (``1`` = present, ``0`` = missing).
     From them a directed dependency mask is built so observed inputs (present clean targets + present conditions)
     form a set that inferred targets attend to, while missing targets and conditions are excluded.
     An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +num_conditions)`` may be
@@ -213,9 +213,9 @@ class DiffusionTransformer(keras.Layer):
         self,
         inputs: tuple[Tensor, Tensor, Tensor | None],
         training: bool | None = None,
-        target_inference_mask: Tensor | None = None,
-        condition_mask: Tensor | None = None,
-        target_condition_mask: Tensor | None = None,
+        fixed_target_mask: Tensor | None = None,
+        observed_condition_mask: Tensor | None = None,
+        infer_target_mask: Tensor | None = None,
         **kwargs,
     ) -> Tensor:
         x, t, conditions = inputs
@@ -225,7 +225,7 @@ class DiffusionTransformer(keras.Layer):
         # Tokenize targets per-dimension; they form the residual stream.
         h = self.value_proj(keras.ops.expand_dims(x, axis=-1))
         h = h + self.target_id[None]
-        h = h + self.state_embedding(target_inference_mask, target_condition_mask, num_targets, batch_size)
+        h = h + self.state_embedding(fixed_target_mask, infer_target_mask, num_targets, batch_size)
 
         # Conditions are embedded once and enter the blocks only as frozen keys/values.
         cond_h = None
@@ -234,7 +234,9 @@ class DiffusionTransformer(keras.Layer):
             num_conditions = keras.ops.shape(conditions)[-1]
             cond_h = self.condition_proj(keras.ops.expand_dims(conditions, axis=-1))
             cond_h = cond_h + self.condition_id[None]
-            cond_h = cond_h + self.state_embedding(None, condition_mask, num_conditions, batch_size, latent=False)
+            cond_h = cond_h + self.state_embedding(
+                None, observed_condition_mask, num_conditions, batch_size, latent=False
+            )
             cond_h = self.condition_norm(cond_h, training=training)
 
         t = keras.ops.reshape(t, (keras.ops.shape(t)[0], -1))[:, :1]
@@ -244,18 +246,18 @@ class DiffusionTransformer(keras.Layer):
         base_mod = self.ada_shared(t_emb)
 
         attention_mask = kwargs.get("attention_mask", None)
-        no_mask_inputs = target_inference_mask is None and condition_mask is None and target_condition_mask is None
+        no_mask_inputs = fixed_target_mask is None and observed_condition_mask is None and infer_target_mask is None
         if attention_mask is None and not no_mask_inputs:
             attention_mask = self.conditioning_attention_mask(
-                target_inference_mask,
-                condition_mask,
-                num_targets,
-                num_conditions,
-                batch_size,
-                target_condition_mask,
+                fixed_target_mask=fixed_target_mask,
+                observed_condition_mask=observed_condition_mask,
+                infer_target_mask=infer_target_mask,
+                num_targets=num_targets,
+                num_conditions=num_conditions,
+                batch_size=batch_size,
             )
 
-        update_mask = feature_mask(target_inference_mask, x)
+        update_mask = feature_mask(fixed_target_mask, x)
 
         for block in self.blocks:
             h = block(
@@ -309,12 +311,12 @@ class DiffusionTransformer(keras.Layer):
 
     @staticmethod
     def conditioning_attention_mask(
-        target_inference_mask: Tensor | None,
-        condition_mask: Tensor | None,
+        fixed_target_mask: Tensor | None,
+        observed_condition_mask: Tensor | None,
+        infer_target_mask: Tensor | None,
         num_targets: int,
         num_conditions: int,
         batch_size: Tensor,
-        target_condition_mask: Tensor | None = None,
     ) -> Tensor:
         """Build the directed dependency mask for target queries over ``[targets, conditions]`` keys.
 
@@ -329,18 +331,18 @@ class DiffusionTransformer(keras.Layer):
 
         Parameters
         ----------
-        target_inference_mask : Tensor or None
+        fixed_target_mask : Tensor or None
             Per-target ``(batch, num_targets)`` with ``1`` = noised/latent, ``0`` = clean.
             ``None`` treats every target as latent.
-        condition_mask : Tensor or None
+        observed_condition_mask : Tensor or None
             Per-condition ``(batch, num_conditions)`` with ``1`` = present, ``0`` = missing.
             ``None`` treats every condition as present.
+        infer_target_mask : Tensor or None
+            Per-target ``(batch, num_targets)`` with ``1`` = present, ``0`` = missing.
         num_targets, num_conditions : int
             Number of target and condition tokens.
         batch_size : Tensor
             Batch size.
-        target_condition_mask : Tensor or None
-            Per-target ``(batch, num_targets)`` with ``1`` = present, ``0`` = missing.
 
         Returns
         -------
@@ -350,21 +352,21 @@ class DiffusionTransformer(keras.Layer):
         """
         target_latent = (
             keras.ops.ones((batch_size, num_targets), dtype="bool")
-            if target_inference_mask is None
-            else keras.ops.cast(target_inference_mask, "bool")
+            if fixed_target_mask is None
+            else keras.ops.cast(fixed_target_mask, "bool")
         )
         target_present = (
             keras.ops.ones((batch_size, num_targets), dtype="bool")
-            if target_condition_mask is None
-            else keras.ops.cast(target_condition_mask, "bool")
+            if infer_target_mask is None
+            else keras.ops.cast(infer_target_mask, "bool")
         )
         target_observed = keras.ops.logical_and(target_present, keras.ops.logical_not(target_latent))
 
         if num_conditions > 0:
             condition_present = (
                 keras.ops.ones((batch_size, num_conditions), dtype="bool")
-                if condition_mask is None
-                else keras.ops.cast(condition_mask, "bool")
+                if observed_condition_mask is None
+                else keras.ops.cast(observed_condition_mask, "bool")
             )
             keys_observed = keras.ops.concatenate([target_observed, condition_present], axis=1)
             keys_present = keras.ops.concatenate([target_present, condition_present], axis=1)

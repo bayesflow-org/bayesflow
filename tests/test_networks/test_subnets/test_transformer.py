@@ -31,7 +31,7 @@ def test_diffusion_transformer_output_shape(diffusion_transformer):
     t = keras.ops.ones((4, 1))
     conditions = keras.ops.ones((4, 5))
 
-    out = diffusion_transformer((x, t, conditions), target_inference_mask=keras.ops.array([[1, 0, 1]] * 4))
+    out = diffusion_transformer((x, t, conditions), fixed_target_mask=keras.ops.array([[1, 0, 1]] * 4))
 
     assert tuple(out.shape) == (4, 3)
 

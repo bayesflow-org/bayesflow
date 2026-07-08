@@ -6,7 +6,7 @@ import keras
 
 from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils.logging import warning
-from bayesflow.utils import slice_maybe_nested, dim_maybe_nested, repeat_and_flatten, tree_concatenate
+from bayesflow.utils import MaskName, slice_maybe_nested, dim_maybe_nested, repeat_and_flatten, tree_concatenate
 from bayesflow.types import Tensor
 
 
@@ -78,9 +78,9 @@ class Sampler:
                 sample_shape=sample_shape,
                 seed=seed,
                 masking_names=(
-                    "target_inference_mask",
-                    "targets_fixed",
-                    "target_condition_mask",
+                    MaskName.FIXED_TARGET,
+                    MaskName.FIXED_TARGET_VALUE,
+                    MaskName.INFER_TARGET,
                 ),  # only needed for unconditional sampling
                 **kwargs,
             )
@@ -122,7 +122,7 @@ class Sampler:
     ):
         conditions = self.repeat_and_flatten_conditions(conditions, num_samples)
 
-        # tensors like target_inference_mask (shape [feature_dim]) are passed through
+        # tensors like fixed_target_mask (shape [feature_dim]) are passed through
         # unchanged when no conditions are given
         kwargs = {
             k: self.repeat_and_flatten_conditions(v, num_samples)

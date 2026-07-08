@@ -83,8 +83,9 @@ def diffusion_model_with_masking():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=(8, 8)),
-        drop_cond_prob=0.5,
-        drop_target_prob=0.5,
+        missing_target_prob=0.3,
+        missing_conditions_prob=0.3,
+        fixed_target_prob=0.3,
     )
 
 

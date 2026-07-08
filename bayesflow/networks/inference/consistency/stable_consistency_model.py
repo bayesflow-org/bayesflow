@@ -12,6 +12,7 @@ from bayesflow.utils import (
     jvp,
     layer_kwargs,
     logging,
+    MaskName,
     maybe_mask_tensor,
     resolve_seed,
     sample_input_masks,
@@ -36,28 +37,28 @@ class StableConsistencyModel(InferenceNetwork):
 
     Parameters
     ----------
-    subnet : str, type, or keras.Layer, optional
+    subnet : str, type, or keras.Layer
         The neural network architecture used for the consistency model.  If a
         string is provided, it should be a registered name (e.g., ``"time_mlp"``).
         If a type or ``keras.Layer`` is provided, it will be directly instantiated
         with the given *subnet_kwargs*.  Any subnet must accept a tuple of tensors
         ``(target, time, conditions)``.  Default is ``"time_mlp"``.
-    sigma : float, optional
+    sigma : float
         Standard deviation of the target distribution for the consistency loss.
         Controls the scale of the noise injected during training.  Default is 1.0.
-    noise_dist_mean : float, optional
+    noise_dist_mean : float
         Mean of the log-normal proposal distribution over noise levels used to
         sample training times (``P_mean`` in [1]). Default is ``-1.0``.
-    noise_dist_std : float, optional
+    noise_dist_std : float
         Standard deviation of that proposal distribution (``P_std`` in [1]).
         Default is ``1.6``.
-    tangent_norm_eps : float, optional
+    tangent_norm_eps : float
         Small constant added to the tangent norm when normalizing the training
         target for stability (``c`` in [1]). Default is ``0.1``.
-    steps : int, optional
+    steps : int
         Default number of steps used by the multistep sampler. Can be overridden
         per call by passing ``steps=`` to sampling. Default is ``15``.
-    rho : float, optional
+    rho : float
         Exponent controlling the curvature of the time discretization schedule
         used at sampling time. Can be overridden per call by passing ``rho=`` to
         sampling. Default is ``3.5``.
@@ -82,9 +83,9 @@ class StableConsistencyModel(InferenceNetwork):
     EPS_WARN = 0.1
     _SUBNET_MASK_KEYS = {
         "attention_mask",
-        "target_inference_mask",
-        "target_condition_mask",
-        "condition_mask",
+        MaskName.FIXED_TARGET,
+        MaskName.INFER_TARGET,
+        MaskName.OBSERVED_CONDITION,
     }
 
     def __init__(
@@ -126,8 +127,9 @@ class StableConsistencyModel(InferenceNetwork):
         self.tangent_norm_eps = tangent_norm_eps
         self.steps = steps
         self.rho = rho
-        self.drop_target_prob = kwargs.get("drop_target_prob", 0.0)
-        self.drop_missing_prob = kwargs.get("drop_missing_prob", 0.0)
+        self.fixed_target_prob = kwargs.get("fixed_target_prob", 0.0)
+        self.missing_target_prob = kwargs.get("missing_target_prob", 0.0)
+        self.missing_conditions_prob = kwargs.get("missing_conditions_prob", 0.0)
         self.seed_generator = keras.random.SeedGenerator()
 
     def get_config(self):
@@ -142,8 +144,9 @@ class StableConsistencyModel(InferenceNetwork):
             "tangent_norm_eps": self.tangent_norm_eps,
             "steps": self.steps,
             "rho": self.rho,
-            "drop_target_prob": self.drop_target_prob,
-            "drop_missing_prob": self.drop_missing_prob,
+            "fixed_target_prob": self.fixed_target_prob,
+            "missing_target_prob": self.missing_target_prob,
+            "missing_conditions_prob": self.missing_conditions_prob,
         }
 
         return base_config | serialize(config)
@@ -222,24 +225,24 @@ class StableConsistencyModel(InferenceNetwork):
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
 
         # Apply user-provided target mask if available
-        target_inference_mask = kwargs.get("target_inference_mask", None)
-        targets_fixed = kwargs.get("targets_fixed", None)
-        if target_inference_mask is not None:
-            target_inference_mask = keras.ops.broadcast_to(target_inference_mask, keras.ops.shape(x))
+        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
+        targets_fixed = kwargs.get(MaskName.FIXED_TARGET_VALUE, None)
+        if fixed_target_mask is not None:
+            fixed_target_mask = keras.ops.broadcast_to(fixed_target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
 
         # apply consistency function at t_1
         x = self.consistency_function(x, t, conditions=conditions, **subnet_kwargs)
-        x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
+        x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
             t = keras.ops.full_like(t, discretized_time[n])
             x_n = ops.cos(t) * x + ops.sin(t) * noise
-            x_n = maybe_mask_tensor(x_n, mask=target_inference_mask, replacement=targets_fixed)
+            x_n = maybe_mask_tensor(x_n, mask=fixed_target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, **subnet_kwargs)
-            x = maybe_mask_tensor(x, mask=target_inference_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(
@@ -294,10 +297,10 @@ class StableConsistencyModel(InferenceNetwork):
             conditions,
             subnet_kwargs,
             training,
-            self.drop_target_prob,
-            self.drop_missing_prob,
-            self.seed_generator,
-            mask_conditions=kwargs.get("mask_conditions", True),
+            fixed_target_prob=self.fixed_target_prob,
+            missing_target_prob=self.missing_target_prob,
+            missing_conditions_prob=self.missing_conditions_prob,
+            seed_generator=self.seed_generator,
         )
         xt = maybe_mask_tensor(xt, mask=mask_x, replacement=x)
 

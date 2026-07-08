@@ -63,8 +63,9 @@ def pairwise_bayes_factors(
     cmap : matplotlib.colors.Colormap or str, optional
         Colormap for the heatmap, always centred at zero via
         :class:`~matplotlib.colors.TwoSlopeNorm`.  If a str, it should be the
-        name of a registered colormap.  Default (``None``) uses the BayesFlow
-        white-to-blue colormap, matching :func:`mc_confusion_matrix`.
+        name of a registered colormap.  Default (``None``) uses a diverging
+        gray-white-blue colormap whose blue end matches the BayesFlow default
+        color, with blue indicating evidence in favour of the true model.
     fmt : str, optional
         Format string for cell annotations (default: ``".1f"``).
     title : bool, optional
@@ -75,7 +76,7 @@ def pairwise_bayes_factors(
     fig : plt.Figure
     """
     if cmap is None:
-        cmap = LinearSegmentedColormap.from_list("", ["#c0392b", "white", "#27ae60"])
+        cmap = LinearSegmentedColormap.from_list("", ["dimgray", "white", "#132a70"])
 
     pred_log_bayes_factors = np.asarray(pred_log_bayes_factors)
     true_models = np.asarray(true_models)

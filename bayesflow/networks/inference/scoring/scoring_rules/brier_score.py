@@ -17,7 +17,7 @@ class BrierScore(CategoricalScoringRule):
 
     .. note::
         Proportional to :class:`PolynomialScore` with :math:`\alpha = 2`
-        (same minimiser and gradient direction, different scale).
+        (same minimizer and gradient direction, different scale).
     """
 
     def __init__(self, **kwargs):

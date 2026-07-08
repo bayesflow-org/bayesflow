@@ -20,11 +20,11 @@ class PolynomialScore(CategoricalScoringRule):
         = \frac{\alpha - 1}{\alpha}\sum_k p_k^\alpha - p_m^{\alpha - 1}
 
     where :math:`p = \mathrm{softmax}(\hat y)` and :math:`m` is the true model index.
-    The unique minimiser of the expected score is the true posterior :math:`p_k^* = P(\mathcal{M}_k \mid x)`
+    The unique minimizer of the expected score is the true posterior :math:`p_k^* = P(\mathcal{M}_k \mid x)`
     for any :math:`\alpha > 1`.
 
     For :math:`\alpha = 2` this is proportional to the :class:`BrierScore`
-    (same gradient direction, same minimiser).  Larger :math:`\alpha` sharpens the
+    (same gradient direction, same minimizer).  Larger :math:`\alpha` sharpens the
     penalty for wrong predictions.
 
     Parameters

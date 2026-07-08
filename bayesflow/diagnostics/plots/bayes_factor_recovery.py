@@ -148,32 +148,32 @@ def bayes_factor_recovery(
             [0, xlim[1]],
             0,
             ylim[1],
-            color="palegreen",
-            alpha=0.25,
+            color="#132a70",
+            alpha=0.10,
             zorder=0,
         )
         ax.fill_between(
             [xlim[0], 0],
             ylim[0],
             0,
-            color="palegreen",
-            alpha=0.25,
+            color="#132a70",
+            alpha=0.10,
             zorder=0,
         )
         ax.fill_between(
             [xlim[0], 0],
             0,
             ylim[1],
-            color="mistyrose",
-            alpha=0.25,
+            color="gray",
+            alpha=0.15,
             zorder=0,
         )
         ax.fill_between(
             [0, xlim[1]],
             ylim[0],
             0,
-            color="mistyrose",
-            alpha=0.25,
+            color="gray",
+            alpha=0.15,
             zorder=0,
         )
 

@@ -17,7 +17,7 @@ FLOAT32_EXP_MAX = np.floor(np.log(np.finfo(np.float32).max))
 class PowerLogisticScore(CategoricalScoringRule):
     r""":math:`S(\{f_k\}, m; \alpha) = \sum_{k \neq m} \left(1 + e^{f_k - f_m}\right)^\alpha`
 
-    The unique minimiser is :math:`f_k^*(x) = \tfrac{1}{\alpha+1}\log K_{k,0}(x)`,
+    The unique minimizer is :math:`f_k^*(x) = \tfrac{1}{\alpha+1}\log K_{k,0}(x)`,
     so network outputs are multiplied by :math:`\alpha + 1` to recover log Bayes factors.
 
     Parameters

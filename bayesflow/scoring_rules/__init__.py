@@ -3,7 +3,6 @@
 from bayesflow.networks.inference.scoring.scoring_rules import (  # noqa: F401
     ScoringRule,
     CategoricalScoringRule,
-    check_categorical_rules_not_mixed,
     ParametricDistributionScore,
     NormedDifferenceScore,
     MeanScore,

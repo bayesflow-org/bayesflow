@@ -251,12 +251,41 @@ def test_resolve_scoring_rules_normalizes_inputs():
     assert resolve({"a": "brier"})["a"].is_pmp_rule
 
 
-def test_mixing_pmp_and_bf_rules_raises():
-    """Mixing PMP and Bayes factor scoring rules raises a ValueError."""
-    from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore
+def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):
+    """PMP and BF rules co-train on separate heads and merge in log-odds space."""
+    from bayesflow.scoring_rules import CrossEntropyScore, LogisticScore
 
-    with pytest.raises(ValueError, match="mix PMP and Bayes factor"):
-        ModelComparisonWorkflow._resolve_scoring_rules([CrossEntropyScore(), ExponentialScore()])
+    num_models = len(mc_simulators)
+    n_test = 8
+
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        scoring_rules=[CrossEntropyScore(), LogisticScore()],
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    test_data = workflow.simulate(n_test)
+
+    nested = workflow.estimate(conditions=test_data, merge_scores=False)
+    assert set(nested) == {"cross_entropy_score", "logistic_score"}
+    assert set(nested["cross_entropy_score"]) == {"logits", "model_probs"}
+    assert set(nested["logistic_score"]) == {"log_bayes_factors", "model_probs"}
+
+    # Merged: log opinion pool over log-odds; PMP rules enter via their logit differences.
+    merged = workflow.estimate(conditions=test_data)
+    assert set(merged) == {"log_bayes_factors", "model_probs"}
+    assert merged["log_bayes_factors"].shape == (n_test, num_models - 1)
+    pmp_log_odds = nested["cross_entropy_score"]["logits"][:, 1:] - nested["cross_entropy_score"]["logits"][:, :1]
+    expected_logbf = np.mean([pmp_log_odds, nested["logistic_score"]["log_bayes_factors"]], axis=0)
+    assert np.allclose(merged["log_bayes_factors"], expected_logbf, atol=1e-5)
+    assert np.allclose(merged["model_probs"].sum(-1), 1.0, atol=1e-5)
+
+    # Diagnostics: union of PMP and BF plots, and all scalar metrics.
+    plots = workflow.plot_default_diagnostics(test_data=test_data)
+    assert {"confusion_matrix", "calibration", "pairwise_bayes_factors"} <= set(plots)
+
+    metrics = workflow.compute_default_diagnostics(test_data=test_data)
+    assert {"accuracy", "ece", "brier_score"} <= set(metrics)
 
 
 def test_estimate_merge_scores(mc_simulators, caplog):

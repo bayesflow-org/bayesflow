@@ -160,23 +160,33 @@ def test_multi_rule_estimate(train_dataset, simulator):
     assert output_with_summaries["_summaries"].shape[0] == num_conditions
 
 
-def test_mixing_pmp_and_bf_rules_raises_in_network_and_approximator():
-    """Mixing PMP and Bayes factor categorical rules is rejected by both the network and the approximator."""
-    from bayesflow.networks import MLP, ScoringRuleNetwork
-    from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore
+def test_merge_rule_estimates_mixed_families():
+    """Mixed PMP + BF estimates pool in log-odds space; PMP logit differences equal log posterior odds."""
+    import numpy as np
+    from bayesflow.approximators import ModelComparisonApproximator
 
-    # ScoringRuleNetwork guards at construction.
-    with pytest.raises(ValueError, match="mix PMP and Bayes factor"):
-        ScoringRuleNetwork(
-            scoring_rules={"ce": CrossEntropyScore(), "exp": ExponentialScore()},
-            subnet=MLP(widths=(8,)),
-        )
+    logits = np.array([[1.0, 2.0, 0.5], [0.0, -1.0, 1.0]])
+    probs = np.exp(logits) / np.exp(logits).sum(-1, keepdims=True)
+    log_bfs = np.array([[0.5, -0.5], [-1.0, 2.0]])
+    f = np.concatenate([np.zeros((2, 1)), log_bfs], axis=-1)
+    bf_probs = np.exp(f) / np.exp(f).sum(-1, keepdims=True)
 
-    # ModelComparisonApproximator applies the same guard on its inference network.
-    from bayesflow.scoring_rules import check_categorical_rules_not_mixed
+    merged = ModelComparisonApproximator._merge_rule_estimates(
+        {
+            "ce": {"logits": logits, "model_probs": probs},
+            "logistic": {"log_bayes_factors": log_bfs, "model_probs": bf_probs},
+        }
+    )
 
-    with pytest.raises(ValueError, match="mix PMP and Bayes factor"):
-        check_categorical_rules_not_mixed({"ce": CrossEntropyScore(), "exp": ExponentialScore()})
+    assert set(merged) == {"log_bayes_factors", "model_probs"}
+    expected_logbf = np.mean([logits[:, 1:] - logits[:, :1], log_bfs], axis=0)
+    assert np.allclose(merged["log_bayes_factors"], expected_logbf, atol=1e-6)
+
+    # model_probs derived from the pooled log odds and normalized
+    f = np.concatenate([np.zeros((2, 1)), expected_logbf], axis=-1)
+    implied = np.exp(f - f.max(-1, keepdims=True))
+    implied /= implied.sum(-1, keepdims=True)
+    assert np.allclose(merged["model_probs"], implied, atol=1e-6)
 
 
 def test_build_dataset_with_simulators_list(approximator, adapter):

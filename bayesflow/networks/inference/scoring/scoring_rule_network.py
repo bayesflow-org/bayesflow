@@ -4,7 +4,7 @@ from bayesflow.utils import model_kwargs, find_network
 from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 from bayesflow.types import Shape, Tensor
-from .scoring_rules import ScoringRule, ParametricDistributionScore, check_categorical_rules_not_mixed
+from .scoring_rules import ScoringRule, ParametricDistributionScore
 from bayesflow.utils.decorators import allow_batch_size
 
 
@@ -51,9 +51,6 @@ class ScoringRuleNetwork(keras.Layer):
                 "`ScoringRuleNetwork` requires at least one scoring rule. "
                 "Provide them via `scoring_rules={'name': rule, ...}` or as direct keyword argument."
             )
-
-        # PMP and Bayes factor categorical rules estimate different quantities and cannot share a network.
-        check_categorical_rules_not_mixed(scoring_rules)
 
         super().__init__(**model_kwargs(kwargs))
 

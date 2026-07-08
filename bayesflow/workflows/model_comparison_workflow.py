@@ -11,7 +11,7 @@ from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.approximators import ModelComparisonApproximator
-from bayesflow.scoring_rules import CategoricalScoringRule, check_categorical_rules_not_mixed
+from bayesflow.scoring_rules import CategoricalScoringRule
 from bayesflow.utils import (
     find_network,
     find_scoring_rule,
@@ -66,8 +66,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
           ``"leaky_exponential"``, ``"logistic"``, ``"power_logistic"``): network outputs
           ``num_models - 1`` log Bayes factors relative to model 0.
 
-        PMP and Bayes factor rules **cannot be mixed** in a single workflow; doing so raises
-        a ``ValueError``, since the two families estimate different quantities.
+        PMP and Bayes factor rules **can be mixed**: each rule trains its own head on the
+        shared classifier body, and at estimation time all rules are pooled in log-odds
+        space (a PMP head's logit differences equal the same log posterior odds that a
+        Bayes factor head outputs directly).
     summary_network : SummaryNetwork or str, optional
         Optional summary network for data compression (default: None).
     initial_learning_rate : float, optional
@@ -217,10 +219,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         Raises
         ------
-        ValueError
-            If PMP scoring rules and Bayes factor scoring rules are mixed. The two families
-            answer different questions (posterior model probabilities vs. log Bayes factors)
-            and cannot be co-trained in a single workflow.
         TypeError
             If ``scoring_rules`` is of an unsupported type.
         """
@@ -246,9 +244,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 f"rules/names, or a dict of name -> rule, got {type(scoring_rules).__name__}."
             )
 
-        # Disallow mixing PMP rules (output posterior model probabilities) with Bayes factor
-        # rules (output log Bayes factors): they target different quantities and cannot be merged.
-        check_categorical_rules_not_mixed(resolved)
         return resolved
 
     @staticmethod
@@ -320,11 +315,13 @@ class ModelComparisonWorkflow(BasicWorkflow):
         merge_scores : bool, optional
             Only relevant when the workflow was configured with more than one scoring rule
             (default: True). If True, the per-rule estimates are pooled into the flat
-            single-rule structure: Bayes factor rules average their ``"log_bayes_factors"``
-            (logarithmic opinion pool) and keep both keys, deriving a consistent
-            ``"model_probs"``; PMP rules average their ``"model_probs"`` (linear opinion pool)
-            and drop the pre-softmax ``"logits"``. If False, results are returned as a nested
-            dict keyed by rule name. Has no effect for a single scoring rule.
+            single-rule structure: when at least one Bayes factor rule is present, all rules
+            are pooled in log-odds space (logarithmic opinion pool; PMP rules enter via their
+            logit differences) and both ``"log_bayes_factors"`` and the derived
+            ``"model_probs"`` are kept; PMP-only rules average their ``"model_probs"``
+            (linear opinion pool) and drop the pre-softmax ``"logits"``. If False, results
+            are returned as a nested dict keyed by rule name. Has no effect for a single
+            scoring rule.
         **kwargs
             Forwarded to :meth:`~bayesflow.approximators.ModelComparisonApproximator.estimate`.
 
@@ -332,10 +329,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
         -------
         dict[str, np.ndarray]
             Single scoring rule (or multiple rules with ``merge_scores=True``): always contains
-            ``"model_probs"`` of shape ``(num_datasets, num_models)``. Bayes factor rules (single
-            or pooled) additionally contain ``"log_bayes_factors"`` of shape
-            ``(num_datasets, num_models - 1)``; a single PMP rule additionally contains
-            ``"logits"`` of shape ``(num_datasets, num_models)``.
+            ``"model_probs"`` of shape ``(num_datasets, num_models)``. When a Bayes factor rule
+            is present (single, pooled, or mixed with PMP rules), additionally contains
+            ``"log_bayes_factors"`` of shape ``(num_datasets, num_models - 1)``; a single PMP
+            rule additionally contains ``"logits"`` of shape ``(num_datasets, num_models)``.
 
             Multiple scoring rules with ``merge_scores=False``: a nested dict keyed by rule name,
             each value having the single-rule structure above.
@@ -358,26 +355,24 @@ class ModelComparisonWorkflow(BasicWorkflow):
         Generate default diagnostic plots for model comparison.
 
         Produces a loss curve (when training history is available) followed by
-        a set of plots that depend on the active scoring rule:
+        a set of plots that depend on the scoring rule families present.  With
+        multiple scoring rules the diagnostics run on the pooled estimates (see
+        :meth:`estimate`), so all plots are produced for a single rule, multiple
+        rules, and mixed families alike.
 
-        With multiple scoring rules the diagnostics run on the pooled estimates (see
-        :meth:`estimate`). PMP diagnostics use the linearly pooled ``model_probs``; Bayes factor
-        diagnostics use the logarithmically pooled ``log_bayes_factors``. All plots are therefore
-        produced for a single rule and for multiple rules alike.
+        Always produced:
 
-        **PMP scoring rules** (:class:`~bayesflow.scoring_rules.CrossEntropyScore`,
+        - ``"calibration"`` — per-model calibration curves with ECE annotations.
+
+        When a **PMP scoring rule** is present (:class:`~bayesflow.scoring_rules.CrossEntropyScore`,
         :class:`~bayesflow.scoring_rules.BrierScore`,
         :class:`~bayesflow.scoring_rules.PolynomialScore`):
 
         - ``"confusion_matrix"`` — posterior model probability confusion matrix.
-        - ``"calibration"`` — per-model calibration curves with ECE annotations.
 
-        **Bayes factor scoring rules** (:class:`~bayesflow.scoring_rules.ExponentialScore`,
+        When a **Bayes factor scoring rule** is present (:class:`~bayesflow.scoring_rules.ExponentialScore`,
         :class:`~bayesflow.scoring_rules.LogisticScore`):
 
-        - ``"calibration"`` — per-model calibration curves (Jeffrey & Wandelt 2024
-          blind coverage): predicted posterior model probability on x, observed
-          fraction on y, with ECE annotations.
         - ``"pairwise_bayes_factors"`` — heatmap of the mean predicted
           :math:`\log \mathrm{BF}_{m,j}` stratified by true model, showing pairwise
           model separability across all :math:`M \times M` pairs.
@@ -446,38 +441,33 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
-        scoring_rules = self.approximator.inference_network.scoring_rules
-        # All rules share one family (PMP/BF is enforced at construction), so any rule decides the mode.
-        is_pmp_mode = next(iter(scoring_rules.values())).is_pmp_rule
+        rules = self.approximator.inference_network.scoring_rules.values()
+        has_pmp_rules = any(rule.is_pmp_rule for rule in rules)
+        has_bf_rules = any(not rule.is_pmp_rule for rule in rules)
 
         # Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
         estimate_kwargs = dict(kwargs.get("estimate_kwargs", {}))
         estimate_kwargs.pop("merge_scores", None)
         estimates = self.estimate(conditions=test_data, merge_scores=True, **estimate_kwargs)
 
-        if is_pmp_mode:
+        if has_pmp_rules:
             figures["confusion_matrix"] = bf_plots.mc_confusion_matrix(
                 pred_models=estimates["model_probs"],
                 true_models=true_models,
                 model_names=self.model_names,
                 **kwargs.get("confusion_matrix_kwargs", {}),
             )
-            figures["calibration"] = bf_plots.mc_calibration(
-                pred_models=estimates["model_probs"],
-                true_models=true_models,
-                model_names=self.model_names,
-                **kwargs.get("calibration_kwargs", {}),
-            )
-        else:
-            bf_calibration_defaults = dict(color="#21908c")
-            figures["calibration"] = bf_plots.mc_calibration(
-                pred_models=estimates["model_probs"],
-                true_models=true_models,
-                model_names=self.model_names,
-                **{**bf_calibration_defaults, **kwargs.get("calibration_kwargs", {})},
-            )
-            # Merged Bayes factor estimates carry pooled log_bayes_factors (log opinion pool),
-            # so the log-BF plots work for a single rule and for multiple rules alike.
+
+        figures["calibration"] = bf_plots.mc_calibration(
+            pred_models=estimates["model_probs"],
+            true_models=true_models,
+            model_names=self.model_names,
+            **kwargs.get("calibration_kwargs", {}),
+        )
+
+        if has_bf_rules:
+            # Merged estimates carry pooled log_bayes_factors whenever a BF rule is present,
+            # so the log-BF plots work for a single rule, multiple rules, and mixed families alike.
             figures["pairwise_bayes_factors"] = bf_plots.pairwise_bayes_factors(
                 pred_log_bayes_factors=estimates["log_bayes_factors"],
                 true_models=true_models,

@@ -12,13 +12,13 @@ def test_is_pmp_rule_pmp_rules():
 
 def test_is_pmp_rule_bf_rules():
     from bayesflow.links import Leaky
-    from bayesflow.scoring_rules import ExponentialScore, LogisticScore, PowerLogisticScore
+    from bayesflow.scoring_rules import ExponentialScore, LogisticScore
 
     assert ExponentialScore().is_pmp_rule is False
     assert ExponentialScore(scale=2.0).is_pmp_rule is False
     assert ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)}).is_pmp_rule is False
     assert LogisticScore().is_pmp_rule is False
-    assert PowerLogisticScore(alpha=1.0).is_pmp_rule is False
+    assert LogisticScore(alpha=1.0).is_pmp_rule is False
 
 
 def test_to_bayes_factors_exponential_is_identity():
@@ -40,8 +40,8 @@ def test_to_bayes_factors_scaled_exponential():
     assert keras.ops.allclose(result, f * scale)
 
 
-def test_to_bayes_factors_base_class_is_identity():
-    """CategoricalScoringRule.to_bayes_factors is the identity by default."""
+def test_to_bayes_factors_plain_logistic_is_identity():
+    """LogisticScore.to_bayes_factors is the identity for alpha = 0 (plain rule)."""
     from bayesflow.scoring_rules import LogisticScore
 
     rule = LogisticScore()
@@ -51,10 +51,10 @@ def test_to_bayes_factors_base_class_is_identity():
 
 
 def test_to_bayes_factors_power_logistic():
-    from bayesflow.scoring_rules import PowerLogisticScore
+    from bayesflow.scoring_rules import LogisticScore
 
     alpha = 2.0
-    rule = PowerLogisticScore(alpha=alpha)
+    rule = LogisticScore(alpha=alpha)
     f = keras.ops.convert_to_tensor([[1.0, -1.0]])
     result = rule.to_bayes_factors(f)
     assert keras.ops.allclose(result, f * (alpha + 1))
@@ -65,13 +65,9 @@ def test_logistic_score_get_config():
 
     rule = LogisticScore()
     config = rule.get_config()
-    assert "alpha" not in config
+    assert config["alpha"] == 0.0
 
-
-def test_power_logistic_score_get_config():
-    from bayesflow.scoring_rules import PowerLogisticScore
-
-    rule = PowerLogisticScore(alpha=1.5)
+    rule = LogisticScore(alpha=1.5)
     config = rule.get_config()
     assert config["alpha"] == 1.5
 
@@ -393,23 +389,21 @@ def test_exponential_score_get_config_round_trip():
     assert restored.scale == 2.0
 
 
-# --- PowerLogisticScore ---
+# --- LogisticScore (power form) ---
 
 
-def test_power_logistic_score_alpha_validation():
-    from bayesflow.scoring_rules import PowerLogisticScore
+def test_logistic_score_alpha_validation():
+    from bayesflow.scoring_rules import LogisticScore
 
-    with pytest.raises(ValueError, match="positive"):
-        PowerLogisticScore(alpha=0.0)
-    with pytest.raises(ValueError, match="positive"):
-        PowerLogisticScore(alpha=-1.0)
+    with pytest.raises(ValueError, match="non-negative"):
+        LogisticScore(alpha=-1.0)
 
 
 def test_power_logistic_score_clipping_no_overflow():
     import keras
-    from bayesflow.scoring_rules import PowerLogisticScore
+    from bayesflow.scoring_rules import LogisticScore
 
-    rule = PowerLogisticScore(alpha=2.0)
+    rule = LogisticScore(alpha=2.0)
     targets = keras.ops.convert_to_tensor([[1.0, 0.0]])
     large_estimates = keras.ops.convert_to_tensor([[1000.0]])
     score = rule.score({"log_bayes_factors": large_estimates}, targets)
@@ -417,10 +411,10 @@ def test_power_logistic_score_clipping_no_overflow():
 
 
 def test_power_logistic_score_get_config_round_trip():
-    from bayesflow.scoring_rules import PowerLogisticScore
+    from bayesflow.scoring_rules import LogisticScore
     from bayesflow.utils.serialization import serialize, deserialize
 
-    original = PowerLogisticScore(alpha=2.0)
+    original = LogisticScore(alpha=2.0)
     restored = deserialize(serialize(original))
-    assert isinstance(restored, PowerLogisticScore)
+    assert isinstance(restored, LogisticScore)
     assert restored.alpha == 2.0

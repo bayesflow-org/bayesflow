@@ -29,10 +29,13 @@ def test_pmp_workflow(tmp_path, mc_simulators):
     # PMP diagnostics: confusion_matrix + calibration (+ loss curve)
     assert set(plots.keys()) == {"loss", "confusion_matrix", "calibration"}
 
-    # PMP metrics: accuracy (float in [0, 1]) + per-model ECE dict
+    # PMP metrics: accuracy (float in [0, 1]) + per-model ECE and Brier score dicts
     assert "accuracy" in metrics
     assert "ece" in metrics
+    assert "brier_score" in metrics
     assert 0.0 <= metrics["accuracy"] <= 1.0
+    assert metrics["brier_score"]["values"].shape == (2,)
+    assert 0.0 <= metrics["brier_score"]["aggregate"] <= 2.0
 
     # Save/load round-trip
     loaded = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
@@ -84,9 +87,10 @@ def test_bf_workflow(tmp_path, mc_simulators):
     # no true_log_bfs_fn supplied → no recovery plot
     assert "bayes_factor_recovery" not in plots
 
-    # BF metrics: accuracy only (no ECE for BF rules)
+    # BF metrics: accuracy + ECE and Brier score computed from the derived model_probs
     assert "accuracy" in metrics
-    assert "ece" not in metrics
+    assert "ece" in metrics
+    assert "brier_score" in metrics
     assert 0.0 <= metrics["accuracy"] <= 1.0
 
     # Save/load round-trip

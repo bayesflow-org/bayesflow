@@ -8,4 +8,5 @@ from .calibration_log_gamma import calibration_log_gamma, gamma_null_distributio
 from .posterior_z_score import posterior_z_score
 from .correlation import correlation
 from .model_comparison_accuracy import model_comparison_accuracy
+from .model_comparison_brier_score import model_comparison_brier_score
 from .accuracy_random_points import accuracy_random_points

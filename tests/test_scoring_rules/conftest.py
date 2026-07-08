@@ -104,9 +104,9 @@ def logistic_score():
 
 @pytest.fixture()
 def power_logistic_score():
-    from bayesflow.scoring_rules import PowerLogisticScore
+    from bayesflow.scoring_rules import LogisticScore
 
-    return PowerLogisticScore(alpha=1.0)
+    return LogisticScore(alpha=1.0)
 
 
 @pytest.fixture(

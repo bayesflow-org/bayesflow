@@ -504,17 +504,18 @@ class ModelComparisonWorkflow(BasicWorkflow):
         """
         Compute default scalar diagnostic metrics for model comparison.
 
-        For **PMP scoring rules**:
+        All metrics are computed from the (pooled) posterior model probabilities,
+        for PMP and Bayes factor scoring rules alike (for Bayes factor rules, the
+        probabilities are derived from the pooled log Bayes factors, see
+        :meth:`estimate`):
 
         - ``"accuracy"`` — fraction of datasets for which ``argmax(PMPs)`` matches
           the true model.
         - ``"ece"`` — per-model expected calibration errors, as returned by
           :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`.
-
-        For **Bayes factor scoring rules**:
-
-        - ``"accuracy"`` — fraction of datasets for which
-          ``argmax(0, f_1, …, f_{M-1})`` matches the true model.
+        - ``"brier_score"`` — per-model (one-vs-rest) and aggregate multi-class
+          Brier scores, as returned by
+          :func:`~bayesflow.diagnostics.metrics.model_comparison_brier_score`.
 
         Parameters
         ----------
@@ -528,8 +529,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
               is an integer.
             - ``estimate_kwargs`` — forwarded to :meth:`estimate`.
             - ``ece_kwargs`` — forwarded to
-              :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`
-              (PMP mode only).
+              :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`.
 
         Returns
         -------
@@ -561,20 +561,22 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
-        scoring_rules = self.approximator.inference_network.scoring_rules
-        # All rules share one family (PMP/BF is enforced at construction), so any rule decides the mode.
-        is_pmp_mode = next(iter(scoring_rules.values())).is_pmp_rule
-
-        metrics = {"accuracy": bf_metrics.model_comparison_accuracy(estimates["model_probs"], true_models)}
-
-        if is_pmp_mode:
-            ece_result = bf_metrics.expected_calibration_error(
+        # Merged estimates always carry 'model_probs' (derived from the pooled log Bayes
+        # factors for BF rules), so all metrics apply to both rule families.
+        metrics = {
+            "accuracy": bf_metrics.model_comparison_accuracy(estimates["model_probs"], true_models),
+            "ece": bf_metrics.expected_calibration_error(
                 estimates=estimates["model_probs"],
                 targets=true_models,
                 model_names=self.model_names,
                 **kwargs.get("ece_kwargs", {}),
-            )
-            metrics["ece"] = ece_result
+            ),
+            "brier_score": bf_metrics.model_comparison_brier_score(
+                estimates=estimates["model_probs"],
+                targets=true_models,
+                model_names=self.model_names,
+            ),
+        }
 
         return metrics
 

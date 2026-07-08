@@ -6,7 +6,7 @@ import keras
 
 from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils.logging import warning
-from bayesflow.utils import slice_maybe_nested, dim_maybe_nested, tree_concatenate
+from bayesflow.utils import slice_maybe_nested, dim_maybe_nested, repeat_and_flatten, tree_concatenate
 from bayesflow.types import Tensor
 
 
@@ -52,15 +52,7 @@ class Sampler:
         if conditions is None:
             return None
 
-        shape = keras.ops.shape(conditions)
-        batch_size = shape[0]
-        non_batch_dims = shape[1:]
-
-        conditions = keras.ops.expand_dims(conditions, axis=1)
-        conditions = keras.ops.broadcast_to(conditions, (batch_size, num_samples, *non_batch_dims))
-        conditions = keras.ops.reshape(conditions, (batch_size * num_samples, *non_batch_dims))
-
-        return conditions
+        return repeat_and_flatten(conditions, num_samples)
 
     def unflatten_samples(self, samples, num_samples: int):
         return keras.tree.map_structure(

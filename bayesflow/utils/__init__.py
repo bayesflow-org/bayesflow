@@ -97,6 +97,7 @@ from .tensor_utils import (
     maybe_mask_tensor,
     pad,
     positive_diag,
+    repeat_and_flatten,
     sample_input_masks,
     searchsorted,
     linsolve_batched,

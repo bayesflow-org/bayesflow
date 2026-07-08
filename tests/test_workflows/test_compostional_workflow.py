@@ -15,7 +15,6 @@ def test_compositional_sampling():
     workflow = CompositionalWorkflow(
         inference_network=DiffusionModel(
             subnet_kwargs=dict(widths=(8, 8)),
-            drop_target_prob=0.5,
         ),
         summary_network=TimeSeriesNetwork(),
         inference_variables=["parameters"],
@@ -66,6 +65,7 @@ def test_compositional_masking():
     epochs = 2
     workflow = CompositionalWorkflow(
         inference_network=DiffusionModel(
+            subnet="diffusion_transformer",
             subnet_kwargs=dict(widths=(8, 8)),
             drop_target_prob=0.5,
         ),
@@ -86,9 +86,9 @@ def test_compositional_masking():
     }
     test_conditions.update({"parameters": test_params})
 
-    def prior_score_fn(theta, time):
+    def prior_score_fn(theta):
         # uniform prior (should be transformed to unbounded prior for a real application)
-        return {"parameters": (1 - time) * keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
 
     samples = workflow.compositional_sample(
         num_samples=num_samples, conditions=test_conditions, compute_prior_score=prior_score_fn
@@ -114,6 +114,14 @@ def test_compositional_masking():
     assert samples.shape == fixed_samples.shape
     assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()
     assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][:, :1]) > 0.1).any()  # should vary
+
+    marginalized_samples = workflow.compositional_sample(
+        conditions=test_conditions,
+        num_samples=num_samples,
+        compute_prior_score=prior_score_fn,
+        target_condition_mask=target_inference_mask,
+    )["parameters"]
+    assert samples.shape == marginalized_samples.shape
 
 
 @pytest.mark.slow
@@ -142,9 +150,9 @@ def test_diffusion_compositional_guidance():
         )
     }
 
-    def prior_score_fn(theta, time):
+    def prior_score_fn(theta):
         # uniform prior (should be transformed to unbounded prior for a real application)
-        return {"parameters": (1 - time) * keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
 
     samples = workflow.compositional_sample(
         num_samples=2, conditions=test_conditions, compute_prior_score=prior_score_fn
@@ -222,8 +230,8 @@ def test_compositional_workflow_from_basic():
         "parameters": test_data["parameters"],
     }
 
-    def zero_prior_score(theta, time):
-        return {"parameters": (1 - time) * keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
+    def zero_prior_score(theta):
+        return {"parameters": keras.ops.zeros(keras.ops.shape(theta["parameters"]))}
 
     samples = comp_wf.compositional_sample(num_samples=3, conditions=conditions, compute_prior_score=zero_prior_score)
     assert samples["parameters"].shape == (5, 3, 2)

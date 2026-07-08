@@ -17,6 +17,7 @@ from bayesflow.utils import (
     logging,
     linsolve_batched,
     maybe_mask_tensor,
+    repeat_and_flatten,
     resolve_seed,
     sample_input_masks,
     vjp,
@@ -1076,16 +1077,11 @@ class DiffusionModel(InferenceNetwork):
 
         # Expand and flatten compositional dimension (i.e., num items) for score computation
         dims = tuple(ops.shape(xz)[1:])
-        snr_dims = tuple(ops.shape(log_snr_t)[1:])
         conditions_dims = tuple(ops.shape(cond_with_prior)[2:])
-        xz_reshaped = ops.reshape(
-            ops.repeat(ops.expand_dims(xz, 1), num_total, axis=1), (batch_size * num_total,) + dims
-        )
-        log_snr_reshaped = ops.reshape(
-            ops.repeat(ops.expand_dims(log_snr_t, 1), num_total, axis=1),
-            (batch_size * num_total,) + snr_dims,
-        )
+        xz_reshaped = repeat_and_flatten(xz, num_total)
+        log_snr_reshaped = repeat_and_flatten(log_snr_t, num_total)
         conditions_flat = ops.reshape(cond_with_prior, (batch_size * num_total,) + conditions_dims)
+        kwargs = self._repeat_mask_kwargs_over_items(kwargs, num_total)
         scores_flat = self.score(
             xz_reshaped,
             log_snr_t=log_snr_reshaped,
@@ -1177,24 +1173,17 @@ class DiffusionModel(InferenceNetwork):
 
         num_total = mini_batch_size + 1
 
-        dims = tuple(ops.shape(xz)[1:])
-        snr_dims = tuple(ops.shape(log_snr_t)[1:])
         cond_dims = tuple(ops.shape(cond_with_prior)[2:])
 
         # Repeat xz and log_snr_t for each observation+prior
-        xz_rep = ops.reshape(
-            ops.repeat(ops.expand_dims(xz, 1), num_total, axis=1),
-            (batch_size * num_total,) + dims,
-        )
-        lsnr_rep = ops.reshape(
-            ops.repeat(ops.expand_dims(log_snr_t, 1), num_total, axis=1),
-            (batch_size * num_total,) + snr_dims,
-        )
+        xz_rep = repeat_and_flatten(xz, num_total)
+        lsnr_rep = repeat_and_flatten(log_snr_t, num_total)
         cond_flat = ops.reshape(
             cond_with_prior,
             (batch_size * num_total,) + cond_dims,
         )
 
+        kwargs = self._repeat_mask_kwargs_over_items(kwargs, num_total)
         all_scores, all_jacs = self._compute_score_and_jacobian(
             xz=xz_rep,
             log_snr_t=lsnr_rep,
@@ -1292,6 +1281,25 @@ class DiffusionModel(InferenceNetwork):
 
         jacobian = ops.concatenate(rows, axis=1)
         return score, jacobian
+
+    def _repeat_mask_kwargs_over_items(self, kwargs: dict, num_total: int) -> dict:
+        """Repeat per-batch mask kwargs along the compositional-item axis.
+
+        In the compositional score, ``xz``, ``log_snr_t`` and ``conditions`` are repeated
+        ``num_total`` times along a new item axis and flattened to ``(batch_size * num_total, ...)``
+        before being passed to the score network. Any subnet mask (e.g. ``target_inference_mask``)
+        carries a leading ``batch_size`` dimension and must be expanded the same way, otherwise the
+        subnet sees inputs and masks with mismatched batch dimensions.
+        """
+        if not kwargs:
+            return kwargs
+        repeated = dict(kwargs)
+        for key in self._SUBNET_MASK_KEYS:
+            value = repeated.get(key)
+            if value is None or not hasattr(value, "shape"):
+                continue
+            repeated[key] = repeat_and_flatten(value, num_total)
+        return repeated
 
     @staticmethod
     def _maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz):

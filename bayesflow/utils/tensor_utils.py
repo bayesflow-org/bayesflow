@@ -135,6 +135,19 @@ def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:
     return tile_axis(x, n, axis=axis)
 
 
+def repeat_and_flatten(x: Tensor, num_repeats: int) -> Tensor:
+    """Repeat each element along the leading (batch) axis and flatten back into it.
+
+    Inserts a new axis after the batch axis, tiles it ``num_repeats`` times and merges it back,
+    so ``(B, ...) -> (B * num_repeats, ...)`` with repeats of the same element kept adjacent
+    (ordering ``[x0, x0, ..., x1, x1, ...]``).
+    """
+    batch_size = keras.ops.shape(x)[0]
+    rest = tuple(keras.ops.shape(x)[1:])
+    x = expand_tile(x, num_repeats, axis=1)
+    return keras.ops.reshape(x, (batch_size * num_repeats,) + rest)
+
+
 def is_symbolic_tensor(x: Tensor) -> bool:
     if keras.utils.is_keras_tensor(x):
         return True

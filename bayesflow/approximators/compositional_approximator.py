@@ -122,7 +122,7 @@ class CompositionalApproximator(ContinuousApproximator):
                 compute_prior_score, adapter=self.adapter, standardizer=self.standardizer
             )
 
-        kwargs = self._standardize_targets_fixed(kwargs)
+        kwargs = self._maybe_standardize_fixed_target_value(kwargs)
         kwargs = self._maybe_inject_guidance_unstandardize(kwargs)
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
         inference_kwargs["compute_prior_score"] = compute_prior_score_pre

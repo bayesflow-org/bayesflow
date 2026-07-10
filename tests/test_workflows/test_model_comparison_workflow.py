@@ -2,6 +2,7 @@ import os
 
 import keras
 import numpy as np
+import pandas as pd
 import pytest
 
 from bayesflow.workflows import ModelComparisonWorkflow
@@ -29,13 +30,19 @@ def test_pmp_workflow(tmp_path, mc_simulators):
     # PMP diagnostics: confusion_matrix + calibration (+ loss curve)
     assert set(plots.keys()) == {"loss", "confusion_matrix", "calibration"}
 
-    # PMP metrics: accuracy (float in [0, 1]) + per-model ECE and Brier score dicts
-    assert "accuracy" in metrics
-    assert "ece" in metrics
-    assert "brier_score" in metrics
-    assert 0.0 <= metrics["accuracy"] <= 1.0
-    assert metrics["brier_score"]["values"].shape == (2,)
-    assert 0.0 <= metrics["brier_score"]["aggregate"] <= 2.0
+    # Raw metric dicts (as_data_frame=False): per-model accuracy, ECE, and Brier score
+    raw_metrics = workflow.compute_default_diagnostics(test_data=20, as_data_frame=False)
+    assert set(raw_metrics) == {"accuracy", "ece", "brier_score"}
+    assert raw_metrics["accuracy"]["values"].shape == (2,)
+    assert raw_metrics["brier_score"]["values"].shape == (2,)
+    assert 0.0 <= raw_metrics["brier_score"]["aggregate"] <= 2.0
+
+    # PMP metrics (default): a DataFrame with one row per metric, one column per model
+    assert isinstance(metrics, pd.DataFrame)
+    assert set(metrics.index) == {"Accuracy", "Expected Calibration Error", "Brier Score"}
+    assert list(metrics.columns) == list(raw_metrics["brier_score"]["model_names"])
+    assert metrics.shape == (3, 2)
+    assert ((metrics.loc["Accuracy"] >= 0.0) & (metrics.loc["Accuracy"] <= 1.0)).all()
 
     # Save/load round-trip
     loaded = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
@@ -87,11 +94,11 @@ def test_bf_workflow(tmp_path, mc_simulators):
     # no true_log_bfs_fn supplied → no recovery plot
     assert "bayes_factor_recovery" not in plots
 
-    # BF metrics: accuracy + ECE and Brier score computed from the derived model_probs
-    assert "accuracy" in metrics
-    assert "ece" in metrics
-    assert "brier_score" in metrics
-    assert 0.0 <= metrics["accuracy"] <= 1.0
+    # BF metrics (default DataFrame): accuracy + ECE and Brier score from the derived model_probs
+    assert isinstance(metrics, pd.DataFrame)
+    assert set(metrics.index) == {"Accuracy", "Expected Calibration Error", "Brier Score"}
+    assert metrics.shape[1] == 2
+    assert ((metrics.loc["Accuracy"] >= 0.0) & (metrics.loc["Accuracy"] <= 1.0)).all()
 
     # Save/load round-trip
     loaded = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
@@ -280,12 +287,18 @@ def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):
     assert np.allclose(merged["log_bayes_factors"], expected_logbf, atol=1e-5)
     assert np.allclose(merged["model_probs"].sum(-1), 1.0, atol=1e-5)
 
-    # Diagnostics: union of PMP and BF plots, and all scalar metrics.
+    # Diagnostics: with both families present, the confusion matrix and pairwise
+    # Bayes factor heatmap share a single side-by-side figure; plus all scalar metrics.
     plots = workflow.plot_default_diagnostics(test_data=test_data)
-    assert {"confusion_matrix", "calibration", "pairwise_bayes_factors"} <= set(plots)
+    assert {"confusion_and_bayes_factors", "calibration"} <= set(plots)
+    assert "confusion_matrix" not in plots and "pairwise_bayes_factors" not in plots
 
     metrics = workflow.compute_default_diagnostics(test_data=test_data)
-    assert {"accuracy", "ece", "brier_score"} <= set(metrics)
+    assert isinstance(metrics, pd.DataFrame)
+    assert set(metrics.index) == {"Accuracy", "Expected Calibration Error", "Brier Score"}
+    # Same scalar metrics regardless of family; as_data_frame=False exposes the raw dicts.
+    raw_metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=False)
+    assert {"accuracy", "ece", "brier_score"} <= set(raw_metrics)
 
 
 def test_estimate_merge_scores(mc_simulators, caplog):
@@ -527,9 +540,9 @@ def test_compute_diagnostics_multi_rule_pmp(mc_simulators):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
 
     metrics = workflow.compute_default_diagnostics(test_data=10)
-    assert "accuracy" in metrics
-    assert "ece" in metrics
-    assert 0.0 <= metrics["accuracy"] <= 1.0
+    assert isinstance(metrics, pd.DataFrame)
+    assert {"Accuracy", "Expected Calibration Error"} <= set(metrics.index)
+    assert ((metrics.loc["Accuracy"] >= 0.0) & (metrics.loc["Accuracy"] <= 1.0)).all()
 
 
 def test_classifier_network_property(mc_simulators):
@@ -570,7 +583,8 @@ def test_compute_diagnostics_with_inference_variables_key(mc_simulators):
     test_data["inference_variables"] = test_data.pop("model_indices")
 
     metrics = workflow.compute_default_diagnostics(test_data=test_data)
-    assert "accuracy" in metrics
+    assert isinstance(metrics, pd.DataFrame)
+    assert "Accuracy" in metrics.index
 
 
 def test_plot_diagnostics_raises_without_model_key(mc_simulators):

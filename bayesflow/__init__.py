@@ -57,8 +57,8 @@ def setup():
             chosen_backend = found_backends[0]
             os.environ["KERAS_BACKEND"] = chosen_backend.env_name
 
-            logger.warning(
-                f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}).\n"
+            logger.info(
+                f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}). "
                 f"Defaulting to {chosen_backend.display_name}.\n"
                 "To override, set the KERAS_BACKEND environment variable before importing bayesflow.\n"
                 "See: https://keras.io/getting_started/#configuring-your-backend"
@@ -125,4 +125,4 @@ from .approximators import (
     RatioApproximator,
 )
 from .simulators import make_simulator
-from .workflows import BasicWorkflow, EnsembleWorkflow, CompositionalWorkflow
+from .workflows import BasicWorkflow, EnsembleWorkflow, CompositionalWorkflow, ModelComparisonWorkflow

@@ -27,8 +27,8 @@ def test_pmp_workflow(tmp_path, mc_simulators):
     assert "loss" in history.history
     assert len(history.history["loss"]) == 2
 
-    # PMP diagnostics: confusion_matrix + calibration (+ loss curve)
-    assert set(plots.keys()) == {"loss", "confusion_matrix", "calibration"}
+    # Diagnostics: combined confusion + pairwise-BF figure + calibration (+ loss curve)
+    assert set(plots.keys()) == {"loss", "confusion_and_bayes_factors", "calibration"}
 
     # Raw metric dicts (as_data_frame=False): per-model accuracy, ECE, and Brier score
     raw_metrics = workflow.compute_default_diagnostics(test_data=20, as_data_frame=False)
@@ -60,7 +60,7 @@ def test_pmp_workflow_with_summary_network(mc_simulators, mc_summary_network):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
     plots = workflow.plot_default_diagnostics(test_data=20)
 
-    assert "confusion_matrix" in plots
+    assert "confusion_and_bayes_factors" in plots
     assert "calibration" in plots
 
 
@@ -85,11 +85,11 @@ def test_bf_workflow(tmp_path, mc_simulators):
     assert "loss" in history.history
     assert len(history.history["loss"]) == 2
 
-    # BF diagnostics: calibration + pairwise_bayes_factors (+ loss); no PMP-only plots
+    # Diagnostics: combined confusion + pairwise-BF figure + calibration (+ loss)
     assert "loss" in plots
     assert "calibration" in plots
-    assert "pairwise_bayes_factors" in plots
-    assert "confusion_matrix" not in plots
+    assert "confusion_and_bayes_factors" in plots
+    assert "confusion_matrix" not in plots and "pairwise_bayes_factors" not in plots
     assert "blind_coverage" not in plots
     # no true_log_bfs_fn supplied → no recovery plot
     assert "bayes_factor_recovery" not in plots
@@ -124,7 +124,7 @@ def test_bf_workflow_with_bayes_factor_recovery(mc_simulators):
 
     assert "bayes_factor_recovery" in plots
     assert "calibration" in plots
-    assert "pairwise_bayes_factors" in plots
+    assert "confusion_and_bayes_factors" in plots
 
 
 def test_bf_workflow_with_summary_network(mc_simulators, mc_summary_network):
@@ -142,7 +142,7 @@ def test_bf_workflow_with_summary_network(mc_simulators, mc_summary_network):
     plots = workflow.plot_default_diagnostics(test_data=20)
 
     assert "calibration" in plots
-    assert "pairwise_bayes_factors" in plots
+    assert "confusion_and_bayes_factors" in plots
 
 
 # ── Shared simulator ──────────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ def test_mc_workflow_with_shared_simulator(mc_summary_network):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
     plots = workflow.plot_default_diagnostics(test_data=20)
 
-    assert "confusion_matrix" in plots
+    assert "confusion_and_bayes_factors" in plots
     assert "calibration" in plots
 
 
@@ -444,7 +444,7 @@ def test_plot_diagnostics_with_presimulated_data(mc_simulators):
     test_data = workflow.simulate(15)
     plots = workflow.plot_default_diagnostics(test_data=test_data)
 
-    assert "confusion_matrix" in plots
+    assert "confusion_and_bayes_factors" in plots
     # loss plot is only added when history is available (which it is here)
     assert "loss" in plots
 
@@ -508,8 +508,8 @@ def test_plot_diagnostics_multi_rule_pmp(mc_simulators):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
 
     plots = workflow.plot_default_diagnostics(test_data=10)
-    # PMP diagnostics come straight from merged model_probs, so no rule-specific plot is missing.
-    assert set(plots.keys()) == {"loss", "confusion_matrix", "calibration"}
+    # PMP diagnostics come straight from merged model_probs; pairwise BFs are derived from them.
+    assert set(plots.keys()) == {"loss", "confusion_and_bayes_factors", "calibration"}
 
 
 def test_plot_diagnostics_multi_rule_bf(mc_simulators):
@@ -524,8 +524,8 @@ def test_plot_diagnostics_multi_rule_bf(mc_simulators):
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
 
     plots = workflow.plot_default_diagnostics(test_data=10)
-    # No true_log_bfs_fn -> no recovery plot, but pairwise (log-BF based) is produced.
-    assert set(plots.keys()) == {"loss", "calibration", "pairwise_bayes_factors"}
+    # No true_log_bfs_fn -> no recovery plot, but the combined confusion + pairwise-BF figure is produced.
+    assert set(plots.keys()) == {"loss", "calibration", "confusion_and_bayes_factors"}
 
 
 def test_compute_diagnostics_multi_rule_pmp(mc_simulators):
@@ -568,7 +568,7 @@ def test_plot_diagnostics_with_inference_variables_key(mc_simulators):
     test_data["inference_variables"] = test_data.pop("model_indices")
 
     plots = workflow.plot_default_diagnostics(test_data=test_data)
-    assert "confusion_matrix" in plots
+    assert "confusion_and_bayes_factors" in plots
 
 
 def test_compute_diagnostics_with_inference_variables_key(mc_simulators):

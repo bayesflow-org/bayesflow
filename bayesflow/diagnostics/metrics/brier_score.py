@@ -6,7 +6,7 @@ from keras import ops
 from ...utils.exceptions import ShapeError
 
 
-def model_comparison_brier_score(
+def brier_score(
     estimates: np.ndarray,
     targets: np.ndarray,
     model_names: Sequence[str] = None,

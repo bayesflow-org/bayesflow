@@ -128,18 +128,18 @@ def test_model_comparison_accuracy():
     one_hot = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
     # PMP mode: predictions shape (N, M)
-    assert bf.diagnostics.metrics.model_comparison_accuracy(probs, one_hot) == 1.0
+    assert bf.diagnostics.metrics.accuracy(probs, one_hot, per_model=False) == 1.0
 
     # partial accuracy
     probs_wrong = np.array([[0.1, 0.8, 0.1], [0.1, 0.9, 0.0], [0.2, 0.3, 0.5]])
-    acc = bf.diagnostics.metrics.model_comparison_accuracy(probs_wrong, one_hot)
+    acc = bf.diagnostics.metrics.accuracy(probs_wrong, one_hot, per_model=False)
     assert abs(acc - 2 / 3) < 1e-6
 
     # Bayes factor mode: predictions shape (N, M-1) — covers lines 61-62
     # log K_{1,0} and log K_{2,0}; prepend f_0=0 and argmax
     log_bfs = np.array([[-1.0, -2.0], [2.0, 0.5], [-0.5, 1.5]])
     # argmax([0,-1,-2])=0, argmax([0,2,0.5])=1, argmax([0,-0.5,1.5])=2 → all correct
-    assert bf.diagnostics.metrics.model_comparison_accuracy(log_bfs, one_hot) == 1.0
+    assert bf.diagnostics.metrics.accuracy(log_bfs, one_hot, per_model=False) == 1.0
 
 
 def test_expected_calibration_error(pred_models, true_models, model_names):
@@ -166,7 +166,7 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
 
 
 def test_model_comparison_brier_score(pred_models, true_models, model_names):
-    out = bf.diagnostics.metrics.model_comparison_brier_score(pred_models, true_models, model_names=model_names)
+    out = bf.diagnostics.metrics.brier_score(pred_models, true_models, model_names=model_names)
     assert list(out.keys()) == ["values", "aggregate", "metric_name", "model_names"]
     assert out["values"].shape == (pred_models.shape[-1],)
     assert out["metric_name"] == "Brier Score"
@@ -174,23 +174,23 @@ def test_model_comparison_brier_score(pred_models, true_models, model_names):
     assert abs(out["aggregate"] - out["values"].sum()) < 1e-6
 
     # default: auto model names
-    out = bf.diagnostics.metrics.model_comparison_brier_score(pred_models, true_models)
+    out = bf.diagnostics.metrics.brier_score(pred_models, true_models)
     assert out["model_names"] == ["M_1", "M_2", "M_3"]
 
     # perfect predictions score 0, maximally wrong confident predictions score 2
     one_hot = np.eye(3)[np.array([0, 1, 2])]
-    out = bf.diagnostics.metrics.model_comparison_brier_score(one_hot, one_hot)
+    out = bf.diagnostics.metrics.brier_score(one_hot, one_hot)
     assert np.allclose(out["values"], 0.0)
     wrong = np.eye(3)[np.array([1, 2, 0])]
-    out = bf.diagnostics.metrics.model_comparison_brier_score(wrong, one_hot)
+    out = bf.diagnostics.metrics.brier_score(wrong, one_hot)
     assert abs(out["aggregate"] - 2.0) < 1e-6
 
     # handles incorrect input?
     with pytest.raises(Exception):
-        bf.diagnostics.metrics.model_comparison_brier_score(pred_models, true_models, model_names=["a"])
+        bf.diagnostics.metrics.brier_score(pred_models, true_models, model_names=["a"])
 
     with pytest.raises(Exception):
-        bf.diagnostics.metrics.model_comparison_brier_score(pred_models, true_models.T)
+        bf.diagnostics.metrics.brier_score(pred_models, true_models.T)
 
 
 def test_calibration_log_gamma(random_estimates, random_targets):

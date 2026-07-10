@@ -3,6 +3,7 @@ import re
 import time
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 import keras
@@ -489,8 +490,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
     def compute_default_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,
+        as_data_frame: bool = True,
         **kwargs,
-    ) -> dict:
+    ) -> Sequence[dict] | pd.DataFrame:
         """
         Compute default scalar diagnostic metrics for model comparison.
 
@@ -499,32 +501,46 @@ class ModelComparisonWorkflow(BasicWorkflow):
         probabilities are derived from the pooled log Bayes factors, see
         :meth:`estimate`):
 
-        - ``"accuracy"`` — fraction of datasets for which ``argmax(PMPs)`` matches
-          the true model.
+        - ``"accuracy"`` — per-model classification accuracy, i.e., the diagonal
+          entries of the row-normalized confusion matrix (fraction of datasets
+          simulated from model ``m`` for which ``argmax(PMPs)`` also predicts
+          model ``m``), as returned by
+          :func:`~bayesflow.diagnostics.metrics.accuracy`. Controlled
+          via the ``per_model`` keyword (default ``True``); set to ``False`` to
+          instead obtain the overall (aggregate) accuracy as a single float.
         - ``"ece"`` — per-model expected calibration errors, as returned by
           :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`.
         - ``"brier_score"`` — per-model (one-vs-rest) and aggregate multi-class
           Brier scores, as returned by
-          :func:`~bayesflow.diagnostics.metrics.model_comparison_brier_score`.
+          :func:`~bayesflow.diagnostics.metrics.brier_score`.
 
         Parameters
         ----------
         test_data : Mapping[str, np.ndarray] or int
             Either a pre-simulated data dictionary or an integer specifying how many
             datasets to generate using the attached simulator.
+        as_data_frame : bool, optional
+            Whether to return the results as a pandas DataFrame (default: True),
+            with one column per model and one row per metric. If False, a
+            dictionary of the raw (unparsed) metric outputs is returned instead.
         **kwargs : dict, optional
             Fine-grained control via nested dicts:
 
             - ``test_data_kwargs`` — forwarded to :meth:`simulate` when ``test_data``
               is an integer.
             - ``estimate_kwargs`` — forwarded to :meth:`estimate`.
+            - ``accuracy_kwargs`` — forwarded to
+              :func:`~bayesflow.diagnostics.metrics.accuracy`
+              (e.g. ``{"per_model": False}`` for the aggregate accuracy).
             - ``ece_kwargs`` — forwarded to
               :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`.
 
         Returns
         -------
-        dict[str, any]
-            Dictionary of diagnostic metrics.
+        dict[str, any] or pd.DataFrame
+            If ``as_data_frame`` is True, a pandas DataFrame with one row per
+            metric and one column per model. Otherwise, a dictionary of the raw
+            metric outputs.
 
         Raises
         ------
@@ -551,22 +567,47 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
+        accuracy_kwargs = dict(kwargs.get("accuracy_kwargs", {}))
+        accuracy_kwargs.setdefault("per_model", True)
+
         # Merged estimates always carry 'model_probs' (derived from the pooled log Bayes
         # factors for BF rules), so all metrics apply to both rule families.
-        metrics = {
-            "accuracy": bf_metrics.model_comparison_accuracy(estimates["model_probs"], true_models),
-            "ece": bf_metrics.expected_calibration_error(
-                estimates=estimates["model_probs"],
-                targets=true_models,
-                model_names=self.model_names,
-                **kwargs.get("ece_kwargs", {}),
-            ),
-            "brier_score": bf_metrics.model_comparison_brier_score(
-                estimates=estimates["model_probs"],
-                targets=true_models,
-                model_names=self.model_names,
-            ),
-        }
+        accuracy_result = bf_metrics.accuracy(
+            estimates["model_probs"],
+            true_models,
+            model_names=self.model_names,
+            **accuracy_kwargs,
+        )
+        ece = bf_metrics.expected_calibration_error(
+            estimates=estimates["model_probs"],
+            targets=true_models,
+            model_names=self.model_names,
+            **kwargs.get("ece_kwargs", {}),
+        )
+        brier_score_result = bf_metrics.brier_score(
+            estimates=estimates["model_probs"],
+            targets=true_models,
+            model_names=self.model_names,
+        )
+
+        if as_data_frame:
+            model_names = ece["model_names"]
+            if isinstance(accuracy_result, dict):
+                accuracy_values = accuracy_result["values"]
+            else:
+                # Aggregate accuracy (per_model=False): broadcast the single value to all models.
+                accuracy_values = [accuracy_result] * len(model_names)
+
+            metrics = pd.DataFrame(
+                {
+                    "Accuracy": accuracy_values,
+                    ece["metric_name"]: ece["values"],
+                    brier_score_result["metric_name"]: brier_score_result["values"],
+                },
+                index=model_names,
+            ).T
+        else:
+            metrics = {"accuracy": accuracy_result, "ece": ece, "brier_score": brier_score_result}
 
         return metrics
 

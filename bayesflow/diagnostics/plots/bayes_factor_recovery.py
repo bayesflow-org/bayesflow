@@ -143,12 +143,13 @@ def bayes_factor_recovery(
         make_quadratic(ax, x, y)
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
 
-        # Quadrant shading: correct = same sign (Q1 and Q3), incorrect = opposite
+        # Quadrant shading: correct = same sign (Q1 and Q3), incorrect = opposite.
+        # Bayes factor accent blue (#6969ff), distinct from the navy used elsewhere.
         ax.fill_between(
             [0, xlim[1]],
             0,
             ylim[1],
-            color="#132a70",
+            color="#6969ff",
             alpha=0.10,
             zorder=0,
         )
@@ -156,7 +157,7 @@ def bayes_factor_recovery(
             [xlim[0], 0],
             ylim[0],
             0,
-            color="#132a70",
+            color="#6969ff",
             alpha=0.10,
             zorder=0,
         )

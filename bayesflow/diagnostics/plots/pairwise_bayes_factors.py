@@ -65,8 +65,10 @@ def pairwise_bayes_factors(
         Colormap for the heatmap, always centred at zero via
         :class:`~matplotlib.colors.TwoSlopeNorm`.  If a str, it should be the
         name of a registered colormap.  Default (``None``) uses a diverging
-        gray-white-blue colormap whose blue end matches the BayesFlow default
-        color, with blue indicating evidence in favour of the true model.
+        gray-white-blue colormap; its blue end is the BayesFlow navy for a
+        standalone plot, switching to the brighter Bayes factor accent color
+        (``#6969ff``) when drawn into a provided ``ax`` (e.g. side by side with
+        the confusion matrix).  Blue indicates evidence in favour of the true model.
     fmt : str, optional
         Format string for cell annotations (default: ``".1f"``).
     title : bool, optional
@@ -81,7 +83,11 @@ def pairwise_bayes_factors(
     fig : plt.Figure
     """
     if cmap is None:
-        cmap = LinearSegmentedColormap.from_list("", ["dimgray", "white", "#132a70"])
+        # Navy by default; switch to the brighter Bayes factor accent blue (#6969ff) only when
+        # embedded into a caller-provided axis (e.g. side by side with the navy confusion matrix),
+        # so a standalone plot stays consistent with the other (navy) diagnostics.
+        blue = "#6969ff" if ax is not None else "#132a70"
+        cmap = LinearSegmentedColormap.from_list("", ["dimgray", "white", blue])
 
     pred_log_bayes_factors = np.asarray(pred_log_bayes_factors)
     true_models = np.asarray(true_models)
@@ -135,8 +141,8 @@ def pairwise_bayes_factors(
     ax.set_xticklabels(model_names, fontsize=tick_fontsize)
     ax.set_yticks(range(M))
     ax.set_yticklabels(model_names, fontsize=tick_fontsize)
-    ax.set_xlabel(r"Comparison model $\mathcal{M}_j$", fontsize=label_fontsize)
-    ax.set_ylabel(r"True model $\mathcal{M}_m$", fontsize=label_fontsize)
+    ax.set_xlabel(r"Competing model", fontsize=label_fontsize)
+    ax.set_ylabel(r"True model", fontsize=label_fontsize)
 
     for i in range(M):
         for j in range(M):
@@ -145,7 +151,7 @@ def pairwise_bayes_factors(
             ax.text(j, i, format(val, fmt), ha="center", va="center", fontsize=value_fontsize, color=text_color)
 
     if title:
-        ax.set_title(r"Mean log Bayes factor by true model", fontsize=title_fontsize)
+        ax.set_title(r"Mean log Bayes factor", fontsize=title_fontsize)
 
     # Only manage layout when we own the figure; otherwise leave it to the caller
     # so embedding into a shared figure does not fight the parent layout.

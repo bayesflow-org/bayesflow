@@ -407,8 +407,31 @@ def test_pairwise_bayes_factors_into_axis(pred_log_bayes_factors, true_models, m
     )
     # Draws into the provided axis and returns its parent figure (enables composition).
     assert out is fig
-    assert ax.get_ylabel() == r"True model $\mathcal{M}_m$"
-    assert ax.get_title() == r"Mean log Bayes factor by true model"
+    assert ax.get_ylabel() == "True model"
+    assert ax.get_title() == "Mean log Bayes factor"
+    plt.close(fig)
+
+
+def test_pairwise_bayes_factors_blue_only_when_embedded(pred_log_bayes_factors, true_models, model_names):
+    """The brighter accent blue appears only when embedded in an axis; standalone stays navy."""
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as mcolors
+
+    # Standalone (ax=None) -> navy blue end.
+    standalone = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors, true_models=true_models, model_names=model_names
+    )
+    standalone_blue = mcolors.to_hex(standalone.axes[0].images[0].cmap(1.0))
+    assert standalone_blue == "#132a70"
+    plt.close(standalone)
+
+    # Embedded (ax provided) -> brighter Bayes factor accent blue.
+    fig, ax = plt.subplots()
+    bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors, true_models=true_models, model_names=model_names, ax=ax
+    )
+    embedded_blue = mcolors.to_hex(ax.images[0].cmap(1.0))
+    assert embedded_blue == "#6969ff"
     plt.close(fig)
 
 
@@ -432,7 +455,11 @@ def test_confusion_matrix_and_pairwise_bayes_factors_side_by_side(
     assert len(fig.axes) == 4
     # ...and each panel keeps its own title (no grand overarching title).
     assert axes[0].get_title() == "Confusion Matrix"
-    assert axes[1].get_title() == r"Mean log Bayes factor by true model"
+    assert axes[1].get_title() == "Mean log Bayes factor"
+    # Embedded pairwise heatmap uses the brighter accent blue to stand apart from the navy matrix.
+    import matplotlib.colors as mcolors
+
+    assert mcolors.to_hex(axes[1].images[0].cmap(1.0)) == "#6969ff"
     plt.close(fig)
 
 

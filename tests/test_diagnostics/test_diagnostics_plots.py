@@ -332,6 +332,19 @@ def test_mc_confusion_matrix(pred_models, true_models, model_names):
     assert out.axes[0].get_title() == "Confusion Matrix"
 
 
+def test_mc_confusion_matrix_into_axis(pred_models, true_models, model_names):
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    out = bf.diagnostics.plots.mc_confusion_matrix(pred_models, true_models, model_names, ax=ax)
+    # Draws into the provided axis and returns its parent figure (enables composition).
+    assert out is fig
+    assert ax.get_ylabel() == "True model"
+    assert ax.get_xlabel() == "Predicted model"
+    assert ax.get_title() == "Confusion Matrix"
+    plt.close(fig)
+
+
 def test_coverage(random_estimates, random_targets):
     # basic functionality: automatic variable names
     out = bf.diagnostics.plots.coverage(random_estimates, random_targets)
@@ -380,6 +393,47 @@ def test_pairwise_bayes_factors(pred_log_bayes_factors, true_models, model_names
         model_names=model_names,
     )
     assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_into_axis(pred_log_bayes_factors, true_models, model_names):
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+        ax=ax,
+    )
+    # Draws into the provided axis and returns its parent figure (enables composition).
+    assert out is fig
+    assert ax.get_ylabel() == r"True model $\mathcal{M}_m$"
+    assert ax.get_title() == r"Mean log Bayes factor by true model"
+    plt.close(fig)
+
+
+def test_confusion_matrix_and_pairwise_bayes_factors_side_by_side(
+    pred_models, pred_log_bayes_factors, true_models, model_names
+):
+    """The confusion matrix and pairwise Bayes factor heatmap compose into a shared figure."""
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+    cm_fig = bf.diagnostics.plots.mc_confusion_matrix(pred_models, true_models, model_names, ax=axes[0])
+    pbf_fig = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+        ax=axes[1],
+    )
+    # Both draw into the same shared figure...
+    assert cm_fig is fig and pbf_fig is fig
+    # ...each panel plus its own colorbar -> 4 axes total...
+    assert len(fig.axes) == 4
+    # ...and each panel keeps its own title (no grand overarching title).
+    assert axes[0].get_title() == "Confusion Matrix"
+    assert axes[1].get_title() == r"Mean log Bayes factor by true model"
+    plt.close(fig)
 
 
 def test_pairwise_bayes_factors_integer_labels(pred_log_bayes_factors, true_models):

@@ -318,6 +318,31 @@ def test_brier_score_optimal_at_true_probs():
     assert rule.score({"logits": perfect_logits}, targets) < rule.score({"logits": random_logits}, targets)
 
 
+def test_brier_score_is_polynomial_special_case():
+    """BrierScore is the alpha=2 PolynomialScore, with alpha fixed and not serialized."""
+    from bayesflow.scoring_rules import BrierScore, PolynomialScore
+
+    rule = BrierScore()
+    assert isinstance(rule, PolynomialScore)
+    assert rule.alpha == 2.0
+    # alpha is not a BrierScore parameter, so it must not leak into the config
+    assert "alpha" not in rule.get_config()
+
+
+def test_brier_score_reports_true_brier_value():
+    """BrierScore.score returns the exact Brier value sum((p - y)^2), not the Tsallis score."""
+    import keras
+    import numpy as np
+    from bayesflow.scoring_rules import BrierScore
+
+    rule = BrierScore()
+    targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
+    logits = keras.ops.convert_to_tensor([[2.0, 0.0], [0.0, 3.0]])
+    probs = np.asarray(keras.ops.softmax(logits, axis=-1))
+    expected = np.mean(np.sum((probs - np.asarray(targets)) ** 2, axis=-1))
+    assert keras.ops.allclose(rule.score({"logits": logits}, targets), expected, atol=1e-6)
+
+
 # --- LogisticScore ---
 
 

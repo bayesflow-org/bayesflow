@@ -349,6 +349,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
     def plot_default_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,
+        estimates: Mapping[str, np.ndarray] | None = None,
         true_log_bfs_fn: Callable | None = None,
         **kwargs,
     ) -> dict[str, plt.Figure]:
@@ -392,6 +393,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
             Either a pre-simulated data dictionary (as returned by
             :meth:`simulate`) or an integer specifying how many datasets to
             generate using the attached simulator.
+        estimates: Mapping[str, np.ndarray] or None
+            Optional pre-computed dictionary of estimates corresponding to the quantities
+            in ``test_data``. Default is ``None`` (i.e., esimtates are obtained from the
+            test data by calling the workflow's ``.estimate()`` method).
         true_log_bfs_fn : callable or None, optional
             A function ``(test_data: dict) -> np.ndarray`` that receives the
             simulated data dictionary and returns ground-truth log Bayes factors
@@ -455,10 +460,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
         has_pmp_rules = any(rule.is_pmp_rule for rule in rules)
         has_bf_rules = any(not rule.is_pmp_rule for rule in rules)
 
-        # Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
-        estimate_kwargs = dict(kwargs.get("estimate_kwargs", {}))
-        estimate_kwargs.pop("merge_scores", None)
-        estimates = self.estimate(conditions=test_data, merge_scores=True, **estimate_kwargs)
+        if estimates is None:
+            # Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
+            estimate_kwargs = kwargs.get("estimate_kwargs", {})
+            estimate_kwargs["merge_scores"] = True
+            estimates = self.estimate(conditions=test_data, **estimate_kwargs)
 
         # The confusion matrix (PMP rules) and pairwise Bayes factor heatmap (BF rules)
         # share a row in a single figure when both families are present (mixed workflow);
@@ -527,6 +533,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
     def compute_default_diagnostics(
         self,
         test_data: Mapping[str, np.ndarray] | int,
+        estimates: Mapping[str, np.ndarray] | None = None,
         as_data_frame: bool = True,
         **kwargs,
     ) -> Sequence[dict] | pd.DataFrame:
@@ -556,6 +563,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
         test_data : Mapping[str, np.ndarray] or int
             Either a pre-simulated data dictionary or an integer specifying how many
             datasets to generate using the attached simulator.
+        estimates: Mapping[str, np.ndarray] or None
+            Optional pre-computed dictionary of estimates corresponding to the quantities
+            in ``test_data``. Default is ``None`` (i.e., esimtates are obtained from the
+            test data by calling the workflow's ``.estimate()`` method).
         as_data_frame : bool, optional
             Whether to return the results as a pandas DataFrame (default: True),
             with one column per model and one row per metric. If False, a
@@ -589,10 +600,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 raise ValueError(f"No simulator attached. Cannot generate {test_data} test datasets.")
             test_data = self.simulate(test_data, **kwargs.get("test_data_kwargs", {}))
 
-        # Metrics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
-        estimate_kwargs = dict(kwargs.get("estimate_kwargs", {}))
-        estimate_kwargs.pop("merge_scores", None)
-        estimates = self.estimate(conditions=test_data, merge_scores=True, **estimate_kwargs)
+        if estimates is None:
+            # Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
+            estimate_kwargs = kwargs.get("estimate_kwargs", {})
+            estimate_kwargs["merge_scores"] = True
+            estimates = self.estimate(conditions=test_data, **estimate_kwargs)
 
         if "model_indices" in test_data:
             true_models = test_data["model_indices"]

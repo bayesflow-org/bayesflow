@@ -43,8 +43,8 @@ from .median_score import MedianScore
 from .quantile_score import QuantileScore
 from .mv_normal_score import MvNormalScore
 from .cross_entropy_score import CrossEntropyScore
-from .brier_score import BrierScore
 from .polynomial_score import PolynomialScore
+from .brier_score import BrierScore
 from .exponential_score import ExponentialScore
 from .logistic_score import LogisticScore
 

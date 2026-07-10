@@ -1,14 +1,14 @@
 import keras
 
-from bayesflow.types import Shape, Tensor
+from bayesflow.types import Tensor
 from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
-from .categorical_scoring_rule import CategoricalScoringRule
+from .polynomial_score import PolynomialScore
 
 
 @serializable("bayesflow.scoring_rules", disable_module_check=True)
-class BrierScore(CategoricalScoringRule):
+class BrierScore(PolynomialScore):
     r""":math:`S(\hat p_{1\ldots C}, y) = \sum_{c=1}^C (\hat p_c - y_c)^2`
 
     Minimized when the predicted probabilities exactly match the one-hot
@@ -16,17 +16,15 @@ class BrierScore(CategoricalScoringRule):
     model :math:`m`.
 
     .. note::
-        Proportional to :class:`PolynomialScore` with :math:`\alpha = 2`
-        (same minimizer and gradient direction, different scale).
+        Special case of :class:`PolynomialScore` with :math:`\alpha = 2`
+        (same minimizer and gradient direction, different scale and offset).
+        This class reports the true Brier score value rather than the Tsallis
+        polynomial score.
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(alpha=2.0, **kwargs)
         self.config = {}
-
-    def get_head_shapes_from_target_shape(self, target_shape: Shape) -> dict[str, Shape]:
-        target_shape = tuple(target_shape)
-        return dict(logits=target_shape[1:])
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
         """
@@ -50,6 +48,3 @@ class BrierScore(CategoricalScoringRule):
         probs = keras.ops.softmax(estimates["logits"], axis=-1)
         scores = keras.ops.sum((probs - targets) ** 2, axis=-1)
         return weighted_mean(scores, weights)
-
-    def get_config(self):
-        return super().get_config() | self.config

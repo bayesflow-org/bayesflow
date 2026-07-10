@@ -23,6 +23,7 @@ def mc_confusion_matrix(
     normalize: str | None = "true",
     cmap: matplotlib.colors.Colormap | str = None,
     title: bool = True,
+    ax: plt.Axes = None,
 ) -> plt.Figure:
     """Plots a confusion matrix for validating a neural network trained for Bayesian model comparison.
 
@@ -59,6 +60,10 @@ def mc_confusion_matrix(
         e.g., 'viridis'. Default colormap matches the BayesFlow defaults by ranging from white to red.
     title          : bool, optional, default True
         A flag for adding 'Confusion Matrix' above the matrix.
+    ax             : matplotlib.axes.Axes, optional, default: None
+        An existing axis to draw into. If ``None``, a new figure and axis are
+        created. When provided, ``fig_size`` is ignored and the parent figure is
+        returned, enabling composition (e.g. side-by-side panels).
 
     Returns
     -------
@@ -80,8 +85,11 @@ def mc_confusion_matrix(
     cm = confusion_matrix(true_models, pred_models, normalize=normalize)
 
     # Initialize figure
-    fig, ax = make_figure(1, 1, figsize=fig_size)
-    ax = ax[0]
+    if ax is None:
+        fig, axes = make_figure(1, 1, figsize=fig_size)
+        ax = axes[0]
+    else:
+        fig = ax.figure
     im = ax.imshow(cm, interpolation="nearest", cmap=cmap)
     cbar = ax.figure.colorbar(im, ax=ax, shrink=0.75)
 

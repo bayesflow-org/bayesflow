@@ -20,6 +20,7 @@ def pairwise_bayes_factors(
     cmap: matplotlib.colors.Colormap | str = None,
     fmt: str = ".1f",
     title: bool = True,
+    ax: plt.Axes = None,
 ) -> plt.Figure:
     r"""Mean pairwise log Bayes factor heatmap, stratified by true generating model.
 
@@ -70,6 +71,10 @@ def pairwise_bayes_factors(
         Format string for cell annotations (default: ``".1f"``).
     title : bool, optional
         Whether to add the plot title (default: True).
+    ax : matplotlib.axes.Axes, optional
+        An existing axis to draw into. If ``None``, a new figure and axis are
+        created. When provided, ``fig_size`` is ignored and the parent figure is
+        returned, enabling composition (e.g. side-by-side panels).
 
     Returns
     -------
@@ -112,12 +117,15 @@ def pairwise_bayes_factors(
         abs_max = 1.0
     norm = matplotlib.colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0.0, vmax=abs_max)
 
-    if fig_size is None:
-        size = max(4.0, M * 1.2)
-        fig_size = (size + 0.5, size)
-
-    fig, axes = make_figure(1, 1, figsize=fig_size)
-    ax = axes[0]
+    owns_figure = ax is None
+    if owns_figure:
+        if fig_size is None:
+            size = max(4.0, M * 1.2)
+            fig_size = (size + 0.5, size)
+        fig, axes = make_figure(1, 1, figsize=fig_size)
+        ax = axes[0]
+    else:
+        fig = ax.figure
 
     im = ax.imshow(mean_matrix, interpolation="nearest", cmap=cmap, norm=norm)
     cbar = ax.figure.colorbar(im, ax=ax, shrink=0.75)
@@ -139,5 +147,8 @@ def pairwise_bayes_factors(
     if title:
         ax.set_title(r"Mean log Bayes factor by true model", fontsize=title_fontsize)
 
-    fig.tight_layout()
+    # Only manage layout when we own the figure; otherwise leave it to the caller
+    # so embedding into a shared figure does not fight the parent layout.
+    if owns_figure:
+        fig.tight_layout()
     return fig

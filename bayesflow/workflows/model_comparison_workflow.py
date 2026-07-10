@@ -381,6 +381,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
           factors, one panel per competing model.  Only produced when
           ``true_log_bfs_fn`` is supplied.
 
+        When **both families** are present (a mixed workflow), the confusion matrix
+        and pairwise Bayes factor heatmap are drawn side by side into a single figure
+        returned under ``"confusion_and_bayes_factors"`` instead of the two separate
+        keys above.
+
         Parameters
         ----------
         test_data : Mapping[str, np.ndarray] or int
@@ -410,6 +415,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
             - ``pairwise_bayes_factors_kwargs`` — forwarded to
               :func:`~bayesflow.diagnostics.plots.pairwise_bayes_factors` (BF scoring
               rules only).
+            - ``matrix_row_figsize`` — figure size ``(width, height)`` for the combined
+              side-by-side confusion matrix / pairwise Bayes factor figure, used only
+              when both scoring rule families are present. Inferred from the number of
+              models if omitted.
 
         Returns
         -------
@@ -451,13 +460,50 @@ class ModelComparisonWorkflow(BasicWorkflow):
         estimate_kwargs.pop("merge_scores", None)
         estimates = self.estimate(conditions=test_data, merge_scores=True, **estimate_kwargs)
 
+        # The confusion matrix (PMP rules) and pairwise Bayes factor heatmap (BF rules)
+        # share a row in a single figure when both families are present (mixed workflow);
+        # a pure-PMP or pure-BF workflow yields just the applicable one. Merged estimates
+        # carry pooled 'model_probs'/'log_bayes_factors' whenever the respective family is
+        # present, so these work for single, multiple, and mixed rules alike.
+        both_matrices = has_pmp_rules and has_bf_rules
+        if both_matrices:
+            num_models = estimates["model_probs"].shape[-1]
+            size = max(4.0, num_models * 1.2)
+            matrix_fig, matrix_axes = plt.subplots(
+                1, 2, figsize=kwargs.get("matrix_row_figsize", (2 * size + 1.0, size))
+            )
+            # Smaller fonts so two titled panels read as one row without a grand title;
+            # user-supplied kwargs still win.
+            panel_defaults = dict(title_fontsize=14, label_fontsize=13, tick_fontsize=11, value_fontsize=9)
+        else:
+            panel_defaults = {}
+
         if has_pmp_rules:
-            figures["confusion_matrix"] = bf_plots.mc_confusion_matrix(
+            confusion_matrix_fig = bf_plots.mc_confusion_matrix(
                 pred_models=estimates["model_probs"],
                 true_models=true_models,
                 model_names=self.model_names,
-                **kwargs.get("confusion_matrix_kwargs", {}),
+                ax=matrix_axes[0] if both_matrices else None,
+                **{**panel_defaults, **kwargs.get("confusion_matrix_kwargs", {})},
             )
+
+        if has_bf_rules:
+            pairwise_bayes_factors_fig = bf_plots.pairwise_bayes_factors(
+                pred_log_bayes_factors=estimates["log_bayes_factors"],
+                true_models=true_models,
+                model_names=self.model_names,
+                ax=matrix_axes[1] if both_matrices else None,
+                **{**panel_defaults, **kwargs.get("pairwise_bayes_factors_kwargs", {})},
+            )
+
+        if both_matrices:
+            matrix_fig.tight_layout()
+            figures["confusion_and_bayes_factors"] = matrix_fig
+        else:
+            if has_pmp_rules:
+                figures["confusion_matrix"] = confusion_matrix_fig
+            if has_bf_rules:
+                figures["pairwise_bayes_factors"] = pairwise_bayes_factors_fig
 
         figures["calibration"] = bf_plots.mc_calibration(
             pred_models=estimates["model_probs"],
@@ -466,24 +512,15 @@ class ModelComparisonWorkflow(BasicWorkflow):
             **kwargs.get("calibration_kwargs", {}),
         )
 
-        if has_bf_rules:
-            # Merged estimates carry pooled log_bayes_factors whenever a BF rule is present,
-            # so the log-BF plots work for a single rule, multiple rules, and mixed families alike.
-            figures["pairwise_bayes_factors"] = bf_plots.pairwise_bayes_factors(
+        if has_bf_rules and true_log_bfs_fn is not None:
+            true_log_bfs = true_log_bfs_fn(test_data)
+            figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
                 pred_log_bayes_factors=estimates["log_bayes_factors"],
+                true_log_bayes_factors=true_log_bfs,
                 true_models=true_models,
                 model_names=self.model_names,
-                **kwargs.get("pairwise_bayes_factors_kwargs", {}),
+                **kwargs.get("bayes_factor_recovery_kwargs", {}),
             )
-            if true_log_bfs_fn is not None:
-                true_log_bfs = true_log_bfs_fn(test_data)
-                figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
-                    pred_log_bayes_factors=estimates["log_bayes_factors"],
-                    true_log_bayes_factors=true_log_bfs,
-                    true_models=true_models,
-                    model_names=self.model_names,
-                    **kwargs.get("bayes_factor_recovery_kwargs", {}),
-                )
 
         return figures
 

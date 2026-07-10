@@ -330,17 +330,23 @@ def test_brier_score_is_polynomial_special_case():
 
 
 def test_brier_score_reports_true_brier_value():
-    """BrierScore.score returns the exact Brier value sum((p - y)^2), not the Tsallis score."""
+    """BrierScore reuses PolynomialScore's computation but reports the true Brier value."""
     import keras
     import numpy as np
-    from bayesflow.scoring_rules import BrierScore
+    from bayesflow.scoring_rules import BrierScore, PolynomialScore
 
-    rule = BrierScore()
     targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
     logits = keras.ops.convert_to_tensor([[2.0, 0.0], [0.0, 3.0]])
+    brier = BrierScore().score({"logits": logits}, targets)
+
+    # Exact (mean) Brier score sum((p - y)^2).
     probs = np.asarray(keras.ops.softmax(logits, axis=-1))
     expected = np.mean(np.sum((probs - np.asarray(targets)) ** 2, axis=-1))
-    assert keras.ops.allclose(rule.score({"logits": logits}, targets), expected, atol=1e-6)
+    assert keras.ops.allclose(brier, expected, atol=1e-6)
+
+    # ...recovered from the alpha=2 Tsallis score via the affine map S_Brier = 2 S_poly + 1.
+    poly = PolynomialScore(alpha=2.0).score({"logits": logits}, targets)
+    assert keras.ops.allclose(brier, 2.0 * poly + 1.0, atol=1e-6)
 
 
 # --- LogisticScore ---

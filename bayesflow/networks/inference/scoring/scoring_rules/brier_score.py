@@ -1,7 +1,4 @@
-import keras
-
 from bayesflow.types import Tensor
-from bayesflow.utils import weighted_mean
 from bayesflow.utils.serialization import serializable
 
 from .polynomial_score import PolynomialScore
@@ -11,16 +8,24 @@ from .polynomial_score import PolynomialScore
 class BrierScore(PolynomialScore):
     r""":math:`S(\hat p_{1\ldots C}, y) = \sum_{c=1}^C (\hat p_c - y_c)^2`
 
-    Minimized when the predicted probabilities exactly match the one-hot
-    targets, i.e. when :math:`\mathrm{softmax}(\hat y)_m = 1` for the true
-    model :math:`m`.
+    The (multi-class) Brier score, realised as the :class:`PolynomialScore`
+    special case with :math:`\alpha = 2`. It is minimized in expectation by the
+    true posterior model probabilities, i.e. when :math:`\mathrm{softmax}(\hat y)_m = 1`
+    for the true model :math:`m`.
 
     .. note::
-        Special case of :class:`PolynomialScore` with :math:`\alpha = 2`
-        (same minimizer and gradient direction, different scale and offset).
-        This class reports the true Brier score value rather than the Tsallis
-        polynomial score.
+        For one-hot targets the Brier score is an exact affine map of the
+        :math:`\alpha = 2` Tsallis polynomial score,
+        :math:`S_{\mathrm{Brier}} = 2\,S_{\mathrm{poly}} + 1`. The heavy lifting is
+        therefore inherited from :class:`PolynomialScore`; :meth:`score` only applies
+        this transform so that the reported value is the true Brier score. (The scale
+        and offset are immaterial for Bayes-risk minimization — same minimizer and
+        gradient direction — but keep the metric interpretable.)
     """
+
+    #: Affine map from the alpha=2 Tsallis polynomial score to the Brier score.
+    _SCALE = 2.0
+    _OFFSET = 1.0
 
     def __init__(self, **kwargs):
         super().__init__(alpha=2.0, **kwargs)
@@ -28,7 +33,12 @@ class BrierScore(PolynomialScore):
 
     def score(self, estimates: dict[str, Tensor], targets: Tensor, weights: Tensor = None) -> Tensor:
         """
-        Computes the Brier score from logits.
+        Computes the (optionally weighted) mean Brier score from logits.
+
+        Reuses :meth:`PolynomialScore.score` (the :math:`\\alpha = 2` Tsallis score)
+        and rescales it to the classical Brier score. Because ``weighted_mean`` is
+        affine-preserving, applying the transform to the aggregated score is
+        equivalent to applying it per sample.
 
         Parameters
         ----------
@@ -45,6 +55,4 @@ class BrierScore(PolynomialScore):
         Tensor
             (Optionally weighted) mean Brier score over the batch.
         """
-        probs = keras.ops.softmax(estimates["logits"], axis=-1)
-        scores = keras.ops.sum((probs - targets) ** 2, axis=-1)
-        return weighted_mean(scores, weights)
+        return self._SCALE * super().score(estimates, targets, weights) + self._OFFSET

@@ -52,7 +52,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         - a single :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance;
         - a string name recognised by :func:`~bayesflow.utils.find_scoring_rule`;
-        - a **list/tuple** of rules (or names) to co-learn several rules simultaneously,
+        - a list/tuple of rules (or names) to co-learn several rules simultaneously,
           which are auto-named after their class (e.g. ``"cross_entropy_score"``);
         - a mapping of explicit names to rules.
 
@@ -67,8 +67,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
           ``"leaky_exponential"``, ``"logistic"``, ``"power_logistic"``): network outputs
           ``num_models - 1`` log Bayes factors relative to model 0.
 
-        PMP and Bayes factor rules **can be mixed**: each rule trains its own head on the
-        shared classifier body, and at estimation time all rules are pooled in log-odds
+        PMP and Bayes factor estimates can be aggregated: all rules are pooled in log-odds
         space (a PMP head's logit differences equal the same log posterior odds that a
         Bayes factor head outputs directly).
     summary_network : SummaryNetwork or str, optional
@@ -314,9 +313,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
             If set to True and a summary network is present, will return the learned summary statistics for
             the provided conditions.
         merge_scores : bool, optional
-            Only relevant when the workflow was configured with more than one scoring rule
-            (default: True). If True, the per-rule estimates are pooled into the flat
-            single-rule structure: when at least one Bayes factor rule is present, all rules
+            Only relevant when the workflow was configured with more than one scoring rule.
+            If True (default), the per-rule estimates are pooled into the flat
+            structure: when at least one Bayes factor rule is present, all rules
             are pooled in log-odds space (logarithmic opinion pool; PMP rules enter via their
             logit differences) and both ``"log_bayes_factors"`` and the derived
             ``"model_probs"`` are kept; PMP-only rules average their ``"model_probs"``

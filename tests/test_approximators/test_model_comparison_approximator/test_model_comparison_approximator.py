@@ -6,6 +6,10 @@ from contextlib import redirect_stdout
 from tests.utils import assert_models_equal
 
 
+def first_tensor_batch(dataset):
+    return keras.tree.map_structure(keras.ops.convert_to_tensor, dataset[0])
+
+
 def test_build(approximator, train_dataset):
     assert approximator.built is False
 
@@ -56,9 +60,10 @@ def test_fit(approximator, train_dataset, validation_dataset):
 
 def test_save_and_load(tmp_path, approximator, train_dataset, validation_dataset):
     # to save, the model must be built
-    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
+    batch = first_tensor_batch(train_dataset)
+    data_shapes = keras.tree.map_structure(keras.ops.shape, batch)
     approximator.build(data_shapes)
-    approximator.compute_metrics(**train_dataset[0])
+    approximator.compute_metrics(**batch)
 
     keras.saving.save_model(approximator, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")
@@ -67,9 +72,10 @@ def test_save_and_load(tmp_path, approximator, train_dataset, validation_dataset
 
 
 def test_estimate(approximator, train_dataset, simulator):
-    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
+    batch = first_tensor_batch(train_dataset)
+    data_shapes = keras.tree.map_structure(keras.ops.shape, batch)
     approximator.build(data_shapes)
-    approximator.compute_metrics(**train_dataset[0])
+    approximator.compute_metrics(**batch)
 
     num_conditions = 2
     num_models = len(simulator.simulators)
@@ -125,9 +131,10 @@ def test_multi_rule_estimate(train_dataset, simulator):
         summary_network=DeepSet(summary_dim=2, depth=1),
         adapter=adapter,
     )
-    data_shapes = keras.tree.map_structure(keras.ops.shape, train_dataset[0])
+    batch = first_tensor_batch(train_dataset)
+    data_shapes = keras.tree.map_structure(keras.ops.shape, batch)
     approx.build(data_shapes)
-    approx.compute_metrics(**train_dataset[0])
+    approx.compute_metrics(**batch)
 
     import numpy as np
 

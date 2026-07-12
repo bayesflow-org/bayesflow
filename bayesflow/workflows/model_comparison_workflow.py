@@ -1,6 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
 import re
-import time
 
 import numpy as np
 import pandas as pd
@@ -16,8 +15,6 @@ from bayesflow.scoring_rules import CategoricalScoringRule
 from bayesflow.utils import (
     find_scoring_rule,
     find_summary_network,
-    logging,
-    format_duration,
     filter_kwargs,
 )
 from bayesflow.diagnostics import plots as bf_plots
@@ -295,57 +292,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
             adapter = adapter.concatenate(inference_conditions, into="inference_conditions")
 
         return adapter
-
-    def estimate(
-        self,
-        *,
-        conditions: dict,
-        return_summaries: bool = False,
-        merge_scores: bool = True,
-        **kwargs,
-    ) -> dict[str, np.ndarray | dict[str, np.ndarray]]:
-        """
-        Return posterior model probabilities (and raw network outputs) for the given conditions.
-
-        Parameters
-        ----------
-        conditions : dict[str, np.ndarray]
-            Conditioning data as produced by the simulator (or real observations).
-        return_summaries: bool, optional
-            If set to True and a summary network is present, will return the learned summary statistics for
-            the provided conditions.
-        merge_scores : bool, optional
-            Only relevant when the workflow was configured with more than one scoring rule.
-            If True (default), the per-rule estimates are pooled into the flat
-            structure: when at least one Bayes factor rule is present, all rules
-            are pooled in log-odds space (logarithmic opinion pool; PMP rules enter via their
-            logit differences) and both ``"log_bayes_factors"`` and the derived
-            ``"model_probs"`` are kept; PMP-only rules average their ``"model_probs"``
-            (linear opinion pool) and drop the pre-softmax ``"logits"``. If False, results
-            are returned as a nested dict keyed by rule name. Has no effect for a single
-            scoring rule.
-        **kwargs
-            Forwarded to :meth:`~bayesflow.approximators.ModelComparisonApproximator.estimate`.
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Single scoring rule (or multiple rules with ``merge_scores=True``): always contains
-            ``"model_probs"`` of shape ``(num_datasets, num_models)``. When a Bayes factor rule
-            is present (single, pooled, or mixed with PMP rules), additionally contains
-            ``"log_bayes_factors"`` of shape ``(num_datasets, num_models - 1)``; a single PMP
-            rule additionally contains ``"logits"`` of shape ``(num_datasets, num_models)``.
-
-            Multiple scoring rules with ``merge_scores=False``: a nested dict keyed by rule name,
-            each value having the single-rule structure above.
-        """
-        start_time = time.perf_counter()
-        estimates = self.approximator.estimate(
-            conditions=conditions, return_summaries=return_summaries, merge_scores=merge_scores, **kwargs
-        )
-        elapsed = time.perf_counter() - start_time
-        logging.info(f"Estimation completed in {format_duration(elapsed)}.")
-        return estimates
 
     def plot_default_diagnostics(
         self,

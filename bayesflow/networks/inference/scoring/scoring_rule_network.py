@@ -183,7 +183,6 @@ class ScoringRuleNetwork(keras.Layer):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
-        x = keras.ops.convert_to_tensor(x)
         output = self(x, conditions, training=stage == "training", **kwargs)
 
         metrics = {}

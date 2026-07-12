@@ -302,7 +302,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         return_summaries: bool = False,
         merge_scores: bool = True,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray | dict[str, np.ndarray]]:
         """
         Return posterior model probabilities (and raw network outputs) for the given conditions.
 

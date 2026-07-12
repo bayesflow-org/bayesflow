@@ -14,7 +14,6 @@ from bayesflow.adapters import Adapter
 from bayesflow.approximators import ModelComparisonApproximator
 from bayesflow.scoring_rules import CategoricalScoringRule
 from bayesflow.utils import (
-    find_network,
     find_scoring_rule,
     find_summary_network,
     logging,
@@ -43,8 +42,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
         Adapter for data processing. If not provided, a default adapter is built
         that maps ``model_indices`` to ``inference_variables`` and handles any
         ``inference_conditions`` / ``summary_variables``.
-    classifier_network : keras.Layer or str, optional
-        The classifier backbone used inside the approximator (default: ``"mlp"``).
+    subnet : keras.Layer or str, optional
+        The shared body of the internal :class:`~bayesflow.networks.ScoringRuleNetwork`,
+        on top of which one head per scoring rule is built (default: ``"mlp"``).
         Accepts a Keras layer instance or any name recognised by
         :func:`~bayesflow.utils.find_network` (e.g. ``"mlp"``).
     scoring_rules : CategoricalScoringRule or Sequence or dict[str, CategoricalScoringRule] or str, optional
@@ -112,7 +112,8 @@ class ModelComparisonWorkflow(BasicWorkflow):
     **kwargs : dict, optional
         Additional keyword arguments organised by context:
 
-        - ``classifier_kwargs`` : dict — passed to :func:`~bayesflow.utils.find_network`.
+        - ``subnet_kwargs``     : dict — used in :class:`~bayesflow.networks.ScoringRuleNetwork`
+          to construct ``subnet`` when it is given as a name.
         - ``summary_kwargs``    : dict — passed to :func:`~bayesflow.utils.find_summary_network`.
         - ``optimizer_kwargs``  : dict — passed to ``_init_optimizer``.
         - ``simulator_kwargs``  : dict — passed to :class:`~bayesflow.simulators.ModelComparisonSimulator`.
@@ -123,7 +124,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         self,
         simulator: Sequence[Simulator] | ModelComparisonSimulator | None = None,
         adapter: Adapter | None = None,
-        classifier_network: keras.Layer | str = "mlp",
+        subnet: keras.Layer | str = "mlp",
         summary_network: SummaryNetwork | str | None = None,
         scoring_rules: CategoricalScoringRule
         | Sequence[CategoricalScoringRule | str]
@@ -184,7 +185,8 @@ class ModelComparisonWorkflow(BasicWorkflow):
         self.approximator = ModelComparisonApproximator(
             inference_network=ScoringRuleNetwork(
                 scoring_rules=resolved_scoring_rules,
-                subnet=find_network(classifier_network, **kwargs.get("classifier_kwargs", {})),
+                subnet=subnet,
+                subnet_kwargs=kwargs.get("subnet_kwargs", {}),
             ),
             summary_network=find_summary_network(summary_network, **kwargs.get("summary_kwargs", {})),
             adapter=adapter,
@@ -198,8 +200,8 @@ class ModelComparisonWorkflow(BasicWorkflow):
         self._needs_compile = True
 
     @property
-    def classifier_network(self) -> keras.Layer:
-        """The classifier backbone (subnet of the internal ScoringRuleNetwork)."""
+    def subnet(self) -> keras.Layer:
+        """The shared body of the internal ScoringRuleNetwork, below the per-rule heads."""
         return self.approximator.inference_network.subnet
 
     @staticmethod

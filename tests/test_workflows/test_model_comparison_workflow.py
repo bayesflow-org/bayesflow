@@ -493,7 +493,7 @@ def test_compute_diagnostics_without_simulator_raises():
         workflow.compute_default_diagnostics(test_data=10)
 
 
-# ── classifier_network property ───────────────────────────────────────────────
+# ── subnet property ──────────────────────────────────────────────────────────
 
 
 def test_plot_diagnostics_multi_rule_pmp(mc_simulators):
@@ -545,11 +545,11 @@ def test_compute_diagnostics_multi_rule_pmp(mc_simulators):
     assert ((metrics.loc["Accuracy"] >= 0.0) & (metrics.loc["Accuracy"] <= 1.0)).all()
 
 
-def test_classifier_network_property(mc_simulators):
-    """classifier_network returns the subnet of the internal ScoringRuleNetwork."""
+def test_subnet_property(mc_simulators):
+    """subnet returns the shared body of the internal ScoringRuleNetwork."""
     workflow = ModelComparisonWorkflow(simulator=mc_simulators)
-    assert workflow.classifier_network is not None
-    assert workflow.classifier_network is workflow.approximator.inference_network.subnet
+    assert workflow.subnet is not None
+    assert workflow.subnet is workflow.approximator.inference_network.subnet
 
 
 # ── inference_variables key branch ───────────────────────────────────────────

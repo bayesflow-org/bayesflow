@@ -4,7 +4,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
-from .feedforward_net import FFN
+from bayesflow.networks.helpers import FFN
 from .multihead_attention import MultiHeadAttention
 
 

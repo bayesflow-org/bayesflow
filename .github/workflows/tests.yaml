@@ -64,6 +64,12 @@ jobs:
         run: |
           uv pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
+      - name: Setup MSVC (Windows + PyTorch)
+        # torch.compile's Inductor backend shells out to the "cl" C++ compiler on Windows,
+        # which is not on PATH by default on windows-latest runners.
+        if: ${{ matrix.os == 'windows-latest' && matrix.backend == 'torch' }}
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+
       - name: Run Tests
         run: |
           uv run pytest -x -m "not slow"

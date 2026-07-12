@@ -7,18 +7,19 @@ from bayesflow.types import Tensor
 from bayesflow.utils import (
     expand_right_as,
     find_network,
+    filter_kwargs,
     layer_kwargs,
     logging,
+    MaskName,
     maybe_mask_tensor,
-    random_mask,
-    randomly_mask_along_axis,
     resolve_seed,
+    sample_input_masks,
     weighted_mean,
 )
 from bayesflow.utils.serialization import serializable, serialize
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS
+from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -33,30 +34,38 @@ class ConsistencyModel(InferenceNetwork):
     total_steps : int or float
         The total number of training steps, must be calculated as
         ``num_epochs * num_batches`` and cannot be inferred during construction.
-    subnet : str or keras.Layer, optional
+    subnet : str or keras.Layer
         A neural network type for the consistency model, will be instantiated using
         *subnet_kwargs*.  If a string is provided, it should be a registered name
         (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
         be directly instantiated with the given *subnet_kwargs*.  Any subnet must
         accept a tuple of tensors ``(target, time, conditions)``.
         Default is ``"time_mlp"``.
-    max_time : int or float, optional
+    max_time : int or float
         The maximum time of the diffusion, equivalent to the maximum noise level
         (``x_1 = z * max_time``).  Default is 80.
-    sigma2 : float, optional
+    sigma2 : float
         Controls the shape of the skip-function.  Default is 1.0.
-    eps : float, optional
+    eps : float
         The minimum time.  Default is 0.001.
-    s0 : int or float, optional
-        Initial number of discretisation steps.  Default is 10.
+    s0 : int or float
+        Initial number of discretisation steps and s0+1 steps will be used for sampling.
+         Default is 10. During sampling, you can pass `steps` to change nmuber of multistep sampling.
     s1 : int or float, optional
         Final number of discretisation steps.  Default is 150.
+    rho : float
+        Exponent controlling the curvature of the (Karras-style) time
+        discretisation schedule. Default is ``7.0``.
+    noise_dist_mean : float
+        Mean of the log-normal proposal distribution over noise levels used to
+        weight the sampled discretisation times (``P_mean`` in [2]).
+        Default is ``-1.1``.
+    noise_dist_std : float
+        Standard deviation of that proposal distribution (``P_std`` in [2]).
+        Default is ``2.0``.
     subnet_kwargs : dict[str, any], optional
         Keyword arguments passed to the subnet constructor or used to update the
         default MLP settings.
-    drop_cond_prob : float, optional
-        Probability of dropping conditions during training (i.e., classifier-free guidance).
-        Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -71,6 +80,13 @@ class ConsistencyModel(InferenceNetwork):
         inference. arXiv:2312.05440.
     """
 
+    _SUBNET_MASK_KEYS = {
+        "attention_mask",
+        MaskName.FIXED_TARGET,
+        MaskName.INFER_TARGET,
+        MaskName.OBSERVED_CONDITION,
+    }
+
     def __init__(
         self,
         total_steps: int | float,
@@ -80,8 +96,10 @@ class ConsistencyModel(InferenceNetwork):
         eps: float = 0.001,
         s0: int | float = 10,
         s1: int | float = 150,
+        rho: float = 7.0,
+        noise_dist_mean: float = -1.1,
+        noise_dist_std: float = 2.0,
         subnet_kwargs: dict[str, any] = None,
-        drop_cond_prob: float = 0.0,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -91,7 +109,10 @@ class ConsistencyModel(InferenceNetwork):
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+        if subnet == "diffusion_transformer":
+            subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
+        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
 
@@ -99,29 +120,29 @@ class ConsistencyModel(InferenceNetwork):
         self.sigma = ops.sqrt(sigma2)
         self.eps = eps
         self.max_time = max_time
-        self.rho = float(kwargs.get("rho", 7.0))
-        self.p_mean = float(kwargs.get("p_mean", -1.1))
-        self.p_std = float(kwargs.get("p_std", 2.0))
+        self.rho = rho
+        self.noise_dist_mean = noise_dist_mean
+        self.noise_dist_std = noise_dist_std
 
-        self.s0 = float(s0)
-        self.s1 = float(s1)
+        self.s0 = s0
+        self.s1 = s1
 
         if self.total_steps < self.s0:
             raise ValueError(f"total_steps={self.total_steps} must be greater than or equal to s0={self.s0}.")
 
         # create variable that works with JIT compilation
-        self.current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
-        self.current_step.assign(0)
+        self._current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
+        self._current_step.assign(0)
 
         self.seed_generator = keras.random.SeedGenerator()
-        self.discretized_times = None
-        self.discretization_map = None
-        self.c_huber = None
-        self.c_huber2 = None
-        self.unique_n = None
-        self.drop_cond_prob = drop_cond_prob
-        self.unconditional_mode = False
-        self.drop_target_prob = float(kwargs.get("drop_target_prob", 0.0))
+        self._discretized_times = None
+        self._discretization_map = None
+        self._c_huber = None
+        self._c_huber2 = None
+        self._unique_n = None
+        self.fixed_target_prob = kwargs.get("fixed_target_prob", 0.0)
+        self.missing_target_prob = kwargs.get("missing_target_prob", 0.0)
+        self.missing_conditions_prob = kwargs.get("missing_conditions_prob", 0.0)
 
     @property
     def student(self):
@@ -140,10 +161,11 @@ class ConsistencyModel(InferenceNetwork):
             "s0": self.s0,
             "s1": self.s1,
             "rho": self.rho,
-            "p_mean": self.p_mean,
-            "p_std": self.p_std,
-            "drop_cond_prob": self.drop_cond_prob,
-            "drop_target_prob": self.drop_target_prob,
+            "noise_dist_mean": self.noise_dist_mean,
+            "noise_dist_std": self.noise_dist_std,
+            "fixed_target_prob": self.fixed_target_prob,
+            "missing_target_prob": self.missing_target_prob,
+            "missing_conditions_prob": self.missing_conditions_prob,
             # we do not need to store subnet_kwargs
         }
 
@@ -194,8 +216,8 @@ class ConsistencyModel(InferenceNetwork):
         self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3
-        self.c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
-        self.c_huber2 = self.c_huber**2
+        self._c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
+        self._c_huber2 = self._c_huber**2
 
         # Calculate discretization schedule in advance
         # The Jax compiler requires fixed-size arrays, so we have
@@ -211,7 +233,7 @@ class ConsistencyModel(InferenceNetwork):
         unique_n = set()
         for step in range(int(self.total_steps)):
             unique_n.add(int(self._schedule_discretization(step)))
-        self.unique_n = sorted(list(unique_n))
+        self._unique_n = sorted(list(unique_n))
 
         # Next, we calculate the discretized times for each n
         # and establish a mapping between n and the position i of the
@@ -224,8 +246,8 @@ class ConsistencyModel(InferenceNetwork):
             discretization_map[n] = i
 
         # Finally, we convert the vectors to tensors
-        self.discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
-        self.discretization_map = ops.convert_to_tensor(discretization_map)
+        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
+        self._discretization_map = ops.convert_to_tensor(discretization_map)
 
     def _forward_train(
         self,
@@ -271,10 +293,10 @@ class ConsistencyModel(InferenceNetwork):
         """
         seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
         # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._SUBNET_MASK_KEYS, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
         steps = int(kwargs.get("steps", self.s0 + 1))
 
-        if steps not in self.unique_n:
+        if steps not in self._unique_n:
             logging.warning(
                 "The number of discretization steps is not equal to the number of unique steps used during training. "
                 "This might lead to suboptimal sample quality."
@@ -285,27 +307,23 @@ class ConsistencyModel(InferenceNetwork):
         t = keras.ops.full((*keras.ops.shape(x)[:-1], 1), discretized_time[0], dtype=x.dtype)
 
         # Apply user-provided target mask if available
-        target_mask = kwargs.get("target_mask", None)
-        targets_fixed = kwargs.get("targets_fixed", None)
-        if target_mask is not None:
-            target_mask = keras.ops.broadcast_to(target_mask, keras.ops.shape(x))
+        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
+        targets_fixed = kwargs.get(MaskName.FIXED_TARGET_VALUE, None)
+        if fixed_target_mask is not None:
+            fixed_target_mask = keras.ops.broadcast_to(fixed_target_mask, keras.ops.shape(x))
             targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
-
-        if self.unconditional_mode and conditions is not None:
-            conditions = keras.ops.zeros_like(conditions)
-            logging.info("Condition masking is applied: conditions are set to zero.")
+            x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
 
         x = self.consistency_function(x, t, conditions=conditions, training=training, **subnet_kwargs)
-        x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+        x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
             x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
             t = keras.ops.full_like(t, discretized_time[n])
-            x_n = maybe_mask_tensor(x_n, mask=target_mask, replacement=targets_fixed)
+            x_n = maybe_mask_tensor(x_n, mask=fixed_target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, training=training, **subnet_kwargs)
-            x = maybe_mask_tensor(x, mask=target_mask, replacement=targets_fixed)
+            x = maybe_mask_tensor(x, mask=fixed_target_mask, replacement=targets_fixed)
         return x
 
     def consistency_function(
@@ -352,23 +370,20 @@ class ConsistencyModel(InferenceNetwork):
         # The discretization schedule requires the number of passed training steps.
         # To be independent of external information, we track it here.
         if training:
-            self.current_step.assign_add(1)
-            self.current_step.assign(ops.minimum(self.current_step, self.total_steps - 1))
+            self._current_step.assign_add(1)
+            self._current_step.assign(ops.minimum(self._current_step, self.total_steps - 1))
 
         discretization_index = ops.take(
-            self.discretization_map, ops.cast(self._schedule_discretization(self.current_step), "int")
+            self._discretization_map, ops.cast(self._schedule_discretization(self._current_step), "int")
         )
-        discretized_time = ops.take(self.discretized_times, discretization_index, axis=0)
-
-        if self.drop_cond_prob > 0 and conditions is not None:
-            conditions = randomly_mask_along_axis(conditions, self.drop_cond_prob, seed_generator=self.seed_generator)
+        discretized_time = ops.take(self._discretized_times, discretization_index, axis=0)
 
         # Randomly sample t_n and t_[n+1] and reshape to (batch_size, 1)
         # adapted noise schedule from [2], Section 3.5
         p = ops.where(
             discretized_time[1:] > 0.0,
-            ops.erf((ops.log(discretized_time[1:]) - self.p_mean) / (ops.sqrt(2.0) * self.p_std))
-            - ops.erf((ops.log(discretized_time[:-1]) - self.p_mean) / (ops.sqrt(2.0) * self.p_std)),
+            ops.erf((ops.log(discretized_time[1:]) - self.noise_dist_mean) / (ops.sqrt(2.0) * self.noise_dist_std))
+            - ops.erf((ops.log(discretized_time[:-1]) - self.noise_dist_mean) / (ops.sqrt(2.0) * self.noise_dist_std)),
             0.0,
         )
 
@@ -380,23 +395,34 @@ class ConsistencyModel(InferenceNetwork):
         # generate noise vector
         noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
 
-        # Generate optional target dropout mask (or return 1.0 if drop_target_prob is 0)
-        mask_x = random_mask(ops.shape(x), self.drop_target_prob, self.seed_generator)
+        # Generate target / condition / missingness masks
+        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        mask_x, loss_mask, subnet_kwargs = sample_input_masks(
+            self.subnet,
+            x,
+            conditions,
+            subnet_kwargs,
+            training,
+            fixed_target_prob=self.fixed_target_prob,
+            missing_target_prob=self.missing_target_prob,
+            missing_conditions_prob=self.missing_conditions_prob,
+            seed_generator=self.seed_generator,
+        )
 
         teacher_out = self._forward_train(
-            x, noise, t1, conditions=conditions, training=training, mask_x=mask_x, **kwargs
+            x, noise, t1, conditions=conditions, training=training, mask_x=mask_x, **subnet_kwargs
         )
         # difference between teacher and student: different time, and no gradient for the teacher
         teacher_out = ops.stop_gradient(teacher_out)
         student_out = self._forward_train(
-            x, noise, t2, conditions=conditions, training=training, mask_x=mask_x, **kwargs
+            x, noise, t2, conditions=conditions, training=training, mask_x=mask_x, **subnet_kwargs
         )
 
         # weighting function, see [2], Section 3.1
         lam = 1 / (t2 - t1)
 
         # Pseudo-huber loss, see [2], Section 3.3
-        loss = lam * (ops.sqrt(mask_x * ops.square(teacher_out - student_out) + self.c_huber2) - self.c_huber)
+        loss = lam * (ops.sqrt(loss_mask * ops.square(teacher_out - student_out) + self._c_huber2) - self._c_huber)
         loss = weighted_mean(loss, sample_weight)
 
         return {"loss": loss}

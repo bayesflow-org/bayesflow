@@ -163,6 +163,44 @@ def test_compute_metrics_with_masking(diffusion_model_with_masking, random_sampl
     assert np.isfinite(loss), f"Loss is not finite: {loss}"
 
 
+def test_mask_aware_subnet_receives_fixed_target_mask(random_samples, random_conditions):
+    from bayesflow.networks import DiffusionModel
+
+    class MaskAwareSubnet(keras.Layer):
+        def __init__(self):
+            super().__init__()
+            self.last_fixed_target_mask = None
+
+        def call(self, inputs, training=None, fixed_target_mask=None):
+            self.last_fixed_target_mask = fixed_target_mask
+            return inputs[0]
+
+        def compute_output_shape(self, input_shape):
+            return input_shape[0]
+
+    subnet = MaskAwareSubnet()
+    model = DiffusionModel(subnet=subnet, fixed_target_prob=0.5)
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    model.build(xz_shape, conditions_shape=cond_shape)
+
+    model.compute_metrics(random_samples, conditions=random_conditions)
+    assert subnet.last_fixed_target_mask is not None
+    assert keras.ops.shape(subnet.last_fixed_target_mask) == keras.ops.shape(random_samples)
+
+    fixed_target_mask = keras.ops.ones_like(random_samples)
+    model.velocity(
+        random_samples,
+        time=0.5,
+        stochastic_solver=False,
+        conditions=random_conditions,
+        fixed_target_mask=fixed_target_mask,
+    )
+    assert np.allclose(
+        keras.ops.convert_to_numpy(subnet.last_fixed_target_mask), keras.ops.convert_to_numpy(fixed_target_mask)
+    )
+
+
 # ---- Guidance (slow, trains a model) ----------------------------------------
 
 
@@ -182,8 +220,8 @@ def test_diffusion_guidance(simple_diffusion_model):
     test_conditions = workflow.simulate(5)
     samples = workflow.sample(num_samples=2, conditions=test_conditions)["parameters"]
 
-    def constraint(z):
-        params = workflow.approximator.standardize_layers["inference_variables"](z, forward=False)
+    def constraint(params):
+        # params are automatically unstandardized before the constraint is called
         a1 = params[..., 0]
         return a1
 
@@ -194,6 +232,9 @@ def test_diffusion_guidance(simple_diffusion_model):
     assert (samples_guided[..., 0] < 0).all()
 
     def guidance_function(x_pred, time, score, **guidance_kwargs):
+        # params are not automatically unstandardized before the guidance is called
+        unstandardize = guidance_kwargs.get("unstandardize", lambda x: x)
+        x_pred = unstandardize(x_pred)
         return x_pred * 0
 
     workflow.approximator.inference_network.guidance_function = guidance_function
@@ -202,3 +243,40 @@ def test_diffusion_guidance(simple_diffusion_model):
         conditions=test_conditions,
     )["parameters"]
     assert samples_guided_func.shape == samples.shape
+
+
+# ---- Joint condition tokenization -----------------------------------------
+
+
+def test_diffusion_transformer_conditions_as_tokens_training_step():
+    """Conditions are tokenized per-dimension; the diffusion output still matches the
+    target shape and a training step produces a finite loss."""
+    from bayesflow.networks import DiffusionModel
+
+    dm = DiffusionModel(subnet="diffusion_transformer", subnet_kwargs=dict(widths=(8, 8)))
+    x = keras.random.normal((4, 5))
+    cond = keras.random.normal((4, 3))
+    dm.build(keras.ops.shape(x), keras.ops.shape(cond))
+
+    metrics = dm.compute_metrics(x, conditions=cond, stage="training")
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics["loss"]))
+
+    restored = deserialize(serialize(dm))
+    metrics_r = restored.compute_metrics(x, conditions=cond, stage="training")
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics_r["loss"]))
+
+
+def test_diffusion_transformer_observed_condition_mask_forwarded():
+    """A per-condition observed_condition_mask is accepted and the output keeps the target shape."""
+    from bayesflow.networks import DiffusionModel
+
+    dm = DiffusionModel(subnet="diffusion_transformer", subnet_kwargs=dict(widths=(8, 8)))
+    x = keras.random.normal((4, 5))
+    cond = keras.random.normal((4, 3))
+    dm.build(keras.ops.shape(x), keras.ops.shape(cond))
+
+    observed_condition_mask = keras.ops.convert_to_tensor(
+        np.array([[1, 1, 0]] * 4, dtype="float32")  # third condition missing
+    )
+    metrics = dm.compute_metrics(x, conditions=cond, stage="training", observed_condition_mask=observed_condition_mask)
+    assert np.isfinite(keras.ops.convert_to_numpy(metrics["loss"]))

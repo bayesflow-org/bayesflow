@@ -196,11 +196,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
         self.history = None
         self._needs_compile = True
 
-    @property
-    def subnet(self) -> keras.Layer:
-        """The shared body of the internal ScoringRuleNetwork, below the per-rule heads."""
-        return self.approximator.inference_network.subnet
-
     @staticmethod
     def _resolve_scoring_rules(
         scoring_rules: CategoricalScoringRule

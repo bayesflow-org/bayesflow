@@ -30,9 +30,7 @@ class OrthogonalPermutation(InvertibleLayer):
     def _forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         z = ops.matmul(x, self.weight)
         log_det = ops.log(ops.abs(ops.det(self.weight)))
-
-        if ops.ndim(x) > 2:
-            log_det = ops.multiply(log_det, ops.shape(x)[1])
+        log_det = ops.broadcast_to(log_det, ops.shape(x)[:-1])
 
         return z, log_det
 
@@ -40,9 +38,7 @@ class OrthogonalPermutation(InvertibleLayer):
         weight = ops.inv(self.weight)
 
         x = ops.matmul(z, weight)
-        log_det = ops.log(ops.abs(ops.det(weight)))
-
-        if ops.ndim(z) > 2:
-            log_det = ops.multiply(log_det, ops.shape(z)[1])
+        log_det = -ops.log(ops.abs(ops.det(self.weight)))
+        log_det = ops.broadcast_to(log_det, ops.shape(z)[:-1])
 
         return x, log_det

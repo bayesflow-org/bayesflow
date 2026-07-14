@@ -1,8 +1,7 @@
-import numpy as np
 import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, deserialize
-from bayesflow.types import ArrayOrTensor, Tensor
+from bayesflow.types import Tensor
 from typing import Union
 
 
@@ -10,7 +9,7 @@ from typing import Union
 class ElementwiseTransform:
     """Base class on which other transforms are based"""
 
-    def __call__(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+    def __call__(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         if inverse:
             return self.inverse(data, **kwargs)
 
@@ -23,49 +22,17 @@ class ElementwiseTransform:
     def get_config(self) -> dict:
         raise NotImplementedError
 
-    def forward(self, data: ArrayOrTensor, keras: bool = False, **kwargs) -> ArrayOrTensor:
-        # We do a general "dispatch", individual subclasses of ElementwiseTransform
-        # implement _forward, _forward_keras, _inverse, _inverse_keras, _log_det_jac, and _log_det_jac_keras.
-        # This avoids having to dispatch on the keras bool inside of the subclass implementations.
-        if keras:
-            return self._forward_keras(data, **kwargs)
-        else:
-            return self._forward(data, **kwargs)
-
-    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
         raise NotImplementedError
 
-    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         raise NotImplementedError
 
-    def inverse(self, data: ArrayOrTensor, keras: bool = False, **kwargs) -> ArrayOrTensor:
-        if keras:
-            return self._inverse_keras(data, **kwargs)
-        else:
-            return self._inverse(data, **kwargs)
-
-    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        raise NotImplementedError
-
-    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
-        raise NotImplementedError
-
-    def log_det_jac(
-        self, data: ArrayOrTensor, inverse: bool = False, keras: bool = False, **kwargs
-    ) -> Union[ArrayOrTensor, None]:
-        if keras:
-            return self._log_det_jac_keras(data, inverse=inverse, **kwargs)
-        else:
-            return self._log_det_jac(data, inverse=inverse, **kwargs)
-
-    def _log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> Union[np.ndarray, None]:
-        return None
-
-    def _log_det_jac_keras(self, data: Tensor, inverse: bool = False, **kwargs) -> Union[Tensor, None]:
+    def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Union[Tensor, None]:
         return None
 
     @staticmethod
-    def _sum_except_batch_keras(data: Tensor) -> Tensor:
+    def _sum_except_batch(data: Tensor) -> Tensor:
         b = ops.shape(data)[0]
         data = ops.reshape(data, (b, -1))
         return ops.sum(data, axis=1)

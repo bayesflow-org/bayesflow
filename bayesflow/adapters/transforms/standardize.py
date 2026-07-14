@@ -1,4 +1,3 @@
-import numpy as np
 import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
@@ -32,13 +31,13 @@ class Standardize(ElementwiseTransform):
 
     def __init__(
         self,
-        mean: int | float | np.ndarray,
-        std: int | float | np.ndarray,
+        mean: int | float | Tensor,
+        std: int | float | Tensor,
     ):
         super().__init__()
 
-        self.mean = mean
-        self.std = std
+        self.mean = ops.convert_to_tensor(mean)
+        self.std = ops.convert_to_tensor(std)
 
     def get_config(self) -> dict:
         config = {
@@ -47,36 +46,19 @@ class Standardize(ElementwiseTransform):
         }
         return serialize(config)
 
-    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        mean = np.broadcast_to(self.mean, data.shape)
-        std = np.broadcast_to(self.std, data.shape)
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
+        mean = ops.broadcast_to(ops.cast(self.mean, dtype=ops.dtype(data)), ops.shape(data))
+        std = ops.broadcast_to(ops.cast(self.std, dtype=ops.dtype(data)), ops.shape(data))
         return (data - mean) / std
 
-    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
-        mean = ops.broadcast_to(ops.convert_to_tensor(self.mean, dtype=data.dtype), ops.shape(data))
-        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=data.dtype), ops.shape(data))
-        return (data - mean) / std
-
-    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        mean = np.broadcast_to(self.mean, data.shape)
-        std = np.broadcast_to(self.std, data.shape)
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
+        mean = ops.broadcast_to(ops.cast(self.mean, dtype=ops.dtype(data)), ops.shape(data))
+        std = ops.broadcast_to(ops.cast(self.std, dtype=ops.dtype(data)), ops.shape(data))
         return data * std + mean
 
-    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
-        mean = ops.broadcast_to(ops.convert_to_tensor(self.mean, dtype=data.dtype), ops.shape(data))
-        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=data.dtype), ops.shape(data))
-        return data * std + mean
-
-    def _log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
-        std = np.broadcast_to(self.std, data.shape)
-        ldj = -np.log(np.abs(std))
-        if inverse:
-            ldj = -ldj
-        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))
-
-    def _log_det_jac_keras(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
-        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=data.dtype), ops.shape(data))
+    def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
+        std = ops.broadcast_to(ops.cast(self.std, dtype=ops.dtype(data)), ops.shape(data))
         ldj = -ops.log(ops.abs(std))
         if inverse:
             ldj = -ldj
-        return self._sum_except_batch_keras(ldj)
+        return self._sum_except_batch(ldj)

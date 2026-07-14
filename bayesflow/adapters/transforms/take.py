@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-import numpy as np
 import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
@@ -20,16 +19,10 @@ class Take(ElementwiseTransform):
         self.indices = indices
         self.axis = axis
 
-    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return np.take(data, self.indices, self.axis)
-
-    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
         return ops.take(data, self.indices, axis=self.axis)
 
-    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data
-
-    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         return data
 
     def get_config(self) -> dict:

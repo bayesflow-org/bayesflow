@@ -1,6 +1,5 @@
 from numbers import Number
 
-import numpy as np
 import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
@@ -35,27 +34,18 @@ class ToArray(ElementwiseTransform):
     def get_config(self) -> dict:
         return serialize({"original_type": self.original_type})
 
-    def _forward(self, data: any, **kwargs) -> np.ndarray:
-        if self.original_type is None:
-            self.original_type = type(data)
-        return np.asarray(data)
-
-    def _forward_keras(self, data: any, **kwargs) -> Tensor:
+    def forward(self, data: any, **kwargs) -> Tensor:
         if self.original_type is None:
             self.original_type = type(data)
         return ops.convert_to_tensor(data)
 
-    def _inverse(self, data: np.ndarray, **kwargs) -> any:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         if self.original_type is None:
             raise RuntimeError("Cannot call `inverse` before calling `forward` at least once.")
 
         if issubclass(self.original_type, Number):
             try:
-                return self.original_type(data.item())
+                return self.original_type(data)
             except ValueError:
                 pass
-
-        return data
-
-    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
         return data

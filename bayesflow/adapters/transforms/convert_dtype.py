@@ -1,4 +1,3 @@
-import numpy as np
 import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
@@ -33,14 +32,8 @@ class ConvertDType(ElementwiseTransform):
         }
         return serialize(config)
 
-    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data.astype(self.to_dtype, copy=False)
-
-    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
         return ops.cast(data, self.to_dtype)
 
-    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data.astype(self.from_dtype, copy=False)
-
-    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         return ops.cast(data, self.from_dtype)

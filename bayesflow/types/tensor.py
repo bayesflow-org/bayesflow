@@ -1,6 +1,6 @@
 import keras
 import numpy as np
-from typing import TypeVar, Union
+from typing import TypeVar
 
 match keras.backend.backend():
     case "numpy":
@@ -21,5 +21,3 @@ match keras.backend.backend():
         raise NotImplementedError
 
 Tensor = TypeVar("Tensor", bound=BackendTensor)
-
-ArrayOrTensor = Union[np.ndarray, Tensor]

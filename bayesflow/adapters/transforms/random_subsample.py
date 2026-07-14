@@ -1,4 +1,3 @@
-import numpy as np
 import keras
 import keras.ops as ops
 from bayesflow.utils.serialization import serializable, serialize
@@ -30,20 +29,7 @@ class RandomSubsample(ElementwiseTransform):
         self.sample_size = sample_size
         self.axis = axis
 
-    def _forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        max_sample_size = data.shape[self.axis]
-
-        if isinstance(self.sample_size, int):
-            sample_size = self.sample_size
-        else:
-            sample_size = np.round(self.sample_size * max_sample_size)
-
-        # random sample without replacement
-        sample_indices = np.random.permutation(max_sample_size)[:sample_size]
-
-        return np.take(data, sample_indices, self.axis)
-
-    def _forward_keras(self, data: Tensor, **kwargs) -> Tensor:
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
         max_sample_size = ops.shape(data)[self.axis]
 
         if isinstance(self.sample_size, int):
@@ -55,11 +41,7 @@ class RandomSubsample(ElementwiseTransform):
         indices = keras.random.shuffle(ops.arange(max_sample_size))[:sample_size]
         return ops.take(data, indices, axis=self.axis)
 
-    def _inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        # non invertible transform
-        return data
-
-    def _inverse_keras(self, data: Tensor, **kwargs) -> Tensor:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         # non invertible transform
         return data
 

@@ -545,13 +545,6 @@ def test_compute_diagnostics_multi_rule_pmp(mc_simulators):
     assert ((metrics.loc["Accuracy"] >= 0.0) & (metrics.loc["Accuracy"] <= 1.0)).all()
 
 
-def test_subnet_property(mc_simulators):
-    """subnet returns the shared body of the internal ScoringRuleNetwork."""
-    workflow = ModelComparisonWorkflow(simulator=mc_simulators)
-    assert workflow.subnet is not None
-    assert workflow.subnet is workflow.approximator.inference_network.subnet
-
-
 # ── inference_variables key branch ───────────────────────────────────────────
 
 

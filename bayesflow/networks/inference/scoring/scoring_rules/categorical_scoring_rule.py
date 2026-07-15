@@ -1,3 +1,5 @@
+import keras
+
 from bayesflow.types import Tensor
 
 from .scoring_rule import ScoringRule
@@ -28,3 +30,12 @@ class CategoricalScoringRule(ScoringRule):
         minimizer lives in a transformed space must override this method.
         """
         return f
+
+    def to_log_odds(self, rule_output: dict[str, Tensor]) -> Tensor:
+        """Map head output to length-``M`` log posterior odds."""
+        if "logits" in rule_output:
+            return rule_output["logits"]
+
+        log_bfs = self.to_bayes_factors(rule_output["log_bayes_factors"])
+        f0 = keras.ops.zeros_like(log_bfs[..., :1])
+        return keras.ops.concatenate([f0, log_bfs], axis=-1)

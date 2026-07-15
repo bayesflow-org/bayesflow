@@ -93,22 +93,17 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         rule: CategoricalScoringRule, rule_output: dict[str, Tensor]
     ) -> dict[str, np.ndarray]:
         """Convert a single scoring rule's raw network output to model probabilities."""
+        log_odds = rule.to_log_odds(rule_output)
+        result = {"model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(log_odds))}
+
         if "logits" in rule_output:
-            logits = rule_output["logits"]
-            return {
-                "logits": keras.ops.convert_to_numpy(logits),
-                "model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(logits)),
-            }
+            result["logits"] = keras.ops.convert_to_numpy(rule_output["logits"])
+        else:
+            # log_odds is anchored (f_0 = 0), so its tail is the log Bayes factors
+            # TODO: remove log_bayes_factors special treatment ?
+            result["log_bayes_factors"] = keras.ops.convert_to_numpy(log_odds[..., 1:])
 
-        # Bayes factor mode
-        log_bfs = rule.to_bayes_factors(rule_output["log_bayes_factors"])
-        f0 = keras.ops.zeros_like(log_bfs[..., :1])
-        model_probs = keras.ops.softmax(keras.ops.concatenate([f0, log_bfs], axis=-1))
-
-        return {
-            "log_bayes_factors": keras.ops.convert_to_numpy(log_bfs),
-            "model_probs": keras.ops.convert_to_numpy(model_probs),
-        }
+        return result
 
     @staticmethod
     def _merge_rule_estimates(per_rule: dict[str, dict[str, np.ndarray]]) -> dict[str, np.ndarray]:

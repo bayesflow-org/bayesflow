@@ -223,11 +223,11 @@ def test_polynomial_score_with_weights():
 
     rule = PolynomialScore(alpha=2.0)
     targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
-    logits = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
+    probs = keras.ops.softmax(keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]]), axis=-1)
     # weights=[2, 0] → weighted_mean uses ops.mean(score * weight), so result = score[0]
     weights = keras.ops.convert_to_tensor([2.0, 0.0])
-    score_weighted = rule.score({"logits": logits}, targets, weights=weights)
-    score_first = rule.score({"logits": logits[:1]}, targets[:1])
+    score_weighted = rule.score({"probs": probs}, targets, weights=weights)
+    score_first = rule.score({"probs": probs[:1]}, targets[:1])
     assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
 
 
@@ -248,10 +248,10 @@ def test_brier_score_with_weights():
 
     rule = BrierScore()
     targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
-    logits = keras.ops.convert_to_tensor([[2.0, 0.0], [0.0, 2.0]])
+    probs = keras.ops.softmax(keras.ops.convert_to_tensor([[2.0, 0.0], [0.0, 2.0]]), axis=-1)
     weights = keras.ops.convert_to_tensor([2.0, 0.0])
-    score_weighted = rule.score({"logits": logits}, targets, weights=weights)
-    score_first = rule.score({"logits": logits[:1]}, targets[:1])
+    score_weighted = rule.score({"probs": probs}, targets, weights=weights)
+    score_first = rule.score({"probs": probs[:1]}, targets[:1])
     assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
 
 
@@ -270,10 +270,10 @@ def test_brier_score_optimal_at_true_probs():
 
     rule = BrierScore()
     targets = keras.ops.convert_to_tensor([[1.0, 0.0], [1.0, 0.0]])
-    # perfect logits vs random
-    perfect_logits = keras.ops.convert_to_tensor([[10.0, -10.0], [10.0, -10.0]])
-    random_logits = keras.ops.convert_to_tensor([[0.0, 0.0], [0.0, 0.0]])
-    assert rule.score({"logits": perfect_logits}, targets) < rule.score({"logits": random_logits}, targets)
+    # perfect probs vs uniform
+    perfect_probs = keras.ops.softmax(keras.ops.convert_to_tensor([[10.0, -10.0], [10.0, -10.0]]), axis=-1)
+    uniform_probs = keras.ops.softmax(keras.ops.convert_to_tensor([[0.0, 0.0], [0.0, 0.0]]), axis=-1)
+    assert rule.score({"probs": perfect_probs}, targets) < rule.score({"probs": uniform_probs}, targets)
 
 
 def test_brier_score_is_polynomial_special_case():
@@ -294,16 +294,16 @@ def test_brier_score_reports_true_brier_value():
     from bayesflow.scoring_rules import BrierScore, PolynomialScore
 
     targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
-    logits = keras.ops.convert_to_tensor([[2.0, 0.0], [0.0, 3.0]])
-    brier = BrierScore().score({"logits": logits}, targets)
+    probs = keras.ops.softmax(keras.ops.convert_to_tensor([[2.0, 0.0], [0.0, 3.0]]), axis=-1)
+    brier = BrierScore().score({"probs": probs}, targets)
 
     # Exact (mean) Brier score sum((p - y)^2).
-    probs = np.asarray(keras.ops.softmax(logits, axis=-1))
-    expected = np.mean(np.sum((probs - np.asarray(targets)) ** 2, axis=-1))
+    probs_np = np.asarray(probs)
+    expected = np.mean(np.sum((probs_np - np.asarray(targets)) ** 2, axis=-1))
     assert keras.ops.allclose(brier, expected, atol=1e-6)
 
     # ...recovered from the alpha=2 Tsallis score via the affine map S_Brier = 2 S_poly + 1.
-    poly = PolynomialScore(alpha=2.0).score({"logits": logits}, targets)
+    poly = PolynomialScore(alpha=2.0).score({"probs": probs}, targets)
     assert keras.ops.allclose(brier, 2.0 * poly + 1.0, atol=1e-6)
 
 

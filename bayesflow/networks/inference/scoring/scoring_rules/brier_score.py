@@ -43,7 +43,7 @@ class BrierScore(PolynomialScore):
         Parameters
         ----------
         estimates : dict[str, Tensor]
-            Must contain ``"logits"`` — raw (unnormalised) scores of shape
+            Must contain ``"probs"`` with shape
             ``(..., num_models)``.
         targets : Tensor
             One-hot encoded target labels of shape ``(..., num_models)``.

@@ -97,7 +97,7 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         result = {"model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(log_odds))}
 
         if rule.is_pmp_rule:
-            result["logits"] = keras.ops.convert_to_numpy(rule_output["logits"])
+            result["logits"] = keras.ops.convert_to_numpy(log_odds)
         else:
             result["log_bayes_factors"] = keras.ops.convert_to_numpy(log_odds[..., 1:] - log_odds[..., :1])
 

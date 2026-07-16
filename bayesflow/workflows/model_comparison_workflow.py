@@ -58,11 +58,11 @@ class ModelComparisonWorkflow(BasicWorkflow):
         via the ``merge_scores`` argument of :meth:`estimate`. Defaults to ``"cross_entropy"``.
         The chosen rule(s) determine what the network learns to estimate:
 
-        - **PMP rules** (``"cross_entropy"``, ``"brier"``, ``"polynomial"``): network
-          outputs softmax probabilities over all ``num_models`` models.
-        - **Bayes factor rules** (``"exponential"``, ``"scaled_exponential"``,
-          ``"leaky_exponential"``, ``"logistic"``, ``"power_logistic"``): network outputs
-          ``num_models - 1`` log Bayes factors relative to model 0.
+        - **PMP rules** (``"cross_entropy"``, ``"brier"``, ``"polynomial"``): estimate
+          the posterior over all ``num_models`` models.
+        - **Bayes factor rules** (``"exponential"``, ``"leaky_exponential"``,
+          ``"logistic"``, ``"power_logistic"``): additionally report ``num_models - 1``
+          log Bayes factors relative to model 0.
 
         PMP and Bayes factor estimates can be aggregated: all rules are pooled in log-odds
         space (a PMP head's logit differences equal the same log posterior odds that a

@@ -2,6 +2,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from bayesflow.types import Shape
+from bayesflow.utils import reseed_random_state
 from bayesflow.utils.decorators import allow_batch_size
 
 from .simulator import Simulator
@@ -71,7 +72,9 @@ class SequentialSimulator(Simulator):
 
         return data
 
-    def _single_sample(self, batch_shape_ext, **kwargs) -> dict[str, np.ndarray]:
+    def _single_sample(
+        self, batch_shape_ext, seed_sequence: np.random.SeedSequence = None, **kwargs
+    ) -> dict[str, np.ndarray]:
         """
         For single sample used by parallel sampling.
 
@@ -85,10 +88,13 @@ class SequentialSimulator(Simulator):
         dict
             Single sample result.
         """
+        if seed_sequence is not None:
+            reseed_random_state((self, kwargs), seed_sequence)
+
         return self.sample(batch_shape=(1, *tuple(batch_shape_ext)), **kwargs)
 
     def sample_parallel(
-        self, batch_shape: Shape, n_jobs: int = -1, verbose: int = 0, **kwargs
+        self, batch_shape: Shape, n_jobs: int = -1, verbose: int = 0, seed: int = None, **kwargs
     ) -> dict[str, np.ndarray]:
         """
         Sample in parallel from the sequential simulator.
@@ -102,6 +108,9 @@ class SequentialSimulator(Simulator):
             Number of parallel jobs. -1 uses all available cores. Default is -1.
         verbose : int, optional
             Verbosity level for joblib. Default is 0 (no output).
+        seed : int, optional
+            Seed used to derive independent random streams for each parallel task. If None, entropy from
+            the operating system is used.
         **kwargs
             Additional keyword arguments passed to each simulator. These may include previously
             sampled outputs used as inputs for subsequent simulators.
@@ -128,8 +137,11 @@ class SequentialSimulator(Simulator):
         if len(bs) == 0:
             raise ValueError("batch_shape must be a positive integer or a nonempty tuple")
 
+        seed_sequences = np.random.SeedSequence(seed).spawn(bs[0])
+
         results = Parallel(n_jobs=n_jobs, verbose=verbose)(
-            delayed(self._single_sample)(batch_shape_ext=bs[1:], **kwargs) for _ in range(bs[0])
+            delayed(self._single_sample)(batch_shape_ext=bs[1:], seed_sequence=seed_sequences[i], **kwargs)
+            for i in range(bs[0])
         )
         return self._combine_results(results)
 

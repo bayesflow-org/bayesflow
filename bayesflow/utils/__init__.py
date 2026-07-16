@@ -8,6 +8,7 @@ from . import (
     keras_utils,
     logging,
     numpy_utils,
+    rng,
     serialization,
     tree,
 )
@@ -79,6 +80,8 @@ from .plot_utils import (
 )
 from .serialization import serialize_value_or_type, deserialize_value_or_type
 
+from .rng import next_seed_sequence, next_uint32, reseed_generator, reseed_random_state
+
 from .tensor_utils import (
     concatenate_valid,
     concatenate_valid_shapes,
@@ -117,4 +120,4 @@ from ._docs import _add_imports_to_all
 
 from .logging import format_duration
 
-_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization", "tree"])
+_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "rng", "serialization", "tree"])

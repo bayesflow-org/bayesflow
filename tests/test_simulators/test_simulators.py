@@ -3,6 +3,39 @@ import keras
 import numpy as np
 
 
+def assert_unique_rows(array):
+    rows = np.reshape(array, (array.shape[0], -1))
+    assert np.unique(rows, axis=0).shape[0] == rows.shape[0]
+
+
+def test_sample_parallel_reseeds_worker_rngs():
+    pytest.importorskip("joblib")
+
+    from bayesflow.simulators import LambdaSimulator, SequentialSimulator
+
+    closure_rng = np.random.default_rng(123)
+
+    def closure_prior():
+        return {"closure": closure_rng.integers(0, 2**31 - 1, size=4)}
+
+    class AttributePrior:
+        def __init__(self):
+            self.rng = np.random.default_rng(456)
+
+        def sample(self, batch_shape, **kwargs):
+            return {"attribute": self.rng.integers(0, 2**31 - 1, size=tuple(batch_shape) + (4,))}
+
+    def make_simulator():
+        return SequentialSimulator([LambdaSimulator(closure_prior), AttributePrior()])
+
+    first = make_simulator().sample_parallel((12,), n_jobs=2, seed=789)
+    second = make_simulator().sample_parallel((12,), n_jobs=2, seed=789)
+
+    for key, value in first.items():
+        np.testing.assert_array_equal(value, second[key])
+        assert_unique_rows(value)
+
+
 def test_two_moons(two_moons_simulator, batch_size):
     samples = two_moons_simulator.sample((batch_size,))
 

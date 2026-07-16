@@ -57,6 +57,7 @@ docs = [
 test = [
   "ipykernel>=7.1.0",
   "ipython>=8.38.0",
+  "joblib>=1.5.2",
   "nbconvert>=7.16.6",
   "pytest>=9.0.2",
   "pytest-cov>=7.0.0",

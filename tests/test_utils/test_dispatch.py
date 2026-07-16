@@ -310,7 +310,6 @@ def test_find_noise_schedule_invalid_object():
         ("brier", "bayesflow.scoring_rules.BrierScore"),
         ("polynomial", "bayesflow.scoring_rules.PolynomialScore"),
         ("exponential", "bayesflow.scoring_rules.ExponentialScore"),
-        ("scaled_exponential", "bayesflow.scoring_rules.ExponentialScore"),
         ("leaky_exponential", "bayesflow.scoring_rules.ExponentialScore"),
         ("logistic", "bayesflow.scoring_rules.LogisticScore"),
         ("power_logistic", "bayesflow.scoring_rules.LogisticScore"),
@@ -334,7 +333,7 @@ def test_find_scoring_rule_leaky_default_sets_link():
 
     rule = find_scoring_rule("leaky_exponential")
     assert isinstance(rule, ExponentialScore)
-    link = rule.get_link("log_bayes_factors")
+    link = rule.get_link("logits")
     assert isinstance(link, Leaky)
     assert link.power == 2.0
 

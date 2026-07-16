@@ -81,18 +81,11 @@ def exponential_score():
 
 
 @pytest.fixture()
-def scaled_exponential_score():
-    from bayesflow.scoring_rules import ExponentialScore
-
-    return ExponentialScore(scale=2.0)
-
-
-@pytest.fixture()
 def leaky_exponential_score():
     from bayesflow.links import Leaky
     from bayesflow.scoring_rules import ExponentialScore
 
-    return ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)})
+    return ExponentialScore(links={"logits": Leaky(power=2.0)})
 
 
 @pytest.fixture()
@@ -121,7 +114,6 @@ def power_logistic_score():
         "brier_score",
         "polynomial_score",
         "exponential_score",
-        "scaled_exponential_score",
         "leaky_exponential_score",
         "logistic_score",
         "power_logistic_score",

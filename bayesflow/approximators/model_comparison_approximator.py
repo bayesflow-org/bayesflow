@@ -96,12 +96,10 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         log_odds = rule.to_log_odds(rule_output)
         result = {"model_probs": keras.ops.convert_to_numpy(keras.ops.softmax(log_odds))}
 
-        if "logits" in rule_output:
+        if rule.is_pmp_rule:
             result["logits"] = keras.ops.convert_to_numpy(rule_output["logits"])
         else:
-            # log_odds is anchored (f_0 = 0), so its tail is the log Bayes factors
-            # TODO: remove log_bayes_factors special treatment ?
-            result["log_bayes_factors"] = keras.ops.convert_to_numpy(log_odds[..., 1:])
+            result["log_bayes_factors"] = keras.ops.convert_to_numpy(log_odds[..., 1:] - log_odds[..., :1])
 
         return result
 
@@ -113,8 +111,8 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         estimates are pooled across rules:
 
         - **Any Bayes factor rule present**: a *logarithmic opinion pool* in log-odds space.
-          BF rules contribute their ``log_bayes_factors`` (already on a common scale via
-          ``to_bayes_factors``); PMP rules contribute the pairwise differences of their
+          BF rules contribute their ``log_bayes_factors`` (log posterior odds relative to
+          model 0); PMP rules contribute the pairwise differences of their
           ``logits``, which equal the same log posterior odds exactly (softmax is invariant
           to the per-row shift). The averages are returned as ``log_bayes_factors``, and
           ``model_probs`` is derived from them so the two stay mutually consistent.

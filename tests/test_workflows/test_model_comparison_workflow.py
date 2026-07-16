@@ -134,7 +134,7 @@ def test_bf_workflow_with_summary_network(mc_simulators, mc_summary_network):
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rules=ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)}),
+        scoring_rules=ExponentialScore(links={"logits": Leaky(power=2.0)}),
         summary_network=mc_summary_network,
         summary_variables=["x"],
     )

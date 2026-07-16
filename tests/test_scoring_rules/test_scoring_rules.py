@@ -15,49 +15,9 @@ def test_is_pmp_rule_bf_rules():
     from bayesflow.scoring_rules import ExponentialScore, LogisticScore
 
     assert ExponentialScore().is_pmp_rule is False
-    assert ExponentialScore(scale=2.0).is_pmp_rule is False
-    assert ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)}).is_pmp_rule is False
+    assert ExponentialScore(links={"logits": Leaky(power=2.0)}).is_pmp_rule is False
     assert LogisticScore().is_pmp_rule is False
     assert LogisticScore(alpha=1.0).is_pmp_rule is False
-
-
-def test_to_bayes_factors_exponential_is_identity():
-    from bayesflow.scoring_rules import ExponentialScore
-
-    rule = ExponentialScore()
-    f = keras.ops.convert_to_tensor([[1.0, -2.0, 0.5]])
-    result = rule.to_bayes_factors(f)
-    assert keras.ops.allclose(result, f)
-
-
-def test_to_bayes_factors_scaled_exponential():
-    from bayesflow.scoring_rules import ExponentialScore
-
-    scale = 3.0
-    rule = ExponentialScore(scale=scale)
-    f = keras.ops.convert_to_tensor([[1.0, -2.0]])
-    result = rule.to_bayes_factors(f)
-    assert keras.ops.allclose(result, f * scale)
-
-
-def test_to_bayes_factors_plain_logistic_is_identity():
-    """LogisticScore.to_bayes_factors is the identity for alpha = 0 (plain rule)."""
-    from bayesflow.scoring_rules import LogisticScore
-
-    rule = LogisticScore()
-    f = keras.ops.convert_to_tensor([[0.5, -0.5]])
-    result = rule.to_bayes_factors(f)
-    assert keras.ops.allclose(result, f)
-
-
-def test_to_bayes_factors_power_logistic():
-    from bayesflow.scoring_rules import LogisticScore
-
-    alpha = 2.0
-    rule = LogisticScore(alpha=alpha)
-    f = keras.ops.convert_to_tensor([[1.0, -1.0]])
-    result = rule.to_bayes_factors(f)
-    assert keras.ops.allclose(result, f * (alpha + 1))
 
 
 def test_logistic_score_get_config():
@@ -76,11 +36,9 @@ def test_exponential_score_leaky_get_config():
     from bayesflow.links import Leaky
     from bayesflow.scoring_rules import ExponentialScore
 
-    rule = ExponentialScore(links={"log_bayes_factors": Leaky(power=2.0)})
-    config = rule.get_config()
-    assert config["scale"] == 1.0
+    rule = ExponentialScore(links={"logits": Leaky(power=2.0)})
 
-    link = rule.get_link("log_bayes_factors")
+    link = rule.get_link("logits")
     link_config = link.get_config()
     assert link_config["power"] == 2.0
 
@@ -360,8 +318,8 @@ def test_logistic_score_with_weights():
     targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
     estimates = keras.ops.convert_to_tensor([[1.0, -1.0], [-1.0, 1.0]])
     weights = keras.ops.convert_to_tensor([2.0, 0.0])
-    score_weighted = rule.score({"log_bayes_factors": estimates[:, 1:]}, targets, weights=weights)
-    score_first = rule.score({"log_bayes_factors": estimates[:1, 1:]}, targets[:1])
+    score_weighted = rule.score({"logits": estimates}, targets, weights=weights)
+    score_first = rule.score({"logits": estimates[:1]}, targets[:1])
     assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
 
 
@@ -377,25 +335,16 @@ def test_logistic_score_get_config_round_trip():
 # --- ExponentialScore ---
 
 
-def test_exponential_score_scale_validation():
-    from bayesflow.scoring_rules import ExponentialScore
-
-    with pytest.raises(ValueError, match="positive"):
-        ExponentialScore(scale=0.0)
-    with pytest.raises(ValueError, match="positive"):
-        ExponentialScore(scale=-1.0)
-
-
 def test_exponential_score_with_weights():
     import keras
     from bayesflow.scoring_rules import ExponentialScore
 
     rule = ExponentialScore()
     targets = keras.ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
-    estimates = keras.ops.convert_to_tensor([[1.0], [-1.0]])
+    estimates = keras.ops.convert_to_tensor([[1.0, -1.0], [-1.0, 1.0]])
     weights = keras.ops.convert_to_tensor([2.0, 0.0])
-    score_weighted = rule.score({"log_bayes_factors": estimates}, targets, weights=weights)
-    score_first = rule.score({"log_bayes_factors": estimates[:1]}, targets[:1])
+    score_weighted = rule.score({"logits": estimates}, targets, weights=weights)
+    score_first = rule.score({"logits": estimates[:1]}, targets[:1])
     assert keras.ops.allclose(score_weighted, score_first, atol=1e-5)
 
 
@@ -405,8 +354,8 @@ def test_exponential_score_clipping_no_overflow():
 
     rule = ExponentialScore()
     targets = keras.ops.convert_to_tensor([[1.0, 0.0]])
-    large_estimates = keras.ops.convert_to_tensor([[1000.0]])
-    score = rule.score({"log_bayes_factors": large_estimates}, targets)
+    large_estimates = keras.ops.convert_to_tensor([[0.0, 1000.0]])
+    score = rule.score({"logits": large_estimates}, targets)
     assert keras.ops.isfinite(score)
 
 
@@ -414,10 +363,9 @@ def test_exponential_score_get_config_round_trip():
     from bayesflow.scoring_rules import ExponentialScore
     from bayesflow.utils.serialization import serialize, deserialize
 
-    original = ExponentialScore(scale=2.0)
+    original = ExponentialScore()
     restored = deserialize(serialize(original))
     assert isinstance(restored, ExponentialScore)
-    assert restored.scale == 2.0
 
 
 # --- LogisticScore (power form) ---
@@ -436,8 +384,8 @@ def test_power_logistic_score_clipping_no_overflow():
 
     rule = LogisticScore(alpha=2.0)
     targets = keras.ops.convert_to_tensor([[1.0, 0.0]])
-    large_estimates = keras.ops.convert_to_tensor([[1000.0]])
-    score = rule.score({"log_bayes_factors": large_estimates}, targets)
+    large_estimates = keras.ops.convert_to_tensor([[0.0, 1000.0]])
+    score = rule.score({"logits": large_estimates}, targets)
     assert keras.ops.isfinite(score)
 
 

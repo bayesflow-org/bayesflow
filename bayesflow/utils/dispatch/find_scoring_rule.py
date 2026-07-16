@@ -29,15 +29,11 @@ def _(name: str, *args, **kwargs):
             from bayesflow.scoring_rules import ExponentialScore
 
             return ExponentialScore(*args, **kwargs)
-        case "scaled_exponential":
-            from bayesflow.scoring_rules import ExponentialScore
-
-            return ExponentialScore(*args, **kwargs)
         case "leaky_exponential":
             from bayesflow.links import Leaky
             from bayesflow.scoring_rules import ExponentialScore
 
-            kwargs.setdefault("links", {"log_bayes_factors": Leaky(power=2.0)})
+            kwargs.setdefault("links", {"logits": Leaky(power=2.0)})
             return ExponentialScore(*args, **kwargs)
         case "logistic":
             from bayesflow.scoring_rules import LogisticScore

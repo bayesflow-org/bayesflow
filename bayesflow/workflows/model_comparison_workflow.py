@@ -402,16 +402,10 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         # Always draw the confusion matrix (PMP view) and pairwise Bayes factor heatmap
         # (BF view) side by side in one figure, regardless of scoring-rule family. Merged
-        # estimates always carry pooled 'model_probs'; the pairwise log odds come
-        # from the pooled 'log_odds' when a BF rule contributed, and are otherwise
-        # derived from the probabilities (log p_k - log p_0), so both views
-        # are available for single, multiple, and mixed rules alike.
+        # estimates always carry 'model_probs' and length-M 'log_odds' (relative to model 0);
+        # the heatmap takes the M-1 non-reference columns.
         model_probs = estimates["model_probs"]
-        if "log_odds" in estimates:
-            pred_log_bfs = estimates["log_odds"]
-        else:
-            log_probs = np.log(np.clip(model_probs, 1e-12, None))
-            pred_log_bfs = log_probs[..., 1:] - log_probs[..., :1]
+        pred_log_bfs = estimates["log_odds"][..., 1:]
 
         num_models = model_probs.shape[-1]
         size = max(4.0, num_models * 1.2)
@@ -447,7 +441,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         if has_bf_rules and true_log_bfs_fn is not None:
             true_log_bfs = true_log_bfs_fn(test_data)
             figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
-                pred_log_bayes_factors=estimates["log_odds"],
+                pred_log_bayes_factors=estimates["log_odds"][..., 1:],
                 true_log_bayes_factors=true_log_bfs,
                 true_models=true_models,
                 model_names=self.model_names,

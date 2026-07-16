@@ -86,13 +86,9 @@ def test_estimate(approximator, train_dataset, simulator):
     assert "model_probs" in output
     assert output["model_probs"].shape == (num_conditions, num_models)
 
-    rule = next(iter(approximator.inference_network.scoring_rules.values()))
-    if rule.is_pmp_rule:
-        assert "logits" in output
-        assert output["logits"].shape == (num_conditions, num_models)
-    else:
-        assert "log_odds" in output
-        assert output["log_odds"].shape == (num_conditions, num_models - 1)
+    assert "log_odds" in output
+    assert output["log_odds"].shape == (num_conditions, num_models)
+    assert "logits" not in output
 
     assert "_summaries" not in output
 
@@ -150,16 +146,16 @@ def test_multi_rule_estimate(train_dataset, simulator):
         assert rule_key in output
         assert "model_probs" in output[rule_key]
         assert output[rule_key]["model_probs"].shape == (num_conditions, num_models)
-        assert "logits" in output[rule_key]
+        assert "log_odds" in output[rule_key]
 
     assert "_summaries" not in output
 
-    # merge_scores=True (default) -> flat dict with model_probs averaged across rules
+    # merge_scores=True (default) -> flat dict, log-pooled over log_odds
     merged = approx.estimate(conditions=conditions)
-    assert set(merged) == {"model_probs"}
-    assert merged["model_probs"].shape == (num_conditions, num_models)
-    expected = np.mean([output[rule_key]["model_probs"] for rule_key in ("ce", "brier")], axis=0)
-    assert np.allclose(merged["model_probs"], expected, atol=1e-6)
+    assert set(merged) == {"model_probs", "log_odds"}
+    assert merged["log_odds"].shape == (num_conditions, num_models)
+    expected_log_odds = np.mean([output[rule_key]["log_odds"] for rule_key in ("ce", "brier")], axis=0)
+    assert np.allclose(merged["log_odds"], expected_log_odds, atol=1e-5)
 
     # return_summaries adds a top-level _summaries key (here checked in nested mode)
     output_with_summaries = approx.estimate(conditions=conditions, merge_scores=False, return_summaries=True)
@@ -167,33 +163,23 @@ def test_multi_rule_estimate(train_dataset, simulator):
     assert output_with_summaries["_summaries"].shape[0] == num_conditions
 
 
-def test_merge_rule_estimates_mixed_families():
-    """Mixed PMP + BF estimates pool in log-odds space; PMP logit differences equal log posterior odds."""
+def test_merge_rule_estimates_log_pool():
+    """Rules pool by a logarithmic opinion pool: the mean of the length-M log_odds."""
     import numpy as np
     from bayesflow.approximators import ModelComparisonApproximator
 
-    logits = np.array([[1.0, 2.0, 0.5], [0.0, -1.0, 1.0]])
-    probs = np.exp(logits) / np.exp(logits).sum(-1, keepdims=True)
-    log_bfs = np.array([[0.5, -0.5], [-1.0, 2.0]])
-    f = np.concatenate([np.zeros((2, 1)), log_bfs], axis=-1)
-    bf_probs = np.exp(f) / np.exp(f).sum(-1, keepdims=True)
+    log_odds_a = np.array([[0.0, 2.0, 0.5], [0.0, -1.0, 1.0]])
+    log_odds_b = np.array([[0.0, -0.5, 1.5], [0.0, 2.0, -1.0]])
 
     merged = ModelComparisonApproximator._merge_rule_estimates(
-        {
-            "ce": {"logits": logits, "model_probs": probs},
-            "logistic": {"log_odds": log_bfs, "model_probs": bf_probs},
-        }
+        {"a": {"log_odds": log_odds_a}, "b": {"log_odds": log_odds_b}}
     )
 
     assert set(merged) == {"log_odds", "model_probs"}
-    expected_logbf = np.mean([logits[:, 1:] - logits[:, :1], log_bfs], axis=0)
-    assert np.allclose(merged["log_odds"], expected_logbf, atol=1e-6)
-
-    # model_probs derived from the pooled log odds and normalized
-    f = np.concatenate([np.zeros((2, 1)), expected_logbf], axis=-1)
-    implied = np.exp(f - f.max(-1, keepdims=True))
-    implied /= implied.sum(-1, keepdims=True)
-    assert np.allclose(merged["model_probs"], implied, atol=1e-6)
+    expected = np.mean([log_odds_a, log_odds_b], axis=0)
+    assert np.allclose(merged["log_odds"], expected, atol=1e-6)
+    exp = np.exp(expected - expected.max(-1, keepdims=True))
+    assert np.allclose(merged["model_probs"], exp / exp.sum(-1, keepdims=True), atol=1e-6)
 
 
 def test_build_dataset_with_simulators_list(approximator, adapter):

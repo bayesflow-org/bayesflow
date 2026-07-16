@@ -186,16 +186,15 @@ def test_mc_workflow_with_shared_simulator(mc_summary_network):
 # ── Output shapes ─────────────────────────────────────────────────────────────
 
 
-def test_estimate_shapes_pmp(mc_simulators):
-    """PMP mode: estimate returns model_probs (N, M) summing to 1 and logits (N, M)."""
-    from bayesflow.scoring_rules import CrossEntropyScore
-
+@pytest.mark.parametrize("rule_name", ["cross_entropy", "brier", "exponential"])
+def test_estimate_shapes(mc_simulators, rule_name):
+    """estimate returns model_probs (N, M) summing to 1 and length-M log_odds (relative to model 0)."""
     num_models = len(mc_simulators)
     n_test = 10
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rules=CrossEntropyScore(),
+        scoring_rules=rule_name,
         inference_conditions=["x"],
     )
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
@@ -205,31 +204,9 @@ def test_estimate_shapes_pmp(mc_simulators):
 
     assert isinstance(estimates, dict)
     assert estimates["model_probs"].shape == (n_test, num_models)
-    assert estimates["logits"].shape == (n_test, num_models)
+    assert estimates["log_odds"].shape == (n_test, num_models)
     assert np.allclose(estimates["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
-
-
-def test_estimate_shapes_bf(mc_simulators):
-    """BF mode: estimate returns model_probs (N, M) summing to 1 and log_odds (N, M-1)."""
-    from bayesflow.scoring_rules import ExponentialScore
-
-    num_models = len(mc_simulators)
-    n_test = 10
-
-    workflow = ModelComparisonWorkflow(
-        simulator=mc_simulators,
-        scoring_rules=ExponentialScore(),
-        inference_conditions=["x"],
-    )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
-    test_data = workflow.simulate(n_test)
-
-    estimates = workflow.estimate(conditions=test_data)
-
-    assert isinstance(estimates, dict)
-    assert estimates["model_probs"].shape == (n_test, num_models)
-    assert estimates["log_odds"].shape == (n_test, num_models - 1)
-    assert np.allclose(estimates["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
+    assert np.allclose(estimates["log_odds"][:, 0], 0.0, atol=1e-6)
 
 
 # ── Multiple scoring rules & merge_scores ─────────────────────────────────────
@@ -275,16 +252,15 @@ def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):
 
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
     assert set(nested) == {"cross_entropy_score", "logistic_score"}
-    assert set(nested["cross_entropy_score"]) == {"logits", "model_probs"}
+    assert set(nested["cross_entropy_score"]) == {"log_odds", "model_probs"}
     assert set(nested["logistic_score"]) == {"log_odds", "model_probs"}
 
-    # Merged: log opinion pool over log-odds; PMP rules enter via their logit differences.
+    # Merged: logarithmic opinion pool over the length-M log_odds.
     merged = workflow.estimate(conditions=test_data)
     assert set(merged) == {"log_odds", "model_probs"}
-    assert merged["log_odds"].shape == (n_test, num_models - 1)
-    pmp_log_odds = nested["cross_entropy_score"]["logits"][:, 1:] - nested["cross_entropy_score"]["logits"][:, :1]
-    expected_logbf = np.mean([pmp_log_odds, nested["logistic_score"]["log_odds"]], axis=0)
-    assert np.allclose(merged["log_odds"], expected_logbf, atol=1e-5)
+    assert merged["log_odds"].shape == (n_test, num_models)
+    expected = np.mean([nested["cross_entropy_score"]["log_odds"], nested["logistic_score"]["log_odds"]], axis=0)
+    assert np.allclose(merged["log_odds"], expected, atol=1e-5)
     assert np.allclose(merged["model_probs"].sum(-1), 1.0, atol=1e-5)
 
     # Diagnostics: with both families present, the confusion matrix and pairwise
@@ -301,17 +277,15 @@ def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):
     assert {"accuracy", "ece", "brier_score"} <= set(raw_metrics)
 
 
-def test_estimate_merge_scores(mc_simulators, caplog):
-    """Multiple rules: merge_scores=True averages model_probs (flat); False keeps per-rule nesting."""
-    import logging
-    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
-
+@pytest.mark.parametrize("rule_names", [["cross_entropy", "brier"], ["exponential", "logistic"]])
+def test_estimate_merge_scores(mc_simulators, rule_names):
+    """merge_scores=False keeps per-rule nesting; True log-pools log_odds into a consistent flat dict."""
     num_models = len(mc_simulators)
     n_test = 8
 
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rules=[CrossEntropyScore(), BrierScore()],
+        scoring_rules=rule_names,
         inference_conditions=["x"],
     )
     workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
@@ -319,51 +293,20 @@ def test_estimate_merge_scores(mc_simulators, caplog):
 
     # merge_scores=False -> nested dict keyed by rule name, each with the single-rule structure
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
-    assert set(nested) == {"cross_entropy_score", "brier_score"}
+    assert len(nested) == 2
     for rule_result in nested.values():
-        assert set(rule_result) == {"logits", "model_probs"}
+        assert set(rule_result) == {"log_odds", "model_probs"}
         assert rule_result["model_probs"].shape == (n_test, num_models)
 
-    # merge_scores=True (default) -> flat, only model_probs (uniform mean), sums to 1, warns
-    with caplog.at_level(logging.WARNING, logger="bayesflow"):
-        merged = workflow.estimate(conditions=test_data)
-    assert set(merged) == {"model_probs"}
-    assert merged["model_probs"].shape == (n_test, num_models)
-    assert np.allclose(merged["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
-    expected = np.mean([nested[k]["model_probs"] for k in nested], axis=0)
-    assert np.allclose(merged["model_probs"], expected, atol=1e-6)
-    assert any("merge_scores" in rec.message for rec in caplog.records)
-
-
-def test_estimate_merge_scores_bayes_factor_family(mc_simulators):
-    """Multiple BF rules: merge log-pools log_odds and derives a consistent model_probs."""
-    from bayesflow.scoring_rules import ExponentialScore, LogisticScore
-
-    num_models = len(mc_simulators)
-    n_test = 8
-
-    workflow = ModelComparisonWorkflow(
-        simulator=mc_simulators,
-        scoring_rules=[ExponentialScore(), LogisticScore()],
-        inference_conditions=["x"],
-    )
-    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
-    test_data = workflow.simulate(n_test)
-
-    nested = workflow.estimate(conditions=test_data, merge_scores=False)
+    # merge_scores=True (default) -> flat, logarithmic opinion pool over log_odds
     merged = workflow.estimate(conditions=test_data)
-
-    # Unlike the PMP family, log_odds is kept (nothing dropped).
     assert set(merged) == {"log_odds", "model_probs"}
-    assert merged["log_odds"].shape == (n_test, num_models - 1)
+    assert merged["log_odds"].shape == (n_test, num_models)
+    expected = np.mean([nested[k]["log_odds"] for k in nested], axis=0)
+    assert np.allclose(merged["log_odds"], expected, atol=1e-5)
 
-    # Logarithmic opinion pool: pooled log BFs are the mean of the per-rule log BFs.
-    expected_logbf = np.mean([nested[k]["log_odds"] for k in nested], axis=0)
-    assert np.allclose(merged["log_odds"], expected_logbf, atol=1e-5)
-
-    # model_probs is derived from the pooled log BFs (softmax over [0, logK]) -> mutually consistent.
-    f = np.concatenate([np.zeros((n_test, 1)), merged["log_odds"]], axis=-1)
-    implied = np.exp(f - f.max(-1, keepdims=True))
+    # model_probs is derived from the pooled log_odds via softmax -> mutually consistent
+    implied = np.exp(merged["log_odds"] - merged["log_odds"].max(-1, keepdims=True))
     implied /= implied.sum(-1, keepdims=True)
     assert np.allclose(merged["model_probs"], implied, atol=1e-5)
     assert np.allclose(merged["model_probs"].sum(-1), 1.0, atol=1e-5)
@@ -496,40 +439,25 @@ def test_compute_diagnostics_without_simulator_raises():
 # ── subnet property ──────────────────────────────────────────────────────────
 
 
-def test_plot_diagnostics_multi_rule_pmp(mc_simulators):
-    """plot_default_diagnostics works for multiple PMP rules via merged model_probs."""
-    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
+@pytest.mark.parametrize("rule_names", [["cross_entropy", "brier"], ["exponential", "logistic"]])
+def test_plot_diagnostics_multi_rule(mc_simulators, rule_names):
+    """plot_default_diagnostics produces the combined figure + calibration for any multi-rule config.
 
+    Without a ``true_log_bfs_fn`` there is no recovery plot.
+    """
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
-        scoring_rules={"ce": CrossEntropyScore(), "brier": BrierScore()},
+        scoring_rules=rule_names,
         inference_conditions=["x"],
     )
     workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
 
     plots = workflow.plot_default_diagnostics(test_data=10)
-    # PMP diagnostics come straight from merged model_probs; pairwise BFs are derived from them.
     assert set(plots.keys()) == {"loss", "confusion_and_bayes_factors", "calibration"}
 
 
-def test_plot_diagnostics_multi_rule_bf(mc_simulators):
-    """Multiple BF rules: the pooled log Bayes factors drive the full BF plot set."""
-    from bayesflow.scoring_rules import ExponentialScore, LogisticScore
-
-    workflow = ModelComparisonWorkflow(
-        simulator=mc_simulators,
-        scoring_rules=[ExponentialScore(), LogisticScore()],
-        inference_conditions=["x"],
-    )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
-
-    plots = workflow.plot_default_diagnostics(test_data=10)
-    # No true_log_bfs_fn -> no recovery plot, but the combined confusion + pairwise-BF figure is produced.
-    assert set(plots.keys()) == {"loss", "calibration", "confusion_and_bayes_factors"}
-
-
-def test_compute_diagnostics_multi_rule_pmp(mc_simulators):
-    """compute_default_diagnostics works for multiple PMP rules via merged model_probs."""
+def test_compute_diagnostics_multi_rule(mc_simulators):
+    """compute_default_diagnostics works for multiple rules via merged model_probs."""
     from bayesflow.scoring_rules import CrossEntropyScore, BrierScore
 
     workflow = ModelComparisonWorkflow(

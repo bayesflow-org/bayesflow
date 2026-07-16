@@ -210,7 +210,7 @@ def test_estimate_shapes_pmp(mc_simulators):
 
 
 def test_estimate_shapes_bf(mc_simulators):
-    """BF mode: estimate returns model_probs (N, M) summing to 1 and log_bayes_factors (N, M-1)."""
+    """BF mode: estimate returns model_probs (N, M) summing to 1 and log_odds (N, M-1)."""
     from bayesflow.scoring_rules import ExponentialScore
 
     num_models = len(mc_simulators)
@@ -228,7 +228,7 @@ def test_estimate_shapes_bf(mc_simulators):
 
     assert isinstance(estimates, dict)
     assert estimates["model_probs"].shape == (n_test, num_models)
-    assert estimates["log_bayes_factors"].shape == (n_test, num_models - 1)
+    assert estimates["log_odds"].shape == (n_test, num_models - 1)
     assert np.allclose(estimates["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
 
 
@@ -276,15 +276,15 @@ def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
     assert set(nested) == {"cross_entropy_score", "logistic_score"}
     assert set(nested["cross_entropy_score"]) == {"logits", "model_probs"}
-    assert set(nested["logistic_score"]) == {"log_bayes_factors", "model_probs"}
+    assert set(nested["logistic_score"]) == {"log_odds", "model_probs"}
 
     # Merged: log opinion pool over log-odds; PMP rules enter via their logit differences.
     merged = workflow.estimate(conditions=test_data)
-    assert set(merged) == {"log_bayes_factors", "model_probs"}
-    assert merged["log_bayes_factors"].shape == (n_test, num_models - 1)
+    assert set(merged) == {"log_odds", "model_probs"}
+    assert merged["log_odds"].shape == (n_test, num_models - 1)
     pmp_log_odds = nested["cross_entropy_score"]["logits"][:, 1:] - nested["cross_entropy_score"]["logits"][:, :1]
-    expected_logbf = np.mean([pmp_log_odds, nested["logistic_score"]["log_bayes_factors"]], axis=0)
-    assert np.allclose(merged["log_bayes_factors"], expected_logbf, atol=1e-5)
+    expected_logbf = np.mean([pmp_log_odds, nested["logistic_score"]["log_odds"]], axis=0)
+    assert np.allclose(merged["log_odds"], expected_logbf, atol=1e-5)
     assert np.allclose(merged["model_probs"].sum(-1), 1.0, atol=1e-5)
 
     # Diagnostics: with both families present, the confusion matrix and pairwise
@@ -336,7 +336,7 @@ def test_estimate_merge_scores(mc_simulators, caplog):
 
 
 def test_estimate_merge_scores_bayes_factor_family(mc_simulators):
-    """Multiple BF rules: merge log-pools log_bayes_factors and derives a consistent model_probs."""
+    """Multiple BF rules: merge log-pools log_odds and derives a consistent model_probs."""
     from bayesflow.scoring_rules import ExponentialScore, LogisticScore
 
     num_models = len(mc_simulators)
@@ -353,16 +353,16 @@ def test_estimate_merge_scores_bayes_factor_family(mc_simulators):
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
     merged = workflow.estimate(conditions=test_data)
 
-    # Unlike the PMP family, log_bayes_factors is kept (nothing dropped).
-    assert set(merged) == {"log_bayes_factors", "model_probs"}
-    assert merged["log_bayes_factors"].shape == (n_test, num_models - 1)
+    # Unlike the PMP family, log_odds is kept (nothing dropped).
+    assert set(merged) == {"log_odds", "model_probs"}
+    assert merged["log_odds"].shape == (n_test, num_models - 1)
 
     # Logarithmic opinion pool: pooled log BFs are the mean of the per-rule log BFs.
-    expected_logbf = np.mean([nested[k]["log_bayes_factors"] for k in nested], axis=0)
-    assert np.allclose(merged["log_bayes_factors"], expected_logbf, atol=1e-5)
+    expected_logbf = np.mean([nested[k]["log_odds"] for k in nested], axis=0)
+    assert np.allclose(merged["log_odds"], expected_logbf, atol=1e-5)
 
     # model_probs is derived from the pooled log BFs (softmax over [0, logK]) -> mutually consistent.
-    f = np.concatenate([np.zeros((n_test, 1)), merged["log_bayes_factors"]], axis=-1)
+    f = np.concatenate([np.zeros((n_test, 1)), merged["log_odds"]], axis=-1)
     implied = np.exp(f - f.max(-1, keepdims=True))
     implied /= implied.sum(-1, keepdims=True)
     assert np.allclose(merged["model_probs"], implied, atol=1e-5)

@@ -62,7 +62,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
           the posterior over all ``num_models`` models.
         - **Bayes factor rules** (``"exponential"``, ``"leaky_exponential"``,
           ``"logistic"``, ``"power_logistic"``): additionally report ``num_models - 1``
-          log Bayes factors relative to model 0.
+          log posterior odds relative to model 0.
 
         PMP and Bayes factor estimates can be aggregated: all rules are pooled in log-odds
         space (a PMP head's logit differences equal the same log posterior odds that a
@@ -310,9 +310,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
           confusion matrix (PMP view) and the pairwise Bayes factor heatmap (BF view)
           drawn side by side in a single figure. Both views are shown regardless of the
           scoring-rule family: merged estimates always carry ``"model_probs"``, and the
-          pairwise log Bayes factors are taken from the pooled ``"log_bayes_factors"``
+          pairwise log odds are taken from the pooled ``"log_odds"``
           when a Bayes factor rule contributed, otherwise derived from the pooled
-          probabilities (:math:`\log \mathrm{BF}_{k,0} = \log p_k - \log p_0`).
+          probabilities (:math:`\log p_k - \log p_0`).
         - ``"calibration"`` — per-model calibration curves with ECE annotations.
 
         When a **Bayes factor scoring rule** is present (:class:`~bayesflow.scoring_rules.ExponentialScore`,
@@ -402,13 +402,13 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         # Always draw the confusion matrix (PMP view) and pairwise Bayes factor heatmap
         # (BF view) side by side in one figure, regardless of scoring-rule family. Merged
-        # estimates always carry pooled 'model_probs'; the pairwise log Bayes factors come
-        # from the pooled 'log_bayes_factors' when a BF rule contributed, and are otherwise
-        # derived from the probabilities (log BF_{k,0} = log p_k - log p_0), so both views
+        # estimates always carry pooled 'model_probs'; the pairwise log odds come
+        # from the pooled 'log_odds' when a BF rule contributed, and are otherwise
+        # derived from the probabilities (log p_k - log p_0), so both views
         # are available for single, multiple, and mixed rules alike.
         model_probs = estimates["model_probs"]
-        if "log_bayes_factors" in estimates:
-            pred_log_bfs = estimates["log_bayes_factors"]
+        if "log_odds" in estimates:
+            pred_log_bfs = estimates["log_odds"]
         else:
             log_probs = np.log(np.clip(model_probs, 1e-12, None))
             pred_log_bfs = log_probs[..., 1:] - log_probs[..., :1]
@@ -447,7 +447,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         if has_bf_rules and true_log_bfs_fn is not None:
             true_log_bfs = true_log_bfs_fn(test_data)
             figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
-                pred_log_bayes_factors=estimates["log_bayes_factors"],
+                pred_log_bayes_factors=estimates["log_odds"],
                 true_log_bayes_factors=true_log_bfs,
                 true_models=true_models,
                 model_names=self.model_names,
@@ -468,7 +468,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         All metrics are computed from the (pooled) posterior model probabilities,
         for PMP and Bayes factor scoring rules alike (for Bayes factor rules, the
-        probabilities are derived from the pooled log Bayes factors, see
+        probabilities are derived from the pooled log odds, see
         :meth:`estimate`):
 
         - ``"accuracy"`` — per-model classification accuracy, i.e., the diagonal

@@ -99,7 +99,7 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         if rule.is_pmp_rule:
             result["logits"] = keras.ops.convert_to_numpy(log_odds)
         else:
-            result["log_bayes_factors"] = keras.ops.convert_to_numpy(log_odds[..., 1:] - log_odds[..., :1])
+            result["log_odds"] = keras.ops.convert_to_numpy(log_odds[..., 1:] - log_odds[..., :1])
 
         return result
 
@@ -111,10 +111,10 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         estimates are pooled across rules:
 
         - **Any Bayes factor rule present**: a *logarithmic opinion pool* in log-odds space.
-          BF rules contribute their ``log_bayes_factors`` (log posterior odds relative to
+          BF rules contribute their ``log_odds`` (log posterior odds relative to
           model 0); PMP rules contribute the pairwise differences of their
           ``logits``, which equal the same log posterior odds exactly (softmax is invariant
-          to the per-row shift). The averages are returned as ``log_bayes_factors``, and
+          to the per-row shift). The averages are returned as ``log_odds``, and
           ``model_probs`` is derived from them so the two stay mutually consistent.
         - **PMP rules only**: a *linear opinion pool* — the per-rule ``model_probs`` are
           averaged. The pre-softmax ``logits`` have no coherent pooled counterpart and are
@@ -122,20 +122,20 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         """
         rule_results = list(per_rule.values())
 
-        if any("log_bayes_factors" in r for r in rule_results):
-            merged_log_bfs = np.mean(
+        if any("log_odds" in r for r in rule_results):
+            merged_log_odds = np.mean(
                 [
-                    r["log_bayes_factors"] if "log_bayes_factors" in r else r["logits"][..., 1:] - r["logits"][..., :1]
+                    r["log_odds"] if "log_odds" in r else r["logits"][..., 1:] - r["logits"][..., :1]
                     for r in rule_results
                 ],
                 axis=0,
             )
-            f0 = np.zeros_like(merged_log_bfs[..., :1])
-            logits = np.concatenate([f0, merged_log_bfs], axis=-1)
+            f0 = np.zeros_like(merged_log_odds[..., :1])
+            logits = np.concatenate([f0, merged_log_odds], axis=-1)
             logits = logits - logits.max(axis=-1, keepdims=True)
             exp = np.exp(logits)
             model_probs = exp / exp.sum(axis=-1, keepdims=True)
-            return {"log_bayes_factors": merged_log_bfs, "model_probs": model_probs}
+            return {"log_odds": merged_log_odds, "model_probs": model_probs}
 
         logging.warning(
             f"merge_scores=True: averaging 'model_probs' across {len(per_rule)} PMP scoring rules; "
@@ -236,11 +236,9 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         ``num_models`` classes, converted to softmax probabilities.
 
         For Bayes factor scoring rules (e.g. :class:`~bayesflow.scoring_rules.ExponentialScore`)
-        the network outputs ``num_models - 1`` log Bayes factors
-        :math:`\\log K_{k,0} = \\log p(x \\mid \\mathcal{M}_k) - \\log p(x \\mid \\mathcal{M}_0)`
-        relative to the reference model :math:`\\mathcal{M}_0`, which are converted to posterior
-        model probabilities by prepending the reference anchor :math:`f_0 = 0` and applying
-        softmax (assumes equal model priors).
+        the network outputs ``num_models - 1`` log posterior odds relative to the reference
+        model :math:`\\mathcal{M}_0` (equal to log Bayes factors :math:`\\log K_{k,0}` under
+        equal model priors), converted to posterior model probabilities via softmax.
 
         Parameters
         ----------
@@ -254,7 +252,7 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
             If True, the per-rule estimates are pooled into the flat single-rule structure:
             when at least one Bayes factor rule is present, all rules are pooled in log-odds
             space (logarithmic opinion pool; PMP rules enter via their logit differences) and
-            a consistent ``"model_probs"`` is derived from the pooled ``"log_bayes_factors"``,
+            a consistent ``"model_probs"`` is derived from the pooled ``"log_odds"``,
             keeping both keys; PMP-only rules average their ``"model_probs"`` (linear opinion
             pool) and drop the pre-softmax ``"logits"`` (with a warning). If False, results
             are returned as a nested dict keyed by rule name. Has no effect for a single rule.
@@ -266,12 +264,12 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         dict[str, np.ndarray]
             Single scoring rule: always contains ``"model_probs"`` of shape
             ``(num_datasets, num_models)``. PMP rules additionally contain ``"logits"``;
-            Bayes factor rules additionally contain ``"log_bayes_factors"``.
+            Bayes factor rules additionally contain ``"log_odds"``.
             If a summary network is present, also contains ``"_summaries"``.
 
             Multiple scoring rules with ``merge_scores=True`` (default): the flat single-rule
             structure. PMP-only rules return pooled ``"model_probs"`` only; if any Bayes factor
-            rule is present, the result contains pooled ``"log_bayes_factors"`` together with
+            rule is present, the result contains pooled ``"log_odds"`` together with
             the ``"model_probs"`` derived from them.
 
             Multiple scoring rules with ``merge_scores=False``: nested dict keyed by rule

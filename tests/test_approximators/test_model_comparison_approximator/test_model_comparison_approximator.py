@@ -91,8 +91,8 @@ def test_estimate(approximator, train_dataset, simulator):
         assert "logits" in output
         assert output["logits"].shape == (num_conditions, num_models)
     else:
-        assert "log_bayes_factors" in output
-        assert output["log_bayes_factors"].shape == (num_conditions, num_models - 1)
+        assert "log_odds" in output
+        assert output["log_odds"].shape == (num_conditions, num_models - 1)
 
     assert "_summaries" not in output
 
@@ -181,13 +181,13 @@ def test_merge_rule_estimates_mixed_families():
     merged = ModelComparisonApproximator._merge_rule_estimates(
         {
             "ce": {"logits": logits, "model_probs": probs},
-            "logistic": {"log_bayes_factors": log_bfs, "model_probs": bf_probs},
+            "logistic": {"log_odds": log_bfs, "model_probs": bf_probs},
         }
     )
 
-    assert set(merged) == {"log_bayes_factors", "model_probs"}
+    assert set(merged) == {"log_odds", "model_probs"}
     expected_logbf = np.mean([logits[:, 1:] - logits[:, :1], log_bfs], axis=0)
-    assert np.allclose(merged["log_bayes_factors"], expected_logbf, atol=1e-6)
+    assert np.allclose(merged["log_odds"], expected_logbf, atol=1e-6)
 
     # model_probs derived from the pooled log odds and normalized
     f = np.concatenate([np.zeros((2, 1)), expected_logbf], axis=-1)

@@ -27,7 +27,7 @@ class MultiDataset(keras.utils.PyDataset):
         self.datasets = datasets
 
     def __getitem__(self, item: int) -> dict[str, dict[str, np.ndarray]]:
-        """Return one batch from each constituent dataset, wrapping shorter ones."""
+        """Return one batch from each constituent dataset, recycling shorter ones."""
         data = {}
         for key, dataset in self.datasets.items():
             data[key] = dataset[item % dataset.num_batches]

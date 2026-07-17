@@ -171,7 +171,7 @@ class SelfConsistencyLoss:
         =======
         A 2-D tensor ``(batch_size, num_samples)``: Estimates of log p(y) for each (observation, parameter sample) pair.
         """
-        data, log_det_jac = self.adapter(adapted_data, inverse=True, log_det_jac=True, keras=True)
+        data, log_det_jac = self.adapter(adapted_data, inverse=True, log_det_jac=True)
 
         log_det_jac_pars, log_det_jac_data = self._collect_log_det_jac_keys(log_det_jac)
 

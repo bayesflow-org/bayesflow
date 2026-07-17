@@ -97,7 +97,9 @@ class ConditionBuilder:
                 num_conditions = dim_maybe_nested(summary_variables, axis=0)
 
                 if num_conditions is None:
-                    # Graph mode: shapes are symbolic, cannot iterate over batches
+                    # Graph mode: batch dim is a symbolic placeholder (unknown until run time),
+                    # so the `for` loop in the else branch below can't slice it into batches.
+                    # -> Call once on the full input.
                     summary_outputs = summary_network(
                         summary_variables, **filter_kwargs(summary_kwargs, summary_network.call)
                     )

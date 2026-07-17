@@ -83,11 +83,11 @@ class SemiSupervisedApproximator(Approximator):
 
         Parameters
         ----------
-        **data : Mapping[str, Tensor]
-            Named list of input datasets.
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").
+        **data : Mapping[str, Tensor]
+            Named list of input datasets.
 
         Returns
         -------
@@ -113,22 +113,19 @@ class SemiSupervisedApproximator(Approximator):
 
         return metrics
 
-    def sample(self, *, approximator: str, **kwargs):
+    def sample(self, *, approximator: str, numpy: bool = True, **kwargs):
         """
         Generates samples from one of the approximator (specified by its name) given input conditions.
+        **kwargs are passed to the approximator.sample method.
         """
         if hasattr(self.approximators[approximator], "sample"):
             samples = self.approximators[approximator].sample(**kwargs)
         else:
             raise AttributeError(f"approximator `{approximator}` does not have a `sample` method.")
 
-        summary_outputs = samples.pop("_summaries", None)
-
-        if self.adapter is not None:
-            samples = self.adapter(samples, inverse=True)
-
-        if summary_outputs is not None:
-            samples["_summaries"] = summary_outputs
+        samples = self.adapter(samples, inverse=True)
+        if numpy:
+            samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         return samples
 
@@ -169,8 +166,6 @@ class SemiSupervisedApproximator(Approximator):
             if hasattr(appr, "built") and not appr.built:
                 appr.build(data_shapes[name])
 
-        self.built = True
-
     def build_from_data(self, adapted_data: Mapping[str, Mapping]):
         adapted_data = next(iter(adapted_data.values()))
         adapted_data = self._adapt_data(adapted_data)
@@ -181,7 +176,8 @@ class SemiSupervisedApproximator(Approximator):
         adapted_data = {}
 
         for name, appr in self.approximators.items():
-            if hasattr(appr, "adapter"):
+            # approximator may be a callable or an object with log_prob method, in which case we don't adapt the data
+            if isinstance(appr, Approximator):
                 adapted_data[name] = appr.adapter(data)
             else:
                 adapted_data[name] = data

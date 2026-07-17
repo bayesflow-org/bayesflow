@@ -288,7 +288,7 @@ class ContinuousApproximator(Approximator):
             samples,
         )
         samples = keras.tree.map_structure(
-            lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False, keras=True),
+            lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False),
             samples,
         )
         if numpy:
@@ -324,7 +324,7 @@ class ContinuousApproximator(Approximator):
         # log_det_jac from the adapter call (log_det_jac=True), which
         # _prepare_conditions does not support.
         data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
-        adapted, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, keras=True, stage="inference")
+        adapted, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
 
         summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
 

@@ -10,6 +10,7 @@ from .expand_dims import ExpandDims
 from .filter_transform import FilterTransform
 from .group import Group
 from .keep import Keep
+from .keras_transform import KerasTransform
 from .log import Log
 from .map_transform import MapTransform
 from .numpy_transform import NumpyTransform

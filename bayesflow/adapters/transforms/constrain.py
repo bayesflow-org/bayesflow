@@ -88,7 +88,7 @@ class Constrain(ElementwiseTransform):
 
                     def ldj(x):
                         z = (x - lower) / (upper - lower)
-                        return -ops.log(z) - ops.log1p(-z) - ops.log((upper - lower))
+                        return -ops.log(z) - ops.log1p(-z) - ops.cast(ops.log((upper - lower)), dtype=ops.dtype(z))
 
                 case str() as name:
                     raise ValueError(f"Unsupported method name for double bounded constraint: '{name}'.")

@@ -29,7 +29,7 @@ class ToDict(Transform):
                 if value.dtype == "category":
                     value = pd.get_dummies(value)
 
-                value = ops.convert_to_tensor(value)
+                value = ops.convert_to_tensor(value, dtype="float32")
 
             data[key] = value
 

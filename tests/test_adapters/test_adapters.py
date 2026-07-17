@@ -23,32 +23,6 @@ def test_cycle_consistency(adapter, random_data):
         assert np.allclose(value, deprocessed[key])
 
 
-def test_cycle_consistency_keras(adapter, random_data):
-    processed = adapter(random_data)
-    deprocessed = adapter(processed, inverse=True)
-
-    keras_data = keras.tree.map_structure(keras.ops.convert_to_tensor, random_data)
-    processed_keras = adapter(keras_data, keras=True)
-    deprocessed_keras = adapter(processed_keras, inverse=True, keras=True)
-    processed_keras = keras.tree.map_structure(keras.ops.convert_to_numpy, processed_keras)
-    deprocessed_keras = keras.tree.map_structure(keras.ops.convert_to_numpy, deprocessed_keras)
-
-    assert processed.keys() == processed_keras.keys()
-    assert deprocessed.keys() == deprocessed_keras.keys()
-
-    for key in processed.keys():
-        # s3 is not deterministic
-        if key == "s3":
-            continue
-        assert np.allclose(processed[key], processed_keras[key])
-
-    for key in deprocessed.keys():
-        # s3 is not deterministic
-        if key == "s3":
-            continue
-        assert np.allclose(deprocessed[key], deprocessed_keras[key])
-
-
 def test_serialize_deserialize(adapter, random_data):
     processed = adapter(random_data)
     serialized = serialize(adapter)
@@ -70,6 +44,7 @@ def test_serialize_deserialize(adapter, random_data):
 def test_constrain():
     # check if constraint-implied transforms are applied correctly
     import numpy as np
+    import keras.ops as ops
     import warnings
     from bayesflow.adapters import Adapter
 
@@ -103,24 +78,24 @@ def test_constrain():
         result = ad(data)
 
     # continuous variables should not have boundary issues
-    assert result["x_lower_cont"].min() < 0.0
-    assert result["x_upper_cont"].max() > 0.0
-    assert result["x_both_cont"].min() < 0.0
-    assert result["x_both_cont"].max() > 1.0
+    assert ops.min(result["x_lower_cont"]) < 0.0
+    assert ops.max(result["x_upper_cont"]) > 0.0
+    assert ops.min(result["x_both_cont"]) < 0.0
+    assert ops.max(result["x_both_cont"]) > 1.0
 
     # discrete variables at the boundaries should not have issues
     # if inclusive is set properly
-    assert np.isfinite(result["x_lower_disc1"].min())
-    assert np.isfinite(result["x_upper_disc1"].max())
-    assert np.isfinite(result["x_both_disc1"].min())
-    assert np.isfinite(result["x_both_disc1"].max())
+    assert ops.isfinite(ops.min(result["x_lower_disc1"]))
+    assert ops.isfinite(ops.max(result["x_upper_disc1"]))
+    assert ops.isfinite(ops.min(result["x_both_disc1"]))
+    assert ops.isfinite(ops.max(result["x_both_disc1"]))
 
     # discrete variables at the boundaries should have issues
     # if inclusive is not set properly
-    assert np.isneginf(result["x_lower_disc2"][0])
-    assert np.isinf(result["x_upper_disc2"][0])
-    assert np.isneginf(result["x_both_disc2"][0])
-    assert np.isinf(result["x_both_disc2"][-1])
+    assert ops.isneginf(ops.min(result["x_lower_disc2"]))
+    assert ops.isinf(ops.max(result["x_upper_disc2"]))
+    assert ops.isneginf(ops.min(result["x_both_disc2"]))
+    assert ops.isinf(ops.max(result["x_both_disc2"][-1]))
 
 
 def test_simple_transforms(random_data):
@@ -229,6 +204,7 @@ def test_split_transform(adapter, random_data):
 
 def test_to_dict_transform():
     import pandas as pd
+    import keras.ops as ops
 
     data = {
         "int32": [1, 2, 3, 4, 5],
@@ -258,8 +234,8 @@ def test_to_dict_transform():
     assert list(processed.keys()) == ["int32", "int64", "float32", "float64", "object", "category"]
 
     for key, value in processed.items():
-        assert isinstance(value, np.ndarray)
-        assert value.dtype == "float32"
+        assert isinstance(value, bf.types.tensor.BackendTensor)
+        assert ops.dtype(value) == "float32"
 
     # category should have 5 one-hot categories, even though it was only passed 4
     assert processed["category"].shape[-1] == 5
@@ -289,28 +265,10 @@ def test_log_det_jac(adapter_log_det_jac, random_data):
 
     assert np.allclose(log_det_jac["u"], u1[:, 0])
 
-    # test keras
-    keras_data = keras.tree.map_structure(keras.ops.convert_to_tensor, random_data)
-    _, log_det_jac_keras = adapter_log_det_jac(keras_data, log_det_jac=True, keras=True)
-    log_det_jac_keras = keras.tree.map_structure(keras.ops.convert_to_numpy, log_det_jac_keras)
-
-    assert log_det_jac.keys() == log_det_jac_keras.keys()
-
-    for key in log_det_jac.keys():
-        assert np.allclose(log_det_jac[key], log_det_jac_keras[key])
-
 
 def test_log_det_jac_inverse(adapter_log_det_jac_inverse, random_data):
     d, forward_log_det_jac = adapter_log_det_jac_inverse(random_data, log_det_jac=True)
     d, inverse_log_det_jac = adapter_log_det_jac_inverse(d, inverse=True, log_det_jac=True)
-
-    for key in forward_log_det_jac.keys():
-        assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])
-
-    # test keras
-    keras_data = keras.tree.map_structure(keras.ops.convert_to_tensor, random_data)
-    d, forward_log_det_jac = adapter_log_det_jac_inverse(keras_data, log_det_jac=True, keras=True)
-    d, inverse_log_det_jac = adapter_log_det_jac_inverse(d, inverse=True, log_det_jac=True, keras=True)
 
     for key in forward_log_det_jac.keys():
         assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])

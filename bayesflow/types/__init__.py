@@ -8,7 +8,7 @@ Custom types used for type annotations.
 """
 
 from .shape import Shape
-from .tensor import Tensor, ArrayOrTensor
+from .tensor import Tensor
 
 from ..utils._docs import _add_imports_to_all
 

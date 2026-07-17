@@ -1,7 +1,5 @@
 from collections.abc import Callable, MutableSequence, Sequence
 
-import numpy as np
-
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serialize, serializable
 
@@ -19,7 +17,7 @@ from .transforms import (
     Keep,
     Log,
     MapTransform,
-    NumpyTransform,
+    KerasTransform,
     OneHot,
     Rename,
     SerializableCustomTransform,
@@ -99,7 +97,7 @@ class Adapter(MutableSequence[Transform]):
         return serialize(config)
 
     def forward(
-        self, data: dict[str, any], *, log_det_jac: bool = False, keras: bool = False, **kwargs
+        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the forward direction.
 
@@ -109,8 +107,6 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
-        keras: bool, optional
-            If False, the transforms are computed using `numpy` as a backend, otherwise using `keras`.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -122,19 +118,19 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
         if not log_det_jac:
             for transform in self.transforms:
-                data = transform(data, keras=keras, **kwargs)
+                data = transform(data, **kwargs)
             return data
 
         log_det_jac = {}
         for transform in self.transforms:
-            transformed_data = transform(data, keras=keras, **kwargs)
-            log_det_jac = transform.log_det_jac(data, log_det_jac=log_det_jac, keras=keras, **kwargs)
+            transformed_data = transform(data, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac=log_det_jac, **kwargs)
             data = transformed_data
 
         return data, log_det_jac
 
     def inverse(
-        self, data: dict[str, any], *, log_det_jac: bool = False, keras: bool = False, **kwargs
+        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the inverse direction.
 
@@ -144,8 +140,6 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
-        keras: bool, optional
-            If False, the transforms are computed using `numpy` as a backend, otherwise using `keras`.
         **kwargs : dict
             Additional keyword arguments passed to each transform.
 
@@ -157,18 +151,18 @@ class Adapter(MutableSequence[Transform]):
         data = data.copy()
         if not log_det_jac:
             for transform in reversed(self.transforms):
-                data = transform(data, inverse=True, keras=keras, **kwargs)
+                data = transform(data, inverse=True, **kwargs)
             return data
 
         log_det_jac = {}
         for transform in reversed(self.transforms):
-            data = transform(data, inverse=True, keras=keras, **kwargs)
-            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, keras=keras, **kwargs)
+            data = transform(data, inverse=True, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac, inverse=True, **kwargs)
 
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, any], *, inverse: bool = False, keras: bool = False, **kwargs
+        self, data: dict[str, any], *, inverse: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
@@ -178,8 +172,6 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
-        keras: bool, optional
-            If False, the transforms are computed using `numpy` as a backend, otherwise using `keras`.
         **kwargs
             Additional keyword arguments passed to each transform.
 
@@ -190,9 +182,9 @@ class Adapter(MutableSequence[Transform]):
         """
 
         if inverse:
-            return self.inverse(data, keras=keras, **kwargs)
+            return self.inverse(data, **kwargs)
 
-        return self.forward(data, keras=keras, **kwargs)
+        return self.forward(data, **kwargs)
 
     def __repr__(self):
         result = ""
@@ -282,23 +274,23 @@ class Adapter(MutableSequence[Transform]):
         self,
         include: str | Sequence[str] = None,
         *,
-        forward: np.ufunc | str,
-        inverse: np.ufunc | str = None,
+        forward: str,
+        inverse: str = None,
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
-        """Append a :py:class:`~transforms.NumpyTransform` to the adapter.
+        """Append a :py:class:`~transforms.KerasTransform` to the adapter.
 
         Parameters
         ----------
-        forward : str or np.ufunc
+        forward : str
             The name of the NumPy function to use for the forward transformation.
-        inverse : str or np.ufunc, optional
+        inverse : str, optional
             The name of the NumPy function to use for the inverse transformation.
             By default, the inverse is inferred from the forward argument for supported methods.
             You can find the supported methods in
-            :py:const:`~bayesflow.adapters.transforms.NumpyTransform.INVERSE_METHODS`.
+            :py:const:`~bayesflow.adapters.transforms.KerasTransform.INVERSE_METHODS`.
         predicate : Predicate, optional
             Function that indicates which variables should be transformed.
         include : str or Sequence of str, optional
@@ -309,7 +301,7 @@ class Adapter(MutableSequence[Transform]):
             Additional keyword arguments passed to the transform.
         """
         transform = FilterTransform(
-            transform_constructor=NumpyTransform,
+            transform_constructor=KerasTransform,
             predicate=predicate,
             include=include,
             exclude=exclude,
@@ -550,9 +542,9 @@ class Adapter(MutableSequence[Transform]):
         ----------
         keys : str or Sequence of str
             The names of the variables to constrain.
-        lower: int or float or np.darray, optional
+        lower: int or float or Tensor, optional
             Lower bound for named data variable.
-        upper : int or float or np.darray, optional
+        upper : int or float or Tensor, optional
             Upper bound for named data variable.
         method : str, optional
             Method by which to shrink the network predictions space to specified bounds. Choose from

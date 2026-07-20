@@ -2,6 +2,7 @@ from collections.abc import Callable, MutableSequence, Sequence
 
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serialize, serializable
+import keras
 
 from .transforms import (
     AsSet,
@@ -162,7 +163,7 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, any], *, inverse: bool = False, **kwargs
+        self, data: dict[str, any], *, inverse: bool = False, device_name: str = "cpu", **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
@@ -172,6 +173,8 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
+        device_name: str, optional
+            Passed to keras.device to specify on which device to apply the adapter.
         **kwargs
             Additional keyword arguments passed to each transform.
 
@@ -181,10 +184,11 @@ class Adapter(MutableSequence[Transform]):
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
 
-        if inverse:
-            return self.inverse(data, **kwargs)
+        with keras.device(device_name):
+            if inverse:
+                return self.inverse(data, **kwargs)
 
-        return self.forward(data, **kwargs)
+            return self.forward(data, **kwargs)
 
     def __repr__(self):
         result = ""

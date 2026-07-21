@@ -62,6 +62,8 @@ def test_constrain():
 
     ad = (
         Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
         .constrain("x_lower_cont", lower=0)
         .constrain("x_upper_cont", upper=0)
         .constrain("x_both_cont", lower=0, upper=1)
@@ -303,19 +305,34 @@ def test_log_det_jac_exceptions(random_data):
 def test_nan_to_num():
     arr = {"test": np.array([1.0, np.nan, 3.0])}
     # test without mask
-    transform = bf.Adapter().nan_to_num(keys="test", default_value=-1.0, return_mask=False)
-    out = transform.forward(arr)["test"]
+    transform = (
+        bf.Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
+        .nan_to_num(keys="test", default_value=-1.0, return_mask=False)
+    )
+    out = transform(arr)["test"]
     np.testing.assert_array_equal(out, np.array([1.0, -1.0, 3.0]))
 
     # test with mask
     arr = {"test": np.array([1.0, np.nan, 3.0]), "test-2d": np.array([[1.0, np.nan], [np.nan, 4.0]])}
-    transform = bf.Adapter().nan_to_num(keys="test", default_value=0.0, return_mask=True)
-    out = transform.forward(arr)
+    transform = (
+        bf.Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
+        .nan_to_num(keys="test", default_value=0.0, return_mask=True)
+    )
+    out = transform(arr)
     np.testing.assert_array_equal(out["test"], np.array([1.0, 0.0, 3.0]))
     np.testing.assert_array_equal(out["mask_test"], np.array([1.0, 0.0, 1.0]))
 
     # test two-d array
-    transform = bf.Adapter().nan_to_num(keys="test-2d", default_value=0.5, return_mask=True, mask_prefix="new_mask")
-    out = transform.forward(arr)
+    transform = (
+        bf.Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
+        .nan_to_num(keys="test-2d", default_value=0.5, return_mask=True, mask_prefix="new_mask")
+    )
+    out = transform(arr)
     np.testing.assert_array_equal(out["test-2d"], np.array([[1.0, 0.5], [0.5, 4.0]]))
     np.testing.assert_array_equal(out["new_mask_test-2d"], np.array([[1, 0], [0, 1]]))

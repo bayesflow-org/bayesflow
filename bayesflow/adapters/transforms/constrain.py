@@ -107,7 +107,7 @@ class Constrain(ElementwiseTransform):
 
                     def ldj(x):
                         y = x - lower
-                        return y - ops.log(ops.expm1(y))
+                        return ops.subtract(y, ops.log(ops.expm1(y)))
 
                 case "exp" | "log":
 
@@ -137,7 +137,7 @@ class Constrain(ElementwiseTransform):
 
                     def ldj(x):
                         y = upper - x
-                        return y - ops.log(ops.expm1(y))
+                        return ops.subtract(y, ops.log(ops.expm1(y)))
 
                 case "exp" | "log":
 

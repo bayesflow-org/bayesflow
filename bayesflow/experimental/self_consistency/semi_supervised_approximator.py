@@ -32,10 +32,10 @@ class SemiSupervisedApproximator(Approximator):
         Named sub-approximators (e.g. ``{"prior": ..., "posterior": ...,
         "likelihood": ...}``).
         Note: approximators must be of class `Approximator`, or an object with `.log_prob` method,
-        or `Callable`. In the latter two cases, the approximator is only used for composite
+        or `Callable`. In the latter two cases, the approximator is only used for semi-supervised
         training.
     adapter : Adapter, optional
-        Shared adapter applied to all datasets before passing to approximators and composite
+        Shared adapter applied to all datasets before passing to approximators and semi-supervised
         metrics. Defaults to an identity adapter.
     """
 
@@ -176,7 +176,8 @@ class SemiSupervisedApproximator(Approximator):
         adapted_data = {}
 
         for name, appr in self.approximators.items():
-            # approximator may be a callable or an object with log_prob method, in which case we don't adapt the data
+            # approximator may be a callable or an object with log_prob method, *without an adapter*
+            # in that case we don't adapt the data
             if isinstance(appr, Approximator):
                 adapted_data[name] = appr.adapter(data)
             else:

@@ -36,8 +36,8 @@ class Standardize(ElementwiseTransform):
     ):
         super().__init__()
 
-        self.mean = ops.convert_to_tensor(mean)
-        self.std = ops.convert_to_tensor(std)
+        self.mean = mean
+        self.std = std
 
     def get_config(self) -> dict:
         config = {
@@ -46,18 +46,21 @@ class Standardize(ElementwiseTransform):
         }
         return serialize(config)
 
+    def _mean_std(self, data: Tensor) -> tuple[Tensor, Tensor]:
+        mean = ops.broadcast_to(ops.convert_to_tensor(self.mean, dtype=ops.dtype(data)), ops.shape(data))
+        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=ops.dtype(data)), ops.shape(data))
+        return mean, std
+
     def forward(self, data: Tensor, **kwargs) -> Tensor:
-        mean = ops.broadcast_to(ops.cast(self.mean, dtype=ops.dtype(data)), ops.shape(data))
-        std = ops.broadcast_to(ops.cast(self.std, dtype=ops.dtype(data)), ops.shape(data))
-        return (data - mean) / std
+        mean, std = self._mean_std(data)
+        return ops.divide(ops.subtract(data, mean), std)
 
     def inverse(self, data: Tensor, **kwargs) -> Tensor:
-        mean = ops.broadcast_to(ops.cast(self.mean, dtype=ops.dtype(data)), ops.shape(data))
-        std = ops.broadcast_to(ops.cast(self.std, dtype=ops.dtype(data)), ops.shape(data))
-        return data * std + mean
+        mean, std = self._mean_std(data)
+        return ops.add(ops.multiply(data, std), mean)
 
     def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
-        std = ops.broadcast_to(ops.cast(self.std, dtype=ops.dtype(data)), ops.shape(data))
+        _, std = self._mean_std(data)
         ldj = -ops.log(ops.abs(std))
         if inverse:
             ldj = -ldj

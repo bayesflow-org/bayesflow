@@ -9,13 +9,15 @@ from .elementwise_transform import ElementwiseTransform
 @serializable("bayesflow.adapters")
 class Shift(ElementwiseTransform):
     def __init__(self, shift: float | Tensor):
-        self.shift = ops.convert_to_tensor(shift)
+        self.shift = shift
 
     def get_config(self) -> dict:
         return serialize({"shift": self.shift})
 
     def forward(self, data: Tensor, **kwargs) -> Tensor:
-        return data + ops.cast(self.shift, ops.dtype(data))
+        shift = ops.convert_to_tensor(self.shift, dtype=ops.dtype(data))
+        return ops.add(data, shift)
 
     def inverse(self, data: Tensor, **kwargs) -> Tensor:
-        return data - ops.cast(self.shift, ops.dtype(data))
+        shift = ops.convert_to_tensor(self.shift, dtype=ops.dtype(data))
+        return ops.subtract(data, shift)

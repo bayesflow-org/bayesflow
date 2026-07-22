@@ -17,7 +17,7 @@ from bayesflow.utils import (
     find_summary_network,
     filter_kwargs,
 )
-from bayesflow.utils import softmax
+from bayesflow.utils.numpy_utils import softmax
 from bayesflow.diagnostics import plots as bf_plots
 from bayesflow.diagnostics import metrics as bf_metrics
 

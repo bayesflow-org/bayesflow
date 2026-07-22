@@ -6,7 +6,7 @@ import numpy as np
 from bayesflow.types import Shape
 from bayesflow.utils import tree_concatenate
 from bayesflow.utils.decorators import allow_batch_size
-from bayesflow.utils import softmax, one_hot
+from bayesflow.utils.numpy_utils import softmax, one_hot
 from bayesflow.utils import logging
 
 from .simulator import Simulator

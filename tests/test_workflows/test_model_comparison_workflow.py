@@ -205,8 +205,11 @@ def test_estimate_shapes(mc_simulators, rule_name):
     assert isinstance(estimates, dict)
     assert estimates["model_probs"].shape == (n_test, num_models)
     assert estimates["log_odds"].shape == (n_test, num_models)
+    assert estimates["log_bayes_factors"].shape == (n_test, num_models)
     assert np.allclose(estimates["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
     assert np.allclose(estimates["log_odds"][:, 0], 0.0, atol=1e-6)
+    # uniform prior (mc_simulators default) -> log Bayes factors equal log odds
+    assert np.allclose(estimates["log_bayes_factors"], estimates["log_odds"], atol=1e-6)
 
 
 # ── Multiple scoring rules & merge_scores ─────────────────────────────────────
@@ -252,12 +255,12 @@ def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):
 
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
     assert set(nested) == {"cross_entropy_score", "logistic_score"}
-    assert set(nested["cross_entropy_score"]) == {"log_odds", "model_probs"}
-    assert set(nested["logistic_score"]) == {"log_odds", "model_probs"}
+    assert set(nested["cross_entropy_score"]) == {"log_odds", "model_probs", "log_bayes_factors"}
+    assert set(nested["logistic_score"]) == {"log_odds", "model_probs", "log_bayes_factors"}
 
     # Merged: logarithmic opinion pool over the length-M log_odds.
     merged = workflow.estimate(conditions=test_data)
-    assert set(merged) == {"log_odds", "model_probs"}
+    assert set(merged) == {"log_odds", "model_probs", "log_bayes_factors"}
     assert merged["log_odds"].shape == (n_test, num_models)
     expected = np.mean([nested["cross_entropy_score"]["log_odds"], nested["logistic_score"]["log_odds"]], axis=0)
     assert np.allclose(merged["log_odds"], expected, atol=1e-5)
@@ -295,12 +298,12 @@ def test_estimate_merge_scores(mc_simulators, rule_names):
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
     assert len(nested) == 2
     for rule_result in nested.values():
-        assert set(rule_result) == {"log_odds", "model_probs"}
+        assert set(rule_result) == {"log_odds", "model_probs", "log_bayes_factors"}
         assert rule_result["model_probs"].shape == (n_test, num_models)
 
     # merge_scores=True (default) -> flat, logarithmic opinion pool over log_odds
     merged = workflow.estimate(conditions=test_data)
-    assert set(merged) == {"log_odds", "model_probs"}
+    assert set(merged) == {"log_odds", "model_probs", "log_bayes_factors"}
     assert merged["log_odds"].shape == (n_test, num_models)
     expected = np.mean([nested[k]["log_odds"] for k in nested], axis=0)
     assert np.allclose(merged["log_odds"], expected, atol=1e-5)

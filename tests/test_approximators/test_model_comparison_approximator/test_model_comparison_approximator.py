@@ -89,6 +89,7 @@ def test_estimate(approximator, train_dataset, simulator):
     assert "log_odds" in output
     assert output["log_odds"].shape == (num_conditions, num_models)
     assert "logits" not in output
+    assert "log_bayes_factors" not in output  # no model_prior -> Bayes factors not computed
 
     assert "_summaries" not in output
 
@@ -97,6 +98,30 @@ def test_estimate(approximator, train_dataset, simulator):
         assert "_summaries" in output_with_summaries
         assert output_with_summaries["_summaries"].ndim == 2
         assert output_with_summaries["_summaries"].shape[0] == num_conditions
+
+
+def test_estimate_log_bayes_factors_prior(approximator, train_dataset, simulator):
+    """log_bayes_factors removes the model-prior log-odds; absent when no prior is given."""
+    import numpy as np
+
+    batch = first_tensor_batch(train_dataset)
+    data_shapes = keras.tree.map_structure(keras.ops.shape, batch)
+    approximator.build(data_shapes)
+    approximator.compute_metrics(**batch)
+
+    num_models = len(simulator.simulators)
+    conditions = simulator.sample(2)
+
+    # no prior -> Bayes factors are not computed
+    out = approximator.estimate(conditions=conditions)
+    assert "log_bayes_factors" not in out
+
+    # non-uniform prior shifts log Bayes factors by the prior log-odds
+    prior = np.linspace(1.0, 2.0, num_models)
+    prior = prior / prior.sum()
+    out = approximator.estimate(conditions=conditions, model_prior=prior)
+    log_prior_odds = np.log(prior) - np.log(prior[0])
+    assert np.allclose(out["log_bayes_factors"], out["log_odds"] - log_prior_odds, atol=1e-6)
 
 
 def test_multi_rule_estimate(train_dataset, simulator):

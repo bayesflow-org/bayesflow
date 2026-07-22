@@ -403,9 +403,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 "'inference_variables' (adapted output). Neither key was found."
             )
 
-        rules = self.approximator.inference_network.scoring_rules.values()
-        has_bf_rules = any(not rule.is_pmp_rule for rule in rules)
-
         if estimates is None:
             # Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.
             estimate_kwargs = kwargs.get("estimate_kwargs", {})
@@ -447,7 +444,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
             **kwargs.get("calibration_kwargs", {}),
         )
 
-        if has_bf_rules and true_log_bfs_fn is not None:
+        if true_log_bfs_fn is not None:
             true_log_bfs = true_log_bfs_fn(test_data)
             figures["bayes_factor_recovery"] = bf_plots.bayes_factor_recovery(
                 pred_log_bayes_factors=estimates.get("log_bayes_factors", estimates["log_odds"])[..., 1:],

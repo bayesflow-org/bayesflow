@@ -47,7 +47,6 @@ class LogisticScore(CategoricalScoringRule):
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("logits",)
     # Small-stddev init keeps initial logits near zero, preventing exp() overflow at the start of training.
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
-    is_pmp_rule = False
 
     def __init__(self, alpha: float = 0.0, **kwargs):
         if alpha < 0:

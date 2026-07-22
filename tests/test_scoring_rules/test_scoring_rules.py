@@ -2,24 +2,6 @@ import keras
 import pytest
 
 
-def test_is_pmp_rule_pmp_rules():
-    from bayesflow.scoring_rules import CrossEntropyScore, BrierScore, PolynomialScore
-
-    assert CrossEntropyScore().is_pmp_rule is True
-    assert BrierScore().is_pmp_rule is True
-    assert PolynomialScore(alpha=2.0).is_pmp_rule is True
-
-
-def test_is_pmp_rule_bf_rules():
-    from bayesflow.links import Leaky
-    from bayesflow.scoring_rules import ExponentialScore, LogisticScore
-
-    assert ExponentialScore().is_pmp_rule is False
-    assert ExponentialScore(links={"logits": Leaky(power=2.0)}).is_pmp_rule is False
-    assert LogisticScore().is_pmp_rule is False
-    assert LogisticScore(alpha=1.0).is_pmp_rule is False
-
-
 def test_logistic_score_get_config():
     from bayesflow.scoring_rules import LogisticScore
 

@@ -221,9 +221,9 @@ def test_resolve_scoring_rules_normalizes_inputs():
 
     resolve = ModelComparisonWorkflow._resolve_scoring_rules
 
-    # None -> default cross-entropy (PMP)
+    # None -> default cross-entropy
     d = resolve(None)
-    assert list(d) == ["scoring_rule"] and d["scoring_rule"].is_pmp_rule
+    assert list(d) == ["scoring_rule"]
 
     # string name -> single rule
     assert list(resolve("exponential")) == ["scoring_rule"]
@@ -235,7 +235,7 @@ def test_resolve_scoring_rules_normalizes_inputs():
     assert list(resolve([ExponentialScore(), ExponentialScore()])) == ["exponential_score", "exponential_score_2"]
 
     # dict with a string value gets resolved to an instance
-    assert resolve({"a": "brier"})["a"].is_pmp_rule
+    assert resolve({"a": "brier"})["a"]
 
 
 def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):

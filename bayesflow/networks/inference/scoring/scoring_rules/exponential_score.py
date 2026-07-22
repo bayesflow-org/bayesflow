@@ -37,7 +37,6 @@ class ExponentialScore(CategoricalScoringRule):
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING = ("logits",)
     # Small-stddev init keeps initial logits near zero for stable early training.
     _head_kernel_initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01)
-    is_pmp_rule = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

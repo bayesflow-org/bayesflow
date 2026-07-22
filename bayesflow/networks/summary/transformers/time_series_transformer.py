@@ -121,8 +121,8 @@ class TimeSeriesTransformer(Transformer):
         training : bool, optional
             Passed to dropout and norm layers, by default False.
         attention_mask : Tensor, optional
-            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask. Takes
-            precedence over any mask derived from ``mask``.
+            Boolean mask broadcastable to ``(B, num_heads, T, T)`` where 1 = attend,
+            0 = mask. Takes precedence over any mask derived from ``mask``.
         mask : Tensor, optional
             Boolean padding mask of shape ``(B, T)`` where 1 = real time step,
             0 = padding. Used for variable-length trajectories padded to a common
@@ -149,6 +149,7 @@ class TimeSeriesTransformer(Transformer):
             inp = self.time_embedding(inp, t=t)
 
         if attention_mask is None and mask is not None:
+            # key-padding mask; keras broadcasts (B, 1, T) over heads and query steps
             attention_mask = keras.ops.expand_dims(keras.ops.cast(mask, "bool"), axis=1)
 
         for layer in self.attention_blocks:

@@ -6,7 +6,7 @@ import numpy as np
 from bayesflow.types import Shape
 from bayesflow.utils import tree_concatenate
 from bayesflow.utils.decorators import allow_batch_size
-from bayesflow.utils import numpy_utils as npu
+from bayesflow.utils import softmax, one_hot
 from bayesflow.utils import logging
 
 from .simulator import Simulator
@@ -128,7 +128,7 @@ class ModelComparisonSimulator(Simulator):
         if self.shared_simulator:
             data |= self.shared_simulator.sample(batch_shape, **kwargs)
 
-        softmax_logits = npu.softmax(self.logits)
+        softmax_logits = softmax(self.logits)
         num_models = len(self.simulators)
 
         # generate data randomly from each model (slower)
@@ -149,7 +149,7 @@ class ModelComparisonSimulator(Simulator):
             model_index = np.random.choice(num_models, p=softmax_logits)
 
             data = self.simulators[model_index].sample(batch_shape, **(kwargs | data))
-            model_indices = npu.one_hot(np.full(batch_shape, model_index, dtype="int32"), num_models)
+            model_indices = one_hot(np.full(batch_shape, model_index, dtype="int32"), num_models)
 
         return data | {"model_indices": model_indices}
 

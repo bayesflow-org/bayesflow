@@ -115,6 +115,20 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         model_probs = exp / exp.sum(axis=-1, keepdims=True)
         return {"model_probs": model_probs, "log_odds": merged_log_odds}
 
+    def _add_log_bayes_factors(self, estimates: dict, model_prior: np.ndarray | None) -> dict:
+        """Add prior-adjusted log Bayes factors to each leaf estimate dict, in place."""
+        if model_prior is None:
+            return estimates
+        if "log_odds" in estimates:
+            log_prior = np.log(np.asarray(model_prior, dtype=float))
+            log_prior_odds = log_prior - log_prior[0]
+            estimates["log_bayes_factors"] = estimates["log_odds"] - log_prior_odds
+        else:
+            for value in estimates.values():
+                if isinstance(value, dict):
+                    self._add_log_bayes_factors(value, model_prior)
+        return estimates
+
     def build_dataset(
         self,
         *,
@@ -135,9 +149,9 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         self,
         *,
         adapter: Adapter | Literal["auto"] = "auto",
-        dataset: keras.utils.PyDataset = None,
-        simulator: ModelComparisonSimulator = None,
-        simulators: Sequence[Simulator] = None,
+        dataset: keras.utils.PyDataset | None = None,
+        simulator: ModelComparisonSimulator | None = None,
+        simulators: Sequence[Simulator] | None = None,
         **kwargs,
     ):
         """
@@ -197,6 +211,7 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         conditions: Mapping[str, np.ndarray],
         return_summaries: bool = False,
         merge_scores: bool = True,
+        model_prior: np.ndarray | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -204,8 +219,10 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
 
         Every scoring rule yields ``"model_probs"`` (the posterior over ``num_models`` models)
         and length-``M`` ``"log_odds"`` relative to the reference model :math:`\\mathcal{M}_0`
-        (so ``log_odds[..., 0] = 0``; equal to log Bayes factors :math:`\\log K_{k,0}` under
-        equal model priors).
+        (so ``log_odds[..., 0] = 0``). When ``model_prior`` is given, ``"log_bayes_factors"``
+        (same shape) is also returned, removing the training model prior:
+        :math:`\\log K_{k,0} = \\text{log\\_odds}_k - (\\log \\pi_k - \\log \\pi_0)`. Without a
+        prior the Bayes factors are undefined and omitted.
 
         Parameters
         ----------
@@ -220,19 +237,24 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
             all rules are pooled in log-odds space (logarithmic opinion pool) and a consistent
             ``"model_probs"`` is derived from the pooled ``"log_odds"``. If False, results are
             returned as a nested dict keyed by rule name. Has no effect for a single rule.
+        model_prior : np.ndarray, optional
+            Prior model probabilities (length ``num_models``) used during training. If given,
+            the output includes ``"log_bayes_factors"``.
         **kwargs
             Additional keyword arguments forwarded to the adapter and classifier.
 
         Returns
         -------
         dict[str, np.ndarray]
-            Single scoring rule: ``"model_probs"`` of shape ``(num_datasets, num_models)`` and
-            ``"log_odds"`` of the same shape (relative to model 0, so ``[..., 0] = 0``). If a
-            summary network is present, also contains ``"_summaries"``.
+            Single scoring rule: ``"model_probs"`` and ``"log_odds"`` of shape
+            ``(num_datasets, num_models)`` (``"log_odds"`` relative to model 0, so
+            ``[..., 0] = 0``), and ``"log_bayes_factors"`` of the same shape when
+            ``model_prior`` is given. If a summary network is present, also contains
+            ``"_summaries"``.
 
             Multiple scoring rules with ``merge_scores=True`` (default): the same flat
             structure, with ``"log_odds"`` pooled across rules (logarithmic opinion pool) and
-            ``"model_probs"`` derived from the pool.
+            ``"model_probs"`` (and ``"log_bayes_factors"``, if a prior was given) derived from it.
 
             Multiple scoring rules with ``merge_scores=False``: nested dict keyed by rule
             name, each value having the same structure as the single-rule case.
@@ -255,6 +277,8 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
             result = self._merge_rule_estimates(per_rule)
         else:
             result = per_rule
+
+        self._add_log_bayes_factors(result, model_prior)
 
         if return_summaries and summary_outputs is not None:
             result["_summaries"] = keras.ops.convert_to_numpy(summary_outputs)

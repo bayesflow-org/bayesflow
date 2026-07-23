@@ -9,7 +9,7 @@ from ...utils.classification import confusion_matrix
 def accuracy(
     predictions: np.ndarray,
     true_models: np.ndarray,
-    model_names: Sequence[str] = None,
+    model_names: Sequence[str] | None = None,
     per_model: bool = True,
 ) -> dict[str, Any]:
     """
@@ -18,7 +18,7 @@ def accuracy(
     Parameters
     ----------
     predictions : np.ndarray of shape (N, M)
-        Network outputs — either posterior model probabilities or log odds
+        Predicted (log) probabilities. The argmax is used as the predicted label.
     true_models : np.ndarray of shape (N, M)
         One-hot encoded true model indices.
     model_names : Sequence[str], optional (default = None)
@@ -26,7 +26,7 @@ def accuracy(
         is True. By default, models are called "M_" + model index.
     per_model : bool, optional (default = True)
         If True, returns the per-model accuracy, i.e., the diagonal entries of
-        the confusion matrix normalized over the true (row) labels — this is
+        the confusion matrix normalized over the true (row) labels. This is
         equivalent to the recall / true-positive-rate of each model. If False,
         returns the overall (aggregate) accuracy as a single float.
 

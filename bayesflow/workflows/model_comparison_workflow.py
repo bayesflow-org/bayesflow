@@ -17,7 +17,6 @@ from bayesflow.utils import (
     find_summary_network,
     filter_kwargs,
 )
-from bayesflow.utils.numpy_utils import softmax
 from bayesflow.diagnostics import plots as bf_plots
 from bayesflow.diagnostics import metrics as bf_metrics
 
@@ -27,7 +26,7 @@ from .basic_workflow import BasicWorkflow
 class ModelComparisonWorkflow(BasicWorkflow):
     """
     This class extends :class:`~bayesflow.workflows.BasicWorkflow` to support
-    amortized Bayesian model comparison.
+    amortized Bayesian model comparison with scoring rules.
 
     Parameters
     ----------
@@ -93,8 +92,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
         A shared simulator that provides context variables to every per-model
         simulator (e.g. sample size ``n``). When ``simulator`` is a list this
         is forwarded to :class:`~bayesflow.simulators.ModelComparisonSimulator`.
-        Scalar outputs from the shared simulator that are listed in
-        ``inference_conditions`` are broadcast to the batch dimension automatically.
     use_mixed_batches : bool, optional
         Whether each training batch mixes samples from different models
         (default: ``True``). Forwarded to
@@ -103,9 +100,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
     model_names : Sequence[str], optional
         Human-readable names for each model, used in diagnostic plots.
     standardize : Sequence[str] or str or None, optional
-        Variables to standardize. When a ``summary_network`` is provided and
-        this argument is ``None``, defaults to ``["summary_variables"]`` so
-        that the raw data is standardized before entering the summary network.
+        Variables to standardize. Defaults to all available input variables.
         ``inference_variables`` (one-hot model indices) are never standardized.
     **kwargs : dict, optional
         Additional keyword arguments organised by context:
@@ -140,7 +135,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         shared_simulator: Simulator | Callable | None = None,
         use_mixed_batches: bool = True,
         model_names: Sequence[str] | None = None,
-        standardize: Sequence[str] | str | None = None,
+        standardize: Sequence[str] | str | None = "all",
         **kwargs,
     ):
         if isinstance(simulator, Sequence):
@@ -151,32 +146,12 @@ class ModelComparisonWorkflow(BasicWorkflow):
                 **kwargs.get("simulator_kwargs", {}),
             )
 
-        if simulator is not None and len(simulator.simulators) < 2:
-            raise ValueError(
-                f"ModelComparisonWorkflow requires at least 2 simulators, got {len(simulator.simulators)}."
-            )
-
         self.simulator = simulator
         self.model_names = model_names
 
-        # When a shared_simulator provides context variables used as inference_conditions,
-        # those variables are scalars (one value per batch, not per sample) and must be
-        # broadcast to the batch dimension before the adapter can concatenate them.
-        # We auto-detect the broadcast target as the first summary variable.
-        broadcast_ref = None
-        if shared_simulator is not None and inference_conditions is not None:
-            sv = [summary_variables] if isinstance(summary_variables, str) else (summary_variables or [])
-            if sv:
-                broadcast_ref = sv[0]
-
         adapter = adapter or ModelComparisonWorkflow.default_adapter(
-            inference_conditions=inference_conditions,
-            summary_variables=summary_variables,
-            broadcast_conditions_to=broadcast_ref,
+            inference_conditions=inference_conditions, summary_variables=summary_variables
         )
-
-        if standardize is None and summary_network is not None:
-            standardize = ["summary_variables"]
 
         resolved_scoring_rules = ModelComparisonWorkflow._resolve_scoring_rules(scoring_rules)
 
@@ -219,11 +194,13 @@ class ModelComparisonWorkflow(BasicWorkflow):
         """
         if scoring_rules is None:
             return {"scoring_rule": find_scoring_rule("cross_entropy")}
+
         if isinstance(scoring_rules, (str, CategoricalScoringRule)):
             return {"scoring_rule": find_scoring_rule(scoring_rules)}
 
         if isinstance(scoring_rules, Mapping):
             resolved = {key: find_scoring_rule(rule) for key, rule in scoring_rules.items()}
+
         elif isinstance(scoring_rules, Sequence):
             resolved: dict[str, CategoricalScoringRule] = {}
             counts: dict[str, int] = {}
@@ -245,7 +222,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
     def default_adapter(
         inference_conditions: Sequence[str] | str,
         summary_variables: Sequence[str] | str,
-        broadcast_conditions_to: str = None,
     ) -> Adapter:
         """
         Build a default adapter for model comparison data.
@@ -260,45 +236,17 @@ class ModelComparisonWorkflow(BasicWorkflow):
             Keys to concatenate into ``inference_conditions``.
         summary_variables : Sequence[str] or str or None
             Keys to concatenate into ``summary_variables``.
-        broadcast_conditions_to : str or None
-            If provided, each ``inference_conditions`` key is broadcast to the
-            batch dimension of this variable before any renaming. Used when a
-            ``shared_simulator`` returns scalar context variables.
 
         Returns
         -------
         Adapter
+            A configured Adapter instance that applies dtype conversion and concatenation.
         """
-        adapter = (
-            Adapter()
-            .convert_dtype(from_dtype="float64", to_dtype="float32")
-            .concatenate("model_indices", into="inference_variables")
+        return BasicWorkflow.default_adapter(
+            inference_variables="model_indices",
+            summary_variables=summary_variables,
+            inference_conditions=inference_conditions,
         )
-
-        # Broadcast scalar context variables (from shared_simulator) to batch dim.
-        # Must happen before concatenate so the broadcast target still has its original name.
-        if broadcast_conditions_to is not None and inference_conditions is not None:
-            conds = [inference_conditions] if isinstance(inference_conditions, str) else list(inference_conditions)
-            adapter = adapter.broadcast(conds, to=broadcast_conditions_to)
-
-        if summary_variables is not None:
-            adapter = adapter.concatenate(summary_variables, into="summary_variables")
-
-        if inference_conditions is not None:
-            adapter = adapter.concatenate(inference_conditions, into="inference_conditions")
-
-        return adapter
-
-    def estimate(self, *, conditions: Mapping[str, np.ndarray] | None = None, model_prior=None, **kwargs):
-        """Estimate model posteriors.
-
-        See :meth:`~bayesflow.approximators.ModelComparisonApproximator.estimate`. When the
-        workflow has a simulator and no ``model_prior`` is given, the simulator's model prior is
-        used so that ``"log_bayes_factors"`` is prior-adjusted.
-        """
-        if model_prior is None and self.simulator is not None:
-            model_prior = softmax(np.asarray(self.simulator.logits, dtype=float))
-        return super().estimate(conditions=conditions, model_prior=model_prior, **kwargs)
 
     def plot_default_diagnostics(
         self,

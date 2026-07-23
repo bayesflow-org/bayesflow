@@ -278,8 +278,7 @@ class BasicWorkflow(Workflow):
         Returns
         -------
         Adapter
-            A configured Adapter instance that applies dtype conversion,
-            concatenation, and optional standardization.
+            A configured Adapter instance that applies dtype conversion and concatenation.
         """
 
         adapter = (

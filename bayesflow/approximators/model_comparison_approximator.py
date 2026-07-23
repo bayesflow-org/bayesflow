@@ -119,14 +119,16 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         """Add prior-adjusted log Bayes factors to each leaf estimate dict, in place."""
         if model_prior is None:
             return estimates
+
         if "log_odds" in estimates:
-            log_prior = np.log(np.asarray(model_prior, dtype=float))
+            log_prior = np.log(model_prior)
             log_prior_odds = log_prior - log_prior[0]
             estimates["log_bayes_factors"] = estimates["log_odds"] - log_prior_odds
         else:
             for value in estimates.values():
                 if isinstance(value, dict):
                     self._add_log_bayes_factors(value, model_prior)
+
         return estimates
 
     def build_dataset(
@@ -270,7 +272,6 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
             for rule_key, rule_output in raw.items()
         }
 
-        # Single rule → flat dict (merge_scores is a no-op here).
         if len(per_rule) == 1:
             result = next(iter(per_rule.values()))
         elif merge_scores:

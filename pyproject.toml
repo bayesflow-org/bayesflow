@@ -96,6 +96,7 @@ exclude = [
   "site-packages",
   "venv",
   "*.ipynb",            # ignore jupyter notebooks completely for now
+  "*.md",               # ignore markdown files
 ]
 
 # more lenient line width than Black

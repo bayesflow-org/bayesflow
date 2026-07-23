@@ -122,8 +122,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         scoring_rules: CategoricalScoringRule
         | Sequence[CategoricalScoringRule | str]
         | dict[str, CategoricalScoringRule]
-        | str
-        | None = None,
+        | str = "cross_entropy",
         initial_learning_rate: float = 5e-4,
         optimizer: keras.optimizers.Optimizer | type | None = None,
         checkpoint_filepath: str | None = None,
@@ -192,8 +191,6 @@ class ModelComparisonWorkflow(BasicWorkflow):
         TypeError
             If ``scoring_rules`` is of an unsupported type.
         """
-        if scoring_rules is None:
-            return {"scoring_rule": find_scoring_rule("cross_entropy")}
 
         if isinstance(scoring_rules, (str, CategoricalScoringRule)):
             return {"scoring_rule": find_scoring_rule(scoring_rules)}

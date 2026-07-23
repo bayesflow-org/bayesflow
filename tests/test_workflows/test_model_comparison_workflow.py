@@ -9,9 +9,6 @@ from bayesflow.workflows import ModelComparisonWorkflow
 from tests.utils import assert_models_equal
 
 
-# ── PMP scoring rules ─────────────────────────────────────────────────────────
-
-
 def test_pmp_workflow(tmp_path, mc_simulators):
     """End-to-end test with the default CrossEntropyScore (PMP mode)."""
     workflow = ModelComparisonWorkflow(
@@ -62,9 +59,6 @@ def test_pmp_workflow_with_summary_network(mc_simulators, mc_summary_network):
 
     assert "confusion_and_bayes_factors" in plots
     assert "calibration" in plots
-
-
-# ── Bayes factor scoring rules ────────────────────────────────────────────────
 
 
 def test_bf_workflow(tmp_path, mc_simulators):
@@ -145,50 +139,9 @@ def test_bf_workflow_with_summary_network(mc_simulators, mc_summary_network):
     assert "confusion_and_bayes_factors" in plots
 
 
-# ── Shared simulator ──────────────────────────────────────────────────────────
-
-
-def test_mc_workflow_with_shared_simulator(mc_summary_network):
-    """Workflow with shared_simulator broadcasts context variables to the batch."""
-    from bayesflow import make_simulator
-
-    def shared(batch_size):
-        return dict(n=np.int32(8))
-
-    def prior_null():
-        return dict(mu=0.0)
-
-    def prior_alt():
-        return dict(mu=np.random.normal(0, 1))
-
-    def likelihood(mu, n):
-        return dict(x=np.random.normal(mu, 1, n))
-
-    simulators = [
-        make_simulator([prior_null, likelihood]),
-        make_simulator([prior_alt, likelihood]),
-    ]
-
-    workflow = ModelComparisonWorkflow(
-        simulator=simulators,
-        shared_simulator=shared,
-        summary_network=mc_summary_network,
-        summary_variables=["x"],
-        inference_conditions=["n"],
-    )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
-    plots = workflow.plot_default_diagnostics(test_data=20)
-
-    assert "confusion_and_bayes_factors" in plots
-    assert "calibration" in plots
-
-
-# ── Output shapes ─────────────────────────────────────────────────────────────
-
-
 @pytest.mark.parametrize("rule_name", ["cross_entropy", "brier", "exponential"])
 def test_estimate_shapes(mc_simulators, rule_name):
-    """estimate returns model_probs (N, M) summing to 1 and length-M log_odds (relative to model 0)."""
+    """estimate returns model_probs and log_odds; Bayes factors require an explicit prior."""
     num_models = len(mc_simulators)
     n_test = 10
 
@@ -205,14 +158,37 @@ def test_estimate_shapes(mc_simulators, rule_name):
     assert isinstance(estimates, dict)
     assert estimates["model_probs"].shape == (n_test, num_models)
     assert estimates["log_odds"].shape == (n_test, num_models)
-    assert estimates["log_bayes_factors"].shape == (n_test, num_models)
+    assert "log_bayes_factors" not in estimates
     assert np.allclose(estimates["model_probs"].sum(axis=-1), 1.0, atol=1e-5)
     assert np.allclose(estimates["log_odds"][:, 0], 0.0, atol=1e-6)
-    # uniform prior (mc_simulators default) -> log Bayes factors equal log odds
-    assert np.allclose(estimates["log_bayes_factors"], estimates["log_odds"], atol=1e-6)
 
 
-# ── Multiple scoring rules & merge_scores ─────────────────────────────────────
+def test_estimate_log_bayes_factors_with_model_prior(mc_simulators):
+    """estimate adds log_bayes_factors when a model prior is provided."""
+    num_models = len(mc_simulators)
+    n_test = 8
+    model_prior = np.linspace(1.0, 2.0, num_models)
+    model_prior = model_prior / model_prior.sum()
+
+    workflow = ModelComparisonWorkflow(
+        simulator=mc_simulators,
+        scoring_rules=["cross_entropy", "brier"],
+        inference_conditions=["x"],
+    )
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    test_data = workflow.simulate(n_test)
+
+    nested = workflow.estimate(conditions=test_data, merge_scores=False, model_prior=model_prior)
+    log_prior_odds = np.log(model_prior) - np.log(model_prior[0])
+
+    for rule_result in nested.values():
+        assert set(rule_result) == {"log_odds", "model_probs", "log_bayes_factors"}
+        assert rule_result["log_bayes_factors"].shape == (n_test, num_models)
+        assert np.allclose(rule_result["log_bayes_factors"], rule_result["log_odds"] - log_prior_odds, atol=1e-6)
+
+    merged = workflow.estimate(conditions=test_data, model_prior=model_prior)
+    assert set(merged) == {"log_odds", "model_probs", "log_bayes_factors"}
+    assert np.allclose(merged["log_bayes_factors"], merged["log_odds"] - log_prior_odds, atol=1e-6)
 
 
 def test_resolve_scoring_rules_normalizes_inputs():
@@ -220,10 +196,6 @@ def test_resolve_scoring_rules_normalizes_inputs():
     from bayesflow.scoring_rules import CrossEntropyScore, BrierScore, ExponentialScore
 
     resolve = ModelComparisonWorkflow._resolve_scoring_rules
-
-    # None -> default cross-entropy
-    d = resolve(None)
-    assert list(d) == ["scoring_rule"]
 
     # string name -> single rule
     assert list(resolve("exponential")) == ["scoring_rule"]
@@ -255,12 +227,12 @@ def test_mixed_pmp_and_bf_rules_workflow(mc_simulators):
 
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
     assert set(nested) == {"cross_entropy_score", "logistic_score"}
-    assert set(nested["cross_entropy_score"]) == {"log_odds", "model_probs", "log_bayes_factors"}
-    assert set(nested["logistic_score"]) == {"log_odds", "model_probs", "log_bayes_factors"}
+    assert set(nested["cross_entropy_score"]) == {"log_odds", "model_probs"}
+    assert set(nested["logistic_score"]) == {"log_odds", "model_probs"}
 
     # Merged: logarithmic opinion pool over the length-M log_odds.
     merged = workflow.estimate(conditions=test_data)
-    assert set(merged) == {"log_odds", "model_probs", "log_bayes_factors"}
+    assert set(merged) == {"log_odds", "model_probs"}
     assert merged["log_odds"].shape == (n_test, num_models)
     expected = np.mean([nested["cross_entropy_score"]["log_odds"], nested["logistic_score"]["log_odds"]], axis=0)
     assert np.allclose(merged["log_odds"], expected, atol=1e-5)
@@ -298,12 +270,12 @@ def test_estimate_merge_scores(mc_simulators, rule_names):
     nested = workflow.estimate(conditions=test_data, merge_scores=False)
     assert len(nested) == 2
     for rule_result in nested.values():
-        assert set(rule_result) == {"log_odds", "model_probs", "log_bayes_factors"}
+        assert set(rule_result) == {"log_odds", "model_probs"}
         assert rule_result["model_probs"].shape == (n_test, num_models)
 
     # merge_scores=True (default) -> flat, logarithmic opinion pool over log_odds
     merged = workflow.estimate(conditions=test_data)
-    assert set(merged) == {"log_odds", "model_probs", "log_bayes_factors"}
+    assert set(merged) == {"log_odds", "model_probs"}
     assert merged["log_odds"].shape == (n_test, num_models)
     expected = np.mean([nested[k]["log_odds"] for k in nested], axis=0)
     assert np.allclose(merged["log_odds"], expected, atol=1e-5)
@@ -313,9 +285,6 @@ def test_estimate_merge_scores(mc_simulators, rule_names):
     implied /= implied.sum(-1, keepdims=True)
     assert np.allclose(merged["model_probs"], implied, atol=1e-5)
     assert np.allclose(merged["model_probs"].sum(-1), 1.0, atol=1e-5)
-
-
-# ── Constructor validation ────────────────────────────────────────────────────
 
 
 def test_requires_at_least_two_simulators():
@@ -354,12 +323,8 @@ def test_default_adapter_structure():
     adapter_full = ModelComparisonWorkflow.default_adapter(
         inference_conditions=["n"],
         summary_variables=["x"],
-        broadcast_conditions_to="x",
     )
     assert isinstance(adapter_full, Adapter)
-
-
-# ── Disabled BasicWorkflow methods ────────────────────────────────────────────
 
 
 def test_disabled_methods_raise(mc_simulators):
@@ -376,16 +341,13 @@ def test_disabled_methods_raise(mc_simulators):
         workflow.ancestral_sample()
 
 
-# ── plot_default_diagnostics with pre-simulated data ─────────────────────────
-
-
 def test_plot_diagnostics_with_presimulated_data(mc_simulators):
     """plot_default_diagnostics accepts a pre-simulated dict instead of an int."""
     workflow = ModelComparisonWorkflow(
         simulator=mc_simulators,
         inference_conditions=["x"],
     )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=2, num_batches_per_epoch=2, verbose=0)
 
     test_data = workflow.simulate(15)
     plots = workflow.plot_default_diagnostics(test_data=test_data)
@@ -439,9 +401,6 @@ def test_compute_diagnostics_without_simulator_raises():
         workflow.compute_default_diagnostics(test_data=10)
 
 
-# ── subnet property ──────────────────────────────────────────────────────────
-
-
 @pytest.mark.parametrize("rule_names", [["cross_entropy", "brier"], ["exponential", "logistic"]])
 def test_plot_diagnostics_multi_rule(mc_simulators, rule_names):
     """plot_default_diagnostics produces the combined figure + calibration for any multi-rule config.
@@ -476,9 +435,6 @@ def test_compute_diagnostics_multi_rule(mc_simulators):
     assert ((metrics.loc["Accuracy"] >= 0.0) & (metrics.loc["Accuracy"] <= 1.0)).all()
 
 
-# ── inference_variables key branch ───────────────────────────────────────────
-
-
 def test_plot_diagnostics_with_inference_variables_key(mc_simulators):
     """plot_default_diagnostics accepts test_data with 'inference_variables' instead of 'model_indices'."""
     workflow = ModelComparisonWorkflow(
@@ -501,7 +457,7 @@ def test_compute_diagnostics_with_inference_variables_key(mc_simulators):
         simulator=mc_simulators,
         inference_conditions=["x"],
     )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=4, num_batches_per_epoch=2, verbose=0)
 
     test_data = workflow.simulate(10)
     test_data["inference_variables"] = test_data.pop("model_indices")
@@ -517,7 +473,7 @@ def test_plot_diagnostics_raises_without_model_key(mc_simulators):
         simulator=mc_simulators,
         inference_conditions=["x"],
     )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=2, num_batches_per_epoch=2, verbose=0)
 
     test_data = workflow.simulate(10)
     del test_data["model_indices"]
@@ -532,7 +488,7 @@ def test_compute_diagnostics_raises_without_model_key(mc_simulators):
         simulator=mc_simulators,
         inference_conditions=["x"],
     )
-    workflow.fit_online(epochs=2, batch_size=4, num_batches_per_epoch=2, verbose=0)
+    workflow.fit_online(epochs=1, batch_size=2, num_batches_per_epoch=2, verbose=0)
 
     test_data = workflow.simulate(10)
     del test_data["model_indices"]

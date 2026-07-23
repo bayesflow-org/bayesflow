@@ -61,7 +61,7 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
         inference_network: ScoringRuleNetwork,
         adapter: Adapter | None = None,
         summary_network: SummaryNetwork | None = None,
-        standardize: str | Sequence[str] | None = None,
+        standardize: str | Sequence[str] | None = "all",
         **kwargs,
     ):
         # Model indices (one-hot encoded) must never be standardized.

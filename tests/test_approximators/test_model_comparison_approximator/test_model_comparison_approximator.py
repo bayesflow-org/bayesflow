@@ -22,6 +22,38 @@ def test_build(approximator, train_dataset):
         assert approximator.summary_network.built is True
 
 
+def test_all_standardization_does_not_standardize_model_indices(
+    adapter, classifier_network, summary_network, train_dataset
+):
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.networks import ScoringRuleNetwork
+    from bayesflow.scoring_rules import CrossEntropyScore
+
+    approximator = ModelComparisonApproximator(
+        inference_network=ScoringRuleNetwork(
+            scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=classifier_network
+        ),
+        adapter=adapter,
+        summary_network=summary_network,
+        standardize="all",
+    )
+    batch = first_tensor_batch(train_dataset)
+    data_shapes = keras.tree.map_structure(keras.ops.shape, batch)
+
+    approximator.build(data_shapes)
+    assert "inference_variables" not in approximator.standardizer.standardize
+
+    model_indices = batch["inference_variables"]
+    standardized_indices = approximator.standardizer.maybe_standardize(
+        model_indices, key="inference_variables", stage="training"
+    )
+    assert keras.ops.allclose(standardized_indices, model_indices)
+
+    metrics = approximator.compute_metrics(**batch)
+    assert keras.ops.isfinite(metrics["loss"])
+    assert keras.ops.convert_to_numpy(metrics["loss"]) >= 0.0
+
+
 def test_build_adapter():
     from bayesflow.approximators import ModelComparisonApproximator
 

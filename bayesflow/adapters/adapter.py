@@ -59,13 +59,17 @@ class Adapter(MutableSequence[Transform]):
     ----------
     transforms : Sequence[Transform], optional
         The sequence of transforms to execute.
+    device_name: str, optional
+        Passed to keras.device to specify on which device to apply the adapter.
     """
 
-    def __init__(self, transforms: Sequence[Transform] | None = None):
+    def __init__(self, transforms: Sequence[Transform] | None = None, device_name: str = "cpu"):
         if transforms is None:
             transforms = []
 
         self.transforms = list(transforms)
+
+        self.device_name = device_name
 
     @staticmethod
     def create_default(inference_variables: Sequence[str]) -> "Adapter":
@@ -164,7 +168,7 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, any], *, inverse: bool = False, device_name: str = "cpu", **kwargs
+        self, data: dict[str, any], *, inverse: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
@@ -174,8 +178,6 @@ class Adapter(MutableSequence[Transform]):
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
-        device_name: str, optional
-            Passed to keras.device to specify on which device to apply the adapter.
         **kwargs
             Additional keyword arguments passed to each transform.
 
@@ -185,7 +187,12 @@ class Adapter(MutableSequence[Transform]):
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
 
-        with keras.device(device_name):
+        if self.device_name is None:
+            if inverse:
+                return self.inverse(data, **kwargs)
+            return self.forward(data, **kwargs)
+
+        with keras.device(self.device_name):
             if inverse:
                 # relevant for torch: move data to correct device
                 data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)

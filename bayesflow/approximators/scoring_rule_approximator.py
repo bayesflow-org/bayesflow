@@ -457,17 +457,20 @@ class ScoringRuleApproximator(ContinuousApproximator):
                         f"It was treated like a vector by the adapter. Handle '{head_key}' estimates with care."
                     )
 
-                adapted = self.adapter(
-                    {"inference_variables": estimate},
-                    inverse=True,
-                    strict=False,
-                    **kwargs,
-                )
-                processed[score_key][head_key] = adapted
+                if head_key in self.inference_network.scoring_rules[score_key].SKIP_INVERSE_ADAPTER:
+                    processed[score_key][head_key] = estimate
+                else:
+                    adapted = self.adapter(
+                        {"inference_variables": estimate},
+                        inverse=True,
+                        strict=False,
+                        **kwargs,
+                    )
+                    processed[score_key][head_key] = adapted
         return processed
 
-    @staticmethod
     def _reorder_estimates(
+        self,
         estimates: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]],
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         """Reorders the nested dictionary so that the inference variable names become the top-level keys."""
@@ -477,7 +480,12 @@ class ScoringRuleApproximator(ContinuousApproximator):
         for variable in variable_names:
             reordered[variable] = {}
             for score_key, inner_dict in estimates.items():
-                reordered[variable][score_key] = {inner_key: value[variable] for inner_key, value in inner_dict.items()}
+                reordered[variable][score_key] = {
+                    inner_key: value[variable]
+                    for inner_key, value in inner_dict.items()
+                    if inner_key not in self.inference_network.scoring_rules[score_key].SKIP_INVERSE_ADAPTER
+                }
+
         return reordered
 
     @staticmethod

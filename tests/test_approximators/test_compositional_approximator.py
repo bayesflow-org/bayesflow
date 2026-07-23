@@ -1,6 +1,7 @@
 """Tests for compositional sampling and prior score computation with adapters."""
 
 import numpy as np
+import keras.ops as ops
 
 from bayesflow import CompositionalApproximator
 
@@ -11,7 +12,7 @@ def mock_prior_score_original_space(data_dict, time):
 
     # Simple prior: N(0,1) for loc
     loc_score = -loc
-    return {"loc": (1.0 - time) * loc_score}
+    return {"loc": ops.multiply(1.0 - time, loc_score)}
 
 
 def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, compositional_diffusion_network):
@@ -30,7 +31,7 @@ def test_prior_score_identity_adapter(simple_log_simulator, identity_adapter, co
 
     # Test compositional sampling
     n_datasets, n_compositional = 8, 5
-    conditions = {"conditions": np.random.normal(0.0, 1.0, (n_datasets, n_compositional, 3)).astype("float32")}
+    conditions = {"conditions": np.random.normal(0.0, 1.0, (n_datasets, n_compositional, 3))}
     samples = approximator.compositional_sample(
         num_samples=10, conditions=conditions, compute_prior_score=mock_prior_score_original_space, batch_size=4
     )

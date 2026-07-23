@@ -9,6 +9,21 @@ from .transform import Transform
 
 @serializable("bayesflow.networks")
 class AffineTransform(Transform):
+    """Elementwise affine transformation ``z = scale * x + shift``.
+
+    Uses two parameters per dimension. The predicted scale is passed through a
+    shifted softplus to keep it strictly positive.
+
+    Parameters
+    ----------
+    clamp : bool, optional
+        Whether to soft clamp the predicted scale with ``arcsinh`` before making
+        it positive. Bounds the attainable scale in exchange for more stable
+        training. Default is True.
+    **kwargs
+        Additional keyword arguments passed to the base ``Transform``.
+    """
+
     def __init__(self, clamp: bool = True, **kwargs):
         super().__init__(**kwargs)
         self.clamp = clamp

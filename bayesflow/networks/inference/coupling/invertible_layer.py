@@ -6,6 +6,13 @@ from bayesflow.utils.serialization import deserialize
 
 
 class InvertibleLayer(keras.Layer):
+    """Base class for the layers a :py:class:`~bayesflow.networks.CouplingFlow` is composed of.
+
+    Subclasses implement ``call`` with an ``inverse`` flag selecting between
+    ``_forward`` and ``_inverse``, and return the transformed tensor together with
+    the log determinant of the Jacobian.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**layer_kwargs(kwargs))
 

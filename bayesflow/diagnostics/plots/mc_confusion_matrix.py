@@ -13,7 +13,7 @@ def mc_confusion_matrix(
     pred_models: Mapping[str, np.ndarray] | np.ndarray,
     true_models: Mapping[str, np.ndarray] | np.ndarray,
     model_names: Sequence[str] = None,
-    fig_size: tuple = (5, 5),
+    figsize: tuple = (5, 5),
     label_fontsize: int = 16,
     title_fontsize: int = 18,
     value_fontsize: int = 10,
@@ -35,7 +35,7 @@ def mc_confusion_matrix(
         The one-hot-encoded true model indices per data set.
     model_names    : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.
-    fig_size       : tuple or None, optional, default: (5, 5)
+    figsize       : tuple or None, optional, default: (5, 5)
         The figure size passed to the ``matplotlib`` constructor. Inferred if ``None``
     label_fontsize    : int, optional, default: 16
         The font size of the y-label and y-label texts
@@ -62,7 +62,7 @@ def mc_confusion_matrix(
         A flag for adding 'Confusion Matrix' above the matrix.
     ax             : matplotlib.axes.Axes, optional, default: None
         An existing axis to draw into. If ``None``, a new figure and axis are
-        created. When provided, ``fig_size`` is ignored and the parent figure is
+        created. When provided, ``figsize`` is ignored and the parent figure is
         returned, enabling composition (e.g. side-by-side panels).
 
     Returns
@@ -86,7 +86,7 @@ def mc_confusion_matrix(
 
     # Initialize figure
     if ax is None:
-        fig, axes = make_figure(1, 1, figsize=fig_size)
+        fig, axes = make_figure(1, 1, figsize=figsize)
         ax = axes[0]
     else:
         fig = ax.figure

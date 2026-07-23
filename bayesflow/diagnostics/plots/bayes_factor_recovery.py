@@ -13,7 +13,7 @@ def bayes_factor_recovery(
     model_names: Sequence[str] = None,
     reference_model: int = 0,
     add_corr: bool = True,
-    fig_size: tuple = None,
+    figsize: tuple = None,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
     metric_fontsize: int = 14,
@@ -49,7 +49,7 @@ def bayes_factor_recovery(
     add_corr : bool, optional
         Annotate each panel with the Pearson correlation between true and
         predicted log Bayes factors (default: True).
-    fig_size : tuple or None, optional
+    figsize : tuple or None, optional
         Passed to ``matplotlib``.  Inferred from the number of panels if None.
     label_fontsize : int, optional
         Font size for axis labels (default: 16).
@@ -112,7 +112,7 @@ def bayes_factor_recovery(
     elif num_row is None:
         num_row = int(np.ceil(num_panels / num_col))
 
-    fig, axes = make_figure(num_row, num_col, figsize=fig_size)
+    fig, axes = make_figure(num_row, num_col, figsize=figsize)
     axes_flat = np.asarray(axes).flat
 
     scatter_kw = dict(alpha=alpha)

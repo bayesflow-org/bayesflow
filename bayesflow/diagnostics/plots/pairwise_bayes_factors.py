@@ -12,7 +12,7 @@ def pairwise_bayes_factors(
     pred_log_bayes_factors: np.ndarray,
     true_models: np.ndarray,
     model_names: Sequence[str] = None,
-    fig_size: tuple = None,
+    figsize: tuple = None,
     label_fontsize: int = 16,
     title_fontsize: int = 18,
     value_fontsize: int = 10,
@@ -51,7 +51,7 @@ def pairwise_bayes_factors(
         One-hot encoded model labels or integer class indices.
     model_names : Sequence[str] or None, optional
         Human-readable model names. Defaults to :math:`M_1, M_2, \ldots`.
-    fig_size : tuple or None, optional
+    figsize : tuple or None, optional
         Figure size passed to matplotlib. Inferred from ``num_models`` if None.
     label_fontsize : int, optional
         Font size for axis labels (default: 16).
@@ -75,7 +75,7 @@ def pairwise_bayes_factors(
         Whether to add the plot title (default: True).
     ax : matplotlib.axes.Axes, optional
         An existing axis to draw into. If ``None``, a new figure and axis are
-        created. When provided, ``fig_size`` is ignored and the parent figure is
+        created. When provided, ``figsize`` is ignored and the parent figure is
         returned, enabling composition (e.g. side-by-side panels).
 
     Returns
@@ -125,10 +125,10 @@ def pairwise_bayes_factors(
 
     owns_figure = ax is None
     if owns_figure:
-        if fig_size is None:
+        if figsize is None:
             size = max(4.0, M * 1.2)
-            fig_size = (size + 0.5, size)
-        fig, axes = make_figure(1, 1, figsize=fig_size)
+            figsize = (size + 0.5, size)
+        fig, axes = make_figure(1, 1, figsize=figsize)
         ax = axes[0]
     else:
         fig = ax.figure

@@ -23,7 +23,7 @@ def mc_calibration(
     metric_fontsize: int = 14,
     tick_fontsize: int = 12,
     epsilon: float = 0.02,
-    fig_size: Sequence[int] = None,
+    figsize: Sequence[int] = None,
     color: str = "#132a70",
     num_col: int = None,
     num_row: int = None,
@@ -55,7 +55,7 @@ def mc_calibration(
         The font size of the axis ticklabels
     epsilon           : float, optional, default: 0.02
         A small amount to pad the [0, 1]-bounded axes from both side.
-    fig_size          : tuple or None, optional, default: None
+    figsize          : tuple or None, optional, default: None
         The figure size passed to the ``matplotlib`` constructor. Inferred if ``None``
     color             : str, optional, default: '#8f2727'
         The color of the calibration curves
@@ -87,7 +87,7 @@ def mc_calibration(
         variable_names=model_names,
         num_col=num_col,
         num_row=num_row,
-        figsize=fig_size,
+        figsize=figsize,
         default_name="M",
     )
 

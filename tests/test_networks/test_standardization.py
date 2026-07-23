@@ -248,6 +248,38 @@ def test_serialize_deserialize():
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
 
+@pytest.mark.parametrize(
+    ("standardize", "data_shapes", "expected"),
+    [
+        (
+            "all",
+            {"inference_conditions": (2, 8), "inference_variables": (2, 2), "mu": (2, 1)},
+            ["inference_variables", "inference_conditions"],
+        ),
+        (
+            ["summary_variables", "inference_conditions"],
+            {"inference_conditions": (2, 8), "mu": (2, 1)},
+            ["inference_conditions"],
+        ),
+    ],
+)
+def test_serialize_deserialize_after_pruning_missing_standardize_keys(standardize, data_shapes, expected):
+    layer = Standardization(standardize=standardize, momentum=0.0)
+    layer.build(data_shapes)
+
+    assert layer.standardize == expected
+    assert list(layer.standardize_layers) == expected
+
+    serialized = serialize(layer)
+    deserialized = deserialize(serialized)
+
+    assert deserialized.standardize == expected
+    assert deserialized.built
+    assert deserialized.standardize_layers is not None
+    assert list(deserialized.standardize_layers) == expected
+    assert all(layer.built for layer in deserialized.standardize_layers.values())
+
+
 def test_save_and_load(tmp_path):
     layer = Standardization(standardize="a", momentum=0.0)
     layer.build({"a": (32, 5)})

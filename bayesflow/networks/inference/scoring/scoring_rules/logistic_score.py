@@ -23,9 +23,7 @@ class LogisticScore(CategoricalScoringRule):
 
     for :math:`\alpha = 0` (default, the plain logistic rule).
 
-    The network outputs logits :math:`f` whose softmax is the posterior over
-    models; pairwise differences :math:`f_k - f_j` estimate log Bayes factors
-    :math:`\log K_{k,j}`.
+    The network outputs logits :math:`f` whose softmax is the posterior over models.
 
     Parameters
     ----------

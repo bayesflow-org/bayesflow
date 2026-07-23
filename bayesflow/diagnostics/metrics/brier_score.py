@@ -1,16 +1,14 @@
+from typing import Any
 from collections.abc import Sequence
 
 import numpy as np
-from keras import ops
-
-from ...utils.exceptions import ShapeError
 
 
 def brier_score(
     estimates: np.ndarray,
     targets: np.ndarray,
     model_names: Sequence[str] = None,
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """
     Computes the (multi-class) Brier score of a model comparison network [1].
 
@@ -22,8 +20,6 @@ def brier_score(
     [1] Brier, G. W. (1950). Verification of forecasts expressed in terms of
     probability. Monthly Weather Review, 78(1), 1-3.
 
-    Notes
-    -----
     Make sure that ``targets`` are **one-hot encoded** classes (i.e., model indices)!
 
     Parameters
@@ -51,22 +47,15 @@ def brier_score(
         - "model_names" : list[str]
             The (inferred) model names.
     """
-    estimates = ops.convert_to_numpy(estimates)
-    targets = ops.convert_to_numpy(targets)
-
-    if estimates.shape != targets.shape:
-        raise ShapeError("`estimates` and `targets` must have the same shape.")
 
     if model_names is None:
         model_names = ["M_" + str(i) for i in range(1, estimates.shape[-1] + 1)]
-    elif len(model_names) != estimates.shape[-1]:
-        raise ShapeError("There must be exactly one `model_name` for each model in `estimates`")
 
     per_model = np.mean((estimates - targets) ** 2, axis=0)
 
     return dict(
         values=per_model,
-        aggregate=float(per_model.sum()),
+        aggregate=per_model.sum(),
         metric_name="Brier Score",
         model_names=list(model_names),
     )

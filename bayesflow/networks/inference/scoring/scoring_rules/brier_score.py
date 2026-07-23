@@ -23,9 +23,11 @@ class BrierScore(PolynomialScore):
         gradient direction — but keep the metric interpretable.)
     """
 
-    #: Affine map from the alpha=2 Tsallis polynomial score to the Brier score.
     _SCALE = 2.0
     _OFFSET = 1.0
+    """
+    Affine map from the alpha=2 Tsallis polynomial score to the Brier score (special case).
+    """
 
     def __init__(self, **kwargs):
         super().__init__(alpha=2.0, **kwargs)

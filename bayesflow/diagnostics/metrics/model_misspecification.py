@@ -46,8 +46,8 @@ def bootstrap_comparison(
         - If the number of number of observed samples exceeds the number of reference samples
         - If the shapes of observed and reference samples do not match on dimensions besides the first one.
     """
-    num_observed: int = observed_samples.shape[0]
-    num_reference: int = reference_samples.shape[0]
+    num_observed = observed_samples.shape[0]
+    num_reference = reference_samples.shape[0]
 
     if num_observed > num_reference:
         raise ValueError(

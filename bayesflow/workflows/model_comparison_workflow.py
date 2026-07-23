@@ -49,24 +49,15 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         - a single :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance;
         - a string name recognised by :func:`~bayesflow.utils.find_scoring_rule`;
-        - a list/tuple of rules (or names) to co-learn several rules simultaneously,
+        - a list/tuple of scores (or names) to co-learn several scores simultaneously,
           which are auto-named after their class (e.g. ``"cross_entropy_score"``);
-        - a mapping of explicit names to rules.
+        - a mapping of explicit names to scores.
 
-        Multiple rules share one classifier body but get separate heads and are trained
+        Multiple scores share one classifier body but get separate heads and are trained
         jointly. Their outputs can then be kept per-rule or aggregated at estimation time
         via the ``merge_scores`` argument of :meth:`estimate`. Defaults to ``"cross_entropy"``.
-        The chosen rule(s) determine what the network learns to estimate:
-
-        - **PMP rules** (``"cross_entropy"``, ``"brier"``, ``"polynomial"``): estimate
-          the posterior over all ``num_models`` models.
-        - **Bayes factor rules** (``"exponential"``, ``"leaky_exponential"``,
-          ``"logistic"``, ``"power_logistic"``): additionally report ``num_models - 1``
-          log posterior odds relative to model 0.
-
-        PMP and Bayes factor estimates can be aggregated: all rules are pooled in log-odds
-        space (a PMP head's logit differences equal the same log posterior odds that a
-        Bayes factor head outputs directly).
+        The chosen rule(s) determine the training dynamics. All scores produce estimates
+        for posterior model probabilities, log odds, and potentially log Bayes factors (BFs).
     summary_network : SummaryNetwork or str, optional
         Optional summary network for data compression (default: None).
     initial_learning_rate : float, optional
@@ -181,9 +172,9 @@ class ModelComparisonWorkflow(BasicWorkflow):
     ) -> dict[str, CategoricalScoringRule]:
         """Normalize the ``scoring_rules`` argument to a ``dict[str, CategoricalScoringRule]``.
 
-        Accepts a single rule (or its string name), a list/tuple of rules (or names), or a
-        mapping of names to rules. ``None`` defaults to a single ``CrossEntropyScore``.
-        Rules given without an explicit name (i.e. in a list) are keyed by a snake-cased
+        Accepts a single rule (or its string name), a list/tuple of scores (or names), or a
+        mapping of names to scores. ``None`` defaults to a single ``CrossEntropyScore``.
+        Scores given without an explicit name (i.e. in a list) are keyed by a snake-cased
         version of their class name, de-duplicated with a numeric suffix.
 
         Raises
@@ -210,7 +201,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         else:
             raise TypeError(
                 "`scoring_rules` must be a CategoricalScoringRule, a string name, a list of "
-                f"rules/names, or a dict of name -> rule, got {type(scoring_rules).__name__}."
+                f"scores/names, or a dict of name -> rule, got {type(scoring_rules).__name__}."
             )
 
         return resolved
@@ -259,22 +250,14 @@ class ModelComparisonWorkflow(BasicWorkflow):
         a set of plots that depend on the scoring rule families present.  With
         multiple scoring rules the diagnostics run on the pooled estimates (see
         :meth:`estimate`), so all plots are produced for a single rule, multiple
-        rules, and mixed families alike.
+        scores, and mixed families alike.
 
         Always produced:
 
         - ``"confusion_and_bayes_factors"`` — the posterior model probability
-          confusion matrix (PMP view) and the pairwise Bayes factor heatmap (BF view)
-          drawn side by side in a single figure. Both views are shown regardless of the
-          scoring-rule family: merged estimates always carry ``"model_probs"``, and the
-          pairwise log odds are taken from the pooled ``"log_odds"``
-          when a Bayes factor rule contributed, otherwise derived from the pooled
-          probabilities (:math:`\log p_k - \log p_0`).
+          confusion matrix (PMP) and the pairwise Bayes factor (BF) heatmap,
+          drawn side by side in a single figure.
         - ``"calibration"`` — per-model calibration curves with ECE annotations.
-
-        When a **Bayes factor scoring rule** is present (:class:`~bayesflow.scoring_rules.ExponentialScore`,
-        :class:`~bayesflow.scoring_rules.LogisticScore`):
-
         - ``"bayes_factor_recovery"`` — scatter of predicted vs. true log Bayes
           factors, one panel per competing model.  Only produced when
           ``true_log_bfs_fn`` is supplied.
@@ -411,10 +394,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         """
         Compute default scalar diagnostic metrics for model comparison.
 
-        All metrics are computed from the (pooled) posterior model probabilities,
-        for PMP and Bayes factor scoring rules alike (for Bayes factor rules, the
-        probabilities are derived from the pooled log odds, see
-        :meth:`estimate`):
+        All metrics are computed from the pooled log odds, see :meth:`estimate`):
 
         - ``"accuracy"`` — per-model classification accuracy, i.e., the diagonal
           entries of the row-normalized confusion matrix (fraction of datasets
@@ -456,7 +436,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         Returns
         -------
-        dict[str, any] or pd.DataFrame
+        dict[str, Any] or pd.DataFrame
             If ``as_data_frame`` is True, a pandas DataFrame with one row per
             metric and one column per model. Otherwise, a dictionary of the raw
             metric outputs.

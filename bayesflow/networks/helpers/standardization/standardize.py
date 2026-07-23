@@ -156,16 +156,16 @@ class Standardize(keras.Layer):
         """
 
         reduce_axes = tuple(range(x.ndim - 1))
-        if mask is None:
-            mask = keras.ops.ones(keras.ops.shape(x)[:-1], dtype=x.dtype)
-        else:
-            mask = keras.ops.cast(keras.ops.broadcast_to(mask, keras.ops.shape(x)[:-1]), x.dtype)
-        mask = mask[..., None]
 
-        # Compute batch mean and M2 per feature, ignoring masked-out positions
-        batch_count = keras.ops.cast(keras.ops.sum(mask), self.count[index].dtype)
-        batch_mean = keras.ops.sum(x * mask, axis=reduce_axes) / batch_count
-        batch_m2 = keras.ops.sum(mask * (x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
+        if mask is None:
+            batch_count = keras.ops.cast(keras.ops.prod(keras.ops.shape(x)[:-1]), self.count[index].dtype)
+            batch_mean = keras.ops.mean(x, axis=reduce_axes)
+            batch_m2 = keras.ops.sum((x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
+        else:
+            mask = keras.ops.cast(keras.ops.broadcast_to(mask, keras.ops.shape(x)[:-1]), x.dtype)[..., None]
+            batch_count = keras.ops.cast(keras.ops.sum(mask), self.count[index].dtype)
+            batch_mean = keras.ops.sum(x * mask, axis=reduce_axes) / batch_count
+            batch_m2 = keras.ops.sum(mask * (x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
 
         # Read current totals
         mean = self.moving_mean[index]

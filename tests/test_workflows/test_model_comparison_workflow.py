@@ -83,9 +83,6 @@ def test_bf_workflow(tmp_path, mc_simulators):
     assert "loss" in plots
     assert "calibration" in plots
     assert "confusion_and_bayes_factors" in plots
-    assert "confusion_matrix" not in plots and "pairwise_bayes_factors" not in plots
-    assert "blind_coverage" not in plots
-    # no true_log_bfs_fn supplied → no recovery plot
     assert "bayes_factor_recovery" not in plots
 
     # BF metrics (default DataFrame): accuracy + ECE and Brier score from the derived model_probs

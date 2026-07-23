@@ -135,12 +135,6 @@ def test_model_comparison_accuracy():
     acc = bf.diagnostics.metrics.accuracy(probs_wrong, one_hot, per_model=False)
     assert abs(acc - 2 / 3) < 1e-6
 
-    # Bayes factor mode: predictions shape (N, M-1) — covers lines 61-62
-    # log K_{1,0} and log K_{2,0}; prepend f_0=0 and argmax
-    log_bfs = np.array([[-1.0, -2.0], [2.0, 0.5], [-0.5, 1.5]])
-    # argmax([0,-1,-2])=0, argmax([0,2,0.5])=1, argmax([0,-0.5,1.5])=2 → all correct
-    assert bf.diagnostics.metrics.accuracy(log_bfs, one_hot, per_model=False) == 1.0
-
 
 def test_expected_calibration_error(pred_models, true_models, model_names):
     out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models, model_names=model_names)

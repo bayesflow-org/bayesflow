@@ -33,6 +33,7 @@ from .transforms import (
     NanToNum,
 )
 from .transforms.filter_transform import Predicate
+from bayesflow.utils.devices import move_tensor
 
 
 @serializable("bayesflow.adapters")
@@ -186,9 +187,19 @@ class Adapter(MutableSequence[Transform]):
 
         with keras.device(device_name):
             if inverse:
-                return self.inverse(data, **kwargs)
+                # relevant for torch: move data to correct device
+                data = keras.tree.map_structure(keras.ops.convert_to_tensor, data)
+                data = self.inverse(data, **kwargs)
+            else:
+                data = self.forward(data, **kwargs)
 
-            return self.forward(data, **kwargs)
+        return data
+
+        # we need to hand off tensors on the default device
+        # not on the device the adapter ran
+        if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
+            return tuple(keras.tree.map_structure(move_tensor, value) for value in data)
+        return keras.tree.map_structure(move_tensor, data)
 
     def __repr__(self):
         result = ""

@@ -119,8 +119,8 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 10. [Deep ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
 11. [Ratio estimation and MCMC](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling user the classifier trick.
 12. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
-13. [T-Test and Model Comparison](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
-14. [Model comparison Deep Dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
+13. [T-Test and model comparison](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
+14. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
 
 ### Tutorial papers
 

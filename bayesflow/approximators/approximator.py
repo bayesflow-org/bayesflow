@@ -313,7 +313,9 @@ class Approximator(BackendApproximator):
         inference_conditions = self.standardizer.maybe_standardize(
             inference_conditions, key="inference_conditions", stage=stage
         )
-        summary_variables = self.standardizer.maybe_standardize(summary_variables, key="summary_variables", stage=stage)
+        summary_variables = self.standardizer.maybe_standardize(
+            summary_variables, key="summary_variables", stage=stage, mask=summary_kwargs.get("mask")
+        )
         resolved_conditions, summary_outputs = self.condition_builder.resolve(
             summary_network=self.summary_network,
             inference_conditions=inference_conditions,

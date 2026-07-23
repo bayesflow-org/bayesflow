@@ -172,7 +172,7 @@ class ModelComparisonApproximator(Approximator):
         inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
-        metrics = {"loss": loss} | inference_metrics | summary_metrics
+        metrics = self._with_layer_losses(loss) | inference_metrics | summary_metrics
         return metrics
 
     def fit(

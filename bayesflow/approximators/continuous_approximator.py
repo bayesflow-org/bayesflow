@@ -153,7 +153,7 @@ class ContinuousApproximator(Approximator):
             f"{self.summary_network.__class__.__name__}/{key}": value for key, value in summary_metrics.items()
         }
 
-        metrics = {"loss": loss} | inference_metrics | summary_metrics
+        metrics = self._with_layer_losses(loss) | inference_metrics | summary_metrics
         return metrics
 
     def fit(self, *args, **kwargs):

@@ -187,7 +187,7 @@ class RatioApproximator(Approximator):
             total_loss = inference_loss
 
         # Format metrics with prefixes
-        inference_metrics = {"loss": total_loss}
+        inference_metrics = self._with_layer_losses(total_loss)
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
         metrics = inference_metrics | summary_metrics

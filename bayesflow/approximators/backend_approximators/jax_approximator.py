@@ -71,7 +71,7 @@ class JAXApproximator(keras.Model):
         state_mapping.extend(zip(self.metrics_variables, metrics_variables))
 
         # perform a stateless call to compute_metrics
-        with keras.StatelessScope(state_mapping) as scope:
+        with keras.StatelessScope(state_mapping, collect_losses=True) as scope:
             kwargs = filter_kwargs(data | {"stage": stage}, self.compute_metrics)
             metrics = self.compute_metrics(**kwargs)
 

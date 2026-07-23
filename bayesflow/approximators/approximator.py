@@ -39,6 +39,15 @@ class Approximator(BackendApproximator):
         """
         return {target: source[key] for key, target in mapping.items() if source.get(key) is not None}
 
+    def _with_layer_losses(self, loss: Tensor) -> dict[str, Tensor]:
+        """Combine loss with the losses registered by the sublayers."""
+        layer_losses = self.losses
+        if not layer_losses:
+            return {"loss": loss}
+
+        layer_loss = keras.ops.sum(layer_losses)
+        return {"loss": loss + layer_loss, "layer_loss": layer_loss}
+
     @property
     def standardize_layers(self):
         """Shortcut to the standardizer's per-variable layers."""

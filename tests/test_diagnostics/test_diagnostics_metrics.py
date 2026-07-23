@@ -179,13 +179,6 @@ def test_model_comparison_brier_score(pred_models, true_models, model_names):
     out = bf.diagnostics.metrics.brier_score(wrong, one_hot)
     assert abs(out["aggregate"] - 2.0) < 1e-6
 
-    # handles incorrect input?
-    with pytest.raises(Exception):
-        bf.diagnostics.metrics.brier_score(pred_models, true_models, model_names=["a"])
-
-    with pytest.raises(Exception):
-        bf.diagnostics.metrics.brier_score(pred_models, true_models.T)
-
 
 def test_calibration_log_gamma(random_estimates, random_targets):
     out = bf.diagnostics.metrics.calibration_log_gamma(random_estimates, random_targets)

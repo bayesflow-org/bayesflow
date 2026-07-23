@@ -1,3 +1,7 @@
+r"""
+Visual diagnosticss for evaluating trained :py:class:`~bayesflow.workflows.Workflow`\ s.
+"""
+
 from .calibration_ecdf import calibration_ecdf
 from .calibration_ecdf_from_quantiles import calibration_ecdf_from_quantiles
 from .calibration_histogram import calibration_histogram
@@ -13,3 +17,7 @@ from .pairs_samples import pairs_samples
 from .recovery import recovery
 from .recovery_from_estimates import recovery_from_estimates
 from .z_score_contraction import z_score_contraction
+
+from ...utils._docs import _add_imports_to_all
+
+_add_imports_to_all(include_modules=[])

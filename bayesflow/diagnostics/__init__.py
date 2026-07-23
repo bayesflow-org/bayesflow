@@ -2,12 +2,20 @@ r"""
 A collection of plotting utilities and metrics for evaluating trained :py:class:`~bayesflow.workflows.Workflow`\ s.
 """
 
+from . import metrics
+from . import plots
+
 from .metrics import (
     bootstrap_comparison,
     calibration_error,
     calibration_log_gamma,
+    classifier_two_sample_test,
+    expected_calibration_error,
+    gamma_discrepancy,
+    gamma_null_distribution,
     posterior_contraction,
     posterior_z_score,
+    root_mean_squared_error,
     summary_space_comparison,
     correlation,
     accuracy_random_points,
@@ -31,6 +39,4 @@ from .plots import (
     z_score_contraction,
 )
 
-from ..utils._docs import _add_imports_to_all
-
-_add_imports_to_all(include_modules=[])
+__all__ = ["metrics", "plots"]

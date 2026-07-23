@@ -3,6 +3,7 @@ import numpy as np
 import keras
 
 from bayesflow.networks.helpers import Standardization
+from bayesflow.networks.helpers.standardization.standardize import Standardize
 from bayesflow.utils.serialization import serialize, deserialize
 
 from tests.utils import assert_layers_equal
@@ -35,24 +36,17 @@ def test_forward_standardization_mask_invariance():
     padded_input = keras.ops.concatenate([real_input, keras.ops.zeros((8, pad_len, 3))], axis=-2)
     mask = keras.ops.concatenate([keras.ops.ones((8, real_len)), keras.ops.zeros((8, pad_len))], axis=-1)
 
-    input_shapes = dict(summary_variables=padded_input.shape, inference_conditions=padded_input.shape)
-    std = Standardization(standardize="all")
-    std.build(input_shapes)
-    layer_1 = std.standardize_layers["summary_variables"]
-    layer_2 = std.standardize_layers["inference_conditions"]
+    masked = Standardize()
+    masked(padded_input, stage="training", mask=mask)
 
-    _ = layer_1(padded_input, stage="training", mask=mask)
-    _ = layer_2(real_input, stage="training")
+    reference = Standardize()
+    reference(real_input, stage="training")
 
-    moving_mean_1 = keras.ops.convert_to_numpy(layer_1.moving_mean[0])
-    moving_mean_2 = keras.ops.convert_to_numpy(layer_2.moving_mean[0])
-
-    np.testing.assert_allclose(moving_mean_1, moving_mean_2)
-
-    moving_m2_1 = keras.ops.convert_to_numpy(layer_1.moving_m2[0])
-    moving_m2_2 = keras.ops.convert_to_numpy(layer_2.moving_m2[0])
-
-    np.testing.assert_allclose(moving_m2_1, moving_m2_2)
+    for attr in ["moving_mean", "moving_m2", "count"]:
+        np.testing.assert_allclose(
+            keras.ops.convert_to_numpy(getattr(masked, attr)[0]),
+            keras.ops.convert_to_numpy(getattr(reference, attr)[0]),
+        )
 
 
 def test_forward_standardization_training_constant_batch():

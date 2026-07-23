@@ -74,7 +74,9 @@ class ModelComparisonSimulator(Simulator):
         fill_value: float = np.nan,
         shared_simulator: Simulator | Callable | None = None,
     ):
-        # constructor body unchanged
+        if len(simulators) < 2:
+            raise ValueError(f"This class requires at least 2 simulators, got {len(simulators)}.")
+
         self.simulators = simulators
 
         if callable(shared_simulator) and not isinstance(shared_simulator, Simulator):
@@ -83,6 +85,7 @@ class ModelComparisonSimulator(Simulator):
 
         if logits is not None and p is not None:
             raise ValueError("Received conflicting arguments. At most one of `p` or `logits` must be provided.")
+
         elif p is not None:
             p = np.array(p, dtype=float)
             if np.any(p <= 0):
@@ -90,6 +93,7 @@ class ModelComparisonSimulator(Simulator):
             if not np.isclose(np.sum(p), 1.0):
                 raise ValueError("Probabilities must sum to 1.")
             logits = np.log(p)
+
         elif logits is None:
             logits = [0.0] * len(simulators)
 

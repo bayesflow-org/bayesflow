@@ -1,7 +1,7 @@
+from typing import Any
 from collections.abc import Sequence
 
 import numpy as np
-from keras import ops
 
 from ...utils.exceptions import ShapeError
 from ...utils.classification import calibration_curve
@@ -13,7 +13,7 @@ def expected_calibration_error(
     model_names: Sequence[str] = None,
     num_bins: int = 10,
     return_probs: bool = False,
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """
     Estimates the expected calibration error (ECE) of a model comparison network according to [1].
 
@@ -54,15 +54,11 @@ def expected_calibration_error(
             Outputs of ``bayesflow.utils.calibration.calibration_curve()`` per model
     """
 
-    # Convert tensors to numpy, if passed
-    estimates = ops.convert_to_numpy(estimates)
-    targets = ops.convert_to_numpy(targets)
-
     if estimates.shape != targets.shape:
         raise ShapeError("`estimates` and `targets` must have the same shape.")
 
     if model_names is None:
-        model_names = ["M_" + str(i) for i in range(estimates.shape[-1])]
+        model_names = ["M_" + str(i) for i in range(1, estimates.shape[-1] + 1)]
     elif len(model_names) != estimates.shape[-1]:
         raise ShapeError("There must be exactly one `model_name` for each model in `estimates`")
 

@@ -191,6 +191,22 @@ def test_load_approximator_explicit_path(tiny_workflow):
     assert_models_equal(tiny_workflow.approximator, workflow2.approximator)
 
 
+def test_load_approximator_pathlib_path(tiny_workflow):
+    """load_approximator(path=...) accepts a pathlib.Path, not just str."""
+    from pathlib import Path
+
+    from bayesflow.networks import CouplingFlow
+
+    explicit_path = Path(tiny_workflow.checkpoint_filepath) / "model.keras"
+    workflow2 = bf.BasicWorkflow(
+        inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables=["parameters"],
+        simulator=bf.simulators.TwoMoons(),
+    )
+    workflow2.load_approximator(path=explicit_path)
+    assert_models_equal(tiny_workflow.approximator, workflow2.approximator)
+
+
 def test_load_approximator_restore_flag(tiny_workflow):
     """restore=True in the constructor automatically loads the checkpoint."""
     from bayesflow.networks import CouplingFlow

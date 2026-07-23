@@ -13,6 +13,8 @@ from .metrics import (
     expected_calibration_error,
     gamma_discrepancy,
     gamma_null_distribution,
+    accuracy,
+    brier_score,
     posterior_contraction,
     posterior_z_score,
     root_mean_squared_error,

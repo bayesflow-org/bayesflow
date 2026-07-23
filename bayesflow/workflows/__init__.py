@@ -18,6 +18,7 @@ Examples
 from .basic_workflow import BasicWorkflow
 from .ensemble_workflow import EnsembleWorkflow
 from .compositional_workflow import CompositionalWorkflow
+from .model_comparison_workflow import ModelComparisonWorkflow
 
 from ..utils._docs import _add_imports_to_all
 

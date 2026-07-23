@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesflow"
-version = "2.0.12"
+version = "2.0.13"
 authors = [{ name = "The BayesFlow Team" }]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -14,7 +14,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -23,17 +22,17 @@ description = "Amortizing Bayesian Inference With Neural Networks"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
 
-requires-python = ">= 3.11, < 3.14"
+requires-python = ">= 3.12, < 3.14"
 dependencies = [
-  "keras>=3.12.0",
-  "matplotlib>=3.10.8",
+  "keras>=3.15.0",
+  "matplotlib>=3.11.1",
   "networkx>=3.4.2",
-  "numpy>=2.2.6",
-  "pandas>=2.3.3",
-  "scipy>=1.15.3",
+  "numpy>=2.5.1",
+  "pandas>=3.0.5",
+  "scipy>=1.18.0",
   "seaborn>=0.13.2",
   "sympy>=1.14.0",
-  "tqdm>=4.67.1",
+  "tqdm>=4.69.0",
 ]
 [project.optional-dependencies]
 dev = [
@@ -104,7 +103,7 @@ line-length = 120
 indent-width = 4
 
 # minimum target python version
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -166,6 +165,11 @@ namespaces = false
 
 [tool.check-wheel-contents]
 ignore = ["W002"]
+
+[tool.uv]
+required-environments = [
+  "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
 
 [tool.uv.sources]
 bayesflow = { workspace = true }

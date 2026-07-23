@@ -183,9 +183,15 @@ def approximator_with_summaries(request):
             )
         case "model_comparison_approximator":
             from bayesflow.approximators import ModelComparisonApproximator
+            from bayesflow.networks import ScoringRuleNetwork
+            from bayesflow.scoring_rules import CrossEntropyScore
 
             return ModelComparisonApproximator(
-                num_models=2, classifier_network=MLP(widths=(8, 8)), adapter=adapter, summary_network=None
+                inference_network=ScoringRuleNetwork(
+                    scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=MLP(widths=(8, 8))
+                ),
+                adapter=adapter,
+                summary_network=None,
             )
         case _:
             raise ValueError("Invalid param for approximator class.")

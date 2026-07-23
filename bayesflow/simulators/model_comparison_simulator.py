@@ -1,15 +1,13 @@
 from collections.abc import Callable, Sequence
+from typing import Literal
+
 import numpy as np
 
 from bayesflow.types import Shape
 from bayesflow.utils import tree_concatenate
 from bayesflow.utils.decorators import allow_batch_size
-
-from bayesflow.utils import numpy_utils as npu
+from bayesflow.utils.numpy_utils import softmax, one_hot
 from bayesflow.utils import logging
-
-from types import FunctionType
-from typing import Literal
 
 from .simulator import Simulator
 from .lambda_simulator import LambdaSimulator
@@ -74,27 +72,30 @@ class ModelComparisonSimulator(Simulator):
         use_mixed_batches: bool = True,
         key_conflicts: Literal["drop", "fill", "error"] = "drop",
         fill_value: float = np.nan,
-        shared_simulator: Simulator | Callable[[Sequence[int]], dict[str, any]] = None,
+        shared_simulator: Simulator | Callable | None = None,
     ):
-        # constructor body unchanged
+        if len(simulators) < 2:
+            raise ValueError(f"This class requires at least 2 simulators, got {len(simulators)}.")
+
         self.simulators = simulators
 
-        if isinstance(shared_simulator, FunctionType):
+        if callable(shared_simulator) and not isinstance(shared_simulator, Simulator):
             shared_simulator = LambdaSimulator(shared_simulator, is_batched=True)
         self.shared_simulator = shared_simulator
 
-        match logits, p:
-            case (None, None):
-                logits = [0.0] * len(simulators)
-            case (None, logits):
-                logits = logits
-            case (p, None):
-                p = np.array(p)
-                if not np.isclose(np.sum(p), 1.0):
-                    raise ValueError("Probabilities must sum to 1.")
-                logits = np.log(p) - np.log(1 - p)
-            case _:
-                raise ValueError("Received conflicting arguments. At most one of `p` or `logits` must be provided.")
+        if logits is not None and p is not None:
+            raise ValueError("Received conflicting arguments. At most one of `p` or `logits` must be provided.")
+
+        elif p is not None:
+            p = np.array(p, dtype=float)
+            if np.any(p <= 0):
+                raise ValueError("All probabilities must be positive.")
+            if not np.isclose(np.sum(p), 1.0):
+                raise ValueError("Probabilities must sum to 1.")
+            logits = np.log(p)
+
+        elif logits is None:
+            logits = [0.0] * len(simulators)
 
         if len(logits) != len(simulators):
             raise ValueError(f"Length of logits ({len(logits)}) must match number of simulators ({len(simulators)}).")
@@ -131,7 +132,7 @@ class ModelComparisonSimulator(Simulator):
         if self.shared_simulator:
             data |= self.shared_simulator.sample(batch_shape, **kwargs)
 
-        softmax_logits = npu.softmax(self.logits)
+        softmax_logits = softmax(self.logits)
         num_models = len(self.simulators)
 
         # generate data randomly from each model (slower)
@@ -152,7 +153,7 @@ class ModelComparisonSimulator(Simulator):
             model_index = np.random.choice(num_models, p=softmax_logits)
 
             data = self.simulators[model_index].sample(batch_shape, **(kwargs | data))
-            model_indices = npu.one_hot(np.full(batch_shape, model_index, dtype="int32"), num_models)
+            model_indices = one_hot(np.full(batch_shape, model_index, dtype="int32"), num_models)
 
         return data | {"model_indices": model_indices}
 

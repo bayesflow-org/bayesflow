@@ -135,7 +135,6 @@ class NonExchangeableWrapper(InferenceNetwork):
     def _prepare_inference_conditions(
         self, xz: Tensor, i: int, conditions: Tensor | None = None, generated_samples: Tensor | None = None
     ):
-
         # this suppresses a warning that occurs because at index i=1, the context only has a single element,
         # which is then summarized.
         with warnings.catch_warnings():

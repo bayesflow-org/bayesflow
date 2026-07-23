@@ -6,6 +6,14 @@ import numpy as np
 from bayesflow.types import Tensor
 
 
+def logits_relative_to_target(logits: Tensor, targets: Tensor) -> Tensor:
+    """Express logits relative to the target model m = argmax(targets)."""
+    m = keras.ops.cast(keras.ops.argmax(targets, axis=-1), dtype="int32")
+    m_idx = keras.ops.expand_dims(m, axis=-1)
+    logit_m = keras.ops.take_along_axis(logits, m_idx, axis=-1)
+    return logits - logit_m
+
+
 def resolve_seed(seed):
     """Convert an integer seed to a SeedGenerator; pass a SeedGenerator or None through unchanged."""
     if isinstance(seed, int):

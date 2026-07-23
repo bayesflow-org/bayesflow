@@ -162,3 +162,7 @@ class TimeSeriesTransformer(Transformer):
             summary = self.pooling(inp, mask=mask)
         summary = self.output_projector(summary)
         return summary
+
+    def compute_mask(self, inputs, mask=None):
+        # The mask is consumed here (attention and pooling). Nothing is propagated downstream.
+        return None

@@ -21,11 +21,13 @@ class Standardize(keras.Layer):
         """
         super().__init__(**layer_kwargs(kwargs))
 
-        self.supports_masking = True
-
         self.moving_mean = None
         self.moving_m2 = None
         self.count = None
+
+    def compute_mask(self, inputs, mask=None):
+        # The mask is consumed here (moment computation). Nothing is propagated downstream.
+        return None
 
     def moving_std(self, index: int) -> Tensor:
         """Calculates the standard deviation from the moving M^2 at the given index and the count.

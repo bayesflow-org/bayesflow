@@ -22,7 +22,8 @@ class CouplingFlow(InferenceNetwork):
 
     Constructs a deep invertible architecture composed of multiple layers,
     including ActNorm, learned permutations, and dual coupling layers.
-    Incorporates ideas from [1-5].
+    Incorporates ideas from [1-5] and can be instantiate either an affine
+    coupling flow or a spline flow.
 
     The specific transformation applied in the coupling layers is determined by
     *transform*, while the subnet type can be either an MLP or another callable
@@ -33,6 +34,13 @@ class CouplingFlow(InferenceNetwork):
     normal, for density estimation.  It can also use more flexible distributions,
     e.g., GMMs for highly multimodal, low-dimensional distributions or
     Multivariate Student-*t* for heavy-tailed distributions.
+
+    Note: Using ``transform="spline"`` produces more flexible estimators and
+    generally needs ``depth < 6``. However, splines can be less stable than the
+    default "affine" transform. Consider increasing the default domain of the spline
+    if you see numerical instabilities (e.g., ``nan`` loss) like so:
+
+    ``CouplingFlow(transform_kwargs={"default_domain": (-5., 5., -5., 5.)})``
 
     Parameters
     ----------
@@ -67,10 +75,10 @@ class CouplingFlow(InferenceNetwork):
         control, e.g.::
             base_distribution=bf.distributions.DiagonalStudentT(df=10.0)
         Default is ``"normal"``.
-    subnet_kwargs : dict[str, any], optional
+    subnet_kwargs : dict[str, Any], optional
         Keyword arguments forwarded to the subnet (e.g., MLP) constructor within
         each coupling layer, such as hidden sizes or activation choices.
-    transform_kwargs : dict[str, any], optional
+    transform_kwargs : dict[str, Any], optional
         Keyword arguments forwarded to the constructor of the transform selected
         by *transform* (e.g., ``bins`` for splines).
     **kwargs

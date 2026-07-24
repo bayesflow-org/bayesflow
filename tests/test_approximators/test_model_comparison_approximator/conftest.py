@@ -63,21 +63,28 @@ def classifier_network():
     return MLP(widths=(8, 8))
 
 
-@pytest.fixture
-def approximator(adapter, classifier_network, summary_network, simulator, standardize):
-    from bayesflow.approximators import ModelComparisonApproximator
-
-    return ModelComparisonApproximator(
-        num_models=len(simulator.simulators),
-        classifier_network=classifier_network,
-        adapter=adapter,
-        summary_network=summary_network,
-        standardize=standardize,
-    )
-
-
 @pytest.fixture(
     params=["all", None, "inference_conditions", "summary_variables", ("inference_conditions", "summary_variables")]
 )
 def standardize(request):
     return request.param
+
+
+@pytest.fixture(params=["cross_entropy_score", "exponential_score"])
+def scoring_rule(request):
+    from bayesflow.scoring_rules import CrossEntropyScore, ExponentialScore
+
+    return {"cross_entropy_score": CrossEntropyScore, "exponential_score": ExponentialScore}[request.param]()
+
+
+@pytest.fixture
+def approximator(adapter, classifier_network, summary_network, simulator, standardize, scoring_rule):
+    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.networks import ScoringRuleNetwork
+
+    return ModelComparisonApproximator(
+        inference_network=ScoringRuleNetwork(scoring_rules={"scoring_rule": scoring_rule}, subnet=classifier_network),
+        adapter=adapter,
+        summary_network=summary_network,
+        standardize=standardize,
+    )

@@ -6,6 +6,8 @@ from .metrics import (
     bootstrap_comparison,
     calibration_error,
     calibration_log_gamma,
+    accuracy,
+    brier_score,
     posterior_contraction,
     posterior_z_score,
     summary_space_comparison,

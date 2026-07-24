@@ -2,7 +2,7 @@ name: bf-cuda
 channels:
   - defaults
 dependencies:
-  - python=3.11
+  - python=3.12
   - pip
   - pip:
       - jax[cuda12]

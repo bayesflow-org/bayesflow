@@ -122,3 +122,73 @@ def test_multimodel_key_conflicts_sample(multimodel_key_conflicts, batch_size):
     elif multimodel_key_conflicts.key_conflicts == "error":
         with pytest.raises(ValueError):
             samples = multimodel_key_conflicts.sample(batch_size)
+
+
+def test_multimodel_single_batch(multimodel_single_batch, batch_size):
+    samples = multimodel_single_batch.sample(batch_size)
+    # all samples in the batch come from the same model
+    assert {"mu", "y", "model_indices"}.issubset(set(samples))
+    assert samples["model_indices"].shape == (batch_size, 2)
+    # every row of model_indices must be identical (single model for whole batch)
+    assert np.all(samples["model_indices"] == samples["model_indices"][0])
+
+
+def test_multimodel_p_argument(batch_size):
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+
+    def prior_0():
+        return dict(mu=0.0)
+
+    def prior_1():
+        return dict(mu=np.random.standard_normal())
+
+    def likelihood(mu):
+        return dict(y=np.random.normal(mu, 1, 4))
+
+    sim0 = make_simulator([prior_0, likelihood])
+    sim1 = make_simulator([prior_1, likelihood])
+
+    # valid probabilities must sum to 1
+    simulator = ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.3, 0.7])
+    samples = simulator.sample(batch_size)
+    assert set(samples) >= {"model_indices", "y"}
+
+    # invalid probabilities should raise
+    with pytest.raises(ValueError, match="sum to 1"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.3, 0.3])
+
+    # p and logits are mutually exclusive
+    with pytest.raises(ValueError, match="conflicting"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.5, 0.5], logits=[0.0, 0.0])
+
+    # non-positive probabilities must raise
+    with pytest.raises(ValueError, match="positive"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.0, 1.0])
+    with pytest.raises(ValueError, match="positive"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[-0.1, 1.1])
+
+
+def test_model_comparison_simulator_logits_length_mismatch():
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+    import numpy as np
+
+    sim = make_simulator([lambda: dict(x=np.random.normal())])
+    with pytest.raises(ValueError, match="[Ll]ength"):
+        ModelComparisonSimulator(simulators=[sim, sim], logits=[0.0, 0.0, 0.0])
+
+
+def test_model_comparison_simulator_shared_simulator_callable(batch_size):
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+    import numpy as np
+
+    def shared(batch_size):
+        return dict(shared=np.ones(batch_size))
+
+    def model():
+        return dict(x=np.random.normal())
+
+    sim = make_simulator([model])
+    mc_sim = ModelComparisonSimulator(simulators=[sim, sim], shared_simulator=shared)
+    samples = mc_sim.sample(batch_size)
+    assert "shared" in samples
+    assert "model_indices" in samples

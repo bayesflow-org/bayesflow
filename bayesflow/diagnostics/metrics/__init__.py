@@ -7,4 +7,6 @@ from .model_misspecification import bootstrap_comparison, summary_space_comparis
 from .calibration_log_gamma import calibration_log_gamma, gamma_null_distribution, gamma_discrepancy
 from .posterior_z_score import posterior_z_score
 from .correlation import correlation
+from .accuracy import accuracy
+from .brier_score import brier_score
 from .accuracy_random_points import accuracy_random_points

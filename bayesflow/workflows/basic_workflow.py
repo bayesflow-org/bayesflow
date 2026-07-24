@@ -158,7 +158,7 @@ class BasicWorkflow(Workflow):
     def adapter(self):
         return self.approximator.adapter
 
-    def load_approximator(self, path: str | None = None):
+    def load_approximator(self, path: str | os.PathLike | None = None):
         """
         Restore the approximator from a saved checkpoint.
 
@@ -176,7 +176,7 @@ class BasicWorkflow(Workflow):
 
         Parameters
         ----------
-        path : str, optional
+        path : str or os.PathLike, optional
             Explicit path to the checkpoint file. The file extension determines
             the loading strategy:
 
@@ -211,6 +211,8 @@ class BasicWorkflow(Workflow):
                 )
             filename = self.checkpoint_name + (".weights.h5" if self.save_weights_only else ".keras")
             path = os.path.join(self.checkpoint_filepath, filename)
+        else:
+            path = os.fspath(path)
 
         if not os.path.exists(path):
             raise FileNotFoundError(
@@ -276,8 +278,7 @@ class BasicWorkflow(Workflow):
         Returns
         -------
         Adapter
-            A configured Adapter instance that applies dtype conversion,
-            concatenation, and optional standardization.
+            A configured Adapter instance that applies dtype conversion and concatenation.
         """
 
         adapter = (

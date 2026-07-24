@@ -39,6 +39,7 @@ from .dispatch import (
     find_summary_network,
     find_inference_network,
     find_distribution,
+    find_scoring_rule,
 )
 
 from .ecdf import simultaneous_ecdf_bands, ranks

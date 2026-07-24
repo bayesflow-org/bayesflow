@@ -25,11 +25,8 @@ class Standardization(keras.Layer):
         else:
             self.standardize = standardize or []
 
-        if self.standardize == "all":
-            # we have to lazily initialize these
-            self.standardize_layers = None
-        else:
-            self.standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
+        # Lazy init
+        self.standardize_layers = None
 
     def maybe_standardize(
         self,
@@ -57,17 +54,19 @@ class Standardization(keras.Layer):
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
         if self.standardize == "all":
             # Only include variables present in data_shapes
-            self.standardize = [
+            keys = [
                 var
                 for var in ["inference_variables", "summary_variables", "inference_conditions"]
                 if var in data_shapes
             ]
-            self.standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
+        else:
+            keys = [var for var in self.standardize if var in data_shapes]
+
+        self.standardize = keys
+        self.standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
 
         for var, layer in self.standardize_layers.items():
             layer.build(data_shapes[var])
-
-        self.built = True
 
     def get_config(self):
         base_config = super().get_config()

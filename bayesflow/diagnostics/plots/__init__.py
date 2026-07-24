@@ -1,3 +1,5 @@
+from .bayes_factor_recovery import bayes_factor_recovery
+from .pairwise_bayes_factors import pairwise_bayes_factors
 from .calibration_ecdf import calibration_ecdf
 from .calibration_ecdf_from_quantiles import calibration_ecdf_from_quantiles
 from .calibration_histogram import calibration_histogram

@@ -133,3 +133,31 @@ def fusion_adapter():
     from bayesflow import Adapter
 
     return Adapter.create_default(["mean"]).group(["a", "b"], "summary_variables")
+
+
+@pytest.fixture
+def mc_simulators():
+    """Null (mu=0) and alternative (mu~N(0,1)) Gaussian simulators for model comparison."""
+    import numpy as np
+    from bayesflow import make_simulator
+
+    def prior_null():
+        return dict(mu=0.0)
+
+    def prior_alternative():
+        return dict(mu=np.random.normal(0, 1))
+
+    def likelihood(mu):
+        return dict(x=np.random.normal(mu, 1, 8))  # 8 i.i.d. observations
+
+    return [
+        make_simulator([prior_null, likelihood]),
+        make_simulator([prior_alternative, likelihood]),
+    ]
+
+
+@pytest.fixture
+def mc_summary_network():
+    from tests.utils import MeanStdSummaryNetwork
+
+    return MeanStdSummaryNetwork()

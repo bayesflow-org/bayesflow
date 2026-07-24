@@ -49,6 +49,59 @@ def mixture_of_multivariate_normal_scores():
     return MixtureScore(mvn1=MvNormalScore(), mvn2=MvNormalScore())
 
 
+# --- Model comparison scoring rules ---
+
+
+@pytest.fixture()
+def cross_entropy_score():
+    from bayesflow.scoring_rules import CrossEntropyScore
+
+    return CrossEntropyScore()
+
+
+@pytest.fixture()
+def brier_score():
+    from bayesflow.scoring_rules import BrierScore
+
+    return BrierScore()
+
+
+@pytest.fixture()
+def polynomial_score():
+    from bayesflow.scoring_rules import PolynomialScore
+
+    return PolynomialScore(alpha=3.0)
+
+
+@pytest.fixture()
+def exponential_score():
+    from bayesflow.scoring_rules import ExponentialScore
+
+    return ExponentialScore()
+
+
+@pytest.fixture()
+def leaky_exponential_score():
+    from bayesflow.links import Leaky
+    from bayesflow.scoring_rules import ExponentialScore
+
+    return ExponentialScore(links={"logits": Leaky(power=2.0)})
+
+
+@pytest.fixture()
+def logistic_score():
+    from bayesflow.scoring_rules import LogisticScore
+
+    return LogisticScore()
+
+
+@pytest.fixture()
+def power_logistic_score():
+    from bayesflow.scoring_rules import LogisticScore
+
+    return LogisticScore(alpha=1.0)
+
+
 @pytest.fixture(
     params=[
         "median_score",
@@ -57,6 +110,13 @@ def mixture_of_multivariate_normal_scores():
         "quantile_score",
         "multivariate_normal_score",
         "mixture_of_multivariate_normal_scores",
+        "cross_entropy_score",
+        "brier_score",
+        "polynomial_score",
+        "exponential_score",
+        "leaky_exponential_score",
+        "logistic_score",
+        "power_logistic_score",
     ],
     scope="function",
 )

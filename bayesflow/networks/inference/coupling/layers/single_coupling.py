@@ -3,11 +3,10 @@ from typing import Any
 import keras
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import filter_kwargs, find_network, layer_kwargs, concatenate_valid
+from bayesflow.utils import filter_kwargs, find_network, find_transform, layer_kwargs, concatenate_valid
 from bayesflow.utils.serialization import serializable, serialize
 
 from ..invertible_layer import InvertibleLayer
-from ..transforms import find_transform
 
 from ....defaults import COUPLING_MLP_DEFAULTS
 

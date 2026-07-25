@@ -55,8 +55,8 @@ class DiffusionModel(InferenceNetwork):
     subnet : str, type, or keras.Layer
         A neural network type for the diffusion model, will be instantiated using
         *subnet_kwargs*.  If a string is provided, it should be a registered name
-        (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
-        be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+        (e.g., ``"time_mlp"``, ``"diffusion_transformer"``).  If a type or ``keras.Layer`` is provided,
+        it will be directly instantiated with the given *subnet_kwargs*.  Any subnet must
         accept a tuple of tensors ``(target, time, conditions)``.
     noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type
         Noise schedule controlling the diffusion dynamics.  Can be a string
@@ -83,6 +83,10 @@ class DiffusionModel(InferenceNetwork):
         Probability of marking each condition as missing during training, so the network learns
         to handle missing conditions. Only takes effect when the subnet accepts
         ``infer_target_mask`` (e.g. ``diffusion_transformer``). Default is 0.0.
+    output_projector : keras.layers.Layer, optional
+        The output projector is applied to the subnet output. Default is a dense layer to map
+        the subnets output to the inference variable dimension.
+        Projector is omitted for ``"diffusion_transformer"``.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -121,6 +125,7 @@ class DiffusionModel(InferenceNetwork):
         fixed_target_prob: float = 0.0,
         missing_target_prob: float = 0.0,
         missing_conditions_prob: float = 0.0,
+        output_projector: keras.Layer = None,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -155,7 +160,12 @@ class DiffusionModel(InferenceNetwork):
         self.subnet = find_network(subnet, **subnet_kwargs)
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
-        self.output_projector = None
+        if output_projector is not None:
+            self.output_projector = output_projector
+        elif subnet == "diffusion_transformer":
+            self.output_projector = keras.layers.Identity()
+        else:
+            self.output_projector = None  # defaults to a dense layer
         self.fixed_target_prob = fixed_target_prob
         self.missing_target_prob = missing_target_prob
         self.missing_conditions_prob = missing_conditions_prob
@@ -268,8 +278,13 @@ class DiffusionModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        units = 1 if self._prediction_type == "potential" else xz_shape[-1]
-        self.output_projector = keras.layers.Dense(units=units, bias_initializer="zeros")
+        if self.output_projector is None:
+            units = 1 if self._prediction_type == "potential" else xz_shape[-1]
+            self.output_projector = keras.layers.Dense(
+                units=units,
+                bias_initializer="zeros",
+                name="output_projector",
+            )
 
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)
@@ -291,6 +306,7 @@ class DiffusionModel(InferenceNetwork):
             "fixed_target_prob": self.fixed_target_prob,
             "missing_target_prob": self.missing_target_prob,
             "missing_conditions_prob": self.missing_conditions_prob,
+            "output_projector": self.output_projector,
         }
         return base_config | serialize(config)
 

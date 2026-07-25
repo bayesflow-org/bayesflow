@@ -115,6 +115,7 @@ class ConsistencyModel(InferenceNetwork):
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
+        self._project_output = kwargs.pop("project_output", None)
         self.sigma2 = ops.convert_to_tensor(sigma2)
         self.sigma = ops.sqrt(sigma2)
         self.eps = eps
@@ -165,10 +166,16 @@ class ConsistencyModel(InferenceNetwork):
             "fixed_target_prob": self.fixed_target_prob,
             "missing_target_prob": self.missing_target_prob,
             "missing_conditions_prob": self.missing_conditions_prob,
+            "project_output": self._project_output,
             # we do not need to store subnet_kwargs
         }
 
         return base_config | serialize(config)
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        # Older configs may have no "project_output" key and always used a Dense projector.
+        return super().from_config({"project_output": True} | config, custom_objects=custom_objects)
 
     def _schedule_discretization(self, step) -> float:
         """Schedule function for adjusting the discretization level `N(k)` during
@@ -206,15 +213,17 @@ class ConsistencyModel(InferenceNetwork):
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-        if out_shape[-1] == xz_shape[-1]:
-            # subnet already outputs in target space
-            self.output_projector = keras.layers.Identity()
-        else:
+        if self._project_output is None:
+            # a subnet whose output already has the target width projects into target space itself
+            self._project_output = out_shape[-1] != xz_shape[-1]
+        if self._project_output:
             self.output_projector = keras.layers.Dense(
                 units=xz_shape[-1],
                 bias_initializer="zeros",
                 name="output_projector",
             )
+        else:
+            self.output_projector = keras.layers.Identity()
         self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3

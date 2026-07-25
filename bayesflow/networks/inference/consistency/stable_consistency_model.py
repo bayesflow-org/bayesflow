@@ -68,10 +68,6 @@ class StableConsistencyModel(InferenceNetwork):
     weight_mlp_kwargs : dict[str, any], optional
         Keyword arguments for an auxiliary MLP used to generate weights within the
         consistency model (e.g., depth, hidden sizes, non-linearity choices).
-    subnet_projector : keras.layers.Layer, optional
-        The subnet projector is applied to the subnet output. Default is a dense layer to map
-        the subnets output to the inference variable dimension.
-        Projector is omitted for ``"diffusion_transformer"``.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``
         (e.g., ``name``, ``dtype``, or ``trainable``).
@@ -103,7 +99,6 @@ class StableConsistencyModel(InferenceNetwork):
         rho: float = 3.5,
         subnet_kwargs: dict[str, any] = None,
         weight_mlp_kwargs: dict[str, any] = None,
-        subnet_projector: keras.Layer = None,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -116,12 +111,7 @@ class StableConsistencyModel(InferenceNetwork):
         self.subnet = find_network(subnet, **subnet_kwargs)
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
-        if subnet_projector is not None:
-            self.subnet_projector = subnet_projector
-        elif subnet == "diffusion_transformer":
-            self.subnet_projector = keras.layers.Identity()
-        else:
-            self.subnet_projector = None  # defaults to a dense layer
+        self.subnet_projector = None
 
         weight_mlp_kwargs = weight_mlp_kwargs or {}
         weight_mlp_kwargs = WEIGHT_MLP_DEFAULTS | weight_mlp_kwargs
@@ -157,7 +147,6 @@ class StableConsistencyModel(InferenceNetwork):
             "fixed_target_prob": self.fixed_target_prob,
             "missing_target_prob": self.missing_target_prob,
             "missing_conditions_prob": self.missing_conditions_prob,
-            "subnet_projector": self.subnet_projector,
         }
 
         return base_config | serialize(config)
@@ -181,7 +170,10 @@ class StableConsistencyModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        if self.subnet_projector is None:
+        if getattr(self.subnet, "projects_output", False):
+            # subnet already outputs in target space
+            self.subnet_projector = keras.layers.Identity()
+        else:
             self.subnet_projector = keras.layers.Dense(
                 units=xz_shape[-1],
                 bias_initializer="zeros",
@@ -192,8 +184,7 @@ class StableConsistencyModel(InferenceNetwork):
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         input_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-        if not self.subnet_projector.built:
-            self.subnet_projector.build(input_shape)
+        self.subnet_projector.build(input_shape)
 
         # input shape for weight function and projector
         input_shape = (xz_shape[0], 1)

@@ -67,9 +67,6 @@ class DiffusionTransformer(keras.Layer):
         Additional keyword arguments forwarded to ``keras.Layer``.
     """
 
-    # The final token projection already maps into target space, so no output projector is needed.
-    projects_output = True
-
     # Condition-state embedding indices for the learnable state table.
     _STATE_LATENT = 0  # target token being inferred (noised)
     _STATE_OBSERVED = 1  # clean target conditioned upon, or present condition

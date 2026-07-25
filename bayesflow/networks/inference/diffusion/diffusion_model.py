@@ -268,7 +268,11 @@ class DiffusionModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        if getattr(self.subnet, "projects_output", False):
+        # construct input shape for subnet and subnet projector
+        time_shape = (xz_shape[0], 1)
+        self.subnet.build((xz_shape, time_shape, conditions_shape))
+        out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
+        if out_shape[-1] == xz_shape[-1]:
             # subnet already outputs in target space
             self.output_projector = keras.layers.Identity()
         else:
@@ -278,12 +282,6 @@ class DiffusionModel(InferenceNetwork):
                 bias_initializer="zeros",
                 name="output_projector",
             )
-
-        # construct input shape for subnet and subnet projector
-        time_shape = (xz_shape[0], 1)
-        self.subnet.build((xz_shape, time_shape, conditions_shape))
-        out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-
         self.output_projector.build(out_shape)
 
     def get_config(self):

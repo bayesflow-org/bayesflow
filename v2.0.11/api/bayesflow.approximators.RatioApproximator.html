@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
     <script src="../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -47,7 +47,7 @@
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.approximators.RatioApproximator';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.18.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -431,7 +431,8 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
   <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
@@ -944,7 +945,7 @@ If the model has not been built, it will be built using a batch from the dataset
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.RatioApproximator.log_ratio">
-<span class="sig-name descname"><span class="pre">log_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/ratio_approximator.html#RatioApproximator.log_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.RatioApproximator.log_ratio" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">log_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/bayesflow/approximators/ratio_approximator.html#RatioApproximator.log_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayesflow.approximators.RatioApproximator.log_ratio" title="Link to this definition">#</a></dt>
 <dd><p>Computes the log likelihood-to-evidence ratio.
 The <cite>data</cite> dictionary is preprocessed using the <cite>adapter</cite>.</p>
 <dl class="field-list simple">
@@ -1335,8 +1336,8 @@ top-level names.</p>
 <dt>Args:</dt><dd><dl>
 <dt>filepath: <cite>str</cite> or <cite>pathlib.Path</cite> object. The path to save the</dt><dd><p>artifact.</p>
 </dd>
-<dt>format: <cite>str</cite>. The export format. Supported values:</dt><dd><p><cite>“tf_saved_model”</cite>, <cite>“onnx”</cite>, <cite>“openvino”</cite>, and <cite>“litert”</cite>.
-Defaults to <cite>“tf_saved_model”</cite>.</p>
+<dt>format: <cite>str</cite>. The export format. Supported values:</dt><dd><p><cite>“tf_saved_model”</cite>, <cite>“onnx”</cite>, <cite>“openvino”</cite>, <cite>“litert”</cite>,
+and <cite>“torch”</cite>. Defaults to <cite>“tf_saved_model”</cite>.</p>
 </dd>
 <dt>verbose: <cite>bool</cite>. Whether to print a message during export. Defaults</dt><dd><p>to <cite>None</cite>, which uses the default value set by different
 backends and formats.</p>
@@ -1344,7 +1345,13 @@ backends and formats.</p>
 <dt>input_signature: Optional. Specifies the shape and dtype of the</dt><dd><p>model inputs. Can be a structure of <cite>keras.InputSpec</cite>,
 <cite>tf.TensorSpec</cite>, <cite>backend.KerasTensor</cite>, or backend tensor. If
 not provided, it will be automatically computed. Defaults to
-<cite>None</cite>.</p>
+<cite>None</cite>.
+Note: With <cite>format=”litert”</cite> and the PyTorch backend, dynamic
+input shapes are not supported. Any dynamic dimensions (i.e.,
+<cite>None</cite> in input shapes) will be automatically replaced with <cite>1</cite>
+during export, which may cause runtime failures for other
+shapes. You must explicitly pass a fixed static
+<cite>input_signature</cite> matching your maximum runtime shape.</p>
 </dd>
 <dt><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs: Additional keyword arguments.</dt><dd><ul>
 <li><dl class="simple">
@@ -1373,11 +1380,25 @@ provided, they will be automatically computed.</p>
 </li>
 <li><dl class="simple">
 <dt>LiteRT-specific options: Optional keyword arguments specific</dt><dd><p>to <cite>format=”litert”</cite>. These are passed directly to the
-TensorFlow Lite converter and include options like
-<cite>optimizations</cite>, <cite>representative_dataset</cite>,
-<cite>experimental_new_quantizer</cite>, <cite>allow_custom_ops</cite>,
-<cite>enable_select_tf_ops</cite>, etc. See TensorFlow Lite
-documentation for all available options.</p>
+TensorFlow Lite converter on the TensorFlow backend and
+include options like <cite>optimizations</cite>,
+<cite>representative_dataset</cite>, <cite>experimental_new_quantizer</cite>,
+<cite>allow_custom_ops</cite>, <cite>enable_select_tf_ops</cite>, etc. On the
+PyTorch backend, LiteRT export accepts <cite>optimizations</cite>
+plus the installed <cite>litert_torch.convert()</cite> keyword
+arguments such as <cite>strict_export</cite>, <cite>dynamic_shapes</cite> (note
+that standard ops do not support dynamic shapes, as noted
+below), <cite>lightweight_conversion</cite>, <cite>enable_x64</cite>,
+<cite>runtime_constant_folding</cite>, and <cite>quant_config</cite>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>PyTorch export options: Optional keyword arguments specific</dt><dd><p>to <cite>format=”torch”</cite>. These are passed directly to
+<cite>torch.export.export</cite> and include <cite>strict</cite>,
+<cite>dynamic_shapes</cite>,
+<cite>prefer_deferred_runtime_asserts_over_guards</cite>, and
+<cite>preserve_module_call_signature</cite>.</p>
 </dd>
 </dl>
 </li>
@@ -1386,6 +1407,14 @@ documentation for all available options.</p>
 </dl>
 </dd>
 </dl>
+<p><strong>Note on LiteRT (TFLite) Export with PyTorch Backend:</strong>
+With the PyTorch backend, LiteRT export (<cite>format=”litert”</cite>) does not
+support dynamic input shapes. If no static signature is provided,
+any dynamic dimensions (represented as <cite>None</cite>) are automatically
+replaced with <cite>1</cite> during export. This can lead to runtime failures
+for other shapes. You must explicitly specify a fixed static
+<cite>input_signature</cite> (matching your maximum runtime dimensions) and pad
+your inputs to this static shape at runtime.</p>
 <p><strong>Note:</strong> This feature is currently supported only with TensorFlow, JAX
 and Torch backends.</p>
 <p><strong>Note:</strong> Be aware that the exported artifact may contain information
@@ -1427,6 +1456,16 @@ and Torch backend.</p>
 <span class="n">output_data</span> <span class="o">=</span> <span class="n">interpreter</span><span class="o">.</span><span class="n">get_tensor</span><span class="p">(</span>
     <span class="n">interpreter</span><span class="o">.</span><span class="n">get_output_details</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;index&#39;</span><span class="p">]</span>
 <span class="p">)</span>
+</pre></div>
+</div>
+<p>Here’s how to export a PyTorch ExportedProgram for inference.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export the model as a PyTorch ExportedProgram artifact</span>
+<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;path/to/model.pt2&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;torch&quot;</span><span class="p">)</span>
+
+<span class="c1"># Load the artifact in a different process/environment</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="n">loaded_program</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">export</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;path/to/model.pt2&quot;</span><span class="p">)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">loaded_program</span><span class="o">.</span><span class="n">module</span><span class="p">()(</span><span class="n">input_tensor</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2233,7 +2272,7 @@ update statelessly.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="bayesflow.approximators.RatioApproximator.summarize">
-<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></span><a class="headerlink" href="#bayesflow.approximators.RatioApproximator.summarize" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span></span><a class="headerlink" href="#bayesflow.approximators.RatioApproximator.summarize" title="Link to this definition">#</a></dt>
 <dd><p>Computes the learned summary statistics of given summary variables.</p>
 <p>The <cite>conditions</cite> dictionary is preprocessed using the <cite>adapter</cite> and passed through the summary network.</p>
 <dl class="field-list simple">
@@ -2620,8 +2659,8 @@ including <a href="#id13"><span class="problematic" id="id14">`</span></a>SeedGe
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2641,7 +2680,7 @@ including <a href="#id13"><span class="problematic" id="id14">`</span></a>SeedGe
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     <br/>
   </p>
 </div>
@@ -2655,7 +2694,7 @@ including <a href="#id13"><span class="problematic" id="id14">`</span></a>SeedGe
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>

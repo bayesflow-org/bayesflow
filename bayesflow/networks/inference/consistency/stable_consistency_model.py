@@ -192,7 +192,8 @@ class StableConsistencyModel(InferenceNetwork):
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         input_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-        self.subnet_projector.build(input_shape)
+        if not self.subnet_projector.built:
+            self.subnet_projector.build(input_shape)
 
         # input shape for weight function and projector
         input_shape = (xz_shape[0], 1)

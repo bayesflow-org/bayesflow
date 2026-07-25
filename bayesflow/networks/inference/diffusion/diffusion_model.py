@@ -291,7 +291,8 @@ class DiffusionModel(InferenceNetwork):
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
-        self.output_projector.build(out_shape)
+        if not self.output_projector.built:
+            self.output_projector.build(out_shape)
 
     def get_config(self):
         base_config = super().get_config()

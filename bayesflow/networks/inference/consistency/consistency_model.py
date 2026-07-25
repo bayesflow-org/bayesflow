@@ -225,7 +225,8 @@ class ConsistencyModel(InferenceNetwork):
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-        self.output_projector.build(out_shape)
+        if not self.output_projector.built:
+            self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3
         self._c_huber = 0.00054 * ops.sqrt(xz_shape[-1])
